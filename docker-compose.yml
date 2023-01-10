@@ -3,7 +3,7 @@ version: '3.3'
 services:
   aurad:
     container_name: aurad_horoscope_migration
-    build: 
+    build:
       context: ./docker/aurad/
       args:
         - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -12,10 +12,10 @@ services:
         - POSTGRES_HOST=${POSTGRES_HOST}
         - POSTGRES_PORT=${POSTGRES_PORT}
     ports:
-      - "1317:1317"
-      - "26656:26656"
-      - "26657:26657"
-      - "9090:9090"
+      - '1317:1317'
+      - '26656:26656'
+      - '26657:26657'
+      - '9090:9090'
     networks:
       - dev_network
     depends_on:
@@ -24,7 +24,7 @@ services:
     container_name: psql_horoscope_migration
     build: ./docker/psql/
     ports:
-      - "5432:5432"
+      - '5432:5432'
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -35,10 +35,9 @@ services:
     image: redis:latest
     container_name: redis_horoscope_migration
     ports:
-      - "6379:6379"
+      - '6379:6379'
     networks:
       - dev_network
-  
 
 networks:
   dev_network:
