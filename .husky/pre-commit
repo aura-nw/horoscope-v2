@@ -1,0 +1,42 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+check_secret_leak(){
+  echo "check_secret_leak is not available at the moment. Just ignore it"
+  # if ! type docker 1>/dev/null; then
+  #   echo "please install docker from docker.com"
+  #   exit 127
+  # fi
+  #
+  # docker run --pull always -v ${PWD}:/ts zricethezav/gitleaks:latest detect --source="/ts" -v
+
+}
+
+
+# Perform lint-check for staged file
+check_lint(){
+  echo check_lint
+  if ! type npx 1>/dev/null; then
+    echo "please install npx, see https://nodejs.dev/learn/the-npx-nodejs-package-runner"
+    exit 127
+  fi
+
+  npx lint-staged
+}
+
+
+# exit if run in CI tool
+[ -n "$CI" ] && exit 0
+
+ set -eEx
+
+if [ -z "${IGNORE_LEAK_CHECK}"  ]; then
+  check_secret_leak
+fi
+
+if [ -z "${IGNORE_LINT_CHECK}" ]; then
+  check_lint
+fi
+
+
+# scan for committed secrets

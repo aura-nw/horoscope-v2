@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+# exit if run in CI tool
+[ -n "$CI" ] && exit 0
+
+set -eEux
+npx commitlint --edit $1

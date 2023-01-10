@@ -1,0 +1,79 @@
+{
+  "name": "lang-feature",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "type": "module",
+  "_moduleAliases": {
+    "@base": "src/base"
+  },
+  "scripts": {
+    "clean": "rimraf ./dist/",
+    "start": "cd dist ;  node --es-module-specifier-resolution=node ../node_modules/moleculer/bin/moleculer-runner.mjs --env --config ./moleculer.config.js",
+    "dev": "ts-node -r tsconfig-paths/register ./node_modules/moleculer/bin/moleculer-runner.mjs --hot --repl --env --config src/moleculer.config.ts",
+    "watch": "nodemon",
+    "db:migrate:make": "ts-node ./node_modules/.bin/knex migrate:make --knexfile knexfile.ts -x ts",
+    "db:migrate:latest": "env DOTENV_CONFIG_PATH=./.env ts-node --require dotenv/config ./node_modules/.bin/knex migrate:latest",
+    "db:migrate:rollback": "env DOTENV_CONFIG_PATH=./.env ts-node --require dotenv/config ./node_modules/.bin/knex migrate:rollback",
+    "db:seed:make": "env DOTENV_CONFIG_PATH=./.env ts-node --require dotenv/config ./node_modules/.bin/knex seed:make",
+    "build": "yarn clean; tsc --project tsconfig.build.json",
+    "prepare": "husky install",
+    "jest": "NODE_OPTIONS=--experimental-vm-modules  jest test",
+    "test": "yarn jest --verbose",
+    "test-watch": "yarn jest --watch",
+    "test-coverage": "yarn jest --coverage",
+    "lint": "echo 'Running lint for repository'"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "**/*.test.ts",
+      "**/*.spec.ts",
+      ".git",
+      "node_modules"
+    ],
+    "watch": [
+      "src"
+    ],
+    "exec": "ts-node -r tsconfig-paths/register ./node_modules/moleculer/bin/moleculer-runner.mjs --hot --repl --env --config src/moleculer.config.ts",
+    "ext": "ts, js"
+  },
+  "dependencies": {
+    "@ourparentcenter/moleculer-decorators-extended": "^1.1.1",
+    "bull": "^4.10.2",
+    "dotenv": "^16.0.3",
+    "ioredis": "^5.2.4",
+    "knex": "^2.3.0",
+    "lodash-es": "^4.17.21",
+    "moleculer": "^0.14.27",
+    "moleculer-auto-openapi": "^1.1.5",
+    "moleculer-web": "^0.10.5",
+    "mysql": "^2.18.1",
+    "objection": "^3.0.1",
+    "reflect-metadata": "^0.1.13",
+    "util": "^0.12.4"
+  },
+  "devDependencies": {
+    "@commitlint/config-conventional": "^17.3.0",
+    "@jest-decorated/core": "^0.1.7",
+    "@jest/globals": "^29.3.1",
+    "@tsconfig/node16": "^1.0.3",
+    "@types/node": "^18.11.11",
+    "@typescript-eslint/eslint-plugin": "^5.40.1",
+    "@typescript-eslint/parser": "^5.40.1",
+    "eslint": "^8.25.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-airbnb-typescript": "^17.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "husky": "^8.0.0",
+    "jest": "^29.3.1",
+    "lint-staged": "^13.1.0",
+    "moleculer-repl": "^0.7.3",
+    "prettier": "^2.7.1",
+    "ts-jest": "^29.0.3",
+    "ts-node": "^10.9.1",
+    "tsconfig-paths": "^4.1.1",
+    "typescript": "^4.8.4"
+  }
+}
