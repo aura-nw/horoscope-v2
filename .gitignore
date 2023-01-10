@@ -65,3 +65,6 @@ typings/
 
 # Don't track transpiled files
 dist/
+
+# personal vscode config
+.vscode/settings.json
