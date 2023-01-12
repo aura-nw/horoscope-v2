@@ -4,21 +4,21 @@ import { Knex } from 'knex';
 
 const config: { [key: string]: Knex.Config } = {
   development: {
-    client: 'mysql',
+    client: 'pg',
     connection: {
-      database: 'objection',
-      host: '172.17.0.2',
-      user: 'root',
-      password: '123456',
+      database: process.env.POSTGRES_DB,
+      host: process.env.POSTGRES_HOST,
+      user: process.env.POSTGRES_USER,
+      password: process.env.POSTGRES_PASSWORD,
     },
   },
   test: {
-    client: 'mysql',
+    client: 'pg',
     connection: {
-      database: 'objection',
-      host: '172.17.0.2',
-      user: 'root',
-      password: '123456',
+      database: process.env.POSTGRES_DB_TEST,
+      host: process.env.POSTGRES_HOST,
+      user: process.env.POSTGRES_USER,
+      password: process.env.POSTGRES_PASSWORD,
     },
   },
   production: {
