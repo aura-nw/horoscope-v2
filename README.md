@@ -21,13 +21,7 @@ $ yarn build && yarn run up
 
 ### Test
 
-Start aurad for test
-
-```
-docker run --rm -p 26667:26657 --name aurad-test --network erascope_dev_network aurad-test
-```
-
-Test:
+Test: start aurad-test -> run test -> stop docker
 
 ```
 yarn test
