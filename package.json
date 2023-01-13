@@ -16,13 +16,14 @@
     "db:migrate:latest": "env DOTENV_CONFIG_PATH=./.env ts-node --require dotenv/config ./node_modules/.bin/knex migrate:latest",
     "db:migrate:rollback": "env DOTENV_CONFIG_PATH=./.env ts-node --require dotenv/config ./node_modules/.bin/knex migrate:rollback",
     "db:seed:make": "env DOTENV_CONFIG_PATH=./.env ts-node --require dotenv/config ./node_modules/.bin/knex seed:make",
-    "build": "yarn clean; tsc --project tsconfig.build.json",
+    "build": "docker-compse build && docker build -t aurad-test ./docker/aurad-test/",
+    "up": "docker-compose up",
     "prepare": "husky install",
     "jest": "NODE_OPTIONS=--experimental-vm-modules  jest test",
     "test": "yarn jest --verbose",
     "test-watch": "yarn jest --watch",
     "test-coverage": "yarn jest --coverage",
-    "lint": "echo 'Running lint for repository'"
+    "lint": "echo 'Running lint for repository' && eslint ."
   },
   "nodemonConfig": {
     "ignore": [
