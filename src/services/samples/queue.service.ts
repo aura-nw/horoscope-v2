@@ -22,7 +22,7 @@ export default class QueueSampleService extends BullableService {
   public addJob1(): string {
     const queueName = 'tuanbass';
     const jobType = 'hello';
-    this.createJob(queueName, jobType, { data: "It's a good day..." });
+    this.createJob(queueName, jobType, { data: 'It\'s a good day...' });
     return 'Job schduled';
   }
 
@@ -47,7 +47,7 @@ export default class QueueSampleService extends BullableService {
       `job handler: printing something to test.. ${JSON.stringify(_payload)}`
     );
     console.log(
-      " Do not access to `this` inside this handler, it's a limitation for the moment "
+      ' Do not access to `this` inside this handler, it\'s a limitation for the moment '
     );
     // console.log(this.name) => IT WILL FAIL
   }
