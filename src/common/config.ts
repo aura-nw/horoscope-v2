@@ -3,12 +3,12 @@ import os from 'os';
 import { LogLevels } from 'moleculer';
 // import dotenvFlow from 'dotenv-flow';
 // import _ from 'lodash';
-// import * as dotenv from 'dotenv'; // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
+import * as dotenv from 'dotenv'; // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
 // import { DBDialog, DBInfo } from '../types';
 
 // import { PATH_COSMOS_SDK } from './constant';
 
-// dotenv.config();
+dotenv.config();
 
 const processEnv = process.env;
 // const envVariables = Object.keys(

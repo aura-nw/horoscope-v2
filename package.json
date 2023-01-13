@@ -38,6 +38,7 @@
     "ext": "ts, js"
   },
   "dependencies": {
+    "@cosmjs/proto-signing": "^0.29.5",
     "@ourparentcenter/moleculer-decorators-extended": "^1.1.1",
     "bull": "^4.10.2",
     "dotenv": "^16.0.3",
@@ -59,6 +60,7 @@
     "util": "^0.12.4"
   },
   "devDependencies": {
+    "@commitlint/cli": "^17.4.1",
     "@commitlint/config-conventional": "^17.3.0",
     "@jest-decorated/core": "^0.1.7",
     "@jest/globals": "^29.3.1",

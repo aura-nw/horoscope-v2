@@ -5,20 +5,26 @@ import { Knex } from 'knex';
 const config: { [key: string]: Knex.Config } = {
   development: {
     client: 'pg',
+    migrations: {
+      directory: './migrations',
+    },
     connection: {
-      database: process.env.POSTGRES_DB,
-      host: process.env.POSTGRES_HOST,
-      user: process.env.POSTGRES_USER,
-      password: process.env.POSTGRES_PASSWORD,
+      database: 'my_database',
+      host: 'localhost',
+      user: 'phamphong',
+      password: 'phamphong9981',
     },
   },
   test: {
     client: 'pg',
+    migrations: {
+      directory: './migrations',
+    },
     connection: {
-      database: process.env.POSTGRES_DB_TEST,
-      host: process.env.POSTGRES_HOST,
-      user: process.env.POSTGRES_USER,
-      password: process.env.POSTGRES_PASSWORD,
+      database: 'test',
+      host: 'localhost',
+      user: 'phamphong',
+      password: 'phamphong9981',
     },
   },
   production: {
