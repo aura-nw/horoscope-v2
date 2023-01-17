@@ -1,10 +1,4 @@
 {
-  "*.ts": [
-    "prettier --write .",
-    "eslint --cache  --ext ts,tsx --fix"
-  ],
-  "*.tsx": [
-    "prettier --write .",
-    "eslint --cache   --ext ts,tsx --fix"
-  ]
+  "*.ts": ["prettier --write .", "eslint --cache  --ext ts,tsx --fix"],
+  "*.tsx": ["prettier --write .", "eslint --cache   --ext ts,tsx --fix"]
 }

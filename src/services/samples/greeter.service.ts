@@ -4,7 +4,6 @@ import { Get, Service } from '@ourparentcenter/moleculer-decorators-extended';
 // import BaseService from 'src/base/BaseService';
 // TODO: Not very happy with relative import,
 //  but ts-node loader does not support yet with type alias for ESM project, will try to fix later
-import { inspect } from 'util';
 import BaseService from '../../base/BaseService';
 import { Summary, Response } from '../../base/openapi';
 
@@ -40,8 +39,7 @@ export default class GreeterService extends BaseService {
   })
   @Summary('Say hello from decorator')
   @Get('/sayHello', {})
-  public sayHello(): string {
-    console.log(inspect(this.schema.actions));
+  public async sayHello(): Promise<string> {
     return 'Hello Moleculer';
   }
 
