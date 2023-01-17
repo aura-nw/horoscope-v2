@@ -1,5 +1,5 @@
 import { Describe, BeforeAll, Test, AfterAll } from '@jest-decorated/core';
-import TxResultModel from '../../models/TxResultModel';
+import TxResultModel from '../../../src/models/TxResultModel';
 
 @Describe('Test sync')
 export default class SyncTest {
