@@ -20,7 +20,7 @@
     "up": "docker-compose up",
     "prepare": "husky install",
     "jest": "NODE_OPTIONS=--experimental-vm-modules  jest test",
-    "test": "docker run --rm -d -p 26667:26657 --name aurad-test --network erascope_dev_network aurad-test && yarn jest --verbose && docker stop aurad-test",
+    "test": "docker run --rm -d -p 26667:26657 --name aurad-test --network erascope_dev_network aurad-test ; yarn jest --verbose ; docker stop aurad-test",
     "test-watch": "docker run --rm -d -p 26667:26657 --name aurad-test --network erascope_dev_network aurad-test && yarn jest --watch && docker stop aurad-test",
     "test-coverage": "docker run --rm -d -p 26667:26657 --name aurad-test --network erascope_dev_network aurad-test && yarn jest --coverage && docker stop aurad-test",
     "lint": "echo 'Running lint for repository' && eslint ."
@@ -39,13 +39,18 @@
     "ext": "ts, js"
   },
   "dependencies": {
+    "@cosmjs/encoding": "^0.29.5",
     "@cosmjs/proto-signing": "^0.29.5",
+    "@cosmjs/stargate": "^0.29.5",
     "@ourparentcenter/moleculer-decorators-extended": "^1.1.1",
+    "@tendermint/amino-js": "^0.6.2",
     "bull": "^4.10.2",
+    "cosmjs-types": "^0.6.1",
     "dotenv": "^16.0.3",
     "ioredis": "^5.2.4",
     "knex": "^2.3.0",
     "lodash-es": "^4.17.21",
+    "long": "^5.2.1",
     "mkdirp": "^1.0.4",
     "moleculer": "^0.14.27",
     "moleculer-auto-openapi": "^1.1.5",
@@ -57,6 +62,7 @@
     "objection": "^3.0.1",
     "pg": "^8.8.0",
     "pg-hstore": "^2.3.4",
+    "protobufjs": "^7.1.2",
     "reflect-metadata": "^0.1.13",
     "util": "^0.12.4"
   },
