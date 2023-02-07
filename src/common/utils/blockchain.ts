@@ -4,7 +4,8 @@ import ConfigClass from '../config';
 import network from '../network';
 
 const mnemonic =
-  'affair forest north decade one empty trend sauce harsh market trumpet middle rally task tooth valid amused stove roast oven guitar diary vital immune';
+  process.env.MNEMONIC ||
+  'notice oak worry limit wrap speak medal online prefer cluster roof addict wrist behave treat actual wasp year salad speed social layer crew genius';
 const configClass = new ConfigClass();
 export async function getClient(): Promise<SigningStargateClient> {
   const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {

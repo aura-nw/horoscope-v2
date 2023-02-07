@@ -1,10 +1,17 @@
 import { Describe, BeforeAll, Test, AfterAll } from '@jest-decorated/core';
-import TxResultModel from '../../../src/models/TxResultModel';
+import knex from '../../../src/common/utils/db-connection';
+// import { sleep } from '../../../src/common/utils/helper';
+// import { getAccounts, getClient } from '../../../src/common/utils/blockchain';
+// import TxResultModel from '../../../src/models/TxResultModel';
 
 @Describe('Test sync')
 export default class SyncTest {
   @BeforeAll()
-  initSuite() {}
+  async initSuite() {
+    await knex.schema.raw(
+      'TRUNCATE TABLE attributes, events, blocks, tx_results CASCADE'
+    );
+  }
 
   @AfterAll()
   tearDown() {}
@@ -18,7 +25,6 @@ export default class SyncTest {
     //   denom: 'uaura',
     //   amount: '100',
     // };
-
     // await client.sendTokens(
     //   firstAccount.address,
     //   recipient,
@@ -26,10 +32,10 @@ export default class SyncTest {
     //   'auto',
     //   ''
     // );
-
-    const tx = await TxResultModel.query().first();
-    if (tx) {
-      console.log(tx.getTxContent());
-    }
+    // await sleep(1000);
+    // const tx = await TxResultModel.query().first();
+    // if (tx) {
+    //   console.log(tx);
+    // }
   }
 }
