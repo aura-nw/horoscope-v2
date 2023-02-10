@@ -10,9 +10,9 @@ $ yarn build && yarn run up
 
 ## YARN scripts
 
-- `yarn  dev`: Start development mode (load all services locally with hot-reload & REPL)
-- `yarn  start`: Start production mode (set `SERVICES` env variable to load certain services)
-- `yarn  lint`: Run ESLint
+- `yarn dev`: Start development mode (load all services locally with hot-reload & REPL)
+- `yarn start`: Start production mode (set `SERVICES` env variable to load certain services)
+- `yarn li nt`: Run ESLint
 
 ## Services
 
