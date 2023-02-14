@@ -16,7 +16,7 @@
     "db:migrate:latest": "env DOTENV_CONFIG_PATH=./.env ts-node --require dotenv/config ./node_modules/.bin/knex migrate:latest",
     "db:migrate:rollback": "env DOTENV_CONFIG_PATH=./.env ts-node --require dotenv/config ./node_modules/.bin/knex migrate:rollback",
     "db:seed:make": "env DOTENV_CONFIG_PATH=./.env ts-node --require dotenv/config ./node_modules/.bin/knex seed:make",
-    "build": "docker-compse build && docker build -t aurad-test ./docker/aurad-test/",
+    "build": "docker-compose build && docker build -t aurad-test ./docker/aurad-test/",
     "up": "docker-compose up",
     "prepare": "husky install",
     "jest": "NODE_OPTIONS=--experimental-vm-modules  jest test",
