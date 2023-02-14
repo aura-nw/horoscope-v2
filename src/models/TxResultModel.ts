@@ -1,6 +1,6 @@
 import { DecodedTxRaw, decodeTxRaw } from '@cosmjs/proto-signing';
+import { TxResult } from 'cosmjs-types/tendermint/abci/types';
 import BaseModel from './BaseModel';
-import { TxResult } from '../../proto/codegen/types';
 
 export default class TxResultModel extends BaseModel {
   static get tableName() {

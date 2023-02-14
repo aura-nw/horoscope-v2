@@ -2,10 +2,10 @@
 
 // const utils_1 = require('@cosmjs/utils');
 
-// export function sleep(ms: number) {
-//   // eslint-disable-next-line no-promise-executor-return
-//   return new Promise((r) => setTimeout(r, ms));
-// }
+export function sleep(ms: number) {
+  // eslint-disable-next-line no-promise-executor-return
+  return new Promise((r) => setTimeout(r, ms));
+}
 
 // export function pollForTx(
 //   handler: any,

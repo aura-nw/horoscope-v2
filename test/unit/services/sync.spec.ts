@@ -1,8 +1,8 @@
 import { Describe, BeforeAll, Test, AfterAll } from '@jest-decorated/core';
 import knex from '../../../src/common/utils/db-connection';
-// import { sleep } from '../../../src/common/utils/helper';
-// import { getAccounts, getClient } from '../../../src/common/utils/blockchain';
-// import TxResultModel from '../../../src/models/TxResultModel';
+import { sleep } from '../../../src/common/utils/helper';
+import { getAccounts, getClient } from '../../../src/common/utils/blockchain';
+import TxResultModel from '../../../src/models/TxResultModel';
 
 @Describe('Test sync')
 export default class SyncTest {
@@ -18,24 +18,24 @@ export default class SyncTest {
 
   @Test('test sync transaction in DB')
   public async testSyncTxSuccess() {
-    // const client = await getClient();
-    // const [firstAccount] = await getAccounts();
-    // const recipient = 'aura1myv43sqgnj5sm4zl98ftl45af9cfzk7nylzq5u';
-    // const amount = {
-    //   denom: 'uaura',
-    //   amount: '100',
-    // };
-    // await client.sendTokens(
-    //   firstAccount.address,
-    //   recipient,
-    //   [amount],
-    //   'auto',
-    //   ''
-    // );
-    // await sleep(1000);
-    // const tx = await TxResultModel.query().first();
-    // if (tx) {
-    //   console.log(tx);
-    // }
+    const client = await getClient();
+    const [firstAccount] = await getAccounts();
+    const recipient = 'aura1myv43sqgnj5sm4zl98ftl45af9cfzk7nylzq5u';
+    const amount = {
+      denom: 'uaura',
+      amount: '100',
+    };
+    await client
+      .sendTokens(firstAccount.address, recipient, [amount], 'auto', '')
+      .catch((err) => {
+        // ignore error
+        console.log(err);
+      });
+
+    await sleep(1000);
+    const tx = await TxResultModel.query().first();
+    if (tx) {
+      console.log(tx.getTxContent());
+    }
   }
 }
