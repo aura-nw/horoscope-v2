@@ -21,7 +21,7 @@
     "stop": "docker-compose stop",
     "prepare": "husky install",
     "jest": "NODE_OPTIONS=--experimental-vm-modules  jest test",
-    "test": "docker run --rm -d -p 26667:26657 --name aurad-test --network erascope_dev_network aurad-test ; yarn jest --verbose ; docker stop aurad-test",
+    "test": "yarn jest --verbose",
     "test-watch": "docker run --rm -d -p 26667:26657 --name aurad-test --network erascope_dev_network aurad-test && yarn jest --watch && docker stop aurad-test",
     "test-coverage": "docker run --rm -d -p 26667:26657 --name aurad-test --network erascope_dev_network aurad-test && yarn jest --coverage && docker stop aurad-test",
     "lint": "echo 'Running lint for repository' && eslint ."
