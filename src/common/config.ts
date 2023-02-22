@@ -38,30 +38,30 @@ const getValue = (text?: string, defaultValud?: string | boolean) => {
 const HOST_NAME = os.hostname().toLowerCase();
 
 // const getDbInfo = (where: string, what: string, defaultValue: string) => {
-//     const value = process.env[`DB_${where}_${what}`];
-//     const generic = process.env[`DB_GENERIC_${what}`];
-//     return value || generic || defaultValue;
+//   const value = process.env[`DB_${where}_${what}`];
+//   const generic = process.env[`DB_GENERIC_${what}`];
+//   return value || generic || defaultValue;
 // };
 
 // const genericDbInfo = (where: string): DBInfo => ({
-//     dialect:
-//         process.env.NODE_ENV != 'test'
-//             ? (getDbInfo(where, 'DIALECT', 'local') as DBDialog)
-//             : (getDbInfo(where, 'TEST_DIALECT', 'local') as DBDialog),
-//     user: getDbInfo(where, 'USER', ''),
-//     password: getDbInfo(where, 'PASSWORD', ''),
-//     host: getDbInfo(where, 'HOST', ''),
-//     port: +getDbInfo(where, 'PORT', '0'),
-//     dbname:
-//         process.env.NODE_ENV != 'test'
-//             ? getDbInfo(where, 'DBNAME', '')
-//             : getDbInfo(where, 'DBNAME_TEST', ''),
-//     collection: getDbInfo(where, 'COLLECTION', where.toLowerCase()),
-//     retryWrites: getDbInfo(where, 'RETRY_WRITES', 'false'),
-//     replicaSet: getDbInfo(where, 'REPLICA_SET', ''),
-//     readPreference: getDbInfo(where, 'READ_PREFERENCE', 'primary'),
-//     maxPoolSize: +getDbInfo(where, 'MAX_POOL_SIZE', '10'),
-//     uri: getDbInfo(where, 'URI', ''),
+//   dialect:
+//     process.env.NODE_ENV !== 'test'
+//       ? (getDbInfo(where, 'DIALECT', 'local') as DBDialog)
+//       : (getDbInfo(where, 'TEST_DIALECT', 'local') as DBDialog),
+//   user: getDbInfo(where, 'USER', ''),
+//   password: getDbInfo(where, 'PASSWORD', ''),
+//   host: getDbInfo(where, 'HOST', ''),
+//   port: +getDbInfo(where, 'PORT', '0'),
+//   dbname:
+//     process.env.NODE_ENV !== 'test'
+//       ? getDbInfo(where, 'DBNAME', '')
+//       : getDbInfo(where, 'DBNAME_TEST', ''),
+//   collection: getDbInfo(where, 'COLLECTION', where.toLowerCase()),
+//   retryWrites: getDbInfo(where, 'RETRY_WRITES', 'false'),
+//   replicaSet: getDbInfo(where, 'REPLICA_SET', ''),
+//   readPreference: getDbInfo(where, 'READ_PREFERENCE', 'primary'),
+//   maxPoolSize: +getDbInfo(where, 'MAX_POOL_SIZE', '10'),
+//   uri: getDbInfo(where, 'URI', ''),
 // });
 
 export default class ConfigClass {
