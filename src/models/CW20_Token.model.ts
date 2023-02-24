@@ -22,7 +22,7 @@ export class CW20Token extends BaseModel implements ICW20Token {
   }
 
   static get idColumn() {
-    return 'id';
+    return 'contract_address';
   }
 
   //   static get jsonSchema() {

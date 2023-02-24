@@ -4,7 +4,7 @@ export interface ICW20Tx {
   tx_hash: string;
   cw20_id: number;
 }
-export class CW20Holder extends BaseModel implements ICW20Tx {
+export class CW20Tx extends BaseModel implements ICW20Tx {
   tx_hash!: string;
 
   cw20_id!: number;
@@ -14,7 +14,7 @@ export class CW20Holder extends BaseModel implements ICW20Tx {
   }
 
   static get idColumn() {
-    return 'id';
+    return 'tx_hash';
   }
 
   //   static get jsonSchema() {

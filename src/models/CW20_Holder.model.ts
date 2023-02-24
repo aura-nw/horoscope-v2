@@ -1,15 +1,12 @@
 import BaseModel from './BaseModel';
 
 export interface ICW20Holder {
-  holder_id: number;
   address: string;
   balance: string;
   token_id: number;
 }
 export class CW20Holder extends BaseModel implements ICW20Holder {
   token_id!: number;
-
-  holder_id!: number;
 
   address!: string;
 
@@ -20,7 +17,7 @@ export class CW20Holder extends BaseModel implements ICW20Holder {
   }
 
   static get idColumn() {
-    return 'holder_id';
+    return ['address', 'token_id'];
   }
 
   //   static get jsonSchema() {
