@@ -3,10 +3,10 @@ import BaseModel from './BaseModel';
 export interface ICW20Holder {
   address: string;
   balance: string;
-  token_id: number;
+  cw20_token: string;
 }
 export class CW20Holder extends BaseModel implements ICW20Holder {
-  token_id!: number;
+  cw20_token!: string;
 
   address!: string;
 
@@ -17,7 +17,7 @@ export class CW20Holder extends BaseModel implements ICW20Holder {
   }
 
   static get idColumn() {
-    return ['address', 'token_id'];
+    return ['address', 'cw20_token'];
   }
 
   //   static get jsonSchema() {

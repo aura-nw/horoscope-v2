@@ -1,5 +1,7 @@
-import { ICW20AssetInfo } from 'src/common/types/interfaces';
-import { ICW20MarketingInfo } from 'src/services/asset-indexer/common.service';
+import {
+  ICW20AssetInfo,
+  ICW20MarketingInfo,
+} from 'src/services/asset-indexer/cw20-asset.service';
 import BaseModel from './BaseModel';
 
 export interface ICW20Token {

@@ -2,12 +2,12 @@ import BaseModel from './BaseModel';
 
 export interface ICW20Tx {
   tx_hash: string;
-  cw20_id: number;
+  cw20_token: string;
 }
 export class CW20Tx extends BaseModel implements ICW20Tx {
   tx_hash!: string;
 
-  cw20_id!: number;
+  cw20_token!: string;
 
   static get tableName() {
     return 'CW20_Tx';

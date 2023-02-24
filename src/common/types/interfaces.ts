@@ -106,12 +106,3 @@ export interface IContractInfo {
     };
   };
 }
-
-export interface ICW20AssetInfo {
-  data: {
-    name: string;
-    symbol: string;
-    decimals: number;
-    total_supply: string;
-  };
-}
