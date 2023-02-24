@@ -16,7 +16,10 @@ export default class CallApiMixin
         enableLoadBalancer: Config.ENABLE_LOADBALANCER,
       },
       methods: {
-        async getCallApiClient(domain: string[], _retry = 0) {
+        async getCallApiClient(
+          domain: string[],
+          retry = Config.RETRY_DEFAULT_CALL_API
+        ) {
           // Create client
           if (this.callApiClient === undefined) {
             if (this.settings.enableLoadBalancer === 'false') {
@@ -24,7 +27,7 @@ export default class CallApiMixin
               this.callApiClient = axiosClient;
             } else {
               const resilientClient = resilient({
-                service: { basePath: '/' },
+                service: { basePath: '/', retry },
               });
               this.callApiClient = resilientClient;
             }
@@ -41,18 +44,22 @@ export default class CallApiMixin
 
           return this.callApiClient;
         },
-        async callApiFromDomain(domain: string[], path: string, retry = 0) {
+        async callApiFromDomain(
+          domain: string[],
+          path: string,
+          retry = Config.RETRY_DEFAULT_CALL_API
+        ) {
           const callApiClient = await this.getCallApiClient(domain, retry);
-          try {
-            const result = await callApiClient.get(path);
+          const result = await callApiClient.get(path);
+          if (result.status === 200) {
             if (result.data) {
               return result.data;
             }
             return null;
-          } catch (error) {
-            this.logger.error(error);
-            return null;
           }
+          throw new Error(
+            `Call api ${domain[0]}/${path} fail with status = ${result.status}`
+          );
         },
       },
     };

@@ -1,3 +1,6 @@
+import * as fs from 'fs';
+import { INetworkInfo } from './types/interfaces';
+
 export const URL_TYPE_CONSTANTS = {
   LCD: 'LCD',
   RPC: 'RPC',
@@ -54,7 +57,13 @@ export const BASE_64_ENCODE = {
 export const CW20_ACTION = {
   URL_GET_OWNER_LIST: 'eyJhbGxfYWNjb3VudHMiOiB7fX0=',
   URL_GET_TOKEN_INFO: 'eyJ0b2tlbl9pbmZvIjoge319',
+  URL_GET_MARKETING_INFO: 'eyJtYXJrZXRpbmdfaW5mbyI6IHt9fQ==',
   GET_OWNER_LIST: 'v1.CW20.getOwnerList',
   GET_BALANCE: 'v1.CW20.getBalance',
   ENRICH_DATA: 'v1.CW20.enrichData',
+  GET_MARKET_INFO: 'v1.CW20.getMarketInfo',
 };
+
+export const LIST_NETWORK: INetworkInfo[] = JSON.parse(
+  fs.readFileSync('network.json').toString()
+);

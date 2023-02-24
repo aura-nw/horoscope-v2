@@ -86,4 +86,32 @@ export interface ISearchTxQuery {
 export interface IContractAndTokenID {
   contractAddress: string | null;
   tokenId: string | null;
+  txhash: string;
+}
+
+export interface IContractInfo {
+  address: string;
+  contract_info: {
+    code_id: string;
+    creator: string;
+    admin: string;
+    label: string;
+    created: {
+      block_height: string;
+      tx_index: string;
+    };
+    ibc_port_id: string;
+    extension: {
+      '@type': string;
+    };
+  };
+}
+
+export interface ICW20AssetInfo {
+  data: {
+    name: string;
+    symbol: string;
+    decimals: number;
+    total_supply: string;
+  };
 }

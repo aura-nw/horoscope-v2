@@ -1,6 +1,6 @@
 import { Knex } from 'knex';
-import { Config } from 'src/common';
-import { LIST_NETWORK } from 'src/common/constant';
+import { Config } from './src/common';
+import { LIST_NETWORK } from './src/common/constant';
 
 // Update with your config settings.
 
