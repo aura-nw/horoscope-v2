@@ -5,12 +5,15 @@ import {
 import BaseModel from './BaseModel';
 
 export interface ICW20Token {
+  id: number;
   code_id: string;
   asset_info: ICW20AssetInfo;
   contract_address: string;
   marketing_info: ICW20MarketingInfo;
 }
 export class CW20Token extends BaseModel implements ICW20Token {
+  id!: number;
+
   code_id!: string;
 
   asset_info!: ICW20AssetInfo;

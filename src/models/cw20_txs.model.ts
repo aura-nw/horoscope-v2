@@ -1,6 +1,7 @@
 import BaseModel from './BaseModel';
 
 export interface ICW20Tx {
+  id: number;
   tx_hash: string;
   contract_address: string;
   from: string;
@@ -9,6 +10,8 @@ export interface ICW20Tx {
   action: string;
 }
 export class CW20Tx extends BaseModel implements ICW20Tx {
+  id!: number;
+
   action!: string;
 
   from!: string;

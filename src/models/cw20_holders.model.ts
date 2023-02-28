@@ -1,11 +1,14 @@
 import BaseModel from './BaseModel';
 
 export interface ICW20Holder {
+  id: number;
   address: string;
   balance: bigint;
   contract_address: string;
 }
 export class CW20Holder extends BaseModel implements ICW20Holder {
+  id!: number;
+
   contract_address!: string;
 
   address!: string;
