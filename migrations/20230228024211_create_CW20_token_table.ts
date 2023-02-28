@@ -3,7 +3,7 @@ import { Knex } from 'knex';
 export async function up(knex: Knex): Promise<void> {
   return knex.schema.createTable('cw20_tokens', (table) => {
     table.increments();
-    table.string('code_id');
+    table.string('code_id').index();
     table.string('asset_info');
     table.string('contract_address').unique().index();
     table.string('marketing_info');

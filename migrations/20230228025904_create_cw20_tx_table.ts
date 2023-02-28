@@ -4,11 +4,11 @@ export async function up(knex: Knex): Promise<void> {
   return knex.schema.createTable('cw20_txs', (table) => {
     table.increments();
     table.string('tx_hash').index();
-    table.string('from');
-    table.string('to');
+    table.string('from').index();
+    table.string('to').index();
     table.bigInteger('amount');
     table.string('action');
-    table.string('contract_address');
+    table.string('contract_address').index();
     table
       .foreign('contract_address')
       .references('cw20_tokens.contract_address');
