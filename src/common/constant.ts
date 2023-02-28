@@ -1,6 +1,3 @@
-import * as fs from 'fs';
-import { INetworkInfo } from './types/interfaces';
-
 export const URL_TYPE_CONSTANTS = {
   LCD: 'LCD',
   RPC: 'RPC',
@@ -15,7 +12,3 @@ export const PROPOSAL_STATUS = {
   PROPOSAL_STATUS_FAILED: 'PROPOSAL_STATUS_FAILED',
   PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT: 'PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT',
 };
-
-export const LIST_NETWORK: INetworkInfo[] = JSON.parse(
-  fs.readFileSync('network.json').toString()
-);
