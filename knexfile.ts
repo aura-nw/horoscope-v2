@@ -1,6 +1,5 @@
 import { Knex } from 'knex';
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-require('dotenv').config();
+import { Config } from './src/common';
 
 // Update with your config settings.
 
@@ -11,10 +10,10 @@ const config: { [key: string]: Knex.Config } = {
       directory: './migrations',
     },
     connection: {
-      database: process.env.POSTGRES_DB,
+      database: Config.POSTGRES_DB,
       host: 'localhost',
-      user: process.env.POSTGRES_USER,
-      password: process.env.POSTGRES_PASSWORD,
+      user: Config.POSTGRES_USER,
+      password: Config.POSTGRES_PASSWORD,
     },
   },
   test: {
@@ -23,10 +22,10 @@ const config: { [key: string]: Knex.Config } = {
       directory: './migrations',
     },
     connection: {
-      database: process.env.POSTGRES_DB_TEST,
+      database: Config.POSTGRES_DB_TEST,
       host: 'localhost',
-      user: process.env.POSTGRES_USER,
-      password: process.env.POSTGRES_PASSWORD,
+      user: Config.POSTGRES_USER,
+      password: Config.POSTGRES_PASSWORD,
     },
   },
   production: {
