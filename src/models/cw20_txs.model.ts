@@ -1,16 +1,19 @@
 import BaseModel from './BaseModel';
 
 export interface ICW20Tx {
-  id: number;
+  id?: number;
   tx_hash: string;
   contract_address: string;
   from: string;
   to: string;
   amount: bigint;
   action: string;
+  created_at?: Date;
+  updated_at?: Date;
 }
+
 export class CW20Tx extends BaseModel implements ICW20Tx {
-  id!: number;
+  id?: number | undefined;
 
   action!: string;
 
@@ -24,6 +27,10 @@ export class CW20Tx extends BaseModel implements ICW20Tx {
 
   contract_address!: string;
 
+  created_at?: Date;
+
+  updated_at?: Date;
+
   static get tableName() {
     return 'cw20_txs';
   }
@@ -36,7 +43,6 @@ export class CW20Tx extends BaseModel implements ICW20Tx {
         contract_address: { type: 'string' },
         from: { type: 'string' },
         to: { type: 'string' },
-        amount: { type: 'number' },
         action: { type: 'string' },
       },
     };

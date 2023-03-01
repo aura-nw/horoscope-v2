@@ -1,5 +1,5 @@
 import { Knex } from 'knex';
-import Network from 'src/common/network';
+import Network from './src/common/network';
 import { Config } from './src/common';
 
 // Update with your config settings.
