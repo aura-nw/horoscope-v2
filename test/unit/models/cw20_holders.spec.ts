@@ -35,7 +35,7 @@ export default class CW20HoldersTest {
     await CW20Holder.query().insert(this.holder);
   }
 
-  @Test('Test query')
+  @Test('Query success')
   public async testQuery() {
     const holder = await CW20Holder.query().first();
     expect(holder).not.toBeUndefined();
@@ -43,7 +43,7 @@ export default class CW20HoldersTest {
     expect(holder?.balance).toBe('1000000000000000000000000000000000000000000');
   }
 
-  @Test('Test update')
+  @Test('Update success')
   public async testUpdate() {
     await CW20Holder.query()
       .update({ address: 'phamphong' })
@@ -54,7 +54,7 @@ export default class CW20HoldersTest {
     expect(holder).not.toBeUndefined();
   }
 
-  @Test('Test get datetime')
+  @Test('Get datetime')
   public async testDateTime() {
     const holder = await CW20Holder.query().first();
     expect(holder).not.toBeUndefined();
@@ -62,7 +62,7 @@ export default class CW20HoldersTest {
     console.log(holder?.created_at?.getMonth(), holder?.id);
   }
 
-  @Test('Test insert')
+  @Test('Insert success')
   public async testInsert() {
     await CW20Holder.query().insert({
       address: 'aura33333333',
@@ -75,16 +75,13 @@ export default class CW20HoldersTest {
     expect(holder).not.toBeUndefined();
   }
 
-  @Test('Test insert fail')
-  public async testInsertFail() {
-    try {
-      await CW20Holder.query().insert({
+  @Test('Insert balance null fail')
+  public async testInsertBalanceNullFail() {
+    await expect(
+      CW20Holder.query().insert({
         address: 'aura33333333',
         contract_address: 'aura546543213241564',
-      });
-      expect(true).toBe(false);
-    } catch (e) {
-      expect(e instanceof NotNullViolationError).toBe(true);
-    }
+      })
+    ).rejects.toBeInstanceOf(NotNullViolationError);
   }
 }

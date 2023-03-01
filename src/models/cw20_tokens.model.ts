@@ -1,9 +1,29 @@
-import {
-  ICW20AssetInfo,
-  ICW20MarketingInfo,
-} from '../services/asset-indexer/cw20-asset.service';
 import BaseModel from './BaseModel';
 
+export interface ICW20MarketingInfo {
+  data: {
+    project: string;
+    description: string;
+    logo: {
+      url: string;
+    };
+    marketing: string;
+  };
+}
+export interface ICW20BalanceInfo {
+  data: {
+    balance: string;
+  };
+}
+
+export interface ICW20AssetInfo {
+  data: {
+    name: string;
+    symbol: string;
+    decimals: number;
+    total_supply: string;
+  };
+}
 export interface ICW20Token {
   id?: number;
   code_id: string;
@@ -13,6 +33,7 @@ export interface ICW20Token {
   created_at?: Date;
   updated_at?: Date;
 }
+
 export class CW20Token extends BaseModel implements ICW20Token {
   id?: number | undefined;
 
