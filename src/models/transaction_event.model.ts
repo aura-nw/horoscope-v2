@@ -2,13 +2,13 @@ import { Model } from 'objection';
 import BaseModel from './BaseModel';
 
 export interface TransactionEvent {
-  tx_hash: string;
+  tx_id: number;
   msg_index: number;
   type: string;
 }
 
 export class TransactionEvent extends BaseModel implements TransactionEvent {
-  tx_hash!: string;
+  tx_id!: number;
 
   msg_index!: number;
 
@@ -22,7 +22,7 @@ export class TransactionEvent extends BaseModel implements TransactionEvent {
     return {
       type: 'object',
       properties: {
-        tx_hash: { type: 'string' },
+        tx_id: { type: 'number' },
         msg_index: { type: 'number' },
         type: { type: 'string' },
       },

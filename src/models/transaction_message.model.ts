@@ -2,7 +2,7 @@ import { Model } from 'objection';
 import BaseModel from './BaseModel';
 
 export interface TransactionMessage {
-  tx_hash: string;
+  tx_id: number;
   msg_index: number;
   type: string;
   sender: string;
@@ -14,7 +14,7 @@ export class TransactionMessage
   extends BaseModel
   implements TransactionMessage
 {
-  tx_hash!: string;
+  tx_id!: number;
 
   msg_index!: number;
 
@@ -38,7 +38,7 @@ export class TransactionMessage
     return {
       type: 'object',
       properties: {
-        tx_hash: { type: 'string' },
+        tx_id: { type: 'number' },
         msg_index: { type: 'number' },
         type: { type: 'string' },
         sender: { type: 'string' },

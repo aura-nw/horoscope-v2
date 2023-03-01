@@ -11,8 +11,6 @@ export interface Transaction {
   gas_limit: number;
   fee: string;
   timstamp: Date;
-  memo: string;
-  signature: string;
   data: JSON;
 }
 
@@ -34,10 +32,6 @@ export class Transaction extends BaseModel implements Transaction {
   fee!: string;
 
   timstamp!: Date;
-
-  memo!: string;
-
-  signature!: string;
 
   data!: JSON;
 
@@ -62,8 +56,6 @@ export class Transaction extends BaseModel implements Transaction {
         gas_limit: { type: 'number' },
         fee: { type: 'string' },
         timestamp: { type: 'timestamp' },
-        memo: { type: 'string' },
-        signature: { type: 'string' },
         data: {
           type: 'object',
           patternProperties: {
