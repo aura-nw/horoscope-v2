@@ -54,14 +54,6 @@ export default class CW20HoldersTest {
     expect(holder).not.toBeUndefined();
   }
 
-  @Test('Get datetime')
-  public async testDateTime() {
-    const holder = await CW20Holder.query().first();
-    expect(holder).not.toBeUndefined();
-    // eslint-disable-next-line no-console
-    console.log(holder?.created_at?.getMonth(), holder?.id);
-  }
-
   @Test('Insert success')
   public async testInsert() {
     await CW20Holder.query().insert({
