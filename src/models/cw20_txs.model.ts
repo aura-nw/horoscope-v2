@@ -38,6 +38,7 @@ export class CW20Tx extends BaseModel implements ICW20Tx {
   static get jsonSchema() {
     return {
       type: 'object',
+      required: ['tx_hash', 'contract_address'],
       properties: {
         tx_hash: { type: 'string' },
         contract_address: { type: 'string' },

@@ -56,6 +56,7 @@ export class CW20Token extends BaseModel implements ICW20Token {
   static get jsonSchema() {
     return {
       type: 'object',
+      required: ['code_id', 'contract_address'],
       properties: {
         code_id: { type: 'string' },
         asset_info: { type: 'object' },

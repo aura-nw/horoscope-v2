@@ -28,6 +28,7 @@ export class CW20Holder extends BaseModel implements ICW20Holder {
   static get jsonSchema() {
     return {
       type: 'object',
+      required: ['balance', 'contract_address', 'address'],
       properties: {
         contract_address: { type: 'string' },
         address: { type: 'string' },

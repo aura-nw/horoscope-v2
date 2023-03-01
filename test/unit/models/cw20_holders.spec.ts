@@ -1,6 +1,6 @@
 import { BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { expect } from '@jest/globals';
-import { NotNullViolationError } from 'objection';
+import { ValidationError } from 'objection';
 import { CW20Token, ICW20Token } from '../../../src/models/cw20_tokens.model';
 import knex from '../../../src/common/utils/db-connection';
 import {
@@ -46,7 +46,7 @@ export default class CW20HoldersTest {
   @Test('Update success')
   public async testUpdate() {
     await CW20Holder.query()
-      .update({ address: 'phamphong' })
+      .patch({ address: 'phamphong' })
       .where('address', 'aura122222');
     const holder = await CW20Holder.query()
       .where('address', 'phamphong')
@@ -74,6 +74,6 @@ export default class CW20HoldersTest {
         address: 'aura33333333',
         contract_address: 'aura546543213241564',
       })
-    ).rejects.toBeInstanceOf(NotNullViolationError);
+    ).rejects.toBeInstanceOf(ValidationError);
   }
 }
