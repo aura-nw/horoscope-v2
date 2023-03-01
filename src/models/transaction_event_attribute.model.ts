@@ -24,6 +24,7 @@ export class TransactionEventAttribute
   static get jsonSchema() {
     return {
       type: 'object',
+      required: ['event_id', 'key', 'value'],
       properties: {
         event_id: { type: 'number' },
         key: { type: 'string' },

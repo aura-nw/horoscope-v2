@@ -31,6 +31,7 @@ export class Block extends BaseModel implements Block {
   static get jsonSchema() {
     return {
       type: 'object',
+      required: ['height', 'hash', 'time', 'proposer_address', 'data'],
       properties: {
         height: { type: 'number' },
         hash: { type: 'string', minLength: 1, maxLength: 255 },

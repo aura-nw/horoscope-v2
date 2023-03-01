@@ -46,6 +46,18 @@ export class Transaction extends BaseModel implements Transaction {
   static get jsonSchema() {
     return {
       type: 'object',
+      required: [
+        'height',
+        'hash',
+        'codespace',
+        'code',
+        'gas_used',
+        'gas_wanted',
+        'gas_limit',
+        'fee',
+        'timestamp',
+        'data',
+      ],
       properties: {
         height: { type: 'number' },
         hash: { type: 'string' },

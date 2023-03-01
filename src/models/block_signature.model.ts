@@ -27,6 +27,13 @@ export class BlockSignature extends BaseModel implements BlockSignature {
   static get jsonSchema() {
     return {
       type: 'object',
+      required: [
+        'block_id',
+        'block_id_flag',
+        'validator_address',
+        'timestamp',
+        'signature',
+      ],
       properties: {
         block_id: { type: 'number' },
         block_id_flag: { type: 'number' },

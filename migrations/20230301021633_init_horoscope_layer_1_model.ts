@@ -40,7 +40,7 @@ export async function up(knex: Knex): Promise<void> {
     table.integer('msg_index').notNullable();
     table.string('type').index().notNullable();
     table.string('sender').index().notNullable();
-    table.specificType('receiver', 'text[]').index().notNullable();
+    table.specificType('receiver', 'text[]').index();
     table.jsonb('content').notNullable();
     table.foreign('tx_id').references('transaction.id');
   });

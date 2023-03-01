@@ -37,6 +37,7 @@ export class TransactionMessage
   static get jsonSchema() {
     return {
       type: 'object',
+      required: ['tx_id', 'msg_index', 'type', 'sender', 'content'],
       properties: {
         tx_id: { type: 'number' },
         msg_index: { type: 'number' },

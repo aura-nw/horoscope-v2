@@ -21,6 +21,7 @@ export class TransactionEvent extends BaseModel implements TransactionEvent {
   static get jsonSchema() {
     return {
       type: 'object',
+      required: ['tx_id', 'msg_index', 'type'],
       properties: {
         tx_id: { type: 'number' },
         msg_index: { type: 'number' },
