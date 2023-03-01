@@ -4,8 +4,6 @@ import BaseModel from './BaseModel';
 export interface Block {
   height: number;
   hash: string;
-  version: number;
-  last_block_id: JSON;
   time: Date;
   proposer_address: string;
   data: JSON;
@@ -15,10 +13,6 @@ export class Block extends BaseModel implements Block {
   height!: number;
 
   hash!: string;
-
-  version!: number;
-
-  last_block_id!: JSON;
 
   time!: Date;
 
@@ -40,15 +34,6 @@ export class Block extends BaseModel implements Block {
       properties: {
         height: { type: 'number' },
         hash: { type: 'string', minLength: 1, maxLength: 255 },
-        version: { type: 'number' },
-        last_block_id: {
-          type: 'object',
-          patternProperties: {
-            '^.*$': {
-              anyOf: [{ type: 'string' }, { type: 'number' }],
-            },
-          },
-        },
         time: { type: 'timestamp' },
         proposer_address: { type: 'string', minLength: 1, maxLength: 255 },
         data: {
