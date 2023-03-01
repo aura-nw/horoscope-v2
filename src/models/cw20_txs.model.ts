@@ -6,14 +6,14 @@ export interface ICW20Tx {
   contract_address: string;
   from: string;
   to: string;
-  amount: bigint;
+  amount: number;
   action: string;
   created_at?: Date;
   updated_at?: Date;
 }
 
 export class CW20Tx extends BaseModel implements ICW20Tx {
-  id?: number | undefined;
+  id?: number;
 
   action!: string;
 
@@ -21,7 +21,7 @@ export class CW20Tx extends BaseModel implements ICW20Tx {
 
   to!: string;
 
-  amount!: bigint;
+  amount!: number;
 
   tx_hash!: string;
 
@@ -44,6 +44,7 @@ export class CW20Tx extends BaseModel implements ICW20Tx {
         from: { type: 'string' },
         to: { type: 'string' },
         action: { type: 'string' },
+        amount: { type: 'number' },
       },
     };
   }

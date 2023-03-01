@@ -1,5 +1,6 @@
 import { BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { expect } from '@jest/globals';
+import { NotNullViolationError } from 'objection';
 import { CW20Token, ICW20Token } from '../../../src/models/cw20_tokens.model';
 import knex from '../../../src/common/utils/db-connection';
 import {
@@ -11,7 +12,7 @@ import {
 export default class CW20HoldersTest {
   holder: ICW20Holder = {
     address: 'aura122222',
-    balance: BigInt(1000000000),
+    balance: 1000000000000000000000000000000000000000000,
     contract_address: 'aura546543213241564',
   };
 
@@ -39,6 +40,7 @@ export default class CW20HoldersTest {
     const holder = await CW20Holder.query().first();
     expect(holder).not.toBeUndefined();
     expect(holder?.address).toBe('aura122222');
+    expect(holder?.balance).toBe('1000000000000000000000000000000000000000000');
   }
 
   @Test('Test update')
@@ -64,12 +66,25 @@ export default class CW20HoldersTest {
   public async testInsert() {
     await CW20Holder.query().insert({
       address: 'aura33333333',
-      balance: BigInt(1000000000),
+      balance: 100000000000000000000000000000000000000,
       contract_address: 'aura546543213241564',
     });
     const holder = await CW20Holder.query()
       .where('address', 'aura33333333')
       .first();
     expect(holder).not.toBeUndefined();
+  }
+
+  @Test('Test insert fail')
+  public async testInsertFail() {
+    try {
+      await CW20Holder.query().insert({
+        address: 'aura33333333',
+        contract_address: 'aura546543213241564',
+      });
+      expect(true).toBe(false);
+    } catch (e) {
+      expect(e instanceof NotNullViolationError).toBe(true);
+    }
   }
 }

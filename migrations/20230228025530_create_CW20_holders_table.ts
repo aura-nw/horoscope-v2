@@ -3,9 +3,9 @@ import { Knex } from 'knex';
 export async function up(knex: Knex): Promise<void> {
   return knex.schema.createTable('cw20_holders', (table) => {
     table.increments();
-    table.string('address').index();
-    table.bigInteger('balance');
-    table.string('contract_address').index();
+    table.string('address').notNullable().index();
+    table.decimal('balance', 80, 0).notNullable();
+    table.string('contract_address').notNullable().index();
     table
       .foreign('contract_address')
       .references('cw20_tokens.contract_address');

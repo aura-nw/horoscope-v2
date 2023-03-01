@@ -3,12 +3,12 @@ import { Knex } from 'knex';
 export async function up(knex: Knex): Promise<void> {
   return knex.schema.createTable('cw20_txs', (table) => {
     table.increments();
-    table.string('tx_hash').index();
+    table.string('tx_hash').notNullable().index();
     table.string('from').index();
     table.string('to').index();
-    table.bigInteger('amount');
+    table.decimal('amount', 80, 0);
     table.string('action');
-    table.string('contract_address').index();
+    table.string('contract_address').notNullable().index();
     table
       .foreign('contract_address')
       .references('cw20_tokens.contract_address');
