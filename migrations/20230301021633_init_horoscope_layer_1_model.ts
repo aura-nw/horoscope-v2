@@ -12,7 +12,7 @@ export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('block_signature', (table: any) => {
     table.increments('id').primary();
     table.integer('height').index().notNullable();
-    table.integer('block_id_flag').index().notNullable();
+    table.integer('block_id_flag').notNullable();
     table.string('validator_address').index().notNullable();
     table.timestamp('timestamp').notNullable();
     table.text('signature').notNullable();
@@ -28,7 +28,7 @@ export async function up(knex: Knex): Promise<void> {
     table.bigint('gas_used').notNullable();
     table.bigint('gas_wanted').notNullable();
     table.bigint('gas_limit').notNullable();
-    table.string('fee').notNullable();
+    table.decimal('fee', 30).notNullable();
     table.timestamp('timestamp').notNullable();
     table.jsonb('data').notNullable();
     table.foreign('height').references('block.height');

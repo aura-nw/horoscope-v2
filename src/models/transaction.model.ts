@@ -9,7 +9,7 @@ export interface Transaction {
   gas_used: number;
   gas_wanted: number;
   gas_limit: number;
-  fee: string;
+  fee: number;
   timstamp: Date;
   data: JSON;
 }
@@ -29,7 +29,7 @@ export class Transaction extends BaseModel implements Transaction {
 
   gas_limit!: number;
 
-  fee!: string;
+  fee!: number;
 
   timstamp!: Date;
 
@@ -54,7 +54,7 @@ export class Transaction extends BaseModel implements Transaction {
         gas_used: { type: 'number' },
         gas_wanted: { type: 'number' },
         gas_limit: { type: 'number' },
-        fee: { type: 'string' },
+        fee: { type: 'number' },
         timestamp: { type: 'timestamp' },
         data: {
           type: 'object',
