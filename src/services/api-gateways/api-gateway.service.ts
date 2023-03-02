@@ -23,6 +23,8 @@ import BaseService from '../../base/BaseService';
         mappingPolicy: 'restrict', // allow action called with exact method
       },
     ],
+    // empty cors object will have moleculer to generate handler for preflight request and CORS header which allow all origin
+    cors: {},
   },
 })
 export default class ApiService extends BaseService {

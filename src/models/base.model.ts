@@ -9,7 +9,7 @@ export default class BaseModel extends Model {
 
   static delColumn = 'delete_at';
 
-  static get idColumn() {
+  static get idColumn(): string | string[] {
     return 'id';
   }
 
