@@ -1,5 +1,4 @@
 import { BeforeAll, Describe, Test } from '@jest-decorated/core';
-import { expect } from '@jest/globals';
 import { ValidationError } from 'objection';
 import { CW20Token, ICW20Token } from '../../../src/models/cw20_tokens.model';
 import knex from '../../../src/common/utils/db-connection';
