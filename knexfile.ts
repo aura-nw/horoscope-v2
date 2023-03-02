@@ -1,4 +1,6 @@
 import { Knex } from 'knex';
+import Network from './src/common/network';
+import { Config } from './src/common';
 
 // Update with your config settings.
 
@@ -9,7 +11,8 @@ const config: { [key: string]: Knex.Config } = {
       directory: './migrations',
     },
     connection: {
-      database: 'my_database',
+      database: Network.find((item) => item.chainId === Config.CHAIN_ID)
+        ?.databaseName,
       host: 'localhost',
       user: 'phamphong',
       password: 'phamphong9981',

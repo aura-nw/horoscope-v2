@@ -9,8 +9,8 @@ export default class BaseModel extends Model {
 
   static delColumn = 'delete_at';
 
-  static get idColumn() {
-    return 'rowid';
+  static get idColumn(): string | string[] {
+    return 'id';
   }
 
   // static customMethod() {
