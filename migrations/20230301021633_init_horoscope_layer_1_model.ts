@@ -36,14 +36,24 @@ export async function up(knex: Knex): Promise<void> {
 
   await knex.schema.createTable('transaction_message', (table: any) => {
     table.increments('id').primary();
-    table.integer('tx_id').index().notNullable();
-    table.integer('msg_index').notNullable();
-    table.string('type').index().notNullable();
-    table.string('sender').index().notNullable();
-    table.specificType('receiver', 'text[]').index();
-    table.jsonb('content').notNullable();
-    table.foreign('tx_id').references('transaction.id');
+    table.integer('tx_msg_id').index().notNullable();
+    table.string('address').notNullable();
+    table.string('reason');
+    table.foreign('tx_msg_id').references('transaction_message.id');
   });
+
+  await knex.schema.createTable(
+    'transaction_message_receiver',
+    (table: any) => {
+      table.increments('id').primary();
+      table.integer('tx_id').index().notNullable();
+      table.integer('msg_index').notNullable();
+      table.string('type').index().notNullable();
+      table.string('sender').index().notNullable();
+      table.jsonb('content').notNullable();
+      table.foreign('tx_id').references('transaction.id');
+    }
+  );
 
   await knex.schema.createTable('transaction_event', (table: any) => {
     table.increments('id').primary();
@@ -67,6 +77,7 @@ export async function down(knex: Knex): Promise<void> {
   knex.schema.dropTable('block_signature');
   knex.schema.dropTable('transaction');
   knex.schema.dropTable('transaction_message');
+  knex.schema.dropTable('transaction_message_receiver');
   knex.schema.dropTable('transaction_event');
   knex.schema.dropTable('transaction_event_attribute');
 }

@@ -1,5 +1,5 @@
 import { Model } from 'objection';
-import BaseModel from './BaseModel';
+import BaseModel from './base.model';
 
 export interface TransactionEvent {
   tx_id: number;

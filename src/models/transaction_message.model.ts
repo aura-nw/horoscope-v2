@@ -1,12 +1,11 @@
 import { Model } from 'objection';
-import BaseModel from './BaseModel';
+import BaseModel from './base.model';
 
 export interface TransactionMessage {
   tx_id: number;
   msg_index: number;
   type: string;
   sender: string;
-  receiver: string[];
   content: JSON;
 }
 
@@ -21,8 +20,6 @@ export class TransactionMessage
   type!: string;
 
   sender!: string;
-
-  receiver!: string[];
 
   content!: JSON;
 
@@ -43,7 +40,6 @@ export class TransactionMessage
         msg_index: { type: 'number' },
         type: { type: 'string' },
         sender: { type: 'string' },
-        receiver: { type: 'array', items: { type: 'string' } },
         content: {
           type: 'object',
           patternProperties: {
