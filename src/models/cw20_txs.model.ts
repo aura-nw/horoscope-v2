@@ -1,4 +1,4 @@
-import BaseModel from './BaseModel';
+import BaseModel from './base.model';
 
 export interface ICW20Tx {
   id?: number;
