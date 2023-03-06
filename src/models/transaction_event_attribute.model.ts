@@ -1,16 +1,7 @@
 import { Model } from 'objection';
 import BaseModel from './base.model';
 
-export interface ITransactionEventAttribute {
-  event_id: number;
-  key: string;
-  value: string;
-}
-
-export class TransactionEventAttribute
-  extends BaseModel
-  implements ITransactionEventAttribute
-{
+export default class TransactionEventAttribute extends BaseModel {
   event_id!: number;
 
   key!: string;

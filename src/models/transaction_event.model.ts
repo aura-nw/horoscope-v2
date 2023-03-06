@@ -1,13 +1,7 @@
 import { Model } from 'objection';
 import BaseModel from './base.model';
 
-export interface ITransactionEvent {
-  tx_id: number;
-  msg_index: number;
-  type: string;
-}
-
-export class TransactionEvent extends BaseModel implements ITransactionEvent {
+export default class TransactionEvent extends BaseModel {
   tx_id!: number;
 
   msg_index!: number;

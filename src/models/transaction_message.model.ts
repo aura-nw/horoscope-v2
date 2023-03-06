@@ -1,18 +1,7 @@
 import { Model } from 'objection';
 import BaseModel from './base.model';
 
-export interface ITransactionMessage {
-  tx_id: number;
-  msg_index: number;
-  type: string;
-  sender: string;
-  content: JSON;
-}
-
-export class TransactionMessage
-  extends BaseModel
-  implements ITransactionMessage
-{
+export default class TransactionMessage extends BaseModel {
   tx_id!: number;
 
   msg_index!: number;

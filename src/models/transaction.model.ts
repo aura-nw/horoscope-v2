@@ -1,20 +1,7 @@
 import { Model } from 'objection';
 import BaseModel from './base.model';
 
-export interface ITransaction {
-  height: number;
-  hash: string;
-  codespace: string;
-  code: number;
-  gas_used: number;
-  gas_wanted: number;
-  gas_limit: number;
-  fee: number;
-  timstamp: Date;
-  data: JSON;
-}
-
-export class Transaction extends BaseModel implements ITransaction {
+export default class Transaction extends BaseModel {
   height!: number;
 
   hash!: string;

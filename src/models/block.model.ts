@@ -1,15 +1,7 @@
 import { Model } from 'objection';
 import BaseModel from './base.model';
 
-export interface IBlock {
-  height: number;
-  hash: string;
-  time: Date;
-  proposer_address: string;
-  data: JSON;
-}
-
-export class Block extends BaseModel implements IBlock {
+export default class Block extends BaseModel {
   height!: number;
 
   hash!: string;

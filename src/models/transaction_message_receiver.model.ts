@@ -1,16 +1,7 @@
 import { Model } from 'objection';
 import BaseModel from './base.model';
 
-export interface ITransactionMessageReceiver {
-  tx_msg_id: number;
-  address: string;
-  reason: string | undefined;
-}
-
-export class TransactionMessageReceiver
-  extends BaseModel
-  implements ITransactionMessageReceiver
-{
+export default class TransactionMessageReceiver extends BaseModel {
   tx_msg_id!: number;
 
   address!: string;
