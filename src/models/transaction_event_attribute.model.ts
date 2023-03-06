@@ -1,7 +1,7 @@
 import { Model } from 'objection';
 import BaseModel from './base.model';
 
-export interface TransactionEventAttribute {
+export interface ITransactionEventAttribute {
   event_id: number;
   key: string;
   value: string;
@@ -9,7 +9,7 @@ export interface TransactionEventAttribute {
 
 export class TransactionEventAttribute
   extends BaseModel
-  implements TransactionEventAttribute
+  implements ITransactionEventAttribute
 {
   event_id!: number;
 

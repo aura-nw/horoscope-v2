@@ -1,7 +1,7 @@
 import { Model } from 'objection';
 import BaseModel from './base.model';
 
-export interface Block {
+export interface IBlock {
   height: number;
   hash: string;
   time: Date;
@@ -9,7 +9,7 @@ export interface Block {
   data: JSON;
 }
 
-export class Block extends BaseModel implements Block {
+export class Block extends BaseModel implements IBlock {
   height!: number;
 
   hash!: string;
@@ -57,6 +57,14 @@ export class Block extends BaseModel implements Block {
         join: {
           from: 'block.id',
           to: 'block_signature.block_id',
+        },
+      },
+      txs: {
+        relation: Model.HasManyRelation,
+        modelClass: 'transaction',
+        join: {
+          from: 'block.height',
+          to: 'transaction.height',
         },
       },
     };

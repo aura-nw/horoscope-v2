@@ -1,13 +1,13 @@
 import { Model } from 'objection';
 import BaseModel from './base.model';
 
-export interface TransactionEvent {
+export interface ITransactionEvent {
   tx_id: number;
   msg_index: number;
   type: string;
 }
 
-export class TransactionEvent extends BaseModel implements TransactionEvent {
+export class TransactionEvent extends BaseModel implements ITransactionEvent {
   tx_id!: number;
 
   msg_index!: number;
@@ -36,8 +36,8 @@ export class TransactionEvent extends BaseModel implements TransactionEvent {
         relation: Model.BelongsToOneRelation,
         modelClass: 'transaction',
         join: {
-          from: 'transaction_event.tx_hash',
-          to: 'transaction.hash',
+          from: 'transaction_event.tx_id',
+          to: 'transaction.id',
         },
       },
       attributes: {

@@ -1,7 +1,7 @@
 import { Model } from 'objection';
 import BaseModel from './base.model';
 
-export interface Transaction {
+export interface ITransaction {
   height: number;
   hash: string;
   codespace: string;
@@ -14,7 +14,7 @@ export interface Transaction {
   data: JSON;
 }
 
-export class Transaction extends BaseModel implements Transaction {
+export class Transaction extends BaseModel implements ITransaction {
   height!: number;
 
   hash!: string;

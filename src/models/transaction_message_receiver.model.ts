@@ -1,7 +1,7 @@
 import { Model } from 'objection';
 import BaseModel from './base.model';
 
-export interface TransactionMessageReceiver {
+export interface ITransactionMessageReceiver {
   tx_msg_id: number;
   address: string;
   reason: string | undefined;
@@ -9,7 +9,7 @@ export interface TransactionMessageReceiver {
 
 export class TransactionMessageReceiver
   extends BaseModel
-  implements TransactionMessageReceiver
+  implements ITransactionMessageReceiver
 {
   tx_msg_id!: number;
 

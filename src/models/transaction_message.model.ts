@@ -1,7 +1,7 @@
 import { Model } from 'objection';
 import BaseModel from './base.model';
 
-export interface TransactionMessage {
+export interface ITransactionMessage {
   tx_id: number;
   msg_index: number;
   type: string;
@@ -11,7 +11,7 @@ export interface TransactionMessage {
 
 export class TransactionMessage
   extends BaseModel
-  implements TransactionMessage
+  implements ITransactionMessage
 {
   tx_id!: number;
 

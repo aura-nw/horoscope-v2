@@ -1,7 +1,7 @@
 import { Model } from 'objection';
 import BaseModel from './base.model';
 
-export interface BlockSignature {
+export interface IBlockSignature {
   height: number;
   block_id_flag: number;
   validator_address: string;
@@ -9,7 +9,7 @@ export interface BlockSignature {
   signature: string;
 }
 
-export class BlockSignature extends BaseModel implements BlockSignature {
+export class BlockSignature extends BaseModel implements IBlockSignature {
   height!: number;
 
   block_id_flag!: number;
