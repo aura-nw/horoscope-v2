@@ -62,7 +62,7 @@ export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('transaction_event', (table: any) => {
     table.increments('id').primary();
     table.integer('tx_id').index().notNullable();
-    table.integer('tx_msg_index').notNullable();
+    table.integer('tx_msg_index');
     table.string('type').index().notNullable();
     table.foreign('tx_id').references('transaction.id');
   });
