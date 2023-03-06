@@ -29,14 +29,6 @@ export default class Block extends BaseModel {
         hash: { type: 'string', minLength: 1, maxLength: 255 },
         time: { type: 'timestamp' },
         proposer_address: { type: 'string', minLength: 1, maxLength: 255 },
-        data: {
-          type: 'object',
-          patternProperties: {
-            '^.*$': {
-              anyOf: [{ type: 'string' }, { type: 'number' }],
-            },
-          },
-        },
       },
     };
   }

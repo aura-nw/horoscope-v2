@@ -4,7 +4,7 @@ import BaseModel from './base.model';
 export default class TransactionEvent extends BaseModel {
   tx_id!: number;
 
-  msg_index!: number;
+  tx_msg_index: number | undefined;
 
   type!: string;
 
@@ -15,10 +15,10 @@ export default class TransactionEvent extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['tx_id', 'msg_index', 'type'],
+      required: ['tx_id', 'type'],
       properties: {
         tx_id: { type: 'number' },
-        msg_index: { type: 'number' },
+        tx_msg_index: { type: 'number' },
         type: { type: 'string' },
       },
     };

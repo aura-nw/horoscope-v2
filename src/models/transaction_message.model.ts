@@ -4,7 +4,7 @@ import BaseModel from './base.model';
 export default class TransactionMessage extends BaseModel {
   tx_id!: number;
 
-  msg_index!: number;
+  index!: number;
 
   type!: string;
 
@@ -23,20 +23,12 @@ export default class TransactionMessage extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['tx_id', 'msg_index', 'type', 'sender', 'content'],
+      required: ['tx_id', 'index', 'type', 'sender', 'content'],
       properties: {
         tx_id: { type: 'number' },
-        msg_index: { type: 'number' },
+        index: { type: 'number' },
         type: { type: 'string' },
         sender: { type: 'string' },
-        content: {
-          type: 'object',
-          patternProperties: {
-            '^.*$': {
-              anyOf: [{ type: 'string' }, { type: 'number' }],
-            },
-          },
-        },
       },
     };
   }
@@ -47,8 +39,8 @@ export default class TransactionMessage extends BaseModel {
         relation: Model.BelongsToOneRelation,
         modelClass: 'transaction',
         join: {
-          from: 'transaction_message.tx_hash',
-          to: 'transaction.hash',
+          from: 'transaction_message.tx_id',
+          to: 'transaction.id',
         },
       },
     };

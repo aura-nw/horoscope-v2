@@ -18,6 +18,14 @@ export default class Transaction extends BaseModel {
 
   fee!: number;
 
+  fee_payer!: string;
+
+  fee_granter!: string;
+
+  signer_public_key_type!: string;
+
+  signer_public_key_threshold: number | undefined;
+
   timstamp!: Date;
 
   data!: JSON;
@@ -42,6 +50,10 @@ export default class Transaction extends BaseModel {
         'gas_wanted',
         'gas_limit',
         'fee',
+        'fee_payer',
+        'fee_granter',
+        'signer_public_key_type',
+        'signer_public_key_threshold',
         'timestamp',
         'data',
       ],
@@ -54,15 +66,11 @@ export default class Transaction extends BaseModel {
         gas_wanted: { type: 'number' },
         gas_limit: { type: 'number' },
         fee: { type: 'number' },
+        fee_payer: { type: 'string' },
+        fee_granter: { type: 'string' },
+        signer_public_key_type: { type: 'string' },
+        signer_public_key_threshold: { type: 'number' },
         timestamp: { type: 'timestamp' },
-        data: {
-          type: 'object',
-          patternProperties: {
-            '^.*$': {
-              anyOf: [{ type: 'string' }, { type: 'number' }],
-            },
-          },
-        },
       },
     };
   }
@@ -81,16 +89,16 @@ export default class Transaction extends BaseModel {
         relation: Model.HasManyRelation,
         modelClass: 'transaction_message',
         join: {
-          from: 'transaction.hash',
-          to: 'transaction_message.tx_hash',
+          from: 'transaction.id',
+          to: 'transaction_message.tx_id',
         },
       },
       events: {
         relation: Model.HasManyRelation,
         modelClass: 'transaction_event',
         join: {
-          from: 'transaction.hash',
-          to: 'transaction_event.tx_hash',
+          from: 'transaction.id',
+          to: 'transaction_event.tx_id',
         },
       },
     };

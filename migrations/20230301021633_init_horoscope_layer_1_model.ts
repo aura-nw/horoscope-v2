@@ -29,36 +29,40 @@ export async function up(knex: Knex): Promise<void> {
     table.bigint('gas_wanted').notNullable();
     table.bigint('gas_limit').notNullable();
     table.decimal('fee', 30).notNullable();
+    table.string('fee_payer').index().notNullable();
+    table.string('fee_granter').index().notNullable();
+    table.string('signer_public_key_type').index().notNullable();
+    table.integer('signer_public_key_threshold');
     table.timestamp('timestamp').notNullable();
     table.jsonb('data').notNullable();
     table.foreign('height').references('block.height');
-  });
-
-  await knex.schema.createTable('transaction_message', (table: any) => {
-    table.increments('id').primary();
-    table.integer('tx_msg_id').index().notNullable();
-    table.string('address').notNullable();
-    table.string('reason');
-    table.foreign('tx_msg_id').references('transaction_message.id');
   });
 
   await knex.schema.createTable(
     'transaction_message_receiver',
     (table: any) => {
       table.increments('id').primary();
-      table.integer('tx_id').index().notNullable();
-      table.integer('msg_index').notNullable();
-      table.string('type').index().notNullable();
-      table.string('sender').index().notNullable();
-      table.jsonb('content').notNullable();
-      table.foreign('tx_id').references('transaction.id');
+      table.integer('tx_msg_id').index().notNullable();
+      table.string('address').index().notNullable();
+      table.string('reason');
+      table.foreign('tx_msg_id').references('transaction_message.id');
     }
   );
+
+  await knex.schema.createTable('transaction_message', (table: any) => {
+    table.increments('id').primary();
+    table.integer('tx_id').index().notNullable();
+    table.integer('index').notNullable();
+    table.string('type').index().notNullable();
+    table.string('sender').index().notNullable();
+    table.jsonb('content').notNullable();
+    table.foreign('tx_id').references('transaction.id');
+  });
 
   await knex.schema.createTable('transaction_event', (table: any) => {
     table.increments('id').primary();
     table.integer('tx_id').index().notNullable();
-    table.integer('msg_index').notNullable();
+    table.integer('tx_msg_index').notNullable();
     table.string('type').index().notNullable();
     table.foreign('tx_id').references('transaction.id');
   });
