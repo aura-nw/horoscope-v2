@@ -44,16 +44,14 @@ export default class QueueManager {
   /**
    * setHandler
    */
-  public async setHandler(
-    qOpt: QueueOptions,
-    fn: (payload: object) => Promise<void>
-  ) {
+  public async setHandler(qOpt: QueueOptions, fn: (payload: object) => Promise<void>) {
     const queue = this.addQueue(qOpt);
     // Create a handler function for the queue
     // console.log("Before queue.process");
     queue.process(qOpt.jobType as string, async (job: any, done: any) => {
       // TODO: Also need to write some preparation here. Let it for now
-      await fn(job.data);
+      const func = this._handlerOwner ? fn.bind(this._handlerOwner) : fn;
+      await func(job.data);
       await done();
     });
     // console.log("After queue.process");
@@ -65,7 +63,7 @@ export default class QueueManager {
   public addQueue(qOpt: QueueOptions): Bull.Queue {
     const redisOpt = this.createRedisOpts(qOpt);
 
-    console.log(`qOpt: ${JSON.stringify(qOpt)}`);
+    // console.log(`qOpt: ${JSON.stringify(qOpt)}`);
     const queue = new Bull(qOpt.queueName as string, redisOpt);
 
     // TODO: implements edge case when bull cannot connect to redis. By Default, it will retry forever
@@ -74,6 +72,11 @@ export default class QueueManager {
     return queue;
   }
 
+  private _handlerOwner?: any;
+
+  public bindThis(_thisObject: any) {
+    this._handlerOwner = _thisObject;
+  }
   /*
    * Cache and retrievv redis connection for reuse later
    */
@@ -123,7 +126,7 @@ export default class QueueManager {
     queueName: string,
     jobName: string,
     opts: Bull.JobOptions,
-    payload?: object
+    payload?: object,
   ): Promise<Bull.Job<any>> {
     const queue = this.getQueue(queueName);
 
@@ -133,9 +136,7 @@ export default class QueueManager {
   }
 
   public async stopAll() {
-    console.log(
-      'Trying to stop all queue... This functionality is not implemented fully yet!!!'
-    );
+    console.log('Trying to stop all queue... This functionality is not implemented fully yet!!!');
 
     const p = Object.values(this._queues).map(async (q) => {
       const queue = q as Bull.Queue;

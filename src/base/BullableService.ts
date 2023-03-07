@@ -1,22 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ServiceBroker } from 'moleculer';
-import QueueManager, {
-  Job,
-  JobOptions,
-  QueueOptions,
-} from '../common/queue/QueueManager';
+import QueueManager, { Job, JobOptions, QueueOptions } from '../common/queue/QueueManager';
 import BaseService from './BaseService';
 
 const DEFAULT_JOB_OTION: JobOptions = {
   removeOnComplete: true,
   removeOnFail: {
-    count: 3,
+    count: 4,
   },
 };
 
 // const BULL_REDIS_KEY = process.env.BULL_REDIS_KEY || 'BULL_REDIS_KEY';
-const DEFAULT_REDIS_URL =
-  process.env.BULL_REDIS_URL || 'redis://127.0.0.1:6379';
+const DEFAULT_REDIS_URL = process.env.BULL_REDIS_URL || 'redis://127.0.0.1:6379';
 
 export default class BullableService extends BaseService {
   private qm?: QueueManager;
@@ -29,21 +24,14 @@ export default class BullableService extends BaseService {
     queueName: string,
     jobType: string,
     payload?: object,
-    opts?: JobOptions
+    opts?: JobOptions,
   ): Promise<Job<any>> {
+    // FIXME: jobtype could be optional
     const jobOptions = { ...DEFAULT_JOB_OTION, ...opts };
-    return this.getQueueManager().createJob(
-      queueName,
-      jobType,
-      jobOptions,
-      payload
-    );
+    return this.getQueueManager().createJob(queueName, jobType, jobOptions, payload);
   }
 
-  public async setHandler(
-    opts: QueueOptions,
-    fn: (payload: any) => Promise<void>
-  ): Promise<void> {
+  public async setHandler(opts: QueueOptions, fn: (payload: any) => Promise<void>): Promise<void> {
     this.getQueueManager().setHandler(opts, fn);
   }
 
@@ -65,6 +53,7 @@ export default class BullableService extends BaseService {
 
   async started() {
     // do some initialization here
+    this.getQueueManager().bindThis(this);
   }
 }
 
@@ -72,11 +61,7 @@ export default class BullableService extends BaseService {
  * Decorator functions to annotate a method as queue handler
  */
 export function QueueHandler(opt?: QueueOptions) {
-  return (
-    target: any,
-    propertyKey: string,
-    _descriptor: PropertyDescriptor
-  ) => {
+  return (target: any, propertyKey: string, _descriptor: PropertyDescriptor) => {
     if (!target.setHandler) {
       return;
     }
