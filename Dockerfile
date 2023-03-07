@@ -4,16 +4,15 @@ FROM node:16-alpine
 WORKDIR /app
 
 # Install dependencies
-COPY package.json package-lock.json ./
-RUN npm ci --silent
+COPY package.json package.json ./
+RUN yarn install --force
 
 # Copy source
 COPY . .
 
 # Build and cleanup
 ENV NODE_ENV=production
-RUN npm run build \
- && npm prune
+RUN yarn build
 
 # Start server
-CMD ["npm", "start"]
+CMD ["yarn", "start"]

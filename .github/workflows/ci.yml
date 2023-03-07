@@ -6,13 +6,14 @@ on:
     branches: [main, develop, serenity, euphoria]
 
 jobs:
-  # lint:
-  #   uses: ./.github/workflows/lint.yml
-  # test:
-  #   uses: ./.github/workflows/test.yml
-  #   secrets: inherit
+  lint:
+    uses: ./.github/workflows/lint.yml
+  test:
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
 
   build:
+    needs: [test, lint]
     runs-on: [self-hosted, aura]
     steps:
       - uses: actions/checkout@v3
