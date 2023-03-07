@@ -1,5 +1,3 @@
-import { expect } from '@jest/globals';
-
 import { Describe, BeforeAll, Test, AfterAll } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import TestService from '../../../src/services/samples/math.service';
