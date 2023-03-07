@@ -14,8 +14,8 @@ const config: { [key: string]: Knex.Config } = {
       database: Network.find((item) => item.chainId === Config.CHAIN_ID)
         ?.databaseName,
       host: 'localhost',
-      user: 'phamphong',
-      password: 'phamphong9981',
+      user: Config.POSTGRES_USER,
+      password: Config.POSTGRES_PASSWORD,
     },
   },
   test: {
@@ -24,10 +24,10 @@ const config: { [key: string]: Knex.Config } = {
       directory: './migrations',
     },
     connection: {
-      database: 'test',
+      database: Config.POSTGRES_DB_TEST,
       host: 'localhost',
-      user: 'phamphong',
-      password: 'phamphong9981',
+      user: Config.POSTGRES_USER,
+      password: Config.POSTGRES_PASSWORD,
     },
   },
   production: {
