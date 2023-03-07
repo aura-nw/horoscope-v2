@@ -38,6 +38,16 @@ export async function up(knex: Knex): Promise<void> {
     table.foreign('height').references('block.height');
   });
 
+  await knex.schema.createTable('transaction_message', (table: any) => {
+    table.increments('id').primary();
+    table.integer('tx_id').index().notNullable();
+    table.integer('index').notNullable();
+    table.string('type').index().notNullable();
+    table.string('sender').index().notNullable();
+    table.jsonb('content').notNullable();
+    table.foreign('tx_id').references('transaction.id');
+  });
+
   await knex.schema.createTable(
     'transaction_message_receiver',
     (table: any) => {
@@ -48,16 +58,6 @@ export async function up(knex: Knex): Promise<void> {
       table.foreign('tx_msg_id').references('transaction_message.id');
     }
   );
-
-  await knex.schema.createTable('transaction_message', (table: any) => {
-    table.increments('id').primary();
-    table.integer('tx_id').index().notNullable();
-    table.integer('index').notNullable();
-    table.string('type').index().notNullable();
-    table.string('sender').index().notNullable();
-    table.jsonb('content').notNullable();
-    table.foreign('tx_id').references('transaction.id');
-  });
 
   await knex.schema.createTable('transaction_event', (table: any) => {
     table.increments('id').primary();
