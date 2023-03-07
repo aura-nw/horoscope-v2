@@ -1,5 +1,5 @@
 import { Model } from 'objection';
-import BaseModel from './base.model';
+import BaseModel from './base';
 
 export default class TransactionMessage extends BaseModel {
   tx_id!: number;

@@ -1,5 +1,5 @@
 import { Model } from 'objection';
-import BaseModel from './base.model';
+import BaseModel from './base';
 
 export default class TransactionEventAttribute extends BaseModel {
   event_id!: number;

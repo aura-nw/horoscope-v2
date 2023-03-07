@@ -1,11 +1,8 @@
 import { BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ValidationError } from 'objection';
-import { CW20Token, ICW20Token } from '../../../src/models/cw20_tokens.model';
-import knex from '../../../src/common/utils/db-connection';
-import {
-  CW20Holder,
-  ICW20Holder,
-} from '../../../src/models/cw20_holders.model';
+import { CW20Token, ICW20Token } from '../../models/cw20_token';
+import knex from '../../common/utils/db-connection';
+import { CW20Holder, ICW20Holder } from '../../models/cw20_holder';
 
 @Describe('Test cw20_holders model')
 export default class CW20HoldersTest {

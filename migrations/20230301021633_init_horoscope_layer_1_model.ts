@@ -29,10 +29,6 @@ export async function up(knex: Knex): Promise<void> {
     table.bigint('gas_wanted').notNullable();
     table.bigint('gas_limit').notNullable();
     table.decimal('fee', 30).notNullable();
-    table.string('fee_payer').index().notNullable();
-    table.string('fee_granter').index().notNullable();
-    table.string('signer_public_key_type').index().notNullable();
-    table.integer('signer_public_key_threshold');
     table.timestamp('timestamp').notNullable();
     table.jsonb('data').notNullable();
     table.foreign('height').references('block.height');

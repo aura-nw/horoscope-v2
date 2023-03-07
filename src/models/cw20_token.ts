@@ -1,4 +1,4 @@
-import BaseModel from './base.model';
+import BaseModel from './base';
 
 export interface ICW20MarketingInfo {
   data: {
@@ -50,7 +50,7 @@ export class CW20Token extends BaseModel implements ICW20Token {
   updated_at?: Date;
 
   static get tableName() {
-    return 'cw20_tokens';
+    return 'cw20_token';
   }
 
   static get jsonSchema() {

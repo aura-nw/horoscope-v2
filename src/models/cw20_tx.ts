@@ -1,4 +1,4 @@
-import BaseModel from './base.model';
+import BaseModel from './base';
 
 export interface ICW20Tx {
   id?: number;
@@ -32,7 +32,7 @@ export class CW20Tx extends BaseModel implements ICW20Tx {
   updated_at?: Date;
 
   static get tableName() {
-    return 'cw20_txs';
+    return 'cw20_tx';
   }
 
   static get jsonSchema() {

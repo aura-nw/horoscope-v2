@@ -1,5 +1,5 @@
 import { Model } from 'objection';
-import BaseModel from './base.model';
+import BaseModel from './base';
 
 export default class Transaction extends BaseModel {
   height!: number;
