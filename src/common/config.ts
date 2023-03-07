@@ -4,6 +4,7 @@ import { LogLevels } from 'moleculer';
 // import dotenvFlow from 'dotenv-flow';
 // import _ from 'lodash';
 import * as dotenv from 'dotenv'; // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
+import { PATH_COSMOS_SDK } from './constant';
 // import { DBDialog, DBInfo } from '../types';
 
 // import { PATH_COSMOS_SDK } from './constant';
@@ -16,11 +17,9 @@ const processEnv = process.env;
 // );
 const configObj = processEnv;
 
-const isTrue = (text?: string | number) =>
-  [1, true, '1', 'true', 'yes'].includes(text || '');
+const isTrue = (text?: string | number) => [1, true, '1', 'true', 'yes'].includes(text || '');
 
-const isFalse = (text?: string | number) =>
-  [0, false, '0', 'false', 'no'].includes(text || '');
+const isFalse = (text?: string | number) => [0, false, '0', 'false', 'no'].includes(text || '');
 
 const getValue = (text?: string, defaultValud?: string | boolean) => {
   const vtrue = isTrue(text);
@@ -89,8 +88,7 @@ export default class ConfigClass {
 
   public static TRACING_TYPE = process.env.TRACING_TYPE || 'Console';
 
-  public static TRACING_ZIPKIN_URL =
-    process.env.TRACING_ZIPKIN_URL || 'http://zipkin:9411';
+  public static TRACING_ZIPKIN_URL = process.env.TRACING_ZIPKIN_URL || 'http://zipkin:9411';
 
   public static METRICS_ENABLED = isTrue(process.env.METRICS_ENABLED || '1');
 
@@ -110,6 +108,12 @@ export default class ConfigClass {
 
   public ENABLE_LOADBALANCER = process.env.ENABLE_LOADBALANCER || 'true';
 
+  public GET_LATEST_BLOCK_API =
+    process.env.GET_LATEST_BLOCK_API || PATH_COSMOS_SDK.GET_LATEST_BLOCK_API;
+
+  public GET_BLOCK_BY_HEIGHT_API =
+    process.env.GET_BLOCK_BY_HEIGHT_API || PATH_COSMOS_SDK.GET_BLOCK_BY_HEIGHT_API;
+
   // Dynamic property key
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [index: string]: any;
@@ -121,9 +125,7 @@ export default class ConfigClass {
       this[key] = configObj[key];
     });
     this.NODE_ENV = process.env.NODE_ENV;
-    this.NODEID = `${
-      process.env.NODEID ? `${process.env.NODEID}-` : ''
-    }${HOST_NAME}-${
+    this.NODEID = `${process.env.NODEID ? `${process.env.NODEID}-` : ''}${HOST_NAME}-${
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       this.NODE_ENV

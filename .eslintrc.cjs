@@ -37,11 +37,12 @@ module.exports = {
     'import/prefer-default-export': 'warn',
     // TODO: remove rules quotes and semi, should be in prettier config. Cannot do it for now, as wrong nvim config
     '@typescript-eslint/quotes': [
-			'error',
-			'single',{
-				avoidEscape: true,
-			},
-		],
+      'error',
+      'single',
+      {
+        avoidEscape: true,
+      },
+    ],
     semi: 'off',
     '@typescript-eslint/semi': 'error',
     '@typescript-eslint/explicit-function-return-type': 'off',
@@ -63,10 +64,7 @@ module.exports = {
     ],
     '@typescript-eslint/no-explicit-any': ['warn'],
     '@typescript-eslint/no-useless-constructor': 'error',
-    '@typescript-eslint/no-use-before-define': [
-      'error',
-      { functions: false, classes: true },
-    ],
+    '@typescript-eslint/no-use-before-define': ['error', { functions: false, classes: true }],
     '@typescript-eslint/no-shadow': ['warn'],
     'no-throw-literal': 'off',
     '@typescript-eslint/no-throw-literal': ['error'],
