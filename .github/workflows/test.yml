@@ -67,6 +67,9 @@ jobs:
       - name: Test
         env:
           NODE_ENV: test
+          POSTGRES_PASSWORD: phamphong9981
+          POSTGRES_USER: phamphong
+          POSTGRES_DB: test
         run: |
           yarn db:migrate:test:latest
           yarn test
