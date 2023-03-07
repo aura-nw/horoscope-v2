@@ -34,16 +34,15 @@ services:
       POSTGRES_DB_TEST: ${POSTGRES_DB_TEST}
     networks:
       - dev_network
-      
   adminer:
     container_name: adminer
     image: adminer:4-standalone
     restart: always
     ports:
-      - "8080:8080"
+      - '8080:8080'
     networks:
       - dev_network
-    
+
   redis:
     image: redis:latest
     container_name: redis_erascope
