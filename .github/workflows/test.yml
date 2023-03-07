@@ -6,7 +6,7 @@ on:
 
 jobs:
   test:
-    runs-on: [self-hosted, test]
+    runs-on: [self-hosted]
 
     services:
       postgres:
