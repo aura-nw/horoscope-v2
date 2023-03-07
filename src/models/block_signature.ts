@@ -1,15 +1,7 @@
 import { Model } from 'objection';
-import BaseModel from './BaseModel';
+import BaseModel from './base';
 
-export interface BlockSignature {
-  height: number;
-  block_id_flag: number;
-  validator_address: string;
-  timestamp: Date;
-  signature: string;
-}
-
-export class BlockSignature extends BaseModel implements BlockSignature {
+export default class BlockSignature extends BaseModel {
   height!: number;
 
   block_id_flag!: number;
@@ -27,6 +19,13 @@ export class BlockSignature extends BaseModel implements BlockSignature {
   static get jsonSchema() {
     return {
       type: 'object',
+      required: [
+        'block_id',
+        'block_id_flag',
+        'validator_address',
+        'timestamp',
+        'signature',
+      ],
       properties: {
         block_id: { type: 'number' },
         block_id_flag: { type: 'number' },

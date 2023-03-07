@@ -7,5 +7,3 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
 	CREATE DATABASE hasura;
 	GRANT ALL PRIVILEGES ON DATABASE hasura TO "$POSTGRES_USER";
 EOSQL
-
-psql --username "$POSTGRES_USER" --dbname "$POSTGRES_DB_TEST" -a -f ./docker-entrypoint-initdb.d/01_schema.sql

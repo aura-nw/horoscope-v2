@@ -1,15 +1,7 @@
 import { Model } from 'objection';
-import BaseModel from './BaseModel';
+import BaseModel from './base';
 
-export interface Block {
-  height: number;
-  hash: string;
-  time: Date;
-  proposer_address: string;
-  data: JSON;
-}
-
-export class Block extends BaseModel implements Block {
+export default class Block extends BaseModel {
   height!: number;
 
   hash!: string;
@@ -31,19 +23,12 @@ export class Block extends BaseModel implements Block {
   static get jsonSchema() {
     return {
       type: 'object',
+      required: ['height', 'hash', 'time', 'proposer_address', 'data'],
       properties: {
         height: { type: 'number' },
         hash: { type: 'string', minLength: 1, maxLength: 255 },
         time: { type: 'timestamp' },
         proposer_address: { type: 'string', minLength: 1, maxLength: 255 },
-        data: {
-          type: 'object',
-          patternProperties: {
-            '^.*$': {
-              anyOf: [{ type: 'string' }, { type: 'number' }],
-            },
-          },
-        },
       },
     };
   }
@@ -56,6 +41,14 @@ export class Block extends BaseModel implements Block {
         join: {
           from: 'block.id',
           to: 'block_signature.block_id',
+        },
+      },
+      txs: {
+        relation: Model.HasManyRelation,
+        modelClass: 'transaction',
+        join: {
+          from: 'block.height',
+          to: 'transaction.height',
         },
       },
     };

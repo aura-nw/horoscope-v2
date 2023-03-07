@@ -1,16 +1,7 @@
 import { Model } from 'objection';
-import BaseModel from './BaseModel';
+import BaseModel from './base';
 
-export interface TransactionEventAttribute {
-  event_id: number;
-  key: string;
-  value: string;
-}
-
-export class TransactionEventAttribute
-  extends BaseModel
-  implements TransactionEventAttribute
-{
+export default class TransactionEventAttribute extends BaseModel {
   event_id!: number;
 
   key!: string;
@@ -24,6 +15,7 @@ export class TransactionEventAttribute
   static get jsonSchema() {
     return {
       type: 'object',
+      required: ['event_id', 'key', 'value'],
       properties: {
         event_id: { type: 'number' },
         key: { type: 'string' },

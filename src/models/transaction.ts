@@ -1,20 +1,7 @@
 import { Model } from 'objection';
-import BaseModel from './BaseModel';
+import BaseModel from './base';
 
-export interface Transaction {
-  height: number;
-  hash: string;
-  codespace: string;
-  code: number;
-  gas_used: number;
-  gas_wanted: number;
-  gas_limit: number;
-  fee: string;
-  timstamp: Date;
-  data: JSON;
-}
-
-export class Transaction extends BaseModel implements Transaction {
+export default class Transaction extends BaseModel {
   height!: number;
 
   hash!: string;
@@ -29,7 +16,15 @@ export class Transaction extends BaseModel implements Transaction {
 
   gas_limit!: number;
 
-  fee!: string;
+  fee!: number;
+
+  fee_payer!: string;
+
+  fee_granter!: string;
+
+  signer_public_key_type!: string;
+
+  signer_public_key_threshold: number | undefined;
 
   timstamp!: Date;
 
@@ -46,6 +41,22 @@ export class Transaction extends BaseModel implements Transaction {
   static get jsonSchema() {
     return {
       type: 'object',
+      required: [
+        'height',
+        'hash',
+        'codespace',
+        'code',
+        'gas_used',
+        'gas_wanted',
+        'gas_limit',
+        'fee',
+        'fee_payer',
+        'fee_granter',
+        'signer_public_key_type',
+        'signer_public_key_threshold',
+        'timestamp',
+        'data',
+      ],
       properties: {
         height: { type: 'number' },
         hash: { type: 'string' },
@@ -54,16 +65,12 @@ export class Transaction extends BaseModel implements Transaction {
         gas_used: { type: 'number' },
         gas_wanted: { type: 'number' },
         gas_limit: { type: 'number' },
-        fee: { type: 'string' },
+        fee: { type: 'number' },
+        fee_payer: { type: 'string' },
+        fee_granter: { type: 'string' },
+        signer_public_key_type: { type: 'string' },
+        signer_public_key_threshold: { type: 'number' },
         timestamp: { type: 'timestamp' },
-        data: {
-          type: 'object',
-          patternProperties: {
-            '^.*$': {
-              anyOf: [{ type: 'string' }, { type: 'number' }],
-            },
-          },
-        },
       },
     };
   }
@@ -82,16 +89,16 @@ export class Transaction extends BaseModel implements Transaction {
         relation: Model.HasManyRelation,
         modelClass: 'transaction_message',
         join: {
-          from: 'transaction.hash',
-          to: 'transaction_message.tx_hash',
+          from: 'transaction.id',
+          to: 'transaction_message.tx_id',
         },
       },
       events: {
         relation: Model.HasManyRelation,
         modelClass: 'transaction_event',
         join: {
-          from: 'transaction.hash',
-          to: 'transaction_event.tx_hash',
+          from: 'transaction.id',
+          to: 'transaction_event.tx_id',
         },
       },
     };
