@@ -8,25 +8,48 @@ import { CW20Holder, ICW20Holder } from '../../../src/models/cw20_holder';
 export default class CW20HoldersTest {
   holder: ICW20Holder = {
     address: 'aura122222',
-    balance: 1000000000000000000000000000000000000000000,
+    balance: '1000000000000000000000000000000000000000123',
     contract_address: 'aura546543213241564',
   };
 
-  token: ICW20Token = {
-    code_id: '1',
-    asset_info: {
-      data: { name: '', symbol: '', decimals: 10, total_supply: '' },
+  token: ICW20Token[] = [
+    {
+      code_id: '1',
+      asset_info: {
+        data: { name: '', symbol: '', decimals: 10, total_supply: '' },
+      },
+      contract_address: 'aura546543213241564',
+      marketing_info: {
+        data: {
+          project: '',
+          description: '',
+          logo: { url: '' },
+          marketing: '',
+        },
+      },
     },
-    contract_address: 'aura546543213241564',
-    marketing_info: {
-      data: { project: '', description: '', logo: { url: '' }, marketing: '' },
+    {
+      code_id: '2',
+      asset_info: {
+        data: { name: '', symbol: '', decimals: 10, total_supply: '' },
+      },
+      contract_address: 'aura9844122522144',
+      marketing_info: {
+        data: {
+          project: '',
+          description: '',
+          logo: { url: '' },
+          marketing: '',
+        },
+      },
     },
-  };
+  ];
 
   @BeforeAll()
   async initSuite() {
-    await knex('cw20_holder').del();
-    await knex('cw20_token').del();
+    await knex.raw(
+      'TRUNCATE TABLE cw20_holder, cw20_token RESTART IDENTITY CASCADE'
+    );
     await CW20Token.query().insert(this.token);
     await CW20Holder.query().insert(this.holder);
   }
@@ -36,7 +59,7 @@ export default class CW20HoldersTest {
     const holder = await CW20Holder.query().first();
     expect(holder).not.toBeUndefined();
     expect(holder?.address).toBe('aura122222');
-    expect(holder?.balance).toBe('1000000000000000000000000000000000000000000');
+    expect(holder?.balance).toBe('1000000000000000000000000000000000000000123');
   }
 
   @Test('Update success')
@@ -54,8 +77,8 @@ export default class CW20HoldersTest {
   public async testInsert() {
     await CW20Holder.query().insert({
       address: 'aura33333333',
-      balance: 100000000000000000000000000000000000000,
-      contract_address: 'aura546543213241564',
+      balance: '100000000000000000000000000000000000000',
+      contract_address: 'aura9844122522144',
     });
     const holder = await CW20Holder.query()
       .where('address', 'aura33333333')
@@ -71,5 +94,13 @@ export default class CW20HoldersTest {
         contract_address: 'aura546543213241564',
       })
     ).rejects.toBeInstanceOf(ValidationError);
+  }
+
+  @Test('Query relation success')
+  public async testQueryRelation() {
+    const token = (await CW20Holder.relatedQuery('token')
+      .for([2])
+      .first()) as CW20Token;
+    expect(token.code_id).toBe('2');
   }
 }

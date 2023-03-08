@@ -10,13 +10,13 @@ export default class Transaction extends BaseModel {
 
   code!: number;
 
-  gas_used!: number;
+  gas_used!: string;
 
-  gas_wanted!: number;
+  gas_wanted!: string;
 
-  gas_limit!: number;
+  gas_limit!: string;
 
-  fee!: number;
+  fee!: string;
 
   fee_payer!: string;
 
@@ -62,10 +62,10 @@ export default class Transaction extends BaseModel {
         hash: { type: 'string' },
         codespace: { type: 'string' },
         code: { type: 'number' },
-        gas_used: { type: 'number' },
-        gas_wanted: { type: 'number' },
-        gas_limit: { type: 'number' },
-        fee: { type: 'number' },
+        gas_used: { type: 'string' },
+        gas_wanted: { type: 'string' },
+        gas_limit: { type: 'string' },
+        fee: { type: 'string' },
         fee_payer: { type: 'string' },
         fee_granter: { type: 'string' },
         signer_public_key_type: { type: 'string' },
