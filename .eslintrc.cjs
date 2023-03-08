@@ -64,7 +64,10 @@ module.exports = {
     ],
     '@typescript-eslint/no-explicit-any': ['warn'],
     '@typescript-eslint/no-useless-constructor': 'error',
-    '@typescript-eslint/no-use-before-define': ['error', { functions: false, classes: true }],
+    '@typescript-eslint/no-use-before-define': [
+      'error',
+      { functions: false, classes: true },
+    ],
     '@typescript-eslint/no-shadow': ['warn'],
     'no-throw-literal': 'off',
     '@typescript-eslint/no-throw-literal': ['error'],

@@ -44,7 +44,10 @@ export default class QueueManager {
   /**
    * setHandler
    */
-  public async setHandler(qOpt: QueueOptions, fn: (payload: object) => Promise<void>) {
+  public async setHandler(
+    qOpt: QueueOptions,
+    fn: (payload: object) => Promise<void>
+  ) {
     const queue = this.addQueue(qOpt);
     // Create a handler function for the queue
     // console.log("Before queue.process");
@@ -126,7 +129,7 @@ export default class QueueManager {
     queueName: string,
     jobName: string,
     opts: Bull.JobOptions,
-    payload?: object,
+    payload?: object
   ): Promise<Bull.Job<any>> {
     const queue = this.getQueue(queueName);
 
@@ -136,7 +139,9 @@ export default class QueueManager {
   }
 
   public async stopAll() {
-    console.log('Trying to stop all queue... This functionality is not implemented fully yet!!!');
+    console.log(
+      'Trying to stop all queue... This functionality is not implemented fully yet!!!'
+    );
 
     const p = Object.values(this._queues).map(async (q) => {
       const queue = q as Bull.Queue;

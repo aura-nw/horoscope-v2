@@ -41,8 +41,12 @@ export default class CW20HoldersTest {
 
   @Test('Update success')
   public async testUpdate() {
-    await CW20Holder.query().patch({ address: 'phamphong' }).where('address', 'aura122222');
-    const holder = await CW20Holder.query().where('address', 'phamphong').first();
+    await CW20Holder.query()
+      .patch({ address: 'phamphong' })
+      .where('address', 'aura122222');
+    const holder = await CW20Holder.query()
+      .where('address', 'phamphong')
+      .first();
     expect(holder).not.toBeUndefined();
   }
 
@@ -53,7 +57,9 @@ export default class CW20HoldersTest {
       balance: 100000000000000000000000000000000000000,
       contract_address: 'aura546543213241564',
     });
-    const holder = await CW20Holder.query().where('address', 'aura33333333').first();
+    const holder = await CW20Holder.query()
+      .where('address', 'aura33333333')
+      .first();
     expect(holder).not.toBeUndefined();
   }
 
@@ -63,7 +69,7 @@ export default class CW20HoldersTest {
       CW20Holder.query().insert({
         address: 'aura33333333',
         contract_address: 'aura546543213241564',
-      }),
+      })
     ).rejects.toBeInstanceOf(ValidationError);
   }
 }

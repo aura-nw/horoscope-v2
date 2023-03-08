@@ -6,7 +6,9 @@ export default class Utils {
   public static LIST_NETWORK = LIST_NETWORK_FILE;
 
   public static getUrlByChainIdAndType(chainId: string, typeUrl: string) {
-    const chain = this.LIST_NETWORK.find((chainItem) => chainItem.chainId === chainId);
+    const chain = this.LIST_NETWORK.find(
+      (chainItem) => chainItem.chainId === chainId
+    );
     if (chain) {
       switch (typeUrl) {
         case URL_TYPE_CONSTANTS.LCD:

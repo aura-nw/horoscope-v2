@@ -10,7 +10,10 @@ export interface TransactionMessage {
   content: JSON;
 }
 
-export class TransactionMessage extends BaseModel implements TransactionMessage {
+export class TransactionMessage
+  extends BaseModel
+  implements TransactionMessage
+{
   tx_id!: number;
 
   msg_index!: number;
