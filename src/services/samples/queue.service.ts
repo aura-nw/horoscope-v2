@@ -46,9 +46,10 @@ export default class QueueSampleService extends BullableService {
     console.log(
       `job handler: printing something to test.. ${JSON.stringify(_payload)}`
     );
-    console.log(
-      ' Do not access to `this` inside this handler, it\'s a limitation for the moment '
-    );
+    // console.log(
+    //   " Do not access to `this` inside this handler, it's a limitation for the moment "
+    // );
+    this.logger.info(JSON.stringify(_payload));
     // console.log(this.name) => IT WILL FAIL
   }
 
@@ -59,5 +60,10 @@ export default class QueueSampleService extends BullableService {
   @QueueHandler({})
   private async defaultHandler(_payload: object): Promise<void> {
     console.log(_payload);
+  }
+
+  _start(): Promise<void> {
+    this.createJob('tuanbass', 'hello', { data: 123 });
+    return super._start();
   }
 }
