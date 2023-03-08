@@ -10,7 +10,7 @@ import BaseService from './BaseService';
 const DEFAULT_JOB_OTION: JobOptions = {
   removeOnComplete: true,
   removeOnFail: {
-    count: 3,
+    count: 4,
   },
 };
 
@@ -23,6 +23,7 @@ export default class BullableService extends BaseService {
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
+    this.getQueueManager().bindThis(this);
   }
 
   public createJob(
@@ -31,6 +32,7 @@ export default class BullableService extends BaseService {
     payload?: object,
     opts?: JobOptions
   ): Promise<Job<any>> {
+    // FIXME: jobtype could be optional
     const jobOptions = { ...DEFAULT_JOB_OTION, ...opts };
     return this.getQueueManager().createJob(
       queueName,
@@ -65,6 +67,7 @@ export default class BullableService extends BaseService {
 
   async started() {
     // do some initialization here
+    this.getQueueManager().bindThis(this);
   }
 }
 
