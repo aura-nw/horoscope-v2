@@ -1,8 +1,7 @@
 name: Build
 
 on:
-  push:
-    branches: [main, develop, serenity, euphoria, feat/cicd]
+  workflow_call:
 
 jobs:
   build:
