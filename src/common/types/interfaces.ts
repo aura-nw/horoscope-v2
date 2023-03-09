@@ -6,3 +6,8 @@ export interface INetworkInfo {
   prefixAddress: string;
   databaseName: string;
 }
+
+export interface ICoin {
+  denom: string;
+  amount: string;
+}
