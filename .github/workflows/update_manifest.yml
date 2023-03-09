@@ -1,8 +1,8 @@
 name: Update manifest
 
 on:
-  push:
-    branches: [main, develop, serenity, euphoria]
+  workflow_call:
+    branches: [main, develop, serenity, euphoria, feat/cicd]
 
 jobs:
   updateManifest:
