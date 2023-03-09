@@ -77,6 +77,7 @@
     "@jest-decorated/core": "^0.1.7",
     "@jest/globals": "^29.3.1",
     "@tsconfig/node16": "^1.0.3",
+    "@types/jest-when": "^3.5.2",
     "@types/mkdirp": "^1.0.2",
     "@types/node": "^18.11.11",
     "@typescript-eslint/eslint-plugin": "^5.40.1",
