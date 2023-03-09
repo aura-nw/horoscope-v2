@@ -1,0 +1,39 @@
+#!/bin/sh
+set -xe
+
+# clone repo manifest
+git clone "https://${PERSONAL_ACCESS_TOKEN}@${REPO_MANIFEST_URL}"
+cd ./${REPO_MANIFEST_NAME}
+git checkout ${REPO_MANIFEST_BRANCH} && git pull
+
+if [ ${GITHUB_REF_NAME} = "main" ]
+then
+  echo 'This is main branch'
+  cd ${REPO_MANIFEST_ENV_MAIN}
+elif [ ${GITHUB_REF_NAME} = "develop" ]
+then
+  echo 'This is develop branch'
+  cd ${REPO_MANIFEST_ENV_DEV}
+elif [ ${GITHUB_REF_NAME} = "test-performance"]
+then
+  echo 'This is test-performance branch'
+  cd ${REPO_MANIFEST_ENV_TEST_PERFORMANCE}  
+elif [ ${GITHUB_REF_NAME} = "staging" ]
+then
+  echo 'This is staging branch'
+  cd ${REPO_MANIFEST_ENV_STAGING}
+elif [ ${GITHUB_REF_NAME} = "feat/cicd" ]
+then
+  echo 'This is feat/cicd branch'
+  cd ${REPO_MANIFEST_ENV_DEV}
+else
+  exit
+fi
+
+kustomize edit set image ${REPO_MANIFEST_TAG_IMAGE}=${CONTAINER_RELEASE_IMAGE}
+
+git config --global user.name "${GITHUB_ACTOR}"
+git config --global user.email "user@aura.network"
+git add . 
+git commit -m "Update image to ${CONTAINER_RELEASE_IMAGE}"
+git push

@@ -11,3 +11,9 @@ jobs:
   test:
     uses: ./.github/workflows/test.yml
     secrets: inherit
+  build:
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+  updateManifest:
+    uses: ./.github/workflows/update_manifest.yml
+    secrets: inherit

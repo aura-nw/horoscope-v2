@@ -1,0 +1,30 @@
+name: Update manifest
+
+on:
+  push:
+    branches: [main, develop, serenity, euphoria]
+
+jobs:
+  updateManifest:
+    runs-on: [self-hosted]
+    needs: [lint, test, build]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: imranismail/setup-kustomize@v2
+      - name: Set environment variable
+        run: |
+          SHORT_SHA_COMMIT=$(git rev-parse --short HEAD)
+          echo CONTAINER_RELEASE_IMAGE=ghcr.io/aura-nw/erascope:${GITHUB_REF_NAME}_${SHORT_SHA_COMMIT} >> $GITHUB_ENV
+          echo REPO_MANIFEST_NAME=gitops >> $GITHUB_ENV
+          echo REPO_MANIFEST_URL=github.com/aura-nw/gitops.git >> $GITHUB_ENV
+          echo REPO_MANIFEST_BRANCH=master >> $GITHUB_ENV
+          echo REPO_MANIFEST_ENV_DEV=./clusters/k8s-dev/horoscope-v2/horoscope-crawl-auratestnet >> $GITHUB_ENV
+          echo REPO_MANIFEST_ENV_STAGING=./clusters/k8s-testnet-euphoria/horoscope-v2/horoscope-crawl-serenity >> $GITHUB_ENV
+          echo REPO_MANIFEST_ENV_MAIN=./clusters/k8s-prod/horoscope-v2/horoscope-crawl-euphoria >> $GITHUB_ENV
+          echo REPO_MANIFEST_TAG_IMAGE=image_erascope >> $GITHUB_ENV
+      - name: Update manifest
+        env:
+          PERSONAL_ACCESS_TOKEN: ${{ secrets.REGISTRY_PASSWORD }}
+        run: |
+          chmod 777 -R ./ci
+          ./ci/updateManifest.sh
