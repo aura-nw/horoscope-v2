@@ -1,6 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { Config } from '@jest/types';
-import _knex from '../common/utils/db-connection';
+import _knex from '../../src/common/utils/db-connection';
 
 export default async function setUp(
   _globalConfig: Config.GlobalConfig,
