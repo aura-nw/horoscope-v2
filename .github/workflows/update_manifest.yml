@@ -6,7 +6,7 @@ on:
 
 jobs:
   updateManifest:
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, aura]
     needs: [lint, test, build]
     steps:
       - uses: actions/checkout@v3

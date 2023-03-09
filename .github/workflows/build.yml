@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, aura]
     steps:
       - uses: actions/checkout@v3
       - name: Get npm cache directory
@@ -23,7 +23,7 @@ jobs:
       - name: Set environment variable
         run: |
           SHORT_SHA_COMMIT=$(git rev-parse --short HEAD)
-          echo CONTAINER_RELEASE_IMAGE=ghcr.io/aura-nw/aura-indexer-crawl:cicd_${SHORT_SHA_COMMIT} >> $GITHUB_ENV
+          echo CONTAINER_RELEASE_IMAGE=ghcr.io/aura-nw/erascope:cicd_${SHORT_SHA_COMMIT} >> $GITHUB_ENV
       - name: Build the Docker image and push it to the registry
         env:
           GITHUB_USERNAME: ${{ github.actor }}
