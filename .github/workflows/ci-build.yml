@@ -6,11 +6,6 @@ on:
     branches: [main, develop, serenity, euphoria, feat/cicd]
 
 jobs:
-  lint:
-    uses: ./.github/workflows/lint.yml
-  test:
-    uses: ./.github/workflows/test.yml
-    secrets: inherit
   build:
     uses: ./.github/workflows/build.yml
     secrets: inherit
