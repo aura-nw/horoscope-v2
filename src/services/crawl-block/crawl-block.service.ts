@@ -28,16 +28,6 @@ export default class CrawlBlockService extends BullableService {
   private async jobHandler(_payload: any): Promise<void> {
     await this.initEnv();
     await this.handleJobCrawlBlock();
-    // this.logger.info(123);
-  }
-
-  @QueueHandler({
-    queueName: 'handle.block',
-    jobType: 'handle.block',
-    prefix: 'horoscope_',
-  })
-  private async handleBlock(_payload: any): Promise<void> {
-    this.logger.info(JSON.stringify(_payload));
   }
 
   private async initEnv() {
