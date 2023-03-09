@@ -1,0 +1,78 @@
+name: Test
+
+on:
+  workflow_call:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: [self-hosted]
+
+    services:
+      postgres:
+        image: postgres:13-alpine
+        env:
+          POSTGRES_PASSWORD: phamphong9981
+          POSTGRES_USER: phamphong
+          POSTGRES_DB: test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:6-alpine
+        ports:
+          - 6379:6379
+
+      aurad:
+        image: auranw/local-aurad:latest
+        ports:
+          - 1317:1317
+          - 26657:26657
+          - 9090:9090
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: lts/gallium
+      - name: Install Yarn
+        run: npm install -g yarn
+
+      - name: Cache node modules
+        id: cache-npm
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+
+      - if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
+        name: List the state of node modules
+        continue-on-error: true
+        run: yarn list
+
+      - name: Install dependencies
+        run: yarn
+
+      - name: Test
+        env:
+          NODE_ENV: test
+          POSTGRES_PASSWORD: phamphong9981
+          POSTGRES_USER: phamphong
+          POSTGRES_DB_TEST: test
+        run: |
+          yarn db:migrate:test:latest
+          yarn test
+
+      - name: Uninstall yarn
+        run: npm uninstall -g yarn
