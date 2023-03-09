@@ -18,7 +18,6 @@ export default class CrawlBlockService extends BullableService {
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
-    this.getQueueManager().bindThis(this);
   }
 
   @QueueHandler({

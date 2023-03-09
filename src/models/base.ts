@@ -2,7 +2,6 @@ import { Model, AjvValidator } from 'objection';
 import addFormats from 'ajv-formats';
 import CustomQueryBuilder from './custom_query_builder';
 import knex from '../common/utils/db-connection';
-// eslint-disable-next-line import/no-extraneous-dependencies
 
 export default class BaseModel extends Model {
   static QueryBuilder = CustomQueryBuilder;
