@@ -3,7 +3,7 @@ name: Build
 on:
   workflow_dispatch:
   push:
-    branches: [main, develop, serenity, euphoria]
+    branches: [main, develop, serenity, euphoria, feat/cicd]
 
 jobs:
   lint:
