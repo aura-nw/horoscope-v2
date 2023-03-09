@@ -1,4 +1,4 @@
-import knex from '../../src/common/utils/db-connection';
+import knex from '../common/utils/db-connection';
 
 export default async function tearDown(
   _globalConfig: any,

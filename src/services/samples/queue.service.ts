@@ -8,7 +8,7 @@ import { inspect as _inspect } from 'util';
 //
 // TODO: Not very happy with relative import,
 //  but ts-node loader does not support yet with type alias for ESM project, will try to fix later
-import BullableService, { QueueHandler } from '../../base/BullableService';
+import BullableService, { QueueHandler } from '../../base/bullable.service';
 
 @Service()
 export default class QueueSampleService extends BullableService {
@@ -22,7 +22,7 @@ export default class QueueSampleService extends BullableService {
   public addJob1(): string {
     const queueName = 'tuanbass';
     const jobType = 'hello';
-    this.createJob(queueName, jobType, { data: 'It\'s a good day...' });
+    this.createJob(queueName, jobType, { data: 'Its a good day...' });
     return 'Job schduled';
   }
 
@@ -46,11 +46,10 @@ export default class QueueSampleService extends BullableService {
     console.log(
       `job handler: printing something to test.. ${JSON.stringify(_payload)}`
     );
-    // console.log(
-    //   " Do not access to `this` inside this handler, it's a limitation for the moment "
-    // );
-    this.logger.info(JSON.stringify(_payload));
-    // console.log(this.name) => IT WILL FAIL
+    console.log(
+      'Do not access to `this` inside this handler, its a limitation for the moment'
+    );
+    console.log(`now I can access to this: ${this.name}`); //= > IT WILL FAIL
   }
 
   /**
@@ -62,8 +61,8 @@ export default class QueueSampleService extends BullableService {
     console.log(_payload);
   }
 
-  _start(): Promise<void> {
-    this.createJob('tuanbass', 'hello', { data: 123 });
-    return super._start();
+  async started() {
+    // do some initialization here
+    this.getQueueManager().bindThis(this);
   }
 }

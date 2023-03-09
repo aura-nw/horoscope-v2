@@ -4,13 +4,13 @@ import QueueManager, {
   Job,
   JobOptions,
   QueueOptions,
-} from '../common/queue/QueueManager';
-import BaseService from './BaseService';
+} from '../common/queue/queue-manager';
+import BaseService from './base.service';
 
 const DEFAULT_JOB_OTION: JobOptions = {
   removeOnComplete: true,
   removeOnFail: {
-    count: 4,
+    count: 3,
   },
 };
 
@@ -32,7 +32,6 @@ export default class BullableService extends BaseService {
     payload?: object,
     opts?: JobOptions
   ): Promise<Job<any>> {
-    // FIXME: jobtype could be optional
     const jobOptions = { ...DEFAULT_JOB_OTION, ...opts };
     return this.getQueueManager().createJob(
       queueName,
