@@ -30,7 +30,7 @@ jobs:
 
   updateManifest:
     runs-on: [self-hosted]
-    needs: [build]
+    needs: [lint, test, build]
     steps:
       - uses: actions/checkout@v3
       - uses: imranismail/setup-kustomize@v2
