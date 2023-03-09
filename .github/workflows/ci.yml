@@ -1,13 +1,17 @@
-name: CI Build
+name: CI
 
 on:
-  workflow_run:
-    workflows: [CI Test]
-    branches: [main, develop, serenity, euphoria, feat/cicd]
-    types: [completed]
+  workflow_dispatch:
+  push:
+    branches: [main, develop, staging, feat/cicd]
 jobs:
+  lint:
+    uses: ./.github/workflows/lint.yml
+  test:
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
   build:
-    runs-on: [self-hosted, aura]
+    runs-on: [self-hosted]
     steps:
       - uses: actions/checkout@v3
       - name: Set environment variable
@@ -25,8 +29,8 @@ jobs:
 
 
   updateManifest:
-    runs-on: [self-hosted, aura]
-    needs: [lint, test, build]
+    runs-on: [self-hosted]
+    needs: [build]
     steps:
       - uses: actions/checkout@v3
       - uses: imranismail/setup-kustomize@v2
