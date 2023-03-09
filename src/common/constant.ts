@@ -1,3 +1,8 @@
+export const APP_CONSTANTS = {
+  VERSION_NUMBER: 1,
+  VERSION: 'v1',
+};
+
 export const URL_TYPE_CONSTANTS = {
   LCD: 'LCD',
   RPC: 'RPC',
@@ -70,4 +75,11 @@ export const BULL_JOB_NAME = {
 
 export const BULL_ACTION_NAME = {
   VALIDATOR_UPSERT: 'validator.upsert',
+};
+
+export const SERVICE_NAME = {
+  CRAWL_VALIDATOR: 'CrawlValidatorService',
+  CRAWL_PARAM: 'CrawlParamService',
+  CRAWL_SIGNING_INFO: 'CrawlSigningInfoService',
+  CRAWL_CHAIN_PROPERTY: 'CrawlChainPropertyService',
 };

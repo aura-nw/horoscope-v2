@@ -9,9 +9,11 @@ import { callApiMixin } from '../../mixin/callApi/call-api.mixin';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { Config } from '../../common';
 import {
+  APP_CONSTANTS,
   BULL_ACTION_NAME,
   BULL_JOB_NAME,
   MODULE_PARAM,
+  SERVICE_NAME,
   URL_TYPE_CONSTANTS,
 } from '../../common/constant';
 import { IListAddressesParam } from '../../common/utils/request';
@@ -21,8 +23,8 @@ import { Validator } from '../../models/validator';
 import LIST_NETWORK from '../../../network.json' assert { type: 'json' };
 
 @Service({
-  name: 'CrawlSigningInfoService',
-  version: 1,
+  name: SERVICE_NAME.CRAWL_SIGNING_INFO,
+  version: APP_CONSTANTS.VERSION_NUMBER,
   mixins: [callApiMixin],
 })
 export default class CrawlSigningInfoService extends BullableService {

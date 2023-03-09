@@ -2,15 +2,20 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import { callApiMixin } from '../../mixin/callApi/call-api.mixin';
 import { ChainProperty } from '../../models/chain_property';
-import { BULL_JOB_NAME, URL_TYPE_CONSTANTS } from '../../common/constant';
+import {
+  APP_CONSTANTS,
+  BULL_JOB_NAME,
+  SERVICE_NAME,
+  URL_TYPE_CONSTANTS,
+} from '../../common/constant';
 import Utils from '../../common/utils/utils';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { Config } from '../../common';
 import { ICoin } from '../../common/types/interfaces';
 
 @Service({
-  name: 'CrawlChainPropertyService',
-  version: 1,
+  name: SERVICE_NAME.CRAWL_CHAIN_PROPERTY,
+  version: APP_CONSTANTS.VERSION_NUMBER,
   mixins: [callApiMixin],
 })
 export default class CrawlChainPropertyService extends BullableService {

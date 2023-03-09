@@ -8,8 +8,10 @@ import { Config } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import Utils from '../../common/utils/utils';
 import {
+  APP_CONSTANTS,
   BULL_ACTION_NAME,
   BULL_JOB_NAME,
+  SERVICE_NAME,
   URL_TYPE_CONSTANTS,
 } from '../../common/constant';
 import knex from '../../common/utils/db-connection';
@@ -17,8 +19,8 @@ import LIST_NETWORK from '../../../network.json' assert { type: 'json' };
 import { callApiMixin } from '../../mixin/callApi/call-api.mixin';
 
 @Service({
-  name: 'CrawlValidatorService',
-  version: 1,
+  name: SERVICE_NAME.CRAWL_VALIDATOR,
+  version: APP_CONSTANTS.VERSION_NUMBER,
   mixins: [callApiMixin],
 })
 export default class CrawlValidatorService extends BullableService {
@@ -217,7 +219,9 @@ export default class CrawlValidatorService extends BullableService {
   }
 
   public async _start() {
-    await this.broker.waitForServices(['v1.CrawlSigningInfoService']);
+    await this.broker.waitForServices([
+      `${APP_CONSTANTS.VERSION}.${SERVICE_NAME.CRAWL_SIGNING_INFO}`,
+    ]);
 
     this.createJob(
       BULL_JOB_NAME.CRAWL_VALIDATOR,
