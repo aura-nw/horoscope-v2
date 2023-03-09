@@ -22,10 +22,6 @@ elif [ ${GITHUB_REF_NAME} = "staging" ]
 then
   echo 'This is staging branch'
   cd ${REPO_MANIFEST_ENV_STAGING}
-elif [ ${GITHUB_REF_NAME} = "feat/cicd" ]
-then
-  echo 'This is feat/cicd branch'
-  cd ${REPO_MANIFEST_ENV_DEV}
 else
   exit
 fi
