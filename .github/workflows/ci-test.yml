@@ -3,7 +3,7 @@ name: CI test
 on:
   workflow_dispatch:
   push:
-    branches-ignore: [main, develop, serenity, euphoria, feat/cicd]
+    branches: [main, develop, serenity, euphoria, feat/cicd]
 
 jobs:
   lint:
