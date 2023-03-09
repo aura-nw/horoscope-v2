@@ -24,7 +24,6 @@ jobs:
           GITHUB_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
           # NPM_TOKEN: ${{ secrets.KEY_NPM_RC }}
         run: |
-          chmod 777 -R ./ci
           ./ci/build.sh
 
 
@@ -49,5 +48,4 @@ jobs:
         env:
           PERSONAL_ACCESS_TOKEN: ${{ secrets.REGISTRY_PASSWORD }}
         run: |
-          chmod 777 -R ./ci
           ./ci/updateManifest.sh
