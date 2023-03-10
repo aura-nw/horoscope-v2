@@ -1,16 +1,22 @@
 import { ServiceBroker } from 'moleculer';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import {
+  GetBlockByHeightResponseSDKType,
+  GetLatestBlockResponseSDKType,
+} from '@aura-nw/aurajs/types/codegen/cosmos/base/tendermint/v1beta1/query';
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { CommitSigSDKType } from '@aura-nw/aurajs/types/codegen/tendermint/types/types';
+import { tendermint } from '@aura-nw/aurajs';
 import Block from '../../models/block';
 import BlockSignature from '../../models/block_signature';
-import Utils from '../../utils/utils';
-import { URL_TYPE_CONSTANTS } from '../../common/constant';
 import { Config } from '../../common';
-import { callApiMixin } from '../../mixins/callApi/call-api.mixin';
+import { aurajsMixin } from '../../mixins/aurajs/aurajs.mixin';
 import BullableService, { QueueHandler } from '../../base/BullableService';
 
 @Service({
   name: 'crawl.block',
-  mixins: [callApiMixin],
+  mixins: [aurajsMixin],
   version: 1,
 })
 export default class CrawlBlockService extends BullableService {
@@ -26,6 +32,16 @@ export default class CrawlBlockService extends BullableService {
     prefix: 'horoscope_',
   })
   private async jobHandler(_payload: any): Promise<void> {
+    // const rpcClient = await this.getRPCClient();
+    const lcdClient = await this.getLCDClient();
+
+    const latestBlock =
+      await lcdClient.cosmos.base.tendermint.v1beta1.getLatestBlock();
+    this.logger.info(JSON.stringify(latestBlock));
+    // const client = await StargateClient.connect('https://rpc.dev.aura.network');
+    // const block = await client.getBlock();
+    // this.logger.info(block);
+    // cosmos.base.v1beta1.
     await this.initEnv();
     await this.handleJobCrawlBlock();
   }
@@ -59,16 +75,14 @@ export default class CrawlBlockService extends BullableService {
     );
     latestBlockRedis = parseInt(latestBlockRedis ?? '0', 10);
 
-    const url = Utils.getUrlByChainIdAndType(
-      Config.CHAIN_ID,
-      URL_TYPE_CONSTANTS.RPC
-    );
-    const responseGetLatestBlock = await this.callApiFromDomain(
-      url,
-      `${Config.GET_LATEST_BLOCK_API}`
-    );
+    const lcdClient = await this.getLCDClient();
+
+    const responseGetLatestBlock: GetLatestBlockResponseSDKType =
+      await lcdClient.cosmos.base.tendermint.v1beta1.getLatestBlock();
     const latestBlockNetwork = parseInt(
-      responseGetLatestBlock.result.block.header.height,
+      responseGetLatestBlock.block?.header?.height
+        ? responseGetLatestBlock.block?.header?.height.toString()
+        : '0',
       10
     );
 
@@ -94,15 +108,18 @@ export default class CrawlBlockService extends BullableService {
       const listPromise = [];
       for (let i = startBlock; i <= endBlock; i += 1) {
         listPromise.push(
-          this.callApiFromDomain(url, `${Config.GET_BLOCK_BY_HEIGHT_API}${i}`)
+          lcdClient.cosmos.base.tendermint.v1beta1.getBlockByHeight({
+            height: i,
+          })
         );
       }
-      const resultListPromise: any[] = await Promise.all(listPromise);
-      const listBlock: any = resultListPromise.map((item) => item.result);
-      this.logger.debug('list block from rpc: ', listBlock);
+      const resultListPromise: GetBlockByHeightResponseSDKType[] =
+        await Promise.all(listPromise);
+      // const listBlock: any = resultListPromise.map((item) => item);
+      // this.logger.debug('list block from rpc: ', listBlock);
 
       // insert data to DB
-      await this.handleListBlock(listBlock);
+      await this.handleListBlock(resultListPromise);
 
       // update currentBlock to redis
       if (this._currentBlock < endBlock) {
@@ -118,37 +135,40 @@ export default class CrawlBlockService extends BullableService {
     }
   }
 
-  async handleListBlock(listBlock: any[]) {
+  async handleListBlock(listBlock: GetBlockByHeightResponseSDKType[]) {
     try {
       // insert list block to DB
       const listBlockModel = listBlock.map((block) =>
         Block.fromJson({
-          height: block.block.header.height,
-          hash: block.block_id.hash,
-          time: block.block.header.time,
-          proposer_address: block.block.header.proposer_address,
+          height: block?.block?.header?.height,
+          hash: block?.block_id?.hash,
+          time: block?.block?.header?.time,
+          proposer_address: block?.block?.header?.proposer_address,
           data: block,
         })
       );
 
       let result: any = await Block.query().insert(listBlockModel);
       this.logger.debug('result insert list block: ', result);
-
       // insert list signatures to DB
       const listSignatures: any[] = [];
       listBlock.forEach((block) => {
-        block.block.last_commit.signatures.forEach((signature: any) => {
-          listSignatures.push(
-            BlockSignature.fromJson({
-              height: block.block.header.height,
-              block_id_flag: signature.block_id_flag,
-              validator_address: signature.validator_address,
-              timestamp: signature.timestamp,
-              signature: signature.signature,
-            })
-          );
-        });
+        block?.block?.last_commit?.signatures.forEach(
+          (signature: CommitSigSDKType) => {
+            listSignatures.push(
+              BlockSignature.fromJson({
+                height: block?.block?.header?.height,
+                block_id_flag:
+                  tendermint.types.BlockIDFlagSDKType[signature.block_id_flag],
+                validator_address: signature.validator_address,
+                timestamp: signature.timestamp,
+                signature: signature.signature,
+              })
+            );
+          }
+        );
       });
+
       result = await BlockSignature.query().insert(listSignatures);
       this.logger.debug('result insert list signatures: ', result);
     } catch (error) {
