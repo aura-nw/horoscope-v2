@@ -1,6 +1,6 @@
 import { Model } from 'objection';
 import CustomQueryBuilder from './custom_query_builder';
-import knex from '../common/utils/db-connection';
+import knex from '../common/utils/db_connection';
 
 export default class BaseModel extends Model {
   static QueryBuilder = CustomQueryBuilder;

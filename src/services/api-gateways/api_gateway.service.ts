@@ -11,7 +11,7 @@ import ApiGateway from 'moleculer-web';
 import { ServiceBroker } from 'moleculer';
 
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import BaseService from '../../base/BaseService';
+import BaseService from '../../base/base.service';
 
 @Service({
   mixins: [ApiGateway],
