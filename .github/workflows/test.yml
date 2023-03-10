@@ -63,7 +63,8 @@ jobs:
 
       - name: Install dependencies
         run: yarn
-
+        env:           
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Test
         env:
           NODE_ENV: test
