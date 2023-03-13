@@ -95,13 +95,20 @@ export const MODULE_PARAM = {
 export const BULL_JOB_NAME = {
   CRAWL_VALIDATOR: 'crawl.validator',
   CRAWL_SIGNING_INFO: 'crawl.signing-info',
+  HANDLE_ADDRESS: 'handle.address',
+  CRAWL_ACCOUNT_AUTH: 'crawl.account-auth',
+  CRAWL_ACCOUNT_BALANCES: 'crawl.account-balances',
+  CRAWL_ACCOUNT_SPENDABLE_BALANCES: 'crawl.account-spendable-balances',
 };
 
 export const BULL_ACTION_NAME = {
   VALIDATOR_UPSERT: 'validator.upsert',
+  ACCOUNT_UPSERT: 'account.upsert',
 };
 
 export const SERVICE_NAME = {
   CRAWL_VALIDATOR: 'CrawlValidatorService',
   CRAWL_SIGNING_INFO: 'CrawlSigningInfoService',
+  HANDLE_ADDRESS: 'HandleAddressService',
+  CRAWL_ACCOUNT: 'CrawlAccountService',
 };
