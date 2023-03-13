@@ -1,14 +1,8 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import { ServiceBroker } from 'moleculer';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-
-import {
-  GetBlockByHeightResponseSDKType,
-  GetLatestBlockResponseSDKType,
-} from '@aura-nw/aurajs/types/codegen/cosmos/base/tendermint/v1beta1/query';
+import { GetLatestBlockResponseSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/base/tendermint/v1beta1/query';
 import { CommitSigSDKType } from '@aura-nw/aurajs/types/codegen/tendermint/types/types';
-
-// import { tendermint } from '@aura-nw/aurajs';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
@@ -119,41 +113,72 @@ export default class CrawlBlockService extends BullableService {
     }
   }
 
-  async handleListBlock(listBlock: GetBlockByHeightResponseSDKType[]) {
+  async handleListBlock(listBlock: any[]) {
     try {
+      // query list existed block and mark to a map
+      const listBlockHeight: number[] = [];
+      const mapExistedBlock: Map<number, boolean> = new Map();
+      listBlock.forEach((block) => {
+        if (block.block?.header?.height) {
+          listBlockHeight.push(parseInt(block.block?.header?.height, 10));
+        }
+      });
+      if (listBlockHeight.length) {
+        const listExistedBlock = await Block.query().whereIn(
+          'height',
+          listBlockHeight
+        );
+        listExistedBlock.forEach((block) => {
+          mapExistedBlock[block.height] = true;
+        });
+      }
       // insert list block to DB
-      const listBlockModel = listBlock.map((block) =>
-        Block.fromJson({
-          height: block?.block?.header?.height,
-          hash: block?.block_id?.hash,
-          time: block?.block?.header?.time,
-          proposer_address: block?.block?.header?.proposer_address,
-          data: block,
-        })
-      );
+      const listBlockModel: Block[] = [];
+      listBlock.forEach((block) => {
+        if (
+          block.block?.header?.height &&
+          mapExistedBlock.get(parseInt(block.block?.header?.height, 10))
+        ) {
+          listBlockModel.push(
+            Block.fromJson({
+              height: block?.block?.header?.height,
+              hash: block?.block_id?.hash,
+              time: block?.block?.header?.time,
+              proposer_address: block?.block?.header?.proposer_address,
+              data: block,
+            })
+          );
+        }
+      });
 
-      let result: any = await Block.query().insert(listBlockModel);
-      this.logger.debug('result insert list block: ', result);
+      if (listBlockModel.length) {
+        const result: any = await Block.query().insert(listBlockModel);
+        this.logger.debug('result insert list block: ', result);
+      }
       // insert list signatures to DB
       const listSignatures: BlockSignature[] = [];
       listBlock.forEach((block) => {
-        block?.block?.last_commit?.signatures.forEach(
-          (signature: CommitSigSDKType) => {
-            listSignatures.push(
-              BlockSignature.fromJson({
-                height: block?.block?.header?.height,
-                block_id_flag: signature.block_id_flag,
-                validator_address: signature.validator_address,
-                timestamp: signature.timestamp,
-                signature: signature.signature,
-              })
-            );
-          }
-        );
+        if (mapExistedBlock.get(parseInt(block.block?.header?.height, 10))) {
+          block?.block?.last_commit?.signatures.forEach(
+            (signature: CommitSigSDKType) => {
+              listSignatures.push(
+                BlockSignature.fromJson({
+                  height: block?.block?.header?.height,
+                  block_id_flag: signature.block_id_flag,
+                  validator_address: signature.validator_address,
+                  timestamp: signature.timestamp,
+                  signature: signature.signature,
+                })
+              );
+            }
+          );
+        }
       });
 
-      result = await BlockSignature.query().insert(listSignatures);
-      this.logger.debug('result insert list signatures: ', result);
+      if (listSignatures.length) {
+        const result = await BlockSignature.query().insert(listSignatures);
+        this.logger.debug('result insert list signatures: ', result);
+      }
     } catch (error) {
       this.logger.error(error);
     }
