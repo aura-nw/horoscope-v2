@@ -3,7 +3,7 @@ import { ServiceBroker } from 'moleculer';
 
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 // import BaseService from 'src/base/BaseService';
-import BaseService from '../../base/BaseService';
+import BaseService from '../../base/base.service';
 
 @Service({
   mixins: [OpenApi],

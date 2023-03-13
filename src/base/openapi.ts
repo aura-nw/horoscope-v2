@@ -42,7 +42,6 @@ export const Response = function (
       },
     };
 
-    console.log(JSON.stringify(target.actions[_key][openApiKey]['responses']));
     target.actions[_key][openApiKey]['responses'][code] = obj;
   };
 };
