@@ -6,7 +6,7 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
-import { aurajsMixin } from '../../mixin/aurajs/aurajs.mixin';
+import { getLcdClient } from '../../common/utils/aurajs_client';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { Config } from '../../common';
 import {
@@ -24,9 +24,10 @@ import { Validator } from '../../models/validator';
 @Service({
   name: SERVICE_NAME.CRAWL_SIGNING_INFO,
   version: CONST_CHAR.VERSION_NUMBER,
-  mixins: [aurajsMixin],
 })
 export default class CrawlSigningInfoService extends BullableService {
+  private _lcdClient: any;
+
   public constructor(public broker: ServiceBroker) {
     super(broker);
   }
@@ -59,7 +60,7 @@ export default class CrawlSigningInfoService extends BullableService {
     prefix: `horoscope-v2-${Config.CHAIN_ID}`,
   })
   private async handleJob(_payload: IListAddressesParam): Promise<void> {
-    const lcdClient = await this.getLCDClient();
+    this._lcdClient = await getLcdClient();
 
     const listFoundValidator: Validator[] = await Validator.query()
       .select('*')
@@ -70,7 +71,8 @@ export default class CrawlSigningInfoService extends BullableService {
     //   URL_TYPE_CONSTANTS.LCD
     // );
 
-    const paramSlashing = await lcdClient.cosmos.slashing.v1beta1.params();
+    const paramSlashing =
+      await this._lcdClient.cosmos.slashing.v1beta1.params();
     const listBulk: any[] = [];
     await Promise.all(
       listFoundValidator.map(async (foundValidator: Validator) => {
@@ -95,9 +97,10 @@ export default class CrawlSigningInfoService extends BullableService {
           // const path = `${Config.GET_SIGNING_INFO}/${consensusAddress}`;
 
           // this.logger.debug(path);
-          const result = await lcdClient.cosmos.slashing.v1beta1.signingInfo({
-            consAddress: consensusAddress,
-          });
+          const result =
+            await this._lcdClient.cosmos.slashing.v1beta1.signingInfo({
+              consAddress: consensusAddress,
+            });
           this.logger.debug(result);
 
           if (result.val_signing_info) {

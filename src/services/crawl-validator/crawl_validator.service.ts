@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop */
 /* eslint-disable import/no-extraneous-dependencies */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { pubkeyToRawAddress } from '@cosmjs/tendermint-rpc';
@@ -15,19 +16,20 @@ import {
   // URL_TYPE_CONSTANTS,
 } from '../../common/constant';
 import knex from '../../common/utils/db_connection';
-import { aurajsMixin } from '../../mixin/aurajs/aurajs.mixin';
 import BlockCheckpoint from '../../models/block_checkpoint';
 import Block from '../../models/block';
 import Transaction from '../../models/transaction';
 import TransactionEvent from '../../models/transaction_event';
 import TransactionEventAttribute from '../../models/transaction_event_attribute';
+import { getLcdClient } from '../../common/utils/aurajs_client';
 
 @Service({
   name: SERVICE_NAME.CRAWL_VALIDATOR,
   version: CONST_CHAR.VERSION_NUMBER,
-  mixins: [aurajsMixin],
 })
 export default class CrawlValidatorService extends BullableService {
+  private _lcdClient: any;
+
   public constructor(public broker: ServiceBroker) {
     super(broker);
   }
@@ -38,7 +40,7 @@ export default class CrawlValidatorService extends BullableService {
     prefix: `horoscope-v2-${Config.CHAIN_ID}`,
   })
   private async handleCrawlAllValidator(_payload: object): Promise<void> {
-    const lcdClient = await this.getLCDClient();
+    this._lcdClient = await getLcdClient();
 
     const listBulk: any[] = [];
     const listValidator: any[] = [];
@@ -102,10 +104,10 @@ export default class CrawlValidatorService extends BullableService {
         };
 
         while (!done) {
-          // eslint-disable-next-line no-await-in-loop
-          resultCallApi = await lcdClient.cosmos.staking.v1beta1.validators({
-            pagination,
-          });
+          resultCallApi =
+            await this._lcdClient.cosmos.staking.v1beta1.validators({
+              pagination,
+            });
 
           listValidator.push(...resultCallApi.validators);
           if (resultCallApi.pagination.next_key === null) {
@@ -200,7 +202,6 @@ export default class CrawlValidatorService extends BullableService {
               string,
               number
             ] = await this.loadCustomInfo(
-              lcdClient,
               validatorEntity.operator_address,
               validatorEntity.account_address,
               validatorEntity.tokens
@@ -237,7 +238,6 @@ export default class CrawlValidatorService extends BullableService {
   }
 
   private async loadCustomInfo(
-    lcdClient: any,
     operatorAddress: string,
     accountAddress: string,
     tokens: string
@@ -258,11 +258,11 @@ export default class CrawlValidatorService extends BullableService {
       //   1
       // );
       const [resultSelfBonded, pool] = await Promise.all([
-        lcdClient.cosmos.staking.v1beta1.delegation({
+        this._lcdClient.cosmos.staking.v1beta1.delegation({
           delegatorAddr: accountAddress,
           validatorAddr: `${operatorAddress}/`,
         }),
-        lcdClient.cosmos.staking.v1beta1.pool(),
+        this._lcdClient.cosmos.staking.v1beta1.pool(),
       ]);
       if (
         resultSelfBonded &&

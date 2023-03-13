@@ -26,7 +26,6 @@ jobs:
         run: |
           ./ci/build.sh
 
-
   updateManifest:
     runs-on: [self-hosted]
     needs: [lint, test, build]
