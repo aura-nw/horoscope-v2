@@ -4,10 +4,7 @@ import { LogLevels } from 'moleculer';
 // import dotenvFlow from 'dotenv-flow';
 // import _ from 'lodash';
 import * as dotenv from 'dotenv'; // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
-import { PATH_COSMOS_SDK } from './constant';
 // import { DBDialog, DBInfo } from '../types';
-
-// import { PATH_COSMOS_SDK } from './constant';
 
 dotenv.config();
 
@@ -110,13 +107,6 @@ export default class ConfigClass {
   // public static JWT_SECRET = process.env.JWT_SECRET || 'dummy-secret';
 
   public ENABLE_LOADBALANCER = process.env.ENABLE_LOADBALANCER || 'true';
-
-  public GET_LATEST_BLOCK_API =
-    process.env.GET_LATEST_BLOCK_API || PATH_COSMOS_SDK.GET_LATEST_BLOCK_API;
-
-  public GET_BLOCK_BY_HEIGHT_API =
-    process.env.GET_BLOCK_BY_HEIGHT_API ||
-    PATH_COSMOS_SDK.GET_BLOCK_BY_HEIGHT_API;
 
   // Dynamic property key
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
