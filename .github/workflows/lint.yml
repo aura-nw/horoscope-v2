@@ -35,7 +35,7 @@ jobs:
 
       - name: Install dependencies
         run: yarn
-        env:           
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
       - name: Lint check
         run: yarn lint
