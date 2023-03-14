@@ -1,3 +1,5 @@
+import Long from 'long';
+
 export interface INetworkInfo {
   chainName: string;
   chainId: string;
@@ -10,4 +12,9 @@ export interface INetworkInfo {
 export interface ICoin {
   denom: string;
   amount: string;
+}
+
+export interface Pagination {
+  limit?: Long;
+  key?: Uint8Array;
 }

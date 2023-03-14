@@ -4,24 +4,22 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { pubkeyToRawAddress } from '@cosmjs/tendermint-rpc';
 import { fromBase64, fromBech32, toBech32 } from '@cosmjs/encoding';
 import { ServiceBroker } from 'moleculer';
+import Long from 'long';
 import { Validator } from '../../models/validator';
 import { Config } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-// import Utils from '../../common/utils/utils';
 import {
   CONST_CHAR,
   BULL_ACTION_NAME,
   BULL_JOB_NAME,
   SERVICE_NAME,
-  // URL_TYPE_CONSTANTS,
 } from '../../common/constant';
 import knex from '../../common/utils/db_connection';
 import BlockCheckpoint from '../../models/block_checkpoint';
 import Block from '../../models/block';
 import Transaction from '../../models/transaction';
-import TransactionEvent from '../../models/transaction_event';
-import TransactionEventAttribute from '../../models/transaction_event_attribute';
 import { getLcdClient } from '../../common/utils/aurajs_client';
+import { Pagination } from '../../common/types/interfaces';
 
 @Service({
   name: SERVICE_NAME.CRAWL_VALIDATOR,
@@ -61,36 +59,29 @@ export default class CrawlValidatorService extends BullableService {
 
     if (latestBlock) {
       const resultTx = await Transaction.query()
-        .select('id', 'height')
-        .where('height', '>', lastHeight)
-        .andWhere('height', '<=', latestBlock.height)
-        .limit(100)
-        .offset(0)
+        .select('transaction.id', 'transaction.height')
+        .join('transaction_event', 'transaction.id', 'transaction_event.tx_id')
+        .select('transaction_event.tx_id')
         .join(
-          TransactionEvent.query()
-            .select('tx_id')
-            .join(
-              TransactionEventAttribute.query()
-                .select('*')
-                .where('key', '=', `${btoa(CONST_CHAR.VALIDATOR)}`)
-                .orWhere('key', '=', `${btoa(CONST_CHAR.SOURCE_VALIDATOR)}`)
-                .orWhere(
-                  'key',
-                  '=',
-                  `${btoa(CONST_CHAR.DESTINATION_VALIDATOR)}`
-                ),
-              function () {
-                this.on(
-                  'transaction_event.id',
-                  '=',
-                  'transaction_event_attribute.event_id'
-                );
-              }
-            ),
-          function () {
-            this.on('transaction.id', '=', 'transaction_event.tx_id');
-          }
-        );
+          'transaction_event_attribute',
+          'transaction_event.id',
+          'transaction_event_attribute.event_id'
+        )
+        .select(
+          'transaction_event_attribute.key',
+          'transaction_event_attribute.value'
+        )
+        .where('transaction.height', '>', lastHeight)
+        .andWhere('transaction.height', '<=', latestBlock.height)
+        .andWhere((builder) =>
+          builder.whereIn('transaction_event_attribute.key', [
+            CONST_CHAR.VALIDATOR,
+            CONST_CHAR.SOURCE_VALIDATOR,
+            CONST_CHAR.DESTINATION_VALIDATOR,
+          ])
+        )
+        .limit(1)
+        .offset(0);
       this.logger.info(
         `Result get Tx from height ${lastHeight} to ${latestBlock.height}:`
       );
@@ -99,8 +90,8 @@ export default class CrawlValidatorService extends BullableService {
       if (resultTx.length > 0) {
         let resultCallApi;
         let done = false;
-        const pagination: any = {
-          limit: Config.NUMBER_OF_VALIDATOR_PER_CALL,
+        const pagination: Pagination = {
+          limit: Long.fromString(Config.NUMBER_OF_VALIDATOR_PER_CALL, 10),
         };
 
         while (!done) {
@@ -177,7 +168,7 @@ export default class CrawlValidatorService extends BullableService {
                 percent_voting_power: 0,
                 start_height: 0,
                 index_offset: 0,
-                jailed_until: '',
+                jailed_until: new Date(0).toISOString(),
                 tombstoned: false,
                 missed_blocks_counter: 0,
               });
@@ -245,18 +236,6 @@ export default class CrawlValidatorService extends BullableService {
     let selfDelegationBalance = '';
     let percentVotingPower = 0;
     try {
-      // const url = Utils.getUrlByChainIdAndType(
-      //   Config.CHAIN_ID,
-      //   URL_TYPE_CONSTANTS.LCD
-      // );
-
-      // const pathSelfDelegation = `${Config.GET_ALL_VALIDATOR}/${operatorAddress}/delegations/${accountAddress}`;
-
-      // const resultSelfBonded = await this.callApiFromDomain(
-      //   url,
-      //   pathSelfDelegation,
-      //   1
-      // );
       const [resultSelfBonded, pool] = await Promise.all([
         this._lcdClient.cosmos.staking.v1beta1.delegation({
           delegatorAddr: accountAddress,
