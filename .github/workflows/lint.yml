@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: 16.14
+          node-version: lts/gallium
           registry-url: https://npm.pkg.github.com/aura-nw
       - name: Install Yarn
         run: npm install -g yarn
@@ -35,11 +35,13 @@ jobs:
         run: yarn list
       - name: Authenticate with private NPM package
         run: |
+          echo "npmRegistryServer: "https://npm.pkg.github.com"" > ~/.yarnrc
+          echo "npmAuthToken: "${{ secrets.KEY_NPM_RC }}"" > ~/.npmrc
           echo "@aura-nw:registry=https://npm.pkg.github.com" > ~/.npmrc
           echo "//registry.npmjs.org/:_authToken=${{ secrets.KEY_NPM_RC }}" > ~/.npmrc
       - name: Install dependencies
         run: yarn
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
+        # env:
+        #   NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
       - name: Lint check
         run: yarn lint
