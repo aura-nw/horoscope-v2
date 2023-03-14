@@ -42,7 +42,7 @@ jobs:
         env:
           NPM_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
       - name: Install dependencies
-        run: yarn
+        run: yarn install --immutable
         env:
           NPM_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
       - name: Lint check
