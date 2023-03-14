@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: 16.14
+          node-version: '16.x'
           registry-url: https://npm.pkg.github.com/aura-nw
       - name: Install Yarn 2
         run: npm install -g yarn@berry
@@ -36,9 +36,9 @@ jobs:
       - name: Setup .yarnrc.yml
         run: |
           yarn -v
-      #     yarn config set npmScopes.aura-nw.npmRegistryServer "https://npm.pkg.github.com"
-      #     yarn config set npmScopes.aura-nw.npmAlwaysAuth true
-      #     yarn config set npmScopes.aura-nw.npmAuthToken $NPM_AUTH_TOKEN
+          yarn config set npmScopes.@aura-nw.npmRegistryServer "https://npm.pkg.github.com"
+          yarn config set npmScopes.@aura-nw.npmAlwaysAuth true
+          yarn config set npmScopes.@aura-nw.npmAuthToken $NPM_AUTH_TOKEN
         env:
           NPM_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
       - name: Install dependencies
