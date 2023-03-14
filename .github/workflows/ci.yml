@@ -22,10 +22,9 @@ jobs:
         env:
           GITHUB_USERNAME: ${{ github.actor }}
           GITHUB_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-          # NPM_TOKEN: ${{ secrets.KEY_NPM_RC }}
+          NPM_TOKEN: ${{ secrets.KEY_NPM_RC }}
         run: |
           ./ci/build.sh
-
 
   updateManifest:
     runs-on: [self-hosted]

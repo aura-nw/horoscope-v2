@@ -20,6 +20,10 @@ export default class Block extends BaseModel {
     return ['data'];
   }
 
+  static get idColumn(): string | string[] {
+    return 'height';
+  }
+
   static get jsonSchema() {
     return {
       type: 'object',
@@ -27,7 +31,7 @@ export default class Block extends BaseModel {
       properties: {
         height: { type: 'number' },
         hash: { type: 'string', minLength: 1, maxLength: 255 },
-        time: { type: 'timestamp' },
+        time: { type: 'string', format: 'date-time' },
         proposer_address: { type: 'string', minLength: 1, maxLength: 255 },
       },
     };
