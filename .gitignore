@@ -73,3 +73,4 @@ dist/
 .vscode/settings.json
 
 .npmrc
+.yarnrc.yml
