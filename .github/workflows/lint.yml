@@ -34,7 +34,9 @@ jobs:
         continue-on-error: true
         run: yarn list
       - name: Authenticate with private NPM package
-        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.KEY_NPM_RC }}" > ~/.npmrc
+        run: |
+          echo "@aura-nw:registry=https://npm.pkg.github.com" > ~/.npmrc
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.KEY_NPM_RC }}" > ~/.npmrc
       - name: Install dependencies
         run: yarn
         env:
