@@ -61,11 +61,10 @@ jobs:
         name: List the state of node modules
         continue-on-error: true
         run: yarn list
-
       - name: Install dependencies
         run: yarn
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Test
         env:
           NODE_ENV: test
