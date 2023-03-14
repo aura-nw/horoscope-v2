@@ -33,14 +33,14 @@ jobs:
         name: List the state of node modules
         continue-on-error: true
         run: yarn list
-      # - name: Setup .yarnrc.yml
-      #   run: |
-      #     yarn -v
+      - name: Setup .yarnrc.yml
+        run: |
+          yarn -v
       #     yarn config set npmScopes.aura-nw.npmRegistryServer "https://npm.pkg.github.com"
       #     yarn config set npmScopes.aura-nw.npmAlwaysAuth true
       #     yarn config set npmScopes.aura-nw.npmAuthToken $NPM_AUTH_TOKEN
-      #   env:
-      #     NPM_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
+        env:
+          NPM_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
       - name: Install dependencies
         run: yarn
         env:
