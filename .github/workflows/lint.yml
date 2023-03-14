@@ -33,6 +33,8 @@ jobs:
         name: List the state of node modules
         continue-on-error: true
         run: yarn list
+      - name: Authenticate with private NPM package
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.GITHUB_TOKEN }}" > ~/.npmrc
       - name: Install dependencies
         run: yarn
         env:
