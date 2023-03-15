@@ -13,9 +13,6 @@ jobs:
         with:
           node-version: '16.14'
           registry-url: https://npm.pkg.github.com/aura-nw
-      - name: Install Yarn 2
-        run: npm install -g yarn@berry
-
       - name: Cache node modules
         id: cache-npm
         uses: actions/cache@v3
@@ -33,15 +30,7 @@ jobs:
         name: List the state of node modules
         continue-on-error: true
         run: npm list
-      # - name: Setup .yarnrc.yml
-      #   run: |
-      #     yarn -v
-      #     yarn config set nodeLinker node-modules
-      #     yarn config set npmScopes.aura-nw.npmRegistryServer "https://npm.pkg.github.com"
-      #     yarn config set npmScopes.aura-nw.npmAlwaysAuth true
-      #     yarn config set npmAuthToken $NPM_AUTH_TOKEN
-      #   env:
-      #     NPM_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
+
       - name: Install dependencies
         run: npm install
         env:
