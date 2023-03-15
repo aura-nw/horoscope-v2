@@ -41,6 +41,7 @@ jobs:
         with:
           node-version: '16.14'
           registry-url: https://npm.pkg.github.com/aura-nw
+          cache: 'yarn'
       # - name: Install Yarn 2
       #   run: npm install -g yarn@berry
 
@@ -67,28 +68,28 @@ jobs:
         name: List the state of node modules
         continue-on-error: true
         run: yarn list
-      - name: Run install
-        uses: borales/actions-yarn@v4.2.0
-        with:
-          cmd: install # will run `yarn install` command
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }} # if needed
+      # - name: Run install
+      #   uses: borales/actions-yarn@v4.2.0
+      #   with:
+      #     cmd: install # will run `yarn install` command
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }} # if needed
 
       # - name: Authenticate with private NPM package
       #   run: echo "//registry.npmjs.org/:_authToken=${{ secrets.KEY_NPM_RC }}" > ~/.npmrc
-      # - name: Setup .yarnrc.yml
-      #   run: |
-      #     yarn -v
-      #     yarn config set nodeLinker node-modules
-      #     yarn config set npmScopes.aura-nw.npmRegistryServer "https://npm.pkg.github.com"
-      #     yarn config set npmScopes.aura-nw.npmAlwaysAuth true
-      #     yarn config set npmAuthToken $NODE_AUTH_TOKEN
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
-      # - name: Install dependencies
-      #   run: yarn
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
+      - name: Setup .yarnrc.yml
+        run: |
+          yarn -v
+          yarn config set nodeLinker node-modules
+          yarn config set npmScopes.aura-nw.npmRegistryServer "https://npm.pkg.github.com"
+          yarn config set npmScopes.aura-nw.npmAlwaysAuth true
+          yarn config set npmAuthToken $NODE_AUTH_TOKEN
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
+      - name: Install dependencies
+        run: yarn
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
       - name: Migration
         env:
           NODE_ENV: test
