@@ -4,7 +4,6 @@ import { LogLevels } from 'moleculer';
 // import dotenvFlow from 'dotenv-flow';
 // import _ from 'lodash';
 import * as dotenv from 'dotenv'; // see https://github.com/motdotla/dotenv#how-do-i-use-dotenv-with-import
-import { PATH_COSMOS_SDK } from './constant';
 // import { DBDialog, DBInfo } from '../types';
 
 // import { PATH_COSMOS_SDK } from './constant';
@@ -110,107 +109,6 @@ export default class ConfigClass {
   // public static JWT_SECRET = process.env.JWT_SECRET || 'dummy-secret';
 
   public ENABLE_LOADBALANCER = process.env.ENABLE_LOADBALANCER || 'true';
-
-  public GET_LATEST_BLOCK_API =
-    process.env.GET_LATEST_BLOCK_API || PATH_COSMOS_SDK.GET_LATEST_BLOCK_API;
-
-  public GET_BLOCK_BY_HEIGHT_API =
-    process.env.GET_BLOCK_BY_HEIGHT_API ||
-    PATH_COSMOS_SDK.GET_BLOCK_BY_HEIGHT_API;
-
-  public GET_ALL_PROPOSAL =
-    process.env.GET_ALL_PROPOSAL || PATH_COSMOS_SDK.GET_ALL_PROPOSAL;
-
-  public GET_PARAMS_BANK =
-    process.env.GET_PARAMS_BANK || PATH_COSMOS_SDK.GET_PARAMS_BANK;
-
-  public GET_PARAMS_DISTRIBUTION =
-    process.env.GET_PARAMS_DISTRIBUTION ||
-    PATH_COSMOS_SDK.GET_PARAMS_DISTRIBUTION;
-
-  public GET_PARAMS_GOV_VOTING =
-    process.env.GET_PARAMS_GOV_VOTING || PATH_COSMOS_SDK.GET_PARAMS_GOV_VOTING;
-
-  public GET_PARAMS_GOV_TALLYING =
-    process.env.GET_PARAMS_GOV_TALLYING ||
-    PATH_COSMOS_SDK.GET_PARAMS_GOV_TALLYING;
-
-  public GET_PARAMS_GOV_DEPOSIT =
-    process.env.GET_PARAMS_GOV_DEPOSIT ||
-    PATH_COSMOS_SDK.GET_PARAMS_GOV_DEPOSIT;
-
-  public GET_PARAMS_SLASHING =
-    process.env.GET_PARAMS_SLASHING || PATH_COSMOS_SDK.GET_PARAMS_SLASHING;
-
-  public GET_PARAMS_STAKING =
-    process.env.GET_PARAMS_STAKING || PATH_COSMOS_SDK.GET_PARAMS_STAKING;
-
-  public GET_PARAMS_IBC_TRANSFER =
-    process.env.GET_PARAMS_IBC_TRANSFER ||
-    PATH_COSMOS_SDK.GET_PARAMS_IBC_TRANSFER;
-
-  public GET_PARAMS_MINT =
-    process.env.GET_PARAMS_MINT || PATH_COSMOS_SDK.GET_PARAMS_MINT;
-
-  public GET_TX_API = process.env.GET_TX_API || PATH_COSMOS_SDK.GET_TX_API;
-
-  public GET_ALL_VALIDATOR =
-    process.env.GET_ALL_VALIDATOR || PATH_COSMOS_SDK.GET_ALL_VALIDATOR;
-
-  public GET_POOL = process.env.GET_POOL || PATH_COSMOS_SDK.GET_POOL;
-
-  public GET_COMMUNITY_POOL =
-    process.env.GET_COMMUNITY_POOL || PATH_COSMOS_SDK.GET_COMMUNITY_POOL;
-
-  public CODE_ID_URI = process.env.CODE_ID_URI || PATH_COSMOS_SDK.CODE_ID_URI;
-
-  public CONTRACT_URI =
-    process.env.CONTRACT_URI || PATH_COSMOS_SDK.CONTRACT_URI;
-
-  public GET_SIGNING_INFO =
-    process.env.GET_SIGNING_INFO || PATH_COSMOS_SDK.GET_SIGNING_INFO;
-
-  public GET_INFLATION =
-    process.env.GET_INFLATION || PATH_COSMOS_SDK.GET_INFLATION;
-
-  public GET_PARAMS_DELEGATE_REWARDS =
-    process.env.GET_PARAMS_DELEGATE_REWARDS ||
-    PATH_COSMOS_SDK.GET_PARAMS_DELEGATE_REWARDS;
-
-  public GET_TX_API_EVENTS =
-    process.env.GET_TX_API_EVENTS || PATH_COSMOS_SDK.GET_TX_API_EVENTS;
-
-  public GET_TX_SEARCH =
-    process.env.GET_TX_SEARCH || PATH_COSMOS_SDK.GET_TX_SEARCH;
-
-  public GET_PARAMS_BALANCE =
-    process.env.GET_PARAMS_BALANCE || PATH_COSMOS_SDK.GET_PARAMS_BALANCE;
-
-  public GET_PARAMS_DELEGATE =
-    process.env.GET_PARAMS_DELEGATE || PATH_COSMOS_SDK.GET_PARAMS_DELEGATE;
-
-  public GET_PARAMS_DELEGATOR =
-    process.env.GET_PARAMS_DELEGATOR || PATH_COSMOS_SDK.GET_PARAMS_DELEGATOR;
-
-  public GET_PARAMS_AUTH_INFO =
-    process.env.GET_PARAMS_AUTH_INFO || PATH_COSMOS_SDK.GET_PARAMS_AUTH_INFO;
-
-  public GET_PARAMS_SPENDABLE_BALANCE =
-    process.env.GET_PARAMS_SPENDABLE_BALANCE ||
-    PATH_COSMOS_SDK.GET_PARAMS_SPENDABLE_BALANCE;
-
-  public GET_PARAMS_IBC_DENOM =
-    process.env.GET_PARAMS_IBC_DENOM || PATH_COSMOS_SDK.GET_PARAMS_IBC_DENOM;
-
-  public GET_VALIDATOR =
-    process.env.GET_VALIDATOR || PATH_COSMOS_SDK.GET_VALIDATOR;
-
-  public GET_DATA_HASH =
-    process.env.GET_DATA_HASH || PATH_COSMOS_SDK.GET_DATA_HASH;
-
-  public GET_SUPPLY = process.env.GET_SUPPLY || PATH_COSMOS_SDK.GET_SUPPLY;
-
-  public SEARCH_TX = process.env.SEARCH_TX || PATH_COSMOS_SDK.SEARCH_TX;
 
   // Dynamic property key
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
