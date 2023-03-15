@@ -40,7 +40,7 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '16.14'
-          # registry-url: https://npm.pkg.github.com/aura-nw
+          registry-url: https://npm.pkg.github.com/aura-nw
       # - name: Install Yarn 2
       #   run: npm install -g yarn@berry
 
@@ -70,7 +70,7 @@ jobs:
       - name: Run install
         uses: borales/actions-yarn@v4
         with:
-          registry-url: https://npm.pkg.github.com
+          registry-url: https://npm.pkg.github.com/aura-nw
           cmd: install # will run `yarn install` command
         env:
           NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }} # if needed
