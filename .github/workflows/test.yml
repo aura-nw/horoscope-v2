@@ -56,13 +56,13 @@ jobs:
             ${{ runner.os }}-build-${{ env.cache-name }}-
             ${{ runner.os }}-build-
             ${{ runner.os }}-
-      - name: Setup .yarnrc.yml
-        run: |
-          yarn config set npmScopes.aura-nw.npmRegistryServer "https://npm.pkg.github.com"
-          yarn config set npmScopes.aura-nw.npmAlwaysAuth true
-          yarn config set npmScopes.aura-nw.npmAuthToken $NPM_AUTH_TOKEN
-        env:
-          NPM_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
+      # - name: Setup .yarnrc.yml
+      #   run: |
+      #     yarn config set npmScopes.aura-nw.npmRegistryServer "https://npm.pkg.github.com"
+      #     yarn config set npmScopes.aura-nw.npmAlwaysAuth true
+      #     yarn config set npmScopes.aura-nw.npmAuthToken $NPM_AUTH_TOKEN
+      #   env:
+      #     NPM_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
       - if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
         name: List the state of node modules
         continue-on-error: true
@@ -70,6 +70,7 @@ jobs:
       - name: Run install
         uses: borales/actions-yarn@v4
         with:
+          registry-url: https://npm.pkg.github.com
           cmd: install # will run `yarn install` command
         env:
           NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }} # if needed
