@@ -39,10 +39,10 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: lts/gallium
+          node-version: '16.14'
           registry-url: https://npm.pkg.github.com/aura-nw
-      - name: Install Yarn
-        run: npm install -g yarn
+      - name: Install Yarn 2
+        run: npm install -g yarn@berry
 
       - name: Cache node modules
         id: cache-npm
@@ -63,6 +63,15 @@ jobs:
         run: yarn list
       - name: Authenticate with private NPM package
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.KEY_NPM_RC }}" > ~/.npmrc
+      - name: Setup .yarnrc.yml
+        run: |
+          yarn -v
+          yarn config set nodeLinker node-modules
+          yarn config set npmScopes.aura-nw.npmRegistryServer "https://npm.pkg.github.com"
+          yarn config set npmScopes.aura-nw.npmAlwaysAuth true
+          yarn config set npmAuthToken $NODE_AUTH_TOKEN
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
       - name: Install dependencies
         run: yarn
         env:
