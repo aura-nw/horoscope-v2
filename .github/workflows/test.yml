@@ -68,9 +68,8 @@ jobs:
         continue-on-error: true
         run: yarn list
       - name: Run install
-        uses: borales/actions-yarn@v4
+        uses: borales/actions-yarn@v4.2.0
         with:
-          registry-url: https://npm.pkg.github.com/aura-nw
           cmd: install # will run `yarn install` command
         env:
           NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }} # if needed
@@ -96,11 +95,11 @@ jobs:
           POSTGRES_PASSWORD: phamphong9981
           POSTGRES_USER: phamphong
           POSTGRES_DB_TEST: test
-        uses: borales/actions-yarn@v4
+        uses: borales/actions-yarn@v4.2.0
         with:
           cmd: db:migrate:test:latest
       - name: Test
-        uses: borales/actions-yarn@v4
+        uses: borales/actions-yarn@v4.2.0
         env:
           NODE_ENV: test
           POSTGRES_PASSWORD: phamphong9981
