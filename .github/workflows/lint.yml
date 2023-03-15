@@ -12,38 +12,39 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '16.14'
+          registry-url: https://npm.pkg.github.com/aura-nw
       - name: Install Yarn 2
         run: npm install -g yarn@berry
 
-      # - name: Cache node modules
-      #   id: cache-npm
-      #   uses: actions/cache@v3
-      #   env:
-      #     cache-name: cache-node-modules
-      #   with:
-      #     path: ~/.npm
-      #     key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-build-${{ env.cache-name }}-
-      #       ${{ runner.os }}-build-
-      #       ${{ runner.os }}-
-
-      # - if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
-      #   name: List the state of node modules
-      #   continue-on-error: true
-      #   run: yarn list
-      - name: Setup .yarnrc.yml
-        run: |
-          yarn -v
-          yarn config set nodeLinker node-modules
-          yarn config set npmScopes.aura-nw.npmRegistryServer "https://npm.pkg.github.com"
-          yarn config set npmScopes.aura-nw.npmAlwaysAuth true
-          yarn config set npmAuthToken $NPM_AUTH_TOKEN
+      - name: Cache node modules
+        id: cache-npm
+        uses: actions/cache@v3
         env:
-          NPM_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+
+      - if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
+        name: List the state of node modules
+        continue-on-error: true
+        run: npm list
+      # - name: Setup .yarnrc.yml
+      #   run: |
+      #     yarn -v
+      #     yarn config set nodeLinker node-modules
+      #     yarn config set npmScopes.aura-nw.npmRegistryServer "https://npm.pkg.github.com"
+      #     yarn config set npmScopes.aura-nw.npmAlwaysAuth true
+      #     yarn config set npmAuthToken $NPM_AUTH_TOKEN
+      #   env:
+      #     NPM_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
       - name: Install dependencies
-        run: yarn install --immutable
+        run: npm install
         env:
           NPM_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
       - name: Lint check
-        run: yarn lint
+        run: npm run lint
