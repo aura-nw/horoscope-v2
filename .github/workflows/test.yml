@@ -61,30 +61,46 @@ jobs:
         name: List the state of node modules
         continue-on-error: true
         run: yarn list
-      - name: Authenticate with private NPM package
-        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.KEY_NPM_RC }}" > ~/.npmrc
-      - name: Setup .yarnrc.yml
-        run: |
-          yarn -v
-          yarn config set nodeLinker node-modules
-          yarn config set npmScopes.aura-nw.npmRegistryServer "https://npm.pkg.github.com"
-          yarn config set npmScopes.aura-nw.npmAlwaysAuth true
-          yarn config set npmAuthToken $NODE_AUTH_TOKEN
+      - name: Run install
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: install # will run `yarn install` command
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
-      - name: Install dependencies
-        run: yarn
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
-      - name: Test
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }} # if needed
+
+      # - name: Authenticate with private NPM package
+      #   run: echo "//registry.npmjs.org/:_authToken=${{ secrets.KEY_NPM_RC }}" > ~/.npmrc
+      # - name: Setup .yarnrc.yml
+      #   run: |
+      #     yarn -v
+      #     yarn config set nodeLinker node-modules
+      #     yarn config set npmScopes.aura-nw.npmRegistryServer "https://npm.pkg.github.com"
+      #     yarn config set npmScopes.aura-nw.npmAlwaysAuth true
+      #     yarn config set npmAuthToken $NODE_AUTH_TOKEN
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
+      # - name: Install dependencies
+      #   run: yarn
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
+      - name: Migration
         env:
           NODE_ENV: test
           POSTGRES_PASSWORD: phamphong9981
           POSTGRES_USER: phamphong
           POSTGRES_DB_TEST: test
-        run: |
-          yarn db:migrate:test:latest
-          yarn test
+        uses: borales/actions-yarn@v4
+        with:
+          cmd: db:migrate:test:latest
+      - name: Test
+        uses: borales/actions-yarn@v4
+        env:
+          NODE_ENV: test
+          POSTGRES_PASSWORD: phamphong9981
+          POSTGRES_USER: phamphong
+          POSTGRES_DB_TEST: test
+        with:
+          cmd: test
 
-      - name: Uninstall yarn
-        run: npm uninstall -g yarn
+      # - name: Uninstall yarn
+      #   run: npm uninstall -g yarn
