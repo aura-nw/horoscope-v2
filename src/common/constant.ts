@@ -67,3 +67,7 @@ export const SERVICE_NAME = {
   CRAWL_VALIDATOR: 'CrawlValidatorService',
   CRAWL_SIGNING_INFO: 'CrawlSigningInfoService',
 };
+
+export const BLOCK_CHECKPOINT_JOB_NAME = {
+  BLOCK_HEIGHT_CRAWLED: 'BLOCK_HEIGHT_CRAWLED',
+};

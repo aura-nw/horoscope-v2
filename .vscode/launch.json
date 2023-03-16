@@ -14,7 +14,7 @@
       "sourceMaps": true,
       "runtimeArgs": ["-r", "ts-node/register"],
       "cwd": "${workspaceRoot}",
-      "args": ["--env", "src/services/*/.service.ts"]
+      "args": ["--env", "src/services/**/*.service.ts"]
     },
     {
       "type": "node",
