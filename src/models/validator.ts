@@ -6,6 +6,8 @@ export interface IConsensusPubkey {
 }
 
 export class Validator extends BaseModel {
+  id!: number;
+
   operator_address!: string;
 
   account_address!: string;

@@ -282,7 +282,6 @@ export default class CrawlValidatorService extends BullableService {
         },
         repeat: {
           every: parseInt(Config.MILISECOND_CRAWL_VALIDATOR, 10),
-          // cron: '0 0 0 * * ?',
         },
       }
     );
