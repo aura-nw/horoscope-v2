@@ -5,6 +5,7 @@ import {
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
 // import IBCDenom from 'src/models/ibc_denom';
+import { AllBalancesRequest } from '../../common/types/interfaces';
 import {
   CONST_CHAR,
   BULL_JOB_NAME,
@@ -36,7 +37,7 @@ export default class CrawlAccountService extends BullableService {
       listAddresses: 'string[]',
     },
   })
-  public actionAccountUpsert(ctx: Context<IListAddressesParam>) {
+  private actionAccountUpsert(ctx: Context<IListAddressesParam>) {
     this.createJob(
       BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH,
       'crawl',
@@ -179,7 +180,7 @@ export default class CrawlAccountService extends BullableService {
             // let urlToCall = param;
             let done = false;
             let resultCallApi;
-            const params: any = {
+            const params: AllBalancesRequest = {
               address,
             };
             while (!done) {
@@ -301,7 +302,7 @@ export default class CrawlAccountService extends BullableService {
             // let urlToCall = param;
             let done = false;
             let resultCallApi;
-            const params: any = {
+            const params: AllBalancesRequest = {
               address,
             };
             while (!done) {

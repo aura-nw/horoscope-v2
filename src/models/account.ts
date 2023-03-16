@@ -12,6 +12,8 @@ export interface IBalance extends ICoin {
 }
 
 export class Account extends BaseModel {
+  id!: number;
+
   address!: string;
 
   balances: IBalance[] | undefined;
@@ -80,6 +82,14 @@ export class Account extends BaseModel {
   static get relationMappings() {
     return {
       stake: {
+        relation: Model.HasManyRelation,
+        modelClass: 'account_stake',
+        join: {
+          from: 'account.id',
+          to: 'account_stake.account_id',
+        },
+      },
+      stake_event: {
         relation: Model.HasManyRelation,
         modelClass: 'transaction_power_event',
         join: {

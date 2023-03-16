@@ -12,8 +12,6 @@ import { Config } from '../../common';
 import BlockCheckpoint from '../../models/block_checkpoint';
 import Block from '../../models/block';
 import Transaction from '../../models/transaction';
-import TransactionEvent from '../../models/transaction_event';
-import TransactionEventAttribute from '../../models/transaction_event_attribute';
 import { Account } from '../../models/account';
 
 @Service({
@@ -54,40 +52,40 @@ export default class HandleAddressService extends BullableService {
       while (!done) {
         // eslint-disable-next-line no-await-in-loop
         const resultTx = await Transaction.query()
-          .select('id', 'height')
-          .where('height', '>', lastHeight)
-          .andWhere('height', '<=', latestBlock.height)
-          .limit(100)
-          .offset(offset)
+          .select('transaction.id', 'transaction.height')
           .join(
-            TransactionEvent.query()
-              .select('tx_id')
-              .join(
-                TransactionEventAttribute.query()
-                  .select('*')
-                  .where('key', '=', `${btoa(CONST_CHAR.RECEIVER)}`)
-                  .orWhere('key', '=', `${btoa(CONST_CHAR.SPENDER)}`)
-                  .orWhere('key', '=', `${btoa(CONST_CHAR.SENDER)}`),
-                function () {
-                  this.on(
-                    'transaction_event.id',
-                    '=',
-                    'transaction_event_attribute.event_id'
-                  );
-                }
-              ),
-            function () {
-              this.on('transaction.id', '=', 'transaction_event.tx_id');
-            }
-          );
+            'transaction_event',
+            'transaction.id',
+            'transaction_event.tx_id'
+          )
+          .select('transaction_event.tx_id')
+          .join(
+            'transaction_event_attribute',
+            'transaction_event.id',
+            'transaction_event_attribute.event_id'
+          )
+          .select(
+            'transaction_event_attribute.key',
+            'transaction_event_attribute.value'
+          )
+          .where('transaction.height', '>', lastHeight)
+          .andWhere('transaction.height', '<=', latestBlock.height)
+          .andWhere((builder) =>
+            builder.whereIn('transaction_event_attribute.key', [
+              CONST_CHAR.RECEIVER,
+              CONST_CHAR.SPENDER,
+              CONST_CHAR.SENDER,
+            ])
+          )
+          .limit(100)
+          .offset(offset);
         this.logger.info(
-          `Result get Tx from height ${lastHeight} to ${
-            latestBlock.height
-          }: ${JSON.stringify(resultTx)}`
+          `Result get Tx from height ${lastHeight} to ${latestBlock.height}:`
         );
+        this.logger.info(JSON.stringify(resultTx));
 
         if (resultTx.length > 0)
-          resultTx.map((res: any) => eventAddresses.push(atob(res.value)));
+          resultTx.map((res: any) => eventAddresses.push(res.value));
 
         if (resultTx.length === 100) offset += 1;
         else done = true;
