@@ -112,3 +112,9 @@ export const SERVICE_NAME = {
   HANDLE_ADDRESS: 'HandleAddressService',
   CRAWL_ACCOUNT: 'CrawlAccountService',
 };
+
+export enum VestingAccountType {
+  CONTINUOUS = '/cosmos.vesting.v1beta1.ContinuousVestingAccount',
+  PERIODIC = '/cosmos.vesting.v1beta1.PeriodicVestingAccount',
+  DELAYED = '/cosmos.vesting.v1beta1.DelayedVestingAccount',
+}

@@ -62,6 +62,10 @@ export class Account extends BaseModel {
             properties: {
               denom: { type: 'string' },
               amount: { type: 'string' },
+              minimal_denom: {
+                type: 'string',
+                require: false,
+              },
             },
           },
         },
@@ -95,6 +99,14 @@ export class Account extends BaseModel {
         join: {
           from: 'account.id',
           to: 'transaction_power_event.delegator_id',
+        },
+      },
+      vesting: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: 'account_vesting',
+        join: {
+          from: 'account.id',
+          to: 'account_vesting.account_id',
         },
       },
     };

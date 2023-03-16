@@ -5,17 +5,17 @@ import {
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
 // import IBCDenom from 'src/models/ibc_denom';
+import AccountVesting from 'src/models/account_vesting';
 import { AllBalancesRequest } from '../../common/types/interfaces';
 import {
   CONST_CHAR,
   BULL_JOB_NAME,
   SERVICE_NAME,
-  // URL_TYPE_CONSTANTS,
   BULL_ACTION_NAME,
+  VestingAccountType,
 } from '../../common/constant';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { Config } from '../../common';
-// import Utils from '../../common/utils/utils';
 import { IListAddressesParam } from '../../common/utils/request';
 import { Account, IBalance } from '../../models/account';
 import { getLcdClient } from '../../common/utils/aurajs_client';
@@ -91,11 +91,6 @@ export default class CrawlAccountService extends BullableService {
 
     const listUpdateQueries: any[] = [];
 
-    // const url = Utils.getUrlByChainIdAndType(
-    //   Config.CHAIN_ID,
-    //   URL_TYPE_CONSTANTS.LCD
-    // );
-
     if (_payload.listAddresses.length > 0) {
       const accounts: Account[] = await Account.query()
         .select('*')
@@ -103,8 +98,6 @@ export default class CrawlAccountService extends BullableService {
 
       await Promise.all(
         _payload.listAddresses.map(async (address: string) => {
-          // const param = `${Config.GET_PARAMS_AUTH_INFO}/${address}`;
-
           const account: Account | undefined = accounts.find(
             (acc: Account) => acc.address === address
           );
@@ -112,7 +105,6 @@ export default class CrawlAccountService extends BullableService {
           if (account) {
             let resultCallApi;
             try {
-              // resultCallApi = await this.callApiFromDomain(url, param);
               resultCallApi = await this._lcdClient.cosmos.auth.v1beta1.account(
                 { address }
               );
@@ -122,17 +114,65 @@ export default class CrawlAccountService extends BullableService {
             }
 
             account.type = resultCallApi.account['@type'];
-            account.pubkey = resultCallApi.account.pub_key;
-            account.account_number = Number.parseInt(
-              resultCallApi.account.account_number,
-              10
-            );
-            account.sequence = Number.parseInt(
-              resultCallApi.account.sequence,
-              10
-            );
+            switch (resultCallApi.account['@type']) {
+              case VestingAccountType.CONTINUOUS:
+              case VestingAccountType.DELAYED:
+              case VestingAccountType.PERIODIC:
+                account.pubkey =
+                  resultCallApi.account.base_vesting_account.base_account.pub_key;
+                account.account_number = Number.parseInt(
+                  resultCallApi.account.account_number,
+                  10
+                );
+                account.sequence = Number.parseInt(
+                  resultCallApi.account.base_vesting_account.base_account
+                    .sequence,
+                  10
+                );
+                break;
+              default:
+                account.pubkey = resultCallApi.account.pub_key;
+                account.account_number = Number.parseInt(
+                  resultCallApi.account.base_vesting_account.base_account
+                    .account_number,
+                  10
+                );
+                account.sequence = Number.parseInt(
+                  resultCallApi.account.sequence,
+                  10
+                );
+                break;
+            }
 
             listUpdateQueries.push(Account.query().update(account));
+
+            if (
+              resultCallApi.account['@type'] ===
+                VestingAccountType.CONTINUOUS ||
+              resultCallApi.account['@type'] === VestingAccountType.DELAYED ||
+              resultCallApi.account['@type'] === VestingAccountType.PERIODIC
+            ) {
+              const accountVesting: AccountVesting = AccountVesting.fromJson({
+                account_id: account.id,
+                original_vesting:
+                  resultCallApi.account.base_vesting_account.original_vesting,
+                delegated_free:
+                  resultCallApi.account.base_vesting_account.delegated_free,
+                delegated_vesting:
+                  resultCallApi.account.base_vesting_account.delegated_vesting,
+                start_time: resultCallApi.account.start_time
+                  ? Number.parseInt(resultCallApi.account.start_time, 10)
+                  : 0,
+                end_time: resultCallApi.account.base_vesting_account.end_time,
+              });
+              listUpdateQueries.push(
+                AccountVesting.query()
+                  .insert(accountVesting)
+                  .onConflict('account_id')
+                  .merge()
+                  .returning('id')
+              );
+            }
           }
         })
       );
@@ -157,11 +197,6 @@ export default class CrawlAccountService extends BullableService {
 
     const listUpdateQueries: any[] = [];
 
-    // const url = Utils.getUrlByChainIdAndType(
-    //   Config.CHAIN_ID,
-    //   URL_TYPE_CONSTANTS.LCD
-    // );
-
     if (_payload.listAddresses.length > 0) {
       const accounts: Account[] = await Account.query()
         .select('*')
@@ -169,15 +204,12 @@ export default class CrawlAccountService extends BullableService {
 
       await Promise.all(
         _payload.listAddresses.map(async (address: string) => {
-          // const param = `${Config.GET_PARAMS_BALANCE}/${address}?pagination.limit=100`;
-
           const account: Account | undefined = accounts.find(
             (acc: Account) => acc.address === address
           );
 
           if (account) {
             const listBalances: IBalance[] = [];
-            // let urlToCall = param;
             let done = false;
             let resultCallApi;
             const params: AllBalancesRequest = {
@@ -198,9 +230,6 @@ export default class CrawlAccountService extends BullableService {
               if (resultCallApi.pagination.next_key === null) {
                 done = true;
               } else {
-                // urlToCall = `${param}&pagination.key=${encodeURIComponent(
-                //   resultCallApi.pagination.next_key
-                // )}`;
                 params.pagination = { key: resultCallApi.pagination.next_key };
               }
             }
@@ -279,11 +308,6 @@ export default class CrawlAccountService extends BullableService {
 
     const listUpdateQueries: any[] = [];
 
-    // const url = Utils.getUrlByChainIdAndType(
-    //   Config.CHAIN_ID,
-    //   URL_TYPE_CONSTANTS.LCD
-    // );
-
     if (_payload.listAddresses.length > 0) {
       const accounts: Account[] = await Account.query()
         .select('*')
@@ -291,15 +315,12 @@ export default class CrawlAccountService extends BullableService {
 
       await Promise.all(
         _payload.listAddresses.map(async (address: string) => {
-          // const param = `${Config.GET_PARAMS_SPENDABLE_BALANCE}/${address}?pagination.limit=100`;
-
           const account: Account | undefined = accounts.find(
             (acc: Account) => acc.address === address
           );
 
           if (account) {
             const listSpendableBalances: IBalance[] = [];
-            // let urlToCall = param;
             let done = false;
             let resultCallApi;
             const params: AllBalancesRequest = {
@@ -307,7 +328,6 @@ export default class CrawlAccountService extends BullableService {
             };
             while (!done) {
               try {
-                // resultCallApi = await this.callApiFromDomain(url, urlToCall);
                 resultCallApi =
                   await this._lcdClient.cosmos.bank.v1beta1.spendableBalances(
                     params
@@ -323,9 +343,6 @@ export default class CrawlAccountService extends BullableService {
               if (resultCallApi.pagination.next_key === null) {
                 done = true;
               } else {
-                // urlToCall = `${param}&pagination.key=${encodeURIComponent(
-                //   resultCallApi.pagination.next_key
-                // )}`;
                 params.pagination = { key: resultCallApi.pagination.next_key };
               }
             }
