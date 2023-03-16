@@ -73,11 +73,13 @@ export async function up(knex: Knex): Promise<void> {
 }
 
 export async function down(knex: Knex): Promise<void> {
-  knex.schema.dropTable('block');
-  knex.schema.dropTable('block_signature');
-  knex.schema.dropTable('transaction');
-  knex.schema.dropTable('transaction_message');
-  knex.schema.dropTable('transaction_message_receiver');
-  knex.schema.dropTable('transaction_event');
-  knex.schema.dropTable('transaction_event_attribute');
+  await Promise.all([
+    knex.schema.dropTable('block'),
+    knex.schema.dropTable('block_signature'),
+    knex.schema.dropTable('transaction'),
+    knex.schema.dropTable('transaction_message'),
+    knex.schema.dropTable('transaction_message_receiver'),
+    knex.schema.dropTable('transaction_event'),
+    knex.schema.dropTable('transaction_event_attribute'),
+  ]);
 }

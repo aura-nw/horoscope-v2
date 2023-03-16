@@ -11,10 +11,8 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: lts/gallium
-      - name: Install Yarn
-        run: npm install -g yarn
-
+          node-version: '16.14'
+          registry-url: https://npm.pkg.github.com/aura-nw
       - name: Cache node modules
         id: cache-npm
         uses: actions/cache@v3
@@ -22,7 +20,7 @@ jobs:
           cache-name: cache-node-modules
         with:
           path: ~/.npm
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}-
             ${{ runner.os }}-build-
@@ -31,9 +29,11 @@ jobs:
       - if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
         name: List the state of node modules
         continue-on-error: true
-        run: yarn list
+        run: npm list
 
       - name: Install dependencies
-        run: yarn
+        run: npm install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
       - name: Lint check
-        run: yarn lint
+        run: npm run lint
