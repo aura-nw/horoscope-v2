@@ -56,7 +56,7 @@ export default class CrawlSigningInfoTest {
   @Test('Crawl validator signing info success')
   public async testCrawlSigningInfo() {
     const validator = await Validator.query().first();
-
+    console.log(validator);
     await this.crawlSigningInfoService?.handleJob({
       listAddresses: [validator?.operator_address || ''],
     });
