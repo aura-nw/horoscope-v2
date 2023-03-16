@@ -14,6 +14,8 @@ export default class TransactionPowerEvent extends BaseModel {
 
   amount!: string;
 
+  time!: string;
+
   static get tableName() {
     return 'transaction_power_event';
   }
@@ -21,7 +23,14 @@ export default class TransactionPowerEvent extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['tx_id', 'type', 'delegator_id', 'validator_src_id', 'amount'],
+      required: [
+        'tx_id',
+        'type',
+        'delegator_id',
+        'validator_src_id',
+        'amount',
+        'time',
+      ],
       properties: {
         tx_id: { type: 'number' },
         type: { type: 'string' },
@@ -29,6 +38,7 @@ export default class TransactionPowerEvent extends BaseModel {
         validator_src_id: { type: 'number' },
         validator_dst_id: { type: 'number' },
         amount: { type: 'string' },
+        time: { type: 'string' },
       },
     };
   }

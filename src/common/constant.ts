@@ -27,6 +27,10 @@ export const CONST_CHAR = {
   _CONTRACT_ADDRESS: '_contract_address',
   CODE_ID: 'code_id',
   EXECUTE: 'execute',
+  STAKING: 'staking',
+  DELEGATE: 'delegate',
+  REDELEGATE: 'redelegate',
+  UNBOND: 'unbond',
 };
 
 export const URL_TYPE_CONSTANTS = {
@@ -99,11 +103,16 @@ export const BULL_JOB_NAME = {
   CRAWL_ACCOUNT_AUTH: 'crawl.account-auth',
   CRAWL_ACCOUNT_BALANCES: 'crawl.account-balances',
   CRAWL_ACCOUNT_SPENDABLE_BALANCES: 'crawl.account-spendable-balances',
+  HANDLE_STAKE_EVENT: 'handle.stake-event',
+  CRAWL_ACCOUNT_DELEGATIONS: 'crawl.account-delegations',
+  CRAWL_ACCOUNT_REDELEGATIONS: 'crawl.account-redelegations',
+  CRAWL_ACCOUNT_UNBONDING: 'crawl.account-unbonding',
 };
 
 export const BULL_ACTION_NAME = {
   VALIDATOR_UPSERT: 'validator.upsert',
   ACCOUNT_UPSERT: 'account.upsert',
+  ACCOUNT_STAKE_UPSERT: 'account-stake.upsert',
 };
 
 export const SERVICE_NAME = {
@@ -111,4 +120,6 @@ export const SERVICE_NAME = {
   CRAWL_SIGNING_INFO: 'CrawlSigningInfoService',
   HANDLE_ADDRESS: 'HandleAddressService',
   CRAWL_ACCOUNT: 'CrawlAccountService',
+  CRAWL_ACCOUNT_STAKE: 'CrawlAccountStakeService',
+  HANDLE_STAKE_EVENT: 'HandleStakeEventService',
 };
