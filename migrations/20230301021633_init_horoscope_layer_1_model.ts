@@ -28,7 +28,7 @@ export async function up(knex: Knex): Promise<void> {
     table.bigint('gas_used').notNullable();
     table.bigint('gas_wanted').notNullable();
     table.bigint('gas_limit').notNullable();
-    table.decimal('fee', 30).notNullable();
+    table.jsonb('fee').notNullable();
     table.timestamp('timestamp').notNullable();
     table.jsonb('data').notNullable();
     table.foreign('height').references('block.height');
@@ -67,7 +67,7 @@ export async function up(knex: Knex): Promise<void> {
     table.increments('id').primary();
     table.integer('event_id').index().notNullable();
     table.string('key').index().notNullable();
-    table.string('value').notNullable();
+    table.text('value').notNullable();
     table.foreign('event_id').references('transaction_event.id');
   });
 }
