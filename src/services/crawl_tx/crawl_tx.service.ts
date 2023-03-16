@@ -16,7 +16,7 @@ import {
   PeriodicAllowance,
 } from 'cosmjs-types/cosmos/feegrant/v1beta1/feegrant';
 import { aura, cosmos } from '@aura-nw/aurajs';
-import { toBase64, fromBase64 } from '@cosmjs/encoding';
+import { toBase64, fromBase64, fromUtf8 } from '@cosmjs/encoding';
 import long from 'long';
 import _ from 'lodash';
 import Transaction from '../../models/transaction';
@@ -29,8 +29,6 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
   version: 1,
 })
 export default class CrawlTxService extends BullableService {
-  private _lcdClient: any;
-
   private _httpBatchClient: HttpBatchClient;
 
   public constructor(public broker: ServiceBroker) {
@@ -56,6 +54,9 @@ export default class CrawlTxService extends BullableService {
   private async jobHandlerTx(_payload: any): Promise<void> {
     const { listTx, timestamp } = _payload;
     const listHandleTx: any[] = [];
+    if (listTx.total_count === '0') {
+      return;
+    }
     try {
       // check if tx existed
       const mapExistedTx: Map<string, boolean> = new Map();
@@ -69,7 +70,7 @@ export default class CrawlTxService extends BullableService {
       // parse tx to format LCD return
       listTx.txs.forEach((tx: any) => {
         this.logger.info(`Handle txhash ${tx.hash}`);
-        if (mapExistedTx.get(tx.txhash)) {
+        if (mapExistedTx.get(tx.hash)) {
           return;
         }
         // decode tx to readable
@@ -155,7 +156,7 @@ export default class CrawlTxService extends BullableService {
     name: 'crawlTxByHeight',
   })
   async crawlTxByHeight(ctx: Context<{ height: number; timestamp: string }>) {
-    this.logger.info(ctx.params.height);
+    this.logger.info('crawl tx by height: ', ctx.params.height);
     const resultJsonRpc = await this._httpBatchClient.execute(
       createJsonRpcRequest('tx_search', {
         query: `tx.height=${ctx.params.height}`,
@@ -168,10 +169,43 @@ export default class CrawlTxService extends BullableService {
   }
 
   async _handleListTx(listTx: any, timestamp: string) {
-    this.logger.info(listTx);
-    listTx.txs.forEach((element: any) => {
-      this.logger.info(element, timestamp);
+    this.logger.debug(listTx);
+    const listTxModel: any[] = [];
+    // const listTxEventModel: TransactionEvent = [];
+    // const listTxEventAttributeModel: TransactionEventAttribute = [];
+
+    listTx.forEach((tx: any) => {
+      this.logger.debug(tx, timestamp);
+      tx.tx_response.events.map((event: any) => ({ type: event.type }));
+      const txInsert = {
+        ...Transaction.fromJson({
+          height: parseInt(tx.tx_response.height, 10),
+          hash: tx.tx_response.txhash,
+          codespace: tx.tx_response.codespace,
+          code: parseInt(tx.tx_response.code, 10),
+          gas_used: tx.tx_response.gas_used.toString(),
+          gas_wanted: tx.tx_response.gas_wanted.toString(),
+          gas_limit: tx.tx.auth_info.fee.gas_limit.toString(),
+          fee: JSON.stringify(tx.tx.auth_info.fee.amount),
+          timestamp,
+          data: tx,
+        }),
+        events: tx.tx_response.events.map((event: any) => ({
+          tx_msg_index: 0,
+          type: event.type,
+          attributes: event.attributes.map((attribute: any) => ({
+            key: fromUtf8(fromBase64(attribute.key)),
+            value: fromUtf8(fromBase64(attribute.value)),
+          })),
+        })),
+      };
+      listTxModel.push(txInsert);
     });
+
+    const resultInsertGraph = await Transaction.query().insertGraph(
+      listTxModel
+    );
+    this.logger.debug('result insert tx', resultInsertGraph);
   }
 
   private async _getRegistry(): Promise<Registry> {
@@ -304,10 +338,6 @@ export default class CrawlTxService extends BullableService {
   }
 
   public async _start() {
-    this.createJob('crawl.tx', 'crawl.tx', {
-      height: 5250518,
-      timestamp: '2023-03-13T07:59:23.228Z',
-    });
     return super._start();
   }
 }
