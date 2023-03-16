@@ -41,7 +41,7 @@ jobs:
         with:
           node-version: '16.14'
           registry-url: https://npm.pkg.github.com/aura-nw
-      - name: Install Yarn 
+      - name: Install Yarn
         run: npm install -g yarn
       - name: Cache node modules
         id: cache-npm
@@ -72,4 +72,3 @@ jobs:
         run: |
           npm run db:migrate:test:latest
           npm run test
-
