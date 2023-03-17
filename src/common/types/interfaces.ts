@@ -14,29 +14,29 @@ export interface ICoin {
   amount: string;
 }
 
-export interface Pagination {
+export interface IPagination {
   limit?: Long;
   key?: Uint8Array;
 }
 
-export interface DelegatorDelegationsRequest {
+export interface IDelegatorDelegations {
   delegatorAddr: string;
-  pagination?: Pagination;
+  pagination?: IPagination;
 }
 
-export interface DelegatorRedelegationsRequest {
+export interface IDelegatorRedelegations {
   delegatorAddr: string;
   srcValidatorAddr: string;
   dstValidatorAddr: string;
-  pagination?: Pagination;
+  pagination?: IPagination;
 }
 
-export interface DelegatorUnbondingRequest {
+export interface IDelegatorUnbonding {
   delegatorAddr: string;
-  pagination?: Pagination;
+  pagination?: IPagination;
 }
 
-export interface AllBalancesRequest {
+export interface IAllBalances {
   address: string;
-  pagination?: Pagination;
+  pagination?: IPagination;
 }

@@ -6,7 +6,7 @@ import {
 import { Context, ServiceBroker } from 'moleculer';
 // import IBCDenom from 'src/models/ibc_denom';
 import AccountVesting from 'src/models/account_vesting';
-import { AllBalancesRequest } from '../../common/types/interfaces';
+import { IAllBalances } from '../../common/types/interfaces';
 import {
   CONST_CHAR,
   BULL_JOB_NAME,
@@ -212,7 +212,7 @@ export default class CrawlAccountService extends BullableService {
             const listBalances: IBalance[] = [];
             let done = false;
             let resultCallApi;
-            const params: AllBalancesRequest = {
+            const params: IAllBalances = {
               address,
             };
             while (!done) {
@@ -323,7 +323,7 @@ export default class CrawlAccountService extends BullableService {
             const listSpendableBalances: IBalance[] = [];
             let done = false;
             let resultCallApi;
-            const params: AllBalancesRequest = {
+            const params: IAllBalances = {
               address,
             };
             while (!done) {
