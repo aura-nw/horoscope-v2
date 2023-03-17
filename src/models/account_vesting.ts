@@ -20,19 +20,19 @@ export default class AccountVesting extends BaseModel {
   }
 
   static get jsonAttributes() {
-    return [
-      'account_id',
-      'original_vesting',
-      'delegated_free',
-      'delegated_vesting',
-      'start_time',
-      'end_time',
-    ];
+    return ['original_vesting', 'delegated_free', 'delegated_vesting'];
   }
 
   static get jsonSchema() {
     return {
       type: 'object',
+      required: [
+        'account_id',
+        'original_vesting',
+        'delegated_free',
+        'delegated_vesting',
+        'end_time',
+      ],
       properties: {
         account_id: { type: 'number' },
         original_vesting: {
