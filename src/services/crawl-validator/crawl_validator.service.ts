@@ -19,7 +19,7 @@ import BlockCheckpoint from '../../models/block_checkpoint';
 import Block from '../../models/block';
 import Transaction from '../../models/transaction';
 import { getLcdClient } from '../../common/utils/aurajs_client';
-import { Pagination } from '../../common/types/interfaces';
+import { IPagination } from '../../common/types/interfaces';
 
 @Service({
   name: SERVICE_NAME.CRAWL_VALIDATOR,
@@ -90,7 +90,7 @@ export default class CrawlValidatorService extends BullableService {
       if (resultTx.length > 0) {
         let resultCallApi;
         let done = false;
-        const pagination: Pagination = {
+        const pagination: IPagination = {
           limit: Long.fromString(Config.NUMBER_OF_VALIDATOR_PER_CALL, 10),
         };
 

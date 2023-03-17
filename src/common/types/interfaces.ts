@@ -14,7 +14,7 @@ export interface ICoin {
   amount: string;
 }
 
-export interface Pagination {
+export interface IPagination {
   limit?: Long;
   key?: Uint8Array;
 }
