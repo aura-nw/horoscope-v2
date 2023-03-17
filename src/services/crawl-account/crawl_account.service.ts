@@ -160,7 +160,7 @@ export default class CrawlAccountService extends BullableService {
                 .where({ id: account.id })
                 .patch({
                   type: account.type,
-                  pubkey: account.pubkey ?? {},
+                  pubkey: account.pubkey,
                   account_number: account.account_number ?? 0,
                   sequence: account.sequence ?? 0,
                 })

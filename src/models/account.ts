@@ -44,7 +44,6 @@ export class Account extends BaseModel {
         'balances',
         'spendable_balances',
         'type',
-        'pubkey',
         'account_number',
         'sequence',
       ],
@@ -79,13 +78,6 @@ export class Account extends BaseModel {
           },
         },
         type: { type: 'string' },
-        pubkey: {
-          type: 'object',
-          properties: {
-            type: { type: 'string' },
-            key: { type: 'string' },
-          },
-        },
         account_number: { type: 'number' },
         sequence: { type: 'number' },
       },
