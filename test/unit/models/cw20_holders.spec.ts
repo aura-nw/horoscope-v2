@@ -1,7 +1,7 @@
 import { BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ValidationError } from 'objection';
 import { CW20Token, ICW20Token } from '../../../src/models/cw20_token';
-import knex from '../../../src/common/utils/db-connection';
+import knex from '../../../src/common/utils/db_connection';
 import { CW20Holder, ICW20Holder } from '../../../src/models/cw20_holder';
 
 const mockBalance = '1000000000000000000000000000000000000000123';

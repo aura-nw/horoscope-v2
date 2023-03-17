@@ -4,8 +4,8 @@ import QueueManager, {
   Job,
   JobOptions,
   QueueOptions,
-} from '../common/queue/QueueManager';
-import BaseService from './BaseService';
+} from '../common/queue/queue_manager';
+import BaseService from './base.service';
 
 const DEFAULT_JOB_OTION: JobOptions = {
   removeOnComplete: true,
@@ -23,6 +23,7 @@ export default class BullableService extends BaseService {
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
+    this.getQueueManager().bindThis(this);
   }
 
   public createJob(
@@ -65,6 +66,7 @@ export default class BullableService extends BaseService {
 
   async started() {
     // do some initialization here
+    this.getQueueManager().bindThis(this);
   }
 }
 

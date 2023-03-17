@@ -1,8 +1,8 @@
 name: Test
 
 on:
-  workflow_call:
   pull_request:
+  workflow_call:
 
 jobs:
   test:
@@ -39,10 +39,10 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: lts/gallium
-      - name: Install Yarn
+          node-version: '16.14'
+          registry-url: https://npm.pkg.github.com/aura-nw
+      - name: Install Yarn 
         run: npm install -g yarn
-
       - name: Cache node modules
         id: cache-npm
         uses: actions/cache@v3
@@ -50,20 +50,19 @@ jobs:
           cache-name: cache-node-modules
         with:
           path: ~/.npm
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}-
             ${{ runner.os }}-build-
             ${{ runner.os }}-
-
       - if: ${{ steps.cache-npm.outputs.cache-hit != 'true' }}
         name: List the state of node modules
         continue-on-error: true
-        run: yarn list
-
+        run: npm list
       - name: Install dependencies
-        run: yarn
-
+        run: npm install
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
       - name: Test
         env:
           NODE_ENV: test
@@ -71,8 +70,6 @@ jobs:
           POSTGRES_USER: phamphong
           POSTGRES_DB_TEST: test
         run: |
-          yarn db:migrate:test:latest
-          yarn test
+          npm run db:migrate:test:latest
+          npm run test
 
-      - name: Uninstall yarn
-        run: npm uninstall -g yarn

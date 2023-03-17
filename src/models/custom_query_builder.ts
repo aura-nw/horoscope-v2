@@ -2,7 +2,7 @@
 /* eslint-disable max-classes-per-file */
 // import {Knex} from 'knex';
 import { MaybeCompositeId, Model, Page, QueryBuilder } from 'objection';
-import knex from '../common/utils/db-connection';
+import knex from '../common/utils/db_connection';
 // import BaseModel from './BaseModel';
 
 //

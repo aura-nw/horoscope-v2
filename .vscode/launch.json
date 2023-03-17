@@ -4,6 +4,7 @@
     {
       "type": "node",
       "request": "launch",
+      "runtimeVersion": "16.14.0",
       "name": "Debug",
       "runtimeExecutable": "ts-node",
       "program": "${workspaceRoot}/node_modules/moleculer/bin/moleculer-runner.mjs",
@@ -11,6 +12,15 @@
       "runtimeArgs": ["-r", "ts-node/register"],
       "cwd": "${workspaceRoot}",
       "args": ["--env", "src/services/**/*.service.ts"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Jest",
+      "program": "${workspaceRoot}/node_modules/jest-cli/bin/jest.js",
+      "args": ["--runInBand"],
+      "cwd": "${workspaceRoot}",
+      "runtimeArgs": ["--inspect-brk", "--nolazy"]
     }
   ]
 }
