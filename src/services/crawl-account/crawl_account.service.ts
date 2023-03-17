@@ -5,14 +5,14 @@ import {
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
 // import IBCDenom from 'src/models/ibc_denom';
-import AccountVesting from 'src/models/account_vesting';
+import AccountVesting from '../../models/account_vesting';
 import { IAllBalances } from '../../common/types/interfaces';
 import {
   CONST_CHAR,
   BULL_JOB_NAME,
   SERVICE_NAME,
   BULL_ACTION_NAME,
-  VestingAccountType,
+  AccountType,
 } from '../../common/constant';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { Config } from '../../common';
@@ -37,7 +37,7 @@ export default class CrawlAccountService extends BullableService {
       listAddresses: 'string[]',
     },
   })
-  private actionAccountUpsert(ctx: Context<IListAddressesParam>) {
+  public actionAccountUpsert(ctx: Context<IListAddressesParam>) {
     this.createJob(
       BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH,
       'crawl',
@@ -115,13 +115,14 @@ export default class CrawlAccountService extends BullableService {
 
             account.type = resultCallApi.account['@type'];
             switch (resultCallApi.account['@type']) {
-              case VestingAccountType.CONTINUOUS:
-              case VestingAccountType.DELAYED:
-              case VestingAccountType.PERIODIC:
+              case AccountType.CONTINUOUS_VESTING:
+              case AccountType.DELAYED_VESTING:
+              case AccountType.PERIODIC_VESTING:
                 account.pubkey =
                   resultCallApi.account.base_vesting_account.base_account.pub_key;
                 account.account_number = Number.parseInt(
-                  resultCallApi.account.account_number,
+                  resultCallApi.account.base_vesting_account.base_account
+                    .account_number,
                   10
                 );
                 account.sequence = Number.parseInt(
@@ -130,11 +131,21 @@ export default class CrawlAccountService extends BullableService {
                   10
                 );
                 break;
+              case AccountType.MODULE:
+                account.pubkey = resultCallApi.account.base_account.pub_key;
+                account.account_number = Number.parseInt(
+                  resultCallApi.account.base_account.account_number,
+                  10
+                );
+                account.sequence = Number.parseInt(
+                  resultCallApi.account.base_account.sequence,
+                  10
+                );
+                break;
               default:
                 account.pubkey = resultCallApi.account.pub_key;
                 account.account_number = Number.parseInt(
-                  resultCallApi.account.base_vesting_account.base_account
-                    .account_number,
+                  resultCallApi.account.account_number,
                   10
                 );
                 account.sequence = Number.parseInt(
@@ -144,13 +155,22 @@ export default class CrawlAccountService extends BullableService {
                 break;
             }
 
-            listUpdateQueries.push(Account.query().update(account));
+            listUpdateQueries.push(
+              Account.query()
+                .where({ id: account.id })
+                .patch({
+                  type: account.type,
+                  pubkey: account.pubkey ?? {},
+                  account_number: account.account_number ?? 0,
+                  sequence: account.sequence ?? 0,
+                })
+            );
 
             if (
               resultCallApi.account['@type'] ===
-                VestingAccountType.CONTINUOUS ||
-              resultCallApi.account['@type'] === VestingAccountType.DELAYED ||
-              resultCallApi.account['@type'] === VestingAccountType.PERIODIC
+                AccountType.CONTINUOUS_VESTING ||
+              resultCallApi.account['@type'] === AccountType.DELAYED_VESTING ||
+              resultCallApi.account['@type'] === AccountType.PERIODIC_VESTING
             ) {
               const accountVesting: AccountVesting = AccountVesting.fromJson({
                 account_id: account.id,
@@ -283,7 +303,11 @@ export default class CrawlAccountService extends BullableService {
 
             account.balances = listBalances;
 
-            listUpdateQueries.push(Account.query().update(account));
+            listUpdateQueries.push(
+              Account.query().where({ id: account.id }).patch({
+                balances: account.balances,
+              })
+            );
           }
         })
       );
@@ -396,7 +420,11 @@ export default class CrawlAccountService extends BullableService {
 
             account.spendable_balances = listSpendableBalances;
 
-            listUpdateQueries.push(Account.query().update(account));
+            listUpdateQueries.push(
+              Account.query().where({ id: account.id }).patch({
+                spendable_balances: account.spendable_balances,
+              })
+            );
           }
         })
       );

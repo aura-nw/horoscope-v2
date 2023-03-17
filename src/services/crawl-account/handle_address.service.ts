@@ -1,6 +1,6 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
-import Utils from 'src/common/utils/utils';
+import Utils from '../../common/utils/utils';
 import {
   CONST_CHAR,
   BULL_JOB_NAME,
@@ -28,7 +28,7 @@ export default class HandleAddressService extends BullableService {
     jobType: 'crawl',
     prefix: `horoscope-v2-${Config.CHAIN_ID}`,
   })
-  private async handleJob(_payload: object): Promise<void> {
+  public async handleJob(_payload: object): Promise<void> {
     const listInsert: any[] = [];
 
     const [handleAddressBlockCheckpoint, latestBlock]: [
@@ -36,16 +36,28 @@ export default class HandleAddressService extends BullableService {
       Block | undefined
     ] = await Promise.all([
       BlockCheckpoint.query()
-        .select('height')
+        .select('*')
         .findOne('job_name', BULL_JOB_NAME.HANDLE_ADDRESS),
       Block.query().select('height').findOne({}).orderBy('height', 'desc'),
     ]);
+    this.logger.info(
+      `Block Checkpoint: ${JSON.stringify(handleAddressBlockCheckpoint)}`
+    );
 
     let lastHeight = 0;
-    if (handleAddressBlockCheckpoint)
+    let updateBlockCheckpoint: BlockCheckpoint;
+    if (handleAddressBlockCheckpoint) {
       lastHeight = handleAddressBlockCheckpoint.height;
+      updateBlockCheckpoint = handleAddressBlockCheckpoint;
+    } else
+      updateBlockCheckpoint = BlockCheckpoint.fromJson({
+        job_name: BULL_JOB_NAME.CRAWL_VALIDATOR,
+        height: 0,
+      });
 
     if (latestBlock) {
+      if (latestBlock.height === lastHeight) return;
+
       const eventAddresses: string[] = [];
       let offset = 0;
       let done = false;
@@ -104,12 +116,12 @@ export default class HandleAddressService extends BullableService {
           if (!existedAccounts.includes(address)) {
             const account: Account = Account.fromJson({
               address,
-              balances: null,
-              spendable_balances: null,
+              balances: [],
+              spendable_balances: [],
               type: null,
-              pubkey: null,
-              account_number: null,
-              sequence: null,
+              pubkey: {},
+              account_number: 0,
+              sequence: 0,
             });
             listInsert.push(Account.query().insert(account));
           }
@@ -133,11 +145,41 @@ export default class HandleAddressService extends BullableService {
           this.logger.error(error);
         }
 
+        updateBlockCheckpoint.height = latestBlock.height;
+        await BlockCheckpoint.query()
+          .insert(updateBlockCheckpoint)
+          .onConflict('job_name')
+          .merge()
+          .returning('id');
+
         this.broker.call(
           `${CONST_CHAR.VERSION}.${SERVICE_NAME.CRAWL_ACCOUNT}.${BULL_ACTION_NAME.ACCOUNT_UPSERT}`,
           { listAddresses }
         );
       }
     }
+  }
+
+  public async _start() {
+    await this.broker.waitForServices([
+      `${CONST_CHAR.VERSION}.${SERVICE_NAME.CRAWL_ACCOUNT}`,
+    ]);
+
+    this.createJob(
+      BULL_JOB_NAME.HANDLE_ADDRESS,
+      'crawl',
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        repeat: {
+          every: parseInt(Config.MILISECOND_HANDLE_ADDRESS, 10),
+        },
+      }
+    );
+
+    return super._start();
   }
 }

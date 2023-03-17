@@ -113,8 +113,10 @@ export const SERVICE_NAME = {
   CRAWL_ACCOUNT: 'CrawlAccountService',
 };
 
-export enum VestingAccountType {
-  CONTINUOUS = '/cosmos.vesting.v1beta1.ContinuousVestingAccount',
-  PERIODIC = '/cosmos.vesting.v1beta1.PeriodicVestingAccount',
-  DELAYED = '/cosmos.vesting.v1beta1.DelayedVestingAccount',
+export enum AccountType {
+  CONTINUOUS_VESTING = '/cosmos.vesting.v1beta1.ContinuousVestingAccount',
+  PERIODIC_VESTING = '/cosmos.vesting.v1beta1.PeriodicVestingAccount',
+  DELAYED_VESTING = '/cosmos.vesting.v1beta1.DelayedVestingAccount',
+  MODULE = '/cosmos.auth.v1beta1.ModuleAccount',
+  BASE = '/cosmos.auth.v1beta1.BaseAccount',
 }
