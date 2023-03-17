@@ -1,3 +1,4 @@
+import { Model } from 'objection';
 import BaseModel from './base';
 
 export interface IConsensusPubkey {
@@ -115,6 +116,15 @@ export class Validator extends BaseModel {
   }
 
   static get relationMappings() {
-    return {};
+    return {
+      proposal: {
+        relation: Model.HasManyRelation,
+        modelClass: 'proposal',
+        join: {
+          from: 'validator.id',
+          to: 'proposal.proposer_id',
+        },
+      },
+    };
   }
 }

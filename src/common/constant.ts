@@ -66,6 +66,7 @@ export const BULL_ACTION_NAME = {
 export const SERVICE_NAME = {
   CRAWL_VALIDATOR: 'CrawlValidatorService',
   CRAWL_SIGNING_INFO: 'CrawlSigningInfoService',
+  CRAWL_PROPOSAL: 'CrawlProposalService',
 };
 
 export const BLOCK_CHECKPOINT_JOB_NAME = {
