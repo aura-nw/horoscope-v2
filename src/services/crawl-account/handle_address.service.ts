@@ -174,9 +174,9 @@ export default class HandleAddressService extends BullableService {
         removeOnFail: {
           count: 3,
         },
-        // repeat: {
-        //   every: parseInt(Config.MILISECOND_HANDLE_ADDRESS, 10),
-        // },
+        repeat: {
+          every: parseInt(Config.MILISECOND_HANDLE_ADDRESS, 10),
+        },
       }
     );
 
