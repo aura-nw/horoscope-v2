@@ -182,7 +182,7 @@ export default class CrawlAccountService extends BullableService {
                   resultCallApi.account.base_vesting_account.delegated_vesting,
                 start_time: resultCallApi.account.start_time
                   ? Number.parseInt(resultCallApi.account.start_time, 10)
-                  : 0,
+                  : null,
                 end_time: resultCallApi.account.base_vesting_account.end_time,
               });
               listUpdateQueries.push(

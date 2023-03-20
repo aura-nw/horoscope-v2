@@ -65,7 +65,7 @@ export default class AccountVesting extends BaseModel {
             },
           },
         },
-        start_time: { type: 'number' },
+        start_time: { type: ['number', 'null'] },
         end_time: { type: 'number' },
       },
     };
