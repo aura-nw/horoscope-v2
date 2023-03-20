@@ -1,5 +1,11 @@
 import Long from 'long';
 
+export interface IAuraJSClientFactory {
+  auranw: any;
+  cosmwasm: any;
+  ibc: any;
+}
+
 export interface INetworkInfo {
   chainName: string;
   chainId: string;

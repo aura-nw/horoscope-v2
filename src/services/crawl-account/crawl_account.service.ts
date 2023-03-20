@@ -4,15 +4,19 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
-// import IBCDenom from 'src/models/ibc_denom';
 import AccountVesting from '../../models/account_vesting';
-import { IAllBalances } from '../../common/types/interfaces';
+import {
+  IAllBalances,
+  ICoin,
+  IAuraJSClientFactory,
+} from '../../common/types/interfaces';
 import {
   CONST_CHAR,
   BULL_JOB_NAME,
   SERVICE_NAME,
   BULL_ACTION_NAME,
   AccountType,
+  REDIS_KEY,
 } from '../../common/constant';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { Config } from '../../common';
@@ -25,7 +29,7 @@ import { getLcdClient } from '../../common/utils/aurajs_client';
   version: CONST_CHAR.VERSION_NUMBER,
 })
 export default class CrawlAccountService extends BullableService {
-  private _lcdClient: any;
+  private _lcdClient!: IAuraJSClientFactory;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -105,9 +109,10 @@ export default class CrawlAccountService extends BullableService {
           if (account) {
             let resultCallApi;
             try {
-              resultCallApi = await this._lcdClient.cosmos.auth.v1beta1.account(
-                { address }
-              );
+              resultCallApi =
+                await this._lcdClient.auranw.cosmos.auth.v1beta1.account({
+                  address,
+                });
             } catch (error) {
               this.logger.error(error);
               throw error;
@@ -229,7 +234,7 @@ export default class CrawlAccountService extends BullableService {
           );
 
           if (account) {
-            const listBalances: IBalance[] = [];
+            let listBalances: IBalance[] = [];
             let done = false;
             let resultCallApi;
             const params: IAllBalances = {
@@ -238,7 +243,9 @@ export default class CrawlAccountService extends BullableService {
             while (!done) {
               try {
                 resultCallApi =
-                  await this._lcdClient.cosmos.bank.v1beta1.allBalances(params);
+                  await this._lcdClient.auranw.cosmos.bank.v1beta1.allBalances(
+                    params
+                  );
               } catch (error) {
                 this.logger.error(error);
                 throw error;
@@ -254,52 +261,8 @@ export default class CrawlAccountService extends BullableService {
               }
             }
 
-            // if (listBalances.length > 1) {
-            //   await Promise.all(
-            //     listBalances.map(async (balance) => {
-            //       if (balance.denom.startsWith('ibc/')) {
-            //         const hash = balance.denom.split('/')[1];
-            //         const ibcDenom: IBCDenom | undefined =
-            //           await IBCDenom.query()
-            //             .select('*')
-            //             .findOne({ hash: balance.denom });
-            //         if (ibcDenom) {
-            //           return {
-            //             amount: balance.amount,
-            //             denom: ibcDenom.base_denom,
-            //             minimal_denom: ibcDenom.hash,
-            //           };
-            //         }
-            //         const hashParam = `${Config.GET_PARAMS_IBC_DENOM}/${hash}`;
-            //         let denomResult;
-            //         try {
-            //           denomResult = await this.callApiFromDomain(
-            //             url,
-            //             hashParam
-            //           );
-
-            //           await IBCDenom.query().insert(
-            //             IBCDenom.fromJson({
-            //               path: denomResult.denom_trace.path,
-            //               base_denom: denomResult.denom_trace.base_denom,
-            //               hash: balance.denom,
-            //             })
-            //           );
-            //         } catch (error) {
-            //           this.logger.error(error);
-            //           throw error;
-            //         }
-
-            //         return {
-            //           amount: balance.amount,
-            //           denom: denomResult.denom_trace.base_denom,
-            //           minimal_denom: balance.denom,
-            //         };
-            //       }
-            //       return balance;
-            //     })
-            //   );
-            // }
+            if (listBalances.length > 1)
+              listBalances = await this.handleIbcDenom(listBalances);
 
             account.balances = listBalances;
 
@@ -344,7 +307,7 @@ export default class CrawlAccountService extends BullableService {
           );
 
           if (account) {
-            const listSpendableBalances: IBalance[] = [];
+            let listSpendableBalances: IBalance[] = [];
             let done = false;
             let resultCallApi;
             const params: IAllBalances = {
@@ -353,7 +316,7 @@ export default class CrawlAccountService extends BullableService {
             while (!done) {
               try {
                 resultCallApi =
-                  await this._lcdClient.cosmos.bank.v1beta1.spendableBalances(
+                  await this._lcdClient.auranw.cosmos.bank.v1beta1.spendableBalances(
                     params
                   );
               } catch (error) {
@@ -371,52 +334,10 @@ export default class CrawlAccountService extends BullableService {
               }
             }
 
-            // if (listSpendableBalances.length > 1) {
-            //   await Promise.all(
-            //     listSpendableBalances.map(async (balance) => {
-            //       if (balance.denom.startsWith('ibc/')) {
-            //         const hash = balance.denom.split('/')[1];
-            //         const ibcDenom: IBCDenom | undefined =
-            //           await IBCDenom.query()
-            //             .select('*')
-            //             .findOne({ hash: balance.denom });
-            //         if (ibcDenom) {
-            //           return {
-            //             amount: balance.amount,
-            //             denom: ibcDenom.base_denom,
-            //             minimal_denom: ibcDenom.hash,
-            //           };
-            //         }
-            //         const hashParam = `${Config.GET_PARAMS_IBC_DENOM}/${hash}`;
-            //         let denomResult;
-            //         try {
-            //           denomResult = await this.callApiFromDomain(
-            //             url,
-            //             hashParam
-            //           );
-
-            //           await IBCDenom.query().insert(
-            //             IBCDenom.fromJson({
-            //               path: denomResult.denom_trace.path,
-            //               base_denom: denomResult.denom_trace.base_denom,
-            //               hash: balance.denom,
-            //             })
-            //           );
-            //         } catch (error) {
-            //           this.logger.error(error);
-            //           throw error;
-            //         }
-
-            //         return {
-            //           amount: balance.amount,
-            //           denom: denomResult.denom_trace.base_denom,
-            //           minimal_denom: balance.denom,
-            //         };
-            //       }
-            //       return balance;
-            //     })
-            //   );
-            // }
+            if (listSpendableBalances.length > 1)
+              listSpendableBalances = await this.handleIbcDenom(
+                listSpendableBalances
+              );
 
             account.spendable_balances = listSpendableBalances;
 
@@ -435,5 +356,52 @@ export default class CrawlAccountService extends BullableService {
         this.logger.error(error);
       }
     }
+  }
+
+  private async handleIbcDenom(listBalances: ICoin[]) {
+    const result = await Promise.all(
+      listBalances.map(async (balance) => {
+        if (balance.denom.startsWith('ibc/')) {
+          const hash = balance.denom.split('/')[1];
+          const ibcDenomRedis = await this.broker.cacher?.get(
+            REDIS_KEY.IBC_DENOM
+          );
+          const ibcDenom = ibcDenomRedis?.find((ibc: any) => ibc.hash === hash);
+          if (ibcDenom) {
+            return {
+              amount: balance.amount,
+              denom: ibcDenom.base_denom,
+              minimal_denom: ibcDenom.hash,
+            };
+          }
+
+          let denomResult;
+          try {
+            denomResult =
+              await this._lcdClient.ibc.ibc.applications.transfer.v1.denomTrace(
+                { hash }
+              );
+
+            ibcDenomRedis?.push({
+              base_denom: denomResult.denom_trace.base_denom,
+              hash: balance.denom,
+            });
+            await this.broker.cacher?.set(REDIS_KEY.IBC_DENOM, ibcDenomRedis);
+          } catch (error) {
+            this.logger.error(error);
+            throw error;
+          }
+
+          return {
+            amount: balance.amount,
+            denom: denomResult.denom_trace.base_denom,
+            minimal_denom: balance.denom,
+          };
+        }
+        return balance;
+      })
+    );
+
+    return result;
   }
 }

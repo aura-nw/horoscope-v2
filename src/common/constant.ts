@@ -29,6 +29,10 @@ export const CONST_CHAR = {
   EXECUTE: 'execute',
 };
 
+export const REDIS_KEY = {
+  IBC_DENOM: 'ibc_denom',
+};
+
 export const URL_TYPE_CONSTANTS = {
   LCD: 'LCD',
   RPC: 'RPC',

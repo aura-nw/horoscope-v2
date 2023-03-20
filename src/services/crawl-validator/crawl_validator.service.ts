@@ -19,14 +19,17 @@ import BlockCheckpoint from '../../models/block_checkpoint';
 import Block from '../../models/block';
 import Transaction from '../../models/transaction';
 import { getLcdClient } from '../../common/utils/aurajs_client';
-import { IPagination } from '../../common/types/interfaces';
+import {
+  IAuraJSClientFactory,
+  IPagination,
+} from '../../common/types/interfaces';
 
 @Service({
   name: SERVICE_NAME.CRAWL_VALIDATOR,
   version: CONST_CHAR.VERSION_NUMBER,
 })
 export default class CrawlValidatorService extends BullableService {
-  private _lcdClient: any;
+  private _lcdClient!: IAuraJSClientFactory;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -105,7 +108,7 @@ export default class CrawlValidatorService extends BullableService {
 
         while (!done) {
           resultCallApi =
-            await this._lcdClient.cosmos.staking.v1beta1.validators({
+            await this._lcdClient.auranw.cosmos.staking.v1beta1.validators({
               pagination,
             });
 
@@ -253,11 +256,11 @@ export default class CrawlValidatorService extends BullableService {
     let percentVotingPower = 0;
     try {
       const [resultSelfBonded, pool] = await Promise.all([
-        this._lcdClient.cosmos.staking.v1beta1.delegation({
+        this._lcdClient.auranw.cosmos.staking.v1beta1.delegation({
           delegatorAddr: accountAddress,
           validatorAddr: `${operatorAddress}/`,
         }),
-        this._lcdClient.cosmos.staking.v1beta1.pool(),
+        this._lcdClient.auranw.cosmos.staking.v1beta1.pool(),
       ]);
       if (
         resultSelfBonded &&
