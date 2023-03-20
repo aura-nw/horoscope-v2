@@ -6,6 +6,7 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
+import { IAuraJSClientFactory } from 'src/common/types/interfaces';
 import { getLcdClient } from '../../common/utils/aurajs_client';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { Config } from '../../common';
@@ -23,7 +24,7 @@ import { Validator } from '../../models/validator';
   version: CONST_CHAR.VERSION_NUMBER,
 })
 export default class CrawlSigningInfoService extends BullableService {
-  private _lcdClient: any;
+  private _lcdClient!: IAuraJSClientFactory;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -64,7 +65,7 @@ export default class CrawlSigningInfoService extends BullableService {
       .whereIn('validator.operator_address', _payload.listAddresses);
 
     const paramSlashing =
-      await this._lcdClient.cosmos.slashing.v1beta1.params();
+      await this._lcdClient.auranw.cosmos.slashing.v1beta1.params();
     const listBulk: any[] = [];
     await Promise.all(
       listFoundValidator.map(async (foundValidator: Validator) => {
@@ -88,7 +89,7 @@ export default class CrawlSigningInfoService extends BullableService {
           );
 
           const result =
-            await this._lcdClient.cosmos.slashing.v1beta1.signingInfo({
+            await this._lcdClient.auranw.cosmos.slashing.v1beta1.signingInfo({
               consAddress: consensusAddress,
             });
           this.logger.debug(result);
