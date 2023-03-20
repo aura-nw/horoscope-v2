@@ -13,12 +13,9 @@ import {
   CONST_CHAR,
   BULL_ACTION_NAME,
   BULL_JOB_NAME,
-  // MODULE_PARAM,
   SERVICE_NAME,
-  // URL_TYPE_CONSTANTS,
 } from '../../common/constant';
 import { IListAddressesParam } from '../../common/utils/request';
-// import Utils from '../../common/utils/utils';
 import { Validator } from '../../models/validator';
 
 @Service({
