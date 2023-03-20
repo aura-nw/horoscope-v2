@@ -14,7 +14,7 @@ COPY . .
 
 # Build and cleanup
 ENV NODE_ENV=production
-RUN npm build
+RUN npm run build
 
 # Start server
-CMD ["npm", "start"]
+CMD ["npm", "run", "start"]

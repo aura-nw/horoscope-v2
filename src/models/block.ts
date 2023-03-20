@@ -1,5 +1,7 @@
 import { Model } from 'objection';
 import BaseModel from './base';
+import BlockSignature from './block_signature';
+import Transaction from './transaction';
 
 export default class Block extends BaseModel {
   height!: number;
@@ -41,15 +43,15 @@ export default class Block extends BaseModel {
     return {
       signatures: {
         relation: Model.HasManyRelation,
-        modelClass: 'block_signature',
+        modelClass: BlockSignature,
         join: {
-          from: 'block.id',
-          to: 'block_signature.block_id',
+          from: 'block.height',
+          to: 'block_signature.height',
         },
       },
       txs: {
         relation: Model.HasManyRelation,
-        modelClass: 'transaction',
+        modelClass: Transaction,
         join: {
           from: 'block.height',
           to: 'transaction.height',
