@@ -9,7 +9,7 @@ export default class CrawlSigningInfoTest {
   validator: Validator = Validator.fromJson({
     commission: JSON.parse('{}'),
     operator_address: 'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx',
-    consensus_address: '',
+    consensus_address: 'auravalcons1wep98af7gdsk54d9f0dwapr6qpxkpll5udf62e',
     consensus_pubkey: {
       type: '/cosmos.crypto.ed25519.PubKey',
       key: 'UaS9Gv6C+SB7PkbRFag2i8hOvJzFGks1+y5hnd0+C6w=',
@@ -35,12 +35,14 @@ export default class CrawlSigningInfoTest {
 
   broker = new ServiceBroker({ logger: false });
 
-  crawlSigningInfoService = this.broker.createService(CrawlSigningInfoService);
+  crawlSigningInfoService?: CrawlSigningInfoService;
 
   @BeforeAll()
   async initSuite() {
     this.broker.start();
-    // this.broker.createService(CrawlSigningInfoService) as CrawlSigningInfoService;
+    this.crawlSigningInfoService = this.broker.createService(
+      CrawlSigningInfoService
+    ) as CrawlSigningInfoService;
     await knex('validator').del();
     await Validator.query().insert(this.validator);
   }
@@ -55,18 +57,13 @@ export default class CrawlSigningInfoTest {
   public async testCrawlSigningInfo() {
     const validator = await Validator.query().first();
 
-    await this.crawlSigningInfoService.handleJob({
-      listAddresses: [validator?.operator_address],
+    await this.crawlSigningInfoService?.handleJob({
+      listAddresses: [validator?.operator_address || ''],
     });
 
-    // const updatedValidator = await Validator.query().first();
+    const updatedValidator = await Validator.query().first();
 
-    // expect(updatedValidator?.consensus_address).toEqual(
-    //   'auravalcons1wep98af7gdsk54d9f0dwapr6qpxkpll5udf62e'
-    // );
-    // expect(updatedValidator?.start_height).toEqual(976);
-    // expect(updatedValidator?.index_offset).toEqual(5250830);
-    // expect(updatedValidator?.tombstoned).toEqual(false);
-    expect(1).toEqual(1);
+    expect(updatedValidator?.start_height).toEqual(976);
+    expect(updatedValidator?.tombstoned).toEqual(false);
   }
 }

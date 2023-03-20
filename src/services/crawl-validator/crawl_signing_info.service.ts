@@ -14,12 +14,9 @@ import {
   CONST_CHAR,
   BULL_ACTION_NAME,
   BULL_JOB_NAME,
-  // MODULE_PARAM,
   SERVICE_NAME,
-  // URL_TYPE_CONSTANTS,
 } from '../../common/constant';
 import { IListAddressesParam } from '../../common/utils/request';
-// import Utils from '../../common/utils/utils';
 import { Validator } from '../../models/validator';
 
 @Service({
@@ -60,17 +57,12 @@ export default class CrawlSigningInfoService extends BullableService {
     jobType: 'crawl',
     prefix: `horoscope-v2-${Config.CHAIN_ID}`,
   })
-  private async handleJob(_payload: IListAddressesParam): Promise<void> {
+  public async handleJob(_payload: IListAddressesParam): Promise<void> {
     this._lcdClient = await getLcdClient();
 
     const listFoundValidator: Validator[] = await Validator.query()
       .select('*')
       .whereIn('validator.operator_address', _payload.listAddresses);
-
-    // const url = Utils.getUrlByChainIdAndType(
-    //   Config.CHAIN_ID,
-    //   URL_TYPE_CONSTANTS.LCD
-    // );
 
     const paramSlashing =
       await this._lcdClient.auranw.cosmos.slashing.v1beta1.params();
@@ -95,9 +87,7 @@ export default class CrawlSigningInfoService extends BullableService {
             `${Config.NETWORK_PREFIX_ADDRESS}${Config.CONSENSUS_PREFIX_ADDRESS}`,
             address
           );
-          // const path = `${Config.GET_SIGNING_INFO}/${consensusAddress}`;
 
-          // this.logger.debug(path);
           const result =
             await this._lcdClient.auranw.cosmos.slashing.v1beta1.signingInfo({
               consAddress: consensusAddress,

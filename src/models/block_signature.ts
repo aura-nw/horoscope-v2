@@ -20,17 +20,17 @@ export default class BlockSignature extends BaseModel {
     return {
       type: 'object',
       required: [
-        'block_id',
+        'height',
         'block_id_flag',
         'validator_address',
         'timestamp',
         'signature',
       ],
       properties: {
-        block_id: { type: 'number' },
+        height: { type: 'number' },
         block_id_flag: { type: 'number' },
         validator_address: { type: 'string' },
-        timestamp: { type: 'timestamp' },
+        timestamp: { type: 'string', format: 'date-time' },
         signature: { type: 'string' },
       },
     };
@@ -42,8 +42,8 @@ export default class BlockSignature extends BaseModel {
         relation: Model.BelongsToOneRelation,
         modelClass: 'block',
         join: {
-          from: 'block_signature.block_id',
-          to: 'block.id',
+          from: 'block_signature.height',
+          to: 'block.height',
         },
       },
     };
