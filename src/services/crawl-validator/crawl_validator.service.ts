@@ -19,14 +19,17 @@ import BlockCheckpoint from '../../models/block_checkpoint';
 import Block from '../../models/block';
 import Transaction from '../../models/transaction';
 import { getLcdClient } from '../../common/utils/aurajs_client';
-import { IPagination } from '../../common/types/interfaces';
+import {
+  IAuraJSClientFactory,
+  IPagination,
+} from '../../common/types/interfaces';
 
 @Service({
   name: SERVICE_NAME.CRAWL_VALIDATOR,
   version: CONST_CHAR.VERSION_NUMBER,
 })
 export default class CrawlValidatorService extends BullableService {
-  private _lcdClient: any;
+  private _lcdClient!: IAuraJSClientFactory;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -37,7 +40,7 @@ export default class CrawlValidatorService extends BullableService {
     jobType: 'crawl',
     prefix: `horoscope-v2-${Config.CHAIN_ID}`,
   })
-  private async handleCrawlAllValidator(_payload: object): Promise<void> {
+  public async handleCrawlAllValidator(_payload: object): Promise<void> {
     this._lcdClient = await getLcdClient();
 
     const listBulk: any[] = [];
@@ -48,16 +51,25 @@ export default class CrawlValidatorService extends BullableService {
       Block | undefined
     ] = await Promise.all([
       BlockCheckpoint.query()
-        .select('height')
+        .select('*')
         .findOne('job_name', BULL_JOB_NAME.CRAWL_VALIDATOR),
       Block.query().select('height').findOne({}).orderBy('height', 'desc'),
     ]);
 
     let lastHeight = 0;
-    if (handleAddressBlockCheckpoint)
+    let updateBlockCheckpoint: BlockCheckpoint;
+    if (handleAddressBlockCheckpoint) {
       lastHeight = handleAddressBlockCheckpoint.height;
+      updateBlockCheckpoint = handleAddressBlockCheckpoint;
+    } else
+      updateBlockCheckpoint = BlockCheckpoint.fromJson({
+        job_name: BULL_JOB_NAME.CRAWL_VALIDATOR,
+        height: 0,
+      });
 
     if (latestBlock) {
+      if (latestBlock.height === lastHeight) return;
+
       const resultTx = await Transaction.query()
         .select('transaction.id', 'transaction.height')
         .join('transaction_event', 'transaction.id', 'transaction_event.tx_id')
@@ -96,7 +108,7 @@ export default class CrawlValidatorService extends BullableService {
 
         while (!done) {
           resultCallApi =
-            await this._lcdClient.cosmos.staking.v1beta1.validators({
+            await this._lcdClient.auranw.cosmos.staking.v1beta1.validators({
               pagination,
             });
 
@@ -225,6 +237,13 @@ export default class CrawlValidatorService extends BullableService {
           this.logger.error(error);
         }
       }
+
+      updateBlockCheckpoint.height = latestBlock.height;
+      await BlockCheckpoint.query()
+        .insert(updateBlockCheckpoint)
+        .onConflict('job_name')
+        .merge()
+        .returning('id');
     }
   }
 
@@ -237,11 +256,11 @@ export default class CrawlValidatorService extends BullableService {
     let percentVotingPower = 0;
     try {
       const [resultSelfBonded, pool] = await Promise.all([
-        this._lcdClient.cosmos.staking.v1beta1.delegation({
+        this._lcdClient.auranw.cosmos.staking.v1beta1.delegation({
           delegatorAddr: accountAddress,
           validatorAddr: `${operatorAddress}/`,
         }),
-        this._lcdClient.cosmos.staking.v1beta1.pool(),
+        this._lcdClient.auranw.cosmos.staking.v1beta1.pool(),
       ]);
       if (
         resultSelfBonded &&

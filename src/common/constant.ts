@@ -29,6 +29,10 @@ export const CONST_CHAR = {
   EXECUTE: 'execute',
 };
 
+export const REDIS_KEY = {
+  IBC_DENOM: 'ibc_denom',
+};
+
 export const URL_TYPE_CONSTANTS = {
   LCD: 'LCD',
   RPC: 'RPC',
@@ -57,17 +61,33 @@ export const MODULE_PARAM = {
 export const BULL_JOB_NAME = {
   CRAWL_VALIDATOR: 'crawl.validator',
   CRAWL_SIGNING_INFO: 'crawl.signing-info',
+  HANDLE_ADDRESS: 'handle.address',
+  CRAWL_ACCOUNT_AUTH: 'crawl.account-auth',
+  CRAWL_ACCOUNT_BALANCES: 'crawl.account-balances',
+  CRAWL_ACCOUNT_SPENDABLE_BALANCES: 'crawl.account-spendable-balances',
+  CRAWL_PROPOSAL: 'crawl.proposal',
 };
 
 export const BULL_ACTION_NAME = {
   VALIDATOR_UPSERT: 'validator.upsert',
+  ACCOUNT_UPSERT: 'account.upsert',
 };
 
 export const SERVICE_NAME = {
   CRAWL_VALIDATOR: 'CrawlValidatorService',
   CRAWL_SIGNING_INFO: 'CrawlSigningInfoService',
   CRAWL_PROPOSAL: 'CrawlProposalService',
+  HANDLE_ADDRESS: 'HandleAddressService',
+  CRAWL_ACCOUNT: 'CrawlAccountService',
 };
+
+export enum AccountType {
+  CONTINUOUS_VESTING = '/cosmos.vesting.v1beta1.ContinuousVestingAccount',
+  PERIODIC_VESTING = '/cosmos.vesting.v1beta1.PeriodicVestingAccount',
+  DELAYED_VESTING = '/cosmos.vesting.v1beta1.DelayedVestingAccount',
+  MODULE = '/cosmos.auth.v1beta1.ModuleAccount',
+  BASE = '/cosmos.auth.v1beta1.BaseAccount',
+}
 
 export const BLOCK_CHECKPOINT_JOB_NAME = {
   BLOCK_HEIGHT_CRAWLED: 'BLOCK_HEIGHT_CRAWLED',
