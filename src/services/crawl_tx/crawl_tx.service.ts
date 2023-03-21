@@ -18,6 +18,7 @@ import {
 import { cosmos } from '@aura-nw/aurajs';
 import { toBase64, fromBase64, fromUtf8 } from '@cosmjs/encoding';
 import _ from 'lodash';
+import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { MSG_TYPE } from '../../common/constant';
 import Transaction from '../../models/transaction';
 import { getHttpBatchClient } from '../../common/utils/cosmjs_client';
@@ -40,9 +41,33 @@ export default class CrawlTxService extends BullableService {
     jobType: 'crawl.tx',
     prefix: 'horoscope_',
   })
-  private async jobHandlerCrawlTx(_payload: any): Promise<void> {
-    const { height, timestamp } = _payload;
-    this.broker.call('v1.crawl.tx.crawlTxByHeight', { height, timestamp });
+  private async jobHandlerCrawlTx(_payload: {
+    listBlock: [{ height: number; timestamp: string }];
+  }): Promise<void> {
+    const listPromise: Promise<any>[] = [];
+    const mapBlockTime: Map<number, string> = new Map();
+    _payload.listBlock.forEach((block) => {
+      this.logger.info('crawl tx by height: ', block.height);
+      mapBlockTime[block.height.toString()] = block.timestamp;
+      listPromise.push(
+        this._httpBatchClient.execute(
+          createJsonRpcRequest('tx_search', {
+            query: `tx.height=${block.height}`,
+          })
+        )
+      );
+    });
+    const resultListPromise: JsonRpcSuccessResponse[] = await Promise.all(
+      listPromise
+    );
+    resultListPromise.forEach((result) => {
+      if (result.result.total_count !== '0') {
+        this.createJob('handle.tx', 'handle.tx', {
+          listTx: result.result,
+          timestamp: mapBlockTime[result.result.txs[0].height],
+        });
+      }
+    });
   }
 
   @QueueHandler({
@@ -154,16 +179,11 @@ export default class CrawlTxService extends BullableService {
   @Action({
     name: 'crawlTxByHeight',
   })
-  async crawlTxByHeight(ctx: Context<{ height: number; timestamp: string }>) {
-    this.logger.info('crawl tx by height: ', ctx.params.height);
-    const resultJsonRpc = await this._httpBatchClient.execute(
-      createJsonRpcRequest('tx_search', {
-        query: `tx.height=${ctx.params.height}`,
-      })
-    );
-    this.createJob('handle.tx', 'handle.tx', {
-      listTx: resultJsonRpc.result,
-      timestamp: ctx.params.timestamp,
+  async crawlTxByHeight(
+    ctx: Context<{ listBlock: [{ height: number; timestamp: string }] }>
+  ) {
+    this.createJob('crawl.tx', 'crawl.tx', {
+      listBlock: ctx.params.listBlock,
     });
   }
 
