@@ -31,7 +31,7 @@ export default class HandleStakeEventService extends BullableService {
     prefix: `horoscope-v2-${Config.CHAIN_ID}`,
   })
   private async handleJob(_payload: object): Promise<void> {
-    const [handleAddressBlockCheckpoint, latestBlock]: [
+    const [handleStakeEventBlockCheckpoint, latestBlock]: [
       BlockCheckpoint | undefined,
       Block | undefined
     ] = await Promise.all([
@@ -42,8 +42,15 @@ export default class HandleStakeEventService extends BullableService {
     ]);
 
     let lastHeight = 0;
-    if (handleAddressBlockCheckpoint)
-      lastHeight = handleAddressBlockCheckpoint.height;
+    let updateBlockCheckpoint: BlockCheckpoint;
+    if (handleStakeEventBlockCheckpoint) {
+      lastHeight = handleStakeEventBlockCheckpoint.height;
+      updateBlockCheckpoint = handleStakeEventBlockCheckpoint;
+    } else
+      updateBlockCheckpoint = BlockCheckpoint.fromJson({
+        job_name: BULL_JOB_NAME.CRAWL_VALIDATOR,
+        height: 0,
+      });
 
     if (latestBlock) {
       const listTxs: any[] = [];
@@ -198,6 +205,13 @@ export default class HandleStakeEventService extends BullableService {
         `${CONST_CHAR.VERSION}.${SERVICE_NAME.CRAWL_ACCOUNT_STAKE}.${BULL_ACTION_NAME.ACCOUNT_STAKE_UPSERT}`,
         { listAddresses }
       );
+
+      updateBlockCheckpoint.height = latestBlock.height;
+      await BlockCheckpoint.query()
+        .insert(updateBlockCheckpoint)
+        .onConflict('job_name')
+        .merge()
+        .returning('id');
     }
   }
 }
