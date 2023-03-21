@@ -62,6 +62,7 @@ export const MODULE_PARAM = {
 
 export const BULL_JOB_NAME = {
   CRAWL_VALIDATOR: 'crawl.validator',
+  CRAWL_GENESIS_VALIDATOR: 'crawl.genesis-validator',
   CRAWL_SIGNING_INFO: 'crawl.signing-info',
   HANDLE_ADDRESS: 'handle.address',
   CRAWL_ACCOUNT_AUTH: 'crawl.account-auth',

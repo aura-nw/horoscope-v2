@@ -35,6 +35,16 @@ export default class CrawlValidatorService extends BullableService {
     super(broker);
   }
 
+  // To crawl all validators at genesis
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
+    jobType: 'crawl',
+    prefix: `horoscope-v2-${Config.CHAIN_ID}`,
+  })
+  public async handleCrawlValidatorsAtGenesis(_payload: object): Promise<void> {
+    await this.updateValidators();
+  }
+
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_VALIDATOR,
     jobType: 'crawl',
@@ -42,9 +52,6 @@ export default class CrawlValidatorService extends BullableService {
   })
   public async handleCrawlAllValidator(_payload: object): Promise<void> {
     this._lcdClient = await getLcdClient();
-
-    const listBulk: any[] = [];
-    const listValidator: any[] = [];
 
     const [handleAddressBlockCheckpoint, latestBlock]: [
       BlockCheckpoint | undefined,
@@ -100,149 +107,7 @@ export default class CrawlValidatorService extends BullableService {
       this.logger.info(JSON.stringify(resultTx));
 
       if (resultTx.length > 0) {
-        let resultCallApi;
-        let done = false;
-        const pagination: IPagination = {
-          limit: Long.fromString(Config.NUMBER_OF_VALIDATOR_PER_CALL, 10),
-        };
-
-        while (!done) {
-          resultCallApi =
-            await this._lcdClient.auranw.cosmos.staking.v1beta1.validators({
-              pagination,
-            });
-
-          listValidator.push(...resultCallApi.validators);
-          if (resultCallApi.pagination.next_key === null) {
-            done = true;
-          } else {
-            pagination.key = resultCallApi.pagination.next_key;
-          }
-        }
-        this.logger.info(
-          `Result get validator from LCD: ${JSON.stringify(listValidator)}`
-        );
-
-        const listValidatorInDB: Validator[] = await knex('validator').select(
-          '*'
-        );
-
-        await Promise.all(
-          listValidator.map(async (validator) => {
-            const foundValidator = listValidatorInDB.find(
-              (validatorInDB: Validator) =>
-                validatorInDB.operator_address === validator.operator_address
-            );
-
-            let validatorEntity: Validator;
-            if (!foundValidator) {
-              const consensusAddress: string = toBech32(
-                `${Config.NETWORK_PREFIX_ADDRESS}${Config.CONSENSUS_PREFIX_ADDRESS}`,
-                pubkeyToRawAddress(
-                  'ed25519',
-                  fromBase64(validator.consensus_pubkey.key.toString())
-                )
-              );
-              const consensusHexAddress: string = toHex(
-                pubkeyToRawAddress(
-                  'ed25519',
-                  fromBase64(validator.consensus_pubkey.key.toString())
-                )
-              ).toUpperCase();
-              const accountAddress = toBech32(
-                Config.NETWORK_PREFIX_ADDRESS,
-                fromBech32(validator.operator_address).data
-              );
-              const consensusPubkey = {
-                type: validator.consensus_pubkey['@type'],
-                key: validator.consensus_pubkey.key,
-              };
-
-              validatorEntity = Validator.fromJson({
-                operator_address: validator.operator_address,
-                account_address: accountAddress,
-                consensus_address: consensusAddress,
-                consensus_hex_address: consensusHexAddress,
-                consensus_pubkey: consensusPubkey,
-                jailed: validator.jailed,
-                status: validator.status,
-                tokens: Number.parseInt(validator.tokens, 10),
-                delegator_shares: Number.parseInt(
-                  validator.delegator_shares,
-                  10
-                ),
-                description: validator.description,
-                unbonding_height: Number.parseInt(
-                  validator.unbonding_height,
-                  10
-                ),
-                unbonding_time: validator.unbonding_time,
-                commission: validator.commission,
-                min_self_delegation: Number.parseInt(
-                  validator.min_self_delegation,
-                  10
-                ),
-                uptime: 0,
-                self_delegation_balance: 0,
-                percent_voting_power: 0,
-                start_height: 0,
-                index_offset: 0,
-                jailed_until: new Date(0).toISOString(),
-                tombstoned: false,
-                missed_blocks_counter: 0,
-              });
-            } else {
-              validatorEntity = foundValidator;
-              validatorEntity.jailed = validator.jailed;
-              validatorEntity.status = validator.status;
-              validatorEntity.tokens = validator.tokens;
-              validatorEntity.delegator_shares = validator.delegator_shares;
-              validatorEntity.unbonding_height = Number.parseInt(
-                validator.unbonding_height,
-                10
-              );
-              validatorEntity.unbonding_time = validator.unbonding_time;
-              validatorEntity.commission = validator.commission;
-              validatorEntity.jailed_until = new Date(
-                validatorEntity.jailed_until
-              ).toISOString();
-            }
-
-            const [selfDelegationBalance, percentVotingPower]: [
-              string,
-              number
-            ] = await this.loadCustomInfo(
-              validatorEntity.operator_address,
-              validatorEntity.account_address,
-              validatorEntity.tokens
-            );
-            validatorEntity.self_delegation_balance = selfDelegationBalance;
-            validatorEntity.percent_voting_power = percentVotingPower;
-
-            listBulk.push(
-              Validator.query()
-                .insert(validatorEntity)
-                .onConflict('operator_address')
-                .merge()
-                .returning('id')
-            );
-          })
-        );
-
-        try {
-          await Promise.all(listBulk);
-
-          const listAddresses: string[] = listValidator.map((validator) =>
-            validator.operator_address.toString()
-          );
-          if (listAddresses.length > 0)
-            this.broker.call(
-              `v1.CrawlSigningInfoService.${BULL_ACTION_NAME.VALIDATOR_UPSERT}`,
-              { listAddresses }
-            );
-        } catch (error) {
-          this.logger.error(error);
-        }
+        await this.updateValidators();
       }
 
       updateBlockCheckpoint.height = latestBlock.height;
@@ -265,7 +130,7 @@ export default class CrawlValidatorService extends BullableService {
       const [resultSelfBonded, pool] = await Promise.all([
         this._lcdClient.auranw.cosmos.staking.v1beta1.delegation({
           delegatorAddr: accountAddress,
-          validatorAddr: `${operatorAddress}/`,
+          validatorAddr: `${operatorAddress}`,
         }),
         this._lcdClient.auranw.cosmos.staking.v1beta1.pool(),
       ]);
@@ -292,10 +157,162 @@ export default class CrawlValidatorService extends BullableService {
     return [selfDelegationBalance, percentVotingPower];
   }
 
+  private async updateValidators() {
+    const listBulk: any[] = [];
+    const listValidator: any[] = [];
+
+    let resultCallApi;
+    let done = false;
+    const pagination: IPagination = {
+      limit: Long.fromString(Config.NUMBER_OF_VALIDATOR_PER_CALL, 10),
+    };
+
+    while (!done) {
+      resultCallApi =
+        await this._lcdClient.auranw.cosmos.staking.v1beta1.validators({
+          pagination,
+        });
+
+      listValidator.push(...resultCallApi.validators);
+      if (resultCallApi.pagination.next_key === null) {
+        done = true;
+      } else {
+        pagination.key = resultCallApi.pagination.next_key;
+      }
+    }
+    this.logger.info(
+      `Result get validator from LCD: ${JSON.stringify(listValidator)}`
+    );
+
+    const listValidatorInDB: Validator[] = await knex('validator').select('*');
+
+    await Promise.all(
+      listValidator.map(async (validator) => {
+        const foundValidator = listValidatorInDB.find(
+          (validatorInDB: Validator) =>
+            validatorInDB.operator_address === validator.operator_address
+        );
+
+        let validatorEntity: Validator;
+        if (!foundValidator) {
+          const consensusAddress: string = toBech32(
+            `${Config.NETWORK_PREFIX_ADDRESS}${Config.CONSENSUS_PREFIX_ADDRESS}`,
+            pubkeyToRawAddress(
+              'ed25519',
+              fromBase64(validator.consensus_pubkey.key.toString())
+            )
+          );
+          const consensusHexAddress: string = toHex(
+            pubkeyToRawAddress(
+              'ed25519',
+              fromBase64(validator.consensus_pubkey.key.toString())
+            )
+          ).toUpperCase();
+          const accountAddress = toBech32(
+            Config.NETWORK_PREFIX_ADDRESS,
+            fromBech32(validator.operator_address).data
+          );
+          const consensusPubkey = {
+            type: validator.consensus_pubkey['@type'],
+            key: validator.consensus_pubkey.key,
+          };
+
+          validatorEntity = Validator.fromJson({
+            operator_address: validator.operator_address,
+            account_address: accountAddress,
+            consensus_address: consensusAddress,
+            consensus_hex_address: consensusHexAddress,
+            consensus_pubkey: consensusPubkey,
+            jailed: validator.jailed,
+            status: validator.status,
+            tokens: Number.parseInt(validator.tokens, 10),
+            delegator_shares: Number.parseInt(validator.delegator_shares, 10),
+            description: validator.description,
+            unbonding_height: Number.parseInt(validator.unbonding_height, 10),
+            unbonding_time: validator.unbonding_time,
+            commission: validator.commission,
+            min_self_delegation: Number.parseInt(
+              validator.min_self_delegation,
+              10
+            ),
+            uptime: 0,
+            self_delegation_balance: 0,
+            percent_voting_power: 0,
+            start_height: 0,
+            index_offset: 0,
+            jailed_until: new Date(0).toISOString(),
+            tombstoned: false,
+            missed_blocks_counter: 0,
+          });
+        } else {
+          validatorEntity = foundValidator;
+          validatorEntity.jailed = validator.jailed;
+          validatorEntity.status = validator.status;
+          validatorEntity.tokens = validator.tokens;
+          validatorEntity.delegator_shares = validator.delegator_shares;
+          validatorEntity.unbonding_height = Number.parseInt(
+            validator.unbonding_height,
+            10
+          );
+          validatorEntity.unbonding_time = validator.unbonding_time;
+          validatorEntity.commission = validator.commission;
+          validatorEntity.jailed_until = new Date(
+            validatorEntity.jailed_until
+          ).toISOString();
+        }
+
+        const [selfDelegationBalance, percentVotingPower]: [string, number] =
+          await this.loadCustomInfo(
+            validatorEntity.operator_address,
+            validatorEntity.account_address,
+            validatorEntity.tokens
+          );
+        validatorEntity.self_delegation_balance = selfDelegationBalance;
+        validatorEntity.percent_voting_power = percentVotingPower;
+
+        listBulk.push(
+          Validator.query()
+            .insert(validatorEntity)
+            .onConflict('operator_address')
+            .merge()
+            .returning('id')
+        );
+      })
+    );
+
+    try {
+      await Promise.all(listBulk);
+
+      const listAddresses: string[] = listValidator.map((validator) =>
+        validator.operator_address.toString()
+      );
+      if (listAddresses.length > 0)
+        this.broker.call(
+          `v1.CrawlSigningInfoService.${BULL_ACTION_NAME.VALIDATOR_UPSERT}`,
+          { listAddresses }
+        );
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
   public async _start() {
     await this.broker.waitForServices([
       `${CONST_CHAR.VERSION}.${SERVICE_NAME.CRAWL_SIGNING_INFO}`,
     ]);
+
+    // To crawl all validators at genesis
+    this.createJob(
+      BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
+      'crawl',
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+      }
+    );
 
     this.createJob(
       BULL_JOB_NAME.CRAWL_VALIDATOR,
