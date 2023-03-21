@@ -15,12 +15,11 @@ import {
   BasicAllowance,
   PeriodicAllowance,
 } from 'cosmjs-types/cosmos/feegrant/v1beta1/feegrant';
-import { aura, cosmos } from '@aura-nw/aurajs';
+import { cosmos } from '@aura-nw/aurajs';
 import { toBase64, fromBase64, fromUtf8 } from '@cosmjs/encoding';
-import long from 'long';
 import _ from 'lodash';
+import { MSG_TYPE } from '../../common/constant';
 import Transaction from '../../models/transaction';
-import Utils from '../../common/utils/utils';
 import { getHttpBatchClient } from '../../common/utils/cosmjs_client';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 
@@ -171,12 +170,37 @@ export default class CrawlTxService extends BullableService {
   async _handleListTx(listTx: any, timestamp: string) {
     this.logger.debug(listTx);
     const listTxModel: any[] = [];
-    // const listTxEventModel: TransactionEvent = [];
-    // const listTxEventAttributeModel: TransactionEventAttribute = [];
-
     listTx.forEach((tx: any) => {
       this.logger.debug(tx, timestamp);
       tx.tx_response.events.map((event: any) => ({ type: event.type }));
+      const sender = fromUtf8(
+        fromBase64(
+          this._findAttribute(
+            tx.tx_response.events,
+            'message',
+            // c2VuZGVy is sender in base64
+            'c2VuZGVy'
+          )
+        )
+      );
+
+      // scan list transfer.recipient and wasm.recipient
+      const listAddressReceiver: any[][] = [[]];
+      tx.tx_response.logs.forEach((log: any, index: number) => {
+        log.events.forEach((event: any) => {
+          if (event.type === 'transfer' || event.type === 'wasm') {
+            event.attributes.forEach((attribute: any) => {
+              if (attribute.key === 'recipient') {
+                listAddressReceiver[index].push({
+                  address: attribute.value,
+                  reason: `${event.type}.${attribute.key}`,
+                });
+              }
+            });
+          }
+        });
+      });
+
       const txInsert = {
         ...Transaction.fromJson({
           height: parseInt(tx.tx_response.height, 10),
@@ -194,9 +218,18 @@ export default class CrawlTxService extends BullableService {
           tx_msg_index: 0,
           type: event.type,
           attributes: event.attributes.map((attribute: any) => ({
-            key: fromUtf8(fromBase64(attribute.key)),
-            value: fromUtf8(fromBase64(attribute.value)),
+            key: attribute?.key ? fromUtf8(fromBase64(attribute?.key)) : null,
+            value: attribute?.value
+              ? fromUtf8(fromBase64(attribute?.value))
+              : null,
           })),
+        })),
+        messages: tx.tx.body.messages.map((message: any, index: any) => ({
+          sender,
+          index,
+          type: message['@type'],
+          content: message,
+          receivers: listAddressReceiver[index],
         })),
       };
       listTxModel.push(txInsert);
@@ -226,16 +259,11 @@ export default class CrawlTxService extends BullableService {
     registry.register('/ibc.lightclients.tendermint.v1.Header', Header);
     registry.register(
       '/cosmos.feegrant.v1beta1.AllowedContractAllowance',
-      aura.feegrant.v1beta1.AllowedContractAllowance as GeneratedType
+      cosmos.feegrant.v1beta1.AllowedContractAllowance as GeneratedType
     );
     registry.register(
       '/cosmos.vesting.v1beta1.MsgCreatePeriodicVestingAccount',
       cosmos.vesting.v1beta1.MsgCreatePeriodicVestingAccount as GeneratedType
-    );
-
-    registry.register(
-      '/cosmos.vesting.v1beta1.MsgCreatePermanentLockedAccount',
-      cosmos.vesting.v1beta1.MsgCreatePermanentLockedAccount as GeneratedType
     );
     this.registry = registry;
     return this.registry;
@@ -261,7 +289,7 @@ export default class CrawlTxService extends BullableService {
   }
 
   private _decodedMsg(registry: Registry, msg: any): any {
-    let result: any = {};
+    const result: any = {};
     if (!msg) {
       return;
     }
@@ -276,65 +304,46 @@ export default class CrawlTxService extends BullableService {
         this.logger.error(msg.typeUrl);
       } else {
         const decoded = registry.decode(msg);
+
         Object.keys(decoded).forEach((key) => {
-          result[key] = this._decodedMsg(registry, decoded[key]);
+          result[key] = decoded[key];
         });
       }
-    } else if (msg.seconds && msg.nanos) {
-      result = new Date(msg.seconds.toNumber() * 1000 + msg.nanos / 1e6);
-    } else if (Array.isArray(msg)) {
-      result = msg.map((element) => this._decodedMsg(registry, element));
-    } else if (msg instanceof Uint8Array) {
-      result = this._decodedMsg(registry, toBase64(msg));
-    } else if (long.isLong(msg) || typeof msg === 'string') {
-      if (typeof msg === 'string') {
-        try {
-          const decodedBase64 = JSON.parse(
-            Buffer.from(msg, 'base64').toString()
-          );
-          Object.keys(decodedBase64).forEach((key) => {
-            result[key] = this._decodedMsg(registry, decodedBase64[key]);
-          });
-        } catch (e) {
-          this.logger.debug('this msg is not base64: ', msg);
-          result = msg.toString();
+
+      if (
+        msg.typeUrl === MSG_TYPE.MSG_EXECUTE_CONTRACT ||
+        msg.typeUrl === MSG_TYPE.MSG_INSTANTIATE_CONTRACT
+      ) {
+        if (result.msg && result.msg instanceof Uint8Array) {
+          result.msg = fromUtf8(result.msg);
         }
-      } else {
-        result = msg.toString();
+      } else if (msg.typeUrl === MSG_TYPE.MSG_UPDATE_CLIENT) {
+        if (result.header?.value && result.header?.typeUrl) {
+          result.header = registry.decode(result.header);
+        }
       }
-    } else if (typeof msg === 'number' || typeof msg === 'boolean') {
-      result = msg;
-    } else if (msg instanceof Object) {
-      Object.keys(msg).forEach((key) => {
-        result[key] = this._decodedMsg(registry, msg[key]);
-      });
-    } else {
-      result = this._decodedMsg(registry, msg);
     }
+
     // eslint-disable-next-line consistent-return
     return result;
   }
 
-  // scan all address in msg tx
-  private _scanAllAddressInTxInput(msg: any): any[] {
-    const listAddress: any[] = [];
-    if (msg != null && msg.constructor === Object) {
-      Object.values(msg).forEach((value: any) => {
-        if (value != null && value.constructor === Object) {
-          listAddress.push(...this._scanAllAddressInTxInput(value));
-        } else if (Array.isArray(value)) {
-          listAddress.push(
-            // eslint-disable-next-line array-callback-return
-            ...value.filter((e: any) => {
-              Utils.isValidAddress(e);
-            })
-          );
-        } else if (Utils.isValidAddress(value)) {
-          listAddress.push(value);
-        }
-      });
+  private _findAttribute(
+    events: any,
+    eventType: string,
+    attributeKey: string
+  ): string {
+    const result = events
+      .find((event: any) => event.type === eventType)
+      ?.attributes.find(
+        (attribute: any) => attribute.key === attributeKey
+      )?.value;
+    if (!result) {
+      throw new Error(
+        `Could not find attribute ${attributeKey} in event type ${eventType}`
+      );
     }
-    return listAddress;
+    return result;
   }
 
   public async _start() {
