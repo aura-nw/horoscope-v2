@@ -69,17 +69,20 @@ export const BULL_JOB_NAME = {
   CRAWL_ACCOUNT_BALANCES: 'crawl.account-balances',
   CRAWL_ACCOUNT_SPENDABLE_BALANCES: 'crawl.account-spendable-balances',
   CRAWL_PROPOSAL: 'crawl.proposal',
+  CRAWL_TALLY_PROPOSAL: 'crawl.tally-proposal',
 };
 
 export const BULL_ACTION_NAME = {
   VALIDATOR_UPSERT: 'validator.upsert',
   ACCOUNT_UPSERT: 'account.upsert',
+  PROPOSAL_TALLY_UPSERT: 'proposal-tally.upsert',
 };
 
 export const SERVICE_NAME = {
   CRAWL_VALIDATOR: 'CrawlValidatorService',
   CRAWL_SIGNING_INFO: 'CrawlSigningInfoService',
   CRAWL_PROPOSAL: 'CrawlProposalService',
+  CRAWL_TALLY_PROPOSAL: 'CrawlTallyProposalService',
   HANDLE_ADDRESS: 'HandleAddressService',
   CRAWL_ACCOUNT: 'CrawlAccountService',
 };

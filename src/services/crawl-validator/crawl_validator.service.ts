@@ -288,7 +288,7 @@ export default class CrawlValidatorService extends BullableService {
       );
       if (listAddresses.length > 0)
         this.broker.call(
-          `v1.CrawlSigningInfoService.${BULL_ACTION_NAME.VALIDATOR_UPSERT}`,
+          `${CONST_CHAR.VERSION}.${SERVICE_NAME.CRAWL_SIGNING_INFO}.${BULL_ACTION_NAME.VALIDATOR_UPSERT}`,
           { listAddresses }
         );
     } catch (error) {
