@@ -6,6 +6,8 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
+import { Proposal } from 'src/models/proposal';
+import { Account } from 'src/models/account';
 import { Config } from '../../common';
 // import { getLcdClient } from '../../common/utils/aurajs_client';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -23,13 +25,14 @@ import { getLcdClient } from '../../common/utils/aurajs_client';
 import BlockCheckpoint from '../../models/block_checkpoint';
 import Block from '../../models/block';
 import Transaction from '../../models/transaction';
+import { IAuraJSClientFactory } from '../../common/types/interfaces';
 
 @Service({
   name: SERVICE_NAME.CRAWL_PROPOSAL,
   version: CONST_CHAR.VERSION_NUMBER,
 })
 export default class CrawlProposalService extends BullableService {
-  private _lcdClient: any;
+  private _lcdClient!: IAuraJSClientFactory;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -43,8 +46,7 @@ export default class CrawlProposalService extends BullableService {
   private async handleCrawlAllValidator(_payload: object): Promise<void> {
     this._lcdClient = await getLcdClient();
 
-    // const listBulk: any[] = [];
-    // const listValidator: any[] = [];
+    const listBulk: any[] = [];
 
     const [handleAddressBlockCheckpoint, latestBlock]: [
       BlockCheckpoint | undefined,
@@ -57,39 +59,200 @@ export default class CrawlProposalService extends BullableService {
     ]);
 
     let lastHeight = 0;
-    if (handleAddressBlockCheckpoint)
+    let updateBlockCheckpoint: BlockCheckpoint;
+    if (handleAddressBlockCheckpoint) {
       lastHeight = handleAddressBlockCheckpoint.height;
+      updateBlockCheckpoint = handleAddressBlockCheckpoint;
+    } else
+      updateBlockCheckpoint = BlockCheckpoint.fromJson({
+        job_name: BULL_JOB_NAME.CRAWL_VALIDATOR,
+        height: 0,
+      });
 
     if (latestBlock) {
-      const resultTx = await Transaction.query()
-        .select('transaction.id', 'transaction.height')
-        .join('transaction_event', 'transaction.id', 'transaction_event.tx_id')
-        .select('transaction_event.tx_id')
-        .join(
-          'transaction_event_attribute',
-          'transaction_event.id',
-          'transaction_event_attribute.event_id'
-        )
-        .select(
-          'transaction_event_attribute.key',
-          'transaction_event_attribute.value'
-        )
-        .where('transaction.height', '>', lastHeight)
-        .andWhere('transaction.height', '<=', latestBlock.height)
-        .andWhere('transaction.code', '!=', '0')
-        .andWhere((builder) =>
-          builder.whereIn('transaction_event_attribute.key', [
-            CONST_CHAR.VALIDATOR,
-            CONST_CHAR.SOURCE_VALIDATOR,
-            CONST_CHAR.DESTINATION_VALIDATOR,
-          ])
-        )
-        .limit(1)
-        .offset(0);
-      this.logger.info(
-        `Result get Tx from height ${lastHeight} to ${latestBlock.height}:`
-      );
-      this.logger.info(JSON.stringify(resultTx));
+      if (latestBlock.height === lastHeight) return;
+
+      const proposalIds: number[] = [];
+      let offset = 0;
+      let done = false;
+      while (!done) {
+        // eslint-disable-next-line no-await-in-loop
+        const resultTx = await Transaction.query()
+          .select('transaction.id', 'transaction.height')
+          .join(
+            'transaction_event',
+            'transaction.id',
+            'transaction_event.tx_id'
+          )
+          .select('transaction_event.tx_id')
+          .join(
+            'transaction_event_attribute',
+            'transaction_event.id',
+            'transaction_event_attribute.event_id'
+          )
+          .select(
+            'transaction_event_attribute.key',
+            'transaction_event_attribute.value'
+          )
+          .where('transaction.height', '>', lastHeight)
+          .andWhere('transaction.height', '<=', latestBlock.height)
+          .andWhere('transaction.code', '=', '0')
+          .andWhere(
+            'transaction_event_attribute.key',
+            '=',
+            CONST_CHAR.PROPOSAL_ID
+          )
+          .limit(100)
+          .offset(offset);
+        this.logger.info(
+          `Result get Tx from height ${lastHeight} to ${latestBlock.height}:`
+        );
+        this.logger.info(JSON.stringify(resultTx));
+
+        if (resultTx.length > 0)
+          resultTx.map((res: any) => proposalIds.push(res.value));
+
+        if (resultTx.length === 100) offset += 1;
+        else done = true;
+      }
+
+      if (proposalIds.length > 0) {
+        const listProposalsInDb: Proposal[] = await Proposal.query().whereIn(
+          'proposal_id',
+          proposalIds
+        );
+
+        await Promise.all(
+          proposalIds.map(async (proposalId: number) => {
+            const proposal =
+              await this._lcdClient.auranw.cosmos.gov.v1beta1.proposal({
+                proposalId,
+              });
+
+            this.logger.info(
+              `Proposal ${proposalId} content: ${proposal.proposal.content}`
+            );
+
+            const foundProposal: Proposal | undefined = listProposalsInDb.find(
+              (pro: Proposal) => pro.proposal_id === proposalId
+            );
+
+            let proposalEntity: Proposal;
+            if (!foundProposal) {
+              const [proposerId, initialDeposit] =
+                await this.getProposerBySearchTx(proposalId);
+
+              proposalEntity = Proposal.fromJson({
+                proposal_id: proposalId,
+                proposer_id: proposerId,
+                voting_start_time:
+                  proposal.proposal.voting_start_time.toISOString(),
+                voting_end_time:
+                  proposal.proposal.voting_end_time.toISOString(),
+                submit_time: proposal.proposal.submit_time.toISOString(),
+                deposit_end_time:
+                  proposal.proposal.deposit_end_time.toISOString(),
+                type: proposal.proposal.content['@type'],
+                title: proposal.proposal.content.title ?? '',
+                description: proposal.proposal.content.description ?? '',
+                content: proposal.proposal.content,
+                status: proposal.proposal.status,
+                tally: {
+                  yes: '0',
+                  no: '0',
+                  abstain: '0',
+                  no_with_veto: '0',
+                },
+                initial_deposit: initialDeposit,
+                total_deposit: proposal.proposal.total_deposit,
+                turnout: 0,
+              });
+            } else {
+              proposalEntity = foundProposal;
+              proposalEntity.status = proposal.proposal.status;
+              proposalEntity.total_deposit = proposal.proposal.total_deposit;
+            }
+
+            listBulk.push(
+              Proposal.query()
+                .insert(proposalEntity)
+                .onConflict('proposal_id')
+                .merge()
+                .returning('proposal_id')
+            );
+          })
+        );
+
+        try {
+          await Promise.all(listBulk);
+        } catch (error) {
+          this.logger.error(error);
+        }
+      }
+
+      updateBlockCheckpoint.height = latestBlock.height;
+      await BlockCheckpoint.query()
+        .insert(updateBlockCheckpoint)
+        .onConflict('job_name')
+        .merge()
+        .returning('id');
     }
+  }
+
+  private async getProposerBySearchTx(proposalId: number) {
+    const tx: any = await Transaction.query()
+      .select('transaction.data')
+      .join('transaction_event', 'transaction.id', 'transaction_event.tx_id')
+      .join(
+        'transaction_event_attribute',
+        'transaction_event.id',
+        'transaction_event_attribute.event_id'
+      )
+      .where('transaction.code', '=', '0')
+      .andWhere('transaction_event.type', '=', CONST_CHAR.SUBMIT_PROPOSAL)
+      .andWhere('transaction_event_attribute.key', '=', CONST_CHAR.PROPOSAL_ID)
+      .andWhere('transaction_event_attribute.value', '=', `${proposalId}`)
+      .limit(1)
+      .offset(0);
+
+    const msgIndex = tx[0].data.tx_response.logs.find(
+      (log: any) =>
+        log.events
+          .find((event: any) => event.type === CONST_CHAR.SUBMIT_PROPOSAL)
+          .attributes.find((attr: any) => attr.key === CONST_CHAR.PROPOSAL_ID)
+          .value === proposalId
+    ).msg_index;
+
+    const initialDeposit =
+      tx[0].data.tx.body.messages[msgIndex].initial_deposit;
+    const proposerAddress = tx[0].data.tx.body.messages[msgIndex].proposer;
+    const proposerId = (
+      await Account.query().findOne('address', proposerAddress)
+    )?.id;
+
+    return [proposerId, initialDeposit];
+  }
+
+  public async _start() {
+    // await this.broker.waitForServices([
+    //   `${CONST_CHAR.VERSION}.${SERVICE_NAME.CRAWL_SIGNING_INFO}`,
+    // ]);
+
+    this.createJob(
+      BULL_JOB_NAME.CRAWL_PROPOSAL,
+      'crawl',
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        // repeat: {
+        //   every: parseInt(Config.MILISECOND_CRAWL_PROPOSAL, 10),
+        // },
+      }
+    );
+
+    return super._start();
   }
 }

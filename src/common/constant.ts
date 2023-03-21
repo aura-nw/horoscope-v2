@@ -27,6 +27,8 @@ export const CONST_CHAR = {
   _CONTRACT_ADDRESS: '_contract_address',
   CODE_ID: 'code_id',
   EXECUTE: 'execute',
+  PROPOSAL_ID: 'proposal_id',
+  SUBMIT_PROPOSAL: 'submit_proposal',
 };
 
 export const REDIS_KEY = {
