@@ -8,6 +8,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('operator_address').unique().notNullable();
     table.string('account_address').unique().notNullable();
     table.string('consensus_address').unique().notNullable();
+    table.string('consensus_hex_address').unique().notNullable();
     table.jsonb('consensus_pubkey').notNullable();
     table.boolean('jailed').notNullable();
     table.string('status').notNullable();

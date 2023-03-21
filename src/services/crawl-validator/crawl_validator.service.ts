@@ -2,7 +2,7 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { pubkeyToRawAddress } from '@cosmjs/tendermint-rpc';
-import { fromBase64, fromBech32, toBech32 } from '@cosmjs/encoding';
+import { fromBase64, fromBech32, toBech32, toHex } from '@cosmjs/encoding';
 import { ServiceBroker } from 'moleculer';
 import Long from 'long';
 import { Validator } from '../../models/validator';
@@ -143,6 +143,12 @@ export default class CrawlValidatorService extends BullableService {
                   fromBase64(validator.consensus_pubkey.key.toString())
                 )
               );
+              const consensusHexAddress: string = toHex(
+                pubkeyToRawAddress(
+                  'ed25519',
+                  fromBase64(validator.consensus_pubkey.key.toString())
+                )
+              ).toUpperCase();
               const accountAddress = toBech32(
                 Config.NETWORK_PREFIX_ADDRESS,
                 fromBech32(validator.operator_address).data
@@ -156,6 +162,7 @@ export default class CrawlValidatorService extends BullableService {
                 operator_address: validator.operator_address,
                 account_address: accountAddress,
                 consensus_address: consensusAddress,
+                consensus_hex_address: consensusHexAddress,
                 consensus_pubkey: consensusPubkey,
                 jailed: validator.jailed,
                 status: validator.status,
