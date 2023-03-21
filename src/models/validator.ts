@@ -15,6 +15,8 @@ export class Validator extends BaseModel {
 
   consensus_address!: string;
 
+  consensus_hex_address!: string;
+
   consensus_pubkey!: IConsensusPubkey;
 
   jailed!: boolean;
@@ -66,6 +68,7 @@ export class Validator extends BaseModel {
         'operator_address',
         'account_address',
         'consensus_address',
+        'consensus_hex_address',
         'consensus_pubkey',
         'jailed',
         'status',
@@ -89,6 +92,7 @@ export class Validator extends BaseModel {
         operator_address: { type: 'string' },
         account_address: { type: 'string' },
         consensus_address: { type: 'string' },
+        consensus_hex_address: { type: 'string' },
         consensus_pubkey: {
           type: 'object',
           properties: {
