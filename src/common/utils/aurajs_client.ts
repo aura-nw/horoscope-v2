@@ -114,5 +114,8 @@ class AuraLcdClient {
     return this.lcdQueries;
   }
 }
-
-export default await AuraLcdClient.connect(Config.LCD_ENDPOINT);
+const endpoint =
+  Config.NODE_ENV === 'test'
+    ? 'https://lcd.dev.aura.network'
+    : Config.LCD_ENDPOINT;
+export default await AuraLcdClient.connect(endpoint);
