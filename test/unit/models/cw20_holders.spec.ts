@@ -4,29 +4,55 @@ import { CW20Token, ICW20Token } from '../../../src/models/cw20_token';
 import knex from '../../../src/common/utils/db_connection';
 import { CW20Holder, ICW20Holder } from '../../../src/models/cw20_holder';
 
+const mockBalance = '1000000000000000000000000000000000000000123';
+const mockTokenAddress = ['aura546543213241564', 'aura9844122522144'];
+const mockHolderAddress = ['aura122222', 'aura33333333'];
 @Describe('Test cw20_holders model')
 export default class CW20HoldersTest {
   holder: ICW20Holder = {
-    address: 'aura122222',
-    balance: 1000000000000000000000000000000000000000000,
-    contract_address: 'aura546543213241564',
+    address: mockHolderAddress[0],
+    balance: mockBalance,
+    contract_address: mockTokenAddress[0],
   };
 
-  token: ICW20Token = {
-    code_id: '1',
-    asset_info: {
-      data: { name: '', symbol: '', decimals: 10, total_supply: '' },
+  token: ICW20Token[] = [
+    {
+      code_id: '1',
+      asset_info: {
+        data: { name: '', symbol: '', decimals: 10, total_supply: '' },
+      },
+      contract_address: mockTokenAddress[0],
+      marketing_info: {
+        data: {
+          project: '',
+          description: '',
+          logo: { url: '' },
+          marketing: '',
+        },
+      },
     },
-    contract_address: 'aura546543213241564',
-    marketing_info: {
-      data: { project: '', description: '', logo: { url: '' }, marketing: '' },
+    {
+      code_id: '2',
+      asset_info: {
+        data: { name: '', symbol: '', decimals: 10, total_supply: '' },
+      },
+      contract_address: mockTokenAddress[1],
+      marketing_info: {
+        data: {
+          project: '',
+          description: '',
+          logo: { url: '' },
+          marketing: '',
+        },
+      },
     },
-  };
+  ];
 
   @BeforeAll()
   async initSuite() {
-    await knex('cw20_holder').del();
-    await knex('cw20_token').del();
+    await knex.raw(
+      'TRUNCATE TABLE cw20_holder, cw20_token RESTART IDENTITY CASCADE'
+    );
     await CW20Token.query().insert(this.token);
     await CW20Holder.query().insert(this.holder);
   }
@@ -35,15 +61,15 @@ export default class CW20HoldersTest {
   public async testQuery() {
     const holder = await CW20Holder.query().first();
     expect(holder).not.toBeUndefined();
-    expect(holder?.address).toBe('aura122222');
-    expect(holder?.balance).toBe('1000000000000000000000000000000000000000000');
+    expect(holder?.address).toBe(mockHolderAddress[0]);
+    expect(holder?.balance).toBe('1000000000000000000000000000000000000000123');
   }
 
   @Test('Update success')
   public async testUpdate() {
     await CW20Holder.query()
       .patch({ address: 'phamphong' })
-      .where('address', 'aura122222');
+      .where('address', mockHolderAddress[0]);
     const holder = await CW20Holder.query()
       .where('address', 'phamphong')
       .first();
@@ -53,12 +79,12 @@ export default class CW20HoldersTest {
   @Test('Insert success')
   public async testInsert() {
     await CW20Holder.query().insert({
-      address: 'aura33333333',
-      balance: 100000000000000000000000000000000000000,
-      contract_address: 'aura546543213241564',
+      address: mockHolderAddress[1],
+      balance: '100000000000000000000000000000000000000',
+      contract_address: mockTokenAddress[1],
     });
     const holder = await CW20Holder.query()
-      .where('address', 'aura33333333')
+      .where('address', mockHolderAddress[1])
       .first();
     expect(holder).not.toBeUndefined();
   }
@@ -67,9 +93,17 @@ export default class CW20HoldersTest {
   public async testInsertBalanceNullFail() {
     await expect(
       CW20Holder.query().insert({
-        address: 'aura33333333',
-        contract_address: 'aura546543213241564',
+        address: mockHolderAddress[1],
+        contract_address: mockTokenAddress[0],
       })
     ).rejects.toBeInstanceOf(ValidationError);
+  }
+
+  @Test('Query relation success')
+  public async testQueryRelation() {
+    const token = (await CW20Holder.relatedQuery('token')
+      .for([2])
+      .first()) as CW20Token;
+    expect(token.code_id).toBe(this.token[1].code_id);
   }
 }

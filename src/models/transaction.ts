@@ -21,7 +21,7 @@ export default class Transaction extends BaseModel {
 
   gas_limit!: string;
 
-  fee!: number;
+  fee!: string;
 
   // fee_payer!: string;
 
