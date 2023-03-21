@@ -51,7 +51,7 @@ export default class CrawlBlockService extends BullableService {
     if (!blockHeightCrawled) {
       blockHeightCrawled = await BlockCheckpoint.query().insert({
         job_name: BLOCK_CHECKPOINT_JOB_NAME.BLOCK_HEIGHT_CRAWLED,
-        height: parseInt(Config.START_BLOCK, 10),
+        height: parseInt(Config.START_BLOCK ?? 0, 10),
       });
     }
 
