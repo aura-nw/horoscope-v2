@@ -1,5 +1,7 @@
 import { Model } from 'objection';
 import BaseModel from './base';
+import BlockSignature from './block_signature';
+import Transaction from './transaction';
 
 export default class Block extends BaseModel {
   height!: number;
@@ -20,6 +22,10 @@ export default class Block extends BaseModel {
     return ['data'];
   }
 
+  static get idColumn(): string | string[] {
+    return 'height';
+  }
+
   static get jsonSchema() {
     return {
       type: 'object',
@@ -27,7 +33,7 @@ export default class Block extends BaseModel {
       properties: {
         height: { type: 'number' },
         hash: { type: 'string', minLength: 1, maxLength: 255 },
-        time: { type: 'timestamp' },
+        time: { type: 'string', format: 'date-time' },
         proposer_address: { type: 'string', minLength: 1, maxLength: 255 },
       },
     };
@@ -37,15 +43,15 @@ export default class Block extends BaseModel {
     return {
       signatures: {
         relation: Model.HasManyRelation,
-        modelClass: 'block_signature',
+        modelClass: BlockSignature,
         join: {
-          from: 'block.id',
-          to: 'block_signature.block_id',
+          from: 'block.height',
+          to: 'block_signature.height',
         },
       },
       txs: {
         relation: Model.HasManyRelation,
-        modelClass: 'transaction',
+        modelClass: Transaction,
         join: {
           from: 'block.height',
           to: 'transaction.height',

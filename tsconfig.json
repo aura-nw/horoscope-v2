@@ -3,7 +3,7 @@
   "compilerOptions": {
     "target": "ES6",
     "rootDirs": ["./src", "./test"],
-    "module": "ESNext",
+    "module": "ESNEXT",
     "outDir": "dist",
     "forceConsistentCasingInFileNames": true,
     "strict": true,

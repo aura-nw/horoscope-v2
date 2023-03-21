@@ -1,7 +1,11 @@
 import { Model } from 'objection';
 import BaseModel from './base';
+// eslint-disable-next-line import/no-cycle
+import TransactionEvent from './transaction_event';
 
 export default class Transaction extends BaseModel {
+  id!: number;
+
   height!: number;
 
   hash!: string;
@@ -10,21 +14,21 @@ export default class Transaction extends BaseModel {
 
   code!: number;
 
-  gas_used!: number;
+  gas_used!: string;
 
-  gas_wanted!: number;
+  gas_wanted!: string;
 
-  gas_limit!: number;
+  gas_limit!: string;
 
   fee!: number;
 
-  fee_payer!: string;
+  // fee_payer!: string;
 
-  fee_granter!: string;
+  // fee_granter!: string;
 
-  signer_public_key_type!: string;
+  // signer_public_key_type!: string;
 
-  signer_public_key_threshold: number | undefined;
+  // signer_public_key_threshold: number | undefined;
 
   timstamp!: Date;
 
@@ -50,10 +54,10 @@ export default class Transaction extends BaseModel {
         'gas_wanted',
         'gas_limit',
         'fee',
-        'fee_payer',
-        'fee_granter',
-        'signer_public_key_type',
-        'signer_public_key_threshold',
+        // 'fee_payer',
+        // 'fee_granter',
+        // 'signer_public_key_type',
+        // 'signer_public_key_threshold',
         'timestamp',
         'data',
       ],
@@ -62,15 +66,15 @@ export default class Transaction extends BaseModel {
         hash: { type: 'string' },
         codespace: { type: 'string' },
         code: { type: 'number' },
-        gas_used: { type: 'number' },
-        gas_wanted: { type: 'number' },
-        gas_limit: { type: 'number' },
-        fee: { type: 'number' },
-        fee_payer: { type: 'string' },
-        fee_granter: { type: 'string' },
-        signer_public_key_type: { type: 'string' },
-        signer_public_key_threshold: { type: 'number' },
-        timestamp: { type: 'timestamp' },
+        gas_used: { type: 'string' },
+        gas_wanted: { type: 'string' },
+        gas_limit: { type: 'string' },
+        // fee: { type: 'number' },
+        // fee_payer: { type: 'string' },
+        // fee_granter: { type: 'string' },
+        // signer_public_key_type: { type: 'string' },
+        // signer_public_key_threshold: { type: 'number' },
+        timestamp: { type: 'string', format: 'date-time' },
       },
     };
   }
@@ -95,7 +99,7 @@ export default class Transaction extends BaseModel {
       },
       events: {
         relation: Model.HasManyRelation,
-        modelClass: 'transaction_event',
+        modelClass: TransactionEvent,
         join: {
           from: 'transaction.id',
           to: 'transaction_event.tx_id',

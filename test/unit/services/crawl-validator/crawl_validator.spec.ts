@@ -1,0 +1,121 @@
+import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
+import { ServiceBroker } from 'moleculer';
+import Block from '../../../../src/models/block';
+import Transaction from '../../../../src/models/transaction';
+import knex from '../../../../src/common/utils/db_connection';
+import CrawlSigningInfoService from '../../../../src/services/crawl-validator/crawl_signing_info.service';
+import CrawlValidatorService from '../../../../src/services/crawl-validator/crawl_validator.service';
+import { Validator } from '../../../../src/models/validator';
+
+@Describe('Test crawl_validator service')
+export default class CrawlValidatorTest {
+  block: Block = Block.fromJson({
+    height: 3967530,
+    hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9F',
+    time: '2023-01-12T01:53:57.216Z',
+    proposer_address: 'auraomd;cvpio3j4eg',
+    data: {},
+  });
+
+  txInsert = {
+    ...Transaction.fromJson({
+      height: 3967530,
+      hash: '4A8B0DE950F563553A81360D4782F6EC451F6BEF7AC50E2459D1997FA168997D',
+      codespace: '',
+      code: 0,
+      gas_used: '123035',
+      gas_wanted: '141106',
+      gas_limit: '141106',
+      fee: 353,
+      timestamp: '2023-01-12T01:53:57.000Z',
+      data: {},
+    }),
+    events: {
+      tx_msg_index: 0,
+      type: 'delegate',
+      attributes: [
+        {
+          key: 'validator',
+          value: 'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx',
+        },
+      ],
+    },
+  };
+
+  broker = new ServiceBroker({ logger: false });
+
+  crawlValidatorService?: CrawlValidatorService;
+
+  crawlSigningInfoService?: CrawlSigningInfoService;
+
+  @BeforeAll()
+  async initSuite() {
+    this.broker.start();
+    this.crawlSigningInfoService = this.broker.createService(
+      CrawlSigningInfoService
+    ) as CrawlSigningInfoService;
+    this.crawlValidatorService = this.broker.createService(
+      CrawlValidatorService
+    ) as CrawlValidatorService;
+    await Promise.all([
+      knex('validator').del(),
+      knex('transaction_event_attribute').del(),
+      knex('block_checkpoint').del(),
+    ]);
+    await knex('transaction_event').del();
+    await knex('transaction').del();
+    await knex('block').del();
+    await Block.query().insert(this.block);
+    await Transaction.query().insertGraph(this.txInsert);
+  }
+
+  @AfterAll()
+  async tearDown() {
+    await Promise.all([
+      knex('validator').del(),
+      knex('transaction_event_attribute').del(),
+      knex('block_checkpoint').del(),
+    ]);
+    await knex('transaction_event').del();
+    await knex('transaction').del();
+    await knex('block').del();
+    this.broker.stop();
+  }
+
+  @Test('Crawl validator info success')
+  public async testCrawlValidator() {
+    await this.crawlValidatorService?.handleCrawlAllValidator({});
+
+    const validators = await Validator.query();
+
+    expect(
+      validators.find(
+        (val) =>
+          val.operator_address ===
+          'auravaloper1edw4lwcz3esnlgzcw60ra8m38k3zygz2xtl2qh'
+      )?.account_address
+    ).toEqual('aura1edw4lwcz3esnlgzcw60ra8m38k3zygz2aewzcf');
+    expect(
+      validators.find(
+        (val) =>
+          val.operator_address ===
+          'auravaloper1edw4lwcz3esnlgzcw60ra8m38k3zygz2xtl2qh'
+      )?.consensus_address
+    ).toEqual('auravalcons1s6gzw2kyrduq60cqnj04psmyv8yk0vxp7m2chr');
+
+    expect(
+      validators.find(
+        (val) =>
+          val.operator_address ===
+          'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx'
+      )?.account_address
+    ).toEqual('aura1d3n0v5f23sqzkhlcnewhksaj8l3x7jey8hq0sc');
+    expect(
+      validators.find(
+        (val) =>
+          val.operator_address ===
+          'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx'
+      )?.consensus_address
+    ).toEqual('auravalcons1wep98af7gdsk54d9f0dwapr6qpxkpll5udf62e');
+  }
+}

@@ -1,5 +1,7 @@
 import { Model } from 'objection';
 import BaseModel from './base';
+// eslint-disable-next-line import/no-cycle
+import TransactionEvent from './transaction_event';
 
 export default class TransactionEventAttribute extends BaseModel {
   event_id!: number;
@@ -28,7 +30,7 @@ export default class TransactionEventAttribute extends BaseModel {
     return {
       owner: {
         relation: Model.BelongsToOneRelation,
-        modelClass: 'transaction_event',
+        modelClass: TransactionEvent,
         join: {
           from: 'transaction_event_attribute.event_id',
           to: 'transaction_event.id',
