@@ -1,5 +1,5 @@
 import { Config } from '.';
-import Network from '../../network.json';
+import Network from '../../network.json' assert { type: 'json' };
 
 export const testNetwork = {
   chainId: 'aura-testnet-2',
