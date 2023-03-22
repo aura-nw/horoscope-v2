@@ -1,5 +1,5 @@
 import { auranw, cosmwasm, ibc } from '@aura-nw/aurajs';
-import { Config } from '..';
+import network from '../network';
 
 interface CosmosQuery {
   cosmos: {
@@ -114,8 +114,5 @@ class AuraLcdClient {
     return this.lcdQueries;
   }
 }
-const endpoint =
-  Config.NODE_ENV === 'test'
-    ? 'https://lcd.dev.aura.network'
-    : Config.LCD_ENDPOINT;
-export default await AuraLcdClient.connect(endpoint);
+
+export default await AuraLcdClient.connect(network.LCD[0]);
