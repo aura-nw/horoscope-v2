@@ -1,25 +1,16 @@
 /* eslint-disable import/no-extraneous-dependencies */
-// import { fromBase64, toBech32 } from '@cosmjs/encoding';
-// import { pubkeyToRawAddress } from '@cosmjs/tendermint-rpc';
-import {
-  //   Action,
-  Service,
-} from '@ourparentcenter/moleculer-decorators-extended';
+import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
-import { Proposal } from 'src/models/proposal';
-import { Account } from 'src/models/account';
+import { Proposal } from '../../models/proposal';
+import { Account } from '../../models/account';
 import { Config } from '../../common';
-// import { getLcdClient } from '../../common/utils/aurajs_client';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-// import { Config } from '../../common';
 import {
+  BULL_ACTION_NAME,
   BULL_JOB_NAME,
   CONST_CHAR,
-  //   BULL_ACTION_NAME,
-  //   BULL_JOB_NAME,
-  // MODULE_PARAM,
+  PROPOSAL_STATUS,
   SERVICE_NAME,
-  // URL_TYPE_CONSTANTS,
 } from '../../common/constant';
 import { getLcdClient } from '../../common/utils/aurajs_client';
 import BlockCheckpoint from '../../models/block_checkpoint';
@@ -43,29 +34,29 @@ export default class CrawlProposalService extends BullableService {
     jobType: 'crawl',
     prefix: `horoscope-v2-${Config.CHAIN_ID}`,
   })
-  private async handleCrawlAllValidator(_payload: object): Promise<void> {
+  private async handleCrawlProposals(_payload: object): Promise<void> {
     this._lcdClient = await getLcdClient();
 
     const listBulk: any[] = [];
 
-    const [handleAddressBlockCheckpoint, latestBlock]: [
+    const [crawlProposalBlockCheckpoint, latestBlock]: [
       BlockCheckpoint | undefined,
       Block | undefined
     ] = await Promise.all([
       BlockCheckpoint.query()
-        .select('height')
-        .findOne('job_name', BULL_JOB_NAME.CRAWL_VALIDATOR),
+        .select('*')
+        .findOne('job_name', BULL_JOB_NAME.CRAWL_PROPOSAL),
       Block.query().select('height').findOne({}).orderBy('height', 'desc'),
     ]);
 
     let lastHeight = 0;
     let updateBlockCheckpoint: BlockCheckpoint;
-    if (handleAddressBlockCheckpoint) {
-      lastHeight = handleAddressBlockCheckpoint.height;
-      updateBlockCheckpoint = handleAddressBlockCheckpoint;
+    if (crawlProposalBlockCheckpoint) {
+      lastHeight = crawlProposalBlockCheckpoint.height;
+      updateBlockCheckpoint = crawlProposalBlockCheckpoint;
     } else
       updateBlockCheckpoint = BlockCheckpoint.fromJson({
-        job_name: BULL_JOB_NAME.CRAWL_VALIDATOR,
+        job_name: BULL_JOB_NAME.CRAWL_PROPOSAL,
         height: 0,
       });
 
@@ -110,7 +101,9 @@ export default class CrawlProposalService extends BullableService {
         this.logger.info(JSON.stringify(resultTx));
 
         if (resultTx.length > 0)
-          resultTx.map((res: any) => proposalIds.push(res.value));
+          resultTx.map((res: any) =>
+            proposalIds.push(Number.parseInt(res.value, 10))
+          );
 
         if (resultTx.length === 100) offset += 1;
         else done = true;
@@ -130,7 +123,9 @@ export default class CrawlProposalService extends BullableService {
               });
 
             this.logger.info(
-              `Proposal ${proposalId} content: ${proposal.proposal.content}`
+              `Proposal ${proposalId} content: ${JSON.stringify(
+                proposal.proposal.content
+              )}`
             );
 
             const foundProposal: Proposal | undefined = listProposalsInDb.find(
@@ -145,13 +140,10 @@ export default class CrawlProposalService extends BullableService {
               proposalEntity = Proposal.fromJson({
                 proposal_id: proposalId,
                 proposer_id: proposerId,
-                voting_start_time:
-                  proposal.proposal.voting_start_time.toISOString(),
-                voting_end_time:
-                  proposal.proposal.voting_end_time.toISOString(),
-                submit_time: proposal.proposal.submit_time.toISOString(),
-                deposit_end_time:
-                  proposal.proposal.deposit_end_time.toISOString(),
+                voting_start_time: proposal.proposal.voting_start_time,
+                voting_end_time: proposal.proposal.voting_end_time,
+                submit_time: proposal.proposal.submit_time,
+                deposit_end_time: proposal.proposal.deposit_end_time,
                 type: proposal.proposal.content['@type'],
                 title: proposal.proposal.content.title ?? '',
                 description: proposal.proposal.content.description ?? '',
@@ -180,6 +172,15 @@ export default class CrawlProposalService extends BullableService {
                 .merge()
                 .returning('proposal_id')
             );
+
+            if (
+              proposal.status === PROPOSAL_STATUS.PROPOSAL_STATUS_VOTING_PERIOD
+            ) {
+              this.broker.call(
+                `${CONST_CHAR.VERSION}.${SERVICE_NAME.CRAWL_TALLY_PROPOSAL}.${BULL_ACTION_NAME.PROPOSAL_TALLY_UPSERT}`,
+                { proposalId }
+              );
+            }
           })
         );
 
@@ -234,9 +235,9 @@ export default class CrawlProposalService extends BullableService {
   }
 
   public async _start() {
-    // await this.broker.waitForServices([
-    //   `${CONST_CHAR.VERSION}.${SERVICE_NAME.CRAWL_SIGNING_INFO}`,
-    // ]);
+    await this.broker.waitForServices([
+      `${CONST_CHAR.VERSION}.${SERVICE_NAME.CRAWL_TALLY_PROPOSAL}`,
+    ]);
 
     this.createJob(
       BULL_JOB_NAME.CRAWL_PROPOSAL,

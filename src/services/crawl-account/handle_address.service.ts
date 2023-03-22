@@ -51,7 +51,7 @@ export default class HandleAddressService extends BullableService {
       updateBlockCheckpoint = handleAddressBlockCheckpoint;
     } else
       updateBlockCheckpoint = BlockCheckpoint.fromJson({
-        job_name: BULL_JOB_NAME.CRAWL_VALIDATOR,
+        job_name: BULL_JOB_NAME.HANDLE_ADDRESS,
         height: 0,
       });
 

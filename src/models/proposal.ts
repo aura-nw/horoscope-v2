@@ -41,7 +41,7 @@ export class Proposal extends BaseModel {
   turnout!: number;
 
   static get tableName() {
-    return 'validator';
+    return 'proposal';
   }
 
   static get jsonAttributes() {
@@ -117,10 +117,10 @@ export class Proposal extends BaseModel {
     return {
       proposer: {
         relation: Model.BelongsToOneRelation,
-        modelClass: 'validator',
+        modelClass: 'account',
         join: {
           from: 'proposal.proposer_id',
-          to: 'validator.id',
+          to: 'account.id',
         },
       },
     };
