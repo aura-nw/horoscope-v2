@@ -1,4 +1,4 @@
-import { aura } from '@aura-nw/aurajs';
+import { auranw } from '@aura-nw/aurajs';
 import { Config } from '..';
 
 export default class AuraJsClient {
@@ -10,9 +10,8 @@ export default class AuraJsClient {
 const client = new AuraJsClient();
 
 export async function getLcdClient() {
-  const { createLCDClient } = aura.ClientFactory;
+  const { createLCDClient } = auranw.ClientFactory;
   if (!client.lcdClient) {
-    // console.log('RUN');
     client.lcdClient = await createLCDClient({
       restEndpoint: Config.LCD_ENDPOINT,
     });
@@ -21,7 +20,7 @@ export async function getLcdClient() {
 }
 
 export async function getRpcClient() {
-  const { createRPCQueryClient } = aura.ClientFactory;
+  const { createRPCQueryClient } = auranw.ClientFactory;
   if (!client.rpcClient) {
     client.rpcClient = await createRPCQueryClient({
       rpcEndpoint: Config.RPC_ENDPOINT,

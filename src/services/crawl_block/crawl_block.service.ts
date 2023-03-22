@@ -8,7 +8,6 @@ import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { BLOCK_CHECKPOINT_JOB_NAME } from '../../common/constant';
 import Block from '../../models/block';
-import BlockSignature from '../../models/block_signature';
 import BlockCheckpoint from '../../models/block_checkpoint';
 import { Config } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -45,9 +44,16 @@ export default class CrawlBlockService extends BullableService {
     this._lcdClient = await getLcdClient();
 
     // Get handled block from db
-    const blockHeightCrawled = await BlockCheckpoint.query().findOne({
+    let blockHeightCrawled = await BlockCheckpoint.query().findOne({
       job_name: BLOCK_CHECKPOINT_JOB_NAME.BLOCK_HEIGHT_CRAWLED,
     });
+
+    if (!blockHeightCrawled) {
+      blockHeightCrawled = await BlockCheckpoint.query().insert({
+        job_name: BLOCK_CHECKPOINT_JOB_NAME.BLOCK_HEIGHT_CRAWLED,
+        height: parseInt(Config.START_BLOCK ?? 0, 10),
+      });
+    }
 
     this._currentBlock = blockHeightCrawled ? blockHeightCrawled.height : 0;
     this.logger.info(`_currentBlock: ${this._currentBlock}`);
@@ -133,51 +139,47 @@ export default class CrawlBlockService extends BullableService {
         });
       }
       // insert list block to DB
-      const listBlockModel: Block[] = [];
+      const listBlockModel: any[] = [];
       listBlock.forEach((block) => {
         if (
           block.block?.header?.height &&
-          mapExistedBlock.get(parseInt(block.block?.header?.height, 10))
+          !mapExistedBlock[parseInt(block.block?.header?.height, 10)]
         ) {
-          listBlockModel.push(
-            Block.fromJson({
+          listBlockModel.push({
+            ...Block.fromJson({
               height: block?.block?.header?.height,
               hash: block?.block_id?.hash,
               time: block?.block?.header?.time,
               proposer_address: block?.block?.header?.proposer_address,
               data: block,
-            })
-          );
+            }),
+            signatures: block?.block?.last_commit?.signatures.map(
+              (signature: CommitSigSDKType) => ({
+                block_id_flag: signature.block_id_flag,
+                validator_address: signature.validator_address,
+                timestamp: signature.timestamp,
+                signature: signature.signature,
+              })
+            ),
+          });
         }
       });
 
       if (listBlockModel.length) {
-        const result: any = await Block.query().insert(listBlockModel);
+        const result: any = await Block.query().insertGraph(listBlockModel);
         this.logger.debug('result insert list block: ', result);
-      }
-      // insert list signatures to DB
-      const listSignatures: BlockSignature[] = [];
-      listBlock.forEach((block) => {
-        if (mapExistedBlock.get(parseInt(block.block?.header?.height, 10))) {
-          block?.block?.last_commit?.signatures.forEach(
-            (signature: CommitSigSDKType) => {
-              listSignatures.push(
-                BlockSignature.fromJson({
-                  height: block?.block?.header?.height,
-                  block_id_flag: signature.block_id_flag,
-                  validator_address: signature.validator_address,
-                  timestamp: signature.timestamp,
-                  signature: signature.signature,
-                })
-              );
-            }
-          );
-        }
-      });
 
-      if (listSignatures.length) {
-        const result = await BlockSignature.query().insert(listSignatures);
-        this.logger.debug('result insert list signatures: ', result);
+        // insert tx by block height
+        const listBlockWithTime: any = [];
+        listBlockModel.forEach((block) => {
+          listBlockWithTime.push({
+            height: block.height,
+            timestamp: block.time,
+          });
+        });
+        this.broker.call('v1.crawl.tx.crawlTxByHeight', {
+          listBlock: listBlockWithTime,
+        });
       }
     } catch (error) {
       this.logger.error(error);
@@ -185,6 +187,7 @@ export default class CrawlBlockService extends BullableService {
   }
 
   public async _start() {
+    await this.waitForServices('v1.crawl.tx');
     this.createJob(
       'crawl.block',
       'crawl.block',

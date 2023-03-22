@@ -1,5 +1,9 @@
 import { Model } from 'objection';
 import BaseModel from './base';
+// eslint-disable-next-line import/no-cycle
+import Transaction from './transaction';
+// eslint-disable-next-line import/no-cycle
+import TransactionEventAttribute from './transaction_event_attribute';
 
 export default class TransactionEvent extends BaseModel {
   tx_id!: number;
@@ -28,7 +32,7 @@ export default class TransactionEvent extends BaseModel {
     return {
       owner: {
         relation: Model.BelongsToOneRelation,
-        modelClass: 'transaction',
+        modelClass: Transaction,
         join: {
           from: 'transaction_event.tx_id',
           to: 'transaction.id',
@@ -36,7 +40,7 @@ export default class TransactionEvent extends BaseModel {
       },
       attributes: {
         relation: Model.HasManyRelation,
-        modelClass: 'transaction_event_attribute',
+        modelClass: TransactionEventAttribute,
         join: {
           from: 'transaction_event.id',
           to: 'transaction_event_attribute.event_id',
