@@ -10,6 +10,7 @@ export default class CrawlSigningInfoTest {
     commission: JSON.parse('{}'),
     operator_address: 'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx',
     consensus_address: 'auravalcons1wep98af7gdsk54d9f0dwapr6qpxkpll5udf62e',
+    consensus_hex_address: '764253F53E43616A55A54BDAEE847A004D60FFF4',
     consensus_pubkey: {
       type: '/cosmos.crypto.ed25519.PubKey',
       key: 'UaS9Gv6C+SB7PkbRFag2i8hOvJzFGks1+y5hnd0+C6w=',

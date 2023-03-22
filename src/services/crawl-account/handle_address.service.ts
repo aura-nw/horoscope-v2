@@ -51,7 +51,7 @@ export default class HandleAddressService extends BullableService {
       updateBlockCheckpoint = handleAddressBlockCheckpoint;
     } else
       updateBlockCheckpoint = BlockCheckpoint.fromJson({
-        job_name: BULL_JOB_NAME.CRAWL_VALIDATOR,
+        job_name: BULL_JOB_NAME.HANDLE_ADDRESS,
         height: 0,
       });
 
@@ -128,15 +128,11 @@ export default class HandleAddressService extends BullableService {
         });
 
         try {
+          updateBlockCheckpoint.height = latestBlock.height;
           await Promise.all([
             ...listInsert,
             BlockCheckpoint.query()
-              .insert(
-                BlockCheckpoint.fromJson({
-                  job_name: BULL_JOB_NAME.HANDLE_ADDRESS,
-                  height: latestBlock.height,
-                })
-              )
+              .insert(updateBlockCheckpoint)
               .onConflict('job_name')
               .merge()
               .returning('id'),
@@ -144,13 +140,6 @@ export default class HandleAddressService extends BullableService {
         } catch (error) {
           this.logger.error(error);
         }
-
-        updateBlockCheckpoint.height = latestBlock.height;
-        await BlockCheckpoint.query()
-          .insert(updateBlockCheckpoint)
-          .onConflict('job_name')
-          .merge()
-          .returning('id');
 
         this.broker.call(
           `${CONST_CHAR.VERSION}.${SERVICE_NAME.CRAWL_ACCOUNT}.${BULL_ACTION_NAME.ACCOUNT_UPSERT}`,
