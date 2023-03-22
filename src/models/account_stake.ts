@@ -2,6 +2,8 @@ import { Model } from 'objection';
 import BaseModel from './base';
 
 export default class AccountStake extends BaseModel {
+  id!: number;
+
   account_id!: number;
 
   validator_src_id!: number;

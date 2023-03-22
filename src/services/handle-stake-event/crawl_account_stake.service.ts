@@ -23,9 +23,9 @@ import {
 import { IListAddressesParam } from '../../common/utils/request';
 import { Account } from '../../models/account';
 import {
-  DelegatorDelegationsRequest,
-  DelegatorRedelegationsRequest,
-  DelegatorUnbondingRequest,
+  IDelegatorDelegations,
+  IDelegatorRedelegations,
+  IDelegatorUnbonding,
 } from '../../common/types/interfaces';
 
 @Service({
@@ -114,7 +114,7 @@ export default class CrawlAccountStakeService extends BullableService {
             const listDelegations: DelegationResponseSDKType[] = [];
             let done = false;
             let resultCallApi;
-            const params: DelegatorDelegationsRequest = {
+            const params: IDelegatorDelegations = {
               delegatorAddr: address,
             };
             while (!done) {
@@ -142,7 +142,8 @@ export default class CrawlAccountStakeService extends BullableService {
               await Promise.all([
                 AccountStake.query()
                   .select('*')
-                  .where('account_id', account.id),
+                  .where('account_id', account.id)
+                  .andWhere('type', CONST_CHAR.DELEGATE),
                 Validator.query()
                   .select('*')
                   .whereIn(
@@ -169,6 +170,8 @@ export default class CrawlAccountStakeService extends BullableService {
                 accountStake.shares = Number.parseFloat(
                   delegate.delegation?.shares || '0'
                 );
+
+                accountStakes.splice(accountStakes.indexOf(accountStake), 1);
               } else {
                 accountStake = AccountStake.fromJson({
                   account_id: account.id,
@@ -194,6 +197,14 @@ export default class CrawlAccountStakeService extends BullableService {
                   .returning('id')
               );
             });
+
+            if (accountStakes.length > 0) {
+              accountStakes.map((accStake: AccountStake) =>
+                listUpdateQueries.push(
+                  AccountStake.query().deleteById(accStake.id)
+                )
+              );
+            }
           }
         })
       );
@@ -233,7 +244,7 @@ export default class CrawlAccountStakeService extends BullableService {
             const listRedelegations: RedelegationResponseSDKType[] = [];
             let done = false;
             let resultCallApi;
-            const params: DelegatorRedelegationsRequest = {
+            const params: IDelegatorRedelegations = {
               delegatorAddr: address,
               srcValidatorAddr: '',
               dstValidatorAddr: '',
@@ -263,7 +274,8 @@ export default class CrawlAccountStakeService extends BullableService {
               await Promise.all([
                 AccountStake.query()
                   .select('*')
-                  .where('account_id', account.id),
+                  .where('account_id', account.id)
+                  .andWhere('type', CONST_CHAR.REDELEGATE),
                 Validator.query()
                   .select('*')
                   .whereIn(
@@ -313,6 +325,8 @@ export default class CrawlAccountStakeService extends BullableService {
                     creation_height: entry.redelegation_entry?.creation_height,
                     end_time: entry.redelegation_entry?.completion_time,
                   });
+                } else {
+                  accountStakes.splice(accountStakes.indexOf(accountStake), 1);
                 }
 
                 listUpdateQueries.push(
@@ -324,6 +338,14 @@ export default class CrawlAccountStakeService extends BullableService {
                 );
               });
             });
+
+            if (accountStakes.length > 0) {
+              accountStakes.map((accStake: AccountStake) =>
+                listUpdateQueries.push(
+                  AccountStake.query().deleteById(accStake.id)
+                )
+              );
+            }
           }
         })
       );
@@ -363,7 +385,7 @@ export default class CrawlAccountStakeService extends BullableService {
             const listUnbonding: UnbondingDelegationSDKType[] = [];
             let done = false;
             let resultCallApi;
-            const params: DelegatorUnbondingRequest = {
+            const params: IDelegatorUnbonding = {
               delegatorAddr: address,
             };
             while (!done) {
@@ -391,7 +413,8 @@ export default class CrawlAccountStakeService extends BullableService {
               await Promise.all([
                 AccountStake.query()
                   .select('*')
-                  .where('account_id', account.id),
+                  .where('account_id', account.id)
+                  .andWhere('type', CONST_CHAR.UNBOND),
                 Validator.query()
                   .select('*')
                   .whereIn(
@@ -425,6 +448,8 @@ export default class CrawlAccountStakeService extends BullableService {
                     creation_height: entry.creation_height,
                     end_time: entry.completion_time,
                   });
+                } else {
+                  accountStakes.splice(accountStakes.indexOf(accountStake), 1);
                 }
 
                 listUpdateQueries.push(
@@ -436,6 +461,14 @@ export default class CrawlAccountStakeService extends BullableService {
                 );
               });
             });
+
+            if (accountStakes.length > 0) {
+              accountStakes.map((accStake: AccountStake) =>
+                listUpdateQueries.push(
+                  AccountStake.query().deleteById(accStake.id)
+                )
+              );
+            }
           }
         })
       );
@@ -447,4 +480,6 @@ export default class CrawlAccountStakeService extends BullableService {
       }
     }
   }
+
+  // TODO: Need interval job to delete finished redelegate and unbond
 }
