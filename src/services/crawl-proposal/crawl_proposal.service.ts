@@ -248,9 +248,9 @@ export default class CrawlProposalService extends BullableService {
         removeOnFail: {
           count: 3,
         },
-        // repeat: {
-        //   every: parseInt(Config.MILISECOND_CRAWL_PROPOSAL, 10),
-        // },
+        repeat: {
+          every: parseInt(Config.MILISECOND_CRAWL_PROPOSAL, 10),
+        },
       }
     );
 
