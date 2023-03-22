@@ -192,26 +192,34 @@ export default class CrawlTxService extends BullableService {
     const listTxModel: any[] = [];
     listTx.forEach((tx: any) => {
       this.logger.debug(tx, timestamp);
-      tx.tx_response.events.map((event: any) => ({ type: event.type }));
-      const sender = fromUtf8(
-        fromBase64(
-          this._findAttribute(
-            tx.tx_response.events,
-            'message',
-            // c2VuZGVy is sender in base64
-            'c2VuZGVy'
+      let sender = '';
+      try {
+        sender = fromUtf8(
+          fromBase64(
+            this._findAttribute(
+              tx.tx_response.events,
+              'message',
+              // c2VuZGVy is sender in base64
+              'c2VuZGVy'
+            )
           )
-        )
-      );
+        );
+      } catch (error) {
+        this.logger.warn(
+          'txhash not has sender event: ',
+          tx.tx_response.txhash
+        );
+        this.logger.warn(error);
+      }
 
       // scan list transfer.recipient and wasm.recipient
       const listAddressReceiver: any[][] = [[]];
-      tx.tx_response.logs.forEach((log: any, index: number) => {
-        log.events.forEach((event: any) => {
+      tx.tx_response?.logs?.forEach((log: any, index: number) => {
+        log.events?.forEach((event: any) => {
           if (event.type === 'transfer' || event.type === 'wasm') {
             event.attributes.forEach((attribute: any) => {
               if (attribute.key === 'recipient') {
-                listAddressReceiver[index].push({
+                listAddressReceiver[index]?.push({
                   address: attribute.value,
                   reason: `${event.type}.${attribute.key}`,
                 });
@@ -353,12 +361,17 @@ export default class CrawlTxService extends BullableService {
     eventType: string,
     attributeKey: string
   ): string {
-    const result = events
-      .find((event: any) => event.type === eventType)
-      ?.attributes.find(
-        (attribute: any) => attribute.key === attributeKey
-      )?.value;
-    if (!result) {
+    let result = '';
+    events.forEach((event: any) => {
+      if (event.type === eventType) {
+        event.attributes.forEach((attribute: any) => {
+          if (attribute.key === attributeKey) {
+            result = attribute.value;
+          }
+        });
+      }
+    });
+    if (!result.length) {
       throw new Error(
         `Could not find attribute ${attributeKey} in event type ${eventType}`
       );
