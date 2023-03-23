@@ -1,5 +1,6 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
+import { BULL_JOB_NAME } from '../../../../src/common/constant';
 import Block from '../../../../src/models/block';
 import Transaction from '../../../../src/models/transaction';
 import knex from '../../../../src/common/utils/db_connection';
@@ -79,6 +80,22 @@ export default class HandleAddressTest {
     this.handleAddressService = this.broker.createService(
       HandleAddressService
     ) as HandleAddressService;
+    await this.crawlAccountService
+      .getQueueManager()
+      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH)
+      .clean(1000);
+    await this.crawlAccountService
+      .getQueueManager()
+      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES)
+      .clean(1000);
+    await this.crawlAccountService
+      .getQueueManager()
+      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES)
+      .clean(1000);
+    await this.handleAddressService
+      .getQueueManager()
+      .getQueue(BULL_JOB_NAME.HANDLE_ADDRESS)
+      .clean(1000);
     await Promise.all([
       knex('account').del(),
       knex('transaction_event_attribute').del(),
