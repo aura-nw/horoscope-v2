@@ -51,7 +51,7 @@ export default class CrawlBlockService extends BullableService {
     if (!blockHeightCrawled) {
       blockHeightCrawled = await BlockCheckpoint.query().insert({
         job_name: BLOCK_CHECKPOINT_JOB_NAME.BLOCK_HEIGHT_CRAWLED,
-        height: parseInt(Config.START_BLOCK, 10),
+        height: parseInt(Config.START_BLOCK ?? 0, 10),
       });
     }
 
@@ -170,11 +170,15 @@ export default class CrawlBlockService extends BullableService {
         this.logger.debug('result insert list block: ', result);
 
         // insert tx by block height
-        listBlockModel.forEach(async (block) => {
-          this.broker.call('v1.crawl.tx.crawlTxByHeight', {
+        const listBlockWithTime: any = [];
+        listBlockModel.forEach((block) => {
+          listBlockWithTime.push({
             height: block.height,
             timestamp: block.time,
           });
+        });
+        this.broker.call('v1.crawl.tx.crawlTxByHeight', {
+          listBlock: listBlockWithTime,
         });
       }
     } catch (error) {
