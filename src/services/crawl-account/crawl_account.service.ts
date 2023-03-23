@@ -4,6 +4,9 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
+import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
+import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
+import { fromBase64, fromUtf8 } from '@cosmjs/encoding';
 import AccountVesting from '../../models/account_vesting';
 import {
   IAllBalances,
@@ -23,6 +26,8 @@ import { Config } from '../../common';
 import { IListAddressesParam } from '../../common/utils/request';
 import { Account, IBalance } from '../../models/account';
 import { getLcdClient } from '../../common/utils/aurajs_client';
+import BlockCheckpoint from '../../models/block_checkpoint';
+import { getHttpBatchClient } from '../../common/utils/cosmjs_client';
 
 @Service({
   name: SERVICE_NAME.CRAWL_ACCOUNT,
@@ -31,8 +36,11 @@ import { getLcdClient } from '../../common/utils/aurajs_client';
 export default class CrawlAccountService extends BullableService {
   private _lcdClient!: IAuraJSClientFactory;
 
+  private _httpBatchClient: HttpBatchClient;
+
   public constructor(public broker: ServiceBroker) {
     super(broker);
+    this._httpBatchClient = getHttpBatchClient();
   }
 
   @Action({
@@ -42,45 +50,98 @@ export default class CrawlAccountService extends BullableService {
     },
   })
   public actionAccountUpsert(ctx: Context<IListAddressesParam>) {
-    this.createJob(
-      BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH,
-      'crawl',
-      {
-        listAddresses: ctx.params.listAddresses,
-      },
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
+    this.createJobAccount(ctx.params.listAddresses);
+  }
+
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
+    jobType: 'crawl',
+    prefix: `horoscope-v2-${Config.CHAIN_ID}`,
+  })
+  public async handleJobCrawlGenesisAccount(_payload: object): Promise<void> {
+    const crawlGenesisAccountBlockCheckpoint: BlockCheckpoint | undefined =
+      await BlockCheckpoint.query()
+        .select('*')
+        .findOne('job_name', BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT);
+
+    if (
+      crawlGenesisAccountBlockCheckpoint?.height === 0 ||
+      !crawlGenesisAccountBlockCheckpoint
+    ) {
+      let listAddresses: string[] = [];
+
+      try {
+        const genesis = await this._httpBatchClient.execute(
+          createJsonRpcRequest('genesis')
+        );
+
+        listAddresses = genesis.result.genesis.app_state.bank.balances.map(
+          (balance: any) => balance.address
+        );
+      } catch (error) {
+        let genesisChunk = '';
+        let index = 0;
+        let done = false;
+        while (!done) {
+          try {
+            const resultChunk = await this._httpBatchClient.execute(
+              createJsonRpcRequest('genesis_chunked', {
+                chunk: index.toString(),
+              })
+            );
+
+            genesisChunk += fromUtf8(fromBase64(resultChunk.result.data));
+            index += 1;
+          } catch (err) {
+            done = true;
+          }
+        }
+
+        const genesisChunkObject: any = JSON.parse(genesisChunk);
+        listAddresses = genesisChunkObject.app_state.bank.balances.map(
+          (balance: any) => balance.address
+        );
       }
-    );
-    this.createJob(
-      BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
-      'crawl',
-      {
-        listAddresses: ctx.params.listAddresses,
-      },
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-      }
-    );
-    this.createJob(
-      BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES,
-      'crawl',
-      {
-        listAddresses: ctx.params.listAddresses,
-      },
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-      }
-    );
+
+      const listInsert: any[] = [];
+      const existedAccounts: string[] = (
+        await Account.query().select('*').whereIn('address', listAddresses)
+      ).map((account: Account) => account.address);
+
+      listAddresses.forEach((address: string) => {
+        if (!existedAccounts.includes(address)) {
+          const account: Account = Account.fromJson({
+            address,
+            balances: [],
+            spendable_balances: [],
+            type: null,
+            pubkey: {},
+            account_number: 0,
+            sequence: 0,
+          });
+          listInsert.push(Account.query().insert(account));
+        }
+      });
+
+      await Promise.all(listInsert);
+
+      this.createJobAccount(listAddresses);
+
+      let updateBlockCheckpoint: BlockCheckpoint;
+      if (crawlGenesisAccountBlockCheckpoint) {
+        updateBlockCheckpoint = crawlGenesisAccountBlockCheckpoint;
+        updateBlockCheckpoint.height = 1;
+      } else
+        updateBlockCheckpoint = BlockCheckpoint.fromJson({
+          job_name: BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
+          height: 1,
+        });
+      await BlockCheckpoint.query()
+        .insert(updateBlockCheckpoint)
+        .onConflict('job_name')
+        .merge()
+        .returning('id');
+    }
   }
 
   @QueueHandler({
@@ -95,6 +156,7 @@ export default class CrawlAccountService extends BullableService {
 
     const listUpdateQueries: any[] = [];
 
+    this.logger.info(`Handle addresses: ${_payload.listAddresses}`);
     if (_payload.listAddresses.length > 0) {
       const accounts: Account[] = await Account.query()
         .select('*')
@@ -222,6 +284,7 @@ export default class CrawlAccountService extends BullableService {
 
     const listUpdateQueries: any[] = [];
 
+    this.logger.info(`Handle addresses: ${_payload.listAddresses}`);
     if (_payload.listAddresses.length > 0) {
       const accounts: Account[] = await Account.query()
         .select('*')
@@ -295,6 +358,7 @@ export default class CrawlAccountService extends BullableService {
 
     const listUpdateQueries: any[] = [];
 
+    this.logger.info(`Handle addresses: ${_payload.listAddresses}`);
     if (_payload.listAddresses.length > 0) {
       const accounts: Account[] = await Account.query()
         .select('*')
@@ -403,5 +467,63 @@ export default class CrawlAccountService extends BullableService {
     );
 
     return result;
+  }
+
+  private createJobAccount(listAddresses: string[]) {
+    this.createJob(
+      BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH,
+      'crawl',
+      {
+        listAddresses,
+      },
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+      }
+    );
+    this.createJob(
+      BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
+      'crawl',
+      {
+        listAddresses,
+      },
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+      }
+    );
+    this.createJob(
+      BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES,
+      'crawl',
+      {
+        listAddresses,
+      },
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+      }
+    );
+  }
+
+  public async _start() {
+    this.createJob(
+      BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
+      'crawl',
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+      }
+    );
+
+    return super._start();
   }
 }

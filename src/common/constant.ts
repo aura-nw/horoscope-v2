@@ -63,6 +63,7 @@ export const BULL_JOB_NAME = {
   CRAWL_GENESIS_VALIDATOR: 'crawl.genesis-validator',
   CRAWL_SIGNING_INFO: 'crawl.signing-info',
   HANDLE_ADDRESS: 'handle.address',
+  CRAWL_GENESIS_ACCOUNT: 'crawl.genesis-account',
   CRAWL_ACCOUNT_AUTH: 'crawl.account-auth',
   CRAWL_ACCOUNT_BALANCES: 'crawl.account-balances',
   CRAWL_ACCOUNT_SPENDABLE_BALANCES: 'crawl.account-spendable-balances',
