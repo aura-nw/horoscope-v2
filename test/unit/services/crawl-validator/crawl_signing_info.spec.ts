@@ -1,5 +1,6 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
+import { BULL_JOB_NAME } from '../../../../src/common/constant';
 import knex from '../../../../src/common/utils/db_connection';
 import { Validator } from '../../../../src/models/validator';
 import CrawlSigningInfoService from '../../../../src/services/crawl-validator/crawl_signing_info.service';
@@ -44,6 +45,10 @@ export default class CrawlSigningInfoTest {
     this.crawlSigningInfoService = this.broker.createService(
       CrawlSigningInfoService
     ) as CrawlSigningInfoService;
+    await this.crawlSigningInfoService
+      .getQueueManager()
+      .getQueue(BULL_JOB_NAME.CRAWL_SIGNING_INFO)
+      .clean(1000);
     await knex('validator').del();
     await Validator.query().insert(this.validator);
   }
@@ -56,10 +61,8 @@ export default class CrawlSigningInfoTest {
 
   @Test('Crawl validator signing info success')
   public async testCrawlSigningInfo() {
-    const validator = await Validator.query().first();
-
     await this.crawlSigningInfoService?.handleJob({
-      listAddresses: [validator?.operator_address || ''],
+      listAddresses: ['auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx'],
     });
 
     const updatedValidator = await Validator.query().first();

@@ -42,7 +42,32 @@ export default class CrawlValidatorService extends BullableService {
     prefix: `horoscope-v2-${Config.CHAIN_ID}`,
   })
   public async handleCrawlValidatorsAtGenesis(_payload: object): Promise<void> {
-    await this.updateValidators();
+    const crawlGenesisValidatorBlockCheckpoint: BlockCheckpoint | undefined =
+      await BlockCheckpoint.query()
+        .select('*')
+        .findOne('job_name', BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR);
+
+    if (
+      crawlGenesisValidatorBlockCheckpoint?.height === 0 ||
+      !crawlGenesisValidatorBlockCheckpoint
+    ) {
+      await this.updateValidators();
+
+      let updateBlockCheckpoint: BlockCheckpoint;
+      if (crawlGenesisValidatorBlockCheckpoint) {
+        updateBlockCheckpoint = crawlGenesisValidatorBlockCheckpoint;
+        updateBlockCheckpoint.height = 1;
+      } else
+        updateBlockCheckpoint = BlockCheckpoint.fromJson({
+          job_name: BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
+          height: 1,
+        });
+      await BlockCheckpoint.query()
+        .insert(updateBlockCheckpoint)
+        .onConflict('job_name')
+        .merge()
+        .returning('id');
+    }
   }
 
   @QueueHandler({
@@ -53,7 +78,7 @@ export default class CrawlValidatorService extends BullableService {
   public async handleCrawlAllValidator(_payload: object): Promise<void> {
     this._lcdClient = await getLcdClient();
 
-    const [handleAddressBlockCheckpoint, latestBlock]: [
+    const [crawlValidatorBlockCheckpoint, latestBlock]: [
       BlockCheckpoint | undefined,
       Block | undefined
     ] = await Promise.all([
@@ -65,9 +90,9 @@ export default class CrawlValidatorService extends BullableService {
 
     let lastHeight = 0;
     let updateBlockCheckpoint: BlockCheckpoint;
-    if (handleAddressBlockCheckpoint) {
-      lastHeight = handleAddressBlockCheckpoint.height;
-      updateBlockCheckpoint = handleAddressBlockCheckpoint;
+    if (crawlValidatorBlockCheckpoint) {
+      lastHeight = crawlValidatorBlockCheckpoint.height;
+      updateBlockCheckpoint = crawlValidatorBlockCheckpoint;
     } else
       updateBlockCheckpoint = BlockCheckpoint.fromJson({
         job_name: BULL_JOB_NAME.CRAWL_VALIDATOR,

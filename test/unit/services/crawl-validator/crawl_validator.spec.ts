@@ -1,5 +1,6 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
+import { BULL_JOB_NAME } from '../../../../src/common/constant';
 import Block from '../../../../src/models/block';
 import Transaction from '../../../../src/models/transaction';
 import knex from '../../../../src/common/utils/db_connection';
@@ -57,6 +58,18 @@ export default class CrawlValidatorTest {
     this.crawlValidatorService = this.broker.createService(
       CrawlValidatorService
     ) as CrawlValidatorService;
+    await this.crawlSigningInfoService
+      .getQueueManager()
+      .getQueue(BULL_JOB_NAME.CRAWL_SIGNING_INFO)
+      .clean(1000);
+    await this.crawlValidatorService
+      .getQueueManager()
+      .getQueue(BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR)
+      .clean(1000);
+    await this.crawlValidatorService
+      .getQueueManager()
+      .getQueue(BULL_JOB_NAME.CRAWL_VALIDATOR)
+      .clean(1000);
     await Promise.all([
       knex('validator').del(),
       knex('transaction_event_attribute').del(),
