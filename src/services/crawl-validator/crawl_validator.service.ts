@@ -155,15 +155,11 @@ export default class CrawlValidatorService extends BullableService {
       const [resultSelfBonded, pool] = await Promise.all([
         this._lcdClient.auranw.cosmos.staking.v1beta1.delegation({
           delegatorAddr: accountAddress,
-          validatorAddr: `${operatorAddress}`,
+          validatorAddr: operatorAddress,
         }),
         this._lcdClient.auranw.cosmos.staking.v1beta1.pool(),
       ]);
-      if (
-        resultSelfBonded &&
-        resultSelfBonded.delegation_response &&
-        resultSelfBonded.delegation_response.balance
-      ) {
+      if (resultSelfBonded?.delegation_response?.balance) {
         selfDelegationBalance =
           resultSelfBonded.delegation_response.balance.amount;
       }
@@ -308,14 +304,10 @@ export default class CrawlValidatorService extends BullableService {
     try {
       await Promise.all(listBulk);
 
-      const listAddresses: string[] = listValidator.map((validator) =>
-        validator.operator_address.toString()
+      this.broker.call(
+        `${CONST_CHAR.VERSION}.${SERVICE_NAME.CRAWL_SIGNING_INFO}.${BULL_ACTION_NAME.VALIDATOR_UPSERT}`,
+        {}
       );
-      if (listAddresses.length > 0)
-        this.broker.call(
-          `v1.CrawlSigningInfoService.${BULL_ACTION_NAME.VALIDATOR_UPSERT}`,
-          { listAddresses }
-        );
     } catch (error) {
       this.logger.error(error);
     }

@@ -1,12 +1,15 @@
+/* eslint-disable no-await-in-loop */
 /* eslint-disable import/no-extraneous-dependencies */
-import { fromBase64, toBech32 } from '@cosmjs/encoding';
-import { pubkeyToRawAddress } from '@cosmjs/tendermint-rpc';
 import {
   Action,
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
-import { Context, ServiceBroker } from 'moleculer';
-import { IAuraJSClientFactory } from 'src/common/types/interfaces';
+import { ServiceBroker } from 'moleculer';
+import Long from 'long';
+import {
+  IAuraJSClientFactory,
+  IPagination,
+} from '../../common/types/interfaces';
 import { getLcdClient } from '../../common/utils/aurajs_client';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { Config } from '../../common';
@@ -16,7 +19,6 @@ import {
   BULL_JOB_NAME,
   SERVICE_NAME,
 } from '../../common/constant';
-import { IListAddressesParam } from '../../common/utils/request';
 import { Validator } from '../../models/validator';
 
 @Service({
@@ -32,17 +34,13 @@ export default class CrawlSigningInfoService extends BullableService {
 
   @Action({
     name: BULL_ACTION_NAME.VALIDATOR_UPSERT,
-    params: {
-      listAddresses: 'string[]',
-    },
+    params: {},
   })
-  public actionValidatorUpsert(ctx: Context<IListAddressesParam>) {
+  public actionValidatorUpsert() {
     this.createJob(
       BULL_JOB_NAME.CRAWL_SIGNING_INFO,
       'crawl',
-      {
-        listAddresses: ctx.params.listAddresses,
-      },
+      {},
       {
         removeOnComplete: true,
         removeOnFail: {
@@ -57,81 +55,74 @@ export default class CrawlSigningInfoService extends BullableService {
     jobType: 'crawl',
     prefix: `horoscope-v2-${Config.CHAIN_ID}`,
   })
-  public async handleJob(_payload: IListAddressesParam): Promise<void> {
+  public async handleJob(_payload: object): Promise<void> {
     this._lcdClient = await getLcdClient();
 
-    const listFoundValidator: Validator[] = await Validator.query()
-      .select('*')
-      .whereIn('validator.operator_address', _payload.listAddresses);
+    const listUpdateValidators: Validator[] = [];
+    const listSigningInfos: any[] = [];
+
+    const listFoundValidator: Validator[] = await Validator.query().select('*');
 
     const paramSlashing =
       await this._lcdClient.auranw.cosmos.slashing.v1beta1.params();
-    const listBulk: any[] = [];
+
+    let resultCallApi;
+    let done = false;
+    const pagination: IPagination = {
+      limit: Long.fromString(Config.NUMBER_OF_VALIDATOR_PER_CALL, 10),
+    };
+
+    while (!done) {
+      resultCallApi =
+        await this._lcdClient.auranw.cosmos.slashing.v1beta1.signingInfos({
+          pagination,
+        });
+
+      listSigningInfos.push(...resultCallApi.info);
+      if (resultCallApi.pagination.next_key === null) {
+        done = true;
+      } else {
+        pagination.key = resultCallApi.pagination.next_key;
+      }
+    }
+
     await Promise.all(
       listFoundValidator.map(async (foundValidator: Validator) => {
         try {
-          const consensusPubkey = foundValidator.consensus_pubkey;
-          this.logger.debug(
-            `Found validator with address ${foundValidator.operator_address}`
-          );
-          this.logger.debug(
-            `Found validator with consensusPubkey ${consensusPubkey}`
+          const signingInfo = listSigningInfos.find(
+            (sign: any) => sign.address === foundValidator.consensus_address
           );
 
-          const address = pubkeyToRawAddress(
-            'ed25519',
-            fromBase64(consensusPubkey.key.toString())
-          );
-
-          const consensusAddress = toBech32(
-            `${Config.NETWORK_PREFIX_ADDRESS}${Config.CONSENSUS_PREFIX_ADDRESS}`,
-            address
-          );
-
-          const result =
-            await this._lcdClient.auranw.cosmos.slashing.v1beta1.signingInfo({
-              consAddress: consensusAddress,
-            });
-          this.logger.debug(result);
-
-          if (result.val_signing_info) {
+          if (signingInfo) {
             let uptime = 0;
             if (paramSlashing?.params) {
               const blockWindow =
                 paramSlashing?.params.signed_blocks_window.toString();
-              const missedBlock =
-                result.val_signing_info.missed_blocks_counter.toString();
+              const missedBlock = signingInfo.missed_blocks_counter.toString();
               uptime =
                 Number(
-                  ((BigInt(blockWindow) - BigInt(missedBlock)) *
-                    BigInt(100000000)) /
+                  (BigInt(blockWindow) - BigInt(missedBlock)) /
                     BigInt(blockWindow)
-                ) / 1000000;
+                ) * 100;
             }
 
             const updateValidator = foundValidator;
             updateValidator.start_height = Number.parseInt(
-              result.val_signing_info.start_height,
+              signingInfo.start_height,
               10
             );
             updateValidator.index_offset = Number.parseInt(
-              result.val_signing_info.index_offset,
+              signingInfo.index_offset,
               10
             );
-            updateValidator.jailed_until = result.val_signing_info.jailed_until;
-            updateValidator.tombstoned = result.val_signing_info.tombstoned;
+            updateValidator.jailed_until = signingInfo.jailed_until;
+            updateValidator.tombstoned = signingInfo.tombstoned;
             updateValidator.missed_blocks_counter = Number.parseInt(
-              result.val_signing_info.missed_blocks_counter,
+              signingInfo.missed_blocks_counter,
               10
             );
             updateValidator.uptime = uptime;
-            listBulk.push(
-              Validator.query()
-                .insert(updateValidator)
-                .onConflict('operator_address')
-                .merge()
-                .returning('id')
-            );
+            listUpdateValidators.push(updateValidator);
           }
         } catch (error) {
           this.logger.error(error);
@@ -140,7 +131,11 @@ export default class CrawlSigningInfoService extends BullableService {
     );
 
     try {
-      await Promise.all(listBulk);
+      await Validator.query()
+        .insert(listUpdateValidators)
+        .onConflict('operator_address')
+        .merge()
+        .returning('id');
     } catch (error) {
       this.logger.error(error);
     }
