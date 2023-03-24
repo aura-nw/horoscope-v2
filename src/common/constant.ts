@@ -92,3 +92,10 @@ export enum AccountType {
 export const BLOCK_CHECKPOINT_JOB_NAME = {
   BLOCK_HEIGHT_CRAWLED: 'BLOCK_HEIGHT_CRAWLED',
 };
+
+export const MSG_TYPE = {
+  MSG_STORE_CODE: '/cosmwasm.wasm.v1.MsgStoreCode',
+  MSG_INSTANTIATE_CONTRACT: '/cosmwasm.wasm.v1.MsgInstantiateContract',
+  MSG_EXECUTE_CONTRACT: '/cosmwasm.wasm.v1.MsgExecuteContract',
+  MSG_UPDATE_CLIENT: '/ibc.core.client.v1.MsgUpdateClient',
+};

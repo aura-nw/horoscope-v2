@@ -2,6 +2,7 @@ import { Model } from 'objection';
 import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
 import TransactionEvent from './transaction_event';
+import TransactionMessage from './transaction_message';
 
 export default class Transaction extends BaseModel {
   id!: number;
@@ -20,7 +21,7 @@ export default class Transaction extends BaseModel {
 
   gas_limit!: string;
 
-  fee!: number;
+  fee!: string;
 
   // fee_payer!: string;
 
@@ -91,7 +92,7 @@ export default class Transaction extends BaseModel {
       },
       messages: {
         relation: Model.HasManyRelation,
-        modelClass: 'transaction_message',
+        modelClass: TransactionMessage,
         join: {
           from: 'transaction.id',
           to: 'transaction_message.tx_id',
