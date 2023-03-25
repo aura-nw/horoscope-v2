@@ -69,8 +69,7 @@ export const BULL_JOB_NAME = {
 };
 
 export const BULL_ACTION_NAME = {
-  VALIDATOR_UPSERT: 'validator:upsert',
-  ACCOUNT_UPSERT: 'account:upsert',
+  ACCOUNT_UPSERT: 'account-upsert',
 };
 
 export const SERVICE_NAME = {
@@ -97,4 +96,8 @@ export const MSG_TYPE = {
   MSG_INSTANTIATE_CONTRACT: '/cosmwasm.wasm.v1.MsgInstantiateContract',
   MSG_EXECUTE_CONTRACT: '/cosmwasm.wasm.v1.MsgExecuteContract',
   MSG_UPDATE_CLIENT: '/ibc.core.client.v1.MsgUpdateClient',
+};
+
+export const ABCI_QUERY_PATH = {
+  VALIDATOR_DELEGATION: '/cosmos.staking.v1beta1.Query/Delegation',
 };
