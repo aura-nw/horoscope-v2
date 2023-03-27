@@ -1,6 +1,6 @@
 import { fromBase64, fromBech32, toBech32, toHex } from '@cosmjs/encoding';
 import { pubkeyToRawAddress } from '@cosmjs/tendermint-rpc';
-import { Config } from '../common';
+import config from '../../config.json';
 import BaseModel from './base';
 
 export interface IConsensusPubkey {
@@ -127,7 +127,7 @@ export class Validator extends BaseModel {
 
   static createNewValidator(validator: any): Validator {
     const consensusAddress: string = toBech32(
-      `${Config.NETWORK_PREFIX_ADDRESS}${Config.CONSENSUS_PREFIX_ADDRESS}`,
+      `${config.networkPrefixAddress}${config.consensusPrefixAddress}`,
       pubkeyToRawAddress(
         'ed25519',
         fromBase64(validator.consensus_pubkey.key.toString())
@@ -140,7 +140,7 @@ export class Validator extends BaseModel {
       )
     ).toUpperCase();
     const accountAddress = toBech32(
-      Config.NETWORK_PREFIX_ADDRESS,
+      config.networkPrefixAddress,
       fromBech32(validator.operator_address).data
     );
     const consensusPubkey = {
@@ -168,6 +168,10 @@ export class Validator extends BaseModel {
       percent_voting_power: 0,
       start_height: 0,
       index_offset: 0,
+      // TODO:
+      // Ajv Format require { type: 'string', format: 'date-time' }
+      // But when query Validator from DB, the data returned is of type Date,
+      // so it needs to be converted to string to be able to insert into DB
       jailed_until: new Date(0).toISOString(),
       tombstoned: false,
       missed_blocks_counter: 0,

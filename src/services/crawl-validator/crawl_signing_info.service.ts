@@ -10,13 +10,13 @@ import {
 } from '../../common/types/interfaces';
 import { getLcdClient } from '../../common/utils/aurajs_client';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { Config } from '../../common';
-import { CONST_CHAR, BULL_JOB_NAME, SERVICE_NAME } from '../../common/constant';
+import { BULL_JOB_NAME, SERVICE_NAME } from '../../common/constant';
 import { Validator } from '../../models/validator';
+import config from '../../../config.json';
 
 @Service({
   name: SERVICE_NAME.CRAWL_SIGNING_INFO,
-  version: CONST_CHAR.VERSION_NUMBER,
+  version: 1,
 })
 export default class CrawlSigningInfoService extends BullableService {
   private _lcdClient!: IAuraJSClientFactory;
@@ -28,7 +28,7 @@ export default class CrawlSigningInfoService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_SIGNING_INFO,
     jobType: 'crawl',
-    prefix: `horoscope-v2-${Config.CHAIN_ID}`,
+    prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: object): Promise<void> {
     this._lcdClient = await getLcdClient();
@@ -45,7 +45,7 @@ export default class CrawlSigningInfoService extends BullableService {
       let resultCallApi;
       let done = false;
       const pagination: IPagination = {
-        limit: Long.fromString(Config.NUMBER_OF_VALIDATOR_PER_CALL, 10),
+        limit: Long.fromInt(config.pageLimit.validator),
       };
 
       while (!done) {
@@ -131,7 +131,7 @@ export default class CrawlSigningInfoService extends BullableService {
           count: 3,
         },
         repeat: {
-          every: parseInt(Config.MILISECOND_CRAWL_SIGNING_INFO, 10),
+          every: config.milisecondCrawlJob.signingInfo,
         },
       }
     );

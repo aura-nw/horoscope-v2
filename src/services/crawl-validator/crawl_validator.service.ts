@@ -13,11 +13,10 @@ import {
   QueryDelegationResponse,
 } from '@aura-nw/aurajs/types/codegen/cosmos/staking/v1beta1/query';
 import { fromBase64, toHex } from '@cosmjs/encoding';
+import TransactionEventAttribute from '../../models/transaction_event_attribute';
 import { Validator } from '../../models/validator';
-import { Config } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
-  CONST_CHAR,
   BULL_JOB_NAME,
   SERVICE_NAME,
   ABCI_QUERY_PATH,
@@ -32,10 +31,11 @@ import {
   IPagination,
 } from '../../common/types/interfaces';
 import { getHttpBatchClient } from '../../common/utils/cosmjs_client';
+import config from '../../../config.json';
 
 @Service({
   name: SERVICE_NAME.CRAWL_VALIDATOR,
-  version: CONST_CHAR.VERSION_NUMBER,
+  version: 1,
 })
 export default class CrawlValidatorService extends BullableService {
   private _lcdClient!: IAuraJSClientFactory;
@@ -51,7 +51,7 @@ export default class CrawlValidatorService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
     jobType: 'crawl',
-    prefix: `horoscope-v2-${Config.CHAIN_ID}`,
+    prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleCrawlValidatorsAtGenesis(_payload: object): Promise<void> {
     this._lcdClient = await getLcdClient();
@@ -87,7 +87,7 @@ export default class CrawlValidatorService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_VALIDATOR,
     jobType: 'crawl',
-    prefix: `horoscope-v2-${Config.CHAIN_ID}`,
+    prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleCrawlAllValidator(_payload: object): Promise<void> {
     this._lcdClient = await getLcdClient();
@@ -133,9 +133,9 @@ export default class CrawlValidatorService extends BullableService {
         .andWhere('transaction.height', '<=', latestBlock.height)
         .andWhere((builder) =>
           builder.whereIn('transaction_event_attribute.key', [
-            CONST_CHAR.VALIDATOR,
-            CONST_CHAR.SOURCE_VALIDATOR,
-            CONST_CHAR.DESTINATION_VALIDATOR,
+            TransactionEventAttribute.EVENT_KEY.VALIDATOR,
+            TransactionEventAttribute.EVENT_KEY.SOURCE_VALIDATOR,
+            TransactionEventAttribute.EVENT_KEY.DESTINATION_VALIDATOR,
           ])
         )
         .limit(1)
@@ -165,7 +165,7 @@ export default class CrawlValidatorService extends BullableService {
     let resultCallApi;
     let done = false;
     const pagination: IPagination = {
-      limit: Long.fromString(Config.NUMBER_OF_VALIDATOR_PER_CALL, 10),
+      limit: Long.fromInt(config.pageLimit.validator),
     };
 
     while (!done) {
@@ -206,8 +206,8 @@ export default class CrawlValidatorService extends BullableService {
           );
           validatorEntity.unbonding_time = validator.unbonding_time;
           validatorEntity.commission = validator.commission;
-          validatorEntity.jailed_until = new Date(
-            foundValidator.jailed_until
+          validatorEntity.jailed_until = (
+            foundValidator.jailed_until as unknown as Date
           ).toISOString();
         }
 
@@ -307,7 +307,7 @@ export default class CrawlValidatorService extends BullableService {
           count: 3,
         },
         repeat: {
-          every: parseInt(Config.MILISECOND_CRAWL_VALIDATOR, 10),
+          every: config.milisecondCrawlJob.validator,
         },
       }
     );
