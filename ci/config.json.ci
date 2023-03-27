@@ -1,0 +1,17 @@
+{
+    "chainId": "aura-testnet-2",
+    "networkPrefixAddress": "aura",
+    "consensusPrefixAddress": "valcons",
+    "validatorPrefixAddress": "valoper",
+    "lcd": "https://lcd.dev.aura.network/",
+    "rpc": "https://rpc.dev.aura.network/",
+    "milisecondCrawlJob": {
+        "validator": 5000,
+        "handleAddress": 5000,
+        "proposal": 5000,
+        "signingInfo": 5000
+    },
+    "pageLimit": {
+        "validator": 50
+    }
+}
