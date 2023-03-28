@@ -1,15 +1,20 @@
 {
-    "chainId": "aura-testnet-2",
-    "networkPrefixAddress": "aura",
-    "consensusPrefixAddress": "valcons",
-    "validatorPrefixAddress": "valoper",
-    "milisecondCrawlJob": {
-        "validator": 5000,
-        "handleAddress": 5000,
-        "proposal": 5000,
-        "signingInfo": 5000
-    },
-    "pageLimit": {
-        "validator": 50
-    }
+  "chainId": "aura-testnet-2",
+  "networkPrefixAddress": "aura",
+  "consensusPrefixAddress": "valcons",
+  "validatorPrefixAddress": "valoper",
+  "millisecondCrawlJob": {
+    "validator": 5000,
+    "handleAddress": 5000,
+    "proposal": 5000,
+    "signingInfo": 5000
+  },
+  "pageLimit": {
+    "validator": 50
+  },
+  "crawlBlock": {
+    "numberOfBlockPerCall": 1,
+    "startBlock": 5294817,
+    "millisecondCrawl": 5000
+  }
 }
