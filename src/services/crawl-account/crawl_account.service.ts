@@ -155,9 +155,6 @@ export default class CrawlAccountService extends BullableService {
 
     const listUpdateQueries: any[] = [];
 
-    this.logger.info(
-      `Handle addresses crawl account auth: ${_payload.listAddresses}`
-    );
     if (_payload.listAddresses.length > 0) {
       const accounts: Account[] = await Account.query()
         .select('*')
@@ -165,6 +162,8 @@ export default class CrawlAccountService extends BullableService {
 
       await Promise.all(
         _payload.listAddresses.map(async (address: string) => {
+          this.logger.info(`Crawl account auth address: ${address}`);
+
           const account: Account | undefined = accounts.find(
             (acc: Account) => acc.address === address
           );
@@ -285,9 +284,6 @@ export default class CrawlAccountService extends BullableService {
 
     const listUpdateQueries: any[] = [];
 
-    this.logger.info(
-      `Handle addresses crawl account balances: ${_payload.listAddresses}`
-    );
     if (_payload.listAddresses.length > 0) {
       const accounts: Account[] = await Account.query()
         .select('*')
@@ -295,6 +291,8 @@ export default class CrawlAccountService extends BullableService {
 
       await Promise.all(
         _payload.listAddresses.map(async (address: string) => {
+          this.logger.info(`Crawl account balances address: ${address}`);
+
           const account: Account | undefined = accounts.find(
             (acc: Account) => acc.address === address
           );
@@ -361,9 +359,6 @@ export default class CrawlAccountService extends BullableService {
 
     const listUpdateQueries: any[] = [];
 
-    this.logger.info(
-      `Handle addresses crawl account spendable balances: ${_payload.listAddresses}`
-    );
     if (_payload.listAddresses.length > 0) {
       const accounts: Account[] = await Account.query()
         .select('*')
@@ -371,6 +366,10 @@ export default class CrawlAccountService extends BullableService {
 
       await Promise.all(
         _payload.listAddresses.map(async (address: string) => {
+          this.logger.info(
+            `Crawl account spendable balances address: ${address}`
+          );
+
           const account: Account | undefined = accounts.find(
             (acc: Account) => acc.address === address
           );

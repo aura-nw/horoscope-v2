@@ -45,7 +45,7 @@ export default class CrawlSigningInfoService extends BullableService {
       let resultCallApi;
       let done = false;
       const pagination: IPagination = {
-        limit: Long.fromInt(config.pageLimit.validator),
+        limit: Long.fromInt(config.crawlValidator.queryPageLimit),
       };
 
       while (!done) {
@@ -64,6 +64,10 @@ export default class CrawlSigningInfoService extends BullableService {
 
       await Promise.all(
         listFoundValidator.map(async (foundValidator: Validator) => {
+          this.logger.info(
+            `Update signing info of validator: ${foundValidator.operator_address}`
+          );
+
           try {
             const signingInfo = listSigningInfos.find(
               (sign: any) => sign.address === foundValidator.consensus_address
@@ -131,7 +135,7 @@ export default class CrawlSigningInfoService extends BullableService {
           count: 3,
         },
         repeat: {
-          every: config.milisecondCrawlJob.signingInfo,
+          every: config.crawlSigningInfo.milisecondCrawl,
         },
       }
     );

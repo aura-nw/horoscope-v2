@@ -83,19 +83,19 @@ export default class HandleAddressTest {
     await this.crawlAccountService
       .getQueueManager()
       .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH)
-      .clean(1000);
+      .empty();
     await this.crawlAccountService
       .getQueueManager()
       .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES)
-      .clean(1000);
+      .empty();
     await this.crawlAccountService
       .getQueueManager()
       .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES)
-      .clean(1000);
+      .empty();
     await this.handleAddressService
       .getQueueManager()
       .getQueue(BULL_JOB_NAME.HANDLE_ADDRESS)
-      .clean(1000);
+      .empty();
     await Promise.all([
       knex('account').del(),
       knex('transaction_event_attribute').del(),

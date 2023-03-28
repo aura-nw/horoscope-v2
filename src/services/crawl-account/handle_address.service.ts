@@ -89,9 +89,8 @@ export default class HandleAddressService extends BullableService {
           .limit(100)
           .offset(offset);
         this.logger.info(
-          `Result get Tx from height ${lastHeight} to ${latestBlock.height}:`
+          `Query Tx from height ${lastHeight} to ${latestBlock.height}`
         );
-        this.logger.info(JSON.stringify(resultTx));
 
         if (resultTx.length > 0)
           resultTx.map((res: any) => eventAddresses.push(res.value));
@@ -158,7 +157,7 @@ export default class HandleAddressService extends BullableService {
           count: 3,
         },
         repeat: {
-          every: config.milisecondCrawlJob.handleAddress,
+          every: config.handleAddress.milisecondCrawl,
         },
       }
     );

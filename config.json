@@ -3,18 +3,19 @@
   "networkPrefixAddress": "aura",
   "consensusPrefixAddress": "valcons",
   "validatorPrefixAddress": "valoper",
-  "milisecondCrawlJob": {
-    "validator": 5000,
-    "handleAddress": 5000,
-    "proposal": 5000,
-    "signingInfo": 5000
-  },
-  "pageLimit": {
-    "validator": 50
+  "crawlValidator": {
+    "milisecondCrawl": 5000,
+    "queryPageLimit": 50
   },
   "crawlBlock": {
-    "numberOfBlockPerCall": 1,
-    "startBlock": 5294817,
+    "milisecondCrawl": 5000,
+    "numberOfBlockPerCall": 100,
+    "startBlock": 5294817
+  },
+  "crawlSigningInfo": {
+    "milisecondCrawl": 5000
+  },
+  "handleAddress": {
     "milisecondCrawl": 5000
   }
 }

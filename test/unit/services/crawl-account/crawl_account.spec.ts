@@ -60,22 +60,24 @@ export default class CrawlAccountTest {
     await this.crawlAccountService
       .getQueueManager()
       .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH)
-      .clean(1000);
+      .empty();
     await this.crawlAccountService
       .getQueueManager()
       .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES)
-      .clean(1000);
+      .empty();
     await this.crawlAccountService
       .getQueueManager()
       .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES)
-      .clean(1000);
-    await Promise.all([knex('account').del(), knex('account_vesting').del()]);
+      .empty();
+    await knex('account_vesting').del();
+    await knex('account').del();
     await Account.query().insert(this.accounts);
   }
 
   @AfterAll()
   async tearDown() {
-    await Promise.all([knex('account').del(), knex('account_vesting').del()]);
+    await knex('account_vesting').del();
+    await knex('account').del();
     this.broker.stop();
   }
 
