@@ -1,5 +1,7 @@
+/* eslint-disable import/no-cycle */
 import { Model } from 'objection';
 import { ICoin } from 'src/common/types/interfaces';
+import { Account } from './account';
 import BaseModel from './base';
 
 export default class AccountVesting extends BaseModel {
@@ -75,7 +77,7 @@ export default class AccountVesting extends BaseModel {
     return {
       account: {
         relation: Model.BelongsToOneRelation,
-        modelClass: 'account',
+        modelClass: Account,
         join: {
           from: 'account_vesting.account_id',
           to: 'account.id',

@@ -63,6 +63,10 @@ jobs:
         run: npm install
         env:
           NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
+      - name: Setup env
+        run: cp ci/.env.ci .env
+      - name: Setup config.json
+        run: cp ci/config.json.ci config.json
       - name: Test
         env:
           NODE_ENV: test

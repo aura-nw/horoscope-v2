@@ -38,4 +38,31 @@ export default class TransactionEventAttribute extends BaseModel {
       },
     };
   }
+
+  static EVENT_KEY = {
+    BALANCES: 'balances',
+    DELEGATION_RESPONSES: 'delegation_responses',
+    REDELEGATION_RESPONSES: 'redelegation_responses',
+    UNBONDING_RESPONSES: 'unbonding_responses',
+    MESSAGE: 'message',
+    ACTION: 'action',
+    TRANSFER: 'transfer',
+    SENDER: 'sender',
+    RECEIVER: 'receiver',
+    SPENDER: 'spender',
+    RECIPIENT: 'recipient',
+    COIN_RECEIVED: 'coin_received',
+    COIN_SPENT: 'coin_spent',
+    WITHDRAW_REWARDS: 'withdraw_rewards',
+    AMOUNT: 'amount',
+    VALIDATOR: 'validator',
+    SOURCE_VALIDATOR: 'source_validator',
+    DESTINATION_VALIDATOR: 'destination_validator',
+    RECV_PACKET: 'recv_packet',
+    PACKET_DATA: 'packet_data',
+    INSTANTIATE: 'instantiate',
+    _CONTRACT_ADDRESS: '_contract_address',
+    CODE_ID: 'code_id',
+    EXECUTE: 'execute',
+  };
 }

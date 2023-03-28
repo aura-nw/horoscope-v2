@@ -14,7 +14,6 @@ import {
   IAuraJSClientFactory,
 } from '../../common/types/interfaces';
 import {
-  CONST_CHAR,
   BULL_JOB_NAME,
   SERVICE_NAME,
   BULL_ACTION_NAME,
@@ -22,16 +21,16 @@ import {
   REDIS_KEY,
 } from '../../common/constant';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { Config } from '../../common';
 import { IListAddressesParam } from '../../common/utils/request';
 import { Account, IBalance } from '../../models/account';
 import { getLcdClient } from '../../common/utils/aurajs_client';
 import BlockCheckpoint from '../../models/block_checkpoint';
 import { getHttpBatchClient } from '../../common/utils/cosmjs_client';
+import config from '../../../config.json';
 
 @Service({
   name: SERVICE_NAME.CRAWL_ACCOUNT,
-  version: CONST_CHAR.VERSION_NUMBER,
+  version: 1,
 })
 export default class CrawlAccountService extends BullableService {
   private _lcdClient!: IAuraJSClientFactory;
@@ -44,7 +43,7 @@ export default class CrawlAccountService extends BullableService {
   }
 
   @Action({
-    name: BULL_ACTION_NAME.ACCOUNT_UPSERT,
+    name: BULL_ACTION_NAME.UPDATE_ACCOUNT,
     params: {
       listAddresses: 'string[]',
     },
@@ -56,7 +55,7 @@ export default class CrawlAccountService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
     jobType: 'crawl',
-    prefix: `horoscope-v2-${Config.CHAIN_ID}`,
+    prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJobCrawlGenesisAccount(_payload: object): Promise<void> {
     const crawlGenesisAccountBlockCheckpoint: BlockCheckpoint | undefined =
@@ -147,7 +146,7 @@ export default class CrawlAccountService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH,
     jobType: 'crawl',
-    prefix: `horoscope-v2-${Config.CHAIN_ID}`,
+    prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJobAccountAuth(
     _payload: IListAddressesParam
@@ -156,7 +155,9 @@ export default class CrawlAccountService extends BullableService {
 
     const listUpdateQueries: any[] = [];
 
-    this.logger.info(`Handle addresses: ${_payload.listAddresses}`);
+    this.logger.info(
+      `Handle addresses crawl account auth: ${_payload.listAddresses}`
+    );
     if (_payload.listAddresses.length > 0) {
       const accounts: Account[] = await Account.query()
         .select('*')
@@ -275,7 +276,7 @@ export default class CrawlAccountService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
     jobType: 'crawl',
-    prefix: `horoscope-v2-${Config.CHAIN_ID}`,
+    prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJobAccountBalances(
     _payload: IListAddressesParam
@@ -284,7 +285,9 @@ export default class CrawlAccountService extends BullableService {
 
     const listUpdateQueries: any[] = [];
 
-    this.logger.info(`Handle addresses: ${_payload.listAddresses}`);
+    this.logger.info(
+      `Handle addresses crawl account balances: ${_payload.listAddresses}`
+    );
     if (_payload.listAddresses.length > 0) {
       const accounts: Account[] = await Account.query()
         .select('*')
@@ -349,7 +352,7 @@ export default class CrawlAccountService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES,
     jobType: 'crawl',
-    prefix: `horoscope-v2-${Config.CHAIN_ID}`,
+    prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJobAccountSpendableBalances(
     _payload: IListAddressesParam
@@ -358,7 +361,9 @@ export default class CrawlAccountService extends BullableService {
 
     const listUpdateQueries: any[] = [];
 
-    this.logger.info(`Handle addresses: ${_payload.listAddresses}`);
+    this.logger.info(
+      `Handle addresses crawl account spendable balances: ${_payload.listAddresses}`
+    );
     if (_payload.listAddresses.length > 0) {
       const accounts: Account[] = await Account.query()
         .select('*')

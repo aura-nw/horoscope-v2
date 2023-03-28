@@ -1,22 +1,19 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import Utils from '../../common/utils/utils';
-import {
-  CONST_CHAR,
-  BULL_JOB_NAME,
-  SERVICE_NAME,
-  BULL_ACTION_NAME,
-} from '../../common/constant';
+import { BULL_JOB_NAME, SERVICE_NAME, SERVICE } from '../../common/constant';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { Config } from '../../common';
 import BlockCheckpoint from '../../models/block_checkpoint';
 import Block from '../../models/block';
 import Transaction from '../../models/transaction';
 import { Account } from '../../models/account';
+import config from '../../../config.json';
+import TransactionEventAttribute from '../../models/transaction_event_attribute';
 
 @Service({
   name: SERVICE_NAME.HANDLE_ADDRESS,
-  version: CONST_CHAR.VERSION_NUMBER,
+  version: 1,
 })
 export default class HandleAddressService extends BullableService {
   public constructor(public broker: ServiceBroker) {
@@ -84,9 +81,9 @@ export default class HandleAddressService extends BullableService {
           .andWhere('transaction.height', '<=', latestBlock.height)
           .andWhere((builder) =>
             builder.whereIn('transaction_event_attribute.key', [
-              CONST_CHAR.RECEIVER,
-              CONST_CHAR.SPENDER,
-              CONST_CHAR.SENDER,
+              TransactionEventAttribute.EVENT_KEY.RECEIVER,
+              TransactionEventAttribute.EVENT_KEY.SPENDER,
+              TransactionEventAttribute.EVENT_KEY.SENDER,
             ])
           )
           .limit(100)
@@ -141,18 +138,15 @@ export default class HandleAddressService extends BullableService {
           this.logger.error(error);
         }
 
-        this.broker.call(
-          `${CONST_CHAR.VERSION}.${SERVICE_NAME.CRAWL_ACCOUNT}.${BULL_ACTION_NAME.ACCOUNT_UPSERT}`,
-          { listAddresses }
-        );
+        this.broker.call(`${SERVICE.V1.CrawlAccount.UpdateAccount}`, {
+          listAddresses,
+        });
       }
     }
   }
 
   public async _start() {
-    await this.broker.waitForServices([
-      `${CONST_CHAR.VERSION}.${SERVICE_NAME.CRAWL_ACCOUNT}`,
-    ]);
+    await this.broker.waitForServices([`${SERVICE.V1.CrawlAccount.name}`]);
 
     this.createJob(
       BULL_JOB_NAME.HANDLE_ADDRESS,
@@ -164,7 +158,7 @@ export default class HandleAddressService extends BullableService {
           count: 3,
         },
         repeat: {
-          every: parseInt(Config.MILISECOND_HANDLE_ADDRESS, 10),
+          every: config.milisecondCrawlJob.handleAddress,
         },
       }
     );

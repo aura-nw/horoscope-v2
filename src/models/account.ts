@@ -1,5 +1,7 @@
+/* eslint-disable import/no-cycle */
 import { Model } from 'objection';
 import { ICoin } from 'src/common/types/interfaces';
+import AccountVesting from './account_vesting';
 import BaseModel from './base';
 
 export interface IPubkey {
@@ -104,7 +106,7 @@ export class Account extends BaseModel {
       },
       vesting: {
         relation: Model.BelongsToOneRelation,
-        modelClass: 'account_vesting',
+        modelClass: AccountVesting,
         join: {
           from: 'account.id',
           to: 'account_vesting.account_id',
