@@ -15,4 +15,8 @@ export default class Utils {
     }
     return false;
   }
+
+  public static _onlyUnique(value: any, index: any, self: any) {
+    return self.indexOf(value) === index;
+  }
 }

@@ -1,3 +1,4 @@
+/* eslint-disable import/no-extraneous-dependencies */
 import { Model, AjvValidator } from 'objection';
 import addFormats from 'ajv-formats';
 import CustomQueryBuilder from './custom_query_builder';
