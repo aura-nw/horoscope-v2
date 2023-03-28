@@ -13,7 +13,7 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { getLcdClient } from '../../common/utils/aurajs_client';
 import { getHttpBatchClient } from '../../common/utils/cosmjs_client';
 import { IAuraJSClientFactory } from '../../common/types/interfaces';
-import config from '../../../config.json';
+import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
   name: 'crawl.block',
