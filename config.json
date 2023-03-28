@@ -3,7 +3,7 @@
   "networkPrefixAddress": "aura",
   "consensusPrefixAddress": "valcons",
   "validatorPrefixAddress": "valoper",
-  "milisecondCrawlJob": {
+  "millisecondCrawlJob": {
     "validator": 5000,
     "handleAddress": 5000,
     "proposal": 5000,
@@ -15,6 +15,6 @@
   "crawlBlock": {
     "numberOfBlockPerCall": 1,
     "startBlock": 5294817,
-    "milisecondCrawl": 5000
+    "millisecondCrawl": 5000
   }
 }
