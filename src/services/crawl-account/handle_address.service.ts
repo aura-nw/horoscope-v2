@@ -1,7 +1,15 @@
-import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { ServiceBroker } from 'moleculer';
+import {
+  Action,
+  Service,
+} from '@ourparentcenter/moleculer-decorators-extended';
+import { Context, ServiceBroker } from 'moleculer';
 import Utils from '../../common/utils/utils';
-import { BULL_JOB_NAME, SERVICE_NAME, SERVICE } from '../../common/constant';
+import {
+  BULL_JOB_NAME,
+  SERVICE_NAME,
+  SERVICE,
+  BULL_ACTION_NAME,
+} from '../../common/constant';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { Config } from '../../common';
 import BlockCheckpoint from '../../models/block_checkpoint';
@@ -10,6 +18,7 @@ import Transaction from '../../models/transaction';
 import { Account } from '../../models/account';
 import config from '../../../config.json';
 import TransactionEventAttribute from '../../models/transaction_event_attribute';
+import { IListAddressesParam } from '../../common/utils/request';
 
 @Service({
   name: SERVICE_NAME.HANDLE_ADDRESS,
@@ -20,14 +29,22 @@ export default class HandleAddressService extends BullableService {
     super(broker);
   }
 
+  @Action({
+    name: BULL_ACTION_NAME.CRAWL_NEW_ACCOUNT_API,
+    params: {
+      listAddresses: 'string[]',
+    },
+  })
+  public async actionCrawlNewAccountApi(ctx: Context<IListAddressesParam>) {
+    await this.insertNewAccount(ctx.params.listAddresses);
+  }
+
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_ADDRESS,
     jobType: 'crawl',
     prefix: `horoscope-v2-${Config.CHAIN_ID}`,
   })
   public async handleJob(_payload: object): Promise<void> {
-    const listInsert: any[] = [];
-
     const [handleAddressBlockCheckpoint, latestBlock]: [
       BlockCheckpoint | undefined,
       Block | undefined
@@ -104,44 +121,49 @@ export default class HandleAddressService extends BullableService {
         .filter(Utils._onlyUnique);
 
       if (listAddresses.length > 0) {
-        const existedAccounts: string[] = (
-          await Account.query().select('*').whereIn('address', listAddresses)
-        ).map((account: Account) => account.address);
+        await this.insertNewAccount(listAddresses);
 
-        listAddresses.forEach((address: string) => {
-          if (!existedAccounts.includes(address)) {
-            const account: Account = Account.fromJson({
-              address,
-              balances: [],
-              spendable_balances: [],
-              type: null,
-              pubkey: {},
-              account_number: 0,
-              sequence: 0,
-            });
-            listInsert.push(Account.query().insert(account));
-          }
-        });
-
-        try {
-          updateBlockCheckpoint.height = latestBlock.height;
-          await Promise.all([
-            ...listInsert,
-            BlockCheckpoint.query()
-              .insert(updateBlockCheckpoint)
-              .onConflict('job_name')
-              .merge()
-              .returning('id'),
-          ]);
-        } catch (error) {
-          this.logger.error(error);
-        }
-
-        this.broker.call(`${SERVICE.V1.CrawlAccount.UpdateAccount}`, {
-          listAddresses,
-        });
+        updateBlockCheckpoint.height = latestBlock.height;
+        await BlockCheckpoint.query()
+          .insert(updateBlockCheckpoint)
+          .onConflict('job_name')
+          .merge()
+          .returning('id');
       }
     }
+  }
+
+  private async insertNewAccount(listAddresses: string[]) {
+    const listInsert: any[] = [];
+
+    const existedAccounts: string[] = (
+      await Account.query().select('*').whereIn('address', listAddresses)
+    ).map((account: Account) => account.address);
+
+    listAddresses.forEach((address: string) => {
+      if (!existedAccounts.includes(address)) {
+        const account: Account = Account.fromJson({
+          address,
+          balances: [],
+          spendable_balances: [],
+          type: null,
+          pubkey: {},
+          account_number: 0,
+          sequence: 0,
+        });
+        listInsert.push(Account.query().insert(account));
+      }
+    });
+
+    try {
+      await Promise.all(listInsert);
+    } catch (error) {
+      this.logger.error(error);
+    }
+
+    this.broker.call(`${SERVICE.V1.CrawlAccount.UpdateAccount}`, {
+      listAddresses,
+    });
   }
 
   public async _start() {

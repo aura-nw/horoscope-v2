@@ -40,6 +40,7 @@ export const BULL_JOB_NAME = {
 
 export const BULL_ACTION_NAME = {
   UPDATE_ACCOUNT: 'UpdateAccount',
+  CRAWL_NEW_ACCOUNT_API: 'CrawlNewAccountApi',
 };
 
 export const SERVICE = {

@@ -48,7 +48,7 @@ export default class CrawlAccountService extends BullableService {
       listAddresses: 'string[]',
     },
   })
-  public actionAccountUpsert(ctx: Context<IListAddressesParam>) {
+  public actionUpdateAccount(ctx: Context<IListAddressesParam>) {
     this.createJobAccount(ctx.params.listAddresses);
   }
 
