@@ -3,8 +3,6 @@
     "networkPrefixAddress": "aura",
     "consensusPrefixAddress": "valcons",
     "validatorPrefixAddress": "valoper",
-    "lcd": "https://lcd.dev.aura.network/",
-    "rpc": "https://rpc.dev.aura.network/",
     "milisecondCrawlJob": {
         "validator": 5000,
         "handleAddress": 5000,
