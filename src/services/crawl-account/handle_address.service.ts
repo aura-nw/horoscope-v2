@@ -157,7 +157,7 @@ export default class HandleAddressService extends BullableService {
           count: 3,
         },
         repeat: {
-          every: config.handleAddress.milisecondCrawl,
+          every: config.handleAddress.millisecondCrawl,
         },
       }
     );

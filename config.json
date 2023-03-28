@@ -4,18 +4,18 @@
   "consensusPrefixAddress": "valcons",
   "validatorPrefixAddress": "valoper",
   "crawlValidator": {
-    "milisecondCrawl": 5000,
+    "millisecondCrawl": 5000,
     "queryPageLimit": 50
   },
   "crawlBlock": {
-    "milisecondCrawl": 5000,
+    "millisecondCrawl": 5000,
     "numberOfBlockPerCall": 100,
     "startBlock": 5294817
   },
   "crawlSigningInfo": {
-    "milisecondCrawl": 5000
+    "millisecondCrawl": 5000
   },
   "handleAddress": {
-    "milisecondCrawl": 5000
+    "millisecondCrawl": 5000
   }
 }
