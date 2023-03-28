@@ -12,7 +12,7 @@ import { getLcdClient } from '../../common/utils/aurajs_client';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE_NAME } from '../../common/constant';
 import { Validator } from '../../models/validator';
-import config from '../../../config.json';
+import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
   name: SERVICE_NAME.CRAWL_SIGNING_INFO,

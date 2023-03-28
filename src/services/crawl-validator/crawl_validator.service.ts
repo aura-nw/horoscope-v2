@@ -31,7 +31,7 @@ import {
   IPagination,
 } from '../../common/types/interfaces';
 import { getHttpBatchClient } from '../../common/utils/cosmjs_client';
-import config from '../../../config.json';
+import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
   name: SERVICE_NAME.CRAWL_VALIDATOR,
