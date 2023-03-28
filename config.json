@@ -11,5 +11,10 @@
   },
   "pageLimit": {
     "validator": 50
+  },
+  "crawlBlock": {
+    "numberOfBlockPerCall": 1,
+    "startBlock": 5294817,
+    "milisecondCrawl": 5000
   }
 }
