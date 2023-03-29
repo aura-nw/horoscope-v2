@@ -1,5 +1,7 @@
+/* eslint-disable import/no-cycle */
 import { Model } from 'objection';
 import { ICoin } from 'src/common/types/interfaces';
+import AccountVesting from './account_vesting';
 import BaseModel from './base';
 
 export interface IPubkey {
@@ -16,17 +18,17 @@ export class Account extends BaseModel {
 
   address!: string;
 
-  balances: IBalance[] | undefined;
+  balances!: IBalance[];
 
-  spendable_balances: IBalance[] | undefined;
+  spendable_balances!: IBalance[];
 
-  type: string | undefined;
+  type!: string;
 
-  pubkey: IPubkey | undefined;
+  pubkey!: IPubkey;
 
-  account_number: number | undefined;
+  account_number!: number;
 
-  sequence: number | undefined;
+  sequence!: number;
 
   static get tableName() {
     return 'account';
@@ -39,6 +41,14 @@ export class Account extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
+      required: [
+        'address',
+        'balances',
+        'spendable_balances',
+        'type',
+        'account_number',
+        'sequence',
+      ],
       properties: {
         address: { type: 'string' },
         balances: {
@@ -50,7 +60,7 @@ export class Account extends BaseModel {
               amount: { type: 'string' },
               minimal_denom: {
                 type: 'string',
-                require: false,
+                // optional: true,
               },
             },
           },
@@ -62,17 +72,14 @@ export class Account extends BaseModel {
             properties: {
               denom: { type: 'string' },
               amount: { type: 'string' },
+              minimal_denom: {
+                type: 'string',
+                // optional: true,
+              },
             },
           },
         },
         type: { type: 'string' },
-        pubkey: {
-          type: 'object',
-          properties: {
-            type: { type: 'string' },
-            key: { type: 'string' },
-          },
-        },
         account_number: { type: 'number' },
         sequence: { type: 'number' },
       },
@@ -95,6 +102,14 @@ export class Account extends BaseModel {
         join: {
           from: 'account.id',
           to: 'transaction_power_event.delegator_id',
+        },
+      },
+      vesting: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: AccountVesting,
+        join: {
+          from: 'account.id',
+          to: 'account_vesting.account_id',
         },
       },
     };

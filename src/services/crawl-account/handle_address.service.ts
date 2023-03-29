@@ -1,10 +1,13 @@
-import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { ServiceBroker } from 'moleculer';
-import Utils from 'src/common/utils/utils';
 import {
-  CONST_CHAR,
+  Action,
+  Service,
+} from '@ourparentcenter/moleculer-decorators-extended';
+import { Context, ServiceBroker } from 'moleculer';
+import Utils from '../../common/utils/utils';
+import {
   BULL_JOB_NAME,
   SERVICE_NAME,
+  SERVICE,
   BULL_ACTION_NAME,
 } from '../../common/constant';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -13,14 +16,27 @@ import BlockCheckpoint from '../../models/block_checkpoint';
 import Block from '../../models/block';
 import Transaction from '../../models/transaction';
 import { Account } from '../../models/account';
+import config from '../../../config.json';
+import TransactionEventAttribute from '../../models/transaction_event_attribute';
+import { IListAddressesParam } from '../../common/utils/request';
 
 @Service({
   name: SERVICE_NAME.HANDLE_ADDRESS,
-  version: CONST_CHAR.VERSION_NUMBER,
+  version: 1,
 })
 export default class HandleAddressService extends BullableService {
   public constructor(public broker: ServiceBroker) {
     super(broker);
+  }
+
+  @Action({
+    name: BULL_ACTION_NAME.CRAWL_NEW_ACCOUNT_API,
+    params: {
+      listAddresses: 'string[]',
+    },
+  })
+  public async actionCrawlNewAccountApi(ctx: Context<IListAddressesParam>) {
+    await this.insertNewAccount(ctx.params.listAddresses);
   }
 
   @QueueHandler({
@@ -28,24 +44,34 @@ export default class HandleAddressService extends BullableService {
     jobType: 'crawl',
     prefix: `horoscope-v2-${Config.CHAIN_ID}`,
   })
-  private async handleJob(_payload: object): Promise<void> {
-    const listInsert: any[] = [];
-
+  public async handleJob(_payload: object): Promise<void> {
     const [handleAddressBlockCheckpoint, latestBlock]: [
       BlockCheckpoint | undefined,
       Block | undefined
     ] = await Promise.all([
       BlockCheckpoint.query()
-        .select('height')
+        .select('*')
         .findOne('job_name', BULL_JOB_NAME.HANDLE_ADDRESS),
       Block.query().select('height').findOne({}).orderBy('height', 'desc'),
     ]);
+    this.logger.info(
+      `Block Checkpoint: ${JSON.stringify(handleAddressBlockCheckpoint)}`
+    );
 
     let lastHeight = 0;
-    if (handleAddressBlockCheckpoint)
+    let updateBlockCheckpoint: BlockCheckpoint;
+    if (handleAddressBlockCheckpoint) {
       lastHeight = handleAddressBlockCheckpoint.height;
+      updateBlockCheckpoint = handleAddressBlockCheckpoint;
+    } else
+      updateBlockCheckpoint = BlockCheckpoint.fromJson({
+        job_name: BULL_JOB_NAME.HANDLE_ADDRESS,
+        height: 0,
+      });
 
     if (latestBlock) {
+      if (latestBlock.height === lastHeight) return;
+
       const eventAddresses: string[] = [];
       let offset = 0;
       let done = false;
@@ -72,17 +98,16 @@ export default class HandleAddressService extends BullableService {
           .andWhere('transaction.height', '<=', latestBlock.height)
           .andWhere((builder) =>
             builder.whereIn('transaction_event_attribute.key', [
-              CONST_CHAR.RECEIVER,
-              CONST_CHAR.SPENDER,
-              CONST_CHAR.SENDER,
+              TransactionEventAttribute.EVENT_KEY.RECEIVER,
+              TransactionEventAttribute.EVENT_KEY.SPENDER,
+              TransactionEventAttribute.EVENT_KEY.SENDER,
             ])
           )
           .limit(100)
           .offset(offset);
         this.logger.info(
-          `Result get Tx from height ${lastHeight} to ${latestBlock.height}:`
+          `Query Tx from height ${lastHeight} to ${latestBlock.height}`
         );
-        this.logger.info(JSON.stringify(resultTx));
 
         if (resultTx.length > 0)
           resultTx.map((res: any) => eventAddresses.push(res.value));
@@ -96,48 +121,69 @@ export default class HandleAddressService extends BullableService {
         .filter(Utils._onlyUnique);
 
       if (listAddresses.length > 0) {
-        const existedAccounts: string[] = (
-          await Account.query().select('*').whereIn('address', listAddresses)
-        ).map((account: Account) => account.address);
+        await this.insertNewAccount(listAddresses);
 
-        listAddresses.forEach((address: string) => {
-          if (!existedAccounts.includes(address)) {
-            const account: Account = Account.fromJson({
-              address,
-              balances: null,
-              spendable_balances: null,
-              type: null,
-              pubkey: null,
-              account_number: null,
-              sequence: null,
-            });
-            listInsert.push(Account.query().insert(account));
-          }
-        });
-
-        try {
-          await Promise.all([
-            ...listInsert,
-            BlockCheckpoint.query()
-              .insert(
-                BlockCheckpoint.fromJson({
-                  job_name: BULL_JOB_NAME.HANDLE_ADDRESS,
-                  height: latestBlock.height,
-                })
-              )
-              .onConflict('job_name')
-              .merge()
-              .returning('id'),
-          ]);
-        } catch (error) {
-          this.logger.error(error);
-        }
-
-        this.broker.call(
-          `${CONST_CHAR.VERSION}.${SERVICE_NAME.CRAWL_ACCOUNT}.${BULL_ACTION_NAME.ACCOUNT_UPSERT}`,
-          { listAddresses }
-        );
+        updateBlockCheckpoint.height = latestBlock.height;
+        await BlockCheckpoint.query()
+          .insert(updateBlockCheckpoint)
+          .onConflict('job_name')
+          .merge()
+          .returning('id');
       }
     }
+  }
+
+  private async insertNewAccount(listAddresses: string[]) {
+    const listInsert: any[] = [];
+
+    const existedAccounts: string[] = (
+      await Account.query().select('*').whereIn('address', listAddresses)
+    ).map((account: Account) => account.address);
+
+    listAddresses.forEach((address: string) => {
+      if (!existedAccounts.includes(address)) {
+        const account: Account = Account.fromJson({
+          address,
+          balances: [],
+          spendable_balances: [],
+          type: null,
+          pubkey: {},
+          account_number: 0,
+          sequence: 0,
+        });
+        listInsert.push(Account.query().insert(account));
+      }
+    });
+
+    try {
+      await Promise.all(listInsert);
+    } catch (error) {
+      this.logger.error(error);
+    }
+
+    this.broker.call(`${SERVICE.V1.CrawlAccount.UpdateAccount}`, {
+      listAddresses,
+    });
+  }
+
+  public async _start() {
+    await this.broker.waitForServices([`${SERVICE.V1.CrawlAccount.name}`]);
+
+    this.createJob(
+      BULL_JOB_NAME.HANDLE_ADDRESS,
+      'crawl',
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        repeat: {
+          every: config.handleAddress.millisecondCrawl,
+        },
+      }
+    );
+
+    return super._start();
   }
 }

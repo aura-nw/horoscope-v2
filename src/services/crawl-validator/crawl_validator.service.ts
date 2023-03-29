@@ -141,9 +141,8 @@ export default class CrawlValidatorService extends BullableService {
         .limit(1)
         .offset(0);
       this.logger.info(
-        `Result get Tx from height ${lastHeight} to ${latestBlock.height}:`
+        `Query Tx from height ${lastHeight} to ${latestBlock.height}`
       );
-      this.logger.info(JSON.stringify(resultTx));
 
       if (resultTx.length > 0) {
         await this.updateValidators();
@@ -165,7 +164,7 @@ export default class CrawlValidatorService extends BullableService {
     let resultCallApi;
     let done = false;
     const pagination: IPagination = {
-      limit: Long.fromInt(config.pageLimit.validator),
+      limit: Long.fromInt(config.crawlValidator.queryPageLimit),
     };
 
     while (!done) {
@@ -186,6 +185,8 @@ export default class CrawlValidatorService extends BullableService {
 
     await Promise.all(
       listValidator.map(async (validator) => {
+        this.logger.info(`Update validator: ${validator.operator_address}`);
+
         const foundValidator = listValidatorInDB.find(
           (validatorInDB: Validator) =>
             validatorInDB.operator_address === validator.operator_address
@@ -307,7 +308,7 @@ export default class CrawlValidatorService extends BullableService {
           count: 3,
         },
         repeat: {
-          every: config.millisecondCrawlJob.validator,
+          every: config.crawlValidator.millisecondCrawl,
         },
       }
     );

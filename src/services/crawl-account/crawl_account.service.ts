@@ -4,97 +4,156 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
-// import IBCDenom from 'src/models/ibc_denom';
-import { AllBalancesRequest } from '../../common/types/interfaces';
+import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
+import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
+import { fromBase64, fromUtf8 } from '@cosmjs/encoding';
+import AccountVesting from '../../models/account_vesting';
 import {
-  CONST_CHAR,
+  IAllBalances,
+  ICoin,
+  IAuraJSClientFactory,
+} from '../../common/types/interfaces';
+import {
   BULL_JOB_NAME,
   SERVICE_NAME,
-  // URL_TYPE_CONSTANTS,
   BULL_ACTION_NAME,
+  AccountType,
+  REDIS_KEY,
 } from '../../common/constant';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { Config } from '../../common';
-// import Utils from '../../common/utils/utils';
 import { IListAddressesParam } from '../../common/utils/request';
 import { Account, IBalance } from '../../models/account';
 import { getLcdClient } from '../../common/utils/aurajs_client';
+import BlockCheckpoint from '../../models/block_checkpoint';
+import { getHttpBatchClient } from '../../common/utils/cosmjs_client';
+import config from '../../../config.json';
 
 @Service({
   name: SERVICE_NAME.CRAWL_ACCOUNT,
-  version: CONST_CHAR.VERSION_NUMBER,
+  version: 1,
 })
 export default class CrawlAccountService extends BullableService {
-  private _lcdClient: any;
+  private _lcdClient!: IAuraJSClientFactory;
+
+  private _httpBatchClient: HttpBatchClient;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
+    this._httpBatchClient = getHttpBatchClient();
   }
 
   @Action({
-    name: BULL_ACTION_NAME.ACCOUNT_UPSERT,
+    name: BULL_ACTION_NAME.UPDATE_ACCOUNT,
     params: {
       listAddresses: 'string[]',
     },
   })
-  private actionAccountUpsert(ctx: Context<IListAddressesParam>) {
-    this.createJob(
-      BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH,
-      'crawl',
-      {
-        listAddresses: ctx.params.listAddresses,
-      },
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
+  public actionUpdateAccount(ctx: Context<IListAddressesParam>) {
+    this.createJobAccount(ctx.params.listAddresses);
+  }
+
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
+    jobType: 'crawl',
+    prefix: `horoscope-v2-${config.chainId}`,
+  })
+  public async handleJobCrawlGenesisAccount(_payload: object): Promise<void> {
+    const crawlGenesisAccountBlockCheckpoint: BlockCheckpoint | undefined =
+      await BlockCheckpoint.query()
+        .select('*')
+        .findOne('job_name', BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT);
+
+    if (
+      crawlGenesisAccountBlockCheckpoint?.height === 0 ||
+      !crawlGenesisAccountBlockCheckpoint
+    ) {
+      let listAddresses: string[] = [];
+
+      try {
+        const genesis = await this._httpBatchClient.execute(
+          createJsonRpcRequest('genesis')
+        );
+
+        listAddresses = genesis.result.genesis.app_state.bank.balances.map(
+          (balance: any) => balance.address
+        );
+      } catch (error) {
+        let genesisChunk = '';
+        let index = 0;
+        let done = false;
+        while (!done) {
+          try {
+            const resultChunk = await this._httpBatchClient.execute(
+              createJsonRpcRequest('genesis_chunked', {
+                chunk: index.toString(),
+              })
+            );
+
+            genesisChunk += fromUtf8(fromBase64(resultChunk.result.data));
+            index += 1;
+          } catch (err) {
+            done = true;
+          }
+        }
+
+        const genesisChunkObject: any = JSON.parse(genesisChunk);
+        listAddresses = genesisChunkObject.app_state.bank.balances.map(
+          (balance: any) => balance.address
+        );
       }
-    );
-    this.createJob(
-      BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
-      'crawl',
-      {
-        listAddresses: ctx.params.listAddresses,
-      },
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-      }
-    );
-    this.createJob(
-      BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES,
-      'crawl',
-      {
-        listAddresses: ctx.params.listAddresses,
-      },
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-      }
-    );
+
+      const listInsert: any[] = [];
+      const existedAccounts: string[] = (
+        await Account.query().select('*').whereIn('address', listAddresses)
+      ).map((account: Account) => account.address);
+
+      listAddresses.forEach((address: string) => {
+        if (!existedAccounts.includes(address)) {
+          const account: Account = Account.fromJson({
+            address,
+            balances: [],
+            spendable_balances: [],
+            type: null,
+            pubkey: {},
+            account_number: 0,
+            sequence: 0,
+          });
+          listInsert.push(Account.query().insert(account));
+        }
+      });
+
+      await Promise.all(listInsert);
+
+      this.createJobAccount(listAddresses);
+
+      let updateBlockCheckpoint: BlockCheckpoint;
+      if (crawlGenesisAccountBlockCheckpoint) {
+        updateBlockCheckpoint = crawlGenesisAccountBlockCheckpoint;
+        updateBlockCheckpoint.height = 1;
+      } else
+        updateBlockCheckpoint = BlockCheckpoint.fromJson({
+          job_name: BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
+          height: 1,
+        });
+      await BlockCheckpoint.query()
+        .insert(updateBlockCheckpoint)
+        .onConflict('job_name')
+        .merge()
+        .returning('id');
+    }
   }
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH,
     jobType: 'crawl',
-    prefix: `horoscope-v2-${Config.CHAIN_ID}`,
+    prefix: `horoscope-v2-${config.chainId}`,
   })
-  private async handleJobAccountAuth(
+  public async handleJobAccountAuth(
     _payload: IListAddressesParam
   ): Promise<void> {
     this._lcdClient = await getLcdClient();
 
     const listUpdateQueries: any[] = [];
-
-    // const url = Utils.getUrlByChainIdAndType(
-    //   Config.CHAIN_ID,
-    //   URL_TYPE_CONSTANTS.LCD
-    // );
 
     if (_payload.listAddresses.length > 0) {
       const accounts: Account[] = await Account.query()
@@ -103,7 +162,7 @@ export default class CrawlAccountService extends BullableService {
 
       await Promise.all(
         _payload.listAddresses.map(async (address: string) => {
-          // const param = `${Config.GET_PARAMS_AUTH_INFO}/${address}`;
+          this.logger.info(`Crawl account auth address: ${address}`);
 
           const account: Account | undefined = accounts.find(
             (acc: Account) => acc.address === address
@@ -112,27 +171,95 @@ export default class CrawlAccountService extends BullableService {
           if (account) {
             let resultCallApi;
             try {
-              // resultCallApi = await this.callApiFromDomain(url, param);
-              resultCallApi = await this._lcdClient.cosmos.auth.v1beta1.account(
-                { address }
-              );
+              resultCallApi =
+                await this._lcdClient.auranw.cosmos.auth.v1beta1.account({
+                  address,
+                });
             } catch (error) {
               this.logger.error(error);
               throw error;
             }
 
             account.type = resultCallApi.account['@type'];
-            account.pubkey = resultCallApi.account.pub_key;
-            account.account_number = Number.parseInt(
-              resultCallApi.account.account_number,
-              10
-            );
-            account.sequence = Number.parseInt(
-              resultCallApi.account.sequence,
-              10
+            switch (resultCallApi.account['@type']) {
+              case AccountType.CONTINUOUS_VESTING:
+              case AccountType.DELAYED_VESTING:
+              case AccountType.PERIODIC_VESTING:
+                account.pubkey =
+                  resultCallApi.account.base_vesting_account.base_account.pub_key;
+                account.account_number = Number.parseInt(
+                  resultCallApi.account.base_vesting_account.base_account
+                    .account_number,
+                  10
+                );
+                account.sequence = Number.parseInt(
+                  resultCallApi.account.base_vesting_account.base_account
+                    .sequence,
+                  10
+                );
+                break;
+              case AccountType.MODULE:
+                account.pubkey = resultCallApi.account.base_account.pub_key;
+                account.account_number = Number.parseInt(
+                  resultCallApi.account.base_account.account_number,
+                  10
+                );
+                account.sequence = Number.parseInt(
+                  resultCallApi.account.base_account.sequence,
+                  10
+                );
+                break;
+              default:
+                account.pubkey = resultCallApi.account.pub_key;
+                account.account_number = Number.parseInt(
+                  resultCallApi.account.account_number,
+                  10
+                );
+                account.sequence = Number.parseInt(
+                  resultCallApi.account.sequence,
+                  10
+                );
+                break;
+            }
+
+            listUpdateQueries.push(
+              Account.query()
+                .where({ id: account.id })
+                .patch({
+                  type: account.type,
+                  pubkey: account.pubkey,
+                  account_number: account.account_number ?? 0,
+                  sequence: account.sequence ?? 0,
+                })
             );
 
-            listUpdateQueries.push(Account.query().update(account));
+            if (
+              resultCallApi.account['@type'] ===
+                AccountType.CONTINUOUS_VESTING ||
+              resultCallApi.account['@type'] === AccountType.DELAYED_VESTING ||
+              resultCallApi.account['@type'] === AccountType.PERIODIC_VESTING
+            ) {
+              const accountVesting: AccountVesting = AccountVesting.fromJson({
+                account_id: account.id,
+                original_vesting:
+                  resultCallApi.account.base_vesting_account.original_vesting,
+                delegated_free:
+                  resultCallApi.account.base_vesting_account.delegated_free,
+                delegated_vesting:
+                  resultCallApi.account.base_vesting_account.delegated_vesting,
+                start_time: resultCallApi.account.start_time
+                  ? Number.parseInt(resultCallApi.account.start_time, 10)
+                  : null,
+                end_time: resultCallApi.account.base_vesting_account.end_time,
+              });
+              listUpdateQueries.push(
+                AccountVesting.query()
+                  .insert(accountVesting)
+                  .onConflict('account_id')
+                  .merge()
+                  .returning('id')
+              );
+            }
           }
         })
       );
@@ -148,19 +275,14 @@ export default class CrawlAccountService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
     jobType: 'crawl',
-    prefix: `horoscope-v2-${Config.CHAIN_ID}`,
+    prefix: `horoscope-v2-${config.chainId}`,
   })
-  private async handleJobAccountBalances(
+  public async handleJobAccountBalances(
     _payload: IListAddressesParam
   ): Promise<void> {
     this._lcdClient = await getLcdClient();
 
     const listUpdateQueries: any[] = [];
-
-    // const url = Utils.getUrlByChainIdAndType(
-    //   Config.CHAIN_ID,
-    //   URL_TYPE_CONSTANTS.LCD
-    // );
 
     if (_payload.listAddresses.length > 0) {
       const accounts: Account[] = await Account.query()
@@ -169,24 +291,25 @@ export default class CrawlAccountService extends BullableService {
 
       await Promise.all(
         _payload.listAddresses.map(async (address: string) => {
-          // const param = `${Config.GET_PARAMS_BALANCE}/${address}?pagination.limit=100`;
+          this.logger.info(`Crawl account balances address: ${address}`);
 
           const account: Account | undefined = accounts.find(
             (acc: Account) => acc.address === address
           );
 
           if (account) {
-            const listBalances: IBalance[] = [];
-            // let urlToCall = param;
+            let listBalances: IBalance[] = [];
             let done = false;
             let resultCallApi;
-            const params: AllBalancesRequest = {
+            const params: IAllBalances = {
               address,
             };
             while (!done) {
               try {
                 resultCallApi =
-                  await this._lcdClient.cosmos.bank.v1beta1.allBalances(params);
+                  await this._lcdClient.auranw.cosmos.bank.v1beta1.allBalances(
+                    params
+                  );
               } catch (error) {
                 this.logger.error(error);
                 throw error;
@@ -198,63 +321,20 @@ export default class CrawlAccountService extends BullableService {
               if (resultCallApi.pagination.next_key === null) {
                 done = true;
               } else {
-                // urlToCall = `${param}&pagination.key=${encodeURIComponent(
-                //   resultCallApi.pagination.next_key
-                // )}`;
                 params.pagination = { key: resultCallApi.pagination.next_key };
               }
             }
 
-            // if (listBalances.length > 1) {
-            //   await Promise.all(
-            //     listBalances.map(async (balance) => {
-            //       if (balance.denom.startsWith('ibc/')) {
-            //         const hash = balance.denom.split('/')[1];
-            //         const ibcDenom: IBCDenom | undefined =
-            //           await IBCDenom.query()
-            //             .select('*')
-            //             .findOne({ hash: balance.denom });
-            //         if (ibcDenom) {
-            //           return {
-            //             amount: balance.amount,
-            //             denom: ibcDenom.base_denom,
-            //             minimal_denom: ibcDenom.hash,
-            //           };
-            //         }
-            //         const hashParam = `${Config.GET_PARAMS_IBC_DENOM}/${hash}`;
-            //         let denomResult;
-            //         try {
-            //           denomResult = await this.callApiFromDomain(
-            //             url,
-            //             hashParam
-            //           );
-
-            //           await IBCDenom.query().insert(
-            //             IBCDenom.fromJson({
-            //               path: denomResult.denom_trace.path,
-            //               base_denom: denomResult.denom_trace.base_denom,
-            //               hash: balance.denom,
-            //             })
-            //           );
-            //         } catch (error) {
-            //           this.logger.error(error);
-            //           throw error;
-            //         }
-
-            //         return {
-            //           amount: balance.amount,
-            //           denom: denomResult.denom_trace.base_denom,
-            //           minimal_denom: balance.denom,
-            //         };
-            //       }
-            //       return balance;
-            //     })
-            //   );
-            // }
+            if (listBalances.length > 1)
+              listBalances = await this.handleIbcDenom(listBalances);
 
             account.balances = listBalances;
 
-            listUpdateQueries.push(Account.query().update(account));
+            listUpdateQueries.push(
+              Account.query().where({ id: account.id }).patch({
+                balances: account.balances,
+              })
+            );
           }
         })
       );
@@ -270,19 +350,14 @@ export default class CrawlAccountService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES,
     jobType: 'crawl',
-    prefix: `horoscope-v2-${Config.CHAIN_ID}`,
+    prefix: `horoscope-v2-${config.chainId}`,
   })
-  private async handleJobAccountSpendableBalances(
+  public async handleJobAccountSpendableBalances(
     _payload: IListAddressesParam
   ): Promise<void> {
     this._lcdClient = await getLcdClient();
 
     const listUpdateQueries: any[] = [];
-
-    // const url = Utils.getUrlByChainIdAndType(
-    //   Config.CHAIN_ID,
-    //   URL_TYPE_CONSTANTS.LCD
-    // );
 
     if (_payload.listAddresses.length > 0) {
       const accounts: Account[] = await Account.query()
@@ -291,25 +366,25 @@ export default class CrawlAccountService extends BullableService {
 
       await Promise.all(
         _payload.listAddresses.map(async (address: string) => {
-          // const param = `${Config.GET_PARAMS_SPENDABLE_BALANCE}/${address}?pagination.limit=100`;
+          this.logger.info(
+            `Crawl account spendable balances address: ${address}`
+          );
 
           const account: Account | undefined = accounts.find(
             (acc: Account) => acc.address === address
           );
 
           if (account) {
-            const listSpendableBalances: IBalance[] = [];
-            // let urlToCall = param;
+            let listSpendableBalances: IBalance[] = [];
             let done = false;
             let resultCallApi;
-            const params: AllBalancesRequest = {
+            const params: IAllBalances = {
               address,
             };
             while (!done) {
               try {
-                // resultCallApi = await this.callApiFromDomain(url, urlToCall);
                 resultCallApi =
-                  await this._lcdClient.cosmos.bank.v1beta1.spendableBalances(
+                  await this._lcdClient.auranw.cosmos.bank.v1beta1.spendableBalances(
                     params
                   );
               } catch (error) {
@@ -323,63 +398,22 @@ export default class CrawlAccountService extends BullableService {
               if (resultCallApi.pagination.next_key === null) {
                 done = true;
               } else {
-                // urlToCall = `${param}&pagination.key=${encodeURIComponent(
-                //   resultCallApi.pagination.next_key
-                // )}`;
                 params.pagination = { key: resultCallApi.pagination.next_key };
               }
             }
 
-            // if (listSpendableBalances.length > 1) {
-            //   await Promise.all(
-            //     listSpendableBalances.map(async (balance) => {
-            //       if (balance.denom.startsWith('ibc/')) {
-            //         const hash = balance.denom.split('/')[1];
-            //         const ibcDenom: IBCDenom | undefined =
-            //           await IBCDenom.query()
-            //             .select('*')
-            //             .findOne({ hash: balance.denom });
-            //         if (ibcDenom) {
-            //           return {
-            //             amount: balance.amount,
-            //             denom: ibcDenom.base_denom,
-            //             minimal_denom: ibcDenom.hash,
-            //           };
-            //         }
-            //         const hashParam = `${Config.GET_PARAMS_IBC_DENOM}/${hash}`;
-            //         let denomResult;
-            //         try {
-            //           denomResult = await this.callApiFromDomain(
-            //             url,
-            //             hashParam
-            //           );
-
-            //           await IBCDenom.query().insert(
-            //             IBCDenom.fromJson({
-            //               path: denomResult.denom_trace.path,
-            //               base_denom: denomResult.denom_trace.base_denom,
-            //               hash: balance.denom,
-            //             })
-            //           );
-            //         } catch (error) {
-            //           this.logger.error(error);
-            //           throw error;
-            //         }
-
-            //         return {
-            //           amount: balance.amount,
-            //           denom: denomResult.denom_trace.base_denom,
-            //           minimal_denom: balance.denom,
-            //         };
-            //       }
-            //       return balance;
-            //     })
-            //   );
-            // }
+            if (listSpendableBalances.length > 1)
+              listSpendableBalances = await this.handleIbcDenom(
+                listSpendableBalances
+              );
 
             account.spendable_balances = listSpendableBalances;
 
-            listUpdateQueries.push(Account.query().update(account));
+            listUpdateQueries.push(
+              Account.query().where({ id: account.id }).patch({
+                spendable_balances: account.spendable_balances,
+              })
+            );
           }
         })
       );
@@ -390,5 +424,110 @@ export default class CrawlAccountService extends BullableService {
         this.logger.error(error);
       }
     }
+  }
+
+  private async handleIbcDenom(listBalances: ICoin[]) {
+    const result = await Promise.all(
+      listBalances.map(async (balance) => {
+        if (balance.denom.startsWith('ibc/')) {
+          const hash = balance.denom.split('/')[1];
+          const ibcDenomRedis = await this.broker.cacher?.get(
+            REDIS_KEY.IBC_DENOM
+          );
+          const ibcDenom = ibcDenomRedis?.find((ibc: any) => ibc.hash === hash);
+          if (ibcDenom) {
+            return {
+              amount: balance.amount,
+              denom: ibcDenom.base_denom,
+              minimal_denom: ibcDenom.hash,
+            };
+          }
+
+          let denomResult;
+          try {
+            denomResult =
+              await this._lcdClient.ibc.ibc.applications.transfer.v1.denomTrace(
+                { hash }
+              );
+
+            ibcDenomRedis?.push({
+              base_denom: denomResult.denom_trace.base_denom,
+              hash: balance.denom,
+            });
+            await this.broker.cacher?.set(REDIS_KEY.IBC_DENOM, ibcDenomRedis);
+          } catch (error) {
+            this.logger.error(error);
+            throw error;
+          }
+
+          return {
+            amount: balance.amount,
+            denom: denomResult.denom_trace.base_denom,
+            minimal_denom: balance.denom,
+          };
+        }
+        return balance;
+      })
+    );
+
+    return result;
+  }
+
+  private createJobAccount(listAddresses: string[]) {
+    this.createJob(
+      BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH,
+      'crawl',
+      {
+        listAddresses,
+      },
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+      }
+    );
+    this.createJob(
+      BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
+      'crawl',
+      {
+        listAddresses,
+      },
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+      }
+    );
+    this.createJob(
+      BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES,
+      'crawl',
+      {
+        listAddresses,
+      },
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+      }
+    );
+  }
+
+  public async _start() {
+    this.createJob(
+      BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
+      'crawl',
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+      }
+    );
+
+    return super._start();
   }
 }

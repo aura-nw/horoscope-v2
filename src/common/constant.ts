@@ -32,6 +32,7 @@ export const BULL_JOB_NAME = {
   CRAWL_GENESIS_VALIDATOR: 'crawl:genesis-validator',
   CRAWL_SIGNING_INFO: 'crawl:signing-info',
   HANDLE_ADDRESS: 'handle:address',
+  CRAWL_GENESIS_ACCOUNT: 'crawl:genesis-account',
   CRAWL_ACCOUNT_AUTH: 'crawl:account-auth',
   CRAWL_ACCOUNT_BALANCES: 'crawl:account-balances',
   CRAWL_ACCOUNT_SPENDABLE_BALANCES: 'crawl:account-spendable-balances',
@@ -42,9 +43,17 @@ export const BULL_JOB_NAME = {
 };
 
 export const BULL_ACTION_NAME = {
-  VALIDATOR_UPSERT: 'validator.upsert',
-  ACCOUNT_UPSERT: 'account.upsert',
-  ACCOUNT_STAKE_UPSERT: 'account-stake.upsert',
+  UPDATE_ACCOUNT: 'UpdateAccount',
+  CRAWL_NEW_ACCOUNT_API: 'CrawlNewAccountApi',
+};
+
+export const SERVICE = {
+  V1: {
+    CrawlAccount: {
+      name: 'v1.CrawlAccountService',
+      UpdateAccount: 'v1.CrawlAccountService.UpdateAccount',
+    },
+  },
 };
 
 export const SERVICE_NAME = {
