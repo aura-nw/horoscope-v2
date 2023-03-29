@@ -4,5 +4,4 @@ Dockerfile
 node_modules
 test
 .vscode
-migrations
 docs

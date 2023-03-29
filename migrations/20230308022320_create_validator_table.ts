@@ -19,7 +19,7 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamp('unbonding_time').notNullable();
     table.jsonb('commission').notNullable();
     table.integer('min_self_delegation').notNullable();
-    table.integer('uptime').notNullable();
+    table.float('uptime', 6, 3).notNullable();
     table.decimal('self_delegation_balance', 30).notNullable();
     table.float('percent_voting_power', 12, 10).notNullable();
     table.integer('start_height').notNullable();

@@ -9,10 +9,11 @@ import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { BLOCK_CHECKPOINT_JOB_NAME } from '../../common/constant';
 import Block from '../../models/block';
 import BlockCheckpoint from '../../models/block_checkpoint';
-import { Config } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { getLcdClient } from '../../common/utils/aurajs_client';
 import { getHttpBatchClient } from '../../common/utils/cosmjs_client';
+import { IAuraJSClientFactory } from '../../common/types/interfaces';
+import config from '../../../config.json';
 
 @Service({
   name: 'crawl.block',
@@ -23,7 +24,7 @@ export default class CrawlBlockService extends BullableService {
 
   private _httpBatchClient: HttpBatchClient;
 
-  private _lcdClient: any;
+  private _lcdClient!: IAuraJSClientFactory;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -51,7 +52,7 @@ export default class CrawlBlockService extends BullableService {
     if (!blockHeightCrawled) {
       blockHeightCrawled = await BlockCheckpoint.query().insert({
         job_name: BLOCK_CHECKPOINT_JOB_NAME.BLOCK_HEIGHT_CRAWLED,
-        height: parseInt(Config.START_BLOCK, 10),
+        height: config.crawlBlock.startBlock,
       });
     }
 
@@ -62,7 +63,7 @@ export default class CrawlBlockService extends BullableService {
   async handleJobCrawlBlock() {
     // Get latest block in network
     const responseGetLatestBlock: GetLatestBlockResponseSDKType =
-      await this._lcdClient.cosmos.base.tendermint.v1beta1.getLatestBlock();
+      await this._lcdClient.auranw.cosmos.base.tendermint.v1beta1.getLatestBlock();
     const latestBlockNetwork = parseInt(
       responseGetLatestBlock.block?.header?.height
         ? responseGetLatestBlock.block?.header?.height.toString()
@@ -75,8 +76,7 @@ export default class CrawlBlockService extends BullableService {
     // crawl block from startBlock to endBlock
     const startBlock = this._currentBlock + 1;
 
-    let endBlock =
-      startBlock + parseInt(Config.NUMBER_OF_BLOCK_PER_CALL, 10) - 1;
+    let endBlock = startBlock + config.crawlBlock.numberOfBlockPerCall - 1;
     if (endBlock > latestBlockNetwork) {
       endBlock = latestBlockNetwork;
     }
@@ -170,11 +170,15 @@ export default class CrawlBlockService extends BullableService {
         this.logger.debug('result insert list block: ', result);
 
         // insert tx by block height
-        listBlockModel.forEach(async (block) => {
-          this.broker.call('v1.crawl.tx.crawlTxByHeight', {
+        const listBlockWithTime: any = [];
+        listBlockModel.forEach((block) => {
+          listBlockWithTime.push({
             height: block.height,
             timestamp: block.time,
           });
+        });
+        this.broker.call('v1.crawl.tx.crawlTxByHeight', {
+          listBlock: listBlockWithTime,
         });
       }
     } catch (error) {
@@ -194,7 +198,7 @@ export default class CrawlBlockService extends BullableService {
           count: 3,
         },
         repeat: {
-          every: Config.MILISECOND_CRAWL_BLOCK ?? 5000,
+          every: config.crawlBlock.millisecondCrawl,
         },
       }
     );

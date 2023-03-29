@@ -20,10 +20,11 @@
       "type": "node",
       "request": "launch",
       "name": "Jest",
+      "runtimeExecutable": "ts-node",
       "program": "${workspaceRoot}/node_modules/jest-cli/bin/jest.js",
       "args": ["--runInBand"],
       "cwd": "${workspaceRoot}",
-      "runtimeArgs": ["--inspect-brk", "--nolazy"]
+      "runtimeArgs": ["--inspect-brk"]
     }
   ]
 }

@@ -1,27 +1,22 @@
+/* eslint-disable no-await-in-loop */
 /* eslint-disable import/no-extraneous-dependencies */
-import { fromBase64, toBech32 } from '@cosmjs/encoding';
-import { pubkeyToRawAddress } from '@cosmjs/tendermint-rpc';
+import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+import { ServiceBroker } from 'moleculer';
+import Long from 'long';
+import { fromBase64 } from '@cosmjs/encoding';
 import {
-  Action,
-  Service,
-} from '@ourparentcenter/moleculer-decorators-extended';
-import { Context, ServiceBroker } from 'moleculer';
-import { IAuraJSClientFactory } from 'src/common/types/interfaces';
+  IAuraJSClientFactory,
+  IPagination,
+} from '../../common/types/interfaces';
 import { getLcdClient } from '../../common/utils/aurajs_client';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { Config } from '../../common';
-import {
-  CONST_CHAR,
-  BULL_ACTION_NAME,
-  BULL_JOB_NAME,
-  SERVICE_NAME,
-} from '../../common/constant';
-import { IListAddressesParam } from '../../common/utils/request';
+import { BULL_JOB_NAME, SERVICE_NAME } from '../../common/constant';
 import { Validator } from '../../models/validator';
+import config from '../../../config.json';
 
 @Service({
   name: SERVICE_NAME.CRAWL_SIGNING_INFO,
-  version: CONST_CHAR.VERSION_NUMBER,
+  version: 1,
 })
 export default class CrawlSigningInfoService extends BullableService {
   private _lcdClient!: IAuraJSClientFactory;
@@ -30,119 +25,117 @@ export default class CrawlSigningInfoService extends BullableService {
     super(broker);
   }
 
-  @Action({
-    name: BULL_ACTION_NAME.VALIDATOR_UPSERT,
-    params: {
-      listAddresses: 'string[]',
-    },
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.CRAWL_SIGNING_INFO,
+    jobType: 'crawl',
+    prefix: `horoscope-v2-${config.chainId}`,
   })
-  public actionValidatorUpsert(ctx: Context<IListAddressesParam>) {
+  public async handleJob(_payload: object): Promise<void> {
+    this._lcdClient = await getLcdClient();
+
+    const listUpdateValidators: Validator[] = [];
+    const listSigningInfos: any[] = [];
+
+    const listFoundValidator: Validator[] = await Validator.query().select('*');
+
+    if (listFoundValidator.length > 0) {
+      const paramSlashing =
+        await this._lcdClient.auranw.cosmos.slashing.v1beta1.params();
+
+      let resultCallApi;
+      let done = false;
+      const pagination: IPagination = {
+        limit: Long.fromInt(config.pageLimit.validator),
+      };
+
+      while (!done) {
+        resultCallApi =
+          await this._lcdClient.auranw.cosmos.slashing.v1beta1.signingInfos({
+            pagination,
+          });
+
+        listSigningInfos.push(...resultCallApi.info);
+        if (resultCallApi.pagination.next_key === null) {
+          done = true;
+        } else {
+          pagination.key = fromBase64(resultCallApi.pagination.next_key);
+        }
+      }
+
+      await Promise.all(
+        listFoundValidator.map(async (foundValidator: Validator) => {
+          try {
+            const signingInfo = listSigningInfos.find(
+              (sign: any) => sign.address === foundValidator.consensus_address
+            );
+
+            if (signingInfo) {
+              let uptime = 0;
+              if (paramSlashing?.params) {
+                const blockWindow =
+                  paramSlashing?.params.signed_blocks_window.toString();
+                const missedBlock =
+                  signingInfo.missed_blocks_counter.toString();
+                uptime =
+                  Number(
+                    ((BigInt(blockWindow) - BigInt(missedBlock)) *
+                      BigInt(100000000)) /
+                      BigInt(blockWindow)
+                  ) / 1000000;
+              }
+
+              const updateValidator = foundValidator;
+              updateValidator.start_height = Number.parseInt(
+                signingInfo.start_height,
+                10
+              );
+              updateValidator.index_offset = Number.parseInt(
+                signingInfo.index_offset,
+                10
+              );
+              updateValidator.jailed_until = signingInfo.jailed_until;
+              updateValidator.tombstoned = signingInfo.tombstoned;
+              updateValidator.missed_blocks_counter = Number.parseInt(
+                signingInfo.missed_blocks_counter,
+                10
+              );
+              updateValidator.uptime = uptime;
+              listUpdateValidators.push(updateValidator);
+            }
+          } catch (error) {
+            this.logger.error(error);
+          }
+        })
+      );
+
+      try {
+        await Validator.query()
+          .insert(listUpdateValidators)
+          .onConflict('operator_address')
+          .merge()
+          .returning('id');
+      } catch (error) {
+        this.logger.error(error);
+      }
+    }
+  }
+
+  public async _start() {
     this.createJob(
       BULL_JOB_NAME.CRAWL_SIGNING_INFO,
       'crawl',
-      {
-        listAddresses: ctx.params.listAddresses,
-      },
+      {},
       {
         removeOnComplete: true,
         removeOnFail: {
           count: 3,
         },
+        repeat: {
+          every: config.millisecondCrawlJob.signingInfo,
+        },
       }
     );
-  }
 
-  @QueueHandler({
-    queueName: BULL_JOB_NAME.CRAWL_SIGNING_INFO,
-    jobType: 'crawl',
-    prefix: `horoscope-v2-${Config.CHAIN_ID}`,
-  })
-  public async handleJob(_payload: IListAddressesParam): Promise<void> {
-    this._lcdClient = await getLcdClient();
-
-    const listFoundValidator: Validator[] = await Validator.query()
-      .select('*')
-      .whereIn('validator.operator_address', _payload.listAddresses);
-
-    const paramSlashing =
-      await this._lcdClient.auranw.cosmos.slashing.v1beta1.params();
-    const listBulk: any[] = [];
-    await Promise.all(
-      listFoundValidator.map(async (foundValidator: Validator) => {
-        try {
-          const consensusPubkey = foundValidator.consensus_pubkey;
-          this.logger.debug(
-            `Found validator with address ${foundValidator.operator_address}`
-          );
-          this.logger.debug(
-            `Found validator with consensusPubkey ${consensusPubkey}`
-          );
-
-          const address = pubkeyToRawAddress(
-            'ed25519',
-            fromBase64(consensusPubkey.key.toString())
-          );
-
-          const consensusAddress = toBech32(
-            `${Config.NETWORK_PREFIX_ADDRESS}${Config.CONSENSUS_PREFIX_ADDRESS}`,
-            address
-          );
-
-          const result =
-            await this._lcdClient.auranw.cosmos.slashing.v1beta1.signingInfo({
-              consAddress: consensusAddress,
-            });
-          this.logger.debug(result);
-
-          if (result.val_signing_info) {
-            let uptime = 0;
-            if (paramSlashing?.params) {
-              const blockWindow =
-                paramSlashing?.params.signed_blocks_window.toString();
-              const missedBlock =
-                result.val_signing_info.missed_blocks_counter.toString();
-              uptime =
-                Number(
-                  ((BigInt(blockWindow) - BigInt(missedBlock)) *
-                    BigInt(100000000)) /
-                    BigInt(blockWindow)
-                ) / 1000000;
-            }
-
-            const updateValidator = foundValidator;
-            updateValidator.start_height = Number.parseInt(
-              result.val_signing_info.start_height,
-              10
-            );
-            updateValidator.index_offset = Number.parseInt(
-              result.val_signing_info.index_offset,
-              10
-            );
-            updateValidator.jailed_until = result.val_signing_info.jailed_until;
-            updateValidator.tombstoned = result.val_signing_info.tombstoned;
-            updateValidator.missed_blocks_counter = Number.parseInt(
-              result.val_signing_info.missed_blocks_counter,
-              10
-            );
-            updateValidator.uptime = uptime;
-            listBulk.push(
-              Validator.query()
-                .insert(updateValidator)
-                .onConflict('operator_address')
-                .merge()
-                .returning('id')
-            );
-          }
-        } catch (error) {
-          this.logger.error(error);
-        }
-      })
-    );
-
-    try {
-      await Promise.all(listBulk);
-    } catch (error) {
-      this.logger.error(error);
-    }
+    return super._start();
   }
 }

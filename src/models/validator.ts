@@ -1,3 +1,6 @@
+import { fromBase64, fromBech32, toBech32, toHex } from '@cosmjs/encoding';
+import { pubkeyToRawAddress } from '@cosmjs/tendermint-rpc';
+import config from '../../config.json';
 import BaseModel from './base';
 
 export interface IConsensusPubkey {
@@ -120,5 +123,60 @@ export class Validator extends BaseModel {
 
   static get relationMappings() {
     return {};
+  }
+
+  static createNewValidator(validator: any): Validator {
+    const consensusAddress: string = toBech32(
+      `${config.networkPrefixAddress}${config.consensusPrefixAddress}`,
+      pubkeyToRawAddress(
+        'ed25519',
+        fromBase64(validator.consensus_pubkey.key.toString())
+      )
+    );
+    const consensusHexAddress: string = toHex(
+      pubkeyToRawAddress(
+        'ed25519',
+        fromBase64(validator.consensus_pubkey.key.toString())
+      )
+    ).toUpperCase();
+    const accountAddress = toBech32(
+      config.networkPrefixAddress,
+      fromBech32(validator.operator_address).data
+    );
+    const consensusPubkey = {
+      type: validator.consensus_pubkey['@type'],
+      key: validator.consensus_pubkey.key,
+    };
+
+    const validatorEntity = Validator.fromJson({
+      operator_address: validator.operator_address,
+      account_address: accountAddress,
+      consensus_address: consensusAddress,
+      consensus_hex_address: consensusHexAddress,
+      consensus_pubkey: consensusPubkey,
+      jailed: validator.jailed,
+      status: validator.status,
+      tokens: Number.parseInt(validator.tokens, 10),
+      delegator_shares: Number.parseInt(validator.delegator_shares, 10),
+      description: validator.description,
+      unbonding_height: Number.parseInt(validator.unbonding_height, 10),
+      unbonding_time: validator.unbonding_time,
+      commission: validator.commission,
+      min_self_delegation: Number.parseInt(validator.min_self_delegation, 10),
+      uptime: 0,
+      self_delegation_balance: 0,
+      percent_voting_power: 0,
+      start_height: 0,
+      index_offset: 0,
+      // TODO:
+      // Ajv Format require { type: 'string', format: 'date-time' }
+      // But when query Validator from DB, the data returned is of type Date,
+      // so it needs to be converted to string to be able to insert into DB
+      jailed_until: new Date(0).toISOString(),
+      tombstoned: false,
+      missed_blocks_counter: 0,
+    });
+
+    return validatorEntity;
   }
 }
