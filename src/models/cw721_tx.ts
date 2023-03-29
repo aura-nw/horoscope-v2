@@ -11,7 +11,7 @@ export interface ICW721Tx {
   contract_address: string;
   from: string;
   to: string;
-  token_id: string;
+  id_token: number;
   action: string;
   created_at?: Date;
   updated_at?: Date;
@@ -26,7 +26,7 @@ export class CW721Tx extends BaseModel implements ICW721Tx {
 
   to!: string;
 
-  token_id!: string;
+  id_token!: number;
 
   tx_hash!: string;
 
@@ -57,20 +57,20 @@ export class CW721Tx extends BaseModel implements ICW721Tx {
 
   static get relationMappings() {
     return {
-      token: {
+      relate_token: {
         relation: Model.BelongsToOneRelation,
         modelClass: CW721Token,
         join: {
-          from: 'cw721_tx.contract_address',
-          to: 'cw721_token.contract_address',
+          from: 'cw721_tx.id_token',
+          to: 'cw721_token.id',
         },
       },
-      tx: {
+      relate_contract: {
         relation: Model.BelongsToOneRelation,
         modelClass: CW721Contract,
         join: {
           from: 'cw721_tx.contract_address',
-          to: 'cw721_token.contract_address',
+          to: 'cw721_contract.address',
         },
       },
     };

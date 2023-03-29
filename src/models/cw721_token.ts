@@ -1,6 +1,8 @@
 import { Model } from 'objection';
 import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
+import { CW721Contract } from './cw721_contract';
+// eslint-disable-next-line import/no-cycle
 import { CW721Tx } from './cw721_tx';
 
 export interface ICW721Token {
@@ -53,8 +55,16 @@ export class CW721Token extends BaseModel implements ICW721Token {
         relation: Model.HasManyRelation,
         modelClass: CW721Tx,
         join: {
+          to: 'cw721_tx.id',
+          from: 'cw721_token.id_token',
+        },
+      },
+      contract: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: CW721Contract,
+        join: {
           to: 'cw721_tx.contract_address',
-          from: 'cw721_token.contract_address',
+          from: 'cw721_contract.address',
         },
       },
     };
