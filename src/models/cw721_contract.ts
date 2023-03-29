@@ -2,6 +2,7 @@ import { Model } from 'objection';
 import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
 import { CW721Token } from './cw721_token';
+// eslint-disable-next-line import/no-cycle
 import { CW721Tx } from './cw721_tx';
 
 export interface ICW721Contract {
