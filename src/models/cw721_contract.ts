@@ -1,34 +1,22 @@
 import { Model } from 'objection';
 import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
-import { CW721Token } from './cw721_token';
+import CW721Token from './cw721_token';
 // eslint-disable-next-line import/no-cycle
-import { CW721Tx } from './cw721_tx';
+import CW721Tx from './cw721_tx';
 
-export interface ICW721Contract {
-  id?: number;
-  code_id: string;
-  address: string;
-  name: string;
-  symbol: string;
-  minter: string;
-  creator: string;
-  created_at?: Date;
-  updated_at?: Date;
-}
-
-export class CW721Contract extends BaseModel implements ICW721Contract {
+export default class CW721Contract extends BaseModel {
   code_id!: string;
 
   address!: string;
 
-  name!: string;
+  name?: string;
 
-  symbol!: string;
+  symbol?: string;
 
   minter!: string;
 
-  creator!: string;
+  creator?: string;
 
   id?: number | undefined;
 
