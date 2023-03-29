@@ -1,8 +1,10 @@
 /* eslint-disable import/no-cycle */
 import { Model } from 'objection';
 import { ICoin } from 'src/common/types/interfaces';
+import AccountStake from './account_stake';
 import AccountVesting from './account_vesting';
 import BaseModel from './base';
+import TransactionPowerEvent from './transaction_power_event';
 
 export interface IPubkey {
   type: string;
@@ -90,7 +92,7 @@ export class Account extends BaseModel {
     return {
       stake: {
         relation: Model.HasManyRelation,
-        modelClass: 'account_stake',
+        modelClass: AccountStake,
         join: {
           from: 'account.id',
           to: 'account_stake.account_id',
@@ -98,7 +100,7 @@ export class Account extends BaseModel {
       },
       stake_event: {
         relation: Model.HasManyRelation,
-        modelClass: 'transaction_power_event',
+        modelClass: TransactionPowerEvent,
         join: {
           from: 'account.id',
           to: 'transaction_power_event.delegator_id',

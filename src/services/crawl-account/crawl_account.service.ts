@@ -515,6 +515,8 @@ export default class CrawlAccountService extends BullableService {
     );
   }
 
+  // TODO: Need interval job to delete finished vesting
+
   public async _start() {
     this.createJob(
       BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,

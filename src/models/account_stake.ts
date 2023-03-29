@@ -1,5 +1,8 @@
+/* eslint-disable import/no-cycle */
 import { Model } from 'objection';
+import { Account } from './account';
 import BaseModel from './base';
+import { Validator } from './validator';
 
 export default class AccountStake extends BaseModel {
   id!: number;
@@ -52,7 +55,7 @@ export default class AccountStake extends BaseModel {
       },
       src_validator: {
         relation: Model.BelongsToOneRelation,
-        modelClass: 'validator',
+        modelClass: Validator,
         join: {
           from: 'account_stake.validator_src_id',
           to: 'validator.id',
@@ -60,7 +63,7 @@ export default class AccountStake extends BaseModel {
       },
       dst_validator: {
         relation: Model.BelongsToOneRelation,
-        modelClass: 'account',
+        modelClass: Account,
         join: {
           from: 'account_stake.validator_dst_id',
           to: 'validator.id',

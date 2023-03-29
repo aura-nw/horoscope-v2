@@ -45,6 +45,8 @@ export const BULL_JOB_NAME = {
 export const BULL_ACTION_NAME = {
   UPDATE_ACCOUNT: 'UpdateAccount',
   CRAWL_NEW_ACCOUNT_API: 'CrawlNewAccountApi',
+  UPDATE_ACCOUNT_STAKE: 'UpdateAccountStake',
+  UPDATE_STAKE_EVENT: 'UpdatePowerEvent',
 };
 
 export const SERVICE = {
@@ -52,6 +54,14 @@ export const SERVICE = {
     CrawlAccount: {
       name: 'v1.CrawlAccountService',
       UpdateAccount: 'v1.CrawlAccountService.UpdateAccount',
+    },
+    CrawlAccountStake: {
+      name: 'v1.CrawlAccountStakeService',
+      UpdateAccountStake: 'v1.CrawlAccountStakeService.UpdateAccountStake',
+    },
+    HandleStakeEvent: {
+      name: 'v1.HandleStakeEventService',
+      UpdatePowerEvent: 'v1.HandleStakeEventService.UpdatePowerEvent',
     },
   },
 };
@@ -82,6 +92,9 @@ export const MSG_TYPE = {
   MSG_INSTANTIATE_CONTRACT: '/cosmwasm.wasm.v1.MsgInstantiateContract',
   MSG_EXECUTE_CONTRACT: '/cosmwasm.wasm.v1.MsgExecuteContract',
   MSG_UPDATE_CLIENT: '/ibc.core.client.v1.MsgUpdateClient',
+  MSG_DELEGATE: '/cosmos.staking.v1beta1.MsgDelegate',
+  MSG_REDELEGATE: '/cosmos.staking.v1beta1.MsgBeginRedelegate',
+  MSG_UNDELEGATE: '/cosmos.staking.v1beta1.MsgUndelegate',
 };
 
 export const ABCI_QUERY_PATH = {

@@ -1,5 +1,9 @@
+/* eslint-disable import/no-cycle */
 import { Model } from 'objection';
+import { Account } from './account';
 import BaseModel from './base';
+import Transaction from './transaction';
+import { Validator } from './validator';
 
 export default class TransactionPowerEvent extends BaseModel {
   tx_id!: number;
@@ -47,7 +51,7 @@ export default class TransactionPowerEvent extends BaseModel {
     return {
       transaction: {
         relation: Model.BelongsToOneRelation,
-        modelClass: 'transaction',
+        modelClass: Transaction,
         join: {
           from: 'transaction_power_event.tx_id',
           to: 'transaction.id',
@@ -55,7 +59,7 @@ export default class TransactionPowerEvent extends BaseModel {
       },
       delegator: {
         relation: Model.BelongsToOneRelation,
-        modelClass: 'account',
+        modelClass: Account,
         join: {
           from: 'transaction_power_event.delegator_id',
           to: 'account.id',
@@ -63,7 +67,7 @@ export default class TransactionPowerEvent extends BaseModel {
       },
       src_validator: {
         relation: Model.BelongsToOneRelation,
-        modelClass: 'validator',
+        modelClass: Validator,
         join: {
           from: 'transaction_power_event.validator_src_id',
           to: 'validator.id',
@@ -71,7 +75,7 @@ export default class TransactionPowerEvent extends BaseModel {
       },
       dst_validator: {
         relation: Model.BelongsToOneRelation,
-        modelClass: 'validator',
+        modelClass: Validator,
         join: {
           from: 'transaction_power_event.validator_dst_id',
           to: 'validator.id',

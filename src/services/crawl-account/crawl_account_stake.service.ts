@@ -4,25 +4,30 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
-import { getLcdClient } from 'src/common/utils/aurajs_client';
-import AccountStake from 'src/models/account_stake';
-import { Validator } from 'src/models/validator';
 import {
   DelegationResponseSDKType,
   RedelegationResponseSDKType,
   UnbondingDelegationSDKType,
 } from '@aura-nw/aurajs/types/codegen/cosmos/staking/v1beta1/staking';
+import { getLcdClient } from '../../common/utils/aurajs_client';
+import AccountStake from '../../models/account_stake';
+import { Validator } from '../../models/validator';
+import Utils from '../../common/utils/utils';
+import TransactionEventAttribute from '../../models/transaction_event_attribute';
 import { Config } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
   BULL_ACTION_NAME,
   BULL_JOB_NAME,
-  CONST_CHAR,
   SERVICE_NAME,
 } from '../../common/constant';
-import { IListAddressesParam } from '../../common/utils/request';
+import {
+  IListAddressesParam,
+  IListTxStakesParam,
+} from '../../common/utils/request';
 import { Account } from '../../models/account';
 import {
+  IAuraJSClientFactory,
   IDelegatorDelegations,
   IDelegatorRedelegations,
   IDelegatorUnbonding,
@@ -30,27 +35,32 @@ import {
 
 @Service({
   name: SERVICE_NAME.CRAWL_ACCOUNT_STAKE,
-  version: CONST_CHAR.VERSION_NUMBER,
+  version: 1,
 })
 export default class CrawlAccountStakeService extends BullableService {
-  private _lcdClient: any;
+  private _lcdClient!: IAuraJSClientFactory;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
   }
 
   @Action({
-    name: BULL_ACTION_NAME.ACCOUNT_STAKE_UPSERT,
+    name: BULL_ACTION_NAME.UPDATE_ACCOUNT_STAKE,
     params: {
-      listAddresses: 'string[]',
+      listTxStakes: 'any[]',
     },
   })
-  private actionAccountStakeUpsert(ctx: Context<IListAddressesParam>) {
+  private actionUpdateAccountStake(ctx: Context<IListTxStakesParam>) {
+    const listAddresses: string[] = ctx.params.listTxStakes
+      .map((tx) => tx.value)
+      .filter((addr: string) => Utils.isValidAddress(addr, 20))
+      .filter(Utils._onlyUnique);
+
     this.createJob(
       BULL_JOB_NAME.CRAWL_ACCOUNT_DELEGATIONS,
       'crawl',
       {
-        listAddresses: ctx.params.listAddresses,
+        listAddresses,
       },
       {
         removeOnComplete: true,
@@ -63,7 +73,7 @@ export default class CrawlAccountStakeService extends BullableService {
       BULL_JOB_NAME.CRAWL_ACCOUNT_REDELEGATIONS,
       'crawl',
       {
-        listAddresses: ctx.params.listAddresses,
+        listAddresses,
       },
       {
         removeOnComplete: true,
@@ -76,7 +86,7 @@ export default class CrawlAccountStakeService extends BullableService {
       BULL_JOB_NAME.CRAWL_ACCOUNT_UNBONDING,
       'crawl',
       {
-        listAddresses: ctx.params.listAddresses,
+        listAddresses,
       },
       {
         removeOnComplete: true,
@@ -120,7 +130,7 @@ export default class CrawlAccountStakeService extends BullableService {
             while (!done) {
               try {
                 resultCallApi =
-                  await this._lcdClient.cosmos.staking.v1beta1.delegatorDelegations(
+                  await this._lcdClient.auranw.cosmos.staking.v1beta1.delegatorDelegations(
                     params
                   );
               } catch (error) {
@@ -143,7 +153,10 @@ export default class CrawlAccountStakeService extends BullableService {
                 AccountStake.query()
                   .select('*')
                   .where('account_id', account.id)
-                  .andWhere('type', CONST_CHAR.DELEGATE),
+                  .andWhere(
+                    'type',
+                    TransactionEventAttribute.EVENT_KEY.DELEGATE
+                  ),
                 Validator.query()
                   .select('*')
                   .whereIn(
@@ -181,7 +194,7 @@ export default class CrawlAccountStakeService extends BullableService {
                       delegate.delegation?.validator_address
                   )?.id,
                   validator_dst_id: null,
-                  type: CONST_CHAR.DELEGATE,
+                  type: TransactionEventAttribute.EVENT_KEY.DELEGATE,
                   shares: Number.parseFloat(delegate.delegation?.shares || '0'),
                   balance: delegate.balance?.amount || '0',
                   creation_height: null,
@@ -252,7 +265,7 @@ export default class CrawlAccountStakeService extends BullableService {
             while (!done) {
               try {
                 resultCallApi =
-                  await this._lcdClient.cosmos.staking.v1beta1.redelegations(
+                  await this._lcdClient.auranw.cosmos.staking.v1beta1.redelegations(
                     params
                   );
               } catch (error) {
@@ -275,7 +288,10 @@ export default class CrawlAccountStakeService extends BullableService {
                 AccountStake.query()
                   .select('*')
                   .where('account_id', account.id)
-                  .andWhere('type', CONST_CHAR.REDELEGATE),
+                  .andWhere(
+                    'type',
+                    TransactionEventAttribute.EVENT_KEY.REDELEGATE
+                  ),
                 Validator.query()
                   .select('*')
                   .whereIn(
@@ -316,7 +332,7 @@ export default class CrawlAccountStakeService extends BullableService {
                         val.operator_address ===
                         redelegate.redelegation?.validator_dst_address
                     )?.id,
-                    type: CONST_CHAR.REDELEGATE,
+                    type: TransactionEventAttribute.EVENT_KEY.REDELEGATE,
                     shares: Number.parseFloat(
                       redelegate.entries[0].redelegation_entry?.shares_dst ||
                         '0'
@@ -391,7 +407,7 @@ export default class CrawlAccountStakeService extends BullableService {
             while (!done) {
               try {
                 resultCallApi =
-                  await this._lcdClient.cosmos.staking.v1beta1.delegatorUnbondingDelegations(
+                  await this._lcdClient.auranw.cosmos.staking.v1beta1.delegatorUnbondingDelegations(
                     params
                   );
               } catch (error) {
@@ -414,7 +430,7 @@ export default class CrawlAccountStakeService extends BullableService {
                 AccountStake.query()
                   .select('*')
                   .where('account_id', account.id)
-                  .andWhere('type', CONST_CHAR.UNBOND),
+                  .andWhere('type', TransactionEventAttribute.EVENT_KEY.UNBOND),
                 Validator.query()
                   .select('*')
                   .whereIn(
@@ -442,7 +458,7 @@ export default class CrawlAccountStakeService extends BullableService {
                       (val) => val.operator_address === unbond.validator_address
                     )?.id,
                     validator_dst_id: null,
-                    type: CONST_CHAR.UNBOND,
+                    type: TransactionEventAttribute.EVENT_KEY.UNBOND,
                     shares: null,
                     balance: entry.balance,
                     creation_height: entry.creation_height,

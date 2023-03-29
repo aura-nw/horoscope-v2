@@ -5,6 +5,8 @@ import Block from '../../../../src/models/block';
 import Transaction from '../../../../src/models/transaction';
 import knex from '../../../../src/common/utils/db_connection';
 import CrawlAccountService from '../../../../src/services/crawl-account/crawl_account.service';
+import CrawlAccountStakeService from '../../../../src/services/crawl-account/crawl_account_stake.service';
+import HandleStakeEventService from '../../../../src/services/crawl-validator/handle_stake_event.service';
 import HandleAddressService from '../../../../src/services/crawl-account/handle_address.service';
 import { Account } from '../../../../src/models/account';
 
@@ -63,6 +65,20 @@ export default class HandleAddressTest {
         ],
       },
     ],
+    messages: {
+      index: 0,
+      type: '/cosmos.staking.v1beta1',
+      sender: 'aura1t0l7tjhqvspw7lnsdr9l5t8fyqpuu3jm57ezqa',
+      content: {
+        '@type': '/cosmos.staking.v1beta1.MsgDelegate',
+        delegator_address: 'aura1t0l7tjhqvspw7lnsdr9l5t8fyqpuu3jm57ezqa',
+        validator_address: 'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx',
+        amount: {
+          denom: 'utaura',
+          amount: '1000000',
+        },
+      },
+    },
   };
 
   broker = new ServiceBroker({ logger: false });
@@ -70,6 +86,10 @@ export default class HandleAddressTest {
   handleAddressService?: HandleAddressService;
 
   crawlAccountService?: CrawlAccountService;
+
+  crawlAccountStakeService?: CrawlAccountStakeService;
+
+  handleStakeEventService?: HandleStakeEventService;
 
   @BeforeAll()
   async initSuite() {
@@ -80,6 +100,12 @@ export default class HandleAddressTest {
     this.handleAddressService = this.broker.createService(
       HandleAddressService
     ) as HandleAddressService;
+    this.crawlAccountStakeService = this.broker.createService(
+      CrawlAccountStakeService
+    ) as CrawlAccountStakeService;
+    this.handleStakeEventService = this.broker.createService(
+      HandleStakeEventService
+    ) as HandleStakeEventService;
     await this.crawlAccountService
       .getQueueManager()
       .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH)
@@ -96,8 +122,25 @@ export default class HandleAddressTest {
       .getQueueManager()
       .getQueue(BULL_JOB_NAME.HANDLE_ADDRESS)
       .empty();
+    await this.handleStakeEventService
+      .getQueueManager()
+      .getQueue(BULL_JOB_NAME.HANDLE_STAKE_EVENT)
+      .empty();
+    await this.crawlAccountStakeService
+      .getQueueManager()
+      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_DELEGATIONS)
+      .empty();
+    await this.crawlAccountStakeService
+      .getQueueManager()
+      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_REDELEGATIONS)
+      .empty();
+    await this.crawlAccountStakeService
+      .getQueueManager()
+      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_UNBONDING)
+      .empty();
     await Promise.all([
       knex('account').del(),
+      knex('transaction_message').del(),
       knex('transaction_event_attribute').del(),
       knex('block_checkpoint').del(),
     ]);
@@ -112,6 +155,7 @@ export default class HandleAddressTest {
   async tearDown() {
     await Promise.all([
       knex('account').del(),
+      knex('transaction_message').del(),
       knex('transaction_event_attribute').del(),
       knex('block_checkpoint').del(),
     ]);
