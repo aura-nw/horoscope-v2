@@ -72,10 +72,7 @@ export class Account extends BaseModel {
             properties: {
               denom: { type: 'string' },
               amount: { type: 'string' },
-              minimal_denom: {
-                type: 'string',
-                // optional: true,
-              },
+              base_denom: { type: 'string' },
             },
           },
         },

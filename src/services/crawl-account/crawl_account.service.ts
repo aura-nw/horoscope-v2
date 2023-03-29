@@ -321,7 +321,9 @@ export default class CrawlAccountService extends BullableService {
               if (resultCallApi.pagination.next_key === null) {
                 done = true;
               } else {
-                params.pagination = { key: resultCallApi.pagination.next_key };
+                params.pagination = {
+                  key: fromBase64(resultCallApi.pagination.next_key),
+                };
               }
             }
 
@@ -398,7 +400,9 @@ export default class CrawlAccountService extends BullableService {
               if (resultCallApi.pagination.next_key === null) {
                 done = true;
               } else {
-                params.pagination = { key: resultCallApi.pagination.next_key };
+                params.pagination = {
+                  key: fromBase64(resultCallApi.pagination.next_key),
+                };
               }
             }
 
@@ -431,15 +435,19 @@ export default class CrawlAccountService extends BullableService {
       listBalances.map(async (balance) => {
         if (balance.denom.startsWith('ibc/')) {
           const hash = balance.denom.split('/')[1];
-          const ibcDenomRedis = await this.broker.cacher?.get(
+          let ibcDenomRedis = await this.broker.cacher?.get(
             REDIS_KEY.IBC_DENOM
           );
-          const ibcDenom = ibcDenomRedis?.find((ibc: any) => ibc.hash === hash);
+          if (ibcDenomRedis === undefined || ibcDenomRedis === null)
+            ibcDenomRedis = [];
+          const ibcDenom = ibcDenomRedis?.find(
+            (ibc: any) => ibc.hash === balance.denom
+          );
           if (ibcDenom) {
             return {
               amount: balance.amount,
-              denom: ibcDenom.base_denom,
-              minimal_denom: ibcDenom.hash,
+              denom: balance.denom,
+              base_denom: ibcDenom.base_denom,
             };
           }
 
@@ -462,8 +470,8 @@ export default class CrawlAccountService extends BullableService {
 
           return {
             amount: balance.amount,
-            denom: denomResult.denom_trace.base_denom,
-            minimal_denom: balance.denom,
+            denom: balance.denom,
+            base_denom: denomResult.denom_trace.base_denom,
           };
         }
         return balance;

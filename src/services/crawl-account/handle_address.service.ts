@@ -106,7 +106,9 @@ export default class HandleAddressService extends BullableService {
           .limit(100)
           .offset(offset);
         this.logger.info(
-          `Query Tx from height ${lastHeight} to ${latestBlock.height}`
+          `Query Tx from height ${lastHeight} to ${
+            latestBlock.height
+          } at page ${offset + 1}`
         );
 
         if (resultTx.length > 0)
