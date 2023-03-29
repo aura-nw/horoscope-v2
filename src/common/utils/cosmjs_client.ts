@@ -6,8 +6,6 @@ import config from '../../../config.json';
 export default class CosmjsClient {
   public httpBatchClient: HttpBatchClient;
 
-  public lcdClient: any;
-
   public constructor() {
     const rpc =
       network.find((net: any) => net.chainId === config.chainId)?.RPC[0] || '';
