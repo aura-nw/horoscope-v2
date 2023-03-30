@@ -24,7 +24,6 @@ import {
 import knex from '../../common/utils/db_connection';
 import BlockCheckpoint from '../../models/block_checkpoint';
 import Block from '../../models/block';
-import Transaction from '../../models/transaction';
 import { getLcdClient } from '../../common/utils/aurajs_client';
 import {
   IAuraJSClientFactory,
@@ -101,6 +100,9 @@ export default class CrawlValidatorService extends BullableService {
         .findOne('job_name', BULL_JOB_NAME.CRAWL_VALIDATOR),
       Block.query().select('height').findOne({}).orderBy('height', 'desc'),
     ]);
+    this.logger.info(
+      `Block Checkpoint: ${JSON.stringify(crawlValidatorBlockCheckpoint)}`
+    );
 
     let lastHeight = 0;
     let updateBlockCheckpoint: BlockCheckpoint;
@@ -116,27 +118,20 @@ export default class CrawlValidatorService extends BullableService {
     if (latestBlock) {
       if (latestBlock.height === lastHeight) return;
 
-      const resultTx = await Transaction.query()
-        .select('transaction.id', 'transaction.height')
-        .join('transaction_event', 'transaction.id', 'transaction_event.tx_id')
-        .select('transaction_event.tx_id')
-        .join(
-          'transaction_event_attribute',
-          'transaction_event.id',
-          'transaction_event_attribute.event_id'
-        )
+      const resultTx = await TransactionEventAttribute.query()
+        .joinRelated('event.[transaction]')
+        .whereIn('transaction_event_attribute.key', [
+          TransactionEventAttribute.EVENT_KEY.VALIDATOR,
+          TransactionEventAttribute.EVENT_KEY.SOURCE_VALIDATOR,
+          TransactionEventAttribute.EVENT_KEY.DESTINATION_VALIDATOR,
+        ])
+        .andWhere('event:transaction.height', '>', lastHeight)
+        .andWhere('event:transaction.height', '<=', latestBlock.height)
         .select(
+          'event:transaction.id',
+          'event:transaction.height',
           'transaction_event_attribute.key',
           'transaction_event_attribute.value'
-        )
-        .where('transaction.height', '>', lastHeight)
-        .andWhere('transaction.height', '<=', latestBlock.height)
-        .andWhere((builder) =>
-          builder.whereIn('transaction_event_attribute.key', [
-            TransactionEventAttribute.EVENT_KEY.VALIDATOR,
-            TransactionEventAttribute.EVENT_KEY.SOURCE_VALIDATOR,
-            TransactionEventAttribute.EVENT_KEY.DESTINATION_VALIDATOR,
-          ])
         )
         .limit(1)
         .offset(0);

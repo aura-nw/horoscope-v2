@@ -14,7 +14,6 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { Config } from '../../common';
 import BlockCheckpoint from '../../models/block_checkpoint';
 import Block from '../../models/block';
-import Transaction from '../../models/transaction';
 import { Account } from '../../models/account';
 import config from '../../../config.json';
 import TransactionEventAttribute from '../../models/transaction_event_attribute';
@@ -77,55 +76,49 @@ export default class HandleAddressService extends BullableService {
       let done = false;
       while (!done) {
         // eslint-disable-next-line no-await-in-loop
-        const resultTx = await Transaction.query()
-          .select('transaction.id', 'transaction.height')
-          .join(
-            'transaction_event',
-            'transaction.id',
-            'transaction_event.tx_id'
-          )
-          .select('transaction_event.tx_id')
-          .join(
-            'transaction_event_attribute',
-            'transaction_event.id',
-            'transaction_event_attribute.event_id'
-          )
+        const resultTx = await TransactionEventAttribute.query()
+          .joinRelated('event.[transaction]')
+          .whereIn('transaction_event_attribute.key', [
+            TransactionEventAttribute.EVENT_KEY.RECEIVER,
+            TransactionEventAttribute.EVENT_KEY.SPENDER,
+            TransactionEventAttribute.EVENT_KEY.SENDER,
+          ])
+          .andWhere('event:transaction.height', '>', lastHeight)
+          .andWhere('event:transaction.height', '<=', latestBlock.height)
           .select(
+            'event:transaction.id',
+            'event:transaction.height',
             'transaction_event_attribute.key',
             'transaction_event_attribute.value'
           )
-          .where('transaction.height', '>', lastHeight)
-          .andWhere('transaction.height', '<=', latestBlock.height)
-          .andWhere((builder) =>
-            builder.whereIn('transaction_event_attribute.key', [
-              TransactionEventAttribute.EVENT_KEY.RECEIVER,
-              TransactionEventAttribute.EVENT_KEY.SPENDER,
-              TransactionEventAttribute.EVENT_KEY.SENDER,
-            ])
-          )
-          .limit(100)
-          .offset(offset * 100);
+          .page(offset, 100);
         this.logger.info(
           `Query Tx from height ${lastHeight} to ${
             latestBlock.height
           } at page ${offset + 1}`
         );
 
-        if (resultTx.length > 0)
-          resultTx.map((res: any) => eventAddresses.push(res.value));
+        if (resultTx.results.length > 0)
+          resultTx.results.map((res: any) => eventAddresses.push(res.value));
 
-        if (resultTx.length === 100) offset += 1;
+        if (resultTx.results.length === 100) offset += 1;
         else done = true;
       }
 
-      const listAddresses = eventAddresses
-        .filter((addr: string) =>
-          Utils.isValidAccountAddress(addr, config.networkPrefixAddress, 20)
+      const listAddresses = Array.from(
+        new Set(
+          eventAddresses.filter((addr: string) =>
+            Utils.isValidAccountAddress(addr, config.networkPrefixAddress, 20)
+          )
         )
-        .filter(Utils._onlyUnique);
+      );
 
       if (listAddresses.length > 0) {
         await this.insertNewAccount(listAddresses);
+
+        this.broker.call(SERVICE.V1.CrawlAccount.UpdateAccount, {
+          listAddresses: Array.from(listAddresses),
+        });
 
         updateBlockCheckpoint.height = latestBlock.height;
         await BlockCheckpoint.query()
@@ -164,10 +157,6 @@ export default class HandleAddressService extends BullableService {
     } catch (error) {
       this.logger.error(error);
     }
-
-    this.broker.call(SERVICE.V1.CrawlAccount.UpdateAccount, {
-      listAddresses,
-    });
   }
 
   public async _start() {
