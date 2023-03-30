@@ -1,7 +1,7 @@
 import { Model } from 'objection';
 import BaseModel from './base';
 
-export default class BlockSignature extends BaseModel {
+export class BlockSignature extends BaseModel {
   height!: number;
 
   block_id_flag!: number;

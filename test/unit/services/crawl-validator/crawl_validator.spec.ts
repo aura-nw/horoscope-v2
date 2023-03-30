@@ -1,12 +1,10 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
-import { BULL_JOB_NAME } from '../../../../src/common/constant';
-import Block from '../../../../src/models/block';
-import Transaction from '../../../../src/models/transaction';
+import { BULL_JOB_NAME } from '../../../../src/common';
+import { Block, Transaction, Validator } from '../../../../src/models';
 import knex from '../../../../src/common/utils/db_connection';
 import CrawlSigningInfoService from '../../../../src/services/crawl-validator/crawl_signing_info.service';
 import CrawlValidatorService from '../../../../src/services/crawl-validator/crawl_validator.service';
-import { Validator } from '../../../../src/models/validator';
 
 @Describe('Test crawl_validator service')
 export default class CrawlValidatorTest {

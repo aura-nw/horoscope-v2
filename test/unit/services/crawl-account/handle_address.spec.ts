@@ -1,12 +1,10 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
-import { BULL_JOB_NAME } from '../../../../src/common/constant';
-import Block from '../../../../src/models/block';
-import Transaction from '../../../../src/models/transaction';
+import { BULL_JOB_NAME } from '../../../../src/common';
+import { Account, Block, Transaction } from '../../../../src/models';
 import knex from '../../../../src/common/utils/db_connection';
 import CrawlAccountService from '../../../../src/services/crawl-account/crawl_account.service';
 import HandleAddressService from '../../../../src/services/crawl-account/handle_address.service';
-import { Account } from '../../../../src/models/account';
 
 @Describe('Test handle_address service')
 export default class HandleAddressTest {

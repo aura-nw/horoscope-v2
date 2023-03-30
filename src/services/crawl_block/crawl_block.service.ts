@@ -6,13 +6,14 @@ import { CommitSigSDKType } from '@aura-nw/aurajs/types/codegen/tendermint/types
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
-import { BLOCK_CHECKPOINT_JOB_NAME } from '../../common/constant';
-import Block from '../../models/block';
-import BlockCheckpoint from '../../models/block_checkpoint';
+import {
+  BLOCK_CHECKPOINT_JOB_NAME,
+  getHttpBatchClient,
+  getLcdClient,
+  IAuraJSClientFactory,
+} from '../../common';
+import { Block, BlockCheckpoint } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { getLcdClient } from '../../common/utils/aurajs_client';
-import { getHttpBatchClient } from '../../common/utils/cosmjs_client';
-import { IAuraJSClientFactory } from '../../common/types/interfaces';
 import config from '../../../config.json';
 
 @Service({

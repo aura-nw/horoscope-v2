@@ -1,7 +1,7 @@
 /* eslint-disable import/no-cycle */
 import { Model } from 'objection';
-import { ICoin } from 'src/common/types/interfaces';
-import AccountVesting from './account_vesting';
+import { ICoin } from '../common';
+import { AccountVesting } from './account_vesting';
 import BaseModel from './base';
 
 export interface IPubkey {

@@ -1,9 +1,8 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
-import { BULL_JOB_NAME } from '../../../../src/common/constant';
-import AccountVesting from '../../../../src/models/account_vesting';
+import { BULL_JOB_NAME } from '../../../../src/common';
+import { Account, AccountVesting } from '../../../../src/models';
 import knex from '../../../../src/common/utils/db_connection';
-import { Account } from '../../../../src/models/account';
 import CrawlAccountService from '../../../../src/services/crawl-account/crawl_account.service';
 
 @Describe('Test crawl_account service')
