@@ -138,7 +138,7 @@ export default class HandleAddressService extends BullableService {
   }
 
   private async insertNewAccount(listAddresses: string[]) {
-    const listInsert: any[] = [];
+    const listAccounts: Account[] = [];
 
     const existedAccounts: string[] = (
       await Account.query().select('*').whereIn('address', listAddresses)
@@ -155,23 +155,23 @@ export default class HandleAddressService extends BullableService {
           account_number: 0,
           sequence: 0,
         });
-        listInsert.push(Account.query().insert(account));
+        listAccounts.push(account);
       }
     });
 
     try {
-      await Promise.all(listInsert);
+      await Account.query().insert(listAccounts);
     } catch (error) {
       this.logger.error(error);
     }
 
-    this.broker.call(`${SERVICE.V1.CrawlAccount.UpdateAccount}`, {
+    this.broker.call(SERVICE.V1.CrawlAccount.UpdateAccount, {
       listAddresses,
     });
   }
 
   public async _start() {
-    await this.broker.waitForServices([`${SERVICE.V1.CrawlAccount.name}`]);
+    await this.broker.waitForServices([SERVICE.V1.CrawlAccount.name]);
 
     this.createJob(
       BULL_JOB_NAME.HANDLE_ADDRESS,
