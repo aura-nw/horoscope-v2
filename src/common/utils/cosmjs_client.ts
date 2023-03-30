@@ -1,3 +1,4 @@
+/* eslint-disable import/no-extraneous-dependencies */
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import network from '../../../network.json' assert { type: 'json' };
 import config from '../../../config.json' assert { type: 'json' };
