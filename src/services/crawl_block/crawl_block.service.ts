@@ -198,7 +198,7 @@ export default class CrawlBlockService extends BullableService {
           count: 3,
         },
         repeat: {
-          every: config.crawlBlock.milisecondCrawl,
+          every: config.crawlBlock.millisecondCrawl,
         },
       }
     );

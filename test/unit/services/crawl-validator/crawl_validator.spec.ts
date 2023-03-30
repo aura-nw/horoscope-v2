@@ -89,15 +89,15 @@ export default class CrawlValidatorTest {
     await this.crawlSigningInfoService
       .getQueueManager()
       .getQueue(BULL_JOB_NAME.CRAWL_SIGNING_INFO)
-      .clean(1000);
+      .empty();
     await this.crawlValidatorService
       .getQueueManager()
       .getQueue(BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR)
-      .clean(1000);
+      .empty();
     await this.crawlValidatorService
       .getQueueManager()
       .getQueue(BULL_JOB_NAME.CRAWL_VALIDATOR)
-      .clean(1000);
+      .empty();
     await Promise.all([
       knex('validator').del(),
       knex('transaction_event_attribute').del(),

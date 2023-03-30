@@ -48,7 +48,7 @@ export default class CrawlSigningInfoTest {
     await this.crawlSigningInfoService
       .getQueueManager()
       .getQueue(BULL_JOB_NAME.CRAWL_SIGNING_INFO)
-      .clean(1000);
+      .empty();
     await knex('validator').del();
     await Validator.query().insert(this.validator);
   }

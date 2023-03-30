@@ -307,7 +307,7 @@ export default class CrawlValidatorService extends BullableService {
           count: 3,
         },
         repeat: {
-          every: config.milisecondCrawlJob.validator,
+          every: config.millisecondCrawlJob.validator,
         },
       }
     );
