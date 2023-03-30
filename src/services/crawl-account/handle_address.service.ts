@@ -15,7 +15,7 @@ import { Config } from '../../common';
 import BlockCheckpoint from '../../models/block_checkpoint';
 import Block from '../../models/block';
 import { Account } from '../../models/account';
-import config from '../../../config.json';
+import config from '../../../config.json' assert { type: 'json' };
 import TransactionEventAttribute from '../../models/transaction_event_attribute';
 import { IListAddressesParam } from '../../common/utils/request';
 

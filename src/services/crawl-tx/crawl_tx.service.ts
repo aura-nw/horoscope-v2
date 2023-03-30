@@ -23,7 +23,7 @@ import { BULL_JOB_NAME, MSG_TYPE, SERVICE_NAME } from '../../common/constant';
 import Transaction from '../../models/transaction';
 import { getHttpBatchClient } from '../../common/utils/cosmjs_client';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import config from '../../../config.json';
+import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
   name: SERVICE_NAME.CRAWL_TRANSACTION,

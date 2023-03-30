@@ -26,7 +26,7 @@ import { Account, IBalance } from '../../models/account';
 import { getLcdClient } from '../../common/utils/aurajs_client';
 import BlockCheckpoint from '../../models/block_checkpoint';
 import { getHttpBatchClient } from '../../common/utils/cosmjs_client';
-import config from '../../../config.json';
+import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
   name: SERVICE_NAME.CRAWL_ACCOUNT,
