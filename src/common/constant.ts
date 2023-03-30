@@ -36,6 +36,9 @@ export const BULL_JOB_NAME = {
   CRAWL_ACCOUNT_AUTH: 'crawl:account-auth',
   CRAWL_ACCOUNT_BALANCES: 'crawl:account-balances',
   CRAWL_ACCOUNT_SPENDABLE_BALANCES: 'crawl:account-spendable-balances',
+  CRAWL_BLOCK: 'crawl:block',
+  CRAWL_TRANSACTION: 'crawl:transaction',
+  HANDLE_TRANSACTION: 'handle:transaction',
 };
 
 export const BULL_ACTION_NAME = {
@@ -57,6 +60,8 @@ export const SERVICE_NAME = {
   CRAWL_SIGNING_INFO: 'CrawlSigningInfoService',
   HANDLE_ADDRESS: 'HandleAddressService',
   CRAWL_ACCOUNT: 'CrawlAccountService',
+  CRAWL_BLOCK: 'CrawlBlockService',
+  CRAWL_TRANSACTION: 'CrawlTransaction',
 };
 
 export enum AccountType {

@@ -6,7 +6,11 @@ import { CommitSigSDKType } from '@aura-nw/aurajs/types/codegen/tendermint/types
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
-import { BLOCK_CHECKPOINT_JOB_NAME } from '../../common/constant';
+import {
+  BLOCK_CHECKPOINT_JOB_NAME,
+  BULL_JOB_NAME,
+  SERVICE_NAME,
+} from '../../common/constant';
 import Block from '../../models/block';
 import BlockCheckpoint from '../../models/block_checkpoint';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -16,7 +20,7 @@ import { IAuraJSClientFactory } from '../../common/types/interfaces';
 import config from '../../../config.json';
 
 @Service({
-  name: 'crawl.block',
+  name: SERVICE_NAME.CRAWL_BLOCK,
   version: 1,
 })
 export default class CrawlBlockService extends BullableService {
@@ -32,9 +36,9 @@ export default class CrawlBlockService extends BullableService {
   }
 
   @QueueHandler({
-    queueName: 'crawl.block',
-    jobType: 'crawl.block',
-    prefix: 'horoscope_',
+    queueName: BULL_JOB_NAME.CRAWL_BLOCK,
+    jobType: 'crawl',
+    prefix: `horoscope-v2-${config.chainId}`,
   })
   private async jobHandler(_payload: any): Promise<void> {
     await this.initEnv();
