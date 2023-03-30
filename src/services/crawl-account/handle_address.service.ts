@@ -119,7 +119,9 @@ export default class HandleAddressService extends BullableService {
       }
 
       const listAddresses = eventAddresses
-        .filter((addr: string) => Utils.isValidAddress(addr, 20))
+        .filter((addr: string) =>
+          Utils.isValidAccountAddress(addr, config.networkPrefixAddress, 20)
+        )
         .filter(Utils._onlyUnique);
 
       if (listAddresses.length > 0) {
