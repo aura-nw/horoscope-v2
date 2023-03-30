@@ -85,7 +85,6 @@ export default class QueueManager {
    */
 
   getRedisConnection = (url: string, type: string): Redis => {
-    console.log(` redis cche: ${this}`);
     let cnn = this._redisConn.get({ type, url });
     if (!cnn) {
       cnn = new Redis(url, REDIS_OPT_FOR_SHARE_CONN);
@@ -103,7 +102,6 @@ export default class QueueManager {
 
     const opts = {
       createClient(type: string): Redis {
-        console.log(`createClient ${type}`);
         switch (type) {
           case 'client':
           case 'subscriber':
