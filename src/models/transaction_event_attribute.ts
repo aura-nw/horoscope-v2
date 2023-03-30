@@ -28,7 +28,7 @@ export default class TransactionEventAttribute extends BaseModel {
 
   static get relationMappings() {
     return {
-      owner: {
+      event: {
         relation: Model.BelongsToOneRelation,
         modelClass: TransactionEvent,
         join: {

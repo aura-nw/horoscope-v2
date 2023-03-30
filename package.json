@@ -22,7 +22,7 @@
     "up": "docker-compose up -d",
     "stop": "docker-compose stop",
     "prepare": "husky install",
-    "jest": "NODE_OPTIONS='--loader ts-node/esm' jest test",
+    "jest": "NODE_OPTIONS='--loader ts-node/esm' jest test --runInBand --forceExit",
     "test": "yarn jest --verbose",
     "test-watch": "yarn jest --watch",
     "test-coverage": "yarn jest --coverage",

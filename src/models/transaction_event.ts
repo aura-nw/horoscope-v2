@@ -30,7 +30,7 @@ export default class TransactionEvent extends BaseModel {
 
   static get relationMappings() {
     return {
-      owner: {
+      transaction: {
         relation: Model.BelongsToOneRelation,
         modelClass: Transaction,
         join: {
