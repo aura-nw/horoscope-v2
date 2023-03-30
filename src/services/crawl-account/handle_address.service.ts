@@ -104,7 +104,7 @@ export default class HandleAddressService extends BullableService {
             ])
           )
           .limit(100)
-          .offset(offset);
+          .offset(offset * 100);
         this.logger.info(
           `Query Tx from height ${lastHeight} to ${
             latestBlock.height
