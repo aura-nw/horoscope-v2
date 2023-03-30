@@ -10,7 +10,7 @@ export interface IPubkey {
 }
 
 export interface IBalance extends ICoin {
-  minimal_denom?: string;
+  base_denom?: string;
 }
 
 export class Account extends BaseModel {
@@ -58,10 +58,7 @@ export class Account extends BaseModel {
             properties: {
               denom: { type: 'string' },
               amount: { type: 'string' },
-              minimal_denom: {
-                type: 'string',
-                // optional: true,
-              },
+              base_denom: { type: 'string' },
             },
           },
         },
@@ -85,22 +82,6 @@ export class Account extends BaseModel {
 
   static get relationMappings() {
     return {
-      stake: {
-        relation: Model.HasManyRelation,
-        modelClass: 'account_stake',
-        join: {
-          from: 'account.id',
-          to: 'account_stake.account_id',
-        },
-      },
-      stake_event: {
-        relation: Model.HasManyRelation,
-        modelClass: 'transaction_power_event',
-        join: {
-          from: 'account.id',
-          to: 'transaction_power_event.delegator_id',
-        },
-      },
       vesting: {
         relation: Model.BelongsToOneRelation,
         modelClass: AccountVesting,
