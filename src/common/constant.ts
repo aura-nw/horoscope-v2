@@ -15,6 +15,7 @@ export const PROPOSAL_STATUS = {
 
 export const BLOCK_CHECKPOINT_JOB_NAME = {
   BLOCK_HEIGHT_CRAWLED: 'BLOCK_HEIGHT_CRAWLED',
+  TX_ASSET_HANDLER: 'TX_ASSET_HANDLER',
 };
 
 export const MSG_TYPE = {
@@ -22,4 +23,26 @@ export const MSG_TYPE = {
   MSG_INSTANTIATE_CONTRACT: '/cosmwasm.wasm.v1.MsgInstantiateContract',
   MSG_EXECUTE_CONTRACT: '/cosmwasm.wasm.v1.MsgExecuteContract',
   MSG_UPDATE_CLIENT: '/ibc.core.client.v1.MsgUpdateClient',
+};
+
+export const ATTRIBUTE_KEY = {
+  CONTRACT_ADDRESS: '_contract_address',
+  TOKEN_ID: 'token_id',
+  FROM: 'from',
+  TO: 'to',
+  AMOUNT: 'amount',
+  ACTION: 'action',
+  SENDER: 'sender',
+  RECIPIENT: 'recipient',
+};
+
+export const EVENT_TYPE = {
+  WASM: 'wasm',
+  EXECUTE: 'execute',
+};
+
+export const CONTRACT_TYPES = {
+  CW20: 'CW20',
+  CW721: 'CW721',
+  CW4973: 'CW4973',
 };
