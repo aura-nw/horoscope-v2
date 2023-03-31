@@ -8,16 +8,18 @@ import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import {
   BLOCK_CHECKPOINT_JOB_NAME,
+  BULL_JOB_NAME,
   getHttpBatchClient,
   getLcdClient,
   IAuraJSClientFactory,
+  SERVICE_NAME,
 } from '../../common';
 import { Block, BlockCheckpoint } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json';
 
 @Service({
-  name: 'crawl.block',
+  name: SERVICE_NAME.CRAWL_BLOCK,
   version: 1,
 })
 export default class CrawlBlockService extends BullableService {
@@ -33,9 +35,9 @@ export default class CrawlBlockService extends BullableService {
   }
 
   @QueueHandler({
-    queueName: 'crawl.block',
-    jobType: 'crawl.block',
-    prefix: 'horoscope_',
+    queueName: BULL_JOB_NAME.CRAWL_BLOCK,
+    jobType: 'crawl',
+    prefix: `horoscope-v2-${config.chainId}`,
   })
   private async jobHandler(_payload: any): Promise<void> {
     await this.initEnv();
