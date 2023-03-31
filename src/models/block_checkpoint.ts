@@ -1,6 +1,6 @@
 import BaseModel from './base';
 
-export default class BlockCheckpoint extends BaseModel {
+export class BlockCheckpoint extends BaseModel {
   job_name!: string;
 
   height!: number;

@@ -6,16 +6,20 @@ import { CommitSigSDKType } from '@aura-nw/aurajs/types/codegen/tendermint/types
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
-import { BLOCK_CHECKPOINT_JOB_NAME } from '../../common/constant';
-import Block from '../../models/block';
-import BlockCheckpoint from '../../models/block_checkpoint';
-import { Config } from '../../common';
+import {
+  BLOCK_CHECKPOINT_JOB_NAME,
+  BULL_JOB_NAME,
+  getHttpBatchClient,
+  getLcdClient,
+  IAuraJSClientFactory,
+  SERVICE_NAME,
+} from '../../common';
+import { Block, BlockCheckpoint } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { getLcdClient } from '../../common/utils/aurajs_client';
-import { getHttpBatchClient } from '../../common/utils/cosmjs_client';
+import config from '../../../config.json';
 
 @Service({
-  name: 'crawl.block',
+  name: SERVICE_NAME.CRAWL_BLOCK,
   version: 1,
 })
 export default class CrawlBlockService extends BullableService {
@@ -23,7 +27,7 @@ export default class CrawlBlockService extends BullableService {
 
   private _httpBatchClient: HttpBatchClient;
 
-  private _lcdClient: any;
+  private _lcdClient!: IAuraJSClientFactory;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -31,9 +35,9 @@ export default class CrawlBlockService extends BullableService {
   }
 
   @QueueHandler({
-    queueName: 'crawl.block',
-    jobType: 'crawl.block',
-    prefix: 'horoscope_',
+    queueName: BULL_JOB_NAME.CRAWL_BLOCK,
+    jobType: 'crawl',
+    prefix: `horoscope-v2-${config.chainId}`,
   })
   private async jobHandler(_payload: any): Promise<void> {
     await this.initEnv();
@@ -51,7 +55,7 @@ export default class CrawlBlockService extends BullableService {
     if (!blockHeightCrawled) {
       blockHeightCrawled = await BlockCheckpoint.query().insert({
         job_name: BLOCK_CHECKPOINT_JOB_NAME.BLOCK_HEIGHT_CRAWLED,
-        height: parseInt(Config.START_BLOCK ?? 0, 10),
+        height: config.crawlBlock.startBlock,
       });
     }
 
@@ -62,7 +66,7 @@ export default class CrawlBlockService extends BullableService {
   async handleJobCrawlBlock() {
     // Get latest block in network
     const responseGetLatestBlock: GetLatestBlockResponseSDKType =
-      await this._lcdClient.cosmos.base.tendermint.v1beta1.getLatestBlock();
+      await this._lcdClient.auranw.cosmos.base.tendermint.v1beta1.getLatestBlock();
     const latestBlockNetwork = parseInt(
       responseGetLatestBlock.block?.header?.height
         ? responseGetLatestBlock.block?.header?.height.toString()
@@ -75,8 +79,7 @@ export default class CrawlBlockService extends BullableService {
     // crawl block from startBlock to endBlock
     const startBlock = this._currentBlock + 1;
 
-    let endBlock =
-      startBlock + parseInt(Config.NUMBER_OF_BLOCK_PER_CALL, 10) - 1;
+    let endBlock = startBlock + config.crawlBlock.numberOfBlockPerCall - 1;
     if (endBlock > latestBlockNetwork) {
       endBlock = latestBlockNetwork;
     }
@@ -198,7 +201,7 @@ export default class CrawlBlockService extends BullableService {
           count: 3,
         },
         repeat: {
-          every: Config.MILISECOND_CRAWL_BLOCK ?? 5000,
+          every: config.crawlBlock.millisecondCrawl,
         },
       }
     );

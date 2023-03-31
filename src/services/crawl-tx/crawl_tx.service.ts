@@ -19,13 +19,18 @@ import { cosmos } from '@aura-nw/aurajs';
 import { toBase64, fromBase64, fromUtf8 } from '@cosmjs/encoding';
 import _ from 'lodash';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
-import { MSG_TYPE } from '../../common/constant';
-import Transaction from '../../models/transaction';
-import { getHttpBatchClient } from '../../common/utils/cosmjs_client';
+import {
+  BULL_JOB_NAME,
+  getHttpBatchClient,
+  MSG_TYPE,
+  SERVICE_NAME,
+} from '../../common';
+import { Transaction } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
+import config from '../../../config.json';
 
 @Service({
-  name: 'crawl.tx',
+  name: SERVICE_NAME.CRAWL_TRANSACTION,
   version: 1,
 })
 export default class CrawlTxService extends BullableService {
@@ -37,9 +42,9 @@ export default class CrawlTxService extends BullableService {
   }
 
   @QueueHandler({
-    queueName: 'crawl.tx',
-    jobType: 'crawl.tx',
-    prefix: 'horoscope_',
+    queueName: BULL_JOB_NAME.CRAWL_TRANSACTION,
+    jobType: 'crawl',
+    prefix: `horoscope-v2-${config.chainId}`,
   })
   private async jobHandlerCrawlTx(_payload: {
     listBlock: [{ height: number; timestamp: string }];
@@ -71,9 +76,9 @@ export default class CrawlTxService extends BullableService {
   }
 
   @QueueHandler({
-    queueName: 'handle.tx',
-    jobType: 'handle.tx',
-    prefix: 'horoscope_',
+    queueName: BULL_JOB_NAME.HANDLE_TRANSACTION,
+    jobType: 'handle',
+    prefix: `horoscope-v2-${config.chainId}`,
   })
   private async jobHandlerTx(_payload: any): Promise<void> {
     const { listTx, timestamp } = _payload;
