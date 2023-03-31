@@ -47,7 +47,6 @@ export default class AssetTxHandlerService extends BullableService {
 
   public async _start(): Promise<void> {
     this._lcdClient = await getLcdClient();
-    this.getContractsInputsAndOutputs(1, 9);
     // this.createJob(
     //   'asset',
     //   'tx_handle',
@@ -196,7 +195,7 @@ export default class AssetTxHandlerService extends BullableService {
     this.logger.info(`_currentAssetHandlerTx: ${this._currentAssetHandlerTx}`);
   }
 
-  private async getContractsInputsAndOutputs(from: number, to: number) {
+  async getContractsInputsAndOutputs(from: number, to: number) {
     const listContractInputsAndOutputs: IContractAndInfo[] = [];
     // from, from+1, ... to-1
     const listTxs = await Transaction.query()
