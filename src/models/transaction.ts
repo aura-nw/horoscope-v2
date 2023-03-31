@@ -5,6 +5,8 @@ import TransactionEvent from './transaction_event';
 import TransactionMessage from './transaction_message';
 
 export default class Transaction extends BaseModel {
+  [relation: string]: any;
+
   id!: number;
 
   height!: number;
@@ -33,7 +35,7 @@ export default class Transaction extends BaseModel {
 
   timstamp!: Date;
 
-  data!: JSON;
+  data!: any;
 
   static get tableName() {
     return 'transaction';
