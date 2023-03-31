@@ -19,9 +19,13 @@ import { cosmos } from '@aura-nw/aurajs';
 import { toBase64, fromBase64, fromUtf8 } from '@cosmjs/encoding';
 import _ from 'lodash';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
-import { BULL_JOB_NAME, MSG_TYPE, SERVICE_NAME } from '../../common/constant';
-import Transaction from '../../models/transaction';
-import { getHttpBatchClient } from '../../common/utils/cosmjs_client';
+import {
+  BULL_JOB_NAME,
+  getHttpBatchClient,
+  MSG_TYPE,
+  SERVICE_NAME,
+} from '../../common';
+import { Transaction } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json';
 

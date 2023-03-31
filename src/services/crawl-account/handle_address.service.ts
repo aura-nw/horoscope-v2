@@ -3,21 +3,22 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
+import {
+  Account,
+  Block,
+  BlockCheckpoint,
+  TransactionEventAttribute,
+} from '../../models';
 import Utils from '../../common/utils/utils';
+import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
   BULL_JOB_NAME,
-  SERVICE_NAME,
+  Config,
+  IListAddressesParam,
   SERVICE,
-  BULL_ACTION_NAME,
-} from '../../common/constant';
-import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { Config } from '../../common';
-import BlockCheckpoint from '../../models/block_checkpoint';
-import Block from '../../models/block';
-import { Account } from '../../models/account';
+  SERVICE_NAME,
+} from '../../common';
 import config from '../../../config.json';
-import TransactionEventAttribute from '../../models/transaction_event_attribute';
-import { IListAddressesParam } from '../../common/utils/request';
 
 @Service({
   name: SERVICE_NAME.HANDLE_ADDRESS,
@@ -29,7 +30,7 @@ export default class HandleAddressService extends BullableService {
   }
 
   @Action({
-    name: BULL_ACTION_NAME.CRAWL_NEW_ACCOUNT_API,
+    name: SERVICE.V1.HandleAddress.CrawlNewAccountApi.key,
     params: {
       listAddresses: 'string[]',
     },
@@ -116,7 +117,7 @@ export default class HandleAddressService extends BullableService {
       if (listAddresses.length > 0) {
         await this.insertNewAccount(listAddresses);
 
-        this.broker.call(SERVICE.V1.CrawlAccount.UpdateAccount, {
+        this.broker.call(SERVICE.V1.CrawlAccount.UpdateAccount.path, {
           listAddresses: Array.from(listAddresses),
         });
 

@@ -7,26 +7,27 @@ import { Context, ServiceBroker } from 'moleculer';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { fromBase64, fromUtf8 } from '@cosmjs/encoding';
-import AccountVesting from '../../models/account_vesting';
 import {
-  IAllBalances,
-  ICoin,
-  IAuraJSClientFactory,
-} from '../../common/types/interfaces';
-import {
-  BULL_JOB_NAME,
-  SERVICE_NAME,
-  BULL_ACTION_NAME,
   AccountType,
+  BULL_JOB_NAME,
+  getHttpBatchClient,
+  getLcdClient,
+  IAllBalances,
+  IAuraJSClientFactory,
+  ICoin,
+  IListAddressesParam,
   REDIS_KEY,
-} from '../../common/constant';
+  SERVICE,
+  SERVICE_NAME,
+} from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { IListAddressesParam } from '../../common/utils/request';
-import { Account, IBalance } from '../../models/account';
-import { getLcdClient } from '../../common/utils/aurajs_client';
-import BlockCheckpoint from '../../models/block_checkpoint';
-import { getHttpBatchClient } from '../../common/utils/cosmjs_client';
 import config from '../../../config.json';
+import {
+  Account,
+  AccountVesting,
+  BlockCheckpoint,
+  IBalance,
+} from '../../models';
 
 @Service({
   name: SERVICE_NAME.CRAWL_ACCOUNT,
@@ -43,7 +44,7 @@ export default class CrawlAccountService extends BullableService {
   }
 
   @Action({
-    name: BULL_ACTION_NAME.UPDATE_ACCOUNT,
+    name: SERVICE.V1.CrawlAccount.UpdateAccount.key,
     params: {
       listAddresses: 'string[]',
     },

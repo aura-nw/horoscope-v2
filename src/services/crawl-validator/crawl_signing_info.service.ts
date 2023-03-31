@@ -4,15 +4,16 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import Long from 'long';
 import { fromBase64 } from '@cosmjs/encoding';
+import BullableService, { QueueHandler } from '../../base/bullable.service';
+import config from '../../../config.json';
 import {
+  BULL_JOB_NAME,
+  getLcdClient,
   IAuraJSClientFactory,
   IPagination,
-} from '../../common/types/interfaces';
-import { getLcdClient } from '../../common/utils/aurajs_client';
-import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { BULL_JOB_NAME, SERVICE_NAME } from '../../common/constant';
-import { Validator } from '../../models/validator';
-import config from '../../../config.json';
+  SERVICE_NAME,
+} from '../../common';
+import { Validator } from '../../models';
 
 @Service({
   name: SERVICE_NAME.CRAWL_SIGNING_INFO,

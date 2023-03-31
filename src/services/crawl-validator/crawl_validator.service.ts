@@ -13,24 +13,24 @@ import {
   QueryDelegationResponse,
 } from '@aura-nw/aurajs/types/codegen/cosmos/staking/v1beta1/query';
 import { fromBase64, toHex } from '@cosmjs/encoding';
-import TransactionEventAttribute from '../../models/transaction_event_attribute';
 import { Validator } from '../../models/validator';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import {
-  BULL_JOB_NAME,
-  SERVICE_NAME,
-  ABCI_QUERY_PATH,
-} from '../../common/constant';
 import knex from '../../common/utils/db_connection';
-import BlockCheckpoint from '../../models/block_checkpoint';
-import Block from '../../models/block';
-import { getLcdClient } from '../../common/utils/aurajs_client';
+import config from '../../../config.json';
 import {
+  ABCI_QUERY_PATH,
+  BULL_JOB_NAME,
+  getHttpBatchClient,
+  getLcdClient,
   IAuraJSClientFactory,
   IPagination,
-} from '../../common/types/interfaces';
-import { getHttpBatchClient } from '../../common/utils/cosmjs_client';
-import config from '../../../config.json';
+  SERVICE_NAME,
+} from '../../common';
+import {
+  Block,
+  BlockCheckpoint,
+  TransactionEventAttribute,
+} from '../../models';
 
 @Service({
   name: SERVICE_NAME.CRAWL_VALIDATOR,
