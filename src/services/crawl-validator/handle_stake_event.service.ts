@@ -3,18 +3,21 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
-import { Validator } from '../../models/validator';
-import TransactionEventAttribute from '../../models/transaction_event_attribute';
-import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
-  BULL_ACTION_NAME,
   BULL_JOB_NAME,
+  IListTxMsgIdsParam,
   MSG_TYPE,
+  SERVICE,
   SERVICE_NAME,
-} from '../../common/constant';
-import TransactionPowerEvent from '../../models/transaction_power_event';
+} from '../../common';
+import {
+  Account,
+  TransactionMessage,
+  TransactionPowerEvent,
+  Validator,
+} from '../../models';
+import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json';
-import { IListTxStakesParam } from '../../common/utils/request';
 
 @Service({
   name: SERVICE_NAME.HANDLE_STAKE_EVENT,
@@ -26,17 +29,17 @@ export default class HandleStakeEventService extends BullableService {
   }
 
   @Action({
-    name: BULL_ACTION_NAME.UPDATE_STAKE_EVENT,
+    name: SERVICE.V1.HandleStakeEvent.UpdatePowerEvent.key,
     params: {
-      listTxStakes: 'any[]',
+      listTxMsgIds: 'number[]',
     },
   })
-  public actionUpdatePowerEvent(ctx: Context<IListTxStakesParam>) {
+  public actionUpdatePowerEvent(ctx: Context<IListTxMsgIdsParam>) {
     this.createJob(
       BULL_JOB_NAME.HANDLE_STAKE_EVENT,
       'crawl',
       {
-        listTxStakes: ctx.params.listTxStakes,
+        listTxMsgIds: ctx.params.listTxMsgIds,
       },
       {
         removeOnComplete: true,
@@ -52,19 +55,19 @@ export default class HandleStakeEventService extends BullableService {
     jobType: 'crawl',
     prefix: `horoscope-v2-${config.chainId}`,
   })
-  private async handleJob(_payload: IListTxStakesParam): Promise<void> {
-    const listTxStakes: any[] = [];
-    _payload.listTxStakes.forEach((tx) => {
-      if (
-        !listTxStakes.find(
-          (txStk) =>
-            txStk.tx_msg_id === tx.tx_msg_id && txStk.index === tx.index
-        )
-      )
-        listTxStakes.push(tx);
-    });
+  public async handleJob(_payload: IListTxMsgIdsParam): Promise<void> {
+    const listTxStakes: any[] = await TransactionMessage.query()
+      .joinRelated('transaction')
+      .select('transaction_message.*', 'transaction.timestamp')
+      .whereIn('transaction_message.id', _payload.listTxMsgIds);
 
-    const validators: Validator[] = await Validator.query();
+    const [validators, accounts]: [Validator[], Account[]] = await Promise.all([
+      Validator.query(),
+      Account.query().whereIn(
+        'address',
+        listTxStakes.map((tx) => tx.sender)
+      ),
+    ]);
 
     const listInsert: TransactionPowerEvent[] = listTxStakes.map((stake) => {
       let validatorSrcId;
@@ -85,7 +88,7 @@ export default class HandleStakeEventService extends BullableService {
               val.operator_address === stake.content.validator_dst_address
           )?.id;
           break;
-        case TransactionEventAttribute.EVENT_KEY.UNBOND:
+        case MSG_TYPE.MSG_UNDELEGATE:
           validatorSrcId = validators.find(
             (val) => val.operator_address === stake.content.validator_address
           )?.id;
@@ -98,11 +101,12 @@ export default class HandleStakeEventService extends BullableService {
         TransactionPowerEvent.fromJson({
           tx_id: stake.tx_id,
           type: stake.type,
-          delegator_id: stake.delegator_id,
+          delegator_id: accounts.find((acc) => acc.address === stake.sender)
+            ?.id,
           validator_src_id: validatorSrcId,
           validator_dst_id: validatorDstId,
           amount: stake.content.amount.amount,
-          time: stake.timestamp,
+          time: stake.timestamp.toISOString(),
         });
 
       return txPowerEvent;

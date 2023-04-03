@@ -3,23 +3,24 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
+import {
+  Account,
+  Block,
+  BlockCheckpoint,
+  Transaction,
+  TransactionEventAttribute,
+} from '../../models';
 import Utils from '../../common/utils/utils';
+import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
   BULL_JOB_NAME,
-  SERVICE_NAME,
-  SERVICE,
-  BULL_ACTION_NAME,
+  Config,
+  IListAddressesParam,
   MSG_TYPE,
-} from '../../common/constant';
-import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { Config } from '../../common';
-import BlockCheckpoint from '../../models/block_checkpoint';
-import Block from '../../models/block';
-import Transaction from '../../models/transaction';
-import { Account } from '../../models/account';
+  SERVICE,
+  SERVICE_NAME,
+} from '../../common';
 import config from '../../../config.json';
-import TransactionEventAttribute from '../../models/transaction_event_attribute';
-import { IListAddressesParam } from '../../common/utils/request';
 
 @Service({
   name: SERVICE_NAME.HANDLE_ADDRESS,
@@ -37,13 +38,16 @@ export default class HandleAddressService extends BullableService {
   }
 
   @Action({
-    name: BULL_ACTION_NAME.CRAWL_NEW_ACCOUNT_API,
+    name: SERVICE.V1.HandleAddress.CrawlNewAccountApi.key,
     params: {
       listAddresses: 'string[]',
     },
   })
   public async actionCrawlNewAccountApi(ctx: Context<IListAddressesParam>) {
-    await this.insertNewAccount(ctx.params.listAddresses, []);
+    await this.insertNewAccountAndCallActionUpdate(
+      ctx.params.listAddresses,
+      []
+    );
   }
 
   @QueueHandler({
@@ -90,72 +94,57 @@ export default class HandleAddressService extends BullableService {
       while (!done) {
         // eslint-disable-next-line no-await-in-loop
         const resultTx = await Transaction.query()
+          .joinRelated('[messages, events.[attributes]]')
+          .whereIn('events:attributes.key', [
+            TransactionEventAttribute.EVENT_KEY.RECEIVER,
+            TransactionEventAttribute.EVENT_KEY.SPENDER,
+            TransactionEventAttribute.EVENT_KEY.SENDER,
+          ])
+          .andWhere('transaction.height', '>', lastHeight)
+          .andWhere('transaction.height', '<=', latestBlock.height)
           .select(
             'transaction.id',
             'transaction.height',
-            'transaction.timestamp'
+            'transaction.timestamp',
+            'messages.id as tx_msg_id',
+            'messages.type',
+            'events:attributes.key',
+            'events:attributes.value'
           )
-          .join(
-            'transaction_message',
-            'transaction.id',
-            'transaction_message.tx_id'
-          )
-          .select(
-            'transaction_message.tx_id as tx_msg_id',
-            'transaction_message.index',
-            'transaction_message.type',
-            'transaction_message.content'
-          )
-          .join(
-            'transaction_event',
-            'transaction.id',
-            'transaction_event.tx_id'
-          )
-          .select('transaction_event.tx_id')
-          .join(
-            'transaction_event_attribute',
-            'transaction_event.id',
-            'transaction_event_attribute.event_id'
-          )
-          .select(
-            'transaction_event_attribute.key',
-            'transaction_event_attribute.value'
-          )
-          .where('transaction.height', '>', lastHeight)
-          .andWhere('transaction.height', '<=', latestBlock.height)
-          .andWhere((builder) =>
-            builder.whereIn('transaction_event_attribute.key', [
-              TransactionEventAttribute.EVENT_KEY.RECEIVER,
-              TransactionEventAttribute.EVENT_KEY.SPENDER,
-              TransactionEventAttribute.EVENT_KEY.SENDER,
-            ])
-          )
-          .limit(100)
-          .offset(offset);
+          .page(offset, 100);
         this.logger.info(
-          `Query Tx from height ${lastHeight} to ${latestBlock.height} page ${
-            offset + 1
-          }`
+          `Query Tx from height ${lastHeight} to ${
+            latestBlock.height
+          } at page ${offset + 1}`
         );
 
-        if (resultTx.length > 0) {
-          resultTx.map((res: any) => eventAddresses.push(res.value));
+        if (resultTx.results.length > 0) {
+          resultTx.results.map((res: any) => eventAddresses.push(res.value));
 
           listTxStakes.push(
-            ...resultTx.filter((res: any) => this.msgStakes.includes(res.type))
+            ...resultTx.results.filter((res: any) =>
+              this.msgStakes.includes(res.type)
+            )
           );
         }
 
-        if (resultTx.length === 100) offset += 1;
+        if (resultTx.results.length === 100) offset += 1;
         else done = true;
       }
 
-      const listAddresses = eventAddresses
-        .filter((addr: string) => Utils.isValidAddress(addr, 20))
-        .filter(Utils._onlyUnique);
+      const listAddresses = Array.from(
+        new Set(
+          eventAddresses.filter((addr: string) =>
+            Utils.isValidAccountAddress(addr, config.networkPrefixAddress, 20)
+          )
+        )
+      );
 
       if (listAddresses.length > 0) {
-        await this.insertNewAccount(listAddresses, listTxStakes);
+        await this.insertNewAccountAndCallActionUpdate(
+          listAddresses,
+          listTxStakes
+        );
 
         updateBlockCheckpoint.height = latestBlock.height;
         await BlockCheckpoint.query()
@@ -167,8 +156,11 @@ export default class HandleAddressService extends BullableService {
     }
   }
 
-  private async insertNewAccount(listAddresses: string[], listTxStakes: any[]) {
-    const listInsert: any[] = [];
+  private async insertNewAccountAndCallActionUpdate(
+    listAddresses: string[],
+    listTxStakes: any[]
+  ) {
+    const listAccounts: Account[] = [];
 
     const existedAccounts: string[] = (
       await Account.query().select('*').whereIn('address', listAddresses)
@@ -185,35 +177,51 @@ export default class HandleAddressService extends BullableService {
           account_number: 0,
           sequence: 0,
         });
-        listInsert.push(Account.query().insert(account));
+        listAccounts.push(account);
       }
     });
 
-    try {
-      await Promise.all(listInsert);
-    } catch (error) {
-      this.logger.error(error);
+    if (listAccounts.length > 0) {
+      try {
+        await Account.query().insert(listAccounts);
+      } catch (error) {
+        this.logger.error('Error insert new account');
+        this.logger.error(error);
+      }
     }
 
-    this.broker.call(`${SERVICE.V1.CrawlAccount.UpdateAccount}`, {
+    this.broker.call(SERVICE.V1.CrawlAccount.UpdateAccount.path, {
       listAddresses,
     });
 
     if (listTxStakes.length > 0) {
-      this.broker.call(`${SERVICE.V1.CrawlAccountStake.UpdateAccountStake}`, {
-        listTxStakes,
+      const listStakeAddresses: string[] = Array.from(
+        new Set(
+          listTxStakes
+            .map((tx) => tx.value)
+            .filter((addr: string) =>
+              Utils.isValidAccountAddress(addr, config.networkPrefixAddress, 20)
+            )
+        )
+      );
+      const listTxIds = Array.from(
+        new Set(listTxStakes.map((txStake) => txStake.tx_msg_id))
+      );
+
+      this.broker.call(SERVICE.V1.CrawlAccountStake.UpdateAccountStake.path, {
+        listAddresses: listStakeAddresses,
       });
-      this.broker.call(`${SERVICE.V1.HandleStakeEvent.UpdatePowerEvent}`, {
-        listTxStakes,
+      this.broker.call(SERVICE.V1.HandleStakeEvent.UpdatePowerEvent.path, {
+        listTxIds,
       });
     }
   }
 
   public async _start() {
-    await Promise.all([
-      this.broker.waitForServices([`${SERVICE.V1.CrawlAccount.name}`]),
-      this.broker.waitForServices([`${SERVICE.V1.CrawlAccountStake.name}`]),
-      this.broker.waitForServices([`${SERVICE.V1.HandleStakeEvent.name}`]),
+    await this.broker.waitForServices([
+      SERVICE.V1.CrawlAccount.name,
+      SERVICE.V1.CrawlAccountStake.name,
+      SERVICE.V1.HandleStakeEvent.name,
     ]);
 
     this.createJob(

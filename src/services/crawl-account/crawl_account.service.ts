@@ -7,26 +7,27 @@ import { Context, ServiceBroker } from 'moleculer';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { fromBase64, fromUtf8 } from '@cosmjs/encoding';
-import AccountVesting from '../../models/account_vesting';
 import {
-  IAllBalances,
-  ICoin,
-  IAuraJSClientFactory,
-} from '../../common/types/interfaces';
-import {
-  BULL_JOB_NAME,
-  SERVICE_NAME,
-  BULL_ACTION_NAME,
   AccountType,
+  BULL_JOB_NAME,
+  getHttpBatchClient,
+  getLcdClient,
+  IAllBalances,
+  IAuraJSClientFactory,
+  ICoin,
+  IListAddressesParam,
   REDIS_KEY,
-} from '../../common/constant';
+  SERVICE,
+  SERVICE_NAME,
+} from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { IListAddressesParam } from '../../common/utils/request';
-import { Account, IBalance } from '../../models/account';
-import { getLcdClient } from '../../common/utils/aurajs_client';
-import BlockCheckpoint from '../../models/block_checkpoint';
-import { getHttpBatchClient } from '../../common/utils/cosmjs_client';
 import config from '../../../config.json';
+import {
+  Account,
+  AccountVesting,
+  BlockCheckpoint,
+  IBalance,
+} from '../../models';
 
 @Service({
   name: SERVICE_NAME.CRAWL_ACCOUNT,
@@ -43,7 +44,7 @@ export default class CrawlAccountService extends BullableService {
   }
 
   @Action({
-    name: BULL_ACTION_NAME.UPDATE_ACCOUNT,
+    name: SERVICE.V1.CrawlAccount.UpdateAccount.key,
     params: {
       listAddresses: 'string[]',
     },
@@ -63,10 +64,13 @@ export default class CrawlAccountService extends BullableService {
         .select('*')
         .findOne('job_name', BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT);
 
-    if (
-      crawlGenesisAccountBlockCheckpoint?.height === 0 ||
-      !crawlGenesisAccountBlockCheckpoint
-    ) {
+    if (config.networkPrefixAddress === 'aura') {
+      if (
+        crawlGenesisAccountBlockCheckpoint &&
+        crawlGenesisAccountBlockCheckpoint.height > 0
+      )
+        return;
+
       let listAddresses: string[] = [];
 
       try {
@@ -77,12 +81,18 @@ export default class CrawlAccountService extends BullableService {
         listAddresses = genesis.result.genesis.app_state.bank.balances.map(
           (balance: any) => balance.address
         );
-      } catch (error) {
+      } catch (error: any) {
+        if (JSON.parse(error.message).code !== -32603) {
+          this.logger.error(error);
+          return;
+        }
+
         let genesisChunk = '';
         let index = 0;
         let done = false;
         while (!done) {
           try {
+            this.logger.info(`Query genesis_chunked at page ${index}`);
             const resultChunk = await this._httpBatchClient.execute(
               createJsonRpcRequest('genesis_chunked', {
                 chunk: index.toString(),
@@ -92,6 +102,11 @@ export default class CrawlAccountService extends BullableService {
             genesisChunk += fromUtf8(fromBase64(resultChunk.result.data));
             index += 1;
           } catch (err) {
+            if (JSON.parse(error.message).code !== -32603) {
+              this.logger.error(error);
+              return;
+            }
+
             done = true;
           }
         }
@@ -102,7 +117,7 @@ export default class CrawlAccountService extends BullableService {
         );
       }
 
-      const listInsert: any[] = [];
+      const listAccounts: Account[] = [];
       const existedAccounts: string[] = (
         await Account.query().select('*').whereIn('address', listAddresses)
       ).map((account: Account) => account.address);
@@ -118,29 +133,29 @@ export default class CrawlAccountService extends BullableService {
             account_number: 0,
             sequence: 0,
           });
-          listInsert.push(Account.query().insert(account));
+          listAccounts.push(account);
         }
       });
 
-      await Promise.all(listInsert);
+      await Account.query().insert(listAccounts);
 
       this.createJobAccount(listAddresses);
-
-      let updateBlockCheckpoint: BlockCheckpoint;
-      if (crawlGenesisAccountBlockCheckpoint) {
-        updateBlockCheckpoint = crawlGenesisAccountBlockCheckpoint;
-        updateBlockCheckpoint.height = 1;
-      } else
-        updateBlockCheckpoint = BlockCheckpoint.fromJson({
-          job_name: BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
-          height: 1,
-        });
-      await BlockCheckpoint.query()
-        .insert(updateBlockCheckpoint)
-        .onConflict('job_name')
-        .merge()
-        .returning('id');
     }
+
+    let updateBlockCheckpoint: BlockCheckpoint;
+    if (crawlGenesisAccountBlockCheckpoint) {
+      updateBlockCheckpoint = crawlGenesisAccountBlockCheckpoint;
+      updateBlockCheckpoint.height = 1;
+    } else
+      updateBlockCheckpoint = BlockCheckpoint.fromJson({
+        job_name: BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
+        height: 1,
+      });
+    await BlockCheckpoint.query()
+      .insert(updateBlockCheckpoint)
+      .onConflict('job_name')
+      .merge()
+      .returning('id');
   }
 
   @QueueHandler({
@@ -153,7 +168,8 @@ export default class CrawlAccountService extends BullableService {
   ): Promise<void> {
     this._lcdClient = await getLcdClient();
 
-    const listUpdateQueries: any[] = [];
+    const listAccounts: Account[] = [];
+    const listAccountVestings: AccountVesting[] = [];
 
     if (_payload.listAddresses.length > 0) {
       const accounts: Account[] = await Account.query()
@@ -222,16 +238,7 @@ export default class CrawlAccountService extends BullableService {
                 break;
             }
 
-            listUpdateQueries.push(
-              Account.query()
-                .where({ id: account.id })
-                .patch({
-                  type: account.type,
-                  pubkey: account.pubkey,
-                  account_number: account.account_number ?? 0,
-                  sequence: account.sequence ?? 0,
-                })
-            );
+            listAccounts.push(account);
 
             if (
               resultCallApi.account['@type'] ===
@@ -252,22 +259,34 @@ export default class CrawlAccountService extends BullableService {
                   : null,
                 end_time: resultCallApi.account.base_vesting_account.end_time,
               });
-              listUpdateQueries.push(
-                AccountVesting.query()
-                  .insert(accountVesting)
-                  .onConflict('account_id')
-                  .merge()
-                  .returning('id')
-              );
+              listAccountVestings.push(accountVesting);
             }
           }
         })
       );
 
       try {
-        await Promise.all(listUpdateQueries);
+        await Account.query()
+          .insert(listAccounts)
+          .onConflict('address')
+          .merge()
+          .returning('id');
       } catch (error) {
+        this.logger.error('Error insert account auth');
         this.logger.error(error);
+      }
+
+      if (listAccountVestings.length > 0) {
+        try {
+          await AccountVesting.query()
+            .insert(listAccountVestings)
+            .onConflict('account_id')
+            .merge()
+            .returning('id');
+        } catch (error) {
+          this.logger.error('Error insert account vesting');
+          this.logger.error(error);
+        }
       }
     }
   }
@@ -282,7 +301,7 @@ export default class CrawlAccountService extends BullableService {
   ): Promise<void> {
     this._lcdClient = await getLcdClient();
 
-    const listUpdateQueries: any[] = [];
+    const listAccounts: Account[] = [];
 
     if (_payload.listAddresses.length > 0) {
       const accounts: Account[] = await Account.query()
@@ -321,7 +340,9 @@ export default class CrawlAccountService extends BullableService {
               if (resultCallApi.pagination.next_key === null) {
                 done = true;
               } else {
-                params.pagination = { key: resultCallApi.pagination.next_key };
+                params.pagination = {
+                  key: fromBase64(resultCallApi.pagination.next_key),
+                };
               }
             }
 
@@ -330,18 +351,19 @@ export default class CrawlAccountService extends BullableService {
 
             account.balances = listBalances;
 
-            listUpdateQueries.push(
-              Account.query().where({ id: account.id }).patch({
-                balances: account.balances,
-              })
-            );
+            listAccounts.push(account);
           }
         })
       );
 
       try {
-        await Promise.all(listUpdateQueries);
+        await Account.query()
+          .insert(listAccounts)
+          .onConflict('address')
+          .merge()
+          .returning('id');
       } catch (error) {
+        this.logger.error('Error insert account balance');
         this.logger.error(error);
       }
     }
@@ -357,7 +379,7 @@ export default class CrawlAccountService extends BullableService {
   ): Promise<void> {
     this._lcdClient = await getLcdClient();
 
-    const listUpdateQueries: any[] = [];
+    const listAccounts: Account[] = [];
 
     if (_payload.listAddresses.length > 0) {
       const accounts: Account[] = await Account.query()
@@ -398,7 +420,9 @@ export default class CrawlAccountService extends BullableService {
               if (resultCallApi.pagination.next_key === null) {
                 done = true;
               } else {
-                params.pagination = { key: resultCallApi.pagination.next_key };
+                params.pagination = {
+                  key: fromBase64(resultCallApi.pagination.next_key),
+                };
               }
             }
 
@@ -409,18 +433,19 @@ export default class CrawlAccountService extends BullableService {
 
             account.spendable_balances = listSpendableBalances;
 
-            listUpdateQueries.push(
-              Account.query().where({ id: account.id }).patch({
-                spendable_balances: account.spendable_balances,
-              })
-            );
+            listAccounts.push(account);
           }
         })
       );
 
       try {
-        await Promise.all(listUpdateQueries);
+        await Account.query()
+          .insert(listAccounts)
+          .onConflict('address')
+          .merge()
+          .returning('id');
       } catch (error) {
+        this.logger.error('Error insert account stake spendable balance');
         this.logger.error(error);
       }
     }
@@ -431,15 +456,19 @@ export default class CrawlAccountService extends BullableService {
       listBalances.map(async (balance) => {
         if (balance.denom.startsWith('ibc/')) {
           const hash = balance.denom.split('/')[1];
-          const ibcDenomRedis = await this.broker.cacher?.get(
+          let ibcDenomRedis = await this.broker.cacher?.get(
             REDIS_KEY.IBC_DENOM
           );
-          const ibcDenom = ibcDenomRedis?.find((ibc: any) => ibc.hash === hash);
+          if (ibcDenomRedis === undefined || ibcDenomRedis === null)
+            ibcDenomRedis = [];
+          const ibcDenom = ibcDenomRedis?.find(
+            (ibc: any) => ibc.hash === balance.denom
+          );
           if (ibcDenom) {
             return {
               amount: balance.amount,
-              denom: ibcDenom.base_denom,
-              minimal_denom: ibcDenom.hash,
+              denom: balance.denom,
+              base_denom: ibcDenom.base_denom,
             };
           }
 
@@ -462,8 +491,8 @@ export default class CrawlAccountService extends BullableService {
 
           return {
             amount: balance.amount,
-            denom: denomResult.denom_trace.base_denom,
-            minimal_denom: balance.denom,
+            denom: balance.denom,
+            base_denom: denomResult.denom_trace.base_denom,
           };
         }
         return balance;

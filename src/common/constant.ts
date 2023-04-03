@@ -42,26 +42,35 @@ export const BULL_JOB_NAME = {
   CRAWL_ACCOUNT_UNBONDING: 'crawl:account-unbonding',
 };
 
-export const BULL_ACTION_NAME = {
-  UPDATE_ACCOUNT: 'UpdateAccount',
-  CRAWL_NEW_ACCOUNT_API: 'CrawlNewAccountApi',
-  UPDATE_ACCOUNT_STAKE: 'UpdateAccountStake',
-  UPDATE_STAKE_EVENT: 'UpdatePowerEvent',
-};
-
 export const SERVICE = {
   V1: {
     CrawlAccount: {
       name: 'v1.CrawlAccountService',
-      UpdateAccount: 'v1.CrawlAccountService.UpdateAccount',
+      UpdateAccount: {
+        key: 'UpdateAccount',
+        path: 'v1.CrawlAccountService.UpdateAccount',
+      },
+    },
+    HandleAddress: {
+      name: 'v1.HandleAddressService',
+      CrawlNewAccountApi: {
+        key: 'CrawlNewAccountApi',
+        path: 'v1.HandleAddressService.CrawlNewAccountApi',
+      },
     },
     CrawlAccountStake: {
       name: 'v1.CrawlAccountStakeService',
-      UpdateAccountStake: 'v1.CrawlAccountStakeService.UpdateAccountStake',
+      UpdateAccountStake: {
+        key: 'UpdateAccountStake',
+        path: 'v1.CrawlAccountStakeService.UpdateAccountStake',
+      },
     },
     HandleStakeEvent: {
       name: 'v1.HandleStakeEventService',
-      UpdatePowerEvent: 'v1.HandleStakeEventService.UpdatePowerEvent',
+      UpdatePowerEvent: {
+        key: 'UpdatePowerEvent',
+        path: 'v1.HandleStakeEventService.UpdatePowerEvent',
+      },
     },
   },
 };
