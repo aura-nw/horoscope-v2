@@ -1,14 +1,12 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
-import { BULL_JOB_NAME } from '../../../../src/common/constant';
-import Block from '../../../../src/models/block';
-import Transaction from '../../../../src/models/transaction';
+import { BULL_JOB_NAME } from '../../../../src/common';
+import { Account, Block, Transaction } from '../../../../src/models';
 import knex from '../../../../src/common/utils/db_connection';
 import CrawlAccountService from '../../../../src/services/crawl-account/crawl_account.service';
 import CrawlAccountStakeService from '../../../../src/services/crawl-account/crawl_account_stake.service';
 import HandleStakeEventService from '../../../../src/services/crawl-validator/handle_stake_event.service';
 import HandleAddressService from '../../../../src/services/crawl-account/handle_address.service';
-import { Account } from '../../../../src/models/account';
 
 @Describe('Test handle_address service')
 export default class HandleAddressTest {
@@ -50,7 +48,7 @@ export default class HandleAddressTest {
         attributes: [
           {
             key: 'spender',
-            value: 'aura1t0l7tjhqvspw7lnsdr9l5t8fyqpuu3jm57ezqa',
+            value: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
           },
         ],
       },
@@ -68,10 +66,10 @@ export default class HandleAddressTest {
     messages: {
       index: 0,
       type: '/cosmos.staking.v1beta1',
-      sender: 'aura1t0l7tjhqvspw7lnsdr9l5t8fyqpuu3jm57ezqa',
+      sender: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
       content: {
         '@type': '/cosmos.staking.v1beta1.MsgDelegate',
-        delegator_address: 'aura1t0l7tjhqvspw7lnsdr9l5t8fyqpuu3jm57ezqa',
+        delegator_address: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
         validator_address: 'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx',
         amount: {
           denom: 'utaura',
@@ -106,38 +104,40 @@ export default class HandleAddressTest {
     this.handleStakeEventService = this.broker.createService(
       HandleStakeEventService
     ) as HandleStakeEventService;
-    await this.crawlAccountService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH)
-      .empty();
-    await this.crawlAccountService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES)
-      .empty();
-    await this.crawlAccountService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES)
-      .empty();
-    await this.handleAddressService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.HANDLE_ADDRESS)
-      .empty();
-    await this.handleStakeEventService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.HANDLE_STAKE_EVENT)
-      .empty();
-    await this.crawlAccountStakeService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_DELEGATIONS)
-      .empty();
-    await this.crawlAccountStakeService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_REDELEGATIONS)
-      .empty();
-    await this.crawlAccountStakeService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_UNBONDING)
-      .empty();
+    await Promise.all([
+      this.crawlAccountService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH)
+        .empty(),
+      this.crawlAccountService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES)
+        .empty(),
+      this.crawlAccountService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES)
+        .empty(),
+      this.handleAddressService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.HANDLE_ADDRESS)
+        .empty(),
+      this.handleStakeEventService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.HANDLE_STAKE_EVENT)
+        .empty(),
+      this.crawlAccountStakeService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_DELEGATIONS)
+        .empty(),
+      this.crawlAccountStakeService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_REDELEGATIONS)
+        .empty(),
+      this.crawlAccountStakeService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_UNBONDING)
+        .empty(),
+    ]);
     await Promise.all([
       knex('account').del(),
       knex('transaction_message').del(),
@@ -178,7 +178,7 @@ export default class HandleAddressTest {
     ).not.toBeUndefined();
     expect(
       accounts.find(
-        (acc) => acc.address === 'aura1t0l7tjhqvspw7lnsdr9l5t8fyqpuu3jm57ezqa'
+        (acc) => acc.address === 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'
       )
     ).not.toBeUndefined();
     expect(
