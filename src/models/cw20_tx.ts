@@ -4,7 +4,7 @@ import { CW20Token } from './cw20_token';
 
 export interface ICW20Tx {
   id?: number;
-  tx_hash: string;
+  txhash: string;
   contract_address: string;
   from: string;
   to: string;
@@ -25,7 +25,7 @@ export class CW20Tx extends BaseModel implements ICW20Tx {
 
   amount!: string;
 
-  tx_hash!: string;
+  txhash!: string;
 
   contract_address!: string;
 
@@ -40,9 +40,9 @@ export class CW20Tx extends BaseModel implements ICW20Tx {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['tx_hash', 'contract_address'],
+      required: ['txhash', 'contract_address'],
       properties: {
-        tx_hash: { type: 'string' },
+        txhash: { type: 'string' },
         contract_address: { type: 'string' },
         from: { type: 'string' },
         to: { type: 'string' },

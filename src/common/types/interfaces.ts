@@ -18,7 +18,7 @@ export interface IContractAndInfo {
   sender: string;
   contractAddress: string;
   action: string;
-  tx_hash: string;
+  txhash: string;
 }
 export interface ICodeidType {
   code_id: number;

@@ -22,6 +22,8 @@ export default class CW721Token extends BaseModel {
 
   updated_at?: Date;
 
+  static softDelete = false;
+
   static get tableName() {
     return 'cw721_token';
   }

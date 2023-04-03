@@ -3,7 +3,7 @@ import { Knex } from 'knex';
 export async function up(knex: Knex): Promise<void> {
   return knex.schema.createTable('cw20_tx', (table) => {
     table.increments();
-    table.string('tx_hash').notNullable().index();
+    table.string('txhash').notNullable().index();
     table.string('from').index();
     table.string('to').index();
     table.decimal('amount', 80, 0);

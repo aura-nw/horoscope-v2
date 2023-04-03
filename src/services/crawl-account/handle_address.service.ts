@@ -18,7 +18,7 @@ import {
   SERVICE,
   SERVICE_NAME,
 } from '../../common';
-import config from '../../../config.json';
+import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
   name: SERVICE_NAME.HANDLE_ADDRESS,
