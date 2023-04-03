@@ -98,6 +98,7 @@ export default class HandleAddressTest {
       knex('account').del(),
       knex('transaction_event_attribute').del(),
       knex('block_checkpoint').del(),
+      knex('transaction_message').del(),
     ]);
     await knex('transaction_event').del();
     await knex('transaction').del();
@@ -112,6 +113,7 @@ export default class HandleAddressTest {
       knex('account').del(),
       knex('transaction_event_attribute').del(),
       knex('block_checkpoint').del(),
+      knex('transaction_message').del(),
     ]);
     await knex('transaction_event').del();
     await knex('transaction').del();

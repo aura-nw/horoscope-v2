@@ -2,13 +2,12 @@ import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { Config } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
-import Block from '../../../../src/models/block';
-import Transaction from '../../../../src/models/transaction';
+import { Block, Transaction } from '../../../../src/models';
 import AssetTxHandlerService from '../../../../src/services/asset-indexer/asset-tx-handler.service';
 import CW721AssetService from '../../../../src/services/asset-indexer/cw721_asset.service';
 
-@Describe('Test crawl_validator service')
-export default class CrawlValidatorTest {
+@Describe('Test asset_indexer service')
+export default class AssetIndexerTest {
   broker = new ServiceBroker({ logger: false });
 
   assetTxHandlerService = this.broker.createService(
@@ -107,7 +106,7 @@ export default class CrawlValidatorTest {
         sender: 'aura1uh24g2lc8hvvkaaf7awz25lrh5fptthu2dhq0n',
         contractAddress:
           'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8xe8',
-        tx_hash:
+        txhash:
           '4A8B0DE950F563553A81360D4782F6EC451F6BEF7AC50E2459D1997FA168997D',
       },
       {
@@ -115,7 +114,7 @@ export default class CrawlValidatorTest {
         sender: 'aura1uh24g2lc8hvvkaaf7awz25lrh5fptthu2dhq0n',
         contractAddress:
           'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8xe8',
-        tx_hash:
+        txhash:
           '4A8B0DE950F563553A81360D4782F6EC451F6BEF7AC50E2459D1997FA168997D',
       },
     ]);

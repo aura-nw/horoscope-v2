@@ -57,6 +57,13 @@ export const SERVICE = {
         path: 'v1.HandleAddressService.CrawlNewAccountApi',
       },
     },
+    Cw721: {
+      name: 'v1.CW721',
+      EnrichCw721: {
+        key: 'enrichCw721',
+        path: 'v1.CW721.enrichCw721',
+      },
+    },
   },
 };
 

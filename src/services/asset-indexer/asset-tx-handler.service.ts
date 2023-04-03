@@ -1,13 +1,16 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
+import { BlockCheckpoint, Transaction } from '../../models';
 import codeid_types from '../../../codeid_types.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { Config } from '../../common';
-import { BLOCK_CHECKPOINT_JOB_NAME, MSG_TYPE } from '../../common/constant';
+import {
+  BLOCK_CHECKPOINT_JOB_NAME,
+  MSG_TYPE,
+  SERVICE,
+} from '../../common/constant';
 import { IContractAndInfo } from '../../common/types/interfaces';
 import { getLcdClient } from '../../common/utils/aurajs_client';
-import BlockCheckpoint from '../../models/block_checkpoint';
-import Transaction from '../../models/transaction';
 
 const { NODE_ENV } = Config;
 
@@ -82,7 +85,7 @@ export default class AssetTxHandlerService extends BullableService {
               const { contractAddress } = item;
               if (contractAddress != null) {
                 const contractInfo =
-                  await this._lcdClient.cosmwasm.wasm.v1.contractInfo({
+                  await this._lcdClient.cosmwasm.cosmwasm.wasm.v1.contractInfo({
                     address: contractAddress,
                   });
                 if (contractInfo != null) {
@@ -92,11 +95,11 @@ export default class AssetTxHandlerService extends BullableService {
                       contractInfo.contract_info?.code_id
                   )?.contract_type;
                   if (type === 'CW721') {
-                    this.broker.call('enrichCw721', {
+                    this.broker.call(SERVICE.V1.Cw721.EnrichCw721.path, {
                       address: contractAddress,
                       codeId: contractInfo.contract_info?.code_id,
                       txData: {
-                        txhash: item.tx_hash,
+                        txhash: item.txhash,
                         sender: item.sender,
                         action: item.action,
                       },
@@ -164,7 +167,7 @@ export default class AssetTxHandlerService extends BullableService {
           contractAddress: contract,
           sender,
           action,
-          tx_hash: tx.hash,
+          txhash: tx.hash,
         });
       });
     }
