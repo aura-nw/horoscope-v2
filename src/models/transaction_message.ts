@@ -1,8 +1,12 @@
+/* eslint-disable import/no-cycle */
 import { Model } from 'objection';
 import BaseModel from './base';
-import TransactionMessageReceiver from './transaction_message_receiver';
+import { Transaction } from './transaction';
+import { TransactionMessageReceiver } from './transaction_message_receiver';
 
-export default class TransactionMessage extends BaseModel {
+export class TransactionMessage extends BaseModel {
+  id!: number;
+
   tx_id!: number;
 
   index!: number;
@@ -11,7 +15,7 @@ export default class TransactionMessage extends BaseModel {
 
   sender!: string;
 
-  content!: JSON;
+  content!: any;
 
   static get tableName() {
     return 'transaction_message';
@@ -36,9 +40,9 @@ export default class TransactionMessage extends BaseModel {
 
   static get relationMappings() {
     return {
-      owner: {
+      transaction: {
         relation: Model.BelongsToOneRelation,
-        modelClass: 'transaction',
+        modelClass: Transaction,
         join: {
           from: 'transaction_message.tx_id',
           to: 'transaction.id',

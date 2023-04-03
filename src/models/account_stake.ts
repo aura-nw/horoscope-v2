@@ -4,7 +4,7 @@ import { Account } from './account';
 import BaseModel from './base';
 import { Validator } from './validator';
 
-export default class AccountStake extends BaseModel {
+export class AccountStake extends BaseModel {
   id!: number;
 
   account_id!: number;
@@ -34,11 +34,11 @@ export default class AccountStake extends BaseModel {
       properties: {
         account_id: { type: 'number' },
         validator_src_id: { type: 'number' },
-        validator_dst_id: { type: 'number' },
-        shares: { type: 'number' },
+        validator_dst_id: { type: ['number', 'null'] },
+        shares: { type: ['number', 'null'] },
         balance: { type: 'string' },
         creation_height: { type: 'number' },
-        end_time: { type: 'string', format: 'date-time' },
+        end_time: { type: ['string', 'null'], format: 'date-time' },
       },
     };
   }

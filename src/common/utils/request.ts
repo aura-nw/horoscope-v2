@@ -2,6 +2,6 @@ export interface IListAddressesParam {
   listAddresses: string[];
 }
 
-export interface IListTxStakesParam {
-  listTxStakes: any[];
+export interface IListTxMsgIdsParam {
+  listTxMsgIds: number[];
 }

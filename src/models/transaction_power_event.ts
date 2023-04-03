@@ -2,10 +2,10 @@
 import { Model } from 'objection';
 import { Account } from './account';
 import BaseModel from './base';
-import Transaction from './transaction';
+import { Transaction } from './transaction';
 import { Validator } from './validator';
 
-export default class TransactionPowerEvent extends BaseModel {
+export class TransactionPowerEvent extends BaseModel {
   tx_id!: number;
 
   type!: string;
@@ -40,7 +40,7 @@ export default class TransactionPowerEvent extends BaseModel {
         type: { type: 'string' },
         delegator_id: { type: 'number' },
         validator_src_id: { type: 'number' },
-        validator_dst_id: { type: 'number' },
+        validator_dst_id: { type: ['number', 'null'] },
         amount: { type: 'string' },
         time: { type: 'string' },
       },

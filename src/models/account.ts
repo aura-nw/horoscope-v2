@@ -1,10 +1,10 @@
 /* eslint-disable import/no-cycle */
 import { Model } from 'objection';
-import { ICoin } from 'src/common/types/interfaces';
-import AccountStake from './account_stake';
-import AccountVesting from './account_vesting';
+import { ICoin } from '../common';
+import { AccountStake } from './account_stake';
+import { AccountVesting } from './account_vesting';
 import BaseModel from './base';
-import TransactionPowerEvent from './transaction_power_event';
+import { TransactionPowerEvent } from './transaction_power_event';
 
 export interface IPubkey {
   type: string;
@@ -12,7 +12,7 @@ export interface IPubkey {
 }
 
 export interface IBalance extends ICoin {
-  minimal_denom?: string;
+  base_denom?: string;
 }
 
 export class Account extends BaseModel {
@@ -60,10 +60,7 @@ export class Account extends BaseModel {
             properties: {
               denom: { type: 'string' },
               amount: { type: 'string' },
-              minimal_denom: {
-                type: 'string',
-                // optional: true,
-              },
+              base_denom: { type: 'string' },
             },
           },
         },
@@ -74,10 +71,7 @@ export class Account extends BaseModel {
             properties: {
               denom: { type: 'string' },
               amount: { type: 'string' },
-              minimal_denom: {
-                type: 'string',
-                // optional: true,
-              },
+              base_denom: { type: 'string' },
             },
           },
         },

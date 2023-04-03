@@ -1,10 +1,10 @@
+/* eslint-disable import/no-cycle */
 import { Model } from 'objection';
 import BaseModel from './base';
-// eslint-disable-next-line import/no-cycle
-import TransactionEvent from './transaction_event';
-import TransactionMessage from './transaction_message';
+import { TransactionEvent } from './transaction_event';
+import { TransactionMessage } from './transaction_message';
 
-export default class Transaction extends BaseModel {
+export class Transaction extends BaseModel {
   id!: number;
 
   height!: number;
