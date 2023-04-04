@@ -21,7 +21,7 @@ import {
   SERVICE_NAME,
 } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import config from '../../../config.json';
+import config from '../../../config.json' assert { type: 'json' };
 import {
   Account,
   AccountVesting,

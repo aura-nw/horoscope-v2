@@ -1,6 +1,6 @@
 import { fromBase64, fromBech32, toBech32, toHex } from '@cosmjs/encoding';
 import { pubkeyToRawAddress } from '@cosmjs/tendermint-rpc';
-import config from '../../config.json';
+import config from '../../config.json' assert { type: 'json' };
 import BaseModel from './base';
 
 export interface IConsensusPubkey {
