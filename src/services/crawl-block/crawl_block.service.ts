@@ -37,7 +37,7 @@ export default class CrawlBlockService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_BLOCK,
-    jobType: 'crawl',
+    jobType: BULL_JOB_NAME.CRAWL_BLOCK,
     prefix: `horoscope-v2-${config.chainId}`,
   })
   private async jobHandler(_payload: any): Promise<void> {
@@ -181,9 +181,12 @@ export default class CrawlBlockService extends BullableService {
             timestamp: block.time,
           });
         });
-        this.broker.call('v1.crawl.tx.crawlTxByHeight', {
-          listBlock: listBlockWithTime,
-        });
+        this.broker.call(
+          `v1.${SERVICE_NAME.CRAWL_TRANSACTION}.crawlTxByHeight`,
+          {
+            listBlock: listBlockWithTime,
+          }
+        );
       }
     } catch (error) {
       this.logger.error(error);
@@ -191,10 +194,10 @@ export default class CrawlBlockService extends BullableService {
   }
 
   public async _start() {
-    await this.waitForServices('v1.crawl.tx');
+    await this.waitForServices(`v1.${SERVICE_NAME.CRAWL_TRANSACTION}`);
     this.createJob(
-      'crawl.block',
-      'crawl.block',
+      `${BULL_JOB_NAME.CRAWL_BLOCK}`,
+      `${BULL_JOB_NAME.CRAWL_BLOCK}`,
       {},
       {
         removeOnComplete: true,

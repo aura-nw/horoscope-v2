@@ -61,7 +61,7 @@ export const SERVICE_NAME = {
   HANDLE_ADDRESS: 'HandleAddressService',
   CRAWL_ACCOUNT: 'CrawlAccountService',
   CRAWL_BLOCK: 'CrawlBlockService',
-  CRAWL_TRANSACTION: 'CrawlTransaction',
+  CRAWL_TRANSACTION: 'CrawlTransactionService',
 };
 
 export enum AccountType {
