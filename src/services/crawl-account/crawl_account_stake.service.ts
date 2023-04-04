@@ -95,7 +95,7 @@ export default class CrawlAccountStakeService extends BullableService {
     jobType: 'crawl',
     prefix: `horoscope-v2-${config.chainId}`,
   })
-  private async handleJobAccountDelegations(
+  public async handleJobAccountDelegations(
     _payload: IListAddressesParam
   ): Promise<void> {
     this._lcdClient = await getLcdClient();
@@ -245,7 +245,7 @@ export default class CrawlAccountStakeService extends BullableService {
     jobType: 'crawl',
     prefix: `horoscope-v2-${config.chainId}`,
   })
-  private async handleJobAccountRedelegations(
+  public async handleJobAccountRedelegations(
     _payload: IListAddressesParam
   ): Promise<void> {
     this._lcdClient = await getLcdClient();
@@ -409,7 +409,7 @@ export default class CrawlAccountStakeService extends BullableService {
     jobType: 'crawl',
     prefix: `horoscope-v2-${config.chainId}`,
   })
-  private async handleJobAccountUnbonding(
+  public async handleJobAccountUnbonding(
     _payload: IListAddressesParam
   ): Promise<void> {
     this._lcdClient = await getLcdClient();

@@ -112,7 +112,10 @@ export default class CrawlAccountTest {
       accounts.find(
         (acc) => acc.address === 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'
       )?.pubkey
-    ).toBeNull();
+    ).toEqual({
+      '@type': '/cosmos.crypto.secp256k1.PubKey',
+      key: 'ApNMBAr8lFRS6DaOKXgGXFcrpf78KHyqPvRCLZrM0Zzg',
+    });
     expect(
       accounts.find(
         (acc) => acc.address === 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'
@@ -243,8 +246,8 @@ export default class CrawlAccountTest {
     expect(
       accounts.find(
         (acc) => acc.address === 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'
-      )?.balances[0].amount
-    ).toEqual('1000000000000');
+      )?.balances.length
+    ).toEqual(1);
   }
 
   @Test('Crawl base account spendable balances success')
@@ -258,7 +261,7 @@ export default class CrawlAccountTest {
     expect(
       accounts.find(
         (acc) => acc.address === 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'
-      )?.spendable_balances[0].amount
-    ).toEqual('1000000000000');
+      )?.spendable_balances.length
+    ).toEqual(1);
   }
 }

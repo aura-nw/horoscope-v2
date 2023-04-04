@@ -1,9 +1,24 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
+import {
+  assertIsDeliverTxSuccess,
+  SigningStargateClient,
+} from '@cosmjs/stargate';
+import { coins, DirectSecp256k1HdWallet } from '@cosmjs/proto-signing';
 import { ServiceBroker } from 'moleculer';
-import { BULL_JOB_NAME } from '../../../../src/common';
-import { Account, Validator } from '../../../../src/models';
-import knex from '../../../../src/common/utils/db_connection';
+import {
+  BULL_JOB_NAME,
+  defaultSendFee,
+  defaultSigningClientOptions,
+} from '../../../../src/common';
+import {
+  Account,
+  AccountStake,
+  TransactionEventAttribute,
+  Validator,
+} from '../../../../src/models';
 import CrawlAccountStakeService from '../../../../src/services/crawl-account/crawl_account_stake.service';
+import config from '../../../../config.json';
+import network from '../../../../network.json';
 
 @Describe('Test crawl_account_stake service')
 export default class CrawlAccountStakeTest {
@@ -20,50 +35,29 @@ export default class CrawlAccountStakeTest {
   validators: Validator[] = [
     Validator.fromJson({
       commission: JSON.parse('{}'),
-      operator_address: 'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx',
-      consensus_address: 'auravalcons1wep98af7gdsk54d9f0dwapr6qpxkpll5udf62e',
-      consensus_hex_address: '764253F53E43616A55A54BDAEE847A004D60FFF4',
+      operator_address: 'auravaloper1phaxpevm5wecex2jyaqty2a4v02qj7qmhyhvcg',
+      consensus_address: 'auravalcons1rvq6km74pua3pt9g7u5svm4r6mrw8z08walfep',
+      consensus_hex_address: '1B01AB6FD50F3B10ACA8F729066EA3D6C6E389E7',
       consensus_pubkey: {
         type: '/cosmos.crypto.ed25519.PubKey',
-        key: 'UaS9Gv6C+SB7PkbRFag2i8hOvJzFGks1+y5hnd0+C6w=',
+        key: 'AtzgNPEcMZlcSTaWjGO5ymvQ9/Sjp8N68/kJrx0ASI0=',
       },
       jailed: false,
       status: 'BOND_STATUS_BONDED',
-      tokens: '21321285226',
-      delegator_shares: '21321285226.000000000000000000',
-      description: JSON.parse('{}'),
+      tokens: '100000000',
+      delegator_shares: '100000000.000000000000000000',
+      description: {
+        moniker: 'mynode',
+        identity: '',
+        website: '',
+        security_contact: '',
+        details: '',
+      },
       unbonding_height: 0,
       unbonding_time: '1970-01-01T00:00:00Z',
       min_self_delegation: '1',
       uptime: 100,
       account_address: 'aura1d3n0v5f23sqzkhlcnewhksaj8l3x7jey8hq0sc',
-      percent_voting_power: 16.498804,
-      start_height: 0,
-      index_offset: 0,
-      jailed_until: '1970-01-01T00:00:00Z',
-      tombstoned: false,
-      missed_blocks_counter: 0,
-      self_delegation_balance: '102469134',
-    }),
-    Validator.fromJson({
-      commission: JSON.parse('{}'),
-      operator_address: 'auravaloper1edw4lwcz3esnlgzcw60ra8m38k3zygz2xtl2qh',
-      consensus_address: 'auravalcons1s6gzw2kyrduq60cqnj04psmyv8yk0vxp7m2chr',
-      consensus_hex_address: '8690272AC41B780D3F009C9F50C36461C967B0C1',
-      consensus_pubkey: {
-        type: '/cosmos.crypto.ed25519.PubKey',
-        key: 'UaS9Gv6C+SB7PkbRFag2i8hOvJzFGks1+y5hnd0+C6w=',
-      },
-      jailed: false,
-      status: 'BOND_STATUS_BONDED',
-      tokens: '21321285226',
-      delegator_shares: '21321285226.000000000000000000',
-      description: JSON.parse('{}'),
-      unbonding_height: 0,
-      unbonding_time: '1970-01-01T00:00:00Z',
-      min_self_delegation: '1',
-      uptime: 100,
-      account_address: 'aura1edw4lwcz3esnlgzcw60ra8m38k3zygz2aewzcf',
       percent_voting_power: 16.498804,
       start_height: 0,
       index_offset: 0,
@@ -84,33 +78,91 @@ export default class CrawlAccountStakeTest {
     this.crawlAccountStakeService = this.broker.createService(
       CrawlAccountStakeService
     ) as CrawlAccountStakeService;
-    await this.crawlAccountStakeService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_DELEGATIONS)
-      .empty();
-    await this.crawlAccountStakeService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_REDELEGATIONS)
-      .empty();
-    await this.crawlAccountStakeService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_UNBONDING)
-      .empty();
-    await Promise.all([knex('account_stake').del(), knex('validator').del()]);
-    await knex('account').del();
+    await Promise.all([
+      this.crawlAccountStakeService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_DELEGATIONS)
+        .empty(),
+      this.crawlAccountStakeService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_REDELEGATIONS)
+        .empty(),
+      this.crawlAccountStakeService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_UNBONDING)
+        .empty(),
+    ]);
+    await Promise.all([
+      AccountStake.query().delete(true),
+      Validator.query().delete(true),
+    ]);
+    await Account.query().delete(true);
     await Account.query().insert(this.account);
     await Validator.query().insert(this.validators);
   }
 
   @AfterAll()
   async tearDown() {
-    await Promise.all([knex('account_stake').del(), knex('validator').del()]);
-    await knex('account').del();
+    await Promise.all([
+      AccountStake.query().delete(true),
+      Validator.query().delete(true),
+    ]);
+    await Account.query().delete(true);
     this.broker.stop();
   }
 
   @Test('Crawl account delegation success')
   public async testCrawlAccountDelegations() {
-    expect(true);
+    const amount = coins(7890, 'uaura');
+    const memo = 'test delegate';
+
+    const wallet = await DirectSecp256k1HdWallet.fromMnemonic(
+      'symbol force gallery make bulk round subway violin worry mixture penalty kingdom boring survey tool fringe patrol sausage hard admit remember broken alien absorb',
+      {
+        prefix: 'aura',
+      }
+    );
+    const client = await SigningStargateClient.connectWithSigner(
+      network.find((net) => net.chainId === config.chainId)?.RPC[0] ?? '',
+      wallet,
+      defaultSigningClientOptions
+    );
+
+    const result = await client.delegateTokens(
+      'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
+      'auravaloper1phaxpevm5wecex2jyaqty2a4v02qj7qmhyhvcg',
+      amount[0],
+      defaultSendFee,
+      memo
+    );
+    assertIsDeliverTxSuccess(result);
+
+    await this.crawlAccountStakeService?.handleJobAccountDelegations({
+      listAddresses: ['aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'],
+    });
+
+    const [accountStake, account, validator]: [
+      AccountStake | undefined,
+      Account | undefined,
+      Validator | undefined
+    ] = await Promise.all([
+      AccountStake.query()
+        .where('type', TransactionEventAttribute.EVENT_KEY.DELEGATE)
+        .first(),
+      Account.query()
+        .where('address', 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk')
+        .first(),
+      Validator.query()
+        .where(
+          'operator_address',
+          'auravaloper1phaxpevm5wecex2jyaqty2a4v02qj7qmhyhvcg'
+        )
+        .first(),
+    ]);
+
+    expect(accountStake?.account_id).toEqual(account?.id);
+    expect(accountStake?.validator_src_id).toEqual(validator?.id);
+    expect(accountStake?.validator_dst_id).toBeNull();
+    expect(accountStake?.balance).toEqual('7890');
   }
 }
