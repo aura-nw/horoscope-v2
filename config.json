@@ -17,5 +17,10 @@
   },
   "handleAddress": {
     "millisecondCrawl": 5000
+  },
+  "handleVoteTx": {
+    "millisecondCrawl": 5000,
+    "numberOfTxPerCall": 100,
+    "startBlock": 0
   }
 }

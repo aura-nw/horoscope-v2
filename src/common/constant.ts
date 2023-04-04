@@ -39,6 +39,7 @@ export const BULL_JOB_NAME = {
   CRAWL_BLOCK: 'crawl:block',
   CRAWL_TRANSACTION: 'crawl:transaction',
   HANDLE_TRANSACTION: 'handle:transaction',
+  HANDLE_VOTE_TX: 'handle:vote-tx',
 };
 
 export const BULL_ACTION_NAME = {
@@ -62,6 +63,7 @@ export const SERVICE_NAME = {
   CRAWL_ACCOUNT: 'CrawlAccountService',
   CRAWL_BLOCK: 'CrawlBlockService',
   CRAWL_TRANSACTION: 'CrawlTransaction',
+  HANDLE_VOTE_TX: 'HandleVoteTxService',
 };
 
 export enum AccountType {
