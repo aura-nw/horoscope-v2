@@ -37,7 +37,54 @@ export default class AssetIndexerTest {
       gas_limit: '141106',
       fee: 353,
       timestamp: '2023-01-12T01:53:57.000Z',
-      data: {},
+      data: {
+        tx_response: {
+          logs: [
+            {
+              msg_index: 0,
+              log: '',
+              events: [
+                {
+                  _id: '642266867cace8e64d9b637d',
+                  type: 'execute',
+                  attributes: [
+                    {
+                      _id: '642266867cace800f59b637e',
+                      key: '_contract_address',
+                      value:
+                        'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8xe8',
+                    },
+                    {
+                      _id: '642266867cace800f59b637e',
+                      key: '_contract_address',
+                      value:
+                        'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnw456131',
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              msg_index: 0,
+              log: '',
+              events: [
+                {
+                  _id: '642266867cace8e64d9b637d',
+                  type: 'execute',
+                  attributes: [
+                    {
+                      _id: '642266867cace800f59b637e',
+                      key: '_contract_address',
+                      value:
+                        'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8777',
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      },
     }),
     messages: [
       {
@@ -63,7 +110,7 @@ export default class AssetIndexerTest {
           funds: [],
           sender: 'aura1uh24g2lc8hvvkaaf7awz25lrh5fptthu2dhq0n',
           contract:
-            'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8xe8',
+            'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8777',
         },
       },
     ],
@@ -103,19 +150,24 @@ export default class AssetIndexerTest {
     expect(extractData).toEqual([
       {
         action: 'add_mint_phase',
-        sender: 'aura1uh24g2lc8hvvkaaf7awz25lrh5fptthu2dhq0n',
+        sender: this.txInsert.messages[0].sender,
         contractAddress:
-          'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8xe8',
-        txhash:
-          '4A8B0DE950F563553A81360D4782F6EC451F6BEF7AC50E2459D1997FA168997D',
+          this.txInsert.data.tx_response.logs[0].events[0].attributes[0].value,
+        txhash: this.txInsert.hash,
+      },
+      {
+        action: 'add_mint_phase',
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.data.tx_response.logs[0].events[0].attributes[1].value,
+        txhash: this.txInsert.hash,
       },
       {
         action: 'add_whitelist',
-        sender: 'aura1uh24g2lc8hvvkaaf7awz25lrh5fptthu2dhq0n',
+        sender: this.txInsert.messages[1].sender,
         contractAddress:
-          'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8xe8',
-        txhash:
-          '4A8B0DE950F563553A81360D4782F6EC451F6BEF7AC50E2459D1997FA168997D',
+          this.txInsert.data.tx_response.logs[1].events[0].attributes[0].value,
+        txhash: this.txInsert.hash,
       },
     ]);
   }

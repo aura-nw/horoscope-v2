@@ -1,16 +1,22 @@
+import {
+  MsgExecuteContract,
+  MsgInstantiateContract,
+} from '@aura-nw/aurajs/types/codegen/cosmwasm/wasm/v1/tx';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
-import { BlockCheckpoint, Transaction } from '../../models';
 import codeid_types from '../../../codeid_types.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { Config } from '../../common';
 import {
+  ATTRIBUTE_KEY,
   BLOCK_CHECKPOINT_JOB_NAME,
+  EVENT_TYPE,
   MSG_TYPE,
   SERVICE,
 } from '../../common/constant';
 import { IContractAndInfo } from '../../common/types/interfaces';
 import { getLcdClient } from '../../common/utils/aurajs_client';
+import { BlockCheckpoint, Transaction, TransactionMessage } from '../../models';
 
 const { NODE_ENV } = Config;
 
@@ -41,7 +47,7 @@ export default class AssetTxHandlerService extends BullableService {
   }
 
   async _start(): Promise<void> {
-    await this.waitForServices('v1.CW721');
+    // await this.waitForServices('v1.CW721');
     this._lcdClient = await getLcdClient();
     if (NODE_ENV !== 'test') {
       await this.initEnv();
@@ -156,19 +162,59 @@ export default class AssetTxHandlerService extends BullableService {
       .alias('tx')
       .whereBetween('tx.id', [from, to])
       .withGraphJoined('messages')
-      .whereIn('messages.type', [MSG_TYPE.MSG_EXECUTE_CONTRACT]);
+      .whereIn('messages.type', [
+        MSG_TYPE.MSG_EXECUTE_CONTRACT,
+        MSG_TYPE.MSG_INSTANTIATE_CONTRACT,
+      ]);
 
     // eslint-disable-next-line no-restricted-syntax
     for (const tx of listTxs) {
-      tx.messages.forEach((message: any) => {
-        const action = Object.keys(JSON.parse(message.content.msg))[0];
-        const { contract, sender } = message.content;
-        listContractInputsAndOutputs.push({
-          contractAddress: contract,
-          sender,
-          action,
-          txhash: tx.hash,
-        });
+      // eslint-disable-next-line @typescript-eslint/no-loop-func
+      tx.messages.forEach((message: TransactionMessage, index: number) => {
+        if (message.type === MSG_TYPE.MSG_EXECUTE_CONTRACT) {
+          const executeMsg: TransactionMessage<MsgExecuteContract> = message;
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          const action = Object.keys(JSON.parse(executeMsg.content.msg))[0];
+          const { sender } = executeMsg.content;
+          const wasmEvent = tx.data.tx_response.logs[index].events.find(
+            (event: any) => event.type === EVENT_TYPE.EXECUTE
+          );
+          wasmEvent.attributes.forEach((attribute: any) => {
+            if (attribute.key === ATTRIBUTE_KEY.CONTRACT_ADDRESS) {
+              listContractInputsAndOutputs.push({
+                contractAddress: attribute.value,
+                sender,
+                action,
+                txhash: tx.hash,
+              });
+            }
+          });
+          // listContractInputsAndOutputs.push({
+          //   contractAddress: contract,
+          //   sender,
+          //   action,
+          //   txhash: tx.hash,
+          // });
+        } else if (message.type === MSG_TYPE.MSG_INSTANTIATE_CONTRACT) {
+          const instantiateMsg: TransactionMessage<MsgInstantiateContract> =
+            message;
+          const action = EVENT_TYPE.INSTANTIATE;
+          const { sender } = instantiateMsg.content;
+          const wasmEvent = tx.data.tx_response.logs[index].events.find(
+            (event: any) => event.type === EVENT_TYPE.INSTANTIATE
+          );
+          wasmEvent.attributes.forEach((attribute: any) => {
+            if (attribute.key === ATTRIBUTE_KEY.CONTRACT_ADDRESS) {
+              listContractInputsAndOutputs.push({
+                contractAddress: attribute.value,
+                sender,
+                action,
+                txhash: tx.hash,
+              });
+            }
+          });
+        }
       });
     }
     return listContractInputsAndOutputs;
