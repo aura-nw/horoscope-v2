@@ -16,7 +16,7 @@ import { fromBase64, toHex } from '@cosmjs/encoding';
 import { Validator } from '../../models/validator';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import knex from '../../common/utils/db_connection';
-import config from '../../../config.json';
+import config from '../../../config.json' assert { type: 'json' };
 import {
   ABCI_QUERY_PATH,
   BULL_JOB_NAME,
