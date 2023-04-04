@@ -47,7 +47,7 @@ export class AccountStake extends BaseModel {
     return {
       account: {
         relation: Model.BelongsToOneRelation,
-        modelClass: 'account',
+        modelClass: Account,
         join: {
           from: 'account_stake.account_id',
           to: 'account.id',
@@ -63,7 +63,7 @@ export class AccountStake extends BaseModel {
       },
       dst_validator: {
         relation: Model.BelongsToOneRelation,
-        modelClass: Account,
+        modelClass: Validator,
         join: {
           from: 'account_stake.validator_dst_id',
           to: 'validator.id',

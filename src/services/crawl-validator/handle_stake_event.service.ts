@@ -70,6 +70,8 @@ export default class HandleStakeEventService extends BullableService {
     ]);
 
     const listInsert: TransactionPowerEvent[] = listTxStakes.map((stake) => {
+      this.logger.info(`Handle message stake ${JSON.stringify(stake)}`);
+
       let validatorSrcId;
       let validatorDstId;
       switch (stake.type) {
