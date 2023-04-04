@@ -208,7 +208,7 @@ export default class HandleAddressService extends BullableService {
             )
         )
       );
-      const listTxIds = Array.from(
+      const listTxMsgIds = Array.from(
         new Set(listTxStakes.map((txStake) => txStake.tx_msg_id))
       );
 
@@ -216,7 +216,7 @@ export default class HandleAddressService extends BullableService {
         listAddresses: listStakeAddresses,
       });
       this.broker.call(SERVICE.V1.HandleStakeEvent.UpdatePowerEvent.path, {
-        listTxIds,
+        listTxMsgIds,
       });
     }
   }

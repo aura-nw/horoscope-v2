@@ -297,6 +297,15 @@ export default class CrawlAccountStakeService extends BullableService {
             }
 
             if (listRedelegations.length > 0) {
+              const listValidators: string[] = [];
+              listRedelegations.map((redelegate) =>
+                listValidators.push(
+                  ...[
+                    redelegate.redelegation?.validator_src_address ?? '',
+                    redelegate.redelegation?.validator_dst_address ?? '',
+                  ]
+                )
+              );
               const [accountStakes, validators]: [AccountStake[], Validator[]] =
                 await Promise.all([
                   AccountStake.query()
@@ -308,15 +317,7 @@ export default class CrawlAccountStakeService extends BullableService {
                     ),
                   Validator.query()
                     .select('*')
-                    .whereIn(
-                      'operator_address',
-                      listRedelegations.map(
-                        (redelegate) =>
-                          redelegate.redelegation?.validator_src_address ||
-                          redelegate.redelegation?.validator_dst_address ||
-                          ''
-                      )
-                    ),
+                    .whereIn('operator_address', listValidators),
                 ]);
 
               listRedelegations.forEach((redelegate) => {
@@ -485,7 +486,8 @@ export default class CrawlAccountStakeService extends BullableService {
                             (val) =>
                               val.operator_address === unbond.validator_address
                           )?.id &&
-                        acc.creation_height === entry.creation_height.toNumber()
+                        acc.creation_height ===
+                          Number.parseInt(entry.creation_height.toString(), 10)
                     );
 
                   if (!accountStake) {
