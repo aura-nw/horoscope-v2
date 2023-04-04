@@ -146,6 +146,10 @@ export default class HandleAddressService extends BullableService {
           listTxStakes
         );
 
+        this.broker.call(SERVICE.V1.CrawlAccount.UpdateAccount.path, {
+          listAddresses: Array.from(listAddresses),
+        });
+
         updateBlockCheckpoint.height = latestBlock.height;
         await BlockCheckpoint.query()
           .insert(updateBlockCheckpoint)

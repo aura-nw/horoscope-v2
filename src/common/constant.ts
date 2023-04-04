@@ -40,6 +40,9 @@ export const BULL_JOB_NAME = {
   CRAWL_ACCOUNT_DELEGATIONS: 'crawl:account-delegations',
   CRAWL_ACCOUNT_REDELEGATIONS: 'crawl:account-redelegations',
   CRAWL_ACCOUNT_UNBONDING: 'crawl:account-unbonding',
+  CRAWL_BLOCK: 'crawl:block',
+  CRAWL_TRANSACTION: 'crawl:transaction',
+  HANDLE_TRANSACTION: 'handle:transaction',
 };
 
 export const SERVICE = {
@@ -82,6 +85,8 @@ export const SERVICE_NAME = {
   CRAWL_ACCOUNT: 'CrawlAccountService',
   CRAWL_ACCOUNT_STAKE: 'CrawlAccountStakeService',
   HANDLE_STAKE_EVENT: 'HandleStakeEventService',
+  CRAWL_BLOCK: 'CrawlBlockService',
+  CRAWL_TRANSACTION: 'CrawlTransaction',
 };
 
 export enum AccountType {
