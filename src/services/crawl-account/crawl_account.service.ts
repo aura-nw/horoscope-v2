@@ -266,20 +266,27 @@ export default class CrawlAccountService extends BullableService {
       );
 
       try {
-        await Promise.all([
-          Account.query()
-            .insert(listAccounts)
-            .onConflict('address')
-            .merge()
-            .returning('id'),
-          AccountVesting.query()
+        await Account.query()
+          .insert(listAccounts)
+          .onConflict('address')
+          .merge()
+          .returning('id');
+      } catch (error) {
+        this.logger.error('Error insert account auth');
+        this.logger.error(error);
+      }
+
+      if (listAccountVestings.length > 0) {
+        try {
+          await AccountVesting.query()
             .insert(listAccountVestings)
             .onConflict('account_id')
             .merge()
-            .returning('id'),
-        ]);
-      } catch (error) {
-        this.logger.error(error);
+            .returning('id');
+        } catch (error) {
+          this.logger.error('Error insert account vesting');
+          this.logger.error(error);
+        }
       }
     }
   }
@@ -356,6 +363,7 @@ export default class CrawlAccountService extends BullableService {
           .merge()
           .returning('id');
       } catch (error) {
+        this.logger.error('Error insert account balance');
         this.logger.error(error);
       }
     }
@@ -437,6 +445,7 @@ export default class CrawlAccountService extends BullableService {
           .merge()
           .returning('id');
       } catch (error) {
+        this.logger.error('Error insert account stake spendable balance');
         this.logger.error(error);
       }
     }
@@ -534,6 +543,8 @@ export default class CrawlAccountService extends BullableService {
       }
     );
   }
+
+  // TODO: Need interval job to delete finished vesting
 
   public async _start() {
     this.createJob(
