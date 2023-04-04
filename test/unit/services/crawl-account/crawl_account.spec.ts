@@ -1,12 +1,20 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { BULL_JOB_NAME } from '../../../../src/common';
-import { Account } from '../../../../src/models';
-import knex from '../../../../src/common/utils/db_connection';
+import {
+  Account,
+  AccountVesting,
+  BlockCheckpoint,
+} from '../../../../src/models';
 import CrawlAccountService from '../../../../src/services/crawl-account/crawl_account.service';
 
 @Describe('Test crawl_account service')
 export default class CrawlAccountTest {
+  blockCheckpoint: BlockCheckpoint = BlockCheckpoint.fromJson({
+    job_name: BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
+    height: 1,
+  });
+
   accounts: Account[] = [
     Account.fromJson({
       address: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
@@ -53,30 +61,37 @@ export default class CrawlAccountTest {
   @BeforeAll()
   async initSuite() {
     this.broker.start();
+    await BlockCheckpoint.query().insert(this.blockCheckpoint);
     this.crawlAccountService = this.broker.createService(
       CrawlAccountService
     ) as CrawlAccountService;
-    await this.crawlAccountService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH)
-      .empty();
-    await this.crawlAccountService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES)
-      .empty();
-    await this.crawlAccountService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES)
-      .empty();
-    await knex('account_vesting').del();
-    await knex('account').del();
+    await Promise.all([
+      this.crawlAccountService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT)
+        .empty(),
+      this.crawlAccountService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH)
+        .empty(),
+      this.crawlAccountService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES)
+        .empty(),
+      this.crawlAccountService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES)
+        .empty(),
+    ]);
+    await AccountVesting.query().delete(true);
+    await Account.query().delete(true);
     await Account.query().insert(this.accounts);
   }
 
   @AfterAll()
   async tearDown() {
-    await knex('account_vesting').del();
-    await knex('account').del();
+    await AccountVesting.query().delete(true);
+    await Account.query().delete(true);
     this.broker.stop();
   }
 

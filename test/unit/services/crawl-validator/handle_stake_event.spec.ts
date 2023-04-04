@@ -9,7 +9,6 @@ import {
   TransactionPowerEvent,
   Validator,
 } from '../../../../src/models';
-import knex from '../../../../src/common/utils/db_connection';
 import HandleStakeEventService from '../../../../src/services/crawl-validator/handle_stake_event.service';
 
 @Describe('Test handle_stake_event service')
@@ -153,12 +152,15 @@ export default class HandleStakeEventTest {
       .getQueue(BULL_JOB_NAME.HANDLE_STAKE_EVENT)
       .empty();
     await Promise.all([
-      knex('transaction_message').del(),
-      knex('transaction_power_event').del(),
+      TransactionMessage.query().delete(true),
+      TransactionPowerEvent.query().delete(true),
     ]);
-    await Promise.all([knex('account').del(), knex('validator').del()]);
-    await knex('transaction').del();
-    await knex('block').del();
+    await Promise.all([
+      Account.query().delete(true),
+      Validator.query().delete(true),
+    ]);
+    await Transaction.query().delete(true);
+    await Block.query().delete(true);
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);
     await Account.query().insert(this.account);
@@ -168,12 +170,15 @@ export default class HandleStakeEventTest {
   @AfterAll()
   async tearDown() {
     await Promise.all([
-      knex('transaction_message').del(),
-      knex('transaction_power_event').del(),
+      TransactionMessage.query().delete(true),
+      TransactionPowerEvent.query().delete(true),
     ]);
-    await Promise.all([knex('account').del(), knex('validator').del()]);
-    await knex('transaction').del();
-    await knex('block').del();
+    await Promise.all([
+      Account.query().delete(true),
+      Validator.query().delete(true),
+    ]);
+    await Transaction.query().delete(true);
+    await Block.query().delete(true);
     this.broker.stop();
   }
 

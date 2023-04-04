@@ -1,13 +1,24 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { BULL_JOB_NAME } from '../../../../src/common';
-import { Block, Transaction, Validator } from '../../../../src/models';
-import knex from '../../../../src/common/utils/db_connection';
+import {
+  Block,
+  BlockCheckpoint,
+  Transaction,
+  TransactionEvent,
+  TransactionEventAttribute,
+  Validator,
+} from '../../../../src/models';
 import CrawlSigningInfoService from '../../../../src/services/crawl-validator/crawl_signing_info.service';
 import CrawlValidatorService from '../../../../src/services/crawl-validator/crawl_validator.service';
 
 @Describe('Test crawl_validator service')
 export default class CrawlValidatorTest {
+  blockCheckpoint: BlockCheckpoint = BlockCheckpoint.fromJson({
+    job_name: BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
+    height: 1,
+  });
+
   block: Block = Block.fromJson({
     height: 3967530,
     hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9F',
@@ -50,32 +61,35 @@ export default class CrawlValidatorTest {
   @BeforeAll()
   async initSuite() {
     this.broker.start();
+    await BlockCheckpoint.query().insert(this.blockCheckpoint);
     this.crawlSigningInfoService = this.broker.createService(
       CrawlSigningInfoService
     ) as CrawlSigningInfoService;
     this.crawlValidatorService = this.broker.createService(
       CrawlValidatorService
     ) as CrawlValidatorService;
-    await this.crawlSigningInfoService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_SIGNING_INFO)
-      .empty();
-    await this.crawlValidatorService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR)
-      .empty();
-    await this.crawlValidatorService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_VALIDATOR)
-      .empty();
     await Promise.all([
-      knex('validator').del(),
-      knex('transaction_event_attribute').del(),
-      knex('block_checkpoint').del(),
+      this.crawlSigningInfoService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_SIGNING_INFO)
+        .empty(),
+      this.crawlValidatorService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR)
+        .empty(),
+      this.crawlValidatorService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_VALIDATOR)
+        .empty(),
     ]);
-    await knex('transaction_event').del();
-    await knex('transaction').del();
-    await knex('block').del();
+    await Promise.all([
+      Validator.query().delete(true),
+      TransactionEventAttribute.query().delete(true),
+      BlockCheckpoint.query().delete(true),
+    ]);
+    await TransactionEvent.query().delete(true);
+    await Transaction.query().delete(true);
+    await Block.query().delete(true);
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);
   }
@@ -83,13 +97,13 @@ export default class CrawlValidatorTest {
   @AfterAll()
   async tearDown() {
     await Promise.all([
-      knex('validator').del(),
-      knex('transaction_event_attribute').del(),
-      knex('block_checkpoint').del(),
+      Validator.query().delete(true),
+      TransactionEventAttribute.query().delete(true),
+      BlockCheckpoint.query().delete(true),
     ]);
-    await knex('transaction_event').del();
-    await knex('transaction').del();
-    await knex('block').del();
+    await TransactionEvent.query().delete(true);
+    await Transaction.query().delete(true);
+    await Block.query().delete(true);
     this.broker.stop();
   }
 

@@ -1,8 +1,15 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { BULL_JOB_NAME } from '../../../../src/common';
-import { Account, Block, Transaction } from '../../../../src/models';
-import knex from '../../../../src/common/utils/db_connection';
+import {
+  Account,
+  Block,
+  BlockCheckpoint,
+  Transaction,
+  TransactionEvent,
+  TransactionEventAttribute,
+  TransactionMessage,
+} from '../../../../src/models';
 import CrawlAccountService from '../../../../src/services/crawl-account/crawl_account.service';
 import CrawlAccountStakeService from '../../../../src/services/crawl-account/crawl_account_stake.service';
 import HandleStakeEventService from '../../../../src/services/crawl-validator/handle_stake_event.service';
@@ -139,14 +146,14 @@ export default class HandleAddressTest {
         .empty(),
     ]);
     await Promise.all([
-      knex('account').del(),
-      knex('transaction_message').del(),
-      knex('transaction_event_attribute').del(),
-      knex('block_checkpoint').del(),
+      Account.query().delete(true),
+      TransactionMessage.query().delete(true),
+      TransactionEventAttribute.query().delete(true),
+      BlockCheckpoint.query().delete(true),
     ]);
-    await knex('transaction_event').del();
-    await knex('transaction').del();
-    await knex('block').del();
+    await TransactionEvent.query().delete(true);
+    await Transaction.query().delete(true);
+    await Block.query().delete(true);
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);
   }
@@ -154,14 +161,14 @@ export default class HandleAddressTest {
   @AfterAll()
   async tearDown() {
     await Promise.all([
-      knex('account').del(),
-      knex('transaction_message').del(),
-      knex('transaction_event_attribute').del(),
-      knex('block_checkpoint').del(),
+      Account.query().delete(true),
+      TransactionMessage.query().delete(true),
+      TransactionEventAttribute.query().delete(true),
+      BlockCheckpoint.query().delete(true),
     ]);
-    await knex('transaction_event').del();
-    await knex('transaction').del();
-    await knex('block').del();
+    await TransactionEvent.query().delete(true);
+    await Transaction.query().delete(true);
+    await Block.query().delete(true);
     this.broker.stop();
   }
 

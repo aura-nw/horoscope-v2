@@ -2,7 +2,6 @@ import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { BULL_JOB_NAME } from '../../../../src/common';
 import { Validator } from '../../../../src/models';
-import knex from '../../../../src/common/utils/db_connection';
 import CrawlSigningInfoService from '../../../../src/services/crawl-validator/crawl_signing_info.service';
 
 @Describe('Test crawl_signing_info service')
@@ -55,13 +54,13 @@ export default class CrawlSigningInfoTest {
       .getQueueManager()
       .getQueue(BULL_JOB_NAME.CRAWL_SIGNING_INFO)
       .empty();
-    await knex('validator').del();
+    await Validator.query().delete(true);
     await Validator.query().insert(this.validator);
   }
 
   @AfterAll()
   async tearDown() {
-    await knex('validator').del();
+    await Validator.query().delete(true);
     this.broker.stop();
   }
 
