@@ -12,7 +12,7 @@ export class Block extends BaseModel {
 
   proposer_address!: string;
 
-  data!: JSON;
+  data!: any;
 
   static get tableName() {
     return 'block';

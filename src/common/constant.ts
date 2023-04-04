@@ -110,6 +110,7 @@ export const ATTRIBUTE_KEY = {
 export const EVENT_TYPE = {
   WASM: 'wasm',
   EXECUTE: 'execute',
+  INSTANTIATE: 'instantiate',
 };
 
 export const CONTRACT_TYPES = {
