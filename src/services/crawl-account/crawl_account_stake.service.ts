@@ -213,29 +213,27 @@ export default class CrawlAccountStakeService extends BullableService {
       );
 
       if (listAccountDelegations.length > 0)
-        try {
-          await AccountStake.query()
-            .insert(listAccountDelegations)
-            .onConflict('id')
-            .merge()
-            .returning('id');
-        } catch (error) {
-          this.logger.error('Error insert account stake delegate');
-          this.logger.error(error);
-        }
+        await AccountStake.query()
+          .insert(listAccountDelegations)
+          .onConflict('id')
+          .merge()
+          .returning('id')
+          .catch((error) => {
+            this.logger.error('Error insert account stake delegate');
+            this.logger.error(error);
+          });
 
       if (listDeletes.length > 0)
-        try {
-          await AccountStake.query()
-            .delete(true)
-            .whereIn(
-              'id',
-              listDeletes.map((del) => del.id)
-            );
-        } catch (error) {
-          this.logger.error('Error delete account stake delegate');
-          this.logger.error(error);
-        }
+        await AccountStake.query()
+          .delete(true)
+          .whereIn(
+            'id',
+            listDeletes.map((del) => del.id)
+          )
+          .catch((error) => {
+            this.logger.error('Error delete account stake delegate');
+            this.logger.error(error);
+          });
     }
   }
 
@@ -377,29 +375,27 @@ export default class CrawlAccountStakeService extends BullableService {
       );
 
       if (listAccountRedelegations.length > 0)
-        try {
-          await AccountStake.query()
-            .insert(listAccountRedelegations)
-            .onConflict('id')
-            .merge()
-            .returning('id');
-        } catch (error) {
-          this.logger.error('Error insert account stake redelegate');
-          this.logger.error(error);
-        }
+        await AccountStake.query()
+          .insert(listAccountRedelegations)
+          .onConflict('id')
+          .merge()
+          .returning('id')
+          .catch((error) => {
+            this.logger.error('Error insert account stake redelegate');
+            this.logger.error(error);
+          });
 
       if (listDeletes.length > 0)
-        try {
-          await AccountStake.query()
-            .delete(true)
-            .whereIn(
-              'id',
-              listDeletes.map((del) => del.id)
-            );
-        } catch (error) {
-          this.logger.error('Error delete account stake redelegate');
-          this.logger.error(error);
-        }
+        await AccountStake.query()
+          .delete(true)
+          .whereIn(
+            'id',
+            listDeletes.map((del) => del.id)
+          )
+          .catch((error) => {
+            this.logger.error('Error delete account stake redelegate');
+            this.logger.error(error);
+          });
     }
   }
 
@@ -523,29 +519,27 @@ export default class CrawlAccountStakeService extends BullableService {
       );
 
       if (listAccountUnbondings.length > 0)
-        try {
-          await AccountStake.query()
-            .insert(listAccountUnbondings)
-            .onConflict('id')
-            .merge()
-            .returning('id');
-        } catch (error) {
-          this.logger.error('Error insert account stake unbonding');
-          this.logger.error(error);
-        }
+        await AccountStake.query()
+          .insert(listAccountUnbondings)
+          .onConflict('id')
+          .merge()
+          .returning('id')
+          .catch((error) => {
+            this.logger.error('Error insert account stake unbonding');
+            this.logger.error(error);
+          });
 
       if (listDeletes.length > 0)
-        try {
-          await AccountStake.query()
-            .delete(true)
-            .whereIn(
-              'id',
-              listDeletes.map((del) => del.id)
-            );
-        } catch (error) {
-          this.logger.error('Error delete account stake unbonding');
-          this.logger.error(error);
-        }
+        await AccountStake.query()
+          .delete(true)
+          .whereIn(
+            'id',
+            listDeletes.map((del) => del.id)
+          )
+          .catch((error) => {
+            this.logger.error('Error delete account stake unbonding');
+            this.logger.error(error);
+          });
     }
   }
 

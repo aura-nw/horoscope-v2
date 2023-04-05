@@ -113,10 +113,11 @@ export default class HandleStakeEventService extends BullableService {
       return txPowerEvent;
     });
 
-    try {
-      await TransactionPowerEvent.query().insert(listInsert);
-    } catch (error) {
-      this.logger.error(error);
-    }
+    await TransactionPowerEvent.query()
+      .insert(listInsert)
+      .catch((error) => {
+        this.logger.error("Error insert validator's power events");
+        this.logger.error(error);
+      });
   }
 }
