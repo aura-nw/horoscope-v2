@@ -20,7 +20,7 @@ import {
   SERVICE,
   SERVICE_NAME,
 } from '../../common';
-import config from '../../../config.json';
+import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
   name: SERVICE_NAME.HANDLE_ADDRESS,
@@ -185,14 +185,7 @@ export default class HandleAddressService extends BullableService {
       }
     });
 
-    if (listAccounts.length > 0) {
-      try {
-        await Account.query().insert(listAccounts);
-      } catch (error) {
-        this.logger.error('Error insert new account');
-        this.logger.error(error);
-      }
-    }
+    if (listAccounts.length > 0) await Account.query().insert(listAccounts);
 
     this.broker.call(SERVICE.V1.CrawlAccount.UpdateAccount.path, {
       listAddresses,

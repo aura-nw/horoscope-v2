@@ -1,6 +1,6 @@
 import { Knex } from 'knex';
-import network from './network.json';
-import configJson from './config.json';
+import network from './network.json' assert { type: 'json' };
+import configJson from './config.json' assert { type: 'json' };
 import { Config } from './src/common';
 
 // Update with your config settings.
