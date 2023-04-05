@@ -5,7 +5,7 @@ import { ServiceBroker } from 'moleculer';
 import Long from 'long';
 import { fromBase64 } from '@cosmjs/encoding';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import config from '../../../config.json';
+import config from '../../../config.json' assert { type: 'json' };
 import {
   BULL_JOB_NAME,
   getLcdClient,
@@ -113,15 +113,15 @@ export default class CrawlSigningInfoService extends BullableService {
         })
       );
 
-      try {
-        await Validator.query()
-          .insert(listUpdateValidators)
-          .onConflict('operator_address')
-          .merge()
-          .returning('id');
-      } catch (error) {
-        this.logger.error(error);
-      }
+      await Validator.query()
+        .insert(listUpdateValidators)
+        .onConflict('operator_address')
+        .merge()
+        .returning('id')
+        .catch((error) => {
+          this.logger.error('Update validator signing info error');
+          this.logger.error(error);
+        });
     }
   }
 
