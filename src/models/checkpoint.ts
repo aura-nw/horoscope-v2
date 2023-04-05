@@ -1,15 +1,14 @@
 import BaseModel from './base';
 
 export interface ICheckpoint {
-  id?: number;
   job_name: string;
-  data: JSON;
+  data: any;
 }
 
-export class Checkpoint extends BaseModel {
+export class Checkpoint extends BaseModel implements ICheckpoint {
   job_name!: string;
 
-  data!: JSON;
+  data!: any;
 
   static get tableName() {
     return 'checkpoint';
