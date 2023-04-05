@@ -18,7 +18,6 @@ import {
   IListAddressesParam,
   REDIS_KEY,
   SERVICE,
-  SERVICE_NAME,
 } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
@@ -30,7 +29,7 @@ import {
 } from '../../models';
 
 @Service({
-  name: SERVICE_NAME.CRAWL_ACCOUNT,
+  name: SERVICE.V1.CrawlAccountService.key,
   version: 1,
 })
 export default class CrawlAccountService extends BullableService {
@@ -44,7 +43,7 @@ export default class CrawlAccountService extends BullableService {
   }
 
   @Action({
-    name: SERVICE.V1.CrawlAccount.UpdateAccount.key,
+    name: SERVICE.V1.CrawlAccountService.UpdateAccount.key,
     params: {
       listAddresses: 'string[]',
     },

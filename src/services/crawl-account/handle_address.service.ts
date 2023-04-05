@@ -18,12 +18,11 @@ import {
   IListAddressesParam,
   MSG_TYPE,
   SERVICE,
-  SERVICE_NAME,
 } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
-  name: SERVICE_NAME.HANDLE_ADDRESS,
+  name: SERVICE.V1.HandleAddressService.key,
   version: 1,
 })
 export default class HandleAddressService extends BullableService {
@@ -38,7 +37,7 @@ export default class HandleAddressService extends BullableService {
   }
 
   @Action({
-    name: SERVICE.V1.HandleAddress.CrawlNewAccountApi.key,
+    name: SERVICE.V1.HandleAddressService.CrawlNewAccountApi.key,
     params: {
       listAddresses: 'string[]',
     },
@@ -146,7 +145,7 @@ export default class HandleAddressService extends BullableService {
           listTxStakes
         );
 
-        this.broker.call(SERVICE.V1.CrawlAccount.UpdateAccount.path, {
+        this.broker.call(SERVICE.V1.CrawlAccountService.UpdateAccount.path, {
           listAddresses: Array.from(listAddresses),
         });
 
@@ -187,7 +186,7 @@ export default class HandleAddressService extends BullableService {
 
     if (listAccounts.length > 0) await Account.query().insert(listAccounts);
 
-    this.broker.call(SERVICE.V1.CrawlAccount.UpdateAccount.path, {
+    this.broker.call(SERVICE.V1.CrawlAccountService.UpdateAccount.path, {
       listAddresses,
     });
 
@@ -205,20 +204,26 @@ export default class HandleAddressService extends BullableService {
         new Set(listTxStakes.map((txStake) => txStake.tx_msg_id))
       );
 
-      this.broker.call(SERVICE.V1.CrawlAccountStake.UpdateAccountStake.path, {
-        listAddresses: listStakeAddresses,
-      });
-      this.broker.call(SERVICE.V1.HandleStakeEvent.UpdatePowerEvent.path, {
-        listTxMsgIds,
-      });
+      this.broker.call(
+        SERVICE.V1.CrawlAccountStakeService.UpdateAccountStake.path,
+        {
+          listAddresses: listStakeAddresses,
+        }
+      );
+      this.broker.call(
+        SERVICE.V1.HandleStakeEventService.UpdatePowerEvent.path,
+        {
+          listTxMsgIds,
+        }
+      );
     }
   }
 
   public async _start() {
     await this.broker.waitForServices([
-      SERVICE.V1.CrawlAccount.name,
-      SERVICE.V1.CrawlAccountStake.name,
-      SERVICE.V1.HandleStakeEvent.name,
+      SERVICE.V1.CrawlAccountService.name,
+      SERVICE.V1.CrawlAccountStakeService.name,
+      SERVICE.V1.HandleStakeEventService.name,
     ]);
 
     this.createJob(

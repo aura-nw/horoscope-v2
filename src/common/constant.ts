@@ -53,44 +53,48 @@ export const BULL_JOB_NAME = {
 
 export const SERVICE = {
   V1: {
-    CrawlAccount: {
+    CrawlAccountService: {
+      key: 'CrawlAccountService',
       name: 'v1.CrawlAccountService',
       UpdateAccount: {
         key: 'UpdateAccount',
         path: 'v1.CrawlAccountService.UpdateAccount',
       },
     },
-    HandleAddress: {
+    HandleAddressService: {
+      key: 'HandleAddressService',
       name: 'v1.HandleAddressService',
       CrawlNewAccountApi: {
         key: 'CrawlNewAccountApi',
         path: 'v1.HandleAddressService.CrawlNewAccountApi',
       },
     },
-    CrawlAccountStake: {
+    CrawlAccountStakeService: {
+      key: 'CrawlAccountStakeService',
       name: 'v1.CrawlAccountStakeService',
       UpdateAccountStake: {
         key: 'UpdateAccountStake',
         path: 'v1.CrawlAccountStakeService.UpdateAccountStake',
       },
     },
-    HandleStakeEvent: {
+    HandleStakeEventService: {
+      key: 'HandleStakeEventService',
       name: 'v1.HandleStakeEventService',
       UpdatePowerEvent: {
         key: 'UpdatePowerEvent',
         path: 'v1.HandleStakeEventService.UpdatePowerEvent',
       },
     },
+    CrawlValidatorService: {
+      key: 'CrawlValidatorService',
+    },
+    CrawlSigningInfoService: {
+      key: 'CrawlSigningInfoService',
+    },
   },
 };
 
 export const SERVICE_NAME = {
-  CRAWL_VALIDATOR: 'CrawlValidatorService',
-  CRAWL_SIGNING_INFO: 'CrawlSigningInfoService',
-  HANDLE_ADDRESS: 'HandleAddressService',
-  CRAWL_ACCOUNT: 'CrawlAccountService',
-  CRAWL_ACCOUNT_STAKE: 'CrawlAccountStakeService',
-  HANDLE_STAKE_EVENT: 'HandleStakeEventService',
   CRAWL_BLOCK: 'CrawlBlockService',
   CRAWL_TRANSACTION: 'CrawlTransaction',
 };

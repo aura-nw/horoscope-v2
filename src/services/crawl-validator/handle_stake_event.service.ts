@@ -8,7 +8,6 @@ import {
   IListTxMsgIdsParam,
   MSG_TYPE,
   SERVICE,
-  SERVICE_NAME,
 } from '../../common';
 import {
   Account,
@@ -20,7 +19,7 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json';
 
 @Service({
-  name: SERVICE_NAME.HANDLE_STAKE_EVENT,
+  name: SERVICE.V1.HandleStakeEventService.key,
   version: 1,
 })
 export default class HandleStakeEventService extends BullableService {
@@ -29,7 +28,7 @@ export default class HandleStakeEventService extends BullableService {
   }
 
   @Action({
-    name: SERVICE.V1.HandleStakeEvent.UpdatePowerEvent.key,
+    name: SERVICE.V1.HandleStakeEventService.UpdatePowerEvent.key,
     params: {
       listTxMsgIds: 'number[]',
     },

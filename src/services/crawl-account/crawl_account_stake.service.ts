@@ -18,7 +18,6 @@ import {
   IDelegatorUnbonding,
   IListAddressesParam,
   SERVICE,
-  SERVICE_NAME,
 } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json';
@@ -30,7 +29,7 @@ import {
 } from '../../models';
 
 @Service({
-  name: SERVICE_NAME.CRAWL_ACCOUNT_STAKE,
+  name: SERVICE.V1.CrawlAccountStakeService.key,
   version: 1,
 })
 export default class CrawlAccountStakeService extends BullableService {
@@ -41,7 +40,7 @@ export default class CrawlAccountStakeService extends BullableService {
   }
 
   @Action({
-    name: SERVICE.V1.CrawlAccountStake.UpdateAccountStake.key,
+    name: SERVICE.V1.CrawlAccountStakeService.UpdateAccountStake.key,
     params: {
       listAddresses: 'string[]',
     },
