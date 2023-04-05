@@ -161,14 +161,7 @@ export default class HandleAddressService extends BullableService {
       }
     });
 
-    if (listAccounts.length > 0) {
-      try {
-        await Account.query().insert(listAccounts);
-      } catch (error) {
-        this.logger.error('Error insert new account');
-        this.logger.error(error);
-      }
-    }
+    if (listAccounts.length > 0) await Account.query().insert(listAccounts);
 
     this.broker.call(SERVICE.V1.CrawlAccount.UpdateAccount.path, {
       listAddresses,

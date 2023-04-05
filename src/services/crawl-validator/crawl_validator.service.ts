@@ -213,15 +213,15 @@ export default class CrawlValidatorService extends BullableService {
 
     listUpdateValidators = await this.loadCustomInfo(listUpdateValidators);
 
-    try {
-      await Validator.query()
-        .insert(listUpdateValidators)
-        .onConflict('operator_address')
-        .merge()
-        .returning('id');
-    } catch (error) {
-      this.logger.error(error);
-    }
+    await Validator.query()
+      .insert(listUpdateValidators)
+      .onConflict('operator_address')
+      .merge()
+      .returning('id')
+      .catch((error) => {
+        this.logger.error('Error insert or update validators');
+        this.logger.error(error);
+      });
   }
 
   private async loadCustomInfo(
