@@ -2,25 +2,30 @@ import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { BULL_JOB_NAME } from '../../../../src/common';
 import { Validator } from '../../../../src/models';
-import knex from '../../../../src/common/utils/db_connection';
 import CrawlSigningInfoService from '../../../../src/services/crawl-validator/crawl_signing_info.service';
 
 @Describe('Test crawl_signing_info service')
 export default class CrawlSigningInfoTest {
   validator: Validator = Validator.fromJson({
     commission: JSON.parse('{}'),
-    operator_address: 'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx',
-    consensus_address: 'auravalcons1wep98af7gdsk54d9f0dwapr6qpxkpll5udf62e',
-    consensus_hex_address: '764253F53E43616A55A54BDAEE847A004D60FFF4',
+    operator_address: 'auravaloper1phaxpevm5wecex2jyaqty2a4v02qj7qmhyhvcg',
+    consensus_address: 'auravalcons1rvq6km74pua3pt9g7u5svm4r6mrw8z08walfep',
+    consensus_hex_address: '1B01AB6FD50F3B10ACA8F729066EA3D6C6E389E7',
     consensus_pubkey: {
       type: '/cosmos.crypto.ed25519.PubKey',
-      key: 'UaS9Gv6C+SB7PkbRFag2i8hOvJzFGks1+y5hnd0+C6w=',
+      key: 'AtzgNPEcMZlcSTaWjGO5ymvQ9/Sjp8N68/kJrx0ASI0=',
     },
     jailed: false,
     status: 'BOND_STATUS_BONDED',
-    tokens: '21321285226',
-    delegator_shares: '21321285226.000000000000000000',
-    description: JSON.parse('{}'),
+    tokens: '100000000',
+    delegator_shares: '100000000.000000000000000000',
+    description: {
+      moniker: 'mynode',
+      identity: '',
+      website: '',
+      security_contact: '',
+      details: '',
+    },
     unbonding_height: 0,
     unbonding_time: '1970-01-01T00:00:00Z',
     min_self_delegation: '1',
@@ -49,25 +54,23 @@ export default class CrawlSigningInfoTest {
       .getQueueManager()
       .getQueue(BULL_JOB_NAME.CRAWL_SIGNING_INFO)
       .empty();
-    await knex('validator').del();
+    await Validator.query().delete(true);
     await Validator.query().insert(this.validator);
   }
 
   @AfterAll()
   async tearDown() {
-    await knex('validator').del();
+    await Validator.query().delete(true);
     this.broker.stop();
   }
 
   @Test('Crawl validator signing info success')
   public async testCrawlSigningInfo() {
-    await this.crawlSigningInfoService?.handleJob({
-      listAddresses: ['auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx'],
-    });
+    await this.crawlSigningInfoService?.handleJob({});
 
     const updatedValidator = await Validator.query().first();
 
-    expect(updatedValidator?.start_height).toEqual(976);
+    expect(updatedValidator?.start_height).toEqual(0);
     expect(updatedValidator?.tombstoned).toEqual(false);
   }
 }
