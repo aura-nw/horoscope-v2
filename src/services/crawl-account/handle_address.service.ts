@@ -43,10 +43,7 @@ export default class HandleAddressService extends BullableService {
     },
   })
   public async actionCrawlNewAccountApi(ctx: Context<IListAddressesParam>) {
-    await this.insertNewAccountAndCallActionUpdate(
-      ctx.params.listAddresses,
-      []
-    );
+    await this.insertNewAccountAndCallActionUpdate(ctx.params.listAddresses);
   }
 
   @QueueHandler({
@@ -161,7 +158,7 @@ export default class HandleAddressService extends BullableService {
 
   private async insertNewAccountAndCallActionUpdate(
     listAddresses: string[],
-    listTxStakes: any[]
+    listTxStakes?: any[]
   ) {
     const listAccounts: Account[] = [];
 
@@ -190,7 +187,7 @@ export default class HandleAddressService extends BullableService {
       listAddresses,
     });
 
-    if (listTxStakes.length > 0) {
+    if (listTxStakes && listTxStakes.length > 0) {
       const listStakeAddresses: string[] = Array.from(
         new Set(
           listTxStakes
