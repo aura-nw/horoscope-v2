@@ -1,7 +1,7 @@
 import { Model } from 'objection';
 import BaseModel from './base';
 
-export default class TransactionMessageReceiver extends BaseModel {
+export class TransactionMessageReceiver extends BaseModel {
   tx_msg_id!: number;
 
   address!: string;

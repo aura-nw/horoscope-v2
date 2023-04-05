@@ -3,21 +3,23 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
+import {
+  Account,
+  Block,
+  BlockCheckpoint,
+  Transaction,
+  TransactionEventAttribute,
+} from '../../models';
 import Utils from '../../common/utils/utils';
+import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
   BULL_JOB_NAME,
-  SERVICE_NAME,
+  Config,
+  IListAddressesParam,
   SERVICE,
-  BULL_ACTION_NAME,
-} from '../../common/constant';
-import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { Config } from '../../common';
-import BlockCheckpoint from '../../models/block_checkpoint';
-import Block from '../../models/block';
-import { Account } from '../../models/account';
+  SERVICE_NAME,
+} from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
-import TransactionEventAttribute from '../../models/transaction_event_attribute';
-import { IListAddressesParam } from '../../common/utils/request';
 
 @Service({
   name: SERVICE_NAME.HANDLE_ADDRESS,
@@ -29,13 +31,13 @@ export default class HandleAddressService extends BullableService {
   }
 
   @Action({
-    name: BULL_ACTION_NAME.CRAWL_NEW_ACCOUNT_API,
+    name: SERVICE.V1.HandleAddress.CrawlNewAccountApi.key,
     params: {
       listAddresses: 'string[]',
     },
   })
   public async actionCrawlNewAccountApi(ctx: Context<IListAddressesParam>) {
-    await this.insertNewAccount(ctx.params.listAddresses);
+    await this.insertNewAccountAndCallActionUpdate(ctx.params.listAddresses);
   }
 
   @QueueHandler({
@@ -74,22 +76,28 @@ export default class HandleAddressService extends BullableService {
       const eventAddresses: string[] = [];
       let offset = 0;
       let done = false;
+      this.logger.info(
+        `Start query Tx from height ${lastHeight} to ${latestBlock.height}`
+      );
       while (!done) {
         // eslint-disable-next-line no-await-in-loop
-        const resultTx = await TransactionEventAttribute.query()
-          .joinRelated('event.[transaction]')
-          .whereIn('transaction_event_attribute.key', [
+        const resultTx = await Transaction.query()
+          .joinRelated('[messages, events.[attributes]]')
+          .whereIn('events:attributes.key', [
             TransactionEventAttribute.EVENT_KEY.RECEIVER,
             TransactionEventAttribute.EVENT_KEY.SPENDER,
             TransactionEventAttribute.EVENT_KEY.SENDER,
           ])
-          .andWhere('event:transaction.height', '>', lastHeight)
-          .andWhere('event:transaction.height', '<=', latestBlock.height)
+          .andWhere('transaction.height', '>', lastHeight)
+          .andWhere('transaction.height', '<=', latestBlock.height)
           .select(
-            'event:transaction.id',
-            'event:transaction.height',
-            'transaction_event_attribute.key',
-            'transaction_event_attribute.value'
+            'transaction.id',
+            'transaction.height',
+            'transaction.timestamp',
+            'messages.id as tx_msg_id',
+            'messages.type',
+            'events:attributes.key',
+            'events:attributes.value'
           )
           .page(offset, 100);
         this.logger.info(
@@ -98,8 +106,9 @@ export default class HandleAddressService extends BullableService {
           } at page ${offset + 1}`
         );
 
-        if (resultTx.results.length > 0)
+        if (resultTx.results.length > 0) {
           resultTx.results.map((res: any) => eventAddresses.push(res.value));
+        }
 
         if (resultTx.results.length === 100) offset += 1;
         else done = true;
@@ -114,9 +123,9 @@ export default class HandleAddressService extends BullableService {
       );
 
       if (listAddresses.length > 0) {
-        await this.insertNewAccount(listAddresses);
+        await this.insertNewAccountAndCallActionUpdate(listAddresses);
 
-        this.broker.call(SERVICE.V1.CrawlAccount.UpdateAccount, {
+        this.broker.call(SERVICE.V1.CrawlAccount.UpdateAccount.path, {
           listAddresses: Array.from(listAddresses),
         });
 
@@ -130,7 +139,7 @@ export default class HandleAddressService extends BullableService {
     }
   }
 
-  private async insertNewAccount(listAddresses: string[]) {
+  private async insertNewAccountAndCallActionUpdate(listAddresses: string[]) {
     const listAccounts: Account[] = [];
 
     const existedAccounts: string[] = (
@@ -152,11 +161,11 @@ export default class HandleAddressService extends BullableService {
       }
     });
 
-    try {
-      await Account.query().insert(listAccounts);
-    } catch (error) {
-      this.logger.error(error);
-    }
+    if (listAccounts.length > 0) await Account.query().insert(listAccounts);
+
+    await this.broker.call(SERVICE.V1.CrawlAccount.UpdateAccount.path, {
+      listAddresses,
+    });
   }
 
   public async _start() {

@@ -22,8 +22,9 @@
     "up": "docker-compose up -d",
     "stop": "docker-compose stop",
     "prepare": "husky install",
-    "jest": "NODE_OPTIONS='--loader ts-node/esm' jest test --runInBand --forceExit",
-    "test": "yarn jest --verbose",
+    "jest": "NODE_OPTIONS='--loader ts-node/esm' jest test",
+    "test": "yarn jest --verbose --runInBand --forceExit",
+    "test-ci": "yarn jest --verbose --runInBand --forceExit",
     "test-watch": "yarn jest --watch",
     "test-coverage": "yarn jest --coverage",
     "lint": "echo 'Running lint for repository' && eslint ."
