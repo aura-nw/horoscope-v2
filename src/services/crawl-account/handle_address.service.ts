@@ -163,7 +163,7 @@ export default class HandleAddressService extends BullableService {
 
     if (listAccounts.length > 0) await Account.query().insert(listAccounts);
 
-    this.broker.call(SERVICE.V1.CrawlAccount.UpdateAccount.path, {
+    await this.broker.call(SERVICE.V1.CrawlAccount.UpdateAccount.path, {
       listAddresses,
     });
   }

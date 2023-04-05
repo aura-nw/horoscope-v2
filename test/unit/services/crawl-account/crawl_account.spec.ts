@@ -25,6 +25,7 @@ export default class CrawlAccountTest {
       account_number: 0,
       sequence: 0,
     }),
+    // TODO: Vesting accounts
     // Account.fromJson({
     //   address: 'aura1pzxc372f574uw989ds9s2acq5tlftexzql707v',
     //   balances: [],
@@ -120,6 +121,7 @@ export default class CrawlAccountTest {
     ).toEqual(3);
   }
 
+  // TODO: Vesting accounts
   // @Test('Crawl vesting account auth success')
   // public async testCrawlVestingAccountAuth() {
   //   await this.crawlAccountService?.handleJobAccountAuth({
