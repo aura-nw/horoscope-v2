@@ -10,9 +10,11 @@ import { Config } from '../../common';
 import {
   ATTRIBUTE_KEY,
   BLOCK_CHECKPOINT_JOB_NAME,
+  BULL_JOB_NAME,
   EVENT_TYPE,
   MSG_TYPE,
   SERVICE,
+  SERVICE_NAME,
 } from '../../common/constant';
 import { IContractAndInfo } from '../../common/types/interfaces';
 import { getLcdClient } from '../../common/utils/aurajs_client';
@@ -21,7 +23,7 @@ import { BlockCheckpoint, Transaction, TransactionMessage } from '../../models';
 const { NODE_ENV } = Config;
 
 @Service({
-  name: 'asset_tx.handler',
+  name: SERVICE_NAME.ASSET_INDEXER,
   version: 1,
 })
 export default class AssetTxHandlerService extends BullableService {
@@ -38,8 +40,8 @@ export default class AssetTxHandlerService extends BullableService {
   }
 
   @QueueHandler({
-    queueName: 'asset',
-    jobType: 'tx_handle',
+    queueName: BULL_JOB_NAME.HANDLE_ASSET_TRANSACTION,
+    jobType: BULL_JOB_NAME.HANDLE_ASSET_TRANSACTION,
   })
   async jobHandler(): Promise<void> {
     this.handleJob();
@@ -47,13 +49,13 @@ export default class AssetTxHandlerService extends BullableService {
   }
 
   async _start(): Promise<void> {
-    // await this.waitForServices('v1.CW721');
+    await this.waitForServices(SERVICE.V1.Cw721.name);
     this._lcdClient = await getLcdClient();
     if (NODE_ENV !== 'test') {
       await this.initEnv();
       this.createJob(
-        'asset',
-        'tx_handle',
+        BULL_JOB_NAME.HANDLE_ASSET_TRANSACTION,
+        BULL_JOB_NAME.HANDLE_ASSET_TRANSACTION,
         {},
         {
           removeOnComplete: true,

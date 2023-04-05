@@ -20,6 +20,7 @@ import CW721Tx from '../../models/cw721_tx';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { getLcdClient } from '../../common/utils/aurajs_client';
 import { getHttpBatchClient } from '../../common/utils/cosmjs_client';
+import { BULL_JOB_NAME, SERVICE, SERVICE_NAME } from '../../common';
 
 interface IContractInfoAndMinter {
   name: string;
@@ -28,7 +29,7 @@ interface IContractInfoAndMinter {
 }
 
 @Service({
-  name: 'CW721',
+  name: SERVICE_NAME.CW721,
   version: 1,
 })
 export default class CW721AssetService extends BullableService {
@@ -43,8 +44,8 @@ export default class CW721AssetService extends BullableService {
 
   // confirmed
   @QueueHandler({
-    queueName: 'enrich',
-    jobType: 'cw721',
+    queueName: BULL_JOB_NAME.ENRICH_CW721,
+    jobType: BULL_JOB_NAME.ENRICH_CW721,
     prefix: 'horoscope_',
   })
   async jobHandlerEnrichCw721(_payload: {
@@ -56,16 +57,13 @@ export default class CW721AssetService extends BullableService {
       action: string;
     };
   }): Promise<void> {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { address, codeId, txData } = _payload;
     const listTokens = await this._getTokenList(address);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const tokens: CW721Token[] = await this._getTokensInfo(address, listTokens);
     const contractInfoAndMinter = await this._getContractInfoAndMinter(address);
     const contractFound = await CW721Contract.query()
       .where('address', address)
       .first();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const contract: CW721Contract = CW721Contract.fromJson({
       code_id: codeId,
       address,
@@ -73,7 +71,6 @@ export default class CW721AssetService extends BullableService {
       symbol: contractInfoAndMinter.symbol,
       minter: contractInfoAndMinter.minter,
     });
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const tx: CW721Tx = CW721Tx.fromJson({
       action: txData.action,
       sender: txData.sender,
@@ -94,7 +91,7 @@ export default class CW721AssetService extends BullableService {
   }
 
   @Action({
-    name: 'enrichCw721',
+    name: SERVICE.V1.Cw721.EnrichCw721.key,
   })
   async enrichCw721(
     ctx: Context<{
@@ -107,7 +104,7 @@ export default class CW721AssetService extends BullableService {
       };
     }>
   ) {
-    this.createJob('enrich', 'cw721', {
+    this.createJob(BULL_JOB_NAME.ENRICH_CW721, BULL_JOB_NAME.ENRICH_CW721, {
       address: ctx.params.address,
       codeId: ctx.params.codeId,
       txData: ctx.params.txData,

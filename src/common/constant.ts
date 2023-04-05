@@ -39,6 +39,9 @@ export const BULL_JOB_NAME = {
   CRAWL_BLOCK: 'crawl:block',
   CRAWL_TRANSACTION: 'crawl:transaction',
   HANDLE_TRANSACTION: 'handle:transaction',
+  HANDLE_ASSET_TRANSACTION: 'handle:asset-tx',
+  ENRICH_CW721: 'enrich:cw721',
+  ENRICH_CW20: 'enrich:cw20',
 };
 
 export const SERVICE = {
@@ -58,10 +61,10 @@ export const SERVICE = {
       },
     },
     Cw721: {
-      name: 'v1.CW721',
+      name: 'v1.Cw721Service',
       EnrichCw721: {
         key: 'enrichCw721',
-        path: 'v1.CW721.enrichCw721',
+        path: 'v1.Cw721Service.enrichCw721',
       },
     },
   },
@@ -74,6 +77,8 @@ export const SERVICE_NAME = {
   CRAWL_ACCOUNT: 'CrawlAccountService',
   CRAWL_BLOCK: 'CrawlBlockService',
   CRAWL_TRANSACTION: 'CrawlTransaction',
+  ASSET_INDEXER: 'AssetTxIndexerService',
+  CW721: 'Cw721Service',
 };
 
 export enum AccountType {
@@ -120,4 +125,14 @@ export const CONTRACT_TYPES = {
 };
 export const ABCI_QUERY_PATH = {
   VALIDATOR_DELEGATION: '/cosmos.staking.v1beta1.Query/Delegation',
+};
+
+export const CW20_ACTION = {
+  URL_GET_OWNER_LIST: 'eyJhbGxfYWNjb3VudHMiOiB7fX0=',
+  URL_GET_TOKEN_INFO: 'eyJ0b2tlbl9pbmZvIjoge319',
+  URL_GET_MARKETING_INFO: 'eyJtYXJrZXRpbmdfaW5mbyI6IHt9fQ==',
+  GET_OWNER_LIST: 'v1.CW20.getOwnerList',
+  GET_BALANCE: 'v1.CW20.getBalance',
+  ENRICH_DATA: 'v1.CW20.enrichData',
+  GET_MARKET_INFO: 'v1.CW20.getMarketInfo',
 };
