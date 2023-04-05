@@ -1,10 +1,12 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import {
   assertIsDeliverTxSuccess,
+  MsgUndelegateEncodeObject,
   SigningStargateClient,
 } from '@cosmjs/stargate';
 import { coins, DirectSecp256k1HdWallet } from '@cosmjs/proto-signing';
 import { ServiceBroker } from 'moleculer';
+import { cosmos } from '@aura-nw/aurajs';
 import {
   BULL_JOB_NAME,
   defaultSendFee,
@@ -164,5 +166,69 @@ export default class CrawlAccountStakeTest {
     expect(accountStake?.validator_src_id).toEqual(validator?.id);
     expect(accountStake?.validator_dst_id).toBeNull();
     expect(accountStake?.balance).toEqual('7890');
+  }
+
+  @Test('Crawl account unbond success')
+  public async testCrawlAccountUnbonding() {
+    const amount = coins(1000, 'uaura');
+    const memo = 'test unbond';
+
+    const wallet = await DirectSecp256k1HdWallet.fromMnemonic(
+      'symbol force gallery make bulk round subway violin worry mixture penalty kingdom boring survey tool fringe patrol sausage hard admit remember broken alien absorb',
+      {
+        prefix: 'aura',
+      }
+    );
+    const client = await SigningStargateClient.connectWithSigner(
+      network.find((net) => net.chainId === config.chainId)?.RPC[0] ?? '',
+      wallet,
+      defaultSigningClientOptions
+    );
+
+    const unbondMsg: MsgUndelegateEncodeObject = {
+      typeUrl: '/cosmos.staking.v1beta1.MsgUndelegate',
+      value: cosmos.staking.v1beta1.MsgUndelegate.fromPartial({
+        delegatorAddress: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
+        validatorAddress: 'auravaloper1phaxpevm5wecex2jyaqty2a4v02qj7qmhyhvcg',
+        amount: amount[0],
+      }),
+    };
+
+    const result = await client.signAndBroadcast(
+      'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
+      [unbondMsg],
+      defaultSendFee,
+      memo
+    );
+    assertIsDeliverTxSuccess(result);
+
+    await this.crawlAccountStakeService?.handleJobAccountUnbonding({
+      listAddresses: ['aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'],
+    });
+
+    const [accountStake, account, validator]: [
+      AccountStake | undefined,
+      Account | undefined,
+      Validator | undefined
+    ] = await Promise.all([
+      AccountStake.query()
+        .where('type', TransactionEventAttribute.EVENT_KEY.UNBOND)
+        .first(),
+      Account.query()
+        .where('address', 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk')
+        .first(),
+      Validator.query()
+        .where(
+          'operator_address',
+          'auravaloper1phaxpevm5wecex2jyaqty2a4v02qj7qmhyhvcg'
+        )
+        .first(),
+    ]);
+
+    expect(accountStake?.account_id).toEqual(account?.id);
+    expect(accountStake?.validator_src_id).toEqual(validator?.id);
+    expect(accountStake?.validator_dst_id).toBeNull();
+    expect(accountStake?.balance).toEqual('1000');
+    expect(accountStake?.creation_height).toEqual(result.height);
   }
 }
