@@ -3,6 +3,7 @@ import { fromBase64, fromBech32, toBech32, toHex } from '@cosmjs/encoding';
 import { pubkeyToRawAddress } from '@cosmjs/tendermint-rpc';
 import { Model } from 'objection';
 import config from '../../config.json' assert { type: 'json' };
+import { AccountStake } from './account_stake';
 import BaseModel from './base';
 import { TransactionPowerEvent } from './transaction_power_event';
 
@@ -140,6 +141,22 @@ export class Validator extends BaseModel {
         join: {
           from: 'validator.id',
           to: 'transaction_power_event.validator_dst_id',
+        },
+      },
+      src_account_stake: {
+        relation: Model.HasManyRelation,
+        modelClass: AccountStake,
+        join: {
+          from: 'validator.id',
+          to: 'account_stake.validator_src_id',
+        },
+      },
+      dst_account_stake: {
+        relation: Model.HasManyRelation,
+        modelClass: AccountStake,
+        join: {
+          from: 'validator.id',
+          to: 'account_stake.validator_dst_id',
         },
       },
     };
