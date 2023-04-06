@@ -12,6 +12,7 @@ import {
   getHttpBatchClient,
   getLcdClient,
   IAuraJSClientFactory,
+  SERVICE,
   SERVICE_NAME,
 } from '../../common';
 import { Block, BlockCheckpoint } from '../../models';
@@ -180,12 +181,9 @@ export default class CrawlBlockService extends BullableService {
             timestamp: block.time,
           });
         });
-        this.broker.call(
-          `v1.${SERVICE_NAME.CRAWL_TRANSACTION}.crawlTxByHeight`,
-          {
-            listBlock: listBlockWithTime,
-          }
-        );
+        this.broker.call(SERVICE.V1.CrawlTransaction.CrawlTxByHeight.path, {
+          listBlock: listBlockWithTime,
+        });
       }
     } catch (error) {
       this.logger.error(error);
@@ -193,7 +191,7 @@ export default class CrawlBlockService extends BullableService {
   }
 
   public async _start() {
-    await this.waitForServices(`v1.${SERVICE_NAME.CRAWL_TRANSACTION}`);
+    await this.waitForServices(SERVICE.V1.CrawlTransaction.name);
     this.createJob(
       `${BULL_JOB_NAME.CRAWL_BLOCK}`,
       `${BULL_JOB_NAME.CRAWL_BLOCK}`,

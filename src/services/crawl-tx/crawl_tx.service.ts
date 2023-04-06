@@ -186,9 +186,9 @@ export default class CrawlTxService extends BullableService {
   }
 
   @Action({
-    name: 'crawlTxByHeight',
+    name: 'CrawlTxByHeight',
   })
-  async crawlTxByHeight(
+  async CrawlTxByHeight(
     ctx: Context<{ listBlock: [{ height: number; timestamp: string }] }>
   ) {
     this.createJob(

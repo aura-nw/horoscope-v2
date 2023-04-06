@@ -57,6 +57,16 @@ export const SERVICE = {
         path: 'v1.HandleAddressService.CrawlNewAccountApi',
       },
     },
+    CrawlBlock: {
+      name: 'v1.CrawlBlock',
+    },
+    CrawlTransaction: {
+      name: 'v1.CrawlTransactionService',
+      CrawlTxByHeight: {
+        key: 'CrawlTxByHeight',
+        path: 'v1.CrawlTransactionService.CrawlTxByHeight',
+      },
+    },
   },
 };
 
