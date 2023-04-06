@@ -1,12 +1,17 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
-import { BULL_JOB_NAME } from '../../../../src/common/constant';
-import Block from '../../../../src/models/block';
-import Transaction from '../../../../src/models/transaction';
-import knex from '../../../../src/common/utils/db_connection';
+import { BULL_JOB_NAME } from '../../../../src/common';
+import {
+  Account,
+  Block,
+  BlockCheckpoint,
+  Transaction,
+  TransactionEvent,
+  TransactionEventAttribute,
+  TransactionMessage,
+} from '../../../../src/models';
 import CrawlAccountService from '../../../../src/services/crawl-account/crawl_account.service';
 import HandleAddressService from '../../../../src/services/crawl-account/handle_address.service';
-import { Account } from '../../../../src/models/account';
 
 @Describe('Test handle_address service')
 export default class HandleAddressTest {
@@ -48,7 +53,7 @@ export default class HandleAddressTest {
         attributes: [
           {
             key: 'spender',
-            value: 'aura1t0l7tjhqvspw7lnsdr9l5t8fyqpuu3jm57ezqa',
+            value: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
           },
         ],
       },
@@ -63,6 +68,20 @@ export default class HandleAddressTest {
         ],
       },
     ],
+    messages: {
+      index: 0,
+      type: '/cosmos.staking.v1beta1',
+      sender: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
+      content: {
+        '@type': '/cosmos.staking.v1beta1.MsgDelegate',
+        delegator_address: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
+        validator_address: 'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx',
+        amount: {
+          denom: 'utaura',
+          amount: '1000000',
+        },
+      },
+    },
   };
 
   broker = new ServiceBroker({ logger: false });
@@ -80,30 +99,33 @@ export default class HandleAddressTest {
     this.handleAddressService = this.broker.createService(
       HandleAddressService
     ) as HandleAddressService;
-    await this.crawlAccountService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH)
-      .empty();
-    await this.crawlAccountService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES)
-      .empty();
-    await this.crawlAccountService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES)
-      .empty();
-    await this.handleAddressService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.HANDLE_ADDRESS)
-      .empty();
     await Promise.all([
-      knex('account').del(),
-      knex('transaction_event_attribute').del(),
-      knex('block_checkpoint').del(),
+      this.crawlAccountService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH)
+        .empty(),
+      this.crawlAccountService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES)
+        .empty(),
+      this.crawlAccountService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES)
+        .empty(),
+      this.handleAddressService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.HANDLE_ADDRESS)
+        .empty(),
     ]);
-    await knex('transaction_event').del();
-    await knex('transaction').del();
-    await knex('block').del();
+    await Promise.all([
+      Account.query().delete(true),
+      TransactionMessage.query().delete(true),
+      TransactionEventAttribute.query().delete(true),
+      BlockCheckpoint.query().delete(true),
+    ]);
+    await TransactionEvent.query().delete(true);
+    await Transaction.query().delete(true);
+    await Block.query().delete(true);
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);
   }
@@ -111,13 +133,14 @@ export default class HandleAddressTest {
   @AfterAll()
   async tearDown() {
     await Promise.all([
-      knex('account').del(),
-      knex('transaction_event_attribute').del(),
-      knex('block_checkpoint').del(),
+      Account.query().delete(true),
+      TransactionMessage.query().delete(true),
+      TransactionEventAttribute.query().delete(true),
+      BlockCheckpoint.query().delete(true),
     ]);
-    await knex('transaction_event').del();
-    await knex('transaction').del();
-    await knex('block').del();
+    await TransactionEvent.query().delete(true);
+    await Transaction.query().delete(true);
+    await Block.query().delete(true);
     this.broker.stop();
   }
 
@@ -134,7 +157,7 @@ export default class HandleAddressTest {
     ).not.toBeUndefined();
     expect(
       accounts.find(
-        (acc) => acc.address === 'aura1t0l7tjhqvspw7lnsdr9l5t8fyqpuu3jm57ezqa'
+        (acc) => acc.address === 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'
       )
     ).not.toBeUndefined();
     expect(

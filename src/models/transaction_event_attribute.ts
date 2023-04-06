@@ -1,9 +1,9 @@
 import { Model } from 'objection';
 import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
-import TransactionEvent from './transaction_event';
+import { TransactionEvent } from './transaction_event';
 
-export default class TransactionEventAttribute extends BaseModel {
+export class TransactionEventAttribute extends BaseModel {
   event_id!: number;
 
   key!: string;

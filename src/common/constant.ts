@@ -42,16 +42,21 @@ export const BULL_JOB_NAME = {
   HANDLE_VOTE_TX: 'handle:vote-tx',
 };
 
-export const BULL_ACTION_NAME = {
-  UPDATE_ACCOUNT: 'UpdateAccount',
-  CRAWL_NEW_ACCOUNT_API: 'CrawlNewAccountApi',
-};
-
 export const SERVICE = {
   V1: {
     CrawlAccount: {
       name: 'v1.CrawlAccountService',
-      UpdateAccount: 'v1.CrawlAccountService.UpdateAccount',
+      UpdateAccount: {
+        key: 'UpdateAccount',
+        path: 'v1.CrawlAccountService.UpdateAccount',
+      },
+    },
+    HandleAddress: {
+      name: 'v1.HandleAddressService',
+      CrawlNewAccountApi: {
+        key: 'CrawlNewAccountApi',
+        path: 'v1.HandleAddressService.CrawlNewAccountApi',
+      },
     },
   },
 };
