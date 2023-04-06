@@ -77,4 +77,4 @@ jobs:
           POSTGRES_DB_TEST: test
         run: |
           npm run db:migrate:test:latest
-          npm run test
+          npm run test-ci

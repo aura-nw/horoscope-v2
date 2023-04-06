@@ -12,3 +12,4 @@ export * from './transaction_event_attribute';
 export * from './transaction_message';
 export * from './transaction_message_receiver';
 export * from './validator';
+export * from './checkpoint';

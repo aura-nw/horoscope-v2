@@ -113,15 +113,15 @@ export default class CrawlSigningInfoService extends BullableService {
         })
       );
 
-      try {
-        await Validator.query()
-          .insert(listUpdateValidators)
-          .onConflict('operator_address')
-          .merge()
-          .returning('id');
-      } catch (error) {
-        this.logger.error(error);
-      }
+      await Validator.query()
+        .insert(listUpdateValidators)
+        .onConflict('operator_address')
+        .merge()
+        .returning('id')
+        .catch((error) => {
+          this.logger.error('Update validator signing info error');
+          this.logger.error(error);
+        });
     }
   }
 
