@@ -23,6 +23,7 @@ import {
   BULL_JOB_NAME,
   getHttpBatchClient,
   MSG_TYPE,
+  SERVICE,
   SERVICE_NAME,
 } from '../../common';
 import { Transaction } from '../../models';
@@ -43,7 +44,7 @@ export default class CrawlTxService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_TRANSACTION,
-    jobType: 'crawl',
+    jobType: BULL_JOB_NAME.CRAWL_TRANSACTION,
     prefix: `horoscope-v2-${config.chainId}`,
   })
   private async jobHandlerCrawlTx(_payload: {
@@ -67,17 +68,21 @@ export default class CrawlTxService extends BullableService {
     );
     resultListPromise.forEach((result) => {
       if (result.result.total_count !== '0') {
-        this.createJob('handle.tx', 'handle.tx', {
-          listTx: result.result,
-          timestamp: mapBlockTime[result.result.txs[0].height],
-        });
+        this.createJob(
+          BULL_JOB_NAME.HANDLE_TRANSACTION,
+          BULL_JOB_NAME.HANDLE_TRANSACTION,
+          {
+            listTx: result.result,
+            timestamp: mapBlockTime[result.result.txs[0].height],
+          }
+        );
       }
     });
   }
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_TRANSACTION,
-    jobType: 'handle',
+    jobType: BULL_JOB_NAME.HANDLE_TRANSACTION,
     prefix: `horoscope-v2-${config.chainId}`,
   })
   private async jobHandlerTx(_payload: any): Promise<void> {
@@ -182,14 +187,18 @@ export default class CrawlTxService extends BullableService {
   }
 
   @Action({
-    name: 'crawlTxByHeight',
+    name: SERVICE.V1.CrawlTransaction.CrawlTxByHeight.key,
   })
-  async crawlTxByHeight(
+  async CrawlTxByHeight(
     ctx: Context<{ listBlock: [{ height: number; timestamp: string }] }>
   ) {
-    this.createJob('crawl.tx', 'crawl.tx', {
-      listBlock: ctx.params.listBlock,
-    });
+    this.createJob(
+      BULL_JOB_NAME.CRAWL_TRANSACTION,
+      BULL_JOB_NAME.CRAWL_TRANSACTION,
+      {
+        listBlock: ctx.params.listBlock,
+      }
+    );
   }
 
   async _handleListTx(listTx: any, timestamp: string) {
