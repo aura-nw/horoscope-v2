@@ -1,9 +1,9 @@
 import { Model } from 'objection';
 import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
-import TransactionEvent from './transaction_event';
+import { TransactionEvent } from './transaction_event';
 
-export default class TransactionEventAttribute extends BaseModel {
+export class TransactionEventAttribute extends BaseModel {
   event_id!: number;
 
   key!: string;
@@ -28,7 +28,7 @@ export default class TransactionEventAttribute extends BaseModel {
 
   static get relationMappings() {
     return {
-      owner: {
+      event: {
         relation: Model.BelongsToOneRelation,
         modelClass: TransactionEvent,
         join: {
@@ -38,4 +38,33 @@ export default class TransactionEventAttribute extends BaseModel {
       },
     };
   }
+
+  static EVENT_KEY = {
+    BALANCES: 'balances',
+    DELEGATION_RESPONSES: 'delegation_responses',
+    REDELEGATION_RESPONSES: 'redelegation_responses',
+    UNBONDING_RESPONSES: 'unbonding_responses',
+    MESSAGE: 'message',
+    ACTION: 'action',
+    TRANSFER: 'transfer',
+    SENDER: 'sender',
+    RECEIVER: 'receiver',
+    SPENDER: 'spender',
+    RECIPIENT: 'recipient',
+    COIN_RECEIVED: 'coin_received',
+    COIN_SPENT: 'coin_spent',
+    WITHDRAW_REWARDS: 'withdraw_rewards',
+    AMOUNT: 'amount',
+    VALIDATOR: 'validator',
+    SOURCE_VALIDATOR: 'source_validator',
+    DESTINATION_VALIDATOR: 'destination_validator',
+    RECV_PACKET: 'recv_packet',
+    PACKET_DATA: 'packet_data',
+    INSTANTIATE: 'instantiate',
+    _CONTRACT_ADDRESS: '_contract_address',
+    CODE_ID: 'code_id',
+    EXECUTE: 'execute',
+    PROPOSAL_ID: 'proposal_id',
+    SUBMIT_PROPOSAL: 'submit_proposal',
+  };
 }

@@ -1,36 +1,3 @@
-export const CONST_CHAR = {
-  VERSION_NUMBER: 1,
-  VERSION: 'v1',
-  BALANCES: 'balances',
-  DELEGATION_RESPONSES: 'delegation_responses',
-  REDELEGATION_RESPONSES: 'redelegation_responses',
-  UNBONDING_RESPONSES: 'unbonding_responses',
-  MESSAGE: 'message',
-  ACTION: 'action',
-  TRANSFER: 'transfer',
-  SENDER: 'sender',
-  RECEIVER: 'receiver',
-  SPENDER: 'spender',
-  CRAWL: 'crawl',
-  API: 'api',
-  RECIPIENT: 'recipient',
-  COIN_RECEIVED: 'coin_received',
-  COIN_SPENT: 'coin_spent',
-  WITHDRAW_REWARDS: 'withdraw_rewards',
-  AMOUNT: 'amount',
-  VALIDATOR: 'validator',
-  SOURCE_VALIDATOR: 'source_validator',
-  DESTINATION_VALIDATOR: 'destination_validator',
-  RECV_PACKET: 'recv_packet',
-  PACKET_DATA: 'packet_data',
-  INSTANTIATE: 'instantiate',
-  _CONTRACT_ADDRESS: '_contract_address',
-  CODE_ID: 'code_id',
-  EXECUTE: 'execute',
-  PROPOSAL_ID: 'proposal_id',
-  SUBMIT_PROPOSAL: 'submit_proposal',
-};
-
 export const REDIS_KEY = {
   IBC_DENOM: 'ibc_denom',
 };
@@ -61,21 +28,38 @@ export const MODULE_PARAM = {
 };
 
 export const BULL_JOB_NAME = {
-  CRAWL_VALIDATOR: 'crawl.validator',
-  CRAWL_GENESIS_VALIDATOR: 'crawl.genesis-validator',
-  CRAWL_SIGNING_INFO: 'crawl.signing-info',
-  HANDLE_ADDRESS: 'handle.address',
-  CRAWL_ACCOUNT_AUTH: 'crawl.account-auth',
-  CRAWL_ACCOUNT_BALANCES: 'crawl.account-balances',
-  CRAWL_ACCOUNT_SPENDABLE_BALANCES: 'crawl.account-spendable-balances',
-  CRAWL_PROPOSAL: 'crawl.proposal',
-  CRAWL_TALLY_PROPOSAL: 'crawl.tally-proposal',
+  CRAWL_VALIDATOR: 'crawl:validator',
+  CRAWL_GENESIS_VALIDATOR: 'crawl:genesis-validator',
+  CRAWL_SIGNING_INFO: 'crawl:signing-info',
+  HANDLE_ADDRESS: 'handle:address',
+  CRAWL_GENESIS_ACCOUNT: 'crawl:genesis-account',
+  CRAWL_ACCOUNT_AUTH: 'crawl:account-auth',
+  CRAWL_ACCOUNT_BALANCES: 'crawl:account-balances',
+  CRAWL_ACCOUNT_SPENDABLE_BALANCES: 'crawl:account-spendable-balances',
+  CRAWL_BLOCK: 'crawl:block',
+  CRAWL_TRANSACTION: 'crawl:transaction',
+  HANDLE_TRANSACTION: 'handle:transaction',
+  CRAWL_PROPOSAL: 'crawl:proposal',
+  CRAWL_TALLY_PROPOSAL: 'crawl:tally-proposal',
 };
 
-export const BULL_ACTION_NAME = {
-  VALIDATOR_UPSERT: 'validator.upsert',
-  ACCOUNT_UPSERT: 'account.upsert',
-  PROPOSAL_TALLY_UPSERT: 'proposal-tally.upsert',
+export const SERVICE = {
+  V1: {
+    CrawlAccount: {
+      name: 'v1.CrawlAccountService',
+      UpdateAccount: {
+        key: 'UpdateAccount',
+        path: 'v1.CrawlAccountService.UpdateAccount',
+      },
+    },
+    HandleAddress: {
+      name: 'v1.HandleAddressService',
+      CrawlNewAccountApi: {
+        key: 'CrawlNewAccountApi',
+        path: 'v1.HandleAddressService.CrawlNewAccountApi',
+      },
+    },
+  },
 };
 
 export const SERVICE_NAME = {
@@ -85,6 +69,8 @@ export const SERVICE_NAME = {
   CRAWL_TALLY_PROPOSAL: 'CrawlTallyProposalService',
   HANDLE_ADDRESS: 'HandleAddressService',
   CRAWL_ACCOUNT: 'CrawlAccountService',
+  CRAWL_BLOCK: 'CrawlBlockService',
+  CRAWL_TRANSACTION: 'CrawlTransaction',
 };
 
 export enum AccountType {
@@ -97,4 +83,15 @@ export enum AccountType {
 
 export const BLOCK_CHECKPOINT_JOB_NAME = {
   BLOCK_HEIGHT_CRAWLED: 'BLOCK_HEIGHT_CRAWLED',
+};
+
+export const MSG_TYPE = {
+  MSG_STORE_CODE: '/cosmwasm.wasm.v1.MsgStoreCode',
+  MSG_INSTANTIATE_CONTRACT: '/cosmwasm.wasm.v1.MsgInstantiateContract',
+  MSG_EXECUTE_CONTRACT: '/cosmwasm.wasm.v1.MsgExecuteContract',
+  MSG_UPDATE_CLIENT: '/ibc.core.client.v1.MsgUpdateClient',
+};
+
+export const ABCI_QUERY_PATH = {
+  VALIDATOR_DELEGATION: '/cosmos.staking.v1beta1.Query/Delegation',
 };

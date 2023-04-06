@@ -1,14 +1,15 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
-import { Config } from '..';
+import network from '../../../network.json' assert { type: 'json' };
+import config from '../../../config.json' assert { type: 'json' };
 
 export default class CosmjsClient {
   public httpBatchClient: HttpBatchClient;
 
-  public lcdClient: any;
-
   public constructor() {
-    this.httpBatchClient = new HttpBatchClient(Config.RPC_ENDPOINT);
+    const rpc =
+      network.find((net: any) => net.chainId === config.chainId)?.RPC[0] || '';
+    this.httpBatchClient = new HttpBatchClient(rpc);
   }
 }
 

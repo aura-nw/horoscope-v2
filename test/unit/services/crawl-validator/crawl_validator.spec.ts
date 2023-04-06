@@ -1,14 +1,24 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
-import Block from '../../../../src/models/block';
-import Transaction from '../../../../src/models/transaction';
-import knex from '../../../../src/common/utils/db_connection';
+import { BULL_JOB_NAME } from '../../../../src/common';
+import {
+  Block,
+  BlockCheckpoint,
+  Transaction,
+  TransactionEvent,
+  TransactionEventAttribute,
+  Validator,
+} from '../../../../src/models';
 import CrawlSigningInfoService from '../../../../src/services/crawl-validator/crawl_signing_info.service';
 import CrawlValidatorService from '../../../../src/services/crawl-validator/crawl_validator.service';
-import { Validator } from '../../../../src/models/validator';
 
 @Describe('Test crawl_validator service')
 export default class CrawlValidatorTest {
+  blockCheckpoint: BlockCheckpoint = BlockCheckpoint.fromJson({
+    job_name: BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
+    height: 1,
+  });
+
   block: Block = Block.fromJson({
     height: 3967530,
     hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9F',
@@ -36,7 +46,7 @@ export default class CrawlValidatorTest {
       attributes: [
         {
           key: 'validator',
-          value: 'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx',
+          value: 'auravaloper1phaxpevm5wecex2jyaqty2a4v02qj7qmhyhvcg',
         },
       ],
     },
@@ -51,6 +61,7 @@ export default class CrawlValidatorTest {
   @BeforeAll()
   async initSuite() {
     this.broker.start();
+    await BlockCheckpoint.query().insert(this.blockCheckpoint);
     this.crawlSigningInfoService = this.broker.createService(
       CrawlSigningInfoService
     ) as CrawlSigningInfoService;
@@ -58,13 +69,27 @@ export default class CrawlValidatorTest {
       CrawlValidatorService
     ) as CrawlValidatorService;
     await Promise.all([
-      knex('validator').del(),
-      knex('transaction_event_attribute').del(),
-      knex('block_checkpoint').del(),
+      this.crawlSigningInfoService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_SIGNING_INFO)
+        .empty(),
+      this.crawlValidatorService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR)
+        .empty(),
+      this.crawlValidatorService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_VALIDATOR)
+        .empty(),
     ]);
-    await knex('transaction_event').del();
-    await knex('transaction').del();
-    await knex('block').del();
+    await Promise.all([
+      Validator.query().delete(true),
+      TransactionEventAttribute.query().delete(true),
+      BlockCheckpoint.query().delete(true),
+    ]);
+    await TransactionEvent.query().delete(true);
+    await Transaction.query().delete(true);
+    await Block.query().delete(true);
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);
   }
@@ -72,13 +97,13 @@ export default class CrawlValidatorTest {
   @AfterAll()
   async tearDown() {
     await Promise.all([
-      knex('validator').del(),
-      knex('transaction_event_attribute').del(),
-      knex('block_checkpoint').del(),
+      Validator.query().delete(true),
+      TransactionEventAttribute.query().delete(true),
+      BlockCheckpoint.query().delete(true),
     ]);
-    await knex('transaction_event').del();
-    await knex('transaction').del();
-    await knex('block').del();
+    await TransactionEvent.query().delete(true);
+    await Transaction.query().delete(true);
+    await Block.query().delete(true);
     this.broker.stop();
   }
 
@@ -92,30 +117,15 @@ export default class CrawlValidatorTest {
       validators.find(
         (val) =>
           val.operator_address ===
-          'auravaloper1edw4lwcz3esnlgzcw60ra8m38k3zygz2xtl2qh'
+          'auravaloper1phaxpevm5wecex2jyaqty2a4v02qj7qmhyhvcg'
       )?.account_address
-    ).toEqual('aura1edw4lwcz3esnlgzcw60ra8m38k3zygz2aewzcf');
+    ).toEqual('aura1phaxpevm5wecex2jyaqty2a4v02qj7qmvkxyqk');
     expect(
       validators.find(
         (val) =>
           val.operator_address ===
-          'auravaloper1edw4lwcz3esnlgzcw60ra8m38k3zygz2xtl2qh'
+          'auravaloper1phaxpevm5wecex2jyaqty2a4v02qj7qmhyhvcg'
       )?.consensus_address
-    ).toEqual('auravalcons1s6gzw2kyrduq60cqnj04psmyv8yk0vxp7m2chr');
-
-    expect(
-      validators.find(
-        (val) =>
-          val.operator_address ===
-          'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx'
-      )?.account_address
-    ).toEqual('aura1d3n0v5f23sqzkhlcnewhksaj8l3x7jey8hq0sc');
-    expect(
-      validators.find(
-        (val) =>
-          val.operator_address ===
-          'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx'
-      )?.consensus_address
-    ).toEqual('auravalcons1wep98af7gdsk54d9f0dwapr6qpxkpll5udf62e');
+    ).toEqual('auravalcons1rvq6km74pua3pt9g7u5svm4r6mrw8z08walfep');
   }
 }

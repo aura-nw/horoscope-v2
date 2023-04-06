@@ -1,6 +1,7 @@
 import { auranw, cosmwasm, ibc } from '@aura-nw/aurajs';
-import { Config } from '..';
 import { IAuraJSClientFactory } from '../types/interfaces';
+import network from '../../../network.json' assert { type: 'json' };
+import config from '../../../config.json' assert { type: 'json' };
 
 export default class AuraJsClient {
   public lcdClient: IAuraJSClientFactory = {
@@ -19,44 +20,50 @@ export default class AuraJsClient {
 const client = new AuraJsClient();
 
 export async function getLcdClient() {
+  const lcd =
+    network.find((net: any) => net.chainId === config.chainId)?.LCD[0] || '';
+
   if (!client.lcdClient.auranw) {
     const auranwClient = auranw.ClientFactory;
     client.lcdClient.auranw = await auranwClient.createLCDClient({
-      restEndpoint: Config.LCD_ENDPOINT,
+      restEndpoint: lcd,
     });
   }
   if (!client.lcdClient.cosmwasm) {
     const cosmwasmClient = cosmwasm.ClientFactory;
     client.lcdClient.cosmwasm = await cosmwasmClient.createLCDClient({
-      restEndpoint: Config.LCD_ENDPOINT,
+      restEndpoint: lcd,
     });
   }
   if (!client.lcdClient.ibc) {
     const ibcClient = ibc.ClientFactory;
     client.lcdClient.ibc = await ibcClient.createLCDClient({
-      restEndpoint: Config.LCD_ENDPOINT,
+      restEndpoint: lcd,
     });
   }
   return client.lcdClient;
 }
 
 export async function getRpcClient() {
+  const rpc =
+    network.find((net: any) => net.chainId === config.chainId)?.RPC[0] || '';
+
   if (!client.rpcClient.auranw) {
     const auranwClient = auranw.ClientFactory;
     client.rpcClient.auranw = await auranwClient.createRPCQueryClient({
-      rpcEndpoint: Config.RPC_ENDPOINT,
+      rpcEndpoint: rpc,
     });
   }
   if (!client.lcdClient.cosmwasm) {
     const cosmwasmClient = cosmwasm.ClientFactory;
     client.lcdClient.cosmwasm = await cosmwasmClient.createRPCQueryClient({
-      rpcEndpoint: Config.RPC_ENDPOINT,
+      rpcEndpoint: rpc,
     });
   }
   if (!client.lcdClient.ibc) {
     const ibcClient = ibc.ClientFactory;
     client.lcdClient.ibc = await ibcClient.createRPCQueryClient({
-      rpcEndpoint: Config.RPC_ENDPOINT,
+      rpcEndpoint: rpc,
     });
   }
   return client.rpcClient;

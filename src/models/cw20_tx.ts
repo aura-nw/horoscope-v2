@@ -1,4 +1,6 @@
+import { Model } from 'objection';
 import BaseModel from './base';
+import { CW20Token } from './cw20_token';
 
 export interface ICW20Tx {
   id?: number;
@@ -6,7 +8,7 @@ export interface ICW20Tx {
   contract_address: string;
   from: string;
   to: string;
-  amount: number;
+  amount: string;
   action: string;
   created_at?: Date;
   updated_at?: Date;
@@ -21,7 +23,7 @@ export class CW20Tx extends BaseModel implements ICW20Tx {
 
   to!: string;
 
-  amount!: number;
+  amount!: string;
 
   tx_hash!: string;
 
@@ -45,7 +47,20 @@ export class CW20Tx extends BaseModel implements ICW20Tx {
         from: { type: 'string' },
         to: { type: 'string' },
         action: { type: 'string' },
-        amount: { type: 'number' },
+        amount: { type: 'string' },
+      },
+    };
+  }
+
+  static get relationMappings() {
+    return {
+      token: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: CW20Token,
+        join: {
+          from: 'cw20_tx.contract_address',
+          to: 'cw20_token.contract_address',
+        },
       },
     };
   }

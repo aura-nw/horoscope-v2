@@ -1,7 +1,8 @@
 import { Model } from 'objection';
 import BaseModel from './base';
+import { TransactionMessageReceiver } from './transaction_message_receiver';
 
-export default class TransactionMessage extends BaseModel {
+export class TransactionMessage extends BaseModel {
   tx_id!: number;
 
   index!: number;
@@ -41,6 +42,14 @@ export default class TransactionMessage extends BaseModel {
         join: {
           from: 'transaction_message.tx_id',
           to: 'transaction.id',
+        },
+      },
+      receivers: {
+        relation: Model.HasManyRelation,
+        modelClass: TransactionMessageReceiver,
+        join: {
+          from: 'transaction_message.id',
+          to: 'transaction_message_receiver.tx_msg_id',
         },
       },
     };

@@ -1,5 +1,11 @@
 [
   {
+    "chainId": "xstaxy-1",
+    "RPC": ["https://rpc.aura.network"],
+    "LCD": ["https://lcd.aura.network"],
+    "databaseName": "local_xstaxy1"
+  },
+  {
     "chainId": "euphoria-2",
     "RPC": ["https://rpc.euphoria.aura.network"],
     "LCD": ["https://lcd.euphoria.aura.network"],
@@ -15,6 +21,12 @@
     "chainId": "aura-testnet-2",
     "RPC": ["https://rpc.dev.aura.network"],
     "LCD": ["https://lcd.dev.aura.network"],
+    "databaseName": "horoscope_dev_auratestnet1"
+  },
+  {
+    "chainId": "aura-testnet",
+    "RPC": ["http://localhost:26657"],
+    "LCD": ["http://localhost:1317"],
     "databaseName": "horoscope_dev_auratestnet1"
   }
 ]
