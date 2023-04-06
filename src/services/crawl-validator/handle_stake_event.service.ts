@@ -58,7 +58,8 @@ export default class HandleStakeEventService extends BullableService {
     const listTxStakes: any[] = await TransactionMessage.query()
       .joinRelated('transaction')
       .select('transaction_message.*', 'transaction.timestamp')
-      .whereIn('transaction_message.id', _payload.listTxMsgIds);
+      .whereIn('transaction_message.id', _payload.listTxMsgIds)
+      .andWhere('transaction.code', 0);
 
     const [validators, accounts]: [Validator[], Account[]] = await Promise.all([
       Validator.query(),
