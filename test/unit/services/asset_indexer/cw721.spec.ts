@@ -2,7 +2,7 @@ import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import knex from '../../../../src/common/utils/db_connection';
 import CW721Token from '../../../../src/models/cw721_token';
-import CW721AssetService from '../../../../src/services/asset-indexer/cw721_asset.service';
+import CW721AssetService from '../../../services/cw721/cw721.service';
 import CW721Contract from '../../../../src/models/cw721_contract';
 
 @Describe('Test cw721 asset service')

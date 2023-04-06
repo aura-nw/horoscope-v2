@@ -19,6 +19,8 @@ export interface IContractAndInfo {
   contractAddress: string;
   action: string;
   txhash: string;
+  tokenid?: string;
+  contractInfo?: any;
 }
 export interface ICodeidType {
   code_id: number;

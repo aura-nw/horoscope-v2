@@ -2,8 +2,6 @@ import { Model } from 'objection';
 import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
 import CW721Contract from './cw721_contract';
-// eslint-disable-next-line import/no-cycle
-import CW721Token from './cw721_token';
 
 export default class CW721Tx extends BaseModel {
   id?: number;
@@ -11,8 +9,6 @@ export default class CW721Tx extends BaseModel {
   action?: string;
 
   sender?: string;
-
-  id_token?: number;
 
   txhash!: string;
 
@@ -42,14 +38,6 @@ export default class CW721Tx extends BaseModel {
 
   static get relationMappings() {
     return {
-      relate_token: {
-        relation: Model.BelongsToOneRelation,
-        modelClass: CW721Token,
-        join: {
-          from: 'cw721_tx.id_token',
-          to: 'cw721_token.id',
-        },
-      },
       relate_contract: {
         relation: Model.BelongsToOneRelation,
         modelClass: CW721Contract,

@@ -2,7 +2,7 @@ import { Model } from 'objection';
 import BaseModel from './base';
 import { TransactionMessageReceiver } from './transaction_message_receiver';
 
-export class TransactionMessage<T = any> extends BaseModel {
+export class TransactionMessage extends BaseModel {
   tx_id!: number;
 
   index!: number;
@@ -11,7 +11,7 @@ export class TransactionMessage<T = any> extends BaseModel {
 
   sender!: string;
 
-  content!: T;
+  content!: any;
 
   static get tableName() {
     return 'transaction_message';

@@ -1,14 +1,17 @@
+import { cosmwasm } from '@aura-nw/aurajs';
 import {
   MsgExecuteContract,
   MsgInstantiateContract,
 } from '@aura-nw/aurajs/types/codegen/cosmwasm/wasm/v1/tx';
+import { fromBase64, toHex } from '@cosmjs/encoding';
+import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
+import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
+import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
-import codeid_types from '../../../codeid_types.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { Config } from '../../common';
+import { Config, getHttpBatchClient } from '../../common';
 import {
-  ATTRIBUTE_KEY,
   BLOCK_CHECKPOINT_JOB_NAME,
   BULL_JOB_NAME,
   EVENT_TYPE,
@@ -19,6 +22,7 @@ import {
 import { IContractAndInfo } from '../../common/types/interfaces';
 import { getLcdClient } from '../../common/utils/aurajs_client';
 import { BlockCheckpoint, Transaction, TransactionMessage } from '../../models';
+import Codeid from '../../models/codeid';
 
 const { NODE_ENV } = Config;
 
@@ -27,6 +31,8 @@ const { NODE_ENV } = Config;
   version: 1,
 })
 export default class AssetTxHandlerService extends BullableService {
+  _httpBatchClient: HttpBatchClient;
+
   _currentAssetHandlerTx = 1;
 
   _lcdClient: any;
@@ -37,6 +43,7 @@ export default class AssetTxHandlerService extends BullableService {
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
+    this._httpBatchClient = getHttpBatchClient();
   }
 
   @QueueHandler({
@@ -44,8 +51,7 @@ export default class AssetTxHandlerService extends BullableService {
     jobType: BULL_JOB_NAME.HANDLE_ASSET_TRANSACTION,
   })
   async jobHandler(): Promise<void> {
-    this.handleJob();
-    // this.handleTxBurnCw721(CHAIN_ID);
+    await this.handleJob();
   }
 
   async _start(): Promise<void> {
@@ -83,45 +89,15 @@ export default class AssetTxHandlerService extends BullableService {
     if (listTx.length > 0) {
       try {
         const listContractsAndInfo = await this.listContractsAndInfo(
-          startTxId,
-          listTx[listTx.length - 1].id
+          1094,
+          1104
         );
-
         if (listContractsAndInfo.length > 0) {
-          await Promise.all(
-            listContractsAndInfo.map(async (item: IContractAndInfo) => {
-              const { contractAddress } = item;
-              if (contractAddress != null) {
-                const contractInfo =
-                  await this._lcdClient.cosmwasm.cosmwasm.wasm.v1.contractInfo({
-                    address: contractAddress,
-                  });
-                if (contractInfo != null) {
-                  const type = codeid_types.find(
-                    (e) =>
-                      e.code_id.toString() ===
-                      contractInfo.contract_info?.code_id
-                  )?.contract_type;
-                  if (type === 'CW721') {
-                    this.broker.call(SERVICE.V1.Cw721.EnrichCw721.path, {
-                      address: contractAddress,
-                      codeId: contractInfo.contract_info?.code_id,
-                      txData: {
-                        txhash: item.txhash,
-                        sender: item.sender,
-                        action: item.action,
-                      },
-                    });
-                    this.logger.debug(`Handle CW721:\n${item}`);
-                  } else {
-                    throw new Error(
-                      `Contract address haven't register its type: ${contractInfo.contract_info?.code_id.toString()}`
-                    );
-                  }
-                }
-              }
-            })
-          );
+          await this.fillContractInfoForList(listContractsAndInfo);
+          for (let index = 0; index < listContractsAndInfo.length; index += 1) {
+            // eslint-disable-next-line no-await-in-loop
+            await this.forwardCw721(listContractsAndInfo[index]);
+          }
         }
         await BlockCheckpoint.query()
           .patch({
@@ -132,6 +108,65 @@ export default class AssetTxHandlerService extends BullableService {
         this.logger.error(error);
       }
     }
+  }
+
+  // checked
+  async forwardCw721(item: IContractAndInfo) {
+    const { contractInfo } = item;
+    if (contractInfo) {
+      const type = (
+        await Codeid.query()
+          .where('codeid', contractInfo.codeId.toString())
+          .first()
+      )?.type;
+      if (type === 'CW721') {
+        const payload = {
+          address: item.contractAddress,
+          codeId: contractInfo.codeId.toString(),
+          tokenId: item.tokenid,
+          txData: {
+            txhash: item.txhash,
+            sender: item.sender,
+            action: item.action,
+          },
+        };
+        this.broker.call(SERVICE.V1.Cw721.HandleCw721.path, payload);
+        this.logger.debug(`Handle CW721:\n${JSON.stringify(payload)}`);
+      } else {
+        this.logger.warn(
+          `Contract address haven't register its type: ${contractInfo.codeId.toString()}`
+        );
+      }
+    }
+  }
+
+  // checked
+  async fillContractInfoForList(listContractsAndInfo: IContractAndInfo[]) {
+    const listPromise: any[] = [];
+    listContractsAndInfo.forEach((e: IContractAndInfo) => {
+      listPromise.push(
+        this._httpBatchClient.execute(
+          createJsonRpcRequest('abci_query', {
+            path: '/cosmwasm.wasm.v1.Query/ContractInfo',
+            data: toHex(
+              cosmwasm.wasm.v1.QueryContractInfoRequest.encode({
+                address: e.contractAddress,
+              }).finish()
+            ),
+          })
+        )
+      );
+    });
+    const resultListPromise: JsonRpcSuccessResponse[] = await Promise.all(
+      listPromise
+    );
+    listContractsAndInfo.forEach((item, index) => {
+      Object.assign(item, {
+        contractInfo: cosmwasm.wasm.v1.QueryContractInfoResponse.decode(
+          fromBase64(resultListPromise[index].result.response.value)
+        ).contractInfo,
+      });
+    });
   }
 
   async initEnv() {
@@ -174,47 +209,39 @@ export default class AssetTxHandlerService extends BullableService {
       // eslint-disable-next-line @typescript-eslint/no-loop-func
       tx.messages.forEach((message: TransactionMessage, index: number) => {
         if (message.type === MSG_TYPE.MSG_EXECUTE_CONTRACT) {
-          const executeMsg: TransactionMessage<MsgExecuteContract> = message;
+          const content = message.content as MsgExecuteContract;
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
-          const action = Object.keys(JSON.parse(executeMsg.content.msg))[0];
-          const { sender } = executeMsg.content;
+          const action = Object.keys(JSON.parse(content.msg))[0];
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          const jsonMsg = JSON.parse(content.msg);
+          const tokenid = jsonMsg[action].token_id;
+          const { sender } = content;
           const wasmEvent = tx.data.tx_response.logs[index].events.find(
             (event: any) => event.type === EVENT_TYPE.EXECUTE
           );
-          wasmEvent.attributes.forEach((attribute: any) => {
-            if (attribute.key === ATTRIBUTE_KEY.CONTRACT_ADDRESS) {
-              listContractInputsAndOutputs.push({
-                contractAddress: attribute.value,
-                sender,
-                action,
-                txhash: tx.hash,
-              });
-            }
+          // not cover submessage
+          listContractInputsAndOutputs.push({
+            contractAddress: wasmEvent.attributes[0].value,
+            sender,
+            action,
+            txhash: tx.hash,
+            tokenid,
           });
-          // listContractInputsAndOutputs.push({
-          //   contractAddress: contract,
-          //   sender,
-          //   action,
-          //   txhash: tx.hash,
-          // });
         } else if (message.type === MSG_TYPE.MSG_INSTANTIATE_CONTRACT) {
-          const instantiateMsg: TransactionMessage<MsgInstantiateContract> =
-            message;
+          const content = message.content as MsgInstantiateContract;
           const action = EVENT_TYPE.INSTANTIATE;
-          const { sender } = instantiateMsg.content;
+          const { sender } = content;
           const wasmEvent = tx.data.tx_response.logs[index].events.find(
             (event: any) => event.type === EVENT_TYPE.INSTANTIATE
           );
-          wasmEvent.attributes.forEach((attribute: any) => {
-            if (attribute.key === ATTRIBUTE_KEY.CONTRACT_ADDRESS) {
-              listContractInputsAndOutputs.push({
-                contractAddress: attribute.value,
-                sender,
-                action,
-                txhash: tx.hash,
-              });
-            }
+          // not cover submessage
+          listContractInputsAndOutputs.push({
+            contractAddress: wasmEvent.attributes[0].value,
+            sender,
+            action,
+            txhash: tx.hash,
           });
         }
       });

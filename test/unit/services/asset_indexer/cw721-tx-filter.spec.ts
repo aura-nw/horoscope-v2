@@ -3,8 +3,8 @@ import { ServiceBroker } from 'moleculer';
 import { Config } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
 import { Block, Transaction } from '../../../../src/models';
-import AssetTxHandlerService from '../../../../src/services/asset-indexer/asset-tx-handler.service';
-import CW721AssetService from '../../../../src/services/asset-indexer/cw721_asset.service';
+import AssetTxHandlerService from '../../../services/cw721/cw721-tx-filter.service';
+import CW721AssetService from '../../../services/cw721/cw721.service';
 
 @Describe('Test asset_indexer service')
 export default class AssetIndexerTest {

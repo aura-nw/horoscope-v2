@@ -40,7 +40,7 @@ export const BULL_JOB_NAME = {
   CRAWL_TRANSACTION: 'crawl:transaction',
   HANDLE_TRANSACTION: 'handle:transaction',
   HANDLE_ASSET_TRANSACTION: 'handle:asset-tx',
-  ENRICH_CW721: 'enrich:cw721',
+  HANDLE_CW721: 'handle:cw721',
   ENRICH_CW20: 'enrich:cw20',
 };
 
@@ -62,9 +62,9 @@ export const SERVICE = {
     },
     Cw721: {
       name: 'v1.Cw721Service',
-      EnrichCw721: {
-        key: 'enrichCw721',
-        path: 'v1.Cw721Service.enrichCw721',
+      HandleCw721: {
+        key: 'handleCw721',
+        path: 'v1.Cw721Service.handleCw721',
       },
     },
   },
@@ -127,12 +127,9 @@ export const ABCI_QUERY_PATH = {
   VALIDATOR_DELEGATION: '/cosmos.staking.v1beta1.Query/Delegation',
 };
 
-export const CW20_ACTION = {
-  URL_GET_OWNER_LIST: 'eyJhbGxfYWNjb3VudHMiOiB7fX0=',
-  URL_GET_TOKEN_INFO: 'eyJ0b2tlbl9pbmZvIjoge319',
-  URL_GET_MARKETING_INFO: 'eyJtYXJrZXRpbmdfaW5mbyI6IHt9fQ==',
-  GET_OWNER_LIST: 'v1.CW20.getOwnerList',
-  GET_BALANCE: 'v1.CW20.getBalance',
-  ENRICH_DATA: 'v1.CW20.enrichData',
-  GET_MARKET_INFO: 'v1.CW20.getMarketInfo',
+export const CW721_ACTION = {
+  MINT: 'mint',
+  BURN: 'burn',
+  TRANSFER: 'transfer',
+  INSTANTIATE: 'instantiate',
 };

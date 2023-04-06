@@ -2,8 +2,6 @@ import { Model } from 'objection';
 import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
 import CW721Contract from './cw721_contract';
-// eslint-disable-next-line import/no-cycle
-import CW721Tx from './cw721_tx';
 
 export default class CW721Token extends BaseModel {
   token_id!: string;
@@ -21,8 +19,6 @@ export default class CW721Token extends BaseModel {
   created_at?: Date;
 
   updated_at?: Date;
-
-  static softDelete = false;
 
   static get tableName() {
     return 'cw721_token';
@@ -42,14 +38,6 @@ export default class CW721Token extends BaseModel {
 
   static get relationMappings() {
     return {
-      txs: {
-        relation: Model.HasManyRelation,
-        modelClass: CW721Tx,
-        join: {
-          to: 'cw721_tx.id',
-          from: 'cw721_token.id_token',
-        },
-      },
       contract: {
         relation: Model.BelongsToOneRelation,
         modelClass: CW721Contract,

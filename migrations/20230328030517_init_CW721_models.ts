@@ -22,19 +22,16 @@ export async function up(knex: Knex): Promise<void> {
     table.string('contract_address').index().notNullable();
     table.foreign('contract_address').references('cw721_contract.address');
     table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
-    table.timestamp('updated_at').notNullable().defaultTo(knex.raw('now()'));
+    table.timestamp('delete_at').notNullable().defaultTo(knex.raw('now()'));
   });
 
   await knex.schema.createTable('cw721_tx', (table) => {
     table.increments('id').primary();
     table.string('txhash').unique().index().notNullable();
-    table.string('from').index();
-    table.string('to').index();
+    table.string('sender').index();
     table.string('action');
     table.string('contract_address').index().notNullable();
-    table.integer('id_token').index().notNullable();
     table.foreign('contract_address').references('cw721_contract.address');
-    table.foreign('id_token').references('cw721_token.id');
     table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
     table.timestamp('updated_at').notNullable().defaultTo(knex.raw('now()'));
   });

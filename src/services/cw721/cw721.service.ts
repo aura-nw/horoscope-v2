@@ -20,7 +20,12 @@ import CW721Tx from '../../models/cw721_tx';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { getLcdClient } from '../../common/utils/aurajs_client';
 import { getHttpBatchClient } from '../../common/utils/cosmjs_client';
-import { BULL_JOB_NAME, SERVICE, SERVICE_NAME } from '../../common';
+import {
+  BULL_JOB_NAME,
+  CW721_ACTION,
+  SERVICE,
+  SERVICE_NAME,
+} from '../../common';
 
 interface IContractInfoAndMinter {
   name: string;
@@ -42,61 +47,68 @@ export default class CW721AssetService extends BullableService {
     this._httpBatchClient = getHttpBatchClient();
   }
 
-  // confirmed
   @QueueHandler({
-    queueName: BULL_JOB_NAME.ENRICH_CW721,
-    jobType: BULL_JOB_NAME.ENRICH_CW721,
+    queueName: BULL_JOB_NAME.HANDLE_CW721,
+    jobType: BULL_JOB_NAME.HANDLE_CW721,
     prefix: 'horoscope_',
   })
-  async jobHandlerEnrichCw721(_payload: {
+  async jobHandlerCw721(_payload: {
     address: string;
     codeId: string;
+    tokenId: string;
     txData: {
       txhash: string;
       sender: string;
       action: string;
     };
   }): Promise<void> {
-    const { address, codeId, txData } = _payload;
-    const listTokens = await this._getTokenList(address);
-    const tokens: CW721Token[] = await this._getTokensInfo(address, listTokens);
-    const contractInfoAndMinter = await this._getContractInfoAndMinter(address);
-    const contractFound = await CW721Contract.query()
-      .where('address', address)
-      .first();
-    const contract: CW721Contract = CW721Contract.fromJson({
-      code_id: codeId,
-      address,
-      name: contractInfoAndMinter.name,
-      symbol: contractInfoAndMinter.symbol,
-      minter: contractInfoAndMinter.minter,
-    });
-    const tx: CW721Tx = CW721Tx.fromJson({
-      action: txData.action,
-      sender: txData.sender,
-      txhash: txData.txhash,
-      contract_address: address,
-    });
-    const cw721ContractGraph = {
-      ...contract,
-      tokens: tokens.map((token) => CW721Token.fromJson(token)),
-    };
-    if (contractFound) {
-      cw721ContractGraph.id = contractFound.id;
-      await CW721Contract.query().upsertGraph(cw721ContractGraph);
+    const { address, codeId, tokenId, txData } = _payload;
+    await CW721Tx.query().insert(
+      CW721Tx.fromJson({
+        action: txData.action,
+        sender: txData.sender,
+        txhash: txData.txhash,
+        contract_address: address,
+      })
+    );
+    if (txData.action === CW721_ACTION.BURN) {
+      await CW721Token.query()
+        .where('contract_address', address)
+        .andWhere('token_id', tokenId)
+        .delete();
+    } else if (txData.action === CW721_ACTION.MINT) {
+      const token = await this.getTokenInfo(address, tokenId);
+      await CW721Token.query().insert(token);
+    } else if (txData.action === CW721_ACTION.TRANSFER) {
+      const token = await this.getTokenInfo(address, tokenId);
+      await CW721Token.query().patch({ owner: token.owner });
+    } else if (txData.action === CW721_ACTION.INSTANTIATE) {
+      const contractInfoAndMinter = await this._getContractInfoAndMinter(
+        address
+      );
+      const contract: CW721Contract = CW721Contract.fromJson({
+        code_id: codeId,
+        address,
+        name: contractInfoAndMinter.name,
+        symbol: contractInfoAndMinter.symbol,
+        minter: contractInfoAndMinter.minter,
+      });
+      await CW721Contract.query().insert(contract);
     } else {
-      await CW721Contract.query().insertGraph(cw721ContractGraph);
+      this.logger.warn(
+        `tx ${txData.txhash} action ${txData.action} not supported `
+      );
     }
-    await CW721Tx.query().insert(tx);
   }
 
   @Action({
-    name: SERVICE.V1.Cw721.EnrichCw721.key,
+    name: SERVICE.V1.Cw721.HandleCw721.key,
   })
   async enrichCw721(
     ctx: Context<{
       address: string;
       codeId: string;
+      tokenId: string;
       txData: {
         txhash: string;
         sender: string;
@@ -104,9 +116,16 @@ export default class CW721AssetService extends BullableService {
       };
     }>
   ) {
-    this.createJob(BULL_JOB_NAME.ENRICH_CW721, BULL_JOB_NAME.ENRICH_CW721, {
+    // this.createJob(BULL_JOB_NAME.HANDLE_CW721, BULL_JOB_NAME.HANDLE_CW721, {
+    //   address: ctx.params.address,
+    //   codeId: ctx.params.codeId,
+    //   tokenid: ctx.params.tokenId,
+    //   txData: ctx.params.txData,
+    // });
+    console.log({
       address: ctx.params.address,
       codeId: ctx.params.codeId,
+      tokenid: ctx.params.tokenId,
       txData: ctx.params.txData,
     });
   }
