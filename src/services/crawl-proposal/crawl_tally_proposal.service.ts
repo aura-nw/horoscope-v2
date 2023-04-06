@@ -5,20 +5,15 @@ import {
 import { Context, ServiceBroker } from 'moleculer';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { IAuraJSClientFactory } from '../../common/types/interfaces';
-import {
-  BULL_ACTION_NAME,
-  BULL_JOB_NAME,
-  CONST_CHAR,
-  SERVICE_NAME,
-} from '../../common/constant';
+import { BULL_JOB_NAME, SERVICE } from '../../common/constant';
 import { IProposalIdParam } from '../../common/utils/request';
 import { Config } from '../../common';
 import { getLcdClient } from '../../common/utils/aurajs_client';
 import { Proposal } from '../../models/proposal';
 
 @Service({
-  name: SERVICE_NAME.CRAWL_TALLY_PROPOSAL,
-  version: CONST_CHAR.VERSION_NUMBER,
+  name: SERVICE.V1.CrawlTallyProposalService.key,
+  version: 1,
 })
 export default class CrawlTallyProposalService extends BullableService {
   private _lcdClient!: IAuraJSClientFactory;
@@ -28,7 +23,7 @@ export default class CrawlTallyProposalService extends BullableService {
   }
 
   @Action({
-    name: BULL_ACTION_NAME.PROPOSAL_TALLY_UPSERT,
+    name: SERVICE.V1.CrawlTallyProposalService.UpdateProposalTally.key,
     params: {
       proposalId: 'number',
     },

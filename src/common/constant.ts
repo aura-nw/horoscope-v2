@@ -59,6 +59,18 @@ export const SERVICE = {
         path: 'v1.HandleAddressService.CrawlNewAccountApi',
       },
     },
+    CrawlProposalService: {
+      name: 'v1.CrawlProposalService',
+      key: 'CrawlProposalService',
+    },
+    CrawlTallyProposalService: {
+      name: 'v1.CrawlTallyProposalService',
+      key: 'CrawlTallyProposalService',
+      UpdateProposalTally: {
+        key: 'UpdateProposalTally',
+        path: 'v1.CrawlTallyProposalService.UpdateProposalTally',
+      },
+    },
   },
 };
 

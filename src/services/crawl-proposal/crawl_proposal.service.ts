@@ -1,26 +1,27 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
-import { Proposal } from '../../models/proposal';
-import { Account } from '../../models/account';
-import { Config } from '../../common';
-import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
-  BULL_ACTION_NAME,
+  Account,
+  Block,
+  BlockCheckpoint,
+  Proposal,
+  Transaction,
+  TransactionEventAttribute,
+} from 'src/models';
+import {
   BULL_JOB_NAME,
-  CONST_CHAR,
+  Config,
+  getLcdClient,
+  IAuraJSClientFactory,
   PROPOSAL_STATUS,
-  SERVICE_NAME,
-} from '../../common/constant';
-import { getLcdClient } from '../../common/utils/aurajs_client';
-import BlockCheckpoint from '../../models/block_checkpoint';
-import Block from '../../models/block';
-import Transaction from '../../models/transaction';
-import { IAuraJSClientFactory } from '../../common/types/interfaces';
+  SERVICE,
+} from '../../common';
+import BullableService, { QueueHandler } from '../../base/bullable.service';
 
 @Service({
-  name: SERVICE_NAME.CRAWL_PROPOSAL,
-  version: CONST_CHAR.VERSION_NUMBER,
+  name: SERVICE.V1.CrawlProposalService.key,
+  version: 1,
 })
 export default class CrawlProposalService extends BullableService {
   private _lcdClient!: IAuraJSClientFactory;
@@ -91,7 +92,7 @@ export default class CrawlProposalService extends BullableService {
           .andWhere(
             'transaction_event_attribute.key',
             '=',
-            CONST_CHAR.PROPOSAL_ID
+            TransactionEventAttribute.EVENT_KEY.PROPOSAL_ID
           )
           .limit(100)
           .offset(offset);
@@ -177,7 +178,7 @@ export default class CrawlProposalService extends BullableService {
               proposal.status === PROPOSAL_STATUS.PROPOSAL_STATUS_VOTING_PERIOD
             ) {
               this.broker.call(
-                `${CONST_CHAR.VERSION}.${SERVICE_NAME.CRAWL_TALLY_PROPOSAL}.${BULL_ACTION_NAME.PROPOSAL_TALLY_UPSERT}`,
+                SERVICE.V1.CrawlTallyProposalService.UpdateProposalTally.path,
                 { proposalId }
               );
             }
@@ -210,8 +211,16 @@ export default class CrawlProposalService extends BullableService {
         'transaction_event_attribute.event_id'
       )
       .where('transaction.code', '=', '0')
-      .andWhere('transaction_event.type', '=', CONST_CHAR.SUBMIT_PROPOSAL)
-      .andWhere('transaction_event_attribute.key', '=', CONST_CHAR.PROPOSAL_ID)
+      .andWhere(
+        'transaction_event.type',
+        '=',
+        TransactionEventAttribute.EVENT_KEY.SUBMIT_PROPOSAL
+      )
+      .andWhere(
+        'transaction_event_attribute.key',
+        '=',
+        TransactionEventAttribute.EVENT_KEY.PROPOSAL_ID
+      )
       .andWhere('transaction_event_attribute.value', '=', `${proposalId}`)
       .limit(1)
       .offset(0);
@@ -219,9 +228,14 @@ export default class CrawlProposalService extends BullableService {
     const msgIndex = tx[0].data.tx_response.logs.find(
       (log: any) =>
         log.events
-          .find((event: any) => event.type === CONST_CHAR.SUBMIT_PROPOSAL)
-          .attributes.find((attr: any) => attr.key === CONST_CHAR.PROPOSAL_ID)
-          .value === proposalId
+          .find(
+            (event: any) =>
+              event.type === TransactionEventAttribute.EVENT_KEY.SUBMIT_PROPOSAL
+          )
+          .attributes.find(
+            (attr: any) =>
+              attr.key === TransactionEventAttribute.EVENT_KEY.PROPOSAL_ID
+          ).value === proposalId
     ).msg_index;
 
     const initialDeposit =
@@ -236,7 +250,7 @@ export default class CrawlProposalService extends BullableService {
 
   public async _start() {
     await this.broker.waitForServices([
-      `${CONST_CHAR.VERSION}.${SERVICE_NAME.CRAWL_TALLY_PROPOSAL}`,
+      SERVICE.V1.CrawlTallyProposalService.name,
     ]);
 
     this.createJob(
