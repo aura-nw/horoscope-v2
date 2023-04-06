@@ -110,7 +110,7 @@ export default class CrawlAccountService extends BullableService {
           }
         }
 
-        const genesisChunkObject: any = JSON.parse(genesisChunk);
+        const genesisChunkObject = JSON.parse(genesisChunk);
         listAddresses = genesisChunkObject.app_state.bank.balances.map(
           (balance: any) => balance.address
         );
@@ -539,7 +539,48 @@ export default class CrawlAccountService extends BullableService {
     );
   }
 
-  // TODO: Need interval job to delete finished vesting
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT,
+    jobType: 'crawl',
+    prefix: `horoscope-v2-${config.chainId}`,
+  })
+  public async handleVestingAccounts(_payload: object): Promise<void> {
+    const accountVestings: any[] = [];
+
+    const now = Math.floor(
+      new Date().setSeconds(new Date().getSeconds() - 6) / 1000
+    );
+    let offset = 0;
+    let done = false;
+    while (!done) {
+      const result = await AccountVesting.query()
+        .joinRelated('account')
+        .where((builder) =>
+          builder
+            .whereIn('account.type', [
+              AccountType.CONTINUOUS_VESTING,
+              AccountType.PERIODIC_VESTING,
+            ])
+            .andWhere('end_time', '>=', now)
+        )
+        .orWhere((builder) =>
+          builder
+            .where('account.type', AccountType.DELAYED_VESTING)
+            .andWhere('end_time', '<=', now)
+        )
+        .select('account.address')
+        .page(offset, 1000);
+
+      if (result.results.length > 0) {
+        accountVestings.push(...result.results);
+        offset += 1;
+      } else done = true;
+    }
+
+    await this.handleJobAccountSpendableBalances({
+      listAddresses: accountVestings.map((vesting) => vesting.address),
+    });
+  }
 
   public async _start() {
     this.createJob(
@@ -550,6 +591,20 @@ export default class CrawlAccountService extends BullableService {
         removeOnComplete: true,
         removeOnFail: {
           count: 3,
+        },
+      }
+    );
+    this.createJob(
+      BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT,
+      'crawl',
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        repeat: {
+          every: config.crawlAccount.handleVestingAccount.millisecondCrawl,
         },
       }
     );

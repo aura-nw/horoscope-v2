@@ -107,7 +107,7 @@ export default class HandleAddressService extends BullableService {
             'events:attributes.key',
             'events:attributes.value'
           )
-          .page(offset, 100);
+          .page(offset, 1000);
         this.logger.info(
           `Query Tx from height ${lastHeight} to ${
             latestBlock.height

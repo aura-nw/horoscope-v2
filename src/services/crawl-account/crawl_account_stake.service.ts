@@ -20,7 +20,7 @@ import {
   SERVICE,
 } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import config from '../../../config.json';
+import config from '../../../config.json' assert { type: 'json' };
 import {
   Account,
   AccountStake,
@@ -543,5 +543,34 @@ export default class CrawlAccountStakeService extends BullableService {
     }
   }
 
-  // TODO: Need interval job to delete finished redelegate and unbond
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.HANDLE_EXPIRED_ACCOUNT_STAKE,
+    jobType: 'crawl',
+    prefix: `horoscope-v2-${config.chainId}`,
+  })
+  public async handleExpiredAccountStake(_payload: object): Promise<void> {
+    const now = new Date(new Date().setSeconds(new Date().getSeconds() - 6));
+
+    await AccountStake.query().delete(true).where('end_time', '<=', now);
+  }
+
+  public async _start() {
+    this.createJob(
+      BULL_JOB_NAME.HANDLE_EXPIRED_ACCOUNT_STAKE,
+      'crawl',
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        repeat: {
+          every:
+            config.crawlAccountStake.handleExpiredAccountStake.millisecondCrawl,
+        },
+      }
+    );
+
+    return super._start();
+  }
 }

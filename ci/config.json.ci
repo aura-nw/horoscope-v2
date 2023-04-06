@@ -17,5 +17,15 @@
   },
   "handleAddress": {
     "millisecondCrawl": 5000
+  },
+  "crawlAccount": {
+    "handleVestingAccount": {
+      "millisecondCrawl": 30000
+    }
+  },
+  "crawlAccountStake": {
+    "handleExpiredAccountStake": {
+      "millisecondCrawl": 30000
+    }
   }
 }
