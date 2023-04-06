@@ -58,7 +58,7 @@ export const SERVICE = {
       },
     },
     CrawlBlock: {
-      name: 'v1.CrawlBlock',
+      name: 'v1.CrawlBlockService',
     },
     CrawlTransaction: {
       name: 'v1.CrawlTransactionService',
