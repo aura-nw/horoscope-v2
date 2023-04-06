@@ -9,7 +9,7 @@
 
 const openApiKey = 'openapi';
 // const responsesKey = 'responses';
-export const Summary = function (summary: string) {
+export function Summary(summary: string) {
   return (target: any, _key: string, _descriptor: PropertyDescriptor) => {
     const obj = target.actions[_key][openApiKey] || {};
 
@@ -18,11 +18,11 @@ export const Summary = function (summary: string) {
       summary,
     };
   };
-};
+}
 
 // TODO: WIP, experiment only, bug when changes order of Summary and Response in action declaration
 // Refactor with lodash
-export const Response = function (
+export function Response(
   code: number,
   description: string,
   responseObject: any
@@ -44,7 +44,7 @@ export const Response = function (
 
     target.actions[_key][openApiKey]['responses'][code] = obj;
   };
-};
+}
 
 // export const ResponseObject(description: string, )
 //
