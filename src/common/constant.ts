@@ -91,12 +91,22 @@ export const SERVICE = {
     CrawlSigningInfoService: {
       key: 'CrawlSigningInfoService',
     },
+    CrawlBlock: {
+      name: 'v1.CrawlBlockService',
+    },
+    CrawlTransaction: {
+      name: 'v1.CrawlTransactionService',
+      CrawlTxByHeight: {
+        key: 'CrawlTxByHeight',
+        path: 'v1.CrawlTransactionService.CrawlTxByHeight',
+      },
+    },
   },
 };
 
 export const SERVICE_NAME = {
   CRAWL_BLOCK: 'CrawlBlockService',
-  CRAWL_TRANSACTION: 'CrawlTransaction',
+  CRAWL_TRANSACTION: 'CrawlTransactionService',
 };
 
 export enum AccountType {
