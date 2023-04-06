@@ -9,15 +9,14 @@ import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import {
   BLOCK_CHECKPOINT_JOB_NAME,
   BULL_JOB_NAME,
+  getHttpBatchClient,
+  getLcdClient,
+  IAuraJSClientFactory,
   SERVICE_NAME,
-} from '../../common/constant';
-import Block from '../../models/block';
-import BlockCheckpoint from '../../models/block_checkpoint';
+} from '../../common';
+import { Block, BlockCheckpoint } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { getLcdClient } from '../../common/utils/aurajs_client';
-import { getHttpBatchClient } from '../../common/utils/cosmjs_client';
-import { IAuraJSClientFactory } from '../../common/types/interfaces';
-import config from '../../../config.json';
+import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
   name: SERVICE_NAME.CRAWL_BLOCK,

@@ -1,9 +1,9 @@
 import { Model } from 'objection';
 import BaseModel from './base';
-import BlockSignature from './block_signature';
-import Transaction from './transaction';
+import { BlockSignature } from './block_signature';
+import { Transaction } from './transaction';
 
-export default class Block extends BaseModel {
+export class Block extends BaseModel {
   height!: number;
 
   hash!: string;

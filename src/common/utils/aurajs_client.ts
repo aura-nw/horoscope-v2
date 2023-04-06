@@ -1,7 +1,7 @@
 import { auranw, cosmwasm, ibc } from '@aura-nw/aurajs';
 import { IAuraJSClientFactory } from '../types/interfaces';
-import network from '../../../network.json';
-import config from '../../../config.json';
+import network from '../../../network.json' assert { type: 'json' };
+import config from '../../../config.json' assert { type: 'json' };
 
 export default class AuraJsClient {
   public lcdClient: IAuraJSClientFactory = {
