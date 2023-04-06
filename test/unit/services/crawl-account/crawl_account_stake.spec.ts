@@ -1,12 +1,10 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import {
   assertIsDeliverTxSuccess,
-  MsgUndelegateEncodeObject,
   SigningStargateClient,
 } from '@cosmjs/stargate';
 import { coins, DirectSecp256k1HdWallet } from '@cosmjs/proto-signing';
 import { ServiceBroker } from 'moleculer';
-import { cosmos } from '@aura-nw/aurajs';
 import {
   BULL_JOB_NAME,
   defaultSendFee,
@@ -76,7 +74,7 @@ export default class CrawlAccountStakeTest {
 
   @BeforeAll()
   async initSuite() {
-    this.broker.start();
+    await this.broker.start();
     this.crawlAccountStakeService = this.broker.createService(
       CrawlAccountStakeService
     ) as CrawlAccountStakeService;
@@ -110,7 +108,7 @@ export default class CrawlAccountStakeTest {
       Validator.query().delete(true),
     ]);
     await Account.query().delete(true);
-    this.broker.stop();
+    await this.broker.stop();
   }
 
   @Test('Crawl account delegation success')
@@ -185,18 +183,10 @@ export default class CrawlAccountStakeTest {
       defaultSigningClientOptions
     );
 
-    const unbondMsg: MsgUndelegateEncodeObject = {
-      typeUrl: '/cosmos.staking.v1beta1.MsgUndelegate',
-      value: cosmos.staking.v1beta1.MsgUndelegate.fromPartial({
-        delegatorAddress: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
-        validatorAddress: 'auravaloper1phaxpevm5wecex2jyaqty2a4v02qj7qmhyhvcg',
-        amount: amount[0],
-      }),
-    };
-
-    const result = await client.signAndBroadcast(
+    const result = await client.undelegateTokens(
       'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
-      [unbondMsg],
+      'auravaloper1phaxpevm5wecex2jyaqty2a4v02qj7qmhyhvcg',
+      amount[0],
       defaultSendFee,
       memo
     );
@@ -230,5 +220,31 @@ export default class CrawlAccountStakeTest {
     expect(accountStake?.validator_dst_id).toBeNull();
     expect(accountStake?.balance).toEqual('1000');
     expect(accountStake?.creation_height).toEqual(result.height);
+  }
+
+  @Test('Handle expired account stake and remove it')
+  public async testHandleExpiredAccountStakes() {
+    const stakingEndTime = new Date(
+      new Date().setSeconds(new Date().getSeconds() - 20)
+    ).toISOString();
+
+    await AccountStake.query()
+      .patch({
+        end_time: stakingEndTime,
+      })
+      .whereIn('type', [
+        TransactionEventAttribute.EVENT_KEY.REDELEGATE,
+        TransactionEventAttribute.EVENT_KEY.UNBOND,
+      ]);
+
+    await this.crawlAccountStakeService?.handleExpiredAccountStake({});
+
+    const expiredAccountStakes: AccountStake[] =
+      await AccountStake.query().whereIn('type', [
+        TransactionEventAttribute.EVENT_KEY.REDELEGATE,
+        TransactionEventAttribute.EVENT_KEY.UNBOND,
+      ]);
+
+    expect(expiredAccountStakes.length).toEqual(0);
   }
 }
