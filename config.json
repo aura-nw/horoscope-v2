@@ -1,5 +1,5 @@
 {
-  "chainId": "aura-testnet",
+  "chainId": "xstaxy-1",
   "networkPrefixAddress": "aura",
   "consensusPrefixAddress": "valcons",
   "validatorPrefixAddress": "valoper",
@@ -10,7 +10,7 @@
   "crawlBlock": {
     "millisecondCrawl": 5000,
     "numberOfBlockPerCall": 100,
-    "startBlock": 5294817
+    "startBlock": 103915
   },
   "crawlSigningInfo": {
     "millisecondCrawl": 5000
@@ -21,6 +21,6 @@
   "handleVoteTx": {
     "millisecondCrawl": 5000,
     "numberOfTxPerCall": 100,
-    "startBlock": 0
+    "startTxId": 0
   }
 }
