@@ -9,7 +9,6 @@ export async function up(knex: Knex): Promise<void> {
     table.integer('validator_src_id').index().notNullable();
     table.integer('validator_dst_id').index();
     table.string('type').index().notNullable();
-    table.decimal('shares', 50, 20);
     table.decimal('balance', 30, 0).notNullable();
     table.integer('creation_height');
     table.timestamp('end_time');

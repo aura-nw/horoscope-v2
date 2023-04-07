@@ -15,8 +15,6 @@ export class AccountStake extends BaseModel {
 
   type!: string;
 
-  shares: number | undefined;
-
   balance!: string;
 
   creation_height: number | undefined;
@@ -35,7 +33,6 @@ export class AccountStake extends BaseModel {
         account_id: { type: 'number' },
         validator_src_id: { type: 'number' },
         validator_dst_id: { type: ['number', 'null'] },
-        shares: { type: ['number', 'null'] },
         balance: { type: 'string' },
         creation_height: { type: 'number' },
         end_time: { type: ['string', 'null'], format: 'date-time' },

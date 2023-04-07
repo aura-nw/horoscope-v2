@@ -177,9 +177,6 @@ export default class CrawlAccountStakeService extends BullableService {
 
                 if (accountStake) {
                   accountStake.balance = delegate.balance?.amount || '0';
-                  accountStake.shares = Number.parseFloat(
-                    delegate.delegation?.shares || '0'
-                  );
 
                   accountStakes.splice(accountStakes.indexOf(accountStake), 1);
                 } else {
@@ -192,9 +189,6 @@ export default class CrawlAccountStakeService extends BullableService {
                     )?.id,
                     validator_dst_id: null,
                     type: TransactionEventAttribute.EVENT_KEY.DELEGATE,
-                    shares: Number.parseFloat(
-                      delegate.delegation?.shares || '0'
-                    ),
                     balance: delegate.balance?.amount || '0',
                     creation_height: null,
                     end_time: null,
@@ -346,10 +340,6 @@ export default class CrawlAccountStakeService extends BullableService {
                           redelegate.redelegation?.validator_dst_address
                       )?.id,
                       type: TransactionEventAttribute.EVENT_KEY.REDELEGATE,
-                      shares: Number.parseFloat(
-                        redelegate.entries[0].redelegation_entry?.shares_dst ||
-                          '0'
-                      ),
                       balance: redelegate.entries[0].balance || '0',
                       creation_height:
                         entry.redelegation_entry?.creation_height,
@@ -494,7 +484,6 @@ export default class CrawlAccountStakeService extends BullableService {
                       )?.id,
                       validator_dst_id: null,
                       type: TransactionEventAttribute.EVENT_KEY.UNBOND,
-                      shares: null,
                       balance: entry.balance,
                       creation_height: entry.creation_height,
                       end_time: entry.completion_time,

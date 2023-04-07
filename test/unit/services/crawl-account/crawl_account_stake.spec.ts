@@ -8,10 +8,9 @@ import { coins, DirectSecp256k1HdWallet } from '@cosmjs/proto-signing';
 import { ServiceBroker } from 'moleculer';
 import { cosmos } from '@aura-nw/aurajs';
 import {
-  BULL_JOB_NAME,
   defaultSendFee,
   defaultSigningClientOptions,
-} from '../../../../src/common';
+} from '../../../helper/constant';
 import {
   Account,
   AccountStake,
@@ -21,6 +20,7 @@ import {
 import CrawlAccountStakeService from '../../../../src/services/crawl-account/crawl_account_stake.service';
 import config from '../../../../config.json';
 import network from '../../../../network.json';
+import { BULL_JOB_NAME } from '../../../../src/common';
 
 @Describe('Test crawl_account_stake service')
 export default class CrawlAccountStakeTest {

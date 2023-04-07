@@ -5,7 +5,7 @@ import { Model } from 'objection';
 import config from '../../config.json' assert { type: 'json' };
 import { AccountStake } from './account_stake';
 import BaseModel from './base';
-import { TransactionPowerEvent } from './transaction_power_event';
+import { PowerEvent } from './power_event';
 
 export interface IConsensusPubkey {
   type: string;
@@ -129,18 +129,18 @@ export class Validator extends BaseModel {
     return {
       src_power_event: {
         relation: Model.HasManyRelation,
-        modelClass: TransactionPowerEvent,
+        modelClass: PowerEvent,
         join: {
           from: 'validator.id',
-          to: 'transaction_power_event.validator_src_id',
+          to: 'power_event.validator_src_id',
         },
       },
       dst_power_event: {
         relation: Model.HasManyRelation,
-        modelClass: TransactionPowerEvent,
+        modelClass: PowerEvent,
         join: {
           from: 'validator.id',
-          to: 'transaction_power_event.validator_dst_id',
+          to: 'power_event.validator_dst_id',
         },
       },
       src_account_stake: {

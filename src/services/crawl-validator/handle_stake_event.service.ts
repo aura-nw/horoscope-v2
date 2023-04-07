@@ -12,7 +12,7 @@ import {
 import {
   Account,
   TransactionMessage,
-  TransactionPowerEvent,
+  PowerEvent,
   Validator,
 } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -69,7 +69,7 @@ export default class HandleStakeEventService extends BullableService {
       ),
     ]);
 
-    const listInsert: TransactionPowerEvent[] = listTxStakes.map((stake) => {
+    const listInsert: PowerEvent[] = listTxStakes.map((stake) => {
       this.logger.info(`Handle message stake ${JSON.stringify(stake)}`);
 
       let validatorSrcId;
@@ -99,22 +99,20 @@ export default class HandleStakeEventService extends BullableService {
           break;
       }
 
-      const txPowerEvent: TransactionPowerEvent =
-        TransactionPowerEvent.fromJson({
-          tx_id: stake.tx_id,
-          type: stake.type,
-          delegator_id: accounts.find((acc) => acc.address === stake.sender)
-            ?.id,
-          validator_src_id: validatorSrcId,
-          validator_dst_id: validatorDstId,
-          amount: stake.content.amount.amount,
-          time: stake.timestamp.toISOString(),
-        });
+      const txPowerEvent: PowerEvent = PowerEvent.fromJson({
+        tx_id: stake.tx_id,
+        type: stake.type,
+        delegator_id: accounts.find((acc) => acc.address === stake.sender)?.id,
+        validator_src_id: validatorSrcId,
+        validator_dst_id: validatorDstId,
+        amount: stake.content.amount.amount,
+        time: stake.timestamp.toISOString(),
+      });
 
       return txPowerEvent;
     });
 
-    await TransactionPowerEvent.query()
+    await PowerEvent.query()
       .insert(listInsert)
       .catch((error) => {
         this.logger.error("Error insert validator's power events");
