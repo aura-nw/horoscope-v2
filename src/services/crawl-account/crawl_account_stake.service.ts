@@ -108,99 +108,94 @@ export default class CrawlAccountStakeService extends BullableService {
         .whereIn('address', _payload.listAddresses);
 
       await Promise.all(
-        _payload.listAddresses.map(async (address: string) => {
-          this.logger.info(`Crawl account delegations address: ${address}`);
-
-          const account: Account | undefined = accounts.find(
-            (acc: Account) => acc.address === address
+        accounts.map(async (account) => {
+          this.logger.info(
+            `Crawl account delegations address: ${account.address}`
           );
 
-          if (account) {
-            const listDelegations: DelegationResponseSDKType[] = [];
-            let done = false;
-            let resultCallApi;
-            const params: IDelegatorDelegations = {
-              delegatorAddr: address,
-            };
-            while (!done) {
-              try {
-                resultCallApi =
-                  await this._lcdClient.auranw.cosmos.staking.v1beta1.delegatorDelegations(
-                    params
-                  );
-              } catch (error) {
-                this.logger.error(error);
-                throw error;
-              }
-
-              if (resultCallApi.delegation_responses.length > 0) {
-                listDelegations.push(...resultCallApi.delegation_responses);
-              }
-              if (resultCallApi.pagination.next_key === null) {
-                done = true;
-              } else {
-                params.pagination = { key: resultCallApi.pagination.next_key };
-              }
+          const listDelegations: DelegationResponseSDKType[] = [];
+          let done = false;
+          let resultCallApi;
+          const params: IDelegatorDelegations = {
+            delegatorAddr: account.address,
+          };
+          while (!done) {
+            try {
+              resultCallApi =
+                await this._lcdClient.auranw.cosmos.staking.v1beta1.delegatorDelegations(
+                  params
+                );
+            } catch (error) {
+              this.logger.error(error);
+              throw error;
             }
 
-            if (listDelegations.length > 0) {
-              const [accountStakes, validators]: [AccountStake[], Validator[]] =
-                await Promise.all([
-                  AccountStake.query()
-                    .select('*')
-                    .where('account_id', account.id)
-                    .andWhere(
-                      'type',
-                      TransactionEventAttribute.EVENT_KEY.DELEGATE
-                    ),
-                  Validator.query()
-                    .select('*')
-                    .whereIn(
-                      'operator_address',
-                      listDelegations.map(
-                        (delegate) =>
-                          delegate.delegation?.validator_address || ''
-                      )
-                    ),
-                ]);
+            if (resultCallApi.delegation_responses.length > 0) {
+              listDelegations.push(...resultCallApi.delegation_responses);
+            }
+            if (resultCallApi.pagination.next_key === null) {
+              done = true;
+            } else {
+              params.pagination = { key: resultCallApi.pagination.next_key };
+            }
+          }
 
-              listDelegations.forEach((delegate) => {
-                let accountStake: AccountStake | undefined = accountStakes.find(
-                  (acc: AccountStake) =>
-                    acc.validator_src_id ===
-                    validators.find(
-                      (val) =>
-                        val.operator_address ===
-                        delegate.delegation?.validator_address
-                    )?.id
-                );
+          if (listDelegations.length > 0) {
+            const [accountStakes, validators]: [AccountStake[], Validator[]] =
+              await Promise.all([
+                AccountStake.query()
+                  .select('*')
+                  .where('account_id', account.id)
+                  .andWhere(
+                    'type',
+                    TransactionEventAttribute.EVENT_KEY.DELEGATE
+                  ),
+                Validator.query()
+                  .select('*')
+                  .whereIn(
+                    'operator_address',
+                    listDelegations.map(
+                      (delegate) => delegate.delegation?.validator_address || ''
+                    )
+                  ),
+              ]);
 
-                if (accountStake) {
-                  accountStake.balance = delegate.balance?.amount || '0';
+            listDelegations.forEach((delegate) => {
+              let accountStake: AccountStake | undefined = accountStakes.find(
+                (acc: AccountStake) =>
+                  acc.validator_src_id ===
+                  validators.find(
+                    (val) =>
+                      val.operator_address ===
+                      delegate.delegation?.validator_address
+                  )?.id
+              );
 
-                  accountStakes.splice(accountStakes.indexOf(accountStake), 1);
-                } else {
-                  accountStake = AccountStake.fromJson({
-                    account_id: account.id,
-                    validator_src_id: validators.find(
-                      (val) =>
-                        val.operator_address ===
-                        delegate.delegation?.validator_address
-                    )?.id,
-                    validator_dst_id: null,
-                    type: TransactionEventAttribute.EVENT_KEY.DELEGATE,
-                    balance: delegate.balance?.amount || '0',
-                    creation_height: null,
-                    end_time: null,
-                  });
-                }
+              if (accountStake) {
+                accountStake.balance = delegate.balance?.amount || '0';
 
-                listAccountDelegations.push(accountStake);
-              });
-
-              if (accountStakes.length > 0) {
-                listDeletes.push(...accountStakes);
+                accountStakes.splice(accountStakes.indexOf(accountStake), 1);
+              } else {
+                accountStake = AccountStake.fromJson({
+                  account_id: account.id,
+                  validator_src_id: validators.find(
+                    (val) =>
+                      val.operator_address ===
+                      delegate.delegation?.validator_address
+                  )?.id,
+                  validator_dst_id: null,
+                  type: TransactionEventAttribute.EVENT_KEY.DELEGATE,
+                  balance: delegate.balance?.amount || '0',
+                  creation_height: null,
+                  end_time: null,
+                });
               }
+
+              listAccountDelegations.push(accountStake);
+            });
+
+            if (accountStakes.length > 0) {
+              listDeletes.push(...accountStakes);
             }
           }
         })
@@ -250,115 +245,106 @@ export default class CrawlAccountStakeService extends BullableService {
         .whereIn('address', _payload.listAddresses);
 
       await Promise.all(
-        _payload.listAddresses.map(async (address: string) => {
-          this.logger.info(`Crawl account redelegations address: ${address}`);
-
-          const account: Account | undefined = accounts.find(
-            (acc: Account) => acc.address === address
+        accounts.map(async (account) => {
+          this.logger.info(
+            `Crawl account redelegations address: ${account.address}`
           );
 
-          if (account) {
-            const listRedelegations: RedelegationResponseSDKType[] = [];
-            let done = false;
-            let resultCallApi;
-            const params: IDelegatorRedelegations = {
-              delegatorAddr: address,
-              srcValidatorAddr: '',
-              dstValidatorAddr: '',
-            };
-            while (!done) {
-              try {
-                resultCallApi =
-                  await this._lcdClient.auranw.cosmos.staking.v1beta1.redelegations(
-                    params
-                  );
-              } catch (error) {
-                this.logger.error(error);
-                throw error;
-              }
-
-              if (resultCallApi.redelegation_responses.length > 0) {
-                listRedelegations.push(...resultCallApi.redelegation_responses);
-              }
-              if (resultCallApi.pagination.next_key === null) {
-                done = true;
-              } else {
-                params.pagination = { key: resultCallApi.pagination.next_key };
-              }
+          const listRedelegations: RedelegationResponseSDKType[] = [];
+          let done = false;
+          let resultCallApi;
+          const params: IDelegatorRedelegations = {
+            delegatorAddr: account.address,
+            srcValidatorAddr: '',
+            dstValidatorAddr: '',
+          };
+          while (!done) {
+            try {
+              resultCallApi =
+                await this._lcdClient.auranw.cosmos.staking.v1beta1.redelegations(
+                  params
+                );
+            } catch (error) {
+              this.logger.error(error);
+              throw error;
             }
 
-            if (listRedelegations.length > 0) {
-              const listValidators: string[] = [];
-              listRedelegations.map((redelegate) =>
-                listValidators.push(
-                  ...[
-                    redelegate.redelegation?.validator_src_address ?? '',
-                    redelegate.redelegation?.validator_dst_address ?? '',
-                  ]
-                )
-              );
-              const [accountStakes, validators]: [AccountStake[], Validator[]] =
-                await Promise.all([
-                  AccountStake.query()
-                    .select('*')
-                    .where('account_id', account.id)
-                    .andWhere(
-                      'type',
-                      TransactionEventAttribute.EVENT_KEY.REDELEGATE
-                    ),
-                  Validator.query()
-                    .select('*')
-                    .whereIn('operator_address', listValidators),
-                ]);
+            if (resultCallApi.redelegation_responses.length > 0) {
+              listRedelegations.push(...resultCallApi.redelegation_responses);
+            }
+            if (resultCallApi.pagination.next_key === null) {
+              done = true;
+            } else {
+              params.pagination = { key: resultCallApi.pagination.next_key };
+            }
+          }
 
-              listRedelegations.forEach((redelegate) => {
-                redelegate.entries.forEach((entry) => {
-                  let accountStake: AccountStake | undefined =
-                    accountStakes.find(
-                      (acc: AccountStake) =>
-                        acc.validator_src_id ===
-                          validators.find(
-                            (val) =>
-                              val.operator_address ===
-                              redelegate.redelegation?.validator_src_address
-                          )?.id &&
-                        acc.creation_height ===
-                          entry.redelegation_entry?.creation_height
-                    );
+          if (listRedelegations.length > 0) {
+            const listValidators: string[] = [];
+            listRedelegations.map((redelegate) =>
+              listValidators.push(
+                ...[
+                  redelegate.redelegation?.validator_src_address ?? '',
+                  redelegate.redelegation?.validator_dst_address ?? '',
+                ]
+              )
+            );
+            const [accountStakes, validators]: [AccountStake[], Validator[]] =
+              await Promise.all([
+                AccountStake.query()
+                  .select('*')
+                  .where('account_id', account.id)
+                  .andWhere(
+                    'type',
+                    TransactionEventAttribute.EVENT_KEY.REDELEGATE
+                  ),
+                Validator.query()
+                  .select('*')
+                  .whereIn('operator_address', listValidators),
+              ]);
 
-                  if (!accountStake) {
-                    accountStake = AccountStake.fromJson({
-                      account_id: account.id,
-                      validator_src_id: validators.find(
+            listRedelegations.forEach((redelegate) => {
+              redelegate.entries.forEach((entry) => {
+                let accountStake: AccountStake | undefined = accountStakes.find(
+                  (acc: AccountStake) =>
+                    acc.validator_src_id ===
+                      validators.find(
                         (val) =>
                           val.operator_address ===
                           redelegate.redelegation?.validator_src_address
-                      )?.id,
-                      validator_dst_id: validators.find(
-                        (val) =>
-                          val.operator_address ===
-                          redelegate.redelegation?.validator_dst_address
-                      )?.id,
-                      type: TransactionEventAttribute.EVENT_KEY.REDELEGATE,
-                      balance: redelegate.entries[0].balance || '0',
-                      creation_height:
-                        entry.redelegation_entry?.creation_height,
-                      end_time: entry.redelegation_entry?.completion_time,
-                    });
-                  } else {
-                    accountStakes.splice(
-                      accountStakes.indexOf(accountStake),
-                      1
-                    );
-                  }
+                      )?.id &&
+                    acc.creation_height ===
+                      entry.redelegation_entry?.creation_height
+                );
 
-                  listAccountRedelegations.push(accountStake);
-                });
+                if (!accountStake) {
+                  accountStake = AccountStake.fromJson({
+                    account_id: account.id,
+                    validator_src_id: validators.find(
+                      (val) =>
+                        val.operator_address ===
+                        redelegate.redelegation?.validator_src_address
+                    )?.id,
+                    validator_dst_id: validators.find(
+                      (val) =>
+                        val.operator_address ===
+                        redelegate.redelegation?.validator_dst_address
+                    )?.id,
+                    type: TransactionEventAttribute.EVENT_KEY.REDELEGATE,
+                    balance: redelegate.entries[0].balance || '0',
+                    creation_height: entry.redelegation_entry?.creation_height,
+                    end_time: entry.redelegation_entry?.completion_time,
+                  });
+                } else {
+                  accountStakes.splice(accountStakes.indexOf(accountStake), 1);
+                }
+
+                listAccountRedelegations.push(accountStake);
               });
+            });
 
-              if (accountStakes.length > 0) {
-                listDeletes.push(...accountStakes);
-              }
+            if (accountStakes.length > 0) {
+              listDeletes.push(...accountStakes);
             }
           }
         })
@@ -408,100 +394,88 @@ export default class CrawlAccountStakeService extends BullableService {
         .whereIn('address', _payload.listAddresses);
 
       await Promise.all(
-        _payload.listAddresses.map(async (address: string) => {
-          this.logger.info(`Crawl account unbonding address: ${address}`);
-
-          const account: Account | undefined = accounts.find(
-            (acc: Account) => acc.address === address
+        accounts.map(async (account) => {
+          this.logger.info(
+            `Crawl account unbonding address: ${account.address}`
           );
 
-          if (account) {
-            const listUnbonding: UnbondingDelegationSDKType[] = [];
-            let done = false;
-            let resultCallApi;
-            const params: IDelegatorUnbonding = {
-              delegatorAddr: address,
-            };
-            while (!done) {
-              try {
-                resultCallApi =
-                  await this._lcdClient.auranw.cosmos.staking.v1beta1.delegatorUnbondingDelegations(
-                    params
-                  );
-              } catch (error) {
-                this.logger.error(error);
-                throw error;
-              }
-
-              if (resultCallApi.unbonding_responses.length > 0) {
-                listUnbonding.push(...resultCallApi.unbonding_responses);
-              }
-              if (resultCallApi.pagination.next_key === null) {
-                done = true;
-              } else {
-                params.pagination = { key: resultCallApi.pagination.next_key };
-              }
+          const listUnbonding: UnbondingDelegationSDKType[] = [];
+          let done = false;
+          let resultCallApi;
+          const params: IDelegatorUnbonding = {
+            delegatorAddr: account.address,
+          };
+          while (!done) {
+            try {
+              resultCallApi =
+                await this._lcdClient.auranw.cosmos.staking.v1beta1.delegatorUnbondingDelegations(
+                  params
+                );
+            } catch (error) {
+              this.logger.error(error);
+              throw error;
             }
 
-            if (listUnbonding.length > 0) {
-              const [accountStakes, validators]: [AccountStake[], Validator[]] =
-                await Promise.all([
-                  AccountStake.query()
-                    .select('*')
-                    .where('account_id', account.id)
-                    .andWhere(
-                      'type',
-                      TransactionEventAttribute.EVENT_KEY.UNBOND
-                    ),
-                  Validator.query()
-                    .select('*')
-                    .whereIn(
-                      'operator_address',
-                      listUnbonding.map((unbond) => unbond.validator_address)
-                    ),
-                ]);
+            if (resultCallApi.unbonding_responses.length > 0) {
+              listUnbonding.push(...resultCallApi.unbonding_responses);
+            }
+            if (resultCallApi.pagination.next_key === null) {
+              done = true;
+            } else {
+              params.pagination = { key: resultCallApi.pagination.next_key };
+            }
+          }
 
-              listUnbonding.forEach((unbond) => {
-                unbond.entries.forEach((entry) => {
-                  let accountStake: AccountStake | undefined =
-                    accountStakes.find(
-                      (acc: AccountStake) =>
-                        acc.validator_src_id ===
-                          validators.find(
-                            (val) =>
-                              val.operator_address === unbond.validator_address
-                          )?.id &&
-                        acc.creation_height ===
-                          Number.parseInt(entry.creation_height.toString(), 10)
-                    );
+          if (listUnbonding.length > 0) {
+            const [accountStakes, validators]: [AccountStake[], Validator[]] =
+              await Promise.all([
+                AccountStake.query()
+                  .select('*')
+                  .where('account_id', account.id)
+                  .andWhere('type', TransactionEventAttribute.EVENT_KEY.UNBOND),
+                Validator.query()
+                  .select('*')
+                  .whereIn(
+                    'operator_address',
+                    listUnbonding.map((unbond) => unbond.validator_address)
+                  ),
+              ]);
 
-                  if (!accountStake) {
-                    accountStake = AccountStake.fromJson({
-                      account_id: account.id,
-                      validator_src_id: validators.find(
+            listUnbonding.forEach((unbond) => {
+              unbond.entries.forEach((entry) => {
+                let accountStake: AccountStake | undefined = accountStakes.find(
+                  (acc: AccountStake) =>
+                    acc.validator_src_id ===
+                      validators.find(
                         (val) =>
                           val.operator_address === unbond.validator_address
-                      )?.id,
-                      validator_dst_id: null,
-                      type: TransactionEventAttribute.EVENT_KEY.UNBOND,
-                      balance: entry.balance,
-                      creation_height: entry.creation_height,
-                      end_time: entry.completion_time,
-                    });
-                  } else {
-                    accountStakes.splice(
-                      accountStakes.indexOf(accountStake),
-                      1
-                    );
-                  }
+                      )?.id &&
+                    acc.creation_height ===
+                      Number.parseInt(entry.creation_height.toString(), 10)
+                );
 
-                  listAccountUnbondings.push(accountStake);
-                });
+                if (!accountStake) {
+                  accountStake = AccountStake.fromJson({
+                    account_id: account.id,
+                    validator_src_id: validators.find(
+                      (val) => val.operator_address === unbond.validator_address
+                    )?.id,
+                    validator_dst_id: null,
+                    type: TransactionEventAttribute.EVENT_KEY.UNBOND,
+                    balance: entry.balance,
+                    creation_height: entry.creation_height,
+                    end_time: entry.completion_time,
+                  });
+                } else {
+                  accountStakes.splice(accountStakes.indexOf(accountStake), 1);
+                }
+
+                listAccountUnbondings.push(accountStake);
               });
+            });
 
-              if (accountStakes.length > 0) {
-                listDeletes.push(...accountStakes);
-              }
+            if (accountStakes.length > 0) {
+              listDeletes.push(...accountStakes);
             }
           }
         })
