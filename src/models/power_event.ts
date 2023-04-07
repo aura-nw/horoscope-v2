@@ -5,7 +5,7 @@ import BaseModel from './base';
 import { Transaction } from './transaction';
 import { Validator } from './validator';
 
-export class TransactionPowerEvent extends BaseModel {
+export class PowerEvent extends BaseModel {
   tx_id!: number;
 
   type!: string;
@@ -21,7 +21,7 @@ export class TransactionPowerEvent extends BaseModel {
   time!: string;
 
   static get tableName() {
-    return 'transaction_power_event';
+    return 'power_event';
   }
 
   static get jsonSchema() {
@@ -53,7 +53,7 @@ export class TransactionPowerEvent extends BaseModel {
         relation: Model.BelongsToOneRelation,
         modelClass: Transaction,
         join: {
-          from: 'transaction_power_event.tx_id',
+          from: 'power_event.tx_id',
           to: 'transaction.id',
         },
       },
@@ -61,7 +61,7 @@ export class TransactionPowerEvent extends BaseModel {
         relation: Model.BelongsToOneRelation,
         modelClass: Account,
         join: {
-          from: 'transaction_power_event.delegator_id',
+          from: 'power_event.delegator_id',
           to: 'account.id',
         },
       },
@@ -69,7 +69,7 @@ export class TransactionPowerEvent extends BaseModel {
         relation: Model.BelongsToOneRelation,
         modelClass: Validator,
         join: {
-          from: 'transaction_power_event.validator_src_id',
+          from: 'power_event.validator_src_id',
           to: 'validator.id',
         },
       },
@@ -77,7 +77,7 @@ export class TransactionPowerEvent extends BaseModel {
         relation: Model.BelongsToOneRelation,
         modelClass: Validator,
         join: {
-          from: 'transaction_power_event.validator_dst_id',
+          from: 'power_event.validator_dst_id',
           to: 'validator.id',
         },
       },

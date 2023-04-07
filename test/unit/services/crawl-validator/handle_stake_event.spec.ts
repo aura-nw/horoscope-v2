@@ -6,7 +6,7 @@ import {
   Block,
   Transaction,
   TransactionMessage,
-  TransactionPowerEvent,
+  PowerEvent,
   Validator,
 } from '../../../../src/models';
 import HandleStakeEventService from '../../../../src/services/crawl-validator/handle_stake_event.service';
@@ -153,7 +153,7 @@ export default class HandleStakeEventTest {
       .empty();
     await Promise.all([
       TransactionMessage.query().delete(true),
-      TransactionPowerEvent.query().delete(true),
+      PowerEvent.query().delete(true),
     ]);
     await Promise.all([
       Account.query().delete(true),
@@ -171,7 +171,7 @@ export default class HandleStakeEventTest {
   async tearDown() {
     await Promise.all([
       TransactionMessage.query().delete(true),
-      TransactionPowerEvent.query().delete(true),
+      PowerEvent.query().delete(true),
     ]);
     await Promise.all([
       Account.query().delete(true),
@@ -182,7 +182,7 @@ export default class HandleStakeEventTest {
     await this.broker.stop();
   }
 
-  @Test('Handle stake event success and insert account_stake to DB')
+  @Test('Handle stake event success and insert power_event to DB')
   public async testHandleStakeEvent() {
     const txMessages: TransactionMessage[] = await TransactionMessage.query();
 
@@ -190,8 +190,7 @@ export default class HandleStakeEventTest {
       listTxMsgIds: txMessages.map((tx) => tx.id),
     });
 
-    const powerEvents: TransactionPowerEvent[] =
-      await TransactionPowerEvent.query();
+    const powerEvents: PowerEvent[] = await PowerEvent.query();
 
     expect(
       powerEvents.find((event) => event.type === MSG_TYPE.MSG_DELEGATE)?.amount

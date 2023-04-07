@@ -11,7 +11,6 @@ import {
   TransactionMessage,
 } from '../../../../src/models';
 import CrawlAccountService from '../../../../src/services/crawl-account/crawl_account.service';
-import CrawlAccountStakeService from '../../../../src/services/crawl-account/crawl_account_stake.service';
 import HandleStakeEventService from '../../../../src/services/crawl-validator/handle_stake_event.service';
 import HandleAddressService from '../../../../src/services/crawl-account/handle_address.service';
 
@@ -92,8 +91,6 @@ export default class HandleAddressTest {
 
   crawlAccountService?: CrawlAccountService;
 
-  crawlAccountStakeService?: CrawlAccountStakeService;
-
   handleStakeEventService?: HandleStakeEventService;
 
   @BeforeAll()
@@ -105,9 +102,6 @@ export default class HandleAddressTest {
     this.handleAddressService = this.broker.createService(
       HandleAddressService
     ) as HandleAddressService;
-    this.crawlAccountStakeService = this.broker.createService(
-      CrawlAccountStakeService
-    ) as CrawlAccountStakeService;
     this.handleStakeEventService = this.broker.createService(
       HandleStakeEventService
     ) as HandleStakeEventService;
@@ -135,18 +129,6 @@ export default class HandleAddressTest {
       this.handleStakeEventService
         .getQueueManager()
         .getQueue(BULL_JOB_NAME.HANDLE_STAKE_EVENT)
-        .empty(),
-      this.crawlAccountStakeService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_DELEGATIONS)
-        .empty(),
-      this.crawlAccountStakeService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_REDELEGATIONS)
-        .empty(),
-      this.crawlAccountStakeService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_UNBONDING)
         .empty(),
     ]);
     await Promise.all([

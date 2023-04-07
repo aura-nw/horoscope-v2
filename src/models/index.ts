@@ -1,6 +1,5 @@
 export * from './account';
 export * from './account_vesting';
-export * from './account_stake';
 export * from './block';
 export * from './block_checkpoint';
 export * from './block_signature';
@@ -12,5 +11,6 @@ export * from './transaction_event';
 export * from './transaction_event_attribute';
 export * from './transaction_message';
 export * from './transaction_message_receiver';
-export * from './transaction_power_event';
+export * from './power_event';
 export * from './validator';
+export * from './checkpoint';

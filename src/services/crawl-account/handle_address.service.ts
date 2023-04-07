@@ -188,25 +188,10 @@ export default class HandleAddressService extends BullableService {
     });
 
     if (listTxStakes && listTxStakes.length > 0) {
-      const listStakeAddresses: string[] = Array.from(
-        new Set(
-          listTxStakes
-            .map((tx) => tx.value)
-            .filter((addr: string) =>
-              Utils.isValidAccountAddress(addr, config.networkPrefixAddress, 20)
-            )
-        )
-      );
       const listTxMsgIds = Array.from(
         new Set(listTxStakes.map((txStake) => txStake.tx_msg_id))
       );
 
-      this.broker.call(
-        SERVICE.V1.CrawlAccountStakeService.UpdateAccountStake.path,
-        {
-          listAddresses: listStakeAddresses,
-        }
-      );
       this.broker.call(
         SERVICE.V1.HandleStakeEventService.UpdatePowerEvent.path,
         {
@@ -219,7 +204,6 @@ export default class HandleAddressService extends BullableService {
   public async _start() {
     await this.broker.waitForServices([
       SERVICE.V1.CrawlAccountService.name,
-      SERVICE.V1.CrawlAccountStakeService.name,
       SERVICE.V1.HandleStakeEventService.name,
     ]);
 

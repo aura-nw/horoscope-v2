@@ -1,9 +1,3 @@
-import {
-  calculateFee,
-  GasPrice,
-  SigningStargateClientOptions,
-} from '@cosmjs/stargate';
-
 export const REDIS_KEY = {
   IBC_DENOM: 'ibc_denom',
 };
@@ -44,10 +38,6 @@ export const BULL_JOB_NAME = {
   CRAWL_ACCOUNT_SPENDABLE_BALANCES: 'crawl:account-spendable-balances',
   HANDLE_VESTING_ACCOUNT: 'handle:vesting-account',
   HANDLE_STAKE_EVENT: 'handle:stake-event',
-  CRAWL_ACCOUNT_DELEGATIONS: 'crawl:account-delegations',
-  CRAWL_ACCOUNT_REDELEGATIONS: 'crawl:account-redelegations',
-  CRAWL_ACCOUNT_UNBONDING: 'crawl:account-unbonding',
-  HANDLE_EXPIRED_ACCOUNT_STAKE: 'handle:expired-account-stake',
   CRAWL_BLOCK: 'crawl:block',
   CRAWL_TRANSACTION: 'crawl:transaction',
   HANDLE_TRANSACTION: 'handle:transaction',
@@ -71,14 +61,6 @@ export const SERVICE = {
         path: 'v1.HandleAddressService.CrawlNewAccountApi',
       },
     },
-    CrawlAccountStakeService: {
-      key: 'CrawlAccountStakeService',
-      name: 'v1.CrawlAccountStakeService',
-      UpdateAccountStake: {
-        key: 'UpdateAccountStake',
-        path: 'v1.CrawlAccountStakeService.UpdateAccountStake',
-      },
-    },
     HandleStakeEventService: {
       key: 'HandleStakeEventService',
       name: 'v1.HandleStakeEventService',
@@ -93,12 +75,22 @@ export const SERVICE = {
     CrawlSigningInfoService: {
       key: 'CrawlSigningInfoService',
     },
+    CrawlBlock: {
+      name: 'v1.CrawlBlockService',
+    },
+    CrawlTransaction: {
+      name: 'v1.CrawlTransactionService',
+      CrawlTxByHeight: {
+        key: 'CrawlTxByHeight',
+        path: 'v1.CrawlTransactionService.CrawlTxByHeight',
+      },
+    },
   },
 };
 
 export const SERVICE_NAME = {
   CRAWL_BLOCK: 'CrawlBlockService',
-  CRAWL_TRANSACTION: 'CrawlTransaction',
+  CRAWL_TRANSACTION: 'CrawlTransactionService',
 };
 
 export enum AccountType {
@@ -126,11 +118,3 @@ export const MSG_TYPE = {
 export const ABCI_QUERY_PATH = {
   VALIDATOR_DELEGATION: '/cosmos.staking.v1beta1.Query/Delegation',
 };
-
-export const defaultSigningClientOptions: SigningStargateClientOptions = {
-  broadcastPollIntervalMs: 300,
-  broadcastTimeoutMs: 8_000,
-  gasPrice: GasPrice.fromString('0.05uaura'),
-};
-export const defaultGasPrice = GasPrice.fromString('0.05uaura');
-export const defaultSendFee = calculateFee(200_000, defaultGasPrice);
