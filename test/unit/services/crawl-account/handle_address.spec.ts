@@ -11,6 +11,7 @@ import {
   TransactionMessage,
 } from '../../../../src/models';
 import CrawlAccountService from '../../../../src/services/crawl-account/crawl_account.service';
+import HandleStakeEventService from '../../../../src/services/crawl-validator/handle_stake_event.service';
 import HandleAddressService from '../../../../src/services/crawl-account/handle_address.service';
 
 @Describe('Test handle_address service')
@@ -90,15 +91,20 @@ export default class HandleAddressTest {
 
   crawlAccountService?: CrawlAccountService;
 
+  handleStakeEventService?: HandleStakeEventService;
+
   @BeforeAll()
   async initSuite() {
-    this.broker.start();
+    await this.broker.start();
     this.crawlAccountService = this.broker.createService(
       CrawlAccountService
     ) as CrawlAccountService;
     this.handleAddressService = this.broker.createService(
       HandleAddressService
     ) as HandleAddressService;
+    this.handleStakeEventService = this.broker.createService(
+      HandleStakeEventService
+    ) as HandleStakeEventService;
     await Promise.all([
       this.crawlAccountService
         .getQueueManager()
@@ -112,9 +118,17 @@ export default class HandleAddressTest {
         .getQueueManager()
         .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES)
         .empty(),
+      this.crawlAccountService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT)
+        .empty(),
       this.handleAddressService
         .getQueueManager()
         .getQueue(BULL_JOB_NAME.HANDLE_ADDRESS)
+        .empty(),
+      this.handleStakeEventService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.HANDLE_STAKE_EVENT)
         .empty(),
     ]);
     await Promise.all([
@@ -141,7 +155,7 @@ export default class HandleAddressTest {
     await TransactionEvent.query().delete(true);
     await Transaction.query().delete(true);
     await Block.query().delete(true);
-    this.broker.stop();
+    await this.broker.stop();
   }
 
   @Test('Handle address success and insert account to DB')

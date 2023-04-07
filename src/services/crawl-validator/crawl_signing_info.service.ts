@@ -11,12 +11,12 @@ import {
   getLcdClient,
   IAuraJSClientFactory,
   IPagination,
-  SERVICE_NAME,
+  SERVICE,
 } from '../../common';
 import { Validator } from '../../models';
 
 @Service({
-  name: SERVICE_NAME.CRAWL_SIGNING_INFO,
+  name: SERVICE.V1.CrawlSigningInfoService.key,
   version: 1,
 })
 export default class CrawlSigningInfoService extends BullableService {

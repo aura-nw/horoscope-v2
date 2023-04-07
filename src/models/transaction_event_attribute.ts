@@ -66,5 +66,9 @@ export class TransactionEventAttribute extends BaseModel {
     EXECUTE: 'execute',
     PROPOSAL_ID: 'proposal_id',
     SUBMIT_PROPOSAL: 'submit_proposal',
+    STAKING: 'staking',
+    DELEGATE: 'delegate',
+    REDELEGATE: 'redelegate',
+    UNBOND: 'unbond',
   };
 }

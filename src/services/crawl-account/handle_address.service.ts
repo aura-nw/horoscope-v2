@@ -16,22 +16,28 @@ import {
   BULL_JOB_NAME,
   Config,
   IListAddressesParam,
+  MSG_TYPE,
   SERVICE,
-  SERVICE_NAME,
 } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
-  name: SERVICE_NAME.HANDLE_ADDRESS,
+  name: SERVICE.V1.HandleAddressService.key,
   version: 1,
 })
 export default class HandleAddressService extends BullableService {
+  private msgStakes = [
+    MSG_TYPE.MSG_DELEGATE,
+    MSG_TYPE.MSG_REDELEGATE,
+    MSG_TYPE.MSG_UNDELEGATE,
+  ];
+
   public constructor(public broker: ServiceBroker) {
     super(broker);
   }
 
   @Action({
-    name: SERVICE.V1.HandleAddress.CrawlNewAccountApi.key,
+    name: SERVICE.V1.HandleAddressService.CrawlNewAccountApi.key,
     params: {
       listAddresses: 'string[]',
     },
@@ -46,6 +52,8 @@ export default class HandleAddressService extends BullableService {
     prefix: `horoscope-v2-${Config.CHAIN_ID}`,
   })
   public async handleJob(_payload: object): Promise<void> {
+    const listTxStakes: any[] = [];
+
     const [handleAddressBlockCheckpoint, latestBlock]: [
       BlockCheckpoint | undefined,
       Block | undefined
@@ -99,7 +107,7 @@ export default class HandleAddressService extends BullableService {
             'events:attributes.key',
             'events:attributes.value'
           )
-          .page(offset, 100);
+          .page(offset, 1000);
         this.logger.info(
           `Query Tx from height ${lastHeight} to ${
             latestBlock.height
@@ -108,6 +116,12 @@ export default class HandleAddressService extends BullableService {
 
         if (resultTx.results.length > 0) {
           resultTx.results.map((res: any) => eventAddresses.push(res.value));
+
+          listTxStakes.push(
+            ...resultTx.results.filter((res: any) =>
+              this.msgStakes.includes(res.type)
+            )
+          );
         }
 
         if (resultTx.results.length === 100) offset += 1;
@@ -123,9 +137,12 @@ export default class HandleAddressService extends BullableService {
       );
 
       if (listAddresses.length > 0) {
-        await this.insertNewAccountAndCallActionUpdate(listAddresses);
+        await this.insertNewAccountAndCallActionUpdate(
+          listAddresses,
+          listTxStakes
+        );
 
-        this.broker.call(SERVICE.V1.CrawlAccount.UpdateAccount.path, {
+        this.broker.call(SERVICE.V1.CrawlAccountService.UpdateAccount.path, {
           listAddresses: Array.from(listAddresses),
         });
 
@@ -139,7 +156,10 @@ export default class HandleAddressService extends BullableService {
     }
   }
 
-  private async insertNewAccountAndCallActionUpdate(listAddresses: string[]) {
+  private async insertNewAccountAndCallActionUpdate(
+    listAddresses: string[],
+    listTxStakes?: any[]
+  ) {
     const listAccounts: Account[] = [];
 
     const existedAccounts: string[] = (
@@ -163,13 +183,29 @@ export default class HandleAddressService extends BullableService {
 
     if (listAccounts.length > 0) await Account.query().insert(listAccounts);
 
-    await this.broker.call(SERVICE.V1.CrawlAccount.UpdateAccount.path, {
+    this.broker.call(SERVICE.V1.CrawlAccountService.UpdateAccount.path, {
       listAddresses,
     });
+
+    if (listTxStakes && listTxStakes.length > 0) {
+      const listTxMsgIds = Array.from(
+        new Set(listTxStakes.map((txStake) => txStake.tx_msg_id))
+      );
+
+      this.broker.call(
+        SERVICE.V1.HandleStakeEventService.UpdatePowerEvent.path,
+        {
+          listTxMsgIds,
+        }
+      );
+    }
   }
 
   public async _start() {
-    await this.broker.waitForServices([SERVICE.V1.CrawlAccount.name]);
+    await this.broker.waitForServices([
+      SERVICE.V1.CrawlAccountService.name,
+      SERVICE.V1.HandleStakeEventService.name,
+    ]);
 
     this.createJob(
       BULL_JOB_NAME.HANDLE_ADDRESS,
