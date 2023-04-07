@@ -41,6 +41,9 @@ export const BULL_JOB_NAME = {
   HANDLE_TRANSACTION: 'handle:transaction',
   HANDLE_ASSET_TRANSACTION: 'handle:asset-tx',
   HANDLE_CW721: 'handle:cw721',
+  HANDLE_CW721_TRANSFER: 'handle:cw721-transfer',
+  HANDLE_CW721_MINT: 'handle:cw721-mint',
+  HANDLE_CW721_BURN: 'handle:cw721-burn',
   ENRICH_CW20: 'enrich:cw20',
 };
 
@@ -101,28 +104,12 @@ export const MSG_TYPE = {
   MSG_UPDATE_CLIENT: '/ibc.core.client.v1.MsgUpdateClient',
 };
 
-export const ATTRIBUTE_KEY = {
-  CONTRACT_ADDRESS: '_contract_address',
-  TOKEN_ID: 'token_id',
-  FROM: 'from',
-  TO: 'to',
-  AMOUNT: 'amount',
-  ACTION: 'action',
-  SENDER: 'sender',
-  RECIPIENT: 'recipient',
-};
-
 export const EVENT_TYPE = {
   WASM: 'wasm',
   EXECUTE: 'execute',
   INSTANTIATE: 'instantiate',
 };
 
-export const CONTRACT_TYPES = {
-  CW20: 'CW20',
-  CW721: 'CW721',
-  CW4973: 'CW4973',
-};
 export const ABCI_QUERY_PATH = {
   VALIDATOR_DELEGATION: '/cosmos.staking.v1beta1.Query/Delegation',
 };

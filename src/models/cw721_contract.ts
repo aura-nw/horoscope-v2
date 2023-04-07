@@ -16,7 +16,7 @@ export default class CW721Contract extends BaseModel {
 
   symbol?: string;
 
-  minter!: string;
+  minter?: string;
 
   creator?: string;
 
@@ -33,7 +33,7 @@ export default class CW721Contract extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['code_id', 'address', 'minter'],
+      required: ['code_id', 'address'],
       properties: {
         code_id: { type: 'string' },
         address: { type: 'string' },

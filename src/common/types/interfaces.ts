@@ -14,27 +14,6 @@ export interface INetworkInfo {
   prefixAddress: string;
   databaseName: string;
 }
-export interface IContractAndInfo {
-  sender: string;
-  contractAddress: string;
-  action: string;
-  txhash: string;
-  tokenid?: string;
-  contractInfo?: any;
-}
-export interface ICodeidType {
-  code_id: number;
-  contract_type: string;
-}
-
-export interface IAttribute {
-  key: string;
-  value: string;
-}
-export interface IEvent {
-  type: string;
-  attributes: IAttribute[];
-}
 
 export interface ICoin {
   denom: string;
