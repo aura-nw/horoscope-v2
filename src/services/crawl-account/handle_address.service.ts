@@ -142,10 +142,6 @@ export default class HandleAddressService extends BullableService {
           listTxStakes
         );
 
-        this.broker.call(SERVICE.V1.CrawlAccountService.UpdateAccount.path, {
-          listAddresses: Array.from(listAddresses),
-        });
-
         updateBlockCheckpoint.height = latestBlock.height;
         await BlockCheckpoint.query()
           .insert(updateBlockCheckpoint)
@@ -183,7 +179,7 @@ export default class HandleAddressService extends BullableService {
 
     if (listAccounts.length > 0) await Account.query().insert(listAccounts);
 
-    this.broker.call(SERVICE.V1.CrawlAccountService.UpdateAccount.path, {
+    await this.broker.call(SERVICE.V1.CrawlAccountService.UpdateAccount.path, {
       listAddresses,
     });
 
@@ -192,7 +188,7 @@ export default class HandleAddressService extends BullableService {
         new Set(listTxStakes.map((txStake) => txStake.tx_msg_id))
       );
 
-      this.broker.call(
+      await this.broker.call(
         SERVICE.V1.HandleStakeEventService.UpdatePowerEvent.path,
         {
           listTxMsgIds,
