@@ -11,12 +11,11 @@ import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { cosmos } from '@aura-nw/aurajs';
 import Long from 'long';
+import { AccountType, BULL_JOB_NAME } from '../../../../src/common';
 import {
-  AccountType,
-  BULL_JOB_NAME,
   defaultSendFee,
   defaultSigningClientOptions,
-} from '../../../../src/common';
+} from '../../../helper/constant';
 import {
   Account,
   AccountVesting,
