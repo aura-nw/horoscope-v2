@@ -182,7 +182,7 @@ export default class HandleStakeEventTest {
     this.broker.stop();
   }
 
-  @Test('Handle stake event success and insert account_stake to DB')
+  @Test('Handle stake event success and insert power_event to DB')
   public async testHandleStakeEvent() {
     const txMessages: TransactionMessage[] = await TransactionMessage.query();
 

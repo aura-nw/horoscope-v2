@@ -1,7 +1,6 @@
 /* eslint-disable import/no-cycle */
 import { Model } from 'objection';
 import { ICoin } from '../common';
-import { AccountStake } from './account_stake';
 import { AccountVesting } from './account_vesting';
 import BaseModel from './base';
 import { PowerEvent } from './power_event';
@@ -84,14 +83,6 @@ export class Account extends BaseModel {
 
   static get relationMappings() {
     return {
-      stakes: {
-        relation: Model.HasManyRelation,
-        modelClass: AccountStake,
-        join: {
-          from: 'account.id',
-          to: 'account_stake.account_id',
-        },
-      },
       power_events: {
         relation: Model.HasManyRelation,
         modelClass: PowerEvent,

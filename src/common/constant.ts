@@ -37,9 +37,6 @@ export const BULL_JOB_NAME = {
   CRAWL_ACCOUNT_BALANCES: 'crawl:account-balances',
   CRAWL_ACCOUNT_SPENDABLE_BALANCES: 'crawl:account-spendable-balances',
   HANDLE_STAKE_EVENT: 'handle:stake-event',
-  CRAWL_ACCOUNT_DELEGATIONS: 'crawl:account-delegations',
-  CRAWL_ACCOUNT_REDELEGATIONS: 'crawl:account-redelegations',
-  CRAWL_ACCOUNT_UNBONDING: 'crawl:account-unbonding',
   CRAWL_BLOCK: 'crawl:block',
   CRAWL_TRANSACTION: 'crawl:transaction',
   HANDLE_TRANSACTION: 'handle:transaction',
@@ -61,14 +58,6 @@ export const SERVICE = {
       CrawlNewAccountApi: {
         key: 'CrawlNewAccountApi',
         path: 'v1.HandleAddressService.CrawlNewAccountApi',
-      },
-    },
-    CrawlAccountStakeService: {
-      key: 'CrawlAccountStakeService',
-      name: 'v1.CrawlAccountStakeService',
-      UpdateAccountStake: {
-        key: 'UpdateAccountStake',
-        path: 'v1.CrawlAccountStakeService.UpdateAccountStake',
       },
     },
     HandleStakeEventService: {
