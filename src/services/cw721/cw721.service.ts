@@ -217,9 +217,12 @@ export default class Cw721HandlerService extends BullableService {
                 sender: cw721Msg.sender,
                 txhash: cw721Msg.txhash,
                 contract_address: cw721Msg.contractAddress,
+                tokenid: cw721Msg.tokenid,
               })
             );
-          await CW721Tx.query().insert(cw721Txs);
+          if (cw721Txs.length > 0) {
+            await CW721Tx.query().insert(cw721Txs);
+          }
           // handle instantiate cw721 contracts
           await this.handleInstantiateMsgs(listContractMsg);
           // handle all cw721 execute messages
