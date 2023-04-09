@@ -18,7 +18,7 @@ export default class CW721Token extends BaseModel {
 
   created_at?: Date;
 
-  updated_at?: Date;
+  delete_at?: Date;
 
   static get tableName() {
     return 'cw721_token';

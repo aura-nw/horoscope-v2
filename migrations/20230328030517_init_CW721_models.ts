@@ -22,7 +22,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('contract_address').index().notNullable();
     table.foreign('contract_address').references('cw721_contract.address');
     table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
-    table.timestamp('delete_at').notNullable().defaultTo(knex.raw('now()'));
+    table.timestamp('delete_at');
   });
 
   await knex.schema.createTable('cw721_tx', (table) => {

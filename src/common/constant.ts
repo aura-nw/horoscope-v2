@@ -39,12 +39,10 @@ export const BULL_JOB_NAME = {
   CRAWL_BLOCK: 'crawl:block',
   CRAWL_TRANSACTION: 'crawl:transaction',
   HANDLE_TRANSACTION: 'handle:transaction',
-  HANDLE_ASSET_TRANSACTION: 'handle:asset-tx',
-  HANDLE_CW721: 'handle:cw721',
+  FILTER_CW721_TRANSACTION: 'filter:cw721-tx',
   HANDLE_CW721_TRANSFER: 'handle:cw721-transfer',
   HANDLE_CW721_MINT: 'handle:cw721-mint',
   HANDLE_CW721_BURN: 'handle:cw721-burn',
-  ENRICH_CW20: 'enrich:cw20',
 };
 
 export const SERVICE = {
@@ -89,7 +87,6 @@ export const SERVICE_NAME = {
   HANDLE_ADDRESS: 'HandleAddressService',
   CRAWL_ACCOUNT: 'CrawlAccountService',
   CRAWL_BLOCK: 'CrawlBlockService',
-  ASSET_INDEXER: 'AssetTxIndexerService',
   CW721: 'Cw721Service',
   CRAWL_TRANSACTION: 'CrawlTransactionService',
 };
@@ -104,7 +101,7 @@ export enum AccountType {
 
 export const BLOCK_CHECKPOINT_JOB_NAME = {
   BLOCK_HEIGHT_CRAWLED: 'BLOCK_HEIGHT_CRAWLED',
-  TX_ASSET_HANDLER: 'TX_ASSET_HANDLER',
+  CW721_HANDLER: 'CW721_HANDLER',
 };
 
 export const MSG_TYPE = {
