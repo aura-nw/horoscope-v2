@@ -1,6 +1,6 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
-import { BULL_JOB_NAME, MSG_TYPE } from '../../../../src/common';
+import { BULL_JOB_NAME } from '../../../../src/common';
 import {
   Account,
   Block,
@@ -187,14 +187,14 @@ export default class HandleStakeEventTest {
     const txMessages: TransactionMessage[] = await TransactionMessage.query();
 
     await this.handleStakeEventService?.handleJob({
-      listTxMsgIds: txMessages.map((tx) => tx.id),
+      txMsgIds: txMessages.map((tx) => tx.id),
     });
 
     const [powerEvents, validators]: [PowerEvent[], Validator[]] =
       await Promise.all([PowerEvent.query(), Validator.query()]);
 
     expect(
-      powerEvents.find((event) => event.type === MSG_TYPE.MSG_DELEGATE)
+      powerEvents.find((event) => event.type === PowerEvent.TYPES.DELEGATE)
         ?.validator_dst_id
     ).toEqual(
       validators.find(
@@ -204,14 +204,16 @@ export default class HandleStakeEventTest {
       )?.id
     );
     expect(
-      powerEvents.find((event) => event.type === MSG_TYPE.MSG_DELEGATE)?.amount
+      powerEvents.find((event) => event.type === PowerEvent.TYPES.DELEGATE)
+        ?.amount
     ).toEqual('1000000');
     expect(
-      powerEvents.find((event) => event.type === MSG_TYPE.MSG_DELEGATE)?.height
+      powerEvents.find((event) => event.type === PowerEvent.TYPES.DELEGATE)
+        ?.height
     ).toEqual(3967530);
 
     expect(
-      powerEvents.find((event) => event.type === MSG_TYPE.MSG_REDELEGATE)
+      powerEvents.find((event) => event.type === PowerEvent.TYPES.REDELEGATE)
         ?.validator_src_id
     ).toEqual(
       validators.find(
@@ -221,7 +223,7 @@ export default class HandleStakeEventTest {
       )?.id
     );
     expect(
-      powerEvents.find((event) => event.type === MSG_TYPE.MSG_REDELEGATE)
+      powerEvents.find((event) => event.type === PowerEvent.TYPES.REDELEGATE)
         ?.validator_dst_id
     ).toEqual(
       validators.find(
@@ -231,11 +233,11 @@ export default class HandleStakeEventTest {
       )?.id
     );
     expect(
-      powerEvents.find((event) => event.type === MSG_TYPE.MSG_REDELEGATE)
+      powerEvents.find((event) => event.type === PowerEvent.TYPES.REDELEGATE)
         ?.amount
     ).toEqual('1000000');
     expect(
-      powerEvents.find((event) => event.type === MSG_TYPE.MSG_REDELEGATE)
+      powerEvents.find((event) => event.type === PowerEvent.TYPES.REDELEGATE)
         ?.height
     ).toEqual(3967530);
   }

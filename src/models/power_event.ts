@@ -27,6 +27,14 @@ export class PowerEvent extends BaseModel {
     return 'power_event';
   }
 
+  static get TYPES() {
+    return {
+      DELEGATE: '/cosmos.staking.v1beta1.MsgDelegate',
+      REDELEGATE: '/cosmos.staking.v1beta1.MsgBeginRedelegate',
+      UNBOND: '/cosmos.staking.v1beta1.MsgUndelegate',
+    };
+  }
+
   static get jsonSchema() {
     return {
       type: 'object',
@@ -34,7 +42,7 @@ export class PowerEvent extends BaseModel {
       properties: {
         tx_id: { type: 'number' },
         height: { type: 'number' },
-        type: { type: 'string' },
+        type: { type: 'string', enum: Object.values(this.TYPES) },
         delegator_id: { type: 'number' },
         validator_src_id: { type: ['number', 'null'] },
         validator_dst_id: { type: ['number', 'null'] },

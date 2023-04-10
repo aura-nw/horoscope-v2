@@ -15,7 +15,7 @@ import {
   IAllBalances,
   IAuraJSClientFactory,
   ICoin,
-  IListAddressesParam,
+  IAddressesParam,
   REDIS_KEY,
   SERVICE,
 } from '../../common';
@@ -45,11 +45,11 @@ export default class CrawlAccountService extends BullableService {
   @Action({
     name: SERVICE.V1.CrawlAccountService.UpdateAccount.key,
     params: {
-      listAddresses: 'string[]',
+      addresses: 'string[]',
     },
   })
-  public actionUpdateAccount(ctx: Context<IListAddressesParam>) {
-    this.createJobAccount(ctx.params.listAddresses);
+  public actionUpdateAccount(ctx: Context<IAddressesParam>) {
+    this.createJobAccount(ctx.params.addresses);
   }
 
   @QueueHandler({
@@ -70,14 +70,14 @@ export default class CrawlAccountService extends BullableService {
       )
         return;
 
-      let listAddresses: string[] = [];
+      let addresses: string[] = [];
 
       try {
         const genesis = await this._httpBatchClient.execute(
           createJsonRpcRequest('genesis')
         );
 
-        listAddresses = genesis.result.genesis.app_state.bank.balances.map(
+        addresses = genesis.result.genesis.app_state.bank.balances.map(
           (balance: any) => balance.address
         );
       } catch (error: any) {
@@ -110,18 +110,18 @@ export default class CrawlAccountService extends BullableService {
           }
         }
 
-        const genesisChunkObject = JSON.parse(genesisChunk);
-        listAddresses = genesisChunkObject.app_state.bank.balances.map(
+        const genesisChunkObject: any = JSON.parse(genesisChunk);
+        addresses = genesisChunkObject.app_state.bank.balances.map(
           (balance: any) => balance.address
         );
       }
 
       const listAccounts: Account[] = [];
       const existedAccounts: string[] = (
-        await Account.query().select('*').whereIn('address', listAddresses)
+        await Account.query().select('*').whereIn('address', addresses)
       ).map((account: Account) => account.address);
 
-      listAddresses.forEach((address: string) => {
+      addresses.forEach((address: string) => {
         if (!existedAccounts.includes(address)) {
           const account: Account = Account.fromJson({
             address,
@@ -138,7 +138,7 @@ export default class CrawlAccountService extends BullableService {
 
       if (listAccounts.length > 0) await Account.query().insert(listAccounts);
 
-      this.createJobAccount(listAddresses);
+      this.createJobAccount(addresses);
     }
 
     let updateBlockCheckpoint: BlockCheckpoint;
@@ -162,21 +162,19 @@ export default class CrawlAccountService extends BullableService {
     jobType: 'crawl',
     prefix: `horoscope-v2-${config.chainId}`,
   })
-  public async handleJobAccountAuth(
-    _payload: IListAddressesParam
-  ): Promise<void> {
+  public async handleJobAccountAuth(_payload: IAddressesParam): Promise<void> {
     this._lcdClient = await getLcdClient();
 
     const listAccounts: Account[] = [];
     const listAccountVestings: AccountVesting[] = [];
 
-    if (_payload.listAddresses.length > 0) {
+    if (_payload.addresses.length > 0) {
       const accounts: Account[] = await Account.query()
         .select('*')
-        .whereIn('address', _payload.listAddresses);
+        .whereIn('address', _payload.addresses);
 
       await Promise.all(
-        _payload.listAddresses.map(async (address: string) => {
+        _payload.addresses.map(async (address: string) => {
           this.logger.info(`Crawl account auth address: ${address}`);
 
           const account: Account | undefined = accounts.find(
@@ -294,19 +292,19 @@ export default class CrawlAccountService extends BullableService {
     prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJobAccountBalances(
-    _payload: IListAddressesParam
+    _payload: IAddressesParam
   ): Promise<void> {
     this._lcdClient = await getLcdClient();
 
     const listAccounts: Account[] = [];
 
-    if (_payload.listAddresses.length > 0) {
+    if (_payload.addresses.length > 0) {
       const accounts: Account[] = await Account.query()
         .select('*')
-        .whereIn('address', _payload.listAddresses);
+        .whereIn('address', _payload.addresses);
 
       await Promise.all(
-        _payload.listAddresses.map(async (address: string) => {
+        _payload.addresses.map(async (address: string) => {
           this.logger.info(`Crawl account balances address: ${address}`);
 
           const account: Account | undefined = accounts.find(
@@ -371,19 +369,19 @@ export default class CrawlAccountService extends BullableService {
     prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJobAccountSpendableBalances(
-    _payload: IListAddressesParam
+    _payload: IAddressesParam
   ): Promise<void> {
     this._lcdClient = await getLcdClient();
 
     const listAccounts: Account[] = [];
 
-    if (_payload.listAddresses.length > 0) {
+    if (_payload.addresses.length > 0) {
       const accounts: Account[] = await Account.query()
         .select('*')
-        .whereIn('address', _payload.listAddresses);
+        .whereIn('address', _payload.addresses);
 
       await Promise.all(
-        _payload.listAddresses.map(async (address: string) => {
+        _payload.addresses.map(async (address: string) => {
           this.logger.info(
             `Crawl account spendable balances address: ${address}`
           );
@@ -497,12 +495,12 @@ export default class CrawlAccountService extends BullableService {
     return result;
   }
 
-  private createJobAccount(listAddresses: string[]) {
+  private createJobAccount(addresses: string[]) {
     this.createJob(
       BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH,
       'crawl',
       {
-        listAddresses,
+        addresses,
       },
       {
         removeOnComplete: true,
@@ -515,7 +513,7 @@ export default class CrawlAccountService extends BullableService {
       BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
       'crawl',
       {
-        listAddresses,
+        addresses,
       },
       {
         removeOnComplete: true,
@@ -528,7 +526,7 @@ export default class CrawlAccountService extends BullableService {
       BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES,
       'crawl',
       {
-        listAddresses,
+        addresses,
       },
       {
         removeOnComplete: true,
@@ -578,7 +576,7 @@ export default class CrawlAccountService extends BullableService {
     }
 
     await this.handleJobAccountSpendableBalances({
-      listAddresses: accountVestings.map((vesting) => vesting.address),
+      addresses: accountVestings.map((vesting) => vesting.address),
     });
   }
 

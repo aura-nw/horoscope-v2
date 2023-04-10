@@ -1,10 +1,10 @@
-export interface IListAddressesParam {
-  listAddresses: string[];
+export interface IAddressesParam {
+  addresses: string[];
 }
 
 export interface IProposalIdParam {
   proposalId: number;
 }
-export interface IListTxMsgIdsParam {
-  listTxMsgIds: number[];
+export interface ITxMsgIdsParam {
+  txMsgIds: number[];
 }
