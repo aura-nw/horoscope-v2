@@ -1,6 +1,6 @@
+/* eslint-disable import/no-cycle */
 import { Model } from 'objection';
 import BaseModel from './base';
-// eslint-disable-next-line import/no-cycle
 import { TransactionEvent } from './transaction_event';
 import { TransactionMessage } from './transaction_message';
 
