@@ -107,6 +107,17 @@ export default class AssetIndexerTest {
                     },
                   ],
                 },
+                {
+                  _id: '642266867cace8e64d9b637d',
+                  type: 'wasm',
+                  attributes: [
+                    {
+                      _id: '642266867cace800f59b637e',
+                      key: 'token_id',
+                      value: 'test1',
+                    },
+                  ],
+                },
               ],
             },
             {
@@ -122,6 +133,22 @@ export default class AssetIndexerTest {
                       key: '_contract_address',
                       value:
                         'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8777',
+                    },
+                  ],
+                },
+                {
+                  _id: '642266867cace8e64d9b637d',
+                  type: 'wasm',
+                  attributes: [
+                    {
+                      _id: '642266867cace800f59b637e',
+                      key: 'token_id',
+                      value: 'test2',
+                    },
+                    {
+                      _id: '642266867cace800f59b637e',
+                      key: 'token_id',
+                      value: 'test3',
                     },
                   ],
                 },
@@ -215,7 +242,8 @@ export default class AssetIndexerTest {
         contractAddress:
           this.txInsert.data.tx_response.logs[0].events[0].attributes[0].value,
         txhash: this.txInsert.hash,
-        tokenid: 'test',
+        tokenid:
+          this.txInsert.data.tx_response.logs[0].events[1].attributes[0].value,
       },
       {
         action: 'add_whitelist',
@@ -223,7 +251,17 @@ export default class AssetIndexerTest {
         contractAddress:
           this.txInsert.data.tx_response.logs[1].events[0].attributes[0].value,
         txhash: this.txInsert.hash,
-        tokenid: undefined,
+        tokenid:
+          this.txInsert.data.tx_response.logs[1].events[1].attributes[0].value,
+      },
+      {
+        action: 'add_whitelist',
+        sender: this.txInsert.messages[1].sender,
+        contractAddress:
+          this.txInsert.data.tx_response.logs[1].events[0].attributes[0].value,
+        txhash: this.txInsert.hash,
+        tokenid:
+          this.txInsert.data.tx_response.logs[1].events[1].attributes[1].value,
       },
     ]);
   }

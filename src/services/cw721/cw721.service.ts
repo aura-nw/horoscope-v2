@@ -31,6 +31,7 @@ import {
   BlockCheckpoint,
   Transaction,
   TransactionEvent,
+  TransactionEventAttribute,
   TransactionMessage,
 } from '../../models';
 import Codeid from '../../models/codeid';
@@ -248,6 +249,7 @@ export default class Cw721HandlerService extends BullableService {
             height: listTx[listTx.length - 1].id + 1,
           })
           .where('job_name', BLOCK_CHECKPOINT_JOB_NAME.CW721_HANDLER);
+        this._currentAssetHandlerTx = listTx[listTx.length - 1].id + 1;
       } catch (error) {
         this.logger.error(error);
       }
@@ -547,31 +549,38 @@ export default class Cw721HandlerService extends BullableService {
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
           const action = Object.keys(JSON.parse(content.msg))[0];
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          const jsonMsg = JSON.parse(content.msg);
-          const tokenid = jsonMsg[action].token_id;
+          const wasmEvents = tx.data.tx_response.logs[index].events.filter(
+            (event: any) => event.type === TransactionEvent.EVENT_TYPE.WASM
+          );
           const { sender } = content;
           // not cover submessage
-          listContractMsgInfo.push({
-            contractAddress: content.contract,
-            sender,
-            action,
-            txhash: tx.hash,
-            tokenid,
+          wasmEvents.forEach((event: any) => {
+            const tokenidAttributes = event.attributes.filter(
+              (attr: any) =>
+                attr.key === TransactionEventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+            );
+            tokenidAttributes.forEach((attr: any) => {
+              listContractMsgInfo.push({
+                contractAddress: content.contract,
+                sender,
+                action,
+                txhash: tx.hash,
+                tokenid: attr.value,
+              });
+            });
           });
         } else if (message.type === MSG_TYPE.MSG_INSTANTIATE_CONTRACT) {
           const content = message.content as MsgInstantiateContract;
           const action = TransactionEvent.EVENT_TYPE.INSTANTIATE;
           const { sender } = content;
-          const wasmEvent = tx.data.tx_response.logs[index].events.find(
+          const instantiateEvent = tx.data.tx_response.logs[index].events.find(
             (event: any) =>
               event.type === TransactionEvent.EVENT_TYPE.INSTANTIATE
           );
-          if (wasmEvent) {
+          if (instantiateEvent) {
             // not cover submessage
             listContractMsgInfo.push({
-              contractAddress: wasmEvent.attributes[0].value,
+              contractAddress: instantiateEvent.attributes[0].value,
               sender,
               action,
               txhash: tx.hash,

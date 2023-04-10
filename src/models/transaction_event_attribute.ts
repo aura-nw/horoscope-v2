@@ -64,5 +64,6 @@ export class TransactionEventAttribute extends BaseModel {
     _CONTRACT_ADDRESS: '_contract_address',
     CODE_ID: 'code_id',
     EXECUTE: 'execute',
+    TOKEN_ID: 'token_id',
   };
 }
