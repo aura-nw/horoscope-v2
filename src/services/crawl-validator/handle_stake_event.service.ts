@@ -4,12 +4,7 @@ import {
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
 import _ from 'lodash';
-import {
-  BULL_JOB_NAME,
-  IListTxMsgIdsParam,
-  MSG_TYPE,
-  SERVICE,
-} from '../../common';
+import { BULL_JOB_NAME, ITxMsgIdsParam, SERVICE } from '../../common';
 import {
   Account,
   TransactionMessage,
@@ -31,15 +26,15 @@ export default class HandleStakeEventService extends BullableService {
   @Action({
     name: SERVICE.V1.HandleStakeEventService.UpdatePowerEvent.key,
     params: {
-      listTxMsgIds: 'number[]',
+      txMsgIds: 'number[]',
     },
   })
-  public actionUpdatePowerEvent(ctx: Context<IListTxMsgIdsParam>) {
+  public actionUpdatePowerEvent(ctx: Context<ITxMsgIdsParam>) {
     this.createJob(
       BULL_JOB_NAME.HANDLE_STAKE_EVENT,
       'crawl',
       {
-        listTxMsgIds: ctx.params.listTxMsgIds,
+        listTxMsgIds: ctx.params.txMsgIds,
       },
       {
         removeOnComplete: true,
@@ -55,7 +50,7 @@ export default class HandleStakeEventService extends BullableService {
     jobType: 'crawl',
     prefix: `horoscope-v2-${config.chainId}`,
   })
-  public async handleJob(_payload: IListTxMsgIdsParam): Promise<void> {
+  public async handleJob(_payload: ITxMsgIdsParam): Promise<void> {
     const stakeTxMsgs: any[] = await TransactionMessage.query()
       .joinRelated('transaction')
       .select(
@@ -63,7 +58,7 @@ export default class HandleStakeEventService extends BullableService {
         'transaction.timestamp',
         'transaction.height'
       )
-      .whereIn('transaction_message.id', _payload.listTxMsgIds)
+      .whereIn('transaction_message.id', _payload.txMsgIds)
       .andWhere('transaction.code', 0);
 
     const [validators, accounts]: [Validator[], Account[]] = await Promise.all([
@@ -82,16 +77,16 @@ export default class HandleStakeEventService extends BullableService {
       let validatorSrcId;
       let validatorDstId;
       switch (stake.type) {
-        case MSG_TYPE.MSG_DELEGATE:
+        case PowerEvent.TYPES.DELEGATE:
           validatorDstId = validatorKeys[stake.content.validator_address].id;
           break;
-        case MSG_TYPE.MSG_REDELEGATE:
+        case PowerEvent.TYPES.REDELEGATE:
           validatorSrcId =
             validatorKeys[stake.content.validator_src_address].id;
           validatorDstId =
             validatorKeys[stake.content.validator_dst_address].id;
           break;
-        case MSG_TYPE.MSG_UNDELEGATE:
+        case PowerEvent.TYPES.UNBOND:
           validatorSrcId = validatorKeys[stake.content.validator_address].id;
           break;
         default:
