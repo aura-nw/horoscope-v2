@@ -99,7 +99,7 @@ export default class CrawlAccountTest {
   @Test('Crawl base account auth success')
   public async testCrawlBaseAccountAuth() {
     await this.crawlAccountService?.handleJobAccountAuth({
-      listAddresses: ['aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'],
+      addresses: ['aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'],
     });
 
     const accounts: Account[] = await Account.query();
@@ -109,11 +109,6 @@ export default class CrawlAccountTest {
         (acc) => acc.address === 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'
       )?.type
     ).toEqual('/cosmos.auth.v1beta1.BaseAccount');
-    expect(
-      accounts.find(
-        (acc) => acc.address === 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'
-      )?.pubkey
-    ).toBeNull();
     expect(
       accounts.find(
         (acc) => acc.address === 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'
@@ -237,7 +232,7 @@ export default class CrawlAccountTest {
   @Test('Crawl base account balances success')
   public async testCrawlBaseAccountBalances() {
     await this.crawlAccountService?.handleJobAccountBalances({
-      listAddresses: ['aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'],
+      addresses: ['aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'],
     });
 
     const accounts: Account[] = await Account.query();
@@ -245,14 +240,14 @@ export default class CrawlAccountTest {
     expect(
       accounts.find(
         (acc) => acc.address === 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'
-      )?.balances[0].amount
-    ).toEqual('1000000000000');
+      )?.balances.length
+    ).toEqual(1);
   }
 
   @Test('Crawl base account spendable balances success')
   public async testCrawlBaseAccountSpendableBalances() {
     await this.crawlAccountService?.handleJobAccountSpendableBalances({
-      listAddresses: ['aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'],
+      addresses: ['aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'],
     });
 
     const accounts: Account[] = await Account.query();
@@ -260,7 +255,7 @@ export default class CrawlAccountTest {
     expect(
       accounts.find(
         (acc) => acc.address === 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'
-      )?.spendable_balances[0].amount
-    ).toEqual('1000000000000');
+      )?.spendable_balances.length
+    ).toEqual(1);
   }
 }

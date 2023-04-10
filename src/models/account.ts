@@ -3,6 +3,7 @@ import { Model } from 'objection';
 import { ICoin } from '../common';
 import { AccountVesting } from './account_vesting';
 import BaseModel from './base';
+import { PowerEvent } from './power_event';
 
 export interface IPubkey {
   type: string;
@@ -82,6 +83,14 @@ export class Account extends BaseModel {
 
   static get relationMappings() {
     return {
+      power_events: {
+        relation: Model.HasManyRelation,
+        modelClass: PowerEvent,
+        join: {
+          from: 'account.id',
+          to: 'power_event.delegator_id',
+        },
+      },
       vesting: {
         relation: Model.BelongsToOneRelation,
         modelClass: AccountVesting,

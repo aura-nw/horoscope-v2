@@ -36,6 +36,7 @@ export const BULL_JOB_NAME = {
   CRAWL_ACCOUNT_AUTH: 'crawl:account-auth',
   CRAWL_ACCOUNT_BALANCES: 'crawl:account-balances',
   CRAWL_ACCOUNT_SPENDABLE_BALANCES: 'crawl:account-spendable-balances',
+  HANDLE_STAKE_EVENT: 'handle:stake-event',
   CRAWL_BLOCK: 'crawl:block',
   CRAWL_TRANSACTION: 'crawl:transaction',
   HANDLE_TRANSACTION: 'handle:transaction',
@@ -43,19 +44,35 @@ export const BULL_JOB_NAME = {
 
 export const SERVICE = {
   V1: {
-    CrawlAccount: {
+    CrawlAccountService: {
+      key: 'CrawlAccountService',
       name: 'v1.CrawlAccountService',
       UpdateAccount: {
         key: 'UpdateAccount',
         path: 'v1.CrawlAccountService.UpdateAccount',
       },
     },
-    HandleAddress: {
+    HandleAddressService: {
+      key: 'HandleAddressService',
       name: 'v1.HandleAddressService',
       CrawlNewAccountApi: {
         key: 'CrawlNewAccountApi',
         path: 'v1.HandleAddressService.CrawlNewAccountApi',
       },
+    },
+    HandleStakeEventService: {
+      key: 'HandleStakeEventService',
+      name: 'v1.HandleStakeEventService',
+      UpdatePowerEvent: {
+        key: 'UpdatePowerEvent',
+        path: 'v1.HandleStakeEventService.UpdatePowerEvent',
+      },
+    },
+    CrawlValidatorService: {
+      key: 'CrawlValidatorService',
+    },
+    CrawlSigningInfoService: {
+      key: 'CrawlSigningInfoService',
     },
     CrawlBlock: {
       name: 'v1.CrawlBlockService',
@@ -71,10 +88,6 @@ export const SERVICE = {
 };
 
 export const SERVICE_NAME = {
-  CRAWL_VALIDATOR: 'CrawlValidatorService',
-  CRAWL_SIGNING_INFO: 'CrawlSigningInfoService',
-  HANDLE_ADDRESS: 'HandleAddressService',
-  CRAWL_ACCOUNT: 'CrawlAccountService',
   CRAWL_BLOCK: 'CrawlBlockService',
   CRAWL_TRANSACTION: 'CrawlTransactionService',
 };
@@ -96,6 +109,9 @@ export const MSG_TYPE = {
   MSG_INSTANTIATE_CONTRACT: '/cosmwasm.wasm.v1.MsgInstantiateContract',
   MSG_EXECUTE_CONTRACT: '/cosmwasm.wasm.v1.MsgExecuteContract',
   MSG_UPDATE_CLIENT: '/ibc.core.client.v1.MsgUpdateClient',
+  MSG_DELEGATE: '/cosmos.staking.v1beta1.MsgDelegate',
+  MSG_REDELEGATE: '/cosmos.staking.v1beta1.MsgBeginRedelegate',
+  MSG_UNDELEGATE: '/cosmos.staking.v1beta1.MsgUndelegate',
 };
 
 export const ABCI_QUERY_PATH = {

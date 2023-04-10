@@ -24,7 +24,7 @@ import {
   getLcdClient,
   IAuraJSClientFactory,
   IPagination,
-  SERVICE_NAME,
+  SERVICE,
 } from '../../common';
 import {
   Block,
@@ -33,7 +33,7 @@ import {
 } from '../../models';
 
 @Service({
-  name: SERVICE_NAME.CRAWL_VALIDATOR,
+  name: SERVICE.V1.CrawlValidatorService.key,
   version: 1,
 })
 export default class CrawlValidatorService extends BullableService {

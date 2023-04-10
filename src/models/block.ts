@@ -1,6 +1,8 @@
+/* eslint-disable import/no-cycle */
 import { Model } from 'objection';
 import BaseModel from './base';
 import { BlockSignature } from './block_signature';
+import { PowerEvent } from './power_event';
 import { Transaction } from './transaction';
 
 export class Block extends BaseModel {
@@ -55,6 +57,14 @@ export class Block extends BaseModel {
         join: {
           from: 'block.height',
           to: 'transaction.height',
+        },
+      },
+      power_events: {
+        relation: Model.HasManyRelation,
+        modelClass: PowerEvent,
+        join: {
+          from: 'block.height',
+          to: 'power_event.height',
         },
       },
     };
