@@ -542,52 +542,60 @@ export default class Cw721HandlerService extends BullableService {
 
     // eslint-disable-next-line no-restricted-syntax
     for (const tx of listTxs) {
-      // eslint-disable-next-line @typescript-eslint/no-loop-func
-      tx.messages.forEach((message: TransactionMessage, index: number) => {
-        if (message.type === MSG_TYPE.MSG_EXECUTE_CONTRACT) {
-          const content = message.content as MsgExecuteContract;
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          const action = Object.keys(JSON.parse(content.msg))[0];
-          const wasmEvents = tx.data.tx_response.logs[index].events.filter(
-            (event: any) => event.type === TransactionEvent.EVENT_TYPE.WASM
-          );
-          const { sender } = content;
-          // not cover submessage
-          wasmEvents.forEach((event: any) => {
-            const tokenidAttributes = event.attributes.filter(
-              (attr: any) =>
-                attr.key === TransactionEventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+      if (tx.code === 0) {
+        // eslint-disable-next-line @typescript-eslint/no-loop-func
+        tx.messages.forEach((message: TransactionMessage, index: number) => {
+          if (message.type === MSG_TYPE.MSG_EXECUTE_CONTRACT) {
+            const content = message.content as MsgExecuteContract;
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            const action = Object.keys(JSON.parse(content.msg))[0];
+            const wasmEvents = tx.data.tx_response.logs[index].events.filter(
+              (event: any) => event.type === TransactionEvent.EVENT_TYPE.WASM
             );
-            tokenidAttributes.forEach((attr: any) => {
+            const { sender } = content;
+            // not cover submessage
+            wasmEvents.forEach((event: any) => {
+              const tokenidAttributes = event.attributes.filter(
+                (attr: any) =>
+                  attr.key === TransactionEventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+              );
+              tokenidAttributes.forEach((attr: any) => {
+                listContractMsgInfo.push({
+                  contractAddress: content.contract,
+                  sender,
+                  action,
+                  txhash: tx.hash,
+                  tokenid: attr.value,
+                });
+              });
+            });
+          } else if (message.type === MSG_TYPE.MSG_INSTANTIATE_CONTRACT) {
+            const content = message.content as MsgInstantiateContract;
+            const action = TransactionEvent.EVENT_TYPE.INSTANTIATE;
+            const { sender } = content;
+            const instantiateEvent = tx.data.tx_response.logs[
+              index
+            ].events.find(
+              (event: any) =>
+                event.type === TransactionEvent.EVENT_TYPE.INSTANTIATE
+            );
+            if (instantiateEvent) {
+              // not cover submessage
               listContractMsgInfo.push({
-                contractAddress: content.contract,
+                contractAddress: instantiateEvent.attributes.find(
+                  (attr: any) =>
+                    attr.key ===
+                    TransactionEventAttribute.ATTRIBUTE_KEY._CONTRACT_ADDRESS
+                ).value,
                 sender,
                 action,
                 txhash: tx.hash,
-                tokenid: attr.value,
               });
-            });
-          });
-        } else if (message.type === MSG_TYPE.MSG_INSTANTIATE_CONTRACT) {
-          const content = message.content as MsgInstantiateContract;
-          const action = TransactionEvent.EVENT_TYPE.INSTANTIATE;
-          const { sender } = content;
-          const instantiateEvent = tx.data.tx_response.logs[index].events.find(
-            (event: any) =>
-              event.type === TransactionEvent.EVENT_TYPE.INSTANTIATE
-          );
-          if (instantiateEvent) {
-            // not cover submessage
-            listContractMsgInfo.push({
-              contractAddress: instantiateEvent.attributes[0].value,
-              sender,
-              action,
-              txhash: tx.hash,
-            });
+            }
           }
-        }
-      });
+        });
+      }
     }
     return listContractMsgInfo;
   }
