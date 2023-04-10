@@ -83,7 +83,7 @@ export default class HandleStakeEventService extends BullableService {
       let validatorDstId;
       switch (stake.type) {
         case MSG_TYPE.MSG_DELEGATE:
-          validatorSrcId = validatorKeys[stake.content.validator_address].id;
+          validatorDstId = validatorKeys[stake.content.validator_address].id;
           break;
         case MSG_TYPE.MSG_REDELEGATE:
           validatorSrcId =
