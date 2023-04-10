@@ -15,7 +15,7 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
   BULL_JOB_NAME,
   Config,
-  IListAddressesParam,
+  IAddressesParam,
   MSG_TYPE,
   SERVICE,
 } from '../../common';
@@ -42,8 +42,8 @@ export default class HandleAddressService extends BullableService {
       listAddresses: 'string[]',
     },
   })
-  public async actionCrawlNewAccountApi(ctx: Context<IListAddressesParam>) {
-    await this.insertNewAccountAndCallActionUpdate(ctx.params.listAddresses);
+  public async actionCrawlNewAccountApi(ctx: Context<IAddressesParam>) {
+    await this.insertNewAccountAndUpdate(ctx.params.addresses);
   }
 
   @QueueHandler({
@@ -52,7 +52,7 @@ export default class HandleAddressService extends BullableService {
     prefix: `horoscope-v2-${Config.CHAIN_ID}`,
   })
   public async handleJob(_payload: object): Promise<void> {
-    const listTxStakes: any[] = [];
+    const stakeTxs: any[] = [];
 
     const [handleAddressBlockCheckpoint, latestBlock]: [
       BlockCheckpoint | undefined,
@@ -117,7 +117,7 @@ export default class HandleAddressService extends BullableService {
         if (resultTx.results.length > 0) {
           resultTx.results.map((res: any) => eventAddresses.push(res.value));
 
-          listTxStakes.push(
+          stakeTxs.push(
             ...resultTx.results.filter((res: any) =>
               this.msgStakes.includes(res.type)
             )
@@ -128,7 +128,7 @@ export default class HandleAddressService extends BullableService {
         else done = true;
       }
 
-      const listAddresses = Array.from(
+      const addresses = Array.from(
         new Set(
           eventAddresses.filter((addr: string) =>
             Utils.isValidAccountAddress(addr, config.networkPrefixAddress, 20)
@@ -136,37 +136,28 @@ export default class HandleAddressService extends BullableService {
         )
       );
 
-      if (listAddresses.length > 0) {
-        await this.insertNewAccountAndCallActionUpdate(
-          listAddresses,
-          listTxStakes
-        );
+      if (addresses.length > 0) await this.insertNewAccountAndUpdate(addresses);
 
-        this.broker.call(SERVICE.V1.CrawlAccountService.UpdateAccount.path, {
-          listAddresses: Array.from(listAddresses),
-        });
+      if (stakeTxs && stakeTxs.length > 0)
+        await this.handlePowerEvent(stakeTxs);
 
-        updateBlockCheckpoint.height = latestBlock.height;
-        await BlockCheckpoint.query()
-          .insert(updateBlockCheckpoint)
-          .onConflict('job_name')
-          .merge()
-          .returning('id');
-      }
+      updateBlockCheckpoint.height = latestBlock.height;
+      await BlockCheckpoint.query()
+        .insert(updateBlockCheckpoint)
+        .onConflict('job_name')
+        .merge()
+        .returning('id');
     }
   }
 
-  private async insertNewAccountAndCallActionUpdate(
-    listAddresses: string[],
-    listTxStakes?: any[]
-  ) {
-    const listAccounts: Account[] = [];
+  private async insertNewAccountAndUpdate(addresses: string[]) {
+    const accounts: Account[] = [];
 
     const existedAccounts: string[] = (
-      await Account.query().select('*').whereIn('address', listAddresses)
+      await Account.query().select('*').whereIn('address', addresses)
     ).map((account: Account) => account.address);
 
-    listAddresses.forEach((address: string) => {
+    addresses.forEach((address: string) => {
       if (!existedAccounts.includes(address)) {
         const account: Account = Account.fromJson({
           address,
@@ -177,28 +168,28 @@ export default class HandleAddressService extends BullableService {
           account_number: 0,
           sequence: 0,
         });
-        listAccounts.push(account);
+        accounts.push(account);
       }
     });
 
-    if (listAccounts.length > 0) await Account.query().insert(listAccounts);
+    if (accounts.length > 0) await Account.query().insert(accounts);
 
-    this.broker.call(SERVICE.V1.CrawlAccountService.UpdateAccount.path, {
-      listAddresses,
+    await this.broker.call(SERVICE.V1.CrawlAccountService.UpdateAccount.path, {
+      addresses,
     });
+  }
 
-    if (listTxStakes && listTxStakes.length > 0) {
-      const listTxMsgIds = Array.from(
-        new Set(listTxStakes.map((txStake) => txStake.tx_msg_id))
-      );
+  private async handlePowerEvent(stakeTxs: any[]) {
+    const txMsgIds = Array.from(
+      new Set(stakeTxs.map((txStake) => txStake.tx_msg_id))
+    );
 
-      this.broker.call(
-        SERVICE.V1.HandleStakeEventService.UpdatePowerEvent.path,
-        {
-          listTxMsgIds,
-        }
-      );
-    }
+    await this.broker.call(
+      SERVICE.V1.HandleStakeEventService.UpdatePowerEvent.path,
+      {
+        listTxMsgIds: txMsgIds,
+      }
+    );
   }
 
   public async _start() {

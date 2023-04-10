@@ -2,17 +2,20 @@
 import { Model } from 'objection';
 import { Account } from './account';
 import BaseModel from './base';
+import { Block } from './block';
 import { Transaction } from './transaction';
 import { Validator } from './validator';
 
 export class PowerEvent extends BaseModel {
   tx_id!: number;
 
+  height!: number;
+
   type!: string;
 
   delegator_id!: number;
 
-  validator_src_id!: number;
+  validator_src_id: number | undefined;
 
   validator_dst_id: number | undefined;
 
@@ -24,22 +27,24 @@ export class PowerEvent extends BaseModel {
     return 'power_event';
   }
 
+  static get TYPES() {
+    return {
+      DELEGATE: '/cosmos.staking.v1beta1.MsgDelegate',
+      REDELEGATE: '/cosmos.staking.v1beta1.MsgBeginRedelegate',
+      UNBOND: '/cosmos.staking.v1beta1.MsgUndelegate',
+    };
+  }
+
   static get jsonSchema() {
     return {
       type: 'object',
-      required: [
-        'tx_id',
-        'type',
-        'delegator_id',
-        'validator_src_id',
-        'amount',
-        'time',
-      ],
+      required: ['tx_id', 'height', 'type', 'delegator_id', 'amount', 'time'],
       properties: {
         tx_id: { type: 'number' },
-        type: { type: 'string' },
+        height: { type: 'number' },
+        type: { type: 'string', enum: Object.values(this.TYPES) },
         delegator_id: { type: 'number' },
-        validator_src_id: { type: 'number' },
+        validator_src_id: { type: ['number', 'null'] },
         validator_dst_id: { type: ['number', 'null'] },
         amount: { type: 'string' },
         time: { type: 'string' },
@@ -49,6 +54,14 @@ export class PowerEvent extends BaseModel {
 
   static get relationMappings() {
     return {
+      block: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: Block,
+        join: {
+          from: 'power_event.height',
+          to: 'block.height',
+        },
+      },
       transaction: {
         relation: Model.BelongsToOneRelation,
         modelClass: Transaction,
