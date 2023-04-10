@@ -225,7 +225,7 @@ export default class CrawlAccountTest {
     assertIsDeliverTxSuccess(result);
 
     await this.crawlAccountService?.handleJobAccountAuth({
-      listAddresses: [
+      addresses: [
         'aura136v0nmlv0saryev8wqz89w80edzdu3quzm0ve9',
         // 'aura1h6r78trkk2ewrry7s3lclrqu9a22ca3hpmyqfu',
         'aura1fndgsk37dss8judrcaae0gamdqdr8t3rlmvtpm',

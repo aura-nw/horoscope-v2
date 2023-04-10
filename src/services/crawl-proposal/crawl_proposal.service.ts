@@ -8,16 +8,16 @@ import {
   Proposal,
   Transaction,
   TransactionEventAttribute,
-} from 'src/models';
+} from '../../models';
 import {
   BULL_JOB_NAME,
-  Config,
   getLcdClient,
   IAuraJSClientFactory,
   PROPOSAL_STATUS,
   SERVICE,
 } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
+import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
   name: SERVICE.V1.CrawlProposalService.key,
@@ -33,12 +33,12 @@ export default class CrawlProposalService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_PROPOSAL,
     jobType: 'crawl',
-    prefix: `horoscope-v2-${Config.CHAIN_ID}`,
+    prefix: `horoscope-v2-${config.chainId}`,
   })
-  private async handleCrawlProposals(_payload: object): Promise<void> {
+  public async handleCrawlProposals(_payload: object): Promise<void> {
     this._lcdClient = await getLcdClient();
 
-    const listBulk: any[] = [];
+    const listProposals: Proposal[] = [];
 
     const [crawlProposalBlockCheckpoint, latestBlock]: [
       BlockCheckpoint | undefined,
@@ -70,43 +70,32 @@ export default class CrawlProposalService extends BullableService {
       while (!done) {
         // eslint-disable-next-line no-await-in-loop
         const resultTx = await Transaction.query()
-          .select('transaction.id', 'transaction.height')
-          .join(
-            'transaction_event',
-            'transaction.id',
-            'transaction_event.tx_id'
-          )
-          .select('transaction_event.tx_id')
-          .join(
-            'transaction_event_attribute',
-            'transaction_event.id',
-            'transaction_event_attribute.event_id'
-          )
-          .select(
-            'transaction_event_attribute.key',
-            'transaction_event_attribute.value'
-          )
+          .joinRelated('events.[attributes]')
           .where('transaction.height', '>', lastHeight)
           .andWhere('transaction.height', '<=', latestBlock.height)
-          .andWhere('transaction.code', '=', '0')
+          .andWhere('transaction.code', 0)
           .andWhere(
-            'transaction_event_attribute.key',
-            '=',
+            'events:attributes.key',
             TransactionEventAttribute.EVENT_KEY.PROPOSAL_ID
           )
-          .limit(100)
-          .offset(offset);
+          .select(
+            'transaction.id',
+            'transaction.height',
+            'events:attributes.key',
+            'events:attributes.value'
+          )
+          .page(offset, 100);
         this.logger.info(
           `Result get Tx from height ${lastHeight} to ${latestBlock.height}:`
         );
         this.logger.info(JSON.stringify(resultTx));
 
-        if (resultTx.length > 0)
-          resultTx.map((res: any) =>
+        if (resultTx.results.length > 0)
+          resultTx.results.map((res: any) =>
             proposalIds.push(Number.parseInt(res.value, 10))
           );
 
-        if (resultTx.length === 100) offset += 1;
+        if (resultTx.results.length === 100) offset += 1;
         else done = true;
       }
 
@@ -166,13 +155,7 @@ export default class CrawlProposalService extends BullableService {
               proposalEntity.total_deposit = proposal.proposal.total_deposit;
             }
 
-            listBulk.push(
-              Proposal.query()
-                .insert(proposalEntity)
-                .onConflict('proposal_id')
-                .merge()
-                .returning('proposal_id')
-            );
+            listProposals.push(proposalEntity);
 
             if (
               proposal.status === PROPOSAL_STATUS.PROPOSAL_STATUS_VOTING_PERIOD
@@ -185,11 +168,15 @@ export default class CrawlProposalService extends BullableService {
           })
         );
 
-        try {
-          await Promise.all(listBulk);
-        } catch (error) {
-          this.logger.error(error);
-        }
+        await Proposal.query()
+          .insert(listProposals)
+          .onConflict('proposal_id')
+          .merge()
+          .returning('proposal_id')
+          .catch((error) => {
+            this.logger.error('Error insert or update proposals');
+            this.logger.error(error);
+          });
       }
 
       updateBlockCheckpoint.height = latestBlock.height;
@@ -202,26 +189,19 @@ export default class CrawlProposalService extends BullableService {
   }
 
   private async getProposerBySearchTx(proposalId: number) {
-    const tx: any = await Transaction.query()
-      .select('transaction.data')
-      .join('transaction_event', 'transaction.id', 'transaction_event.tx_id')
-      .join(
-        'transaction_event_attribute',
-        'transaction_event.id',
-        'transaction_event_attribute.event_id'
-      )
-      .where('transaction.code', '=', '0')
+    const tx = await Transaction.query()
+      .joinRelated('events.[attributes]')
+      .where('transaction.code', 0)
       .andWhere(
-        'transaction_event.type',
-        '=',
+        'events.type',
         TransactionEventAttribute.EVENT_KEY.SUBMIT_PROPOSAL
       )
       .andWhere(
-        'transaction_event_attribute.key',
-        '=',
+        'events:attributes.key',
         TransactionEventAttribute.EVENT_KEY.PROPOSAL_ID
       )
-      .andWhere('transaction_event_attribute.value', '=', `${proposalId}`)
+      .andWhere('events:attributes.value', proposalId.toString())
+      .select('transaction.data')
       .limit(1)
       .offset(0);
 
@@ -235,7 +215,7 @@ export default class CrawlProposalService extends BullableService {
           .attributes.find(
             (attr: any) =>
               attr.key === TransactionEventAttribute.EVENT_KEY.PROPOSAL_ID
-          ).value === proposalId
+          ).value === proposalId.toString()
     ).msg_index;
 
     const initialDeposit =
@@ -263,7 +243,7 @@ export default class CrawlProposalService extends BullableService {
           count: 3,
         },
         repeat: {
-          every: parseInt(Config.MILISECOND_CRAWL_PROPOSAL, 10),
+          every: config.crawlProposal.millisecondCrawl,
         },
       }
     );

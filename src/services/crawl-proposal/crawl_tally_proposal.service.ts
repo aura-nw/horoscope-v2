@@ -3,13 +3,16 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
+import {
+  BULL_JOB_NAME,
+  getLcdClient,
+  IAuraJSClientFactory,
+  IProposalIdParam,
+  SERVICE,
+} from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { IAuraJSClientFactory } from '../../common/types/interfaces';
-import { BULL_JOB_NAME, SERVICE } from '../../common/constant';
-import { IProposalIdParam } from '../../common/utils/request';
-import { Config } from '../../common';
-import { getLcdClient } from '../../common/utils/aurajs_client';
-import { Proposal } from '../../models/proposal';
+import { Proposal } from '../../models';
+import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
   name: SERVICE.V1.CrawlTallyProposalService.key,
@@ -47,7 +50,7 @@ export default class CrawlTallyProposalService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_TALLY_PROPOSAL,
     jobType: 'crawl',
-    prefix: `horoscope-v2-${Config.CHAIN_ID}`,
+    prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: IProposalIdParam): Promise<void> {
     this._lcdClient = await getLcdClient();

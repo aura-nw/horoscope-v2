@@ -1,5 +1,7 @@
+/* eslint-disable import/no-cycle */
 import { Model } from 'objection';
 import { ICoin } from '../common/types/interfaces';
+import { Account } from './account';
 import BaseModel from './base';
 
 export interface ITally {
@@ -117,7 +119,7 @@ export class Proposal extends BaseModel {
     return {
       proposer: {
         relation: Model.BelongsToOneRelation,
-        modelClass: 'account',
+        modelClass: Account,
         join: {
           from: 'proposal.proposer_id',
           to: 'account.id',
