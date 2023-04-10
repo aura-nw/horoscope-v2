@@ -47,4 +47,10 @@ export class TransactionEvent extends BaseModel {
       },
     };
   }
+
+  static EVENT_TYPE = {
+    WASM: 'wasm',
+    EXECUTE: 'execute',
+    INSTANTIATE: 'instantiate',
+  };
 }

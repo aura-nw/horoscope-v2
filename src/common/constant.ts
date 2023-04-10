@@ -111,19 +111,6 @@ export const MSG_TYPE = {
   MSG_UPDATE_CLIENT: '/ibc.core.client.v1.MsgUpdateClient',
 };
 
-export const EVENT_TYPE = {
-  WASM: 'wasm',
-  EXECUTE: 'execute',
-  INSTANTIATE: 'instantiate',
-};
-
 export const ABCI_QUERY_PATH = {
   VALIDATOR_DELEGATION: '/cosmos.staking.v1beta1.Query/Delegation',
-};
-
-export const CW721_ACTION = {
-  MINT: 'mint',
-  BURN: 'burn',
-  TRANSFER: 'transfer',
-  INSTANTIATE: 'instantiate',
 };

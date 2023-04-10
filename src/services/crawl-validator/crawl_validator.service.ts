@@ -121,9 +121,9 @@ export default class CrawlValidatorService extends BullableService {
       const resultTx = await TransactionEventAttribute.query()
         .joinRelated('event.[transaction]')
         .whereIn('transaction_event_attribute.key', [
-          TransactionEventAttribute.EVENT_KEY.VALIDATOR,
-          TransactionEventAttribute.EVENT_KEY.SOURCE_VALIDATOR,
-          TransactionEventAttribute.EVENT_KEY.DESTINATION_VALIDATOR,
+          TransactionEventAttribute.ATTRIBUTE_KEY.VALIDATOR,
+          TransactionEventAttribute.ATTRIBUTE_KEY.SOURCE_VALIDATOR,
+          TransactionEventAttribute.ATTRIBUTE_KEY.DESTINATION_VALIDATOR,
         ])
         .andWhere('event:transaction.height', '>', lastHeight)
         .andWhere('event:transaction.height', '<=', latestBlock.height)

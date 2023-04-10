@@ -23,13 +23,16 @@ import { Config, getHttpBatchClient } from '../../common';
 import {
   BLOCK_CHECKPOINT_JOB_NAME,
   BULL_JOB_NAME,
-  CW721_ACTION,
-  EVENT_TYPE,
   MSG_TYPE,
   SERVICE_NAME,
 } from '../../common/constant';
 import { getLcdClient } from '../../common/utils/aurajs_client';
-import { BlockCheckpoint, Transaction, TransactionMessage } from '../../models';
+import {
+  BlockCheckpoint,
+  Transaction,
+  TransactionEvent,
+  TransactionMessage,
+} from '../../models';
 import Codeid from '../../models/codeid';
 import CW721Token from '../../models/cw721_token';
 import config from '../../../config.json' assert { type: 'json' };
@@ -57,6 +60,13 @@ interface ITokenInfo {
   extension: any;
   owner: string;
 }
+
+const CW721_ACTION = {
+  MINT: 'mint',
+  BURN: 'burn',
+  TRANSFER: 'transfer',
+  INSTANTIATE: 'instantiate',
+};
 
 @Service({
   name: SERVICE_NAME.CW721,
@@ -552,10 +562,11 @@ export default class Cw721HandlerService extends BullableService {
           });
         } else if (message.type === MSG_TYPE.MSG_INSTANTIATE_CONTRACT) {
           const content = message.content as MsgInstantiateContract;
-          const action = EVENT_TYPE.INSTANTIATE;
+          const action = TransactionEvent.EVENT_TYPE.INSTANTIATE;
           const { sender } = content;
           const wasmEvent = tx.data.tx_response.logs[index].events.find(
-            (event: any) => event.type === EVENT_TYPE.INSTANTIATE
+            (event: any) =>
+              event.type === TransactionEvent.EVENT_TYPE.INSTANTIATE
           );
           if (wasmEvent) {
             // not cover submessage
