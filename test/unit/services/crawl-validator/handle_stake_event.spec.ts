@@ -190,14 +190,53 @@ export default class HandleStakeEventTest {
       listTxMsgIds: txMessages.map((tx) => tx.id),
     });
 
-    const powerEvents: PowerEvent[] = await PowerEvent.query();
+    const [powerEvents, validators]: [PowerEvent[], Validator[]] =
+      await Promise.all([PowerEvent.query(), Validator.query()]);
 
+    expect(
+      powerEvents.find((event) => event.type === MSG_TYPE.MSG_DELEGATE)
+        ?.validator_dst_id
+    ).toEqual(
+      validators.find(
+        (val) =>
+          val.operator_address ===
+          'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx'
+      )?.id
+    );
     expect(
       powerEvents.find((event) => event.type === MSG_TYPE.MSG_DELEGATE)?.amount
     ).toEqual('1000000');
     expect(
+      powerEvents.find((event) => event.type === MSG_TYPE.MSG_DELEGATE)?.height
+    ).toEqual(3967530);
+
+    expect(
+      powerEvents.find((event) => event.type === MSG_TYPE.MSG_REDELEGATE)
+        ?.validator_src_id
+    ).toEqual(
+      validators.find(
+        (val) =>
+          val.operator_address ===
+          'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx'
+      )?.id
+    );
+    expect(
+      powerEvents.find((event) => event.type === MSG_TYPE.MSG_REDELEGATE)
+        ?.validator_dst_id
+    ).toEqual(
+      validators.find(
+        (val) =>
+          val.operator_address ===
+          'auravaloper1edw4lwcz3esnlgzcw60ra8m38k3zygz2xtl2qh'
+      )?.id
+    );
+    expect(
       powerEvents.find((event) => event.type === MSG_TYPE.MSG_REDELEGATE)
         ?.amount
     ).toEqual('1000000');
+    expect(
+      powerEvents.find((event) => event.type === MSG_TYPE.MSG_REDELEGATE)
+        ?.height
+    ).toEqual(3967530);
   }
 }

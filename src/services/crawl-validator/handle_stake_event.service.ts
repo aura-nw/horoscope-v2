@@ -3,6 +3,7 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
+import _ from 'lodash';
 import {
   BULL_JOB_NAME,
   IListTxMsgIdsParam,
@@ -55,9 +56,13 @@ export default class HandleStakeEventService extends BullableService {
     prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: IListTxMsgIdsParam): Promise<void> {
-    const listTxStakes: any[] = await TransactionMessage.query()
+    const stakeTxMsgs: any[] = await TransactionMessage.query()
       .joinRelated('transaction')
-      .select('transaction_message.*', 'transaction.timestamp')
+      .select(
+        'transaction_message.*',
+        'transaction.timestamp',
+        'transaction.height'
+      )
       .whereIn('transaction_message.id', _payload.listTxMsgIds)
       .andWhere('transaction.code', 0);
 
@@ -65,55 +70,50 @@ export default class HandleStakeEventService extends BullableService {
       Validator.query(),
       Account.query().whereIn(
         'address',
-        listTxStakes.map((tx) => tx.sender)
+        stakeTxMsgs.map((tx) => tx.sender)
       ),
     ]);
+    const validatorKeys = _.keyBy(validators, 'operator_address');
+    const accountKeys = _.keyBy(accounts, 'address');
 
-    const listInsert: PowerEvent[] = listTxStakes.map((stake) => {
+    const powerEvents: PowerEvent[] = stakeTxMsgs.map((stake) => {
       this.logger.info(`Handle message stake ${JSON.stringify(stake)}`);
 
       let validatorSrcId;
       let validatorDstId;
       switch (stake.type) {
         case MSG_TYPE.MSG_DELEGATE:
-          validatorSrcId = validators.find(
-            (val) => val.operator_address === stake.content.validator_address
-          )?.id;
+          validatorDstId = validatorKeys[stake.content.validator_address].id;
           break;
         case MSG_TYPE.MSG_REDELEGATE:
-          validatorSrcId = validators.find(
-            (val) =>
-              val.operator_address === stake.content.validator_src_address
-          )?.id;
-          validatorDstId = validators.find(
-            (val) =>
-              val.operator_address === stake.content.validator_dst_address
-          )?.id;
+          validatorSrcId =
+            validatorKeys[stake.content.validator_src_address].id;
+          validatorDstId =
+            validatorKeys[stake.content.validator_dst_address].id;
           break;
         case MSG_TYPE.MSG_UNDELEGATE:
-          validatorSrcId = validators.find(
-            (val) => val.operator_address === stake.content.validator_address
-          )?.id;
+          validatorSrcId = validatorKeys[stake.content.validator_address].id;
           break;
         default:
           break;
       }
 
-      const txPowerEvent: PowerEvent = PowerEvent.fromJson({
+      const powerEvent: PowerEvent = PowerEvent.fromJson({
         tx_id: stake.tx_id,
+        height: stake.height,
         type: stake.type,
-        delegator_id: accounts.find((acc) => acc.address === stake.sender)?.id,
+        delegator_id: accountKeys[stake.sender].id,
         validator_src_id: validatorSrcId,
         validator_dst_id: validatorDstId,
         amount: stake.content.amount.amount,
         time: stake.timestamp.toISOString(),
       });
 
-      return txPowerEvent;
+      return powerEvent;
     });
 
     await PowerEvent.query()
-      .insert(listInsert)
+      .insert(powerEvents)
       .catch((error) => {
         this.logger.error("Error insert validator's power events");
         this.logger.error(error);

@@ -43,7 +43,7 @@ export default class HandleAddressService extends BullableService {
     },
   })
   public async actionCrawlNewAccountApi(ctx: Context<IListAddressesParam>) {
-    await this.insertNewAccountAndCallActionUpdate(ctx.params.listAddresses);
+    await this.insertNewAccountAndUpdate(ctx.params.listAddresses);
   }
 
   @QueueHandler({
@@ -136,26 +136,22 @@ export default class HandleAddressService extends BullableService {
         )
       );
 
-      if (listAddresses.length > 0) {
-        await this.insertNewAccountAndCallActionUpdate(
-          listAddresses,
-          listTxStakes
-        );
+      if (listAddresses.length > 0)
+        await this.insertNewAccountAndUpdate(listAddresses);
 
-        updateBlockCheckpoint.height = latestBlock.height;
-        await BlockCheckpoint.query()
-          .insert(updateBlockCheckpoint)
-          .onConflict('job_name')
-          .merge()
-          .returning('id');
-      }
+      if (listTxStakes && listTxStakes.length > 0)
+        await this.handlePowerEvent(listTxStakes);
+
+      updateBlockCheckpoint.height = latestBlock.height;
+      await BlockCheckpoint.query()
+        .insert(updateBlockCheckpoint)
+        .onConflict('job_name')
+        .merge()
+        .returning('id');
     }
   }
 
-  private async insertNewAccountAndCallActionUpdate(
-    listAddresses: string[],
-    listTxStakes?: any[]
-  ) {
+  private async insertNewAccountAndUpdate(listAddresses: string[]) {
     const listAccounts: Account[] = [];
 
     const existedAccounts: string[] = (
@@ -182,19 +178,19 @@ export default class HandleAddressService extends BullableService {
     await this.broker.call(SERVICE.V1.CrawlAccountService.UpdateAccount.path, {
       listAddresses,
     });
+  }
 
-    if (listTxStakes && listTxStakes.length > 0) {
-      const listTxMsgIds = Array.from(
-        new Set(listTxStakes.map((txStake) => txStake.tx_msg_id))
-      );
+  private async handlePowerEvent(listTxStakes: any[]) {
+    const listTxMsgIds = Array.from(
+      new Set(listTxStakes.map((txStake) => txStake.tx_msg_id))
+    );
 
-      await this.broker.call(
-        SERVICE.V1.HandleStakeEventService.UpdatePowerEvent.path,
-        {
-          listTxMsgIds,
-        }
-      );
-    }
+    await this.broker.call(
+      SERVICE.V1.HandleStakeEventService.UpdatePowerEvent.path,
+      {
+        listTxMsgIds,
+      }
+    );
   }
 
   public async _start() {
