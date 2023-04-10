@@ -543,7 +543,7 @@ export default class CrawlAccountService extends BullableService {
     prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleVestingAccounts(_payload: object): Promise<void> {
-    const accountVestings: any[] = [];
+    const addresses: string[] = [];
 
     const now = Math.floor(
       new Date().setSeconds(new Date().getSeconds() - 6) / 1000
@@ -551,32 +551,32 @@ export default class CrawlAccountService extends BullableService {
     let offset = 0;
     let done = false;
     while (!done) {
-      const result = await AccountVesting.query()
-        .joinRelated('account')
+      const result = await Account.query()
+        .joinRelated('vesting')
         .where((builder) =>
           builder
             .whereIn('account.type', [
               AccountType.CONTINUOUS_VESTING,
               AccountType.PERIODIC_VESTING,
             ])
-            .andWhere('end_time', '>=', now)
+            .andWhere('vesting.end_time', '>=', now)
         )
         .orWhere((builder) =>
           builder
             .where('account.type', AccountType.DELAYED_VESTING)
-            .andWhere('end_time', '<=', now)
+            .andWhere('vesting.end_time', '<=', now)
         )
         .select('account.address')
         .page(offset, 1000);
 
       if (result.results.length > 0) {
-        accountVestings.push(...result.results);
+        result.results.map((res) => addresses.push(res.address));
         offset += 1;
       } else done = true;
     }
 
     await this.handleJobAccountSpendableBalances({
-      addresses: accountVestings.map((vesting) => vesting.address),
+      addresses,
     });
   }
 
