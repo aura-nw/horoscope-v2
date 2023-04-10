@@ -2,11 +2,14 @@
 import { Model } from 'objection';
 import { Account } from './account';
 import BaseModel from './base';
+import { Block } from './block';
 import { Transaction } from './transaction';
 import { Validator } from './validator';
 
 export class PowerEvent extends BaseModel {
   tx_id!: number;
+
+  height!: number;
 
   type!: string;
 
@@ -29,6 +32,7 @@ export class PowerEvent extends BaseModel {
       type: 'object',
       required: [
         'tx_id',
+        'height',
         'type',
         'delegator_id',
         'validator_src_id',
@@ -37,6 +41,7 @@ export class PowerEvent extends BaseModel {
       ],
       properties: {
         tx_id: { type: 'number' },
+        height: { type: 'number' },
         type: { type: 'string' },
         delegator_id: { type: 'number' },
         validator_src_id: { type: 'number' },
@@ -49,6 +54,14 @@ export class PowerEvent extends BaseModel {
 
   static get relationMappings() {
     return {
+      block: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: Block,
+        join: {
+          from: 'power_event.height',
+          to: 'block.height',
+        },
+      },
       transaction: {
         relation: Model.BelongsToOneRelation,
         modelClass: Transaction,

@@ -196,8 +196,16 @@ export default class HandleStakeEventTest {
       powerEvents.find((event) => event.type === MSG_TYPE.MSG_DELEGATE)?.amount
     ).toEqual('1000000');
     expect(
+      powerEvents.find((event) => event.type === MSG_TYPE.MSG_DELEGATE)?.height
+    ).toEqual(3967530);
+
+    expect(
       powerEvents.find((event) => event.type === MSG_TYPE.MSG_REDELEGATE)
         ?.amount
     ).toEqual('1000000');
+    expect(
+      powerEvents.find((event) => event.type === MSG_TYPE.MSG_REDELEGATE)
+        ?.height
+    ).toEqual(3967530);
   }
 }

@@ -4,6 +4,7 @@ export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('power_event', (table: any) => {
     table.increments();
     table.integer('tx_id').index().notNullable();
+    table.integer('height').index().notNullable();
     table.integer('delegator_id').index().notNullable();
     table.integer('validator_src_id').index().notNullable();
     table.integer('validator_dst_id').index();
