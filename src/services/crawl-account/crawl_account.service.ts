@@ -630,6 +630,7 @@ export default class CrawlAccountService extends BullableService {
           builder
             .where('account.type', AccountType.DELAYED_VESTING)
             .andWhere('vesting.end_time', '<=', now)
+            .andWhere('vesting.end_time', '>', now - 60)
         )
         .select('account.address')
         .page(offset, 1000);
