@@ -153,8 +153,8 @@ export default class CrawlValidatorService extends BullableService {
   }
 
   private async updateValidators() {
-    let listUpdateValidators: Validator[] = [];
-    const listValidator: any[] = [];
+    let updateValidators: Validator[] = [];
+    const validators: any[] = [];
 
     let resultCallApi;
     let done = false;
@@ -168,7 +168,7 @@ export default class CrawlValidatorService extends BullableService {
           pagination,
         });
 
-      listValidator.push(...resultCallApi.validators);
+      validators.push(...resultCallApi.validators);
       if (resultCallApi.pagination.next_key === null) {
         done = true;
       } else {
@@ -176,13 +176,13 @@ export default class CrawlValidatorService extends BullableService {
       }
     }
 
-    const listValidatorInDB: Validator[] = await knex('validator').select('*');
+    const validatorInDB: Validator[] = await knex('validator').select('*');
 
     await Promise.all(
-      listValidator.map(async (validator) => {
+      validators.map(async (validator) => {
         this.logger.info(`Update validator: ${validator.operator_address}`);
 
-        const foundValidator = listValidatorInDB.find(
+        const foundValidator = validatorInDB.find(
           (validatorInDB: Validator) =>
             validatorInDB.operator_address === validator.operator_address
         );
@@ -207,14 +207,14 @@ export default class CrawlValidatorService extends BullableService {
           ).toISOString();
         }
 
-        listUpdateValidators.push(validatorEntity);
+        updateValidators.push(validatorEntity);
       })
     );
 
-    listUpdateValidators = await this.loadCustomInfo(listUpdateValidators);
+    updateValidators = await this.loadCustomInfo(updateValidators);
 
     await Validator.query()
-      .insert(listUpdateValidators)
+      .insert(updateValidators)
       .onConflict('operator_address')
       .merge()
       .returning('id')
@@ -224,15 +224,13 @@ export default class CrawlValidatorService extends BullableService {
       });
   }
 
-  private async loadCustomInfo(
-    listValidators: Validator[]
-  ): Promise<Validator[]> {
-    const listPromise: any[] = [];
+  private async loadCustomInfo(validators: Validator[]): Promise<Validator[]> {
+    const batchQueries: any[] = [];
 
     const pool = await this._lcdClient.auranw.cosmos.staking.v1beta1.pool();
 
     await Promise.all(
-      listValidators.map(async (validator: Validator) => {
+      validators.map(async (validator: Validator) => {
         const request: QueryDelegationRequest = {
           delegatorAddr: validator.account_address,
           validatorAddr: validator.operator_address,
@@ -241,7 +239,7 @@ export default class CrawlValidatorService extends BullableService {
           cosmos.staking.v1beta1.QueryDelegationRequest.encode(request).finish()
         );
 
-        listPromise.push(
+        batchQueries.push(
           this._httpBatchClient.execute(
             createJsonRpcRequest('abci_query', {
               path: ABCI_QUERY_PATH.VALIDATOR_DELEGATION,
@@ -252,7 +250,7 @@ export default class CrawlValidatorService extends BullableService {
       })
     );
 
-    const result: JsonRpcSuccessResponse[] = await Promise.all(listPromise);
+    const result: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
     const delegations: QueryDelegationResponse[] = result.map(
       (res: JsonRpcSuccessResponse) =>
         cosmos.staking.v1beta1.QueryDelegationResponse.decode(
@@ -260,7 +258,7 @@ export default class CrawlValidatorService extends BullableService {
         )
     );
 
-    listValidators.forEach((val: Validator) => {
+    validators.forEach((val: Validator) => {
       const delegation = delegations.find(
         (dele: QueryDelegationResponse) =>
           dele.delegationResponse?.delegation?.validatorAddress ===
@@ -276,7 +274,7 @@ export default class CrawlValidatorService extends BullableService {
         ) / 1000000;
     });
 
-    return listValidators;
+    return validators;
   }
 
   public async _start() {

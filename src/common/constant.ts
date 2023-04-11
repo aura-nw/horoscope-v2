@@ -116,5 +116,7 @@ export const MSG_TYPE = {
 };
 
 export const ABCI_QUERY_PATH = {
+  ACCOUNT_ALL_BALANCES: '/cosmos.bank.v1beta1.Query/AllBalances',
+  ACCOUNT_SPENDABLE_BALANCES: '/cosmos.bank.v1beta1.Query/SpendableBalances',
   VALIDATOR_DELEGATION: '/cosmos.staking.v1beta1.Query/Delegation',
 };
