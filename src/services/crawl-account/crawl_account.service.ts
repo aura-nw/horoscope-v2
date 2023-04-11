@@ -326,7 +326,7 @@ export default class CrawlAccountService extends BullableService {
           if (account.next_key)
             request.pagination = {
               key: account.next_key,
-              limit: Long.fromInt(1),
+              limit: Long.fromInt(0),
               offset: Long.fromInt(0),
               countTotal: false,
               reverse: false,
@@ -436,7 +436,7 @@ export default class CrawlAccountService extends BullableService {
           if (account.next_key)
             request.pagination = {
               key: account.next_key,
-              limit: Long.fromInt(1),
+              limit: Long.fromInt(0),
               offset: Long.fromInt(0),
               countTotal: false,
               reverse: false,
