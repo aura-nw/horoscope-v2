@@ -9,7 +9,7 @@
   },
   "scripts": {
     "clean": "rimraf ./dist/",
-    "start": "ts-node -r tsconfig-paths/register ./node_modules/moleculer/bin/moleculer-runner.mjs --env --config src/moleculer.config.ts",
+    "start": "cd dist ; node --es-module-specifier-resolution=node ../node_modules/moleculer/bin/moleculer-runner.mjs --env --config ./src/moleculer.config.js",
     "dev": "ts-node -r tsconfig-paths/register ./node_modules/moleculer/bin/moleculer-runner.mjs --hot --repl --env --config src/moleculer.config.ts",
     "watch": "nodemon",
     "db:migrate:make": "ts-node ./node_modules/.bin/knex migrate:make --knexfile knexfile.ts -x ts",

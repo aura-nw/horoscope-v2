@@ -46,7 +46,7 @@ export default class AssetIndexerTest {
       action: 'mint',
       txhash:
         'CCB1BA7C3D3AAE293645787CEE0408DEE42F529AFCF7C8F7F93CBB4AE7ED28B6',
-      tokenid: '1677142001007',
+      token_id: '1677142001007',
     },
     {
       contractAddress:
@@ -55,7 +55,7 @@ export default class AssetIndexerTest {
       action: 'mint',
       txhash:
         'DEF522CDF8791F88BC000D24C31387C03D3ACBBE38BC1BD1CA415424B520F446',
-      tokenid: '1677142001017',
+      token_id: '1677142001017',
     },
   ];
 
@@ -242,7 +242,7 @@ export default class AssetIndexerTest {
         contractAddress:
           this.txInsert.data.tx_response.logs[0].events[0].attributes[0].value,
         txhash: this.txInsert.hash,
-        tokenid:
+        token_id:
           this.txInsert.data.tx_response.logs[0].events[1].attributes[0].value,
       },
       {
@@ -251,7 +251,7 @@ export default class AssetIndexerTest {
         contractAddress:
           this.txInsert.data.tx_response.logs[1].events[0].attributes[0].value,
         txhash: this.txInsert.hash,
-        tokenid:
+        token_id:
           this.txInsert.data.tx_response.logs[1].events[1].attributes[0].value,
       },
       {
@@ -260,7 +260,7 @@ export default class AssetIndexerTest {
         contractAddress:
           this.txInsert.data.tx_response.logs[1].events[0].attributes[0].value,
         txhash: this.txInsert.hash,
-        tokenid:
+        token_id:
           this.txInsert.data.tx_response.logs[1].events[1].attributes[1].value,
       },
     ]);
@@ -289,14 +289,14 @@ export default class AssetIndexerTest {
         sender: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
         action: 'transfer',
         txhash: '',
-        tokenid: 'token_id1',
+        token_id: 'token_id1',
       },
       {
         contractAddress: this.mockInitContract.address,
         sender: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
         action: 'transfer',
         txhash: '',
-        tokenid: 'token_id2',
+        token_id: 'token_id2',
       },
     ]);
     const token1 = await CW721Token.query()
@@ -319,14 +319,14 @@ export default class AssetIndexerTest {
         sender: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
         action: 'mint',
         txhash: '',
-        tokenid: 'token_id_mint_1',
+        token_id: 'token_id_mint_1',
       },
       {
         contractAddress: this.mockInitContract.address,
         sender: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
         action: 'mint',
         txhash: '',
-        tokenid: 'token_id_mint_2',
+        token_id: 'token_id_mint_2',
       },
     ];
     const mockReslut = [
@@ -347,11 +347,11 @@ export default class AssetIndexerTest {
     await this.cw721HandlerService.jobHandlerCw721Mint(mockMintMsg);
     const token1 = await CW721Token.query()
       .where('contract_address', mockMintMsg[0].contractAddress)
-      .andWhere('token_id', mockMintMsg[0].tokenid)
+      .andWhere('token_id', mockMintMsg[0].token_id)
       .first();
     const token2 = await CW721Token.query()
       .where('contract_address', mockMintMsg[1].contractAddress)
-      .andWhere('token_id', mockMintMsg[1].tokenid)
+      .andWhere('token_id', mockMintMsg[1].token_id)
       .first();
     expect(token1?.owner).toEqual(mockReslut[0].owner);
     expect(token2?.owner).toEqual(mockReslut[1].owner);
@@ -365,7 +365,7 @@ export default class AssetIndexerTest {
         sender: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
         action: 'burn',
         txhash: '',
-        tokenid: this.mockInitContract.tokens[0].token_id,
+        token_id: this.mockInitContract.tokens[0].token_id,
       },
     ];
     await this.cw721HandlerService.jobHandlerCw721Burn(mockBurnMsg);
@@ -384,7 +384,7 @@ export default class AssetIndexerTest {
         sender: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
         action: 'instantiate',
         txhash: '',
-        codeid: 'hihi',
+        code_id: 'hihi',
         contractType: 'CW721',
       },
     ];
@@ -405,6 +405,6 @@ export default class AssetIndexerTest {
     expect(contract?.minter).toEqual(mockMinterAndTokenInfo[0].minter);
     expect(contract?.name).toEqual(mockMinterAndTokenInfo[0].name);
     expect(contract?.symbol).toEqual(mockMinterAndTokenInfo[0].symbol);
-    expect(contract?.code_id).toEqual(mockInstantiateMsg[0].codeid);
+    expect(contract?.code_id).toEqual(mockInstantiateMsg[0].code_id);
   }
 }

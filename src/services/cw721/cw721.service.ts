@@ -1,4 +1,3 @@
-/* eslint-disable no-await-in-loop */
 import { cosmwasm } from '@aura-nw/aurajs';
 import {
   MsgExecuteContract,
@@ -34,7 +33,7 @@ import {
   TransactionEventAttribute,
   TransactionMessage,
 } from '../../models';
-import Codeid from '../../models/codeid';
+import Codeid from '../../models/code_id';
 import CW721Token from '../../models/cw721_token';
 import config from '../../../config.json' assert { type: 'json' };
 
@@ -51,8 +50,8 @@ interface IContractMsgInfo {
   contractAddress: string;
   action: string;
   txhash: string;
-  tokenid?: string;
-  codeid?: string;
+  token_id?: string;
+  code_id?: string;
   contractType?: string;
 }
 
@@ -102,11 +101,11 @@ export default class Cw721HandlerService extends BullableService {
       listTransfer
     );
     listTransfer.forEach((item, index) => {
-      if (item.tokenid && resultListTokenInfo[index].owner) {
+      if (item.token_id && resultListTokenInfo[index].owner) {
         batchUpdateTransfer.push(
           CW721Token.query()
             .where('contract_address', item.contractAddress)
-            .andWhere('token_id', item.tokenid)
+            .andWhere('token_id', item.token_id)
             .patch({
               owner: resultListTokenInfo[index].owner,
             })
@@ -132,7 +131,7 @@ export default class Cw721HandlerService extends BullableService {
     await CW721Token.query().insert(
       listMint.map((mintMsg, index) =>
         CW721Token.fromJson({
-          token_id: mintMsg.tokenid,
+          token_id: mintMsg.token_id,
           token_uri: resultListTokenInfo[index].token_uri,
           extension: resultListTokenInfo[index].extension,
           owner: resultListTokenInfo[index].owner,
@@ -150,11 +149,11 @@ export default class Cw721HandlerService extends BullableService {
   async jobHandlerCw721Burn(listBurn: IContractMsgInfo[]): Promise<void> {
     const batchUpdateBurn: any[] = [];
     listBurn.forEach((item) => {
-      if (item.tokenid) {
+      if (item.token_id) {
         batchUpdateBurn.push(
           CW721Token.query()
             .where('contract_address', item.contractAddress)
-            .andWhere('token_id', item.tokenid)
+            .andWhere('token_id', item.token_id)
             .delete()
         );
       } else {
@@ -228,7 +227,7 @@ export default class Cw721HandlerService extends BullableService {
                 sender: cw721Msg.sender,
                 txhash: cw721Msg.txhash,
                 contract_address: cw721Msg.contractAddress,
-                tokenid: cw721Msg.tokenid,
+                token_id: cw721Msg.token_id,
               })
             );
           if (cw721Txs.length > 0) {
@@ -270,7 +269,7 @@ export default class Cw721HandlerService extends BullableService {
 
       const instantiateContracts = cw721MsgsInstantiate.map((contract, index) =>
         CW721Contract.fromJson({
-          code_id: contract.codeid,
+          code_id: contract.code_id,
           address: contract.contractAddress,
           name: batchContractInfoAndMinter[index].name,
           symbol: batchContractInfoAndMinter[index].symbol,
@@ -339,7 +338,7 @@ export default class Cw721HandlerService extends BullableService {
       listContractMsg.map(async (msg) => {
         const type = (
           await Codeid.query()
-            .where('codeid', msg.codeid ? msg.codeid : 'unknown')
+            .where('code_id', msg.code_id ? msg.code_id : 'unknown')
             .first()
         )?.type;
         return Object.assign(msg, { contractType: type });
@@ -370,7 +369,7 @@ export default class Cw721HandlerService extends BullableService {
     );
     listContractMsg.forEach((item, index) => {
       Object.assign(item, {
-        codeid: cosmwasm.wasm.v1.QueryContractInfoResponse.decode(
+        code_id: cosmwasm.wasm.v1.QueryContractInfoResponse.decode(
           fromBase64(resultListPromise[index].result.response.value)
         ).contractInfo?.codeId.toString(),
       });
@@ -460,7 +459,7 @@ export default class Cw721HandlerService extends BullableService {
   ): Promise<ITokenInfo[]> {
     const listPromise: any[] = [];
     listToken.forEach((item: IContractMsgInfo) => {
-      if (item.tokenid) {
+      if (item.token_id) {
         listPromise.push(
           this._httpBatchClient.execute(
             createJsonRpcRequest('abci_query', {
@@ -471,7 +470,7 @@ export default class Cw721HandlerService extends BullableService {
                   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                   // @ts-ignore
                   queryData: toBase64(
-                    toUtf8(`{"all_nft_info":{"token_id":"${item.tokenid}"}}`)
+                    toUtf8(`{"all_nft_info":{"token_id":"${item.token_id}"}}`)
                   ),
                 }).finish()
               ),
@@ -566,7 +565,7 @@ export default class Cw721HandlerService extends BullableService {
                   sender,
                   action,
                   txhash: tx.hash,
-                  tokenid: attr.value,
+                  token_id: attr.value,
                 });
               });
             });

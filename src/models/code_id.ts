@@ -3,10 +3,10 @@ import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
 import CW721Contract from './cw721_contract';
 
-export default class Codeid extends BaseModel {
+export default class CodeId extends BaseModel {
   id?: number;
 
-  codeid!: string;
+  code_id!: string;
 
   type!: string;
 
@@ -21,21 +21,21 @@ export default class Codeid extends BaseModel {
   updated_at?: Date;
 
   static get tableName() {
-    return 'codeid';
+    return 'code_id';
   }
 
   static get jsonSchema() {
     return {
       type: 'object',
       required: [
-        'codeid',
+        'code_id',
         'type',
         'contract_name',
         'contract_version',
         'status',
       ],
       properties: {
-        codeid: { type: 'string' },
+        code_id: { type: 'string' },
         type: { type: 'string' },
         contract_name: { type: 'string' },
         contract_version: { type: 'string' },
@@ -50,7 +50,7 @@ export default class Codeid extends BaseModel {
         relation: Model.HasManyRelation,
         modelClass: CW721Contract,
         join: {
-          from: 'codeid.codeid',
+          from: 'code_id.code_id',
           to: 'cw721_contract.code_id',
         },
       },

@@ -14,7 +14,7 @@ export default class CW721Tx extends BaseModel {
 
   contract_address!: string;
 
-  tokenid?: string;
+  token_id?: string;
 
   created_at?: Date;
 
@@ -33,7 +33,7 @@ export default class CW721Tx extends BaseModel {
         contract_address: { type: 'string' },
         sender: { type: 'string' },
         action: { type: 'string' },
-        tokenid: { type: 'string' },
+        token_id: { type: 'string' },
       },
     };
   }
