@@ -10,7 +10,7 @@ export default class CW721Token extends BaseModel {
 
   extension?: any;
 
-  owner!: string;
+  owner?: string;
 
   id?: number | undefined;
 
@@ -27,7 +27,7 @@ export default class CW721Token extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['token_id', 'owner', 'contract_address'],
+      required: ['token_id', 'contract_address'],
       properties: {
         token_id: { type: 'string' },
         contract_address: { type: 'string' },

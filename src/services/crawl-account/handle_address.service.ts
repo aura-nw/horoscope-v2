@@ -92,9 +92,9 @@ export default class HandleAddressService extends BullableService {
         const resultTx = await Transaction.query()
           .joinRelated('[messages, events.[attributes]]')
           .whereIn('events:attributes.key', [
-            TransactionEventAttribute.ATTRIBUTE_KEY.RECEIVER,
-            TransactionEventAttribute.ATTRIBUTE_KEY.SPENDER,
-            TransactionEventAttribute.ATTRIBUTE_KEY.SENDER,
+            TransactionEventAttribute.EVENT_KEY.RECEIVER,
+            TransactionEventAttribute.EVENT_KEY.SPENDER,
+            TransactionEventAttribute.EVENT_KEY.SENDER,
           ])
           .andWhere('transaction.height', '>', lastHeight)
           .andWhere('transaction.height', '<=', latestBlock.height)

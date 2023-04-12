@@ -39,7 +39,7 @@ export class TransactionEventAttribute extends BaseModel {
     };
   }
 
-  static ATTRIBUTE_KEY = {
+  static EVENT_KEY = {
     BALANCES: 'balances',
     DELEGATION_RESPONSES: 'delegation_responses',
     REDELEGATION_RESPONSES: 'redelegation_responses',

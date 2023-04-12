@@ -41,9 +41,7 @@ export const BULL_JOB_NAME = {
   CRAWL_TRANSACTION: 'crawl:transaction',
   HANDLE_TRANSACTION: 'handle:transaction',
   FILTER_CW721_TRANSACTION: 'filter:cw721-tx',
-  HANDLE_CW721_TRANSFER: 'handle:cw721-transfer',
-  HANDLE_CW721_MINT: 'handle:cw721-mint',
-  HANDLE_CW721_BURN: 'handle:cw721-burn',
+  HANDLE_CW721_EXECUTE: 'handle:cw721-execute',
 };
 
 export const SERVICE = {
