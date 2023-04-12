@@ -22,5 +22,10 @@
   },
   "handleAddress": {
     "millisecondCrawl": 5000
+  },
+  "crawlAccount": {
+    "handleVestingAccount": {
+      "millisecondCrawl": 30000
+    }
   }
 }

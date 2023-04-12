@@ -22,5 +22,10 @@
     "assetTxBatch": 100,
     "assetMillisecondRepeatJob": 5000,
     "assetStartTxId": 0
+  },
+  "crawlAccount": {
+    "handleVestingAccount": {
+      "millisecondCrawl": 30000
+    }
   }
 }
