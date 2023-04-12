@@ -8,7 +8,7 @@ import {
   Block,
   BlockCheckpoint,
   Transaction,
-  TransactionEventAttribute,
+  EventAttribute,
 } from '../../models';
 import Utils from '../../common/utils/utils';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -92,9 +92,9 @@ export default class HandleAddressService extends BullableService {
         const resultTx = await Transaction.query()
           .joinRelated('[messages, events.[attributes]]')
           .whereIn('events:attributes.key', [
-            TransactionEventAttribute.EVENT_KEY.RECEIVER,
-            TransactionEventAttribute.EVENT_KEY.SPENDER,
-            TransactionEventAttribute.EVENT_KEY.SENDER,
+            EventAttribute.EVENT_KEY.RECEIVER,
+            EventAttribute.EVENT_KEY.SPENDER,
+            EventAttribute.EVENT_KEY.SENDER,
           ])
           .andWhere('transaction.height', '>', lastHeight)
           .andWhere('transaction.height', '<=', latestBlock.height)

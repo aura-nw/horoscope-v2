@@ -6,8 +6,8 @@ import {
   Block,
   BlockCheckpoint,
   Transaction,
-  TransactionEvent,
-  TransactionEventAttribute,
+  Event,
+  EventAttribute,
   TransactionMessage,
 } from '../../../../src/models';
 import CrawlAccountService from '../../../../src/services/crawl-account/crawl_account.service';
@@ -130,10 +130,10 @@ export default class HandleAddressTest {
     await Promise.all([
       Account.query().delete(true),
       TransactionMessage.query().delete(true),
-      TransactionEventAttribute.query().delete(true),
+      EventAttribute.query().delete(true),
       BlockCheckpoint.query().delete(true),
     ]);
-    await TransactionEvent.query().delete(true);
+    await Event.query().delete(true);
     await Transaction.query().delete(true);
     await Block.query().delete(true);
     await Block.query().insert(this.block);
@@ -145,10 +145,10 @@ export default class HandleAddressTest {
     await Promise.all([
       Account.query().delete(true),
       TransactionMessage.query().delete(true),
-      TransactionEventAttribute.query().delete(true),
+      EventAttribute.query().delete(true),
       BlockCheckpoint.query().delete(true),
     ]);
-    await TransactionEvent.query().delete(true);
+    await Event.query().delete(true);
     await Transaction.query().delete(true);
     await Block.query().delete(true);
     this.broker.stop();
