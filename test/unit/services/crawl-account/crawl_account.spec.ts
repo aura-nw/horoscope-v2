@@ -81,6 +81,7 @@ export default class CrawlAccountTest {
   @BeforeAll()
   async initSuite() {
     await this.broker.start();
+    await BlockCheckpoint.query().delete(true);
     await BlockCheckpoint.query().insert(this.blockCheckpoint);
     this.crawlAccountService = this.broker.createService(
       CrawlAccountService
@@ -114,6 +115,7 @@ export default class CrawlAccountTest {
 
   @AfterAll()
   async tearDown() {
+    await BlockCheckpoint.query().delete(true);
     await AccountVesting.query().delete(true);
     await Account.query().delete(true);
     await this.broker.stop();
