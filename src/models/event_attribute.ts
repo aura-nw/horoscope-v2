@@ -1,9 +1,9 @@
 import { Model } from 'objection';
 import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
-import { TransactionEvent } from './transaction_event';
+import { Event } from './event';
 
-export class TransactionEventAttribute extends BaseModel {
+export class EventAttribute extends BaseModel {
   event_id!: number;
 
   key!: string;
@@ -11,7 +11,7 @@ export class TransactionEventAttribute extends BaseModel {
   value!: string;
 
   static get tableName() {
-    return 'transaction_event_attribute';
+    return 'event_attribute';
   }
 
   static get jsonSchema() {
@@ -30,10 +30,10 @@ export class TransactionEventAttribute extends BaseModel {
     return {
       event: {
         relation: Model.BelongsToOneRelation,
-        modelClass: TransactionEvent,
+        modelClass: Event,
         join: {
-          from: 'transaction_event_attribute.event_id',
-          to: 'transaction_event.id',
+          from: 'event_attribute.event_id',
+          to: 'event.id',
         },
       },
     };
