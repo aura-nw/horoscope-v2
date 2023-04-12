@@ -247,22 +247,24 @@ export default class CrawlValidatorService extends BullableService {
     );
 
     const result: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
-    const delegations: QueryDelegationResponse[] = result.map(
+    const delegations: (QueryDelegationResponse | null)[] = result.map(
       (res: JsonRpcSuccessResponse) =>
-        cosmos.staking.v1beta1.QueryDelegationResponse.decode(
-          fromBase64(res.result.response.value)
-        )
+        res.result.response.value
+          ? cosmos.staking.v1beta1.QueryDelegationResponse.decode(
+              fromBase64(res.result.response.value)
+            )
+          : null
     );
 
     validators.forEach((val: Validator) => {
       const delegation = delegations.find(
-        (dele: QueryDelegationResponse) =>
-          dele.delegationResponse?.delegation?.validatorAddress ===
+        (dele) =>
+          dele?.delegationResponse?.delegation?.validatorAddress ===
           val.operator_address
       );
 
       val.self_delegation_balance =
-        delegation?.delegationResponse?.balance?.amount ?? '';
+        delegation?.delegationResponse?.balance?.amount ?? '0';
       val.percent_voting_power =
         Number(
           (BigInt(val.tokens) * BigInt(100000000)) /
