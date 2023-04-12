@@ -23,6 +23,7 @@ import {
   BULL_JOB_NAME,
   getHttpBatchClient,
   MSG_TYPE,
+  SERVICE,
   SERVICE_NAME,
 } from '../../common';
 import { Transaction } from '../../models';
@@ -186,9 +187,9 @@ export default class CrawlTxService extends BullableService {
   }
 
   @Action({
-    name: 'crawlTxByHeight',
+    name: SERVICE.V1.CrawlTransaction.CrawlTxByHeight.key,
   })
-  async crawlTxByHeight(
+  async CrawlTxByHeight(
     ctx: Context<{ listBlock: [{ height: number; timestamp: string }] }>
   ) {
     this.createJob(

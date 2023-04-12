@@ -64,5 +64,9 @@ export class TransactionEventAttribute extends BaseModel {
     _CONTRACT_ADDRESS: '_contract_address',
     CODE_ID: 'code_id',
     EXECUTE: 'execute',
+    STAKING: 'staking',
+    DELEGATE: 'delegate',
+    REDELEGATE: 'redelegate',
+    UNBOND: 'unbond',
   };
 }

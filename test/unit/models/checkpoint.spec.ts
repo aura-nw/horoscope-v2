@@ -1,13 +1,13 @@
 import { BeforeAll, Describe, Test } from '@jest-decorated/core';
-import { Checkpoint, ICheckpoint } from '../../../src/models';
+import { Checkpoint } from '../../../src/models';
 import knex from '../../../src/common/utils/db_connection';
 
 @Describe('Test checkpoint model')
 export default class CW20HoldersTest {
-  checkpointTx: ICheckpoint = {
+  checkpointTx = Checkpoint.fromJson({
     job_name: 'BullJobTx',
     data: { checkpointX: 'value1', checkpointY: 2 },
-  };
+  });
 
   @BeforeAll()
   async initSuite() {

@@ -1,11 +1,6 @@
 import BaseModel from './base';
 
-export interface ICheckpoint {
-  job_name: string;
-  data: any;
-}
-
-export class Checkpoint extends BaseModel implements ICheckpoint {
+export class Checkpoint extends BaseModel {
   job_name!: string;
 
   data!: any;
