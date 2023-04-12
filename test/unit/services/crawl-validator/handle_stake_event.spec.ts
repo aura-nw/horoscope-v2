@@ -143,7 +143,7 @@ export default class HandleStakeEventTest {
 
   @BeforeAll()
   async initSuite() {
-    this.broker.start();
+    await this.broker.start();
     this.handleStakeEventService = this.broker.createService(
       HandleStakeEventService
     ) as HandleStakeEventService;
@@ -179,7 +179,7 @@ export default class HandleStakeEventTest {
     ]);
     await Transaction.query().delete(true);
     await Block.query().delete(true);
-    this.broker.stop();
+    await this.broker.stop();
   }
 
   @Test('Handle stake event success and insert power_event to DB')

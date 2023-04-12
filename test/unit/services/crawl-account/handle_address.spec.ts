@@ -95,7 +95,7 @@ export default class HandleAddressTest {
 
   @BeforeAll()
   async initSuite() {
-    this.broker.start();
+    await this.broker.start();
     this.crawlAccountService = this.broker.createService(
       CrawlAccountService
     ) as CrawlAccountService;
@@ -117,6 +117,10 @@ export default class HandleAddressTest {
       this.crawlAccountService
         .getQueueManager()
         .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES)
+        .empty(),
+      this.crawlAccountService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT)
         .empty(),
       this.handleAddressService
         .getQueueManager()
@@ -151,7 +155,7 @@ export default class HandleAddressTest {
     await TransactionEvent.query().delete(true);
     await Transaction.query().delete(true);
     await Block.query().delete(true);
-    this.broker.stop();
+    await this.broker.stop();
   }
 
   @Test('Handle address success and insert account to DB')

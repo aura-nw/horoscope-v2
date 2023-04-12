@@ -34,12 +34,12 @@ export default class CrawlSigningInfoService extends BullableService {
   public async handleJob(_payload: object): Promise<void> {
     this._lcdClient = await getLcdClient();
 
-    const listUpdateValidators: Validator[] = [];
-    const listSigningInfos: any[] = [];
+    const updateValidators: Validator[] = [];
+    const signingInfos: any[] = [];
 
-    const listFoundValidator: Validator[] = await Validator.query().select('*');
+    const foundValidators: Validator[] = await Validator.query().select('*');
 
-    if (listFoundValidator.length > 0) {
+    if (foundValidators.length > 0) {
       const paramSlashing =
         await this._lcdClient.auranw.cosmos.slashing.v1beta1.params();
 
@@ -55,7 +55,7 @@ export default class CrawlSigningInfoService extends BullableService {
             pagination,
           });
 
-        listSigningInfos.push(...resultCallApi.info);
+        signingInfos.push(...resultCallApi.info);
         if (resultCallApi.pagination.next_key === null) {
           done = true;
         } else {
@@ -64,13 +64,13 @@ export default class CrawlSigningInfoService extends BullableService {
       }
 
       await Promise.all(
-        listFoundValidator.map(async (foundValidator: Validator) => {
+        foundValidators.map(async (foundValidator: Validator) => {
           this.logger.info(
             `Update signing info of validator: ${foundValidator.operator_address}`
           );
 
           try {
-            const signingInfo = listSigningInfos.find(
+            const signingInfo = signingInfos.find(
               (sign: any) => sign.address === foundValidator.consensus_address
             );
 
@@ -105,7 +105,7 @@ export default class CrawlSigningInfoService extends BullableService {
                 10
               );
               updateValidator.uptime = uptime;
-              listUpdateValidators.push(updateValidator);
+              updateValidators.push(updateValidator);
             }
           } catch (error) {
             this.logger.error(error);
@@ -114,7 +114,7 @@ export default class CrawlSigningInfoService extends BullableService {
       );
 
       await Validator.query()
-        .insert(listUpdateValidators)
+        .insert(updateValidators)
         .onConflict('operator_address')
         .merge()
         .returning('id')

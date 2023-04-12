@@ -12,7 +12,7 @@ import {
   Validator,
 } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import config from '../../../config.json';
+import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
   name: SERVICE.V1.HandleStakeEventService.key,

@@ -36,6 +36,7 @@ export const BULL_JOB_NAME = {
   CRAWL_ACCOUNT_AUTH: 'crawl:account-auth',
   CRAWL_ACCOUNT_BALANCES: 'crawl:account-balances',
   CRAWL_ACCOUNT_SPENDABLE_BALANCES: 'crawl:account-spendable-balances',
+  HANDLE_VESTING_ACCOUNT: 'handle:vesting-account',
   HANDLE_STAKE_EVENT: 'handle:stake-event',
   CRAWL_BLOCK: 'crawl:block',
   CRAWL_TRANSACTION: 'crawl:transaction',
@@ -115,5 +116,7 @@ export const MSG_TYPE = {
 };
 
 export const ABCI_QUERY_PATH = {
+  ACCOUNT_ALL_BALANCES: '/cosmos.bank.v1beta1.Query/AllBalances',
+  ACCOUNT_SPENDABLE_BALANCES: '/cosmos.bank.v1beta1.Query/SpendableBalances',
   VALIDATOR_DELEGATION: '/cosmos.staking.v1beta1.Query/Delegation',
 };

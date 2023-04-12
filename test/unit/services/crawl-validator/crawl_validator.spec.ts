@@ -60,7 +60,7 @@ export default class CrawlValidatorTest {
 
   @BeforeAll()
   async initSuite() {
-    this.broker.start();
+    await this.broker.start();
     await BlockCheckpoint.query().insert(this.blockCheckpoint);
     this.crawlSigningInfoService = this.broker.createService(
       CrawlSigningInfoService
@@ -104,7 +104,7 @@ export default class CrawlValidatorTest {
     await TransactionEvent.query().delete(true);
     await Transaction.query().delete(true);
     await Block.query().delete(true);
-    this.broker.stop();
+    await this.broker.stop();
   }
 
   @Test('Crawl validator info success')
