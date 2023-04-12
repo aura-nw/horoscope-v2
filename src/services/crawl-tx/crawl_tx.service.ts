@@ -26,7 +26,7 @@ import {
   SERVICE,
   SERVICE_NAME,
 } from '../../common';
-import { Transaction } from '../../models';
+import { Event, Transaction } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 
@@ -73,6 +73,7 @@ export default class CrawlTxService extends BullableService {
           BULL_JOB_NAME.HANDLE_TRANSACTION,
           {
             listTx: result.result,
+            height: result.result.txs[0].height,
             timestamp: mapBlockTime[result.result.txs[0].height],
           }
         );
@@ -86,7 +87,7 @@ export default class CrawlTxService extends BullableService {
     prefix: `horoscope-v2-${config.chainId}`,
   })
   private async jobHandlerTx(_payload: any): Promise<void> {
-    const { listTx, timestamp } = _payload;
+    const { listTx, timestamp, height } = _payload;
     const listHandleTx: any[] = [];
     if (listTx.total_count === '0') {
       return;
@@ -179,7 +180,7 @@ export default class CrawlTxService extends BullableService {
         listHandleTx.push(parsedTx);
       });
 
-      await this._handleListTx(listHandleTx, timestamp);
+      await this._handleListTx(listHandleTx, timestamp, height);
     } catch (error) {
       this.logger.error(error);
       throw error;
@@ -201,7 +202,7 @@ export default class CrawlTxService extends BullableService {
     );
   }
 
-  async _handleListTx(listTx: any, timestamp: string) {
+  async _handleListTx(listTx: any, timestamp: string, height: number) {
     this.logger.debug(listTx);
     const listTxModel: any[] = [];
     listTx.forEach((tx: any) => {
@@ -265,6 +266,8 @@ export default class CrawlTxService extends BullableService {
               ? fromUtf8(fromBase64(attribute?.value))
               : null,
           })),
+          block_height: height,
+          source: Event.SOURCE.TX_EVENT,
         })),
         messages: tx.tx.body.messages.map((message: any, index: any) => ({
           sender,
