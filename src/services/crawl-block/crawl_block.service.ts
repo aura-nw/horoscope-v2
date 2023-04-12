@@ -6,6 +6,7 @@ import { CommitSigSDKType } from '@aura-nw/aurajs/types/codegen/tendermint/types
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
+import { fromBase64, fromUtf8 } from '@cosmjs/encoding';
 import {
   BLOCK_CHECKPOINT_JOB_NAME,
   BULL_JOB_NAME,
@@ -15,7 +16,7 @@ import {
   SERVICE,
   SERVICE_NAME,
 } from '../../common';
-import { Block, BlockCheckpoint } from '../../models';
+import { Block, BlockCheckpoint, Event } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 
@@ -86,22 +87,40 @@ export default class CrawlBlockService extends BullableService {
     }
     this.logger.info(`startBlock: ${startBlock} endBlock: ${endBlock}`);
     try {
-      const listPromise = [];
+      const listPromiseBlock = [];
+      const listPromiseBlockResult = [];
       for (let i = startBlock; i <= endBlock; i += 1) {
-        listPromise.push(
+        listPromiseBlock.push(
           this._httpBatchClient.execute(
             createJsonRpcRequest('block', { height: i.toString() })
           )
         );
+        listPromiseBlockResult.push(
+          this._httpBatchClient.execute(
+            createJsonRpcRequest('block_results', { height: i.toString() })
+          )
+        );
       }
-      const resultListPromise: JsonRpcSuccessResponse[] = await Promise.all(
-        listPromise
+      const listBlock: JsonRpcSuccessResponse[] = await Promise.all(
+        listPromiseBlock
       );
 
-      // insert data to DB
-      await this.handleListBlock(
-        resultListPromise.map((result) => result.result)
+      const listBlockResult: JsonRpcSuccessResponse[] = await Promise.all(
+        listPromiseBlockResult
       );
+
+      listBlockResult.forEach((result) => {
+        const { height } = result.result;
+        const blockInListBlock = listBlock.find(
+          (block) => block.result.block.header.height === height
+        );
+        if (blockInListBlock) {
+          blockInListBlock.result.block_result = result.result;
+        }
+      });
+
+      // insert data to DB
+      await this.handleListBlock(listBlock.map((result) => result.result));
 
       // update crawled block to db
       if (this._currentBlock < endBlock) {
@@ -149,6 +168,17 @@ export default class CrawlBlockService extends BullableService {
           block.block?.header?.height &&
           !mapExistedBlock[parseInt(block.block?.header?.height, 10)]
         ) {
+          const listEvent: any[] = [];
+          if (block.block_result.begin_block_events?.length > 0) {
+            block.block_result.begin_block_events.forEach((event: any) => {
+              listEvent.push({ event, source: Event.SOURCE.BEGIN_BLOCK_EVENT });
+            });
+          }
+          if (block.block_result.end_block_events?.length > 0) {
+            block.block_result.end_block_events.forEach((event: any) => {
+              listEvent.push({ event, source: Event.SOURCE.END_BLOCK_EVENT });
+            });
+          }
           listBlockModel.push({
             ...Block.fromJson({
               height: block?.block?.header?.height,
@@ -165,6 +195,18 @@ export default class CrawlBlockService extends BullableService {
                 signature: signature.signature,
               })
             ),
+            events: listEvent.map((event: any) => ({
+              type: event.event.type,
+              attributes: event.event.attributes.map((attribute: any) => ({
+                key: attribute?.key
+                  ? fromUtf8(fromBase64(attribute?.key))
+                  : null,
+                value: attribute?.value
+                  ? fromUtf8(fromBase64(attribute?.value))
+                  : null,
+              })),
+              source: event.source,
+            })),
           });
         }
       });
