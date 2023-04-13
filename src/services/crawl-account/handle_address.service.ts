@@ -187,7 +187,7 @@ export default class HandleAddressService extends BullableService {
     await this.broker.call(
       SERVICE.V1.HandleStakeEventService.UpdatePowerEvent.path,
       {
-        listTxMsgIds: txMsgIds,
+        txMsgIds,
       }
     );
   }
