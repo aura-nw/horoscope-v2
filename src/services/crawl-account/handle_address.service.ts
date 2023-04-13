@@ -124,7 +124,7 @@ export default class HandleAddressService extends BullableService {
           );
         }
 
-        if (resultTx.results.length === 100) offset += 1;
+        if (resultTx.results.length === 1000) offset += 1;
         else done = true;
       }
 
