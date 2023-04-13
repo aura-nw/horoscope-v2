@@ -21,7 +21,7 @@
   "cw721": {
     "blocksPerBatch": 100,
     "millisecondRepeatJob": 5000,
-    "assetStartTxId": 0
+    "startBlock": 0
   },
   "crawlAccount": {
     "handleVestingAccount": {
