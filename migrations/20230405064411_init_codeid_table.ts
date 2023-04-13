@@ -6,6 +6,8 @@ export async function up(knex: Knex): Promise<void> {
     table.string('code_id').unique().index().notNullable();
     table.string('type').index().notNullable();
     table.string('status').index().notNullable();
+    table.string('contract_name').index();
+    table.string('contract_version').index();
     table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
     table.timestamp('updated_at').notNullable().defaultTo(knex.raw('now()'));
   });

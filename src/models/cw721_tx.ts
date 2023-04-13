@@ -10,7 +10,7 @@ export default class CW721Tx extends BaseModel {
 
   sender?: string;
 
-  txhash!: string;
+  tx_hash!: string;
 
   contract_address!: string;
 
@@ -27,9 +27,9 @@ export default class CW721Tx extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['txhash', 'contract_address'],
+      required: ['tx_hash', 'contract_address'],
       properties: {
-        txhash: { type: 'string' },
+        tx_hash: { type: 'string' },
         contract_address: { type: 'string' },
         sender: { type: 'string' },
         action: { type: 'string' },

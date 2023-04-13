@@ -19,8 +19,8 @@
     "millisecondCrawl": 5000
   },
   "cw721": {
-    "assetTxBatch": 100,
-    "assetMillisecondRepeatJob": 5000,
+    "blocksPerBatch": 100,
+    "millisecondRepeatJob": 5000,
     "assetStartTxId": 0
   },
   "crawlAccount": {

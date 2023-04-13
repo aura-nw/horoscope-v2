@@ -20,7 +20,7 @@ export default class CW721Contract extends BaseModel {
 
   creator?: string;
 
-  id?: number | undefined;
+  id?: number;
 
   created_at?: Date;
 

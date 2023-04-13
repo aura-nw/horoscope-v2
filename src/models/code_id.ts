@@ -10,9 +10,9 @@ export default class CodeId extends BaseModel {
 
   type!: string;
 
-  contract_name!: number;
+  contract_name?: string;
 
-  contract_version!: string;
+  contract_version?: string;
 
   status!: string;
 

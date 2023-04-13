@@ -20,14 +20,15 @@ export async function up(knex: Knex): Promise<void> {
     table.jsonb('extension');
     table.string('owner');
     table.string('contract_address').index().notNullable();
+    table.integer('last_updated_height').index();
     table.foreign('contract_address').references('cw721_contract.address');
     table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
-    table.timestamp('delete_at');
+    table.boolean('burned').defaultTo(false);
   });
 
   await knex.schema.createTable('cw721_tx', (table) => {
     table.increments('id').primary();
-    table.string('txhash').unique().index().notNullable();
+    table.string('tx_hash').unique().index().notNullable();
     table.string('sender').index();
     table.string('action');
     table.string('contract_address').index().notNullable();

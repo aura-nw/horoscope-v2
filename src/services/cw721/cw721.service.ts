@@ -16,6 +16,7 @@ import {
 } from '../../common/constant';
 import { getLcdClient } from '../../common/utils/aurajs_client';
 import {
+  Block,
   BlockCheckpoint,
   Transaction,
   TransactionEvent,
@@ -32,12 +33,18 @@ const { NODE_ENV } = Config;
 interface IContractMsgInfo {
   sender: string;
   contractAddress: string;
-  action: string;
-  txhash: string;
-  token_id?: string;
-  code_id?: string;
+  action?: string;
   contractType?: string;
   content: string;
+  wasm_attributes?: {
+    key: string;
+    value: string;
+  }[];
+  tx: Transaction;
+}
+
+interface IInstantiateMsgInfo extends IContractMsgInfo {
+  code_id: string;
 }
 
 const CW721_ACTION = {
@@ -54,12 +61,12 @@ const CW721_ACTION = {
 export default class Cw721HandlerService extends BullableService {
   _httpBatchClient: HttpBatchClient;
 
-  _currentAssetHandlerTx = 1;
+  _currentAssetHandlerBlock = 1;
 
   _lcdClient: any;
 
-  _assetTxBatch: number = config.cw721.assetTxBatch
-    ? config.cw721.assetTxBatch
+  _blocksPerBatch: number = config.cw721.blocksPerBatch
+    ? config.cw721.blocksPerBatch
     : 100;
 
   public constructor(public broker: ServiceBroker) {
@@ -90,19 +97,27 @@ export default class Cw721HandlerService extends BullableService {
   async handlerCw721Transfer(listTransfer: IContractMsgInfo[]): Promise<void> {
     const batchUpdateTransfer: any[] = [];
     listTransfer.forEach((item) => {
-      const newOwner = JSON.parse(item.content)[item.action]?.recipient;
-      if (item.token_id && newOwner) {
+      const newOwner = this.getAttributeFrom(
+        item.wasm_attributes,
+        TransactionEventAttribute.EVENT_KEY.RECIPIENT
+      );
+      const tokenId = this.getAttributeFrom(
+        item.wasm_attributes,
+        TransactionEventAttribute.EVENT_KEY.TOKEN_ID
+      );
+      if (tokenId && newOwner) {
         batchUpdateTransfer.push(
           CW721Token.query()
             .where('contract_address', item.contractAddress)
-            .andWhere('token_id', item.token_id)
+            .andWhere('token_id', tokenId)
             .patch({
               owner: newOwner,
+              last_updated_height: item.tx.height,
             })
         );
       } else {
         throw new Error(
-          `Msg transfer in tx ${item.txhash} not found token id transfered or not found new owner`
+          `Msg transfer in tx ${item.tx.hash} not found token id transfered or not found new owner`
         );
       }
     });
@@ -111,33 +126,52 @@ export default class Cw721HandlerService extends BullableService {
 
   // checked
   async handlerCw721Mint(listMint: IContractMsgInfo[]): Promise<void> {
-    await CW721Token.query().insert(
-      listMint.map((mintMsg) =>
-        CW721Token.fromJson({
-          token_id: mintMsg.token_id,
-          token_uri: JSON.parse(mintMsg.content)[mintMsg.action]?.token_uri,
-          extension: JSON.parse(mintMsg.content)[mintMsg.action]?.extension,
-          owner: JSON.parse(mintMsg.content)[mintMsg.action]?.owner,
-          contract_address: mintMsg.contractAddress,
+    if (listMint.length > 0) {
+      await CW721Token.query().insert(
+        listMint.map((mintMsg) => {
+          const tokenId = this.getAttributeFrom(
+            mintMsg.wasm_attributes,
+            TransactionEventAttribute.EVENT_KEY.TOKEN_ID
+          );
+          return CW721Token.fromJson({
+            token_id: tokenId,
+            token_uri: JSON.parse(mintMsg.content)[CW721_ACTION.MINT]
+              ?.token_uri,
+            extension: JSON.parse(mintMsg.content)[CW721_ACTION.MINT]
+              ?.extension,
+            owner: this.getAttributeFrom(
+              mintMsg.wasm_attributes,
+              TransactionEventAttribute.EVENT_KEY.OWNER
+            ),
+            contract_address: mintMsg.contractAddress,
+            last_updated_height: mintMsg.tx.height,
+          });
         })
-      )
-    );
+      );
+    }
   }
 
   // checked
   async handlerCw721Burn(listBurn: IContractMsgInfo[]): Promise<void> {
     const batchUpdateBurn: any[] = [];
     listBurn.forEach((item) => {
-      if (item.token_id) {
+      const tokenId = this.getAttributeFrom(
+        item.wasm_attributes,
+        TransactionEventAttribute.EVENT_KEY.TOKEN_ID
+      );
+      if (tokenId) {
         batchUpdateBurn.push(
           CW721Token.query()
             .where('contract_address', item.contractAddress)
-            .andWhere('token_id', item.token_id)
-            .delete()
+            .andWhere('token_id', tokenId)
+            .patch({
+              last_updated_height: item.tx.height,
+              burned: true,
+            })
         );
       } else {
         throw new Error(
-          `Msg burn in tx ${item.txhash} not found token id burned`
+          `Msg burn in tx ${item.tx.hash} not found token id burned`
         );
       }
     });
@@ -158,7 +192,7 @@ export default class Cw721HandlerService extends BullableService {
     this._lcdClient = await getLcdClient();
     if (NODE_ENV !== 'test') {
       await this.initEnv();
-      this.createJob(
+      await this.createJob(
         BULL_JOB_NAME.FILTER_CW721_TRANSACTION,
         BULL_JOB_NAME.FILTER_CW721_TRANSACTION,
         {},
@@ -168,7 +202,7 @@ export default class Cw721HandlerService extends BullableService {
             count: 3,
           },
           repeat: {
-            every: config.cw721.assetMillisecondRepeatJob,
+            every: config.cw721.millisecondRepeatJob,
           },
         }
       );
@@ -178,24 +212,30 @@ export default class Cw721HandlerService extends BullableService {
 
   async handleJob() {
     // get range txs for proccessing
-    const startTxId: number = this._currentAssetHandlerTx;
-    const listTx: Transaction[] = await Transaction.query()
-      .where('id', '>=', startTxId)
-      .orderBy('id', 'ASC')
-      .limit(this._assetTxBatch);
-    this.logger.info(
-      `startTxId: ${startTxId} to endTxId: ${listTx[listTx.length - 1].id}`
+    const startBlock: number = this._currentAssetHandlerBlock;
+    const latestBlock = await Block.query().orderBy('height', 'DESC').first();
+    if (!latestBlock) {
+      throw Error('Block table empty');
+    }
+    const endBlock: number = Math.min(
+      startBlock + this._blocksPerBatch,
+      latestBlock.height
     );
-    if (listTx.length > 0) {
+    this.logger.info(`startBlock: ${startBlock} to endBlock: ${endBlock}`);
+    if (endBlock >= startBlock) {
       try {
-        // get all contract Msg in above range txs
+        // get all contract Msg in above range blocks
         const listContractMsg = await this.getContractMsgs(
-          startTxId,
-          listTx[listTx.length - 1].id
+          startBlock,
+          endBlock
         );
         if (listContractMsg.length > 0) {
           // handle instantiate cw721 contracts
-          await this.handleInstantiateMsgs(listContractMsg);
+          await this.handleInstantiateMsgs(
+            listContractMsg.filter(
+              (msg) => msg.action === CW721_ACTION.INSTANTIATE
+            ) as IInstantiateMsgInfo[]
+          );
           // filter Cw721 Msgs
           const cw721ListAddr = (
             await CW721Contract.query().whereIn(
@@ -209,14 +249,14 @@ export default class Cw721HandlerService extends BullableService {
           // handle Cw721 Tx
           await this.handleCw721Tx(cw721Msgs);
           // handle all cw721 execute messages
-          this.handleCw721MsgExec(cw721Msgs);
+          await this.handleCw721MsgExec(cw721Msgs);
         }
         await BlockCheckpoint.query()
           .patch({
-            height: listTx[listTx.length - 1].id + 1,
+            height: endBlock + 1,
           })
           .where('job_name', BLOCK_CHECKPOINT_JOB_NAME.CW721_HANDLER);
-        this._currentAssetHandlerTx = listTx[listTx.length - 1].id + 1;
+        this._currentAssetHandlerBlock = endBlock + 1;
       } catch (error) {
         this.logger.error(error);
       }
@@ -226,39 +266,38 @@ export default class Cw721HandlerService extends BullableService {
   // checked
   async handleCw721Tx(listCw721Msgs: IContractMsgInfo[]) {
     // insert new cw721 txs
-    const cw721Txs = listCw721Msgs.map((cw721Msg) =>
-      CW721Tx.fromJson({
+    const cw721Txs = listCw721Msgs.map((cw721Msg) => {
+      const tokenId = this.getAttributeFrom(
+        cw721Msg.wasm_attributes,
+        TransactionEventAttribute.EVENT_KEY.TOKEN_ID
+      );
+      return CW721Tx.fromJson({
         action: cw721Msg.action,
         sender: cw721Msg.sender,
-        txhash: cw721Msg.txhash,
+        tx_hash: cw721Msg.tx.hash,
         contract_address: cw721Msg.contractAddress,
-        token_id: cw721Msg.token_id,
-      })
-    );
+        token_id: tokenId,
+      });
+    });
     if (cw721Txs.length > 0) {
       await CW721Tx.query().insert(cw721Txs);
     }
   }
 
   // checked
-  async handleInstantiateMsgs(batchContract: IContractMsgInfo[]) {
-    // filter all msg instantiate
-    const msgsInstantiate = batchContract.filter(
-      (msg) => msg.action === CW721_ACTION.INSTANTIATE
-    );
-    await Promise.all(
-      msgsInstantiate.map(async (msg) => {
-        const type = (
-          await Codeid.query()
-            .where('code_id', msg.code_id ? msg.code_id : 'unknown')
-            .first()
-        )?.type;
-        return Object.assign(msg, { contractType: type });
-      })
-    );
+  async handleInstantiateMsgs(msgsInstantiate: IInstantiateMsgInfo[]) {
+    // get all code_id which is cw721 and in above list msgs
+    const cw721CodeIds = (
+      await Codeid.query()
+        .whereIn(
+          'code_id',
+          msgsInstantiate.map((msg) => msg.code_id)
+        )
+        .andWhere('type', 'CW721')
+    ).map((record) => record.code_id);
     // filter cw721 msg instantiate
-    const cw721MsgsInstantiate = msgsInstantiate.filter(
-      (msg) => msg.contractType === 'CW721'
+    const cw721MsgsInstantiate = msgsInstantiate.filter((msg) =>
+      cw721CodeIds.includes(msg.code_id)
     );
     if (cw721MsgsInstantiate.length > 0) {
       const instantiateContracts = cw721MsgsInstantiate.map((msg) =>
@@ -275,14 +314,14 @@ export default class Cw721HandlerService extends BullableService {
   }
 
   // checked
-  handleCw721MsgExec(cw721Msgs: IContractMsgInfo[]) {
+  async handleCw721MsgExec(cw721Msgs: IContractMsgInfo[]) {
     // filter all msg execute
     const cw721MsgsExecute = cw721Msgs.filter(
       (msg) => msg.action !== CW721_ACTION.INSTANTIATE
     );
     // create execute msg job
     if (cw721MsgsExecute.length > 0) {
-      this.createJob(
+      await this.createJob(
         BULL_JOB_NAME.HANDLE_CW721_EXECUTE,
         BULL_JOB_NAME.HANDLE_CW721_EXECUTE,
         cw721MsgsExecute,
@@ -296,114 +335,133 @@ export default class Cw721HandlerService extends BullableService {
     }
   }
 
-  // checked + tested
+  // checked
   async initEnv() {
     // DB -> Config -> MinDB
-    // Get handled txs from db
-    let TxIdAssetHandler = await BlockCheckpoint.query().findOne({
+    // Get handled blocks from db
+    let blockAssetHandler = await BlockCheckpoint.query().findOne({
       job_name: BLOCK_CHECKPOINT_JOB_NAME.CW721_HANDLER,
     });
-    if (!TxIdAssetHandler) {
+    if (!blockAssetHandler) {
       // min Tx from DB
-      const minTxId = await Transaction.query().orderBy('id', 'ASC').first();
-      if (!minTxId) {
-        throw Error('Transaction table empty');
+      const minBlock = await Block.query().orderBy('height', 'ASC').first();
+      if (!minBlock) {
+        throw Error('Block table empty');
       }
-      TxIdAssetHandler = await BlockCheckpoint.query().insert({
+      blockAssetHandler = await BlockCheckpoint.query().insert({
         job_name: BLOCK_CHECKPOINT_JOB_NAME.CW721_HANDLER,
-        height: config.cw721.assetStartTxId
-          ? config.cw721.assetStartTxId
-          : minTxId.id,
+        height: config.cw721.startBlock
+          ? config.cw721.startBlock
+          : minBlock.height,
       });
     }
-    this._currentAssetHandlerTx = TxIdAssetHandler.height;
-    this.logger.info(`_currentAssetHandlerTx: ${this._currentAssetHandlerTx}`);
+    this._currentAssetHandlerBlock = blockAssetHandler.height;
+    this.logger.info(
+      `_currentAssetHandlerBlock: ${this._currentAssetHandlerBlock}`
+    );
   }
 
-  // checked + tested
-  async getContractMsgs(from: number, to: number) {
-    const listContractMsgInfo: IContractMsgInfo[] = [];
-    // from, from+1, ... to-1
+  // checked
+  async getContractMsgs(startBlock: number, endBlock: number) {
+    const listContractMsgInfo: (IContractMsgInfo | IInstantiateMsgInfo)[] = [];
+    // from, from+1, ... to
     const listTxs = await Transaction.query()
       .alias('tx')
-      .whereBetween('tx.id', [from, to])
+      .whereBetween('tx.height', [startBlock, endBlock])
+      .andWhere('tx.code', 0)
       .withGraphJoined('messages')
       .whereIn('messages.type', [
         MSG_TYPE.MSG_EXECUTE_CONTRACT,
         MSG_TYPE.MSG_INSTANTIATE_CONTRACT,
-      ]);
+      ])
+      .orderBy('id', 'ASC');
 
     // eslint-disable-next-line no-restricted-syntax
     for (const tx of listTxs) {
-      if (tx.code === 0) {
-        tx.messages.forEach((message: TransactionMessage, index: number) => {
-          if (message.type === MSG_TYPE.MSG_EXECUTE_CONTRACT) {
-            const content = message.content as MsgExecuteContract;
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            const action = Object.keys(JSON.parse(content.msg))[0];
-            const wasmEvents = tx.data.tx_response.logs[index].events.filter(
-              (event: any) => event.type === TransactionEvent.EVENT_TYPE.WASM
+      tx.messages.forEach((message: TransactionMessage, index: number) => {
+        if (message.type === MSG_TYPE.MSG_EXECUTE_CONTRACT) {
+          const content = message.content as MsgExecuteContract;
+          const wasmEvent = tx.data.tx_response.logs[index].events.find(
+            (event: any) => event.type === TransactionEvent.EVENT_TYPE.WASM
+          );
+          if (wasmEvent) {
+            // split into wasm sub-events
+            const listWasmSubEventAttrs = wasmEvent.attributes.reduce(
+              (acc: any, curr: any) => {
+                if (
+                  curr.key ===
+                  TransactionEventAttribute.EVENT_KEY._CONTRACT_ADDRESS
+                ) {
+                  acc.push([curr]); // start a new sub-array with the current element
+                } else if (acc.length > 0) {
+                  acc[acc.length - 1].push(curr); // add the current element to the last sub-array
+                }
+                return acc;
+              },
+              []
             );
             const { sender } = content;
-            // not cover submessage
-            wasmEvents.forEach((event: any) => {
-              const tokenidAttribute = event.attributes.find(
-                (attr: any) =>
-                  attr.key === TransactionEventAttribute.EVENT_KEY.TOKEN_ID
+            listWasmSubEventAttrs.forEach((wasmSubEventAttrs: any) => {
+              const action = this.getAttributeFrom(
+                wasmSubEventAttrs,
+                TransactionEventAttribute.EVENT_KEY.ACTION
               );
-              if (tokenidAttribute) {
-                listContractMsgInfo.push({
-                  contractAddress: content.contract,
-                  sender,
-                  action,
-                  txhash: tx.hash,
-                  token_id: tokenidAttribute.value,
-                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                  // @ts-ignore
-                  content: content.msg,
-                });
-              }
-            });
-          } else if (message.type === MSG_TYPE.MSG_INSTANTIATE_CONTRACT) {
-            const content = message.content as MsgInstantiateContract;
-            const action = TransactionEvent.EVENT_TYPE.INSTANTIATE;
-            const { sender } = content;
-            const instantiateEvent = tx.data.tx_response.logs[
-              index
-            ].events.find(
-              (event: any) =>
-                event.type === TransactionEvent.EVENT_TYPE.INSTANTIATE
-            );
-            if (instantiateEvent) {
-              const { low, high }: { low: number; high: number } =
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                content.code_id;
-              let codeId = low.toString();
-              if (high) {
-                codeId = high.toString() + codeId;
-              }
-              // not cover submessage
               listContractMsgInfo.push({
-                contractAddress: instantiateEvent.attributes.find(
-                  (attr: any) =>
-                    attr.key ===
-                    TransactionEventAttribute.EVENT_KEY._CONTRACT_ADDRESS
-                ).value,
+                contractAddress: this.getAttributeFrom(
+                  wasmSubEventAttrs,
+                  TransactionEventAttribute.EVENT_KEY._CONTRACT_ADDRESS
+                ),
                 sender,
                 action,
-                txhash: tx.hash,
-                code_id: codeId,
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 content: content.msg,
+                wasm_attributes: wasmSubEventAttrs,
+                tx,
               });
-            }
+            });
           }
-        });
-      }
+        } else if (message.type === MSG_TYPE.MSG_INSTANTIATE_CONTRACT) {
+          const content = message.content as MsgInstantiateContract;
+          const action = TransactionEvent.EVENT_TYPE.INSTANTIATE;
+          const { sender } = content;
+          const instantiateEvent = tx.data.tx_response.logs[index].events.find(
+            (event: any) =>
+              event.type === TransactionEvent.EVENT_TYPE.INSTANTIATE
+          );
+          if (instantiateEvent) {
+            const { low, high }: { low: number; high: number } =
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              content.code_id;
+            let codeId = low.toString();
+            if (high) {
+              codeId = high.toString() + codeId;
+            }
+            // not cover submessage
+            listContractMsgInfo.push({
+              contractAddress: this.getAttributeFrom(
+                instantiateEvent.attributes,
+                TransactionEventAttribute.EVENT_KEY._CONTRACT_ADDRESS
+              ),
+              sender,
+              action,
+              code_id: codeId,
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              content: content.msg,
+              tx,
+            });
+          }
+        }
+      });
     }
     return listContractMsgInfo;
+  }
+
+  // checked
+  getAttributeFrom(listAttributes: any, attributeType: string) {
+    return listAttributes?.find((attr: any) => attr.key === attributeType)
+      ?.value;
   }
 }

@@ -16,9 +16,11 @@ export default class CW721Token extends BaseModel {
 
   contract_address!: string;
 
+  last_updated_height!: number;
+
   created_at?: Date;
 
-  delete_at?: Date;
+  burned?: boolean;
 
   static get tableName() {
     return 'cw721_token';
@@ -27,11 +29,12 @@ export default class CW721Token extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['token_id', 'contract_address'],
+      required: ['token_id', 'contract_address', 'last_updated_height'],
       properties: {
         token_id: { type: 'string' },
         contract_address: { type: 'string' },
         owner: { type: 'string' },
+        last_updated_height: { type: 'number' },
       },
     };
   }
