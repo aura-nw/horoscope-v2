@@ -88,14 +88,11 @@ export default class CrawlBlockService extends BullableService {
     this.logger.info(`startBlock: ${startBlock} endBlock: ${endBlock}`);
     try {
       const blockQueries = [];
-      const blockResultsQueries = [];
       for (let i = startBlock; i <= endBlock; i += 1) {
         blockQueries.push(
           this._httpBatchClient.execute(
             createJsonRpcRequest('block', { height: i.toString() })
-          )
-        );
-        blockResultsQueries.push(
+          ),
           this._httpBatchClient.execute(
             createJsonRpcRequest('block_results', { height: i.toString() })
           )
@@ -105,22 +102,16 @@ export default class CrawlBlockService extends BullableService {
         blockQueries
       );
 
-      const blockResultResponse: JsonRpcSuccessResponse[] = await Promise.all(
-        blockResultsQueries
-      );
-
-      blockResultResponse.forEach((result) => {
-        const { height } = result.result;
-        const blockInListBlock = blockResponses.find(
-          (block) => block.result.block.header.height === height
-        );
-        if (blockInListBlock) {
-          blockInListBlock.result.block_result = result.result;
-        }
-      });
+      const mergeBlockResponses: JsonRpcSuccessResponse[] = [];
+      for (let i = 0; i < blockResponses.length; i += 2) {
+        blockResponses[i].result.block_result = blockResponses[i + 1].result;
+        mergeBlockResponses.push(blockResponses[i]);
+      }
 
       // insert data to DB
-      await this.handleListBlock(blockResponses.map((result) => result.result));
+      await this.handleListBlock(
+        mergeBlockResponses.map((result) => result.result)
+      );
 
       // update crawled block to db
       if (this._currentBlock < endBlock) {
