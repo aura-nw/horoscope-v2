@@ -261,6 +261,10 @@ export default class CrawlTxService extends BullableService {
           tx_msg_index: 0,
           type: event.type,
           attributes: event.attributes.map((attribute: any) => ({
+            block_height: parseInt(tx.tx_response.height, 10),
+            composite_key: attribute?.key
+              ? `${event.type}.${fromUtf8(fromBase64(attribute?.key))}`
+              : null,
             key: attribute?.key ? fromUtf8(fromBase64(attribute?.key)) : null,
             value: attribute?.value
               ? fromUtf8(fromBase64(attribute?.value))
