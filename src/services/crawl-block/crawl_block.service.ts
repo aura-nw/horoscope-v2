@@ -87,31 +87,31 @@ export default class CrawlBlockService extends BullableService {
     }
     this.logger.info(`startBlock: ${startBlock} endBlock: ${endBlock}`);
     try {
-      const listPromiseBlock = [];
-      const listPromiseBlockResult = [];
+      const blockQueries = [];
+      const blockResultsQueries = [];
       for (let i = startBlock; i <= endBlock; i += 1) {
-        listPromiseBlock.push(
+        blockQueries.push(
           this._httpBatchClient.execute(
             createJsonRpcRequest('block', { height: i.toString() })
           )
         );
-        listPromiseBlockResult.push(
+        blockResultsQueries.push(
           this._httpBatchClient.execute(
             createJsonRpcRequest('block_results', { height: i.toString() })
           )
         );
       }
-      const listBlock: JsonRpcSuccessResponse[] = await Promise.all(
-        listPromiseBlock
+      const blockResponses: JsonRpcSuccessResponse[] = await Promise.all(
+        blockQueries
       );
 
-      const listBlockResult: JsonRpcSuccessResponse[] = await Promise.all(
-        listPromiseBlockResult
+      const blockResultResponse: JsonRpcSuccessResponse[] = await Promise.all(
+        blockResultsQueries
       );
 
-      listBlockResult.forEach((result) => {
+      blockResultResponse.forEach((result) => {
         const { height } = result.result;
-        const blockInListBlock = listBlock.find(
+        const blockInListBlock = blockResponses.find(
           (block) => block.result.block.header.height === height
         );
         if (blockInListBlock) {
@@ -120,7 +120,7 @@ export default class CrawlBlockService extends BullableService {
       });
 
       // insert data to DB
-      await this.handleListBlock(listBlock.map((result) => result.result));
+      await this.handleListBlock(blockResponses.map((result) => result.result));
 
       // update crawled block to db
       if (this._currentBlock < endBlock) {
@@ -168,15 +168,21 @@ export default class CrawlBlockService extends BullableService {
           block.block?.header?.height &&
           !mapExistedBlock[parseInt(block.block?.header?.height, 10)]
         ) {
-          const listEvent: any[] = [];
+          const listEvent: Event[] = [];
           if (block.block_result.begin_block_events?.length > 0) {
             block.block_result.begin_block_events.forEach((event: any) => {
-              listEvent.push({ event, source: Event.SOURCE.BEGIN_BLOCK_EVENT });
+              listEvent.push({
+                ...event,
+                source: Event.SOURCE.BEGIN_BLOCK_EVENT,
+              });
             });
           }
           if (block.block_result.end_block_events?.length > 0) {
             block.block_result.end_block_events.forEach((event: any) => {
-              listEvent.push({ event, source: Event.SOURCE.END_BLOCK_EVENT });
+              listEvent.push({
+                ...event,
+                source: Event.SOURCE.END_BLOCK_EVENT,
+              });
             });
           }
           listBlockModel.push({
@@ -196,8 +202,8 @@ export default class CrawlBlockService extends BullableService {
               })
             ),
             events: listEvent.map((event: any) => ({
-              type: event.event.type,
-              attributes: event.event.attributes.map((attribute: any) => ({
+              type: event.type,
+              attributes: event.attributes.map((attribute: any) => ({
                 key: attribute?.key
                   ? fromUtf8(fromBase64(attribute?.key))
                   : null,
