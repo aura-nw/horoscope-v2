@@ -124,7 +124,7 @@ export default class HandleAddressService extends BullableService {
           );
         }
 
-        if (resultTx.results.length === 100) offset += 1;
+        if (resultTx.results.length === 1000) offset += 1;
         else done = true;
       }
 
@@ -187,7 +187,7 @@ export default class HandleAddressService extends BullableService {
     await this.broker.call(
       SERVICE.V1.HandleStakeEventService.UpdatePowerEvent.path,
       {
-        listTxMsgIds: txMsgIds,
+        txMsgIds,
       }
     );
   }
