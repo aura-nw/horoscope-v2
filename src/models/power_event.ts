@@ -29,9 +29,9 @@ export class PowerEvent extends BaseModel {
 
   static get TYPES() {
     return {
-      DELEGATE: '/cosmos.staking.v1beta1.MsgDelegate',
-      REDELEGATE: '/cosmos.staking.v1beta1.MsgBeginRedelegate',
-      UNBOND: '/cosmos.staking.v1beta1.MsgUndelegate',
+      DELEGATE: 'delegate',
+      REDELEGATE: 'redelegate',
+      UNBOND: 'unbond',
     };
   }
 

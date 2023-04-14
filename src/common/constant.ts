@@ -36,6 +36,8 @@ export const BULL_JOB_NAME = {
   CRAWL_ACCOUNT_AUTH: 'crawl:account-auth',
   CRAWL_ACCOUNT_BALANCES: 'crawl:account-balances',
   CRAWL_ACCOUNT_SPENDABLE_BALANCES: 'crawl:account-spendable-balances',
+  CRAWL_ACCOUNT_STAKE: 'crawl:account-stake',
+  HANDLE_ACCOUNT_STAKE_END_TIME: 'handle:account-stake-end-time',
   HANDLE_VESTING_ACCOUNT: 'handle:vesting-account',
   HANDLE_STAKE_EVENT: 'handle:stake-event',
   CRAWL_BLOCK: 'crawl:block',
@@ -51,6 +53,14 @@ export const SERVICE = {
       UpdateAccount: {
         key: 'UpdateAccount',
         path: 'v1.CrawlAccountService.UpdateAccount',
+      },
+    },
+    CrawlAccountStakeService: {
+      key: 'CrawlAccountStakeService',
+      name: 'v1.CrawlAccountStakeService',
+      UpdateAccountStake: {
+        key: 'UpdateAccountStake',
+        path: 'v1.CrawlAccountStakeService.UpdateAccountStake',
       },
     },
     HandleAddressService: {

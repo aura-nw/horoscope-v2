@@ -68,5 +68,6 @@ export class TransactionEventAttribute extends BaseModel {
     DELEGATE: 'delegate',
     REDELEGATE: 'redelegate',
     UNBOND: 'unbond',
+    COMPLETION_TIME: 'completion_time',
   };
 }

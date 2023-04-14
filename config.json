@@ -22,5 +22,10 @@
     "handleVestingAccount": {
       "millisecondCrawl": 30000
     }
+  },
+  "crawlAccountStake": {
+    "handleAccountStakeEndTime": {
+      "millisecondCrawl": 30000
+    }
   }
 }
