@@ -253,12 +253,12 @@ export default class CrawlGenesisService extends BullableService {
     accounts.forEach((account) => {
       account.balances.forEach((balance) => {
         if (balance.denom.startsWith('ibc/')) {
-          const ibcDenom = ibcDenomRedis?.find(
+          const existIbcDenomRedis = ibcDenomRedis?.find(
             (ibc: any) => ibc.hash === balance.denom
           );
-          if (ibcDenom) {
+          if (existIbcDenomRedis) {
             // eslint-disable-next-line no-param-reassign
-            balance.base_denom = ibcDenom.base_denom;
+            balance.base_denom = existIbcDenomRedis.base_denom;
           } else ibcDenoms.push(balance.denom);
         }
       });
@@ -285,15 +285,17 @@ export default class CrawlGenesisService extends BullableService {
       );
     });
 
-    const result: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
-    const ibcDenomTraces = result.map((res, index) => ({
+    const resultIbcDenom: JsonRpcSuccessResponse[] = await Promise.all(
+      batchQueries
+    );
+    const ibcDenomResponses = resultIbcDenom.map((res, index) => ({
       hash: ibcDenoms[index],
       ...ibc.applications.transfer.v1.QueryDenomTraceResponse.decode(
         fromBase64(res.result.response.value)
       ).denomTrace,
     }));
 
-    ibcDenomTraces.forEach((denomTrace) => {
+    ibcDenomResponses.forEach((denomTrace) => {
       ibcDenomRedis?.push({
         base_denom: denomTrace.baseDenom,
         hash: denomTrace.hash,
@@ -302,7 +304,7 @@ export default class CrawlGenesisService extends BullableService {
       const accountsWTrace = accounts.filter((acc) =>
         acc.balances.find((bal) => bal.denom === denomTrace.hash)
       );
-      if (accountsWTrace.length > 0)
+      if (accountsWTrace.length > 0) {
         accountsWTrace.forEach((acc) => {
           const account = acc.balances.find(
             (bal) => bal.denom === denomTrace.hash
@@ -310,6 +312,7 @@ export default class CrawlGenesisService extends BullableService {
 
           if (account) account.base_denom = denomTrace.baseDenom;
         });
+      }
     });
 
     return accounts;
