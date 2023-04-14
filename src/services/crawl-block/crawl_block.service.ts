@@ -102,16 +102,16 @@ export default class CrawlBlockService extends BullableService {
         blockQueries
       );
 
-      const mergeBlockResponses: JsonRpcSuccessResponse[] = [];
+      const mergeBlockResponses: any[] = [];
       for (let i = 0; i < blockResponses.length; i += 2) {
-        blockResponses[i].result.block_result = blockResponses[i + 1].result;
-        mergeBlockResponses.push(blockResponses[i]);
+        mergeBlockResponses.push({
+          ...blockResponses[i].result,
+          block_result: blockResponses[i + 1].result,
+        });
       }
 
       // insert data to DB
-      await this.handleListBlock(
-        mergeBlockResponses.map((result) => result.result)
-      );
+      await this.handleListBlock(mergeBlockResponses);
 
       // update crawled block to db
       if (this._currentBlock < endBlock) {
@@ -159,10 +159,10 @@ export default class CrawlBlockService extends BullableService {
           block.block?.header?.height &&
           !mapExistedBlock[parseInt(block.block?.header?.height, 10)]
         ) {
-          const listEvent: Event[] = [];
+          const events: Event[] = [];
           if (block.block_result.begin_block_events?.length > 0) {
             block.block_result.begin_block_events.forEach((event: any) => {
-              listEvent.push({
+              events.push({
                 ...event,
                 source: Event.SOURCE.BEGIN_BLOCK_EVENT,
               });
@@ -170,7 +170,7 @@ export default class CrawlBlockService extends BullableService {
           }
           if (block.block_result.end_block_events?.length > 0) {
             block.block_result.end_block_events.forEach((event: any) => {
-              listEvent.push({
+              events.push({
                 ...event,
                 source: Event.SOURCE.END_BLOCK_EVENT,
               });
@@ -192,7 +192,7 @@ export default class CrawlBlockService extends BullableService {
                 signature: signature.signature,
               })
             ),
-            events: listEvent.map((event: any) => ({
+            events: events.map((event: any) => ({
               type: event.type,
               attributes: event.attributes.map((attribute: any) => ({
                 key: attribute?.key
