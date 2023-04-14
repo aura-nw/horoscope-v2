@@ -871,11 +871,21 @@ export default class CrawlBlockTest {
     this.crawlTxService = this.broker.createService(
       CrawlTxService
     ) as CrawlTxService;
-    await this.crawlBlockService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_BLOCK)
-      .empty();
-    await knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE');
+    await Promise.all([
+      this.crawlBlockService
+        .getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_BLOCK)
+        .empty(),
+      this.crawlTxService
+        ?.getQueueManager()
+        .getQueue(BULL_JOB_NAME.CRAWL_TRANSACTION)
+        .empty(),
+      this.crawlTxService
+        ?.getQueueManager()
+        .getQueue(BULL_JOB_NAME.HANDLE_TRANSACTION)
+        .empty(),
+      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+    ]);
   }
 
   @Test('Parse block and insert to DB')
@@ -904,6 +914,10 @@ export default class CrawlBlockTest {
       this.crawlTxService
         ?.getQueueManager()
         .getQueue(BULL_JOB_NAME.CRAWL_TRANSACTION)
+        .empty(),
+      this.crawlTxService
+        ?.getQueueManager()
+        .getQueue(BULL_JOB_NAME.HANDLE_TRANSACTION)
         .empty(),
     ]);
     await Promise.all([
