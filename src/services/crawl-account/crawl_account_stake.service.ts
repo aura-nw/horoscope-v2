@@ -3,9 +3,9 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
-import BullableService, { QueueHandler } from 'src/base/bullable.service';
 import _ from 'lodash';
 import { parseCoins } from '@cosmjs/proto-signing';
+import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, ITxIdsParam, SERVICE } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
 import {
@@ -21,6 +21,12 @@ import {
   version: 1,
 })
 export default class CrawlAccountStakeService extends BullableService {
+  private eventStakes = [
+    TransactionEventAttribute.EVENT_KEY.DELEGATE,
+    TransactionEventAttribute.EVENT_KEY.REDELEGATE,
+    TransactionEventAttribute.EVENT_KEY.UNBOND,
+  ];
+
   public constructor(public broker: ServiceBroker) {
     super(broker);
   }
@@ -52,9 +58,7 @@ export default class CrawlAccountStakeService extends BullableService {
     jobType: 'crawl',
     prefix: `horoscope-v2-${config.chainId}`,
   })
-  public async handleJobAccountDelegations(
-    _payload: ITxIdsParam
-  ): Promise<void> {
+  public async handleJob(_payload: ITxIdsParam): Promise<void> {
     const stakeTxs: any[] = await Transaction.query()
       .joinRelated('events.[attributes]')
       .select(
@@ -98,12 +102,12 @@ export default class CrawlAccountStakeService extends BullableService {
             )
             .map((tx) => tx.value)
         )
-        .andWhere('type', AccountStake.TYPES.DELEGATE),
+        .andWhere('account_stake.type', AccountStake.TYPES.DELEGATE),
     ]);
     const validatorKeys = _.keyBy(validators, 'operator_address');
     const accountKeys = _.keyBy(accounts, 'address');
 
-    const accountStakes: AccountStake[] = [];
+    // const accountStakes: AccountStake[] = [];
     const accountDel: AccountStake[] = [];
     stakeTxs
       .filter((stake) => this.eventStakes.includes(stake.type))
@@ -118,8 +122,6 @@ export default class CrawlAccountStakeService extends BullableService {
           (tx) => tx.event_id === stake.event_id
         );
 
-        // let validatorSrcId;
-        // let validatorDstId;
         switch (stake.type) {
           case AccountStake.TYPES.DELEGATE:
             {
@@ -166,7 +168,7 @@ export default class CrawlAccountStakeService extends BullableService {
                 });
               }
 
-              accountStakes.push(accStake);
+              accountDelegations.push(accStake);
             }
             break;
           case AccountStake.TYPES.REDELEGATE:
@@ -204,7 +206,7 @@ export default class CrawlAccountStakeService extends BullableService {
                 if (stakeLeftRedele > 0) {
                   accStakeSrc.balance = stakeLeftRedele.toString();
 
-                  accountStakes.push(accStakeSrc);
+                  accountDelegations.push(accStakeSrc);
                 } else accountDel.push(accStakeSrc);
               }
               if (accStakeDst) {
@@ -290,7 +292,7 @@ export default class CrawlAccountStakeService extends BullableService {
                 ).value,
               });
 
-              accountStakes.push(...[accStakeDst, accRestake]);
+              accountDelegations.push(...[accStakeDst, accRestake]);
             }
             break;
           case AccountStake.TYPES.UNBOND:
@@ -316,7 +318,7 @@ export default class CrawlAccountStakeService extends BullableService {
                 if (stakeLeftRedele > 0) {
                   accStake.balance = stakeLeftRedele.toString();
 
-                  accountStakes.push(accStake);
+                  accountDelegations.push(accStake);
                 } else accountDel.push(accStake);
               }
 
@@ -347,7 +349,7 @@ export default class CrawlAccountStakeService extends BullableService {
                 ).value,
               });
 
-              accountStakes.push(accUnbond);
+              accountDelegations.push(accUnbond);
             }
             break;
           default:
@@ -355,9 +357,9 @@ export default class CrawlAccountStakeService extends BullableService {
         }
       });
 
-    if (accountStakes.length > 0)
+    if (accountDelegations.length > 0)
       await AccountStake.query()
-        .insert(accountStakes)
+        .insert(accountDelegations)
         .onConflict('id')
         .merge()
         .returning('id')

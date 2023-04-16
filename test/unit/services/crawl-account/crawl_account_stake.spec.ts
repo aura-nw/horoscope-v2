@@ -5,15 +5,15 @@ import {
   Account,
   Block,
   Transaction,
-  PowerEvent,
   Validator,
   TransactionEventAttribute,
   TransactionEvent,
+  AccountStake,
 } from '../../../../src/models';
-import HandleStakeEventService from '../../../../src/services/crawl-validator/handle_stake_event.service';
+import CrawlAccountStakeService from '../../../../src/services/crawl-account/crawl_account_stake.service';
 
-@Describe('Test handle_stake_event service')
-export default class HandleStakeEventTest {
+@Describe('Test crawl_account_stake service')
+export default class CrawlAccountStakeTest {
   block: Block = Block.fromJson({
     height: 3967530,
     hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9F',
@@ -79,7 +79,12 @@ export default class HandleStakeEventTest {
           },
           {
             key: 'amount',
-            value: '1000000uaura',
+            value: '200000uaura',
+            msg_index: 1,
+          },
+          {
+            key: 'completion_time',
+            value: '2023-04-05T02:45:20Z',
             msg_index: 1,
           },
         ],
@@ -109,6 +114,11 @@ export default class HandleStakeEventTest {
             value: '500000uaura',
             msg_index: 2,
           },
+          {
+            key: 'completion_time',
+            value: '2023-04-05T02:45:20Z',
+            msg_index: 2,
+          },
         ],
       },
       {
@@ -119,6 +129,33 @@ export default class HandleStakeEventTest {
             key: 'sender',
             value: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
             msg_index: 2,
+          },
+        ],
+      },
+      {
+        tx_msg_index: 3,
+        type: 'delegate',
+        attributes: [
+          {
+            key: 'validator',
+            value: 'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx',
+            msg_index: 3,
+          },
+          {
+            key: 'amount',
+            value: '1000000uaura',
+            msg_index: 3,
+          },
+        ],
+      },
+      {
+        tx_msg_index: 3,
+        type: 'message',
+        attributes: [
+          {
+            key: 'sender',
+            value: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
+            msg_index: 3,
           },
         ],
       },
@@ -194,21 +231,21 @@ export default class HandleStakeEventTest {
 
   broker = new ServiceBroker({ logger: false });
 
-  handleStakeEventService?: HandleStakeEventService;
+  crawlAccountStakeService?: CrawlAccountStakeService;
 
   @BeforeAll()
   async initSuite() {
     await this.broker.start();
-    this.handleStakeEventService = this.broker.createService(
-      HandleStakeEventService
-    ) as HandleStakeEventService;
-    await this.handleStakeEventService
+    this.crawlAccountStakeService = this.broker.createService(
+      CrawlAccountStakeService
+    ) as CrawlAccountStakeService;
+    await this.crawlAccountStakeService
       .getQueueManager()
-      .getQueue(BULL_JOB_NAME.HANDLE_STAKE_EVENT)
+      .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_STAKE)
       .empty();
     await Promise.all([
       TransactionEventAttribute.query().delete(true),
-      PowerEvent.query().delete(true),
+      AccountStake.query().delete(true),
     ]);
     await Promise.all([
       TransactionEvent.query().delete(true),
@@ -227,7 +264,7 @@ export default class HandleStakeEventTest {
   async tearDown() {
     await Promise.all([
       TransactionEventAttribute.query().delete(true),
-      PowerEvent.query().delete(true),
+      AccountStake.query().delete(true),
     ]);
     await Promise.all([
       TransactionEvent.query().delete(true),
@@ -239,38 +276,19 @@ export default class HandleStakeEventTest {
     await this.broker.stop();
   }
 
-  @Test('Handle stake event success and insert power_event to DB')
-  public async testHandleStakeEvent() {
+  @Test('Crawl account stake success and insert account_stake to DB')
+  public async testCrawlAccountStake() {
     const txs: Transaction[] = await Transaction.query();
 
-    await this.handleStakeEventService?.handleJob({
+    await this.crawlAccountStakeService?.handleJob({
       txIds: txs.map((tx) => tx.id),
     });
 
-    const [powerEvents, validators]: [PowerEvent[], Validator[]] =
-      await Promise.all([PowerEvent.query(), Validator.query()]);
+    const [accountStakes, validators]: [AccountStake[], Validator[]] =
+      await Promise.all([AccountStake.query(), Validator.query()]);
 
     expect(
-      powerEvents.find((event) => event.type === PowerEvent.TYPES.DELEGATE)
-        ?.validator_dst_id
-    ).toEqual(
-      validators.find(
-        (val) =>
-          val.operator_address ===
-          'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx'
-      )?.id
-    );
-    expect(
-      powerEvents.find((event) => event.type === PowerEvent.TYPES.DELEGATE)
-        ?.amount
-    ).toEqual('1000000');
-    expect(
-      powerEvents.find((event) => event.type === PowerEvent.TYPES.DELEGATE)
-        ?.height
-    ).toEqual(3967530);
-
-    expect(
-      powerEvents.find((event) => event.type === PowerEvent.TYPES.REDELEGATE)
+      accountStakes.find((stake) => stake.type === AccountStake.TYPES.DELEGATE)
         ?.validator_src_id
     ).toEqual(
       validators.find(
@@ -280,8 +298,25 @@ export default class HandleStakeEventTest {
       )?.id
     );
     expect(
-      powerEvents.find((event) => event.type === PowerEvent.TYPES.REDELEGATE)
-        ?.validator_dst_id
+      accountStakes.find((stake) => stake.type === AccountStake.TYPES.DELEGATE)
+        ?.balance
+    ).toEqual('1300000');
+
+    expect(
+      accountStakes.find(
+        (stake) => stake.type === AccountStake.TYPES.REDELEGATE
+      )?.validator_src_id
+    ).toEqual(
+      validators.find(
+        (val) =>
+          val.operator_address ===
+          'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx'
+      )?.id
+    );
+    expect(
+      accountStakes.find(
+        (stake) => stake.type === AccountStake.TYPES.REDELEGATE
+      )?.validator_dst_id
     ).toEqual(
       validators.find(
         (val) =>
@@ -290,16 +325,18 @@ export default class HandleStakeEventTest {
       )?.id
     );
     expect(
-      powerEvents.find((event) => event.type === PowerEvent.TYPES.REDELEGATE)
-        ?.amount
-    ).toEqual('1000000');
+      accountStakes.find(
+        (stake) => stake.type === AccountStake.TYPES.REDELEGATE
+      )?.balance
+    ).toEqual('200000');
     expect(
-      powerEvents.find((event) => event.type === PowerEvent.TYPES.REDELEGATE)
-        ?.height
-    ).toEqual(3967530);
+      accountStakes.find(
+        (stake) => stake.type === AccountStake.TYPES.REDELEGATE
+      )?.end_time
+    ).toEqual(new Date('2023-04-05T02:45:20Z'));
 
     expect(
-      powerEvents.find((event) => event.type === PowerEvent.TYPES.UNBOND)
+      accountStakes.find((stake) => stake.type === AccountStake.TYPES.UNBOND)
         ?.validator_src_id
     ).toEqual(
       validators.find(
@@ -309,12 +346,12 @@ export default class HandleStakeEventTest {
       )?.id
     );
     expect(
-      powerEvents.find((event) => event.type === PowerEvent.TYPES.UNBOND)
-        ?.amount
+      accountStakes.find((stake) => stake.type === AccountStake.TYPES.UNBOND)
+        ?.balance
     ).toEqual('500000');
     expect(
-      powerEvents.find((event) => event.type === PowerEvent.TYPES.UNBOND)
-        ?.height
-    ).toEqual(3967530);
+      accountStakes.find((stake) => stake.type === AccountStake.TYPES.UNBOND)
+        ?.end_time
+    ).toEqual(new Date('2023-04-05T02:45:20Z'));
   }
 }
