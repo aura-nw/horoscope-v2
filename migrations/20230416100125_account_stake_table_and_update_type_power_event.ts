@@ -1,5 +1,5 @@
 import { Knex } from 'knex';
-import { AccountStake } from '../src/models';
+import { PowerEvent } from '../src/models';
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('account_stake', (table: any) => {
@@ -16,8 +16,20 @@ export async function up(knex: Knex): Promise<void> {
     table.foreign('validator_src_id').references('validator.id');
     table.foreign('validator_dst_id').references('validator.id');
   });
+  await knex.schema.alterTable('power_event', (table) => {
+    table.string('type').alter();
+  });
 }
 
 export async function down(knex: Knex): Promise<void> {
+  await knex.schema.alterTable('power_event', (table) => {
+    table
+      .enum('type', [
+        PowerEvent.TYPES.DELEGATE,
+        PowerEvent.TYPES.REDELEGATE,
+        PowerEvent.TYPES.UNBOND,
+      ])
+      .alter();
+  });
   await knex.schema.dropTable('account_stake');
 }
