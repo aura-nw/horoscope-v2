@@ -600,13 +600,58 @@ export default class AssetIndexerTest {
           data: {},
         }),
       },
+      {
+        contractAddress: this.mockInitContract.address,
+        sender: '',
+        action: 'burn',
+        content: '',
+        wasm_attributes: [
+          {
+            _id: '63a55d044c1864001244a47b',
+            key: '_contract_address',
+            value: this.mockInitContract.tokens[1].contract_address,
+          },
+          {
+            _id: '63a55d044c1864001244a47c',
+            key: 'action',
+            value: 'burn',
+          },
+          {
+            _id: '63a55d044c1864001244a47d',
+            key: 'sender',
+            value: 'aura15f6wn3nymdnhnh5ddlqletuptjag09tryrtpq5',
+          },
+          {
+            _id: '63a55d044c1864001244a47e',
+            key: 'token_id',
+            value: this.mockInitContract.tokens[1].token_id,
+          },
+        ],
+        tx: Transaction.fromJson({
+          height: 500000,
+          hash: '',
+          code: 0,
+          gas_used: '123035',
+          gas_wanted: '141106',
+          gas_limit: '141106',
+          fee: 353,
+          timestamp: '2023-01-12T01:53:57.000Z',
+          codespace: '',
+          data: {},
+        }),
+      },
     ];
     await this.cw721HandlerService.handlerCw721Burn(mockBurnMsg);
     const token1 = await CW721Token.query()
       .where('contract_address', this.mockInitContract.address)
       .andWhere('token_id', this.mockInitContract.tokens[0].token_id)
       .first();
+    const token2 = await CW721Token.query()
+      .where('contract_address', this.mockInitContract.address)
+      .andWhere('token_id', this.mockInitContract.tokens[1].token_id)
+      .first();
     expect(token1?.burned).toEqual(true);
+    expect(token2?.burned).toEqual(true);
   }
 
   @Test('test handlerCw721Instantiate')
