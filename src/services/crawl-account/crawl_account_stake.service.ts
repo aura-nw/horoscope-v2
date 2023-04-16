@@ -107,8 +107,6 @@ export default class CrawlAccountStakeService extends BullableService {
     const validatorKeys = _.keyBy(validators, 'operator_address');
     const accountKeys = _.keyBy(accounts, 'address');
 
-    // const accountStakes: AccountStake[] = [];
-    const accountDel: AccountStake[] = [];
     stakeTxs
       .filter((stake) => this.eventStakes.includes(stake.type))
       .filter(
@@ -166,9 +164,9 @@ export default class CrawlAccountStakeService extends BullableService {
                   )[0].amount,
                   end_time: null,
                 });
-              }
 
-              accountDelegations.push(accStake);
+                accountDelegations.push(accStake);
+              }
             }
             break;
           case AccountStake.TYPES.REDELEGATE:
@@ -178,7 +176,7 @@ export default class CrawlAccountStakeService extends BullableService {
               );
               let accStakeDst = accountDelegations.find(
                 (acc) =>
-                  acc.validator_dst_id ===
+                  acc.validator_src_id ===
                   validatorKeys[
                     stakeEvents.find(
                       (event) =>
@@ -190,7 +188,8 @@ export default class CrawlAccountStakeService extends BullableService {
               );
 
               if (accStakeSrc) {
-                const stakeLeftRedele =
+                // if (stakeLeftRedele > 0) {
+                accStakeSrc.balance = (
                   parseInt(accStakeSrc.balance, 10) -
                   parseInt(
                     parseCoins(
@@ -201,13 +200,15 @@ export default class CrawlAccountStakeService extends BullableService {
                       ).value
                     )[0].amount,
                     10
-                  );
-
-                if (stakeLeftRedele > 0) {
-                  accStakeSrc.balance = stakeLeftRedele.toString();
-
-                  accountDelegations.push(accStakeSrc);
-                } else accountDel.push(accStakeSrc);
+                  )
+                ).toString();
+                // } else {
+                //   accountDelegations.splice(
+                //     accountDelegations.indexOf(accStakeSrc),
+                //     1
+                //   );
+                //   accountDel.push(accStakeSrc);
+                // }
               }
               if (accStakeDst) {
                 accStakeDst.balance = (
@@ -255,6 +256,8 @@ export default class CrawlAccountStakeService extends BullableService {
                   )[0].amount,
                   end_time: null,
                 });
+
+                accountDelegations.push(accStakeDst);
               }
 
               const accRestake = AccountStake.fromJson({
@@ -292,7 +295,7 @@ export default class CrawlAccountStakeService extends BullableService {
                 ).value,
               });
 
-              accountDelegations.push(...[accStakeDst, accRestake]);
+              accountDelegations.push(accRestake);
             }
             break;
           case AccountStake.TYPES.UNBOND:
@@ -302,7 +305,8 @@ export default class CrawlAccountStakeService extends BullableService {
               );
 
               if (accStake) {
-                const stakeLeftRedele =
+                // if (stakeLeftUnbond > 0) {
+                accStake.balance = (
                   parseInt(accStake.balance, 10) -
                   parseInt(
                     parseCoins(
@@ -313,13 +317,15 @@ export default class CrawlAccountStakeService extends BullableService {
                       ).value
                     )[0].amount,
                     10
-                  );
-
-                if (stakeLeftRedele > 0) {
-                  accStake.balance = stakeLeftRedele.toString();
-
-                  accountDelegations.push(accStake);
-                } else accountDel.push(accStake);
+                  )
+                ).toString();
+                // } else {
+                //   accountDelegations.splice(
+                //     accountDelegations.indexOf(accStake),
+                //     1
+                //   );
+                //   accountDel.push(accStake);
+                // }
               }
 
               const accUnbond = AccountStake.fromJson({
@@ -357,7 +363,14 @@ export default class CrawlAccountStakeService extends BullableService {
         }
       });
 
-    if (accountDelegations.length > 0)
+    const accountUpd = accountDelegations.filter(
+      (acc) => parseInt(acc.balance, 10) > 0
+    );
+    const accountDel = accountDelegations.filter(
+      (acc) => parseInt(acc.balance, 10) <= 0
+    );
+
+    if (accountUpd.length > 0)
       await AccountStake.query()
         .insert(accountDelegations)
         .onConflict('id')
