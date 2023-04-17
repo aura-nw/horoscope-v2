@@ -58,9 +58,9 @@ const CW721_ACTION = {
   version: 1,
 })
 export default class Cw721HandlerService extends BullableService {
-  private _blocksPerBatch!: number;
+  _blocksPerBatch!: number;
 
-  private _currentAssetHandlerBlock!: number;
+  _currentAssetHandlerBlock!: number;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
