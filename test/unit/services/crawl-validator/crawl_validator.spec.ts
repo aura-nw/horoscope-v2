@@ -5,8 +5,8 @@ import {
   Block,
   BlockCheckpoint,
   Transaction,
-  TransactionEvent,
-  TransactionEventAttribute,
+  Event,
+  EventAttribute,
   Validator,
 } from '../../../../src/models';
 import CrawlSigningInfoService from '../../../../src/services/crawl-validator/crawl_signing_info.service';
@@ -84,10 +84,10 @@ export default class CrawlValidatorTest {
     ]);
     await Promise.all([
       Validator.query().delete(true),
-      TransactionEventAttribute.query().delete(true),
+      EventAttribute.query().delete(true),
       BlockCheckpoint.query().delete(true),
     ]);
-    await TransactionEvent.query().delete(true);
+    await Event.query().delete(true);
     await Transaction.query().delete(true);
     await Block.query().delete(true);
     await Block.query().insert(this.block);
@@ -98,10 +98,10 @@ export default class CrawlValidatorTest {
   async tearDown() {
     await Promise.all([
       Validator.query().delete(true),
-      TransactionEventAttribute.query().delete(true),
+      EventAttribute.query().delete(true),
       BlockCheckpoint.query().delete(true),
     ]);
-    await TransactionEvent.query().delete(true);
+    await Event.query().delete(true);
     await Transaction.query().delete(true);
     await Block.query().delete(true);
     await this.broker.stop();

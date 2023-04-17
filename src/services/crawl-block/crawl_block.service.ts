@@ -6,6 +6,7 @@ import { CommitSigSDKType } from '@aura-nw/aurajs/types/codegen/tendermint/types
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
+import { fromBase64, fromUtf8 } from '@cosmjs/encoding';
 import {
   BLOCK_CHECKPOINT_JOB_NAME,
   BULL_JOB_NAME,
@@ -15,7 +16,7 @@ import {
   SERVICE,
   SERVICE_NAME,
 } from '../../common';
-import { Block, BlockCheckpoint } from '../../models';
+import { Block, BlockCheckpoint, Event } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 
@@ -86,22 +87,31 @@ export default class CrawlBlockService extends BullableService {
     }
     this.logger.info(`startBlock: ${startBlock} endBlock: ${endBlock}`);
     try {
-      const listPromise = [];
+      const blockQueries = [];
       for (let i = startBlock; i <= endBlock; i += 1) {
-        listPromise.push(
+        blockQueries.push(
           this._httpBatchClient.execute(
             createJsonRpcRequest('block', { height: i.toString() })
+          ),
+          this._httpBatchClient.execute(
+            createJsonRpcRequest('block_results', { height: i.toString() })
           )
         );
       }
-      const resultListPromise: JsonRpcSuccessResponse[] = await Promise.all(
-        listPromise
+      const blockResponses: JsonRpcSuccessResponse[] = await Promise.all(
+        blockQueries
       );
 
+      const mergeBlockResponses: any[] = [];
+      for (let i = 0; i < blockResponses.length; i += 2) {
+        mergeBlockResponses.push({
+          ...blockResponses[i].result,
+          block_result: blockResponses[i + 1].result,
+        });
+      }
+
       // insert data to DB
-      await this.handleListBlock(
-        resultListPromise.map((result) => result.result)
-      );
+      await this.handleListBlock(mergeBlockResponses);
 
       // update crawled block to db
       if (this._currentBlock < endBlock) {
@@ -149,6 +159,23 @@ export default class CrawlBlockService extends BullableService {
           block.block?.header?.height &&
           !mapExistedBlock[parseInt(block.block?.header?.height, 10)]
         ) {
+          const events: Event[] = [];
+          if (block.block_result.begin_block_events?.length > 0) {
+            block.block_result.begin_block_events.forEach((event: any) => {
+              events.push({
+                ...event,
+                source: Event.SOURCE.BEGIN_BLOCK_EVENT,
+              });
+            });
+          }
+          if (block.block_result.end_block_events?.length > 0) {
+            block.block_result.end_block_events.forEach((event: any) => {
+              events.push({
+                ...event,
+                source: Event.SOURCE.END_BLOCK_EVENT,
+              });
+            });
+          }
           listBlockModel.push({
             ...Block.fromJson({
               height: block?.block?.header?.height,
@@ -165,6 +192,22 @@ export default class CrawlBlockService extends BullableService {
                 signature: signature.signature,
               })
             ),
+            events: events.map((event: any) => ({
+              type: event.type,
+              attributes: event.attributes.map((attribute: any) => ({
+                block_height: block?.block?.header?.height,
+                composite_key: attribute?.key
+                  ? `${event.type}.${fromUtf8(fromBase64(attribute?.key))}`
+                  : null,
+                key: attribute?.key
+                  ? fromUtf8(fromBase64(attribute?.key))
+                  : null,
+                value: attribute?.value
+                  ? fromUtf8(fromBase64(attribute?.value))
+                  : null,
+              })),
+              source: event.source,
+            })),
           });
         }
       });

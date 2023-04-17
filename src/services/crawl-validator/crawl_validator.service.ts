@@ -26,11 +26,7 @@ import {
   IPagination,
   SERVICE,
 } from '../../common';
-import {
-  Block,
-  BlockCheckpoint,
-  TransactionEventAttribute,
-} from '../../models';
+import { Block, BlockCheckpoint, EventAttribute } from '../../models';
 
 @Service({
   name: SERVICE.V1.CrawlValidatorService.key,
@@ -118,20 +114,20 @@ export default class CrawlValidatorService extends BullableService {
     if (latestBlock) {
       if (latestBlock.height === lastHeight) return;
 
-      const resultTx = await TransactionEventAttribute.query()
+      const resultTx = await EventAttribute.query()
         .joinRelated('event.[transaction]')
-        .whereIn('transaction_event_attribute.key', [
-          TransactionEventAttribute.EVENT_KEY.VALIDATOR,
-          TransactionEventAttribute.EVENT_KEY.SOURCE_VALIDATOR,
-          TransactionEventAttribute.EVENT_KEY.DESTINATION_VALIDATOR,
+        .whereIn('event_attribute.key', [
+          EventAttribute.EVENT_KEY.VALIDATOR,
+          EventAttribute.EVENT_KEY.SOURCE_VALIDATOR,
+          EventAttribute.EVENT_KEY.DESTINATION_VALIDATOR,
         ])
         .andWhere('event:transaction.height', '>', lastHeight)
         .andWhere('event:transaction.height', '<=', latestBlock.height)
         .select(
           'event:transaction.id',
           'event:transaction.height',
-          'transaction_event_attribute.key',
-          'transaction_event_attribute.value'
+          'event_attribute.key',
+          'event_attribute.value'
         )
         .limit(1)
         .offset(0);
@@ -251,22 +247,24 @@ export default class CrawlValidatorService extends BullableService {
     );
 
     const result: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
-    const delegations: QueryDelegationResponse[] = result.map(
+    const delegations: (QueryDelegationResponse | null)[] = result.map(
       (res: JsonRpcSuccessResponse) =>
-        cosmos.staking.v1beta1.QueryDelegationResponse.decode(
-          fromBase64(res.result.response.value)
-        )
+        res.result.response.value
+          ? cosmos.staking.v1beta1.QueryDelegationResponse.decode(
+              fromBase64(res.result.response.value)
+            )
+          : null
     );
 
     validators.forEach((val: Validator) => {
       const delegation = delegations.find(
-        (dele: QueryDelegationResponse) =>
-          dele.delegationResponse?.delegation?.validatorAddress ===
+        (dele) =>
+          dele?.delegationResponse?.delegation?.validatorAddress ===
           val.operator_address
       );
 
       val.self_delegation_balance =
-        delegation?.delegationResponse?.balance?.amount ?? '';
+        delegation?.delegationResponse?.balance?.amount ?? '0';
       val.percent_voting_power =
         Number(
           (BigInt(val.tokens) * BigInt(100000000)) /
