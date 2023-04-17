@@ -323,28 +323,25 @@ export default class CrawlTxService extends BullableService {
           ? fromUtf8(fromBase64(attribute?.value))
           : null;
         const keyInMap = `${type}_${key}_${value}`;
-        if (mapEventMsgIdx.has(keyInMap)) {
-          const listIndex = mapEventMsgIdx.get(keyInMap);
-          // get first index with this key
-          const firstIndex = listIndex?.shift();
 
-          if (firstIndex != null) {
-            if (event.msg_index) {
-              if (event.msg_index !== firstIndex) {
-                this.logger.warn(
-                  `something wrong: setting index ${firstIndex} to existed index ${event.msg_index}`
-                );
-              }
-            } else {
-              // eslint-disable-next-line no-param-reassign
-              event.msg_index = firstIndex;
-            }
-          }
+        const listIndex = mapEventMsgIdx.get(keyInMap);
+        // get first index with this key
+        const firstIndex = listIndex?.shift();
 
-          // delete key in map if value is empty
-          if (listIndex?.length === 0) {
-            mapEventMsgIdx.delete(keyInMap);
+        if (firstIndex != null) {
+          if (event.msg_index && event.msg_index !== firstIndex) {
+            this.logger.warn(
+              `something wrong: setting index ${firstIndex} to existed index ${event.msg_index}`
+            );
+          } else {
+            // eslint-disable-next-line no-param-reassign
+            event.msg_index = firstIndex;
           }
+        }
+
+        // delete key in map if value is empty
+        if (listIndex?.length === 0) {
+          mapEventMsgIdx.delete(keyInMap);
         }
       });
     });
