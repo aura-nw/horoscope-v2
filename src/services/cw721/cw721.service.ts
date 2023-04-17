@@ -374,7 +374,10 @@ export default class Cw721HandlerService extends BullableService {
           if (wasmEvent) {
             // split into wasm sub-events
             const listWasmSubEventAttrs = wasmEvent.attributes.reduce(
-              (acc: any, curr: any) => {
+              (
+                acc: { key: string; value: string }[][],
+                curr: { key: string; value: string }
+              ) => {
                 if (
                   curr.key ===
                   TransactionEventAttribute.EVENT_KEY._CONTRACT_ADDRESS
