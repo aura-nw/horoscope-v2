@@ -21,6 +21,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('owner');
     table.string('contract_address').index().notNullable();
     table.integer('last_updated_height').index();
+    table.unique(['token_id', 'contract_address', 'last_updated_height']);
     table.foreign('contract_address').references('cw721_contract.address');
     table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
     table.boolean('burned').defaultTo(false);
@@ -28,11 +29,12 @@ export async function up(knex: Knex): Promise<void> {
 
   await knex.schema.createTable('cw721_tx', (table) => {
     table.increments('id').primary();
-    table.string('tx_hash').unique().index().notNullable();
+    table.string('tx_hash').index().notNullable();
     table.string('sender').index();
     table.string('action');
     table.string('contract_address').index().notNullable();
     table.string('token_id').index();
+    table.unique(['tx_hash', 'contract_address', 'action', 'token_id']);
     table.foreign('contract_address').references('cw721_contract.address');
     table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
     table.timestamp('updated_at').notNullable().defaultTo(knex.raw('now()'));

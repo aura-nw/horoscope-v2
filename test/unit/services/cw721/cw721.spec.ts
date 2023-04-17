@@ -6,8 +6,8 @@ import CW721Contract from '../../../../src/models/cw721_contract';
 import { BULL_JOB_NAME } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
 import { Block, Transaction } from '../../../../src/models';
-import Cw721HandlerService from '../../../../src/services/cw721/cw721.service';
 import config from '../../../../config.json' assert { type: 'json' };
+import Cw721HandlerService from '../../../../src/services/cw721/cw721.service';
 
 @Describe('Test cw721 service')
 export default class AssetIndexerTest {
@@ -223,10 +223,6 @@ export default class AssetIndexerTest {
       this.cw721HandlerService
         .getQueueManager()
         .getQueue(BULL_JOB_NAME.FILTER_CW721_TRANSACTION)
-        .empty(),
-      this.cw721HandlerService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.HANDLE_CW721_EXECUTE)
         .empty(),
     ]);
     await this.broker.start();
@@ -691,5 +687,33 @@ export default class AssetIndexerTest {
     expect(contract?.name).toEqual(content.name);
     expect(contract?.symbol).toEqual(content.symbol);
     expect(contract?.code_id).toEqual(mockInstantiateMsg[0].code_id);
+  }
+
+  @Test('test handle conflict')
+  public async testHandleConflict() {
+    const mockToken = {
+      token_id: 'test conflict',
+      token_uri: null,
+      extension: null,
+      owner: 'phamphong_test',
+      contract_address: this.mockInitContract.address,
+      last_updated_height: 12345678,
+    };
+    const conflictOwner = 'phamphong_test_conflict';
+    await CW721Token.query().insert(
+      CW721Token.fromJson({
+        ...mockToken,
+      })
+    );
+    const mergeToken = await CW721Token.query()
+      .insertAndFetch(
+        CW721Token.fromJson({
+          ...mockToken,
+          owner: conflictOwner,
+        })
+      )
+      .onConflict(['token_id', 'contract_address', 'last_updated_height'])
+      .merge();
+    expect(mergeToken.owner).toEqual(conflictOwner);
   }
 }

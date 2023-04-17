@@ -58,27 +58,12 @@ const CW721_ACTION = {
   version: 1,
 })
 export default class Cw721HandlerService extends BullableService {
+  private _blocksPerBatch!: number;
+
+  private _currentAssetHandlerBlock!: number;
+
   public constructor(public broker: ServiceBroker) {
     super(broker);
-  }
-
-  @QueueHandler({
-    queueName: BULL_JOB_NAME.HANDLE_CW721_EXECUTE,
-    jobType: BULL_JOB_NAME.HANDLE_CW721_EXECUTE,
-  })
-  async jobHandlerCw721(listMsgsExecute: IContractMsgInfo[]) {
-    // handle mint
-    await this.handlerCw721Mint(
-      listMsgsExecute.filter((msg) => msg.action === CW721_ACTION.MINT)
-    );
-    // handle transfer
-    await this.handlerCw721Transfer(
-      listMsgsExecute.filter((msg) => msg.action === CW721_ACTION.TRANSFER)
-    );
-    // handle burn
-    await this.handlerCw721Burn(
-      listMsgsExecute.filter((msg) => msg.action === CW721_ACTION.BURN)
-    );
   }
 
   // checked
@@ -113,29 +98,32 @@ export default class Cw721HandlerService extends BullableService {
   // checked
   async handlerCw721Mint(mintMsgs: IContractMsgInfo[]): Promise<void> {
     if (mintMsgs.length > 0) {
-      await CW721Token.query().insert(
-        mintMsgs.map((mintMsg) => {
-          const tokenId = this.getAttributeFrom(
-            mintMsg.wasm_attributes,
-            TransactionEventAttribute.EVENT_KEY.TOKEN_ID
-          );
-          const tokenUri = JSON.parse(mintMsg.content)[CW721_ACTION.MINT]
-            ?.token_uri;
-          const extension = JSON.parse(mintMsg.content)[CW721_ACTION.MINT]
-            ?.extension;
-          return CW721Token.fromJson({
-            token_id: tokenId,
-            token_uri: tokenUri,
-            extension,
-            owner: this.getAttributeFrom(
+      await CW721Token.query()
+        .insert(
+          mintMsgs.map((mintMsg) => {
+            const tokenId = this.getAttributeFrom(
               mintMsg.wasm_attributes,
-              TransactionEventAttribute.EVENT_KEY.OWNER
-            ),
-            contract_address: mintMsg.contractAddress,
-            last_updated_height: mintMsg.tx.height,
-          });
-        })
-      );
+              TransactionEventAttribute.EVENT_KEY.TOKEN_ID
+            );
+            const tokenUri = JSON.parse(mintMsg.content)[CW721_ACTION.MINT]
+              ?.token_uri;
+            const extension = JSON.parse(mintMsg.content)[CW721_ACTION.MINT]
+              ?.extension;
+            return CW721Token.fromJson({
+              token_id: tokenId,
+              token_uri: tokenUri,
+              extension,
+              owner: this.getAttributeFrom(
+                mintMsg.wasm_attributes,
+                TransactionEventAttribute.EVENT_KEY.OWNER
+              ),
+              contract_address: mintMsg.contractAddress,
+              last_updated_height: mintMsg.tx.height,
+            });
+          })
+        )
+        .onConflict(['token_id', 'contract_address', 'last_updated_height'])
+        .merge();
     }
   }
 
@@ -176,7 +164,9 @@ export default class Cw721HandlerService extends BullableService {
     jobType: BULL_JOB_NAME.FILTER_CW721_TRANSACTION,
   })
   async jobHandler(): Promise<void> {
-    await this.handleJob();
+    if (this._currentAssetHandlerBlock) {
+      await this.handleJob();
+    }
   }
 
   // checked
@@ -247,16 +237,16 @@ export default class Cw721HandlerService extends BullableService {
             cw721Msgs.filter((msg) => msg.action !== CW721_ACTION.INSTANTIATE)
           );
         }
-        await BlockCheckpoint.query()
-          .patch({
-            height: endBlock + 1,
-          })
-          .where('job_name', BLOCK_CHECKPOINT_JOB_NAME.CW721_HANDLER);
-        this._currentAssetHandlerBlock = endBlock + 1;
       } catch (error) {
         this.logger.error(error);
       }
     }
+    await BlockCheckpoint.query()
+      .patch({
+        height: endBlock + 1,
+      })
+      .where('job_name', BLOCK_CHECKPOINT_JOB_NAME.CW721_HANDLER);
+    this._currentAssetHandlerBlock = endBlock + 1;
   }
 
   // checked
@@ -276,7 +266,10 @@ export default class Cw721HandlerService extends BullableService {
       });
     });
     if (cw721Txs.length > 0) {
-      await CW721Tx.query().insert(cw721Txs);
+      await CW721Tx.query()
+        .insert(cw721Txs)
+        .onConflict(['tx_hash', 'contract_address', 'action', 'token_id'])
+        .merge();
     }
   }
 
@@ -306,26 +299,27 @@ export default class Cw721HandlerService extends BullableService {
           minter: content.minter,
         });
       });
-      await CW721Contract.query().insert(instantiateContracts);
+      await CW721Contract.query()
+        .insert(instantiateContracts)
+        .onConflict('address')
+        .merge();
     }
   }
 
   // checked
   async handleCw721MsgExec(cw721MsgsExecute: IContractMsgInfo[]) {
-    // create execute msg job
-    if (cw721MsgsExecute.length > 0) {
-      await this.createJob(
-        BULL_JOB_NAME.HANDLE_CW721_EXECUTE,
-        BULL_JOB_NAME.HANDLE_CW721_EXECUTE,
-        cw721MsgsExecute,
-        {
-          removeOnComplete: true,
-          removeOnFail: {
-            count: 3,
-          },
-        }
-      );
-    }
+    // handle mint
+    await this.handlerCw721Mint(
+      cw721MsgsExecute.filter((msg) => msg.action === CW721_ACTION.MINT)
+    );
+    // handle transfer
+    await this.handlerCw721Transfer(
+      cw721MsgsExecute.filter((msg) => msg.action === CW721_ACTION.TRANSFER)
+    );
+    // handle burn
+    await this.handlerCw721Burn(
+      cw721MsgsExecute.filter((msg) => msg.action === CW721_ACTION.BURN)
+    );
   }
 
   // checked
