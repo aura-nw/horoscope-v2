@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 /* eslint-disable no-await-in-loop */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
@@ -136,11 +137,10 @@ export default class CrawlGenesisService extends BullableService {
   })
   public async crawlGenesisAccounts(_payload: object): Promise<void> {
     this.logger.info('Crawl genesis accounts');
-    const genesis = JSON.parse(fs.readFileSync('genesis.txt').toString());
+    let genesis = JSON.parse(fs.readFileSync('genesis.txt').toString());
+    if (genesis.result) genesis = genesis.result.genesis;
 
-    const balances =
-      genesis.result?.genesis.app_state.bank.balances ||
-      genesis.app_state.bank.balances;
+    const { balances } = genesis.app_state.bank;
     const auths: any = _.keyBy(
       genesis.result?.genesis.app_state.auth.accounts.map((acc: any) =>
         Utils.flattenObject(acc)
@@ -164,9 +164,9 @@ export default class CrawlGenesisService extends BullableService {
         sequence: Number.parseInt(auths[bal.address].sequence, 10),
       };
       if (
-        auths[bal.address]['@type'] === AccountType.CONTINUOUS_VESTING ||
-        auths[bal.address]['@type'] === AccountType.DELAYED_VESTING ||
-        auths[bal.address]['@type'] === AccountType.PERIODIC_VESTING
+        account.type === AccountType.CONTINUOUS_VESTING ||
+        account.type === AccountType.DELAYED_VESTING ||
+        account.type === AccountType.PERIODIC_VESTING
       )
         account.vesting = {
           original_vesting: auths[bal.address].original_vesting,
@@ -190,12 +190,12 @@ export default class CrawlGenesisService extends BullableService {
 
     // Need to optimize
     if (updateAccounts.length > 0) {
-      let index = 1;
-      do {
-        this.logger.info(`Insert batch of 5000 accounts number ${index}`);
-        await Account.query().insertGraph(updateAccounts.splice(0, 5000));
-        index += 1;
-      } while (updateAccounts.length > 0);
+      await Promise.all(
+        _.chunk(updateAccounts, 5000).map(async (chunkAccounts, index) => {
+          this.logger.info(`Insert batch of 5000 accounts number ${index}`);
+          await Account.query().insertGraph(chunkAccounts);
+        })
+      );
     }
   }
 
@@ -206,25 +206,29 @@ export default class CrawlGenesisService extends BullableService {
   })
   public async crawlGenesisValidators(_payload: object): Promise<void> {
     this.logger.info('Crawl genesis validators');
-    const genesis = JSON.parse(fs.readFileSync('genesis.txt').toString());
+    let genesis = JSON.parse(fs.readFileSync('genesis.txt').toString());
+    if (genesis.result) genesis = genesis.result.genesis;
 
-    let genValidators =
-      genesis.result?.genesis.app_state.genutil.gen_txs.map(
-        (genTx: any) =>
-          genTx.body.messages.filter(
-            (msg: any) => msg['@type'] === MSG_TYPE.MSG_CREATE_VALIDATOR
-          ).messages
-      ) ||
-      genesis.app_state.genutil.gen_txs.map(
-        (genTx: any) =>
-          genTx.body.messages.filter(
-            (msg: any) => msg['@type'] === MSG_TYPE.MSG_CREATE_VALIDATOR
-          ).messages
-      );
+    let genValidators = genesis.app_state.genutil.gen_txs
+      .map((genTx: any) =>
+        genTx.body.messages.filter(
+          (msg: any) => msg['@type'] === MSG_TYPE.MSG_CREATE_VALIDATOR
+        )
+      )
+      .flat();
     if (genValidators.length === 0)
-      genValidators =
-        genesis.result?.genesis.app_state.staking.validators ||
-        genesis.app_state.staking.validators;
+      genValidators = genesis.app_state.staking.validators;
+    else
+      genValidators.forEach((genVal: any) => {
+        genVal.consensus_pubkey = genVal.pubkey;
+        genVal.operator_address = genVal.validator_address;
+        genVal.jailed = false;
+        genVal.status = 'BOND_STATUS_BONDED';
+        genVal.tokens = genVal.value.amount;
+        genVal.delegator_shares = genVal.value.amount;
+        genVal.unbonding_height = '0';
+        genVal.unbonding_time = new Date(0).toISOString();
+      });
 
     const validators: Validator[] = [];
     genValidators.forEach((genVal: any) => {
@@ -245,25 +249,23 @@ export default class CrawlGenesisService extends BullableService {
     this.logger.info('Handle IBC denom');
     let ibcDenomRedis = await this.broker.cacher?.get(REDIS_KEY.IBC_DENOM);
     if (ibcDenomRedis === undefined || ibcDenomRedis === null)
-      ibcDenomRedis = [];
+      ibcDenomRedis = {};
 
-    const ibcDenoms: string[] = [];
+    let ibcDenoms: string[] = [];
     const batchQueries: any[] = [];
 
     accounts.forEach((account) => {
       account.balances.forEach((balance) => {
         if (balance.denom.startsWith('ibc/')) {
-          const existIbcDenomRedis = ibcDenomRedis?.find(
-            (ibc: any) => ibc.hash === balance.denom
-          );
-          if (existIbcDenomRedis) {
-            // eslint-disable-next-line no-param-reassign
-            balance.base_denom = existIbcDenomRedis.base_denom;
+          if (ibcDenomRedis && ibcDenomRedis[balance.denom]) {
+            balance.base_denom = ibcDenomRedis[balance.denom];
           } else ibcDenoms.push(balance.denom);
         }
       });
     });
 
+    // Filter unique hashes
+    ibcDenoms = Array.from(new Set(ibcDenoms));
     ibcDenoms.forEach((hash) => {
       const request: QueryDenomTraceRequest = {
         hash,
@@ -296,23 +298,20 @@ export default class CrawlGenesisService extends BullableService {
     }));
 
     ibcDenomResponses.forEach((denomTrace) => {
-      ibcDenomRedis?.push({
-        base_denom: denomTrace.baseDenom,
-        hash: denomTrace.hash,
+      if (ibcDenomRedis) ibcDenomRedis[denomTrace.hash] = denomTrace.baseDenom;
+    });
+    await this.broker.cacher?.set(REDIS_KEY.IBC_DENOM, ibcDenomRedis);
+
+    accounts.forEach((account) => {
+      account.balances.forEach((balance) => {
+        if (
+          balance.denom.startsWith('ibc/') &&
+          !balance.base_denom &&
+          ibcDenomRedis
+        ) {
+          balance.base_denom = ibcDenomRedis[balance.denom];
+        }
       });
-
-      const accountsWTrace = accounts.filter((acc) =>
-        acc.balances.find((bal) => bal.denom === denomTrace.hash)
-      );
-      if (accountsWTrace.length > 0) {
-        accountsWTrace.forEach((acc) => {
-          const account = acc.balances.find(
-            (bal) => bal.denom === denomTrace.hash
-          );
-
-          if (account) account.base_denom = denomTrace.baseDenom;
-        });
-      }
     });
 
     return accounts;
