@@ -7,7 +7,10 @@ import { BULL_JOB_NAME } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
 import { Block, Transaction } from '../../../../src/models';
 import config from '../../../../config.json' assert { type: 'json' };
-import Cw721HandlerService from '../../../../src/services/cw721/cw721.service';
+import Cw721HandlerService, {
+  CW721_ACTION,
+} from '../../../../src/services/cw721/cw721.service';
+import CW721TokenHistory from '../../../../src/models/cw721_token_history';
 
 @Describe('Test cw721 service')
 export default class AssetIndexerTest {
@@ -227,7 +230,7 @@ export default class AssetIndexerTest {
     ]);
     await this.broker.start();
     await knex.raw(
-      'TRUNCATE TABLE transaction_event_attribute, transaction_message, transaction_event, transaction, block, block_checkpoint, cw721_token, cw721_contract, cw721_token_history, code_id RESTART IDENTITY CASCADE'
+      'TRUNCATE TABLE event_attribute, transaction_message, event, transaction, block, block_checkpoint, cw721_token, cw721_contract, cw721_token_history, code_id RESTART IDENTITY CASCADE'
     );
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);
@@ -326,7 +329,7 @@ export default class AssetIndexerTest {
     const mockContractTransferMsg = [
       {
         contractAddress: this.mockInitContract.address,
-        sender: '',
+        sender: 'phamphong_haha',
         action: 'transfer_nft',
         content: '',
         wasm_attributes: [
@@ -371,7 +374,7 @@ export default class AssetIndexerTest {
       },
       {
         contractAddress: this.mockInitContract.address,
-        sender: '',
+        sender: 'phamphong_hihi',
         action: 'transfer_nft',
         content: '',
         wasm_attributes: [
@@ -414,10 +417,53 @@ export default class AssetIndexerTest {
           data: {},
         }),
       },
+      {
+        contractAddress: this.mockInitContract.address,
+        sender: 'phamphong_hihi3',
+        action: 'transfer_nft',
+        content: '',
+        wasm_attributes: [
+          {
+            _id: '63fda557271e5f3bc9321148',
+            key: '_contract_address',
+            value: this.mockInitContract.address,
+          },
+          {
+            _id: '63fda557271e5f2e69321149',
+            key: 'action',
+            value: 'transfer_nft',
+          },
+          {
+            _id: '63fda557271e5f2b7a32114a',
+            key: 'recipient',
+            value: 'phamphong_transfer3',
+          },
+          {
+            _id: '63fda557271e5f515032114b',
+            key: 'sender',
+            value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
+          },
+          {
+            _id: '63fda557271e5f65ee32114c',
+            key: 'token_id',
+            value: this.mockInitContract.tokens[1].token_id,
+          },
+        ],
+        tx: Transaction.fromJson({
+          height: 200001,
+          hash: 'lllll',
+          code: 0,
+          gas_used: '123035',
+          gas_wanted: '141106',
+          gas_limit: '141106',
+          fee: 353,
+          timestamp: '2023-01-12T01:53:57.000Z',
+          codespace: '',
+          data: {},
+        }),
+      },
     ];
-    await this.cw721HandlerService.handlerCw721Transfer(
-      mockContractTransferMsg
-    );
+    await this.cw721HandlerService.handleCw721Transfer(mockContractTransferMsg);
     const token1 = await CW721Token.query()
       .where('contract_address', this.mockInitContract.address)
       .andWhere('token_id', this.mockInitContract.tokens[0].token_id)
@@ -430,7 +476,46 @@ export default class AssetIndexerTest {
       mockContractTransferMsg[0].wasm_attributes[2].value
     );
     expect(token2?.owner).toEqual(
+      mockContractTransferMsg[2].wasm_attributes[2].value
+    );
+    // assert CW721_token_history
+    const token1History = await CW721TokenHistory.query()
+      .where('contract_address', this.mockInitContract.address)
+      .andWhere('token_id', this.mockInitContract.tokens[0].token_id)
+      .first();
+    const token2History = await CW721TokenHistory.query()
+      .where('contract_address', this.mockInitContract.address)
+      .andWhere('token_id', this.mockInitContract.tokens[1].token_id);
+    expect(token1History?.sender).toEqual(mockContractTransferMsg[0].sender);
+    expect(token1History?.action).toEqual(CW721_ACTION.TRANSFER);
+    expect(token1History?.height).toEqual(mockContractTransferMsg[0].tx.height);
+    expect(token1History?.owner).toEqual(
+      mockContractTransferMsg[0].wasm_attributes[2].value
+    );
+    expect(token1History?.token_id).toEqual(
+      this.mockInitContract.tokens[0].token_id
+    );
+    expect(token2History[0]?.sender).toEqual(mockContractTransferMsg[1].sender);
+    expect(token2History[0]?.action).toEqual(CW721_ACTION.TRANSFER);
+    expect(token2History[0]?.height).toEqual(
+      mockContractTransferMsg[1].tx.height
+    );
+    expect(token2History[0]?.owner).toEqual(
       mockContractTransferMsg[1].wasm_attributes[2].value
+    );
+    expect(token2History[0]?.token_id).toEqual(
+      this.mockInitContract.tokens[1].token_id
+    );
+    expect(token2History[1]?.sender).toEqual(mockContractTransferMsg[2].sender);
+    expect(token2History[1]?.action).toEqual(CW721_ACTION.TRANSFER);
+    expect(token2History[1]?.height).toEqual(
+      mockContractTransferMsg[2].tx.height
+    );
+    expect(token2History[1]?.owner).toEqual(
+      mockContractTransferMsg[2].wasm_attributes[2].value
+    );
+    expect(token2History[1]?.token_id).toEqual(
+      this.mockInitContract.tokens[1].token_id
     );
   }
 
@@ -439,8 +524,8 @@ export default class AssetIndexerTest {
     const mockContractMintMsg = [
       {
         contractAddress: this.mockInitContract.address,
-        sender: '',
-        action: 'transfer_nft',
+        sender: '111',
+        action: 'mint',
         content:
           '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
         wasm_attributes: [
@@ -472,7 +557,7 @@ export default class AssetIndexerTest {
         ],
         tx: Transaction.fromJson({
           height: 100000,
-          hash: '',
+          hash: 'hicc',
           code: 0,
           gas_used: '123035',
           gas_wanted: '141106',
@@ -485,8 +570,8 @@ export default class AssetIndexerTest {
       },
       {
         contractAddress: this.mockInitContract.address,
-        sender: '',
-        action: 'transfer_nft',
+        sender: '22222',
+        action: 'mint',
         content:
           '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
         wasm_attributes: [
@@ -517,8 +602,8 @@ export default class AssetIndexerTest {
           },
         ],
         tx: Transaction.fromJson({
-          height: 200000,
-          hash: '',
+          height: 110000,
+          hash: '11111',
           code: 0,
           gas_used: '123035',
           gas_wanted: '141106',
@@ -530,7 +615,7 @@ export default class AssetIndexerTest {
         }),
       },
     ];
-    await this.cw721HandlerService.handlerCw721Mint(mockContractMintMsg);
+    await this.cw721HandlerService.handleCw721Mint(mockContractMintMsg);
     const token1 = await CW721Token.query()
       .where(
         'contract_address',
@@ -551,6 +636,39 @@ export default class AssetIndexerTest {
     expect(token2?.owner).toEqual(
       mockContractMintMsg[1].wasm_attributes[3].value
     );
+    // assert token history
+    const token1History = await CW721TokenHistory.query()
+      .where(
+        'contract_address',
+        this.mockInitContract.tokens[0].contract_address
+      )
+      .andWhere('token_id', mockContractMintMsg[0].wasm_attributes[4].value)
+      .first();
+    const token2History = await CW721TokenHistory.query()
+      .where(
+        'contract_address',
+        this.mockInitContract.tokens[1].contract_address
+      )
+      .andWhere('token_id', mockContractMintMsg[1].wasm_attributes[4].value)
+      .first();
+    expect(token1History?.sender).toEqual(mockContractMintMsg[0].sender);
+    expect(token1History?.action).toEqual(CW721_ACTION.MINT);
+    expect(token1History?.height).toEqual(mockContractMintMsg[0].tx.height);
+    expect(token1History?.owner).toEqual(
+      mockContractMintMsg[0].wasm_attributes[3].value
+    );
+    expect(token1History?.token_id).toEqual(
+      mockContractMintMsg[0].wasm_attributes[4].value
+    );
+    expect(token2History?.sender).toEqual(mockContractMintMsg[1].sender);
+    expect(token2History?.action).toEqual(CW721_ACTION.MINT);
+    expect(token2History?.height).toEqual(mockContractMintMsg[1].tx.height);
+    expect(token2History?.owner).toEqual(
+      mockContractMintMsg[1].wasm_attributes[3].value
+    );
+    expect(token2History?.token_id).toEqual(
+      mockContractMintMsg[1].wasm_attributes[4].value
+    );
   }
 
   @Test('test jobHandlerCw721Burn')
@@ -558,7 +676,7 @@ export default class AssetIndexerTest {
     const mockBurnMsg = [
       {
         contractAddress: this.mockInitContract.address,
-        sender: '',
+        sender: 'phamphong_burn1',
         action: 'burn',
         content: '',
         wasm_attributes: [
@@ -598,7 +716,7 @@ export default class AssetIndexerTest {
       },
       {
         contractAddress: this.mockInitContract.address,
-        sender: '',
+        sender: 'phamphong_burn2',
         action: 'burn',
         content: '',
         wasm_attributes: [
@@ -637,7 +755,7 @@ export default class AssetIndexerTest {
         }),
       },
     ];
-    await this.cw721HandlerService.handlerCw721Burn(mockBurnMsg);
+    await this.cw721HandlerService.handleCw721Burn(mockBurnMsg);
     const token1 = await CW721Token.query()
       .where('contract_address', this.mockInitContract.address)
       .andWhere('token_id', this.mockInitContract.tokens[0].token_id)
@@ -648,6 +766,21 @@ export default class AssetIndexerTest {
       .first();
     expect(token1?.burned).toEqual(true);
     expect(token2?.burned).toEqual(true);
+    // assert CW721HistoryToken
+    const token1History = await CW721TokenHistory.query()
+      .where('contract_address', this.mockInitContract.address)
+      .andWhere('token_id', this.mockInitContract.tokens[0].token_id)
+      .andWhere('sender', mockBurnMsg[0].sender)
+      .first();
+    const token2History = await CW721TokenHistory.query()
+      .where('contract_address', this.mockInitContract.address)
+      .andWhere('token_id', this.mockInitContract.tokens[1].token_id)
+      .andWhere('sender', mockBurnMsg[1].sender)
+      .first();
+    expect(token1History?.action).toEqual(CW721_ACTION.BURN);
+    expect(token1History?.owner).toBeNull();
+    expect(token2History?.action).toEqual(CW721_ACTION.BURN);
+    expect(token2History?.owner).toBeNull();
   }
 
   @Test('test handlerCw721Instantiate')

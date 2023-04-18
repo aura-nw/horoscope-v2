@@ -46,7 +46,7 @@ interface IInstantiateMsgInfo extends IContractMsgInfo {
   code_id: string;
 }
 
-const CW721_ACTION = {
+export const CW721_ACTION = {
   MINT: 'mint',
   BURN: 'burn',
   TRANSFER: 'transfer_nft',
@@ -66,8 +66,8 @@ export default class Cw721HandlerService extends BullableService {
     super(broker);
   }
 
-  // checked
-  async handlerCw721Transfer(transferMsgs: IContractMsgInfo[]): Promise<void> {
+  // loop for each msg, insert into CW721TokenHistory and update new owner for each tokens
+  async handleCw721Transfer(transferMsgs: IContractMsgInfo[]): Promise<void> {
     // eslint-disable-next-line no-restricted-syntax
     for (const transferMsg of transferMsgs) {
       const newOwner = this.getAttributeFrom(
@@ -80,13 +80,26 @@ export default class Cw721HandlerService extends BullableService {
       );
       if (tokenId && newOwner) {
         // eslint-disable-next-line no-await-in-loop
-        await CW721Token.query()
-          .where('contract_address', transferMsg.contractAddress)
-          .andWhere('token_id', tokenId)
-          .patch({
-            owner: newOwner,
-            last_updated_height: transferMsg.tx.height,
-          });
+        await Promise.all([
+          CW721TokenHistory.query().insert(
+            CW721TokenHistory.fromJson({
+              action: CW721_ACTION.TRANSFER,
+              sender: transferMsg.sender,
+              tx_hash: transferMsg.tx.hash,
+              height: transferMsg.tx.height,
+              contract_address: transferMsg.contractAddress,
+              token_id: tokenId,
+              owner: newOwner,
+            })
+          ),
+          CW721Token.query()
+            .where('contract_address', transferMsg.contractAddress)
+            .andWhere('token_id', tokenId)
+            .patch({
+              owner: newOwner,
+              last_updated_height: transferMsg.tx.height,
+            }),
+        ]);
       } else {
         throw new Error(
           `Msg transfer in tx ${transferMsg.tx.hash} not found token id transfered or not found new owner`
@@ -95,64 +108,113 @@ export default class Cw721HandlerService extends BullableService {
     }
   }
 
-  // checked
-  async handlerCw721Mint(mintMsgs: IContractMsgInfo[]): Promise<void> {
+  // insert to CW721TokenHistory and CW721Token
+  async handleCw721Mint(mintMsgs: IContractMsgInfo[]): Promise<void> {
     if (mintMsgs.length > 0) {
-      await CW721Token.query()
-        .insert(
+      await Promise.all([
+        CW721TokenHistory.query().insert(
           mintMsgs.map((mintMsg) => {
             const tokenId = this.getAttributeFrom(
               mintMsg.wasm_attributes,
               EventAttribute.EVENT_KEY.TOKEN_ID
             );
-            const tokenUri = JSON.parse(mintMsg.content)[CW721_ACTION.MINT]
-              ?.token_uri;
-            const extension = JSON.parse(mintMsg.content)[CW721_ACTION.MINT]
-              ?.extension;
-            return CW721Token.fromJson({
-              token_id: tokenId,
-              token_uri: tokenUri,
-              extension,
-              owner: this.getAttributeFrom(
-                mintMsg.wasm_attributes,
-                EventAttribute.EVENT_KEY.OWNER
-              ),
+            const owner = this.getAttributeFrom(
+              mintMsg.wasm_attributes,
+              EventAttribute.EVENT_KEY.OWNER
+            );
+            return CW721TokenHistory.fromJson({
+              action: CW721_ACTION.MINT,
+              sender: mintMsg.sender,
+              tx_hash: mintMsg.tx.hash,
+              height: mintMsg.tx.height,
               contract_address: mintMsg.contractAddress,
-              last_updated_height: mintMsg.tx.height,
+              token_id: tokenId,
+              owner,
             });
           })
-        )
-        .onConflict(['token_id', 'contract_address', 'last_updated_height'])
-        .merge();
+        ),
+        CW721Token.query()
+          .insert(
+            mintMsgs.map((mintMsg) => {
+              const tokenId = this.getAttributeFrom(
+                mintMsg.wasm_attributes,
+                EventAttribute.EVENT_KEY.TOKEN_ID
+              );
+              const tokenUri = JSON.parse(mintMsg.content)[CW721_ACTION.MINT]
+                ?.token_uri;
+              const extension = JSON.parse(mintMsg.content)[CW721_ACTION.MINT]
+                ?.extension;
+              const owner = this.getAttributeFrom(
+                mintMsg.wasm_attributes,
+                EventAttribute.EVENT_KEY.OWNER
+              );
+              return CW721Token.fromJson({
+                token_id: tokenId,
+                token_uri: tokenUri,
+                extension,
+                owner,
+                contract_address: mintMsg.contractAddress,
+                last_updated_height: mintMsg.tx.height,
+              });
+            })
+          )
+          .onConflict(['token_id', 'contract_address', 'last_updated_height'])
+          .merge(),
+      ]);
     }
   }
 
-  // checked
-  async handlerCw721Burn(burnMsgs: IContractMsgInfo[]): Promise<void> {
+  // insert into CW721HistoryToken and update burned
+  async handleCw721Burn(burnMsgs: IContractMsgInfo[]): Promise<void> {
     try {
-      await knex.transaction(async (trx) => {
-        const queries: any[] = [];
-        burnMsgs.forEach((burnMsg) => {
-          const tokenId = this.getAttributeFrom(
-            burnMsg.wasm_attributes,
-            EventAttribute.EVENT_KEY.TOKEN_ID
-          );
-          if (tokenId) {
-            const query = CW721Token.query()
-              .where('contract_address', burnMsg.contractAddress)
-              .andWhere('token_id', tokenId)
-              .patch({
-                last_updated_height: burnMsg.tx.height,
-                burned: true,
-              })
-              .transacting(trx);
-            queries.push(query);
-          }
-        });
-        await Promise.all(queries) // Once every query is written
-          .then(trx.commit) // We try to execute all of them
-          .catch(trx.rollback); // And rollback in case any of them goes wrong
-      });
+      if (burnMsgs.length > 0) {
+        await Promise.all([
+          CW721TokenHistory.query().insert(
+            burnMsgs.map((burnMsg) => {
+              const tokenId = this.getAttributeFrom(
+                burnMsg.wasm_attributes,
+                EventAttribute.EVENT_KEY.TOKEN_ID
+              );
+              const owner = this.getAttributeFrom(
+                burnMsg.wasm_attributes,
+                EventAttribute.EVENT_KEY.OWNER
+              );
+              return CW721TokenHistory.fromJson({
+                action: CW721_ACTION.BURN,
+                sender: burnMsg.sender,
+                tx_hash: burnMsg.tx.hash,
+                height: burnMsg.tx.height,
+                contract_address: burnMsg.contractAddress,
+                token_id: tokenId,
+                owner,
+              });
+            })
+          ),
+          knex.transaction(async (trx) => {
+            const queries: any[] = [];
+            burnMsgs.forEach((burnMsg) => {
+              const tokenId = this.getAttributeFrom(
+                burnMsg.wasm_attributes,
+                EventAttribute.EVENT_KEY.TOKEN_ID
+              );
+              if (tokenId) {
+                const query = CW721Token.query()
+                  .where('contract_address', burnMsg.contractAddress)
+                  .andWhere('token_id', tokenId)
+                  .patch({
+                    last_updated_height: burnMsg.tx.height,
+                    burned: true,
+                  })
+                  .transacting(trx);
+                queries.push(query);
+              }
+            });
+            await Promise.all(queries) // Once every query is written
+              .then(trx.commit) // We try to execute all of them
+              .catch(trx.rollback); // And rollback in case any of them goes wrong
+          }),
+        ]);
+      }
     } catch (err) {
       this.logger.error(err);
     }
@@ -230,8 +292,6 @@ export default class Cw721HandlerService extends BullableService {
           const cw721Msgs = listContractMsg.filter((msg) =>
             cw721ListAddr.includes(msg.contractAddress)
           );
-          // handle Cw721 Tx
-          await this.handleCw721Tx(cw721Msgs);
           // handle all cw721 execute messages
           await this.handleCw721MsgExec(
             cw721Msgs.filter((msg) => msg.action !== CW721_ACTION.INSTANTIATE)
@@ -247,30 +307,6 @@ export default class Cw721HandlerService extends BullableService {
       })
       .where('job_name', BLOCK_CHECKPOINT_JOB_NAME.CW721_HANDLER);
     this._currentAssetHandlerBlock = endBlock + 1;
-  }
-
-  // checked
-  async handleCw721Tx(listCw721Msgs: IContractMsgInfo[]) {
-    // insert new cw721 txs
-    const cw721Txs = listCw721Msgs.map((cw721Msg) => {
-      const tokenId = this.getAttributeFrom(
-        cw721Msg.wasm_attributes,
-        EventAttribute.EVENT_KEY.TOKEN_ID
-      );
-      return CW721TokenHistory.fromJson({
-        action: cw721Msg.action,
-        sender: cw721Msg.sender,
-        tx_hash: cw721Msg.tx.hash,
-        contract_address: cw721Msg.contractAddress,
-        token_id: tokenId,
-      });
-    });
-    if (cw721Txs.length > 0) {
-      await CW721TokenHistory.query()
-        .insert(cw721Txs)
-        .onConflict(['tx_hash', 'contract_address', 'action', 'token_id'])
-        .merge();
-    }
   }
 
   // checked
@@ -309,15 +345,15 @@ export default class Cw721HandlerService extends BullableService {
   // checked
   async handleCw721MsgExec(cw721MsgsExecute: IContractMsgInfo[]) {
     // handle mint
-    await this.handlerCw721Mint(
+    await this.handleCw721Mint(
       cw721MsgsExecute.filter((msg) => msg.action === CW721_ACTION.MINT)
     );
     // handle transfer
-    await this.handlerCw721Transfer(
+    await this.handleCw721Transfer(
       cw721MsgsExecute.filter((msg) => msg.action === CW721_ACTION.TRANSFER)
     );
     // handle burn
-    await this.handlerCw721Burn(
+    await this.handleCw721Burn(
       cw721MsgsExecute.filter((msg) => msg.action === CW721_ACTION.BURN)
     );
   }
