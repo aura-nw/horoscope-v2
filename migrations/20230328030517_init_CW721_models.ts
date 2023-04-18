@@ -9,8 +9,6 @@ export async function up(knex: Knex): Promise<void> {
     table.string('symbol');
     table.string('minter');
     table.string('creator');
-    table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
-    table.timestamp('updated_at').notNullable().defaultTo(knex.raw('now()'));
   });
 
   await knex.schema.createTable('cw721_token', (table) => {
@@ -23,7 +21,6 @@ export async function up(knex: Knex): Promise<void> {
     table.integer('last_updated_height').index();
     table.unique(['token_id', 'contract_address', 'last_updated_height']);
     table.foreign('contract_address').references('cw721_contract.address');
-    table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
     table.boolean('burned').defaultTo(false);
   });
 
@@ -34,10 +31,10 @@ export async function up(knex: Knex): Promise<void> {
     table.string('action');
     table.string('contract_address').index().notNullable();
     table.string('token_id').index();
+    table.string('owner');
+    table.integer('height');
     table.unique(['tx_hash', 'contract_address', 'action', 'token_id']);
     table.foreign('contract_address').references('cw721_contract.address');
-    table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
-    table.timestamp('updated_at').notNullable().defaultTo(knex.raw('now()'));
   });
 }
 

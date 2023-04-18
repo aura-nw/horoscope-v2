@@ -22,10 +22,6 @@ export default class CW721Contract extends BaseModel {
 
   id?: number;
 
-  created_at?: Date;
-
-  updated_at?: Date;
-
   static get tableName() {
     return 'cw721_contract';
   }

@@ -16,9 +16,9 @@ export default class CW721TokenHistory extends BaseModel {
 
   token_id?: string;
 
-  created_at?: Date;
+  owner?: string;
 
-  updated_at?: Date;
+  height?: string;
 
   static get tableName() {
     return 'cw721_token_history';
@@ -34,6 +34,8 @@ export default class CW721TokenHistory extends BaseModel {
         sender: { type: 'string' },
         action: { type: 'string' },
         token_id: { type: 'string' },
+        height: { type: 'number' },
+        owner: { type: 'string' },
       },
     };
   }

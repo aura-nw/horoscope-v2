@@ -18,8 +18,6 @@ export default class CW721Token extends BaseModel {
 
   last_updated_height!: number;
 
-  created_at?: Date;
-
   burned?: boolean;
 
   static get tableName() {
