@@ -27,7 +27,7 @@ export async function up(knex: Knex): Promise<void> {
     table.boolean('burned').defaultTo(false);
   });
 
-  await knex.schema.createTable('cw721_tx', (table) => {
+  await knex.schema.createTable('cw721_token_history', (table) => {
     table.increments('id').primary();
     table.string('tx_hash').index().notNullable();
     table.string('sender').index();
@@ -42,7 +42,7 @@ export async function up(knex: Knex): Promise<void> {
 }
 
 export async function down(knex: Knex): Promise<void> {
-  await knex.schema.dropTable('cw721_tx');
+  await knex.schema.dropTable('cw721_token_history');
   await knex.schema.dropTable('cw721_token');
   await knex.schema.dropTable('cw721_contract');
 }

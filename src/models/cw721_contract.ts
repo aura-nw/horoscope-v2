@@ -3,7 +3,7 @@ import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
 import CW721Token from './cw721_token';
 // eslint-disable-next-line import/no-cycle
-import CW721Tx from './cw721_tx';
+import CW721TokenHistory from './cw721_token_history';
 // eslint-disable-next-line import/no-cycle
 import CodeId from './code_id';
 
@@ -54,10 +54,10 @@ export default class CW721Contract extends BaseModel {
       },
       txs: {
         relation: Model.HasManyRelation,
-        modelClass: CW721Tx,
+        modelClass: CW721TokenHistory,
         join: {
           from: 'cw721_contract.address',
-          to: 'cw721_tx.contract_address',
+          to: 'cw721_token_history.contract_address',
         },
       },
       codeid: {

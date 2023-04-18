@@ -3,7 +3,7 @@ import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
 import CW721Contract from './cw721_contract';
 
-export default class CW721Tx extends BaseModel {
+export default class CW721TokenHistory extends BaseModel {
   id?: number;
 
   action?: string;
@@ -21,7 +21,7 @@ export default class CW721Tx extends BaseModel {
   updated_at?: Date;
 
   static get tableName() {
-    return 'cw721_tx';
+    return 'cw721_token_history';
   }
 
   static get jsonSchema() {
@@ -44,7 +44,7 @@ export default class CW721Tx extends BaseModel {
         relation: Model.BelongsToOneRelation,
         modelClass: CW721Contract,
         join: {
-          from: 'cw721_tx.contract_address',
+          from: 'cw721_token_history.contract_address',
           to: 'cw721_contract.address',
         },
       },

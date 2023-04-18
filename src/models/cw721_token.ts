@@ -45,7 +45,7 @@ export default class CW721Token extends BaseModel {
         relation: Model.BelongsToOneRelation,
         modelClass: CW721Contract,
         join: {
-          to: 'cw721_tx.contract_address',
+          to: 'cw721_token_history.contract_address',
           from: 'cw721_contract.address',
         },
       },

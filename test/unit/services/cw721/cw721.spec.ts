@@ -227,7 +227,7 @@ export default class AssetIndexerTest {
     ]);
     await this.broker.start();
     await knex.raw(
-      'TRUNCATE TABLE transaction_event_attribute, transaction_message, transaction_event, transaction, block, block_checkpoint, cw721_token, cw721_contract, cw721_tx, code_id RESTART IDENTITY CASCADE'
+      'TRUNCATE TABLE transaction_event_attribute, transaction_message, transaction_event, transaction, block, block_checkpoint, cw721_token, cw721_contract, cw721_token_history, code_id RESTART IDENTITY CASCADE'
     );
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);
