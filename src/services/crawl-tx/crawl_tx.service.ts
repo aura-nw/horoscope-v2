@@ -294,25 +294,25 @@ export default class CrawlTxService extends BullableService {
   }
 
   private setMsgIndexToEvent(tx: any) {
-    const mapIndexLog: Map<string, number[]> = new Map();
+    const mapEventMsgIdx: Map<string, number[]> = new Map();
 
-    // set index_msg from log to mapIndexLog
+    // set index_msg from log to mapEventMsgIdx
     tx.tx_response.logs?.forEach((log: any, index: number) => {
       log.events.forEach((event: any) => {
         const { type } = event;
         event.attributes.forEach((attribute: any) => {
           const keyInMap = `${type}_${attribute.key}_${attribute.value}`;
-          if (mapIndexLog.has(keyInMap)) {
-            const listIndex = mapIndexLog.get(keyInMap);
-            listIndex?.push(listIndex.length ?? 0);
+          if (mapEventMsgIdx.has(keyInMap)) {
+            const listIndex = mapEventMsgIdx.get(keyInMap);
+            listIndex?.push(listIndex.length);
           } else {
-            mapIndexLog.set(keyInMap, [index]);
+            mapEventMsgIdx.set(keyInMap, [index]);
           }
         });
       });
     });
 
-    // set index_msg grom mapIndexLog to event
+    // set index_msg from mapEventMsgIdx to event
     tx.tx_response.events.forEach((event: any) => {
       const { type } = event;
       event.attributes.forEach((attribute: any) => {
@@ -323,28 +323,25 @@ export default class CrawlTxService extends BullableService {
           ? fromUtf8(fromBase64(attribute?.value))
           : null;
         const keyInMap = `${type}_${key}_${value}`;
-        if (mapIndexLog.has(keyInMap)) {
-          const listIndex = mapIndexLog.get(keyInMap);
-          // get first index with this key
-          const firstIndex = listIndex?.shift();
 
-          if (firstIndex != null) {
-            if (event.msg_index) {
-              if (event.msg_index !== firstIndex) {
-                this.logger.warn(
-                  `something wrong: setting index ${firstIndex} to existed index ${event.msg_index}`
-                );
-              }
-            } else {
-              // eslint-disable-next-line no-param-reassign
-              event.msg_index = firstIndex;
-            }
-          }
+        const listIndex = mapEventMsgIdx.get(keyInMap);
+        // get first index with this key
+        const firstIndex = listIndex?.shift();
 
-          // delete key in map if value is empty
-          if (listIndex?.length === 0) {
-            mapIndexLog.delete(keyInMap);
+        if (firstIndex != null) {
+          if (event.msg_index && event.msg_index !== firstIndex) {
+            this.logger.warn(
+              `something wrong: setting index ${firstIndex} to existed index ${event.msg_index}`
+            );
+          } else {
+            // eslint-disable-next-line no-param-reassign
+            event.msg_index = firstIndex;
           }
+        }
+
+        // delete key in map if value is empty
+        if (listIndex?.length === 0) {
+          mapEventMsgIdx.delete(keyInMap);
         }
       });
     });
