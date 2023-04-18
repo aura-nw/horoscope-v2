@@ -136,12 +136,15 @@ export default class CrawlGenesisService extends BullableService {
     prefix: `horoscope-v2-${config.chainId}`,
   })
   public async crawlGenesisAccounts(_payload: object): Promise<void> {
-    const accountsInDb: Account[] = await Account.query();
-    if (accountsInDb.length > 0) return;
-
     this.logger.info('Crawl genesis accounts');
     let genesis = JSON.parse(fs.readFileSync('genesis.txt').toString());
     if (genesis.result) genesis = genesis.result.genesis;
+
+    const accountsInDb: Account[] = await Account.query();
+    if (accountsInDb.length > 0) {
+      this.logger.error('DB already contains some accounts');
+      return;
+    }
 
     const { balances } = genesis.app_state.bank;
     const auths: any = _.keyBy(
