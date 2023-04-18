@@ -37,4 +37,18 @@ export default class Utils {
     }
     return false;
   }
+
+  public static flattenObject(obj: any): any {
+    return Object.keys(obj).reduce((acc, k) => {
+      if (
+        typeof obj[k] === 'object' &&
+        !Array.isArray(obj[k]) &&
+        obj[k] &&
+        k !== 'pub_key'
+      )
+        Object.assign(acc, Utils.flattenObject(obj[k]));
+      else acc[k] = obj[k];
+      return acc;
+    }, {});
+  }
 }
