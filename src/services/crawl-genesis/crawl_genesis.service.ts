@@ -136,6 +136,9 @@ export default class CrawlGenesisService extends BullableService {
     prefix: `horoscope-v2-${config.chainId}`,
   })
   public async crawlGenesisAccounts(_payload: object): Promise<void> {
+    const accountsInDb: Account[] = await Account.query();
+    if (accountsInDb.length > 0) return;
+
     this.logger.info('Crawl genesis accounts');
     let genesis = JSON.parse(fs.readFileSync('genesis.txt').toString());
     if (genesis.result) genesis = genesis.result.genesis;
@@ -151,7 +154,7 @@ export default class CrawlGenesisService extends BullableService {
       'address'
     );
 
-    const accounts: Account[] = [];
+    let accounts: Account[] = [];
 
     balances.forEach((bal: any) => {
       const account: any = {
@@ -181,17 +184,11 @@ export default class CrawlGenesisService extends BullableService {
       accounts.push(account);
     });
 
-    const accountsHaveIbc = await this.handleIbcDenom(
-      accounts.filter((acc) => acc.balances.length > 1)
-    );
-    const updateAccounts = accounts
-      .filter((acc) => acc.balances.length === 1)
-      .concat(accountsHaveIbc);
+    accounts = await this.handleIbcDenom(accounts);
 
-    // Need to optimize
-    if (updateAccounts.length > 0) {
+    if (accounts.length > 0) {
       await Promise.all(
-        _.chunk(updateAccounts, 5000).map(async (chunkAccounts, index) => {
+        _.chunk(accounts, 5000).map(async (chunkAccounts, index) => {
           this.logger.info(`Insert batch of 5000 accounts number ${index}`);
           await Account.query().insertGraph(chunkAccounts);
         })
@@ -257,58 +254,54 @@ export default class CrawlGenesisService extends BullableService {
     accounts.forEach((account) => {
       account.balances.forEach((balance) => {
         if (balance.denom.startsWith('ibc/')) {
-          if (ibcDenomRedis && ibcDenomRedis[balance.denom]) {
-            balance.base_denom = ibcDenomRedis[balance.denom];
-          } else ibcDenoms.push(balance.denom);
+          if (ibcDenomRedis && !ibcDenomRedis[balance.denom])
+            ibcDenoms.push(balance.denom);
         }
       });
     });
 
-    // Filter unique hashes
-    ibcDenoms = Array.from(new Set(ibcDenoms));
-    ibcDenoms.forEach((hash) => {
-      const request: QueryDenomTraceRequest = {
-        hash,
-      };
+    if (ibcDenoms.length > 0) {
+      // Filter unique hashes
+      ibcDenoms = Array.from(new Set(ibcDenoms));
+      ibcDenoms.forEach((hash) => {
+        const request: QueryDenomTraceRequest = {
+          hash,
+        };
+        const data = toHex(
+          ibc.applications.transfer.v1.QueryDenomTraceRequest.encode(
+            request
+          ).finish()
+        );
+        batchQueries.push(
+          this._httpBatchClient.execute(
+            createJsonRpcRequest('abci_query', {
+              path: ABCI_QUERY_PATH.DENOM_TRACE,
+              data,
+            })
+          )
+        );
+      });
 
-      const data = toHex(
-        ibc.applications.transfer.v1.QueryDenomTraceRequest.encode(
-          request
-        ).finish()
+      const resultIbcDenom: JsonRpcSuccessResponse[] = await Promise.all(
+        batchQueries
       );
+      const ibcDenomResponses = resultIbcDenom.map((res, index) => ({
+        hash: ibcDenoms[index],
+        ...ibc.applications.transfer.v1.QueryDenomTraceResponse.decode(
+          fromBase64(res.result.response.value)
+        ).denomTrace,
+      }));
 
-      batchQueries.push(
-        this._httpBatchClient.execute(
-          createJsonRpcRequest('abci_query', {
-            path: ABCI_QUERY_PATH.DENOM_TRACE,
-            data,
-          })
-        )
-      );
-    });
-
-    const resultIbcDenom: JsonRpcSuccessResponse[] = await Promise.all(
-      batchQueries
-    );
-    const ibcDenomResponses = resultIbcDenom.map((res, index) => ({
-      hash: ibcDenoms[index],
-      ...ibc.applications.transfer.v1.QueryDenomTraceResponse.decode(
-        fromBase64(res.result.response.value)
-      ).denomTrace,
-    }));
-
-    ibcDenomResponses.forEach((denomTrace) => {
-      if (ibcDenomRedis) ibcDenomRedis[denomTrace.hash] = denomTrace.baseDenom;
-    });
-    await this.broker.cacher?.set(REDIS_KEY.IBC_DENOM, ibcDenomRedis);
+      ibcDenomResponses.forEach((denomTrace) => {
+        if (ibcDenomRedis)
+          ibcDenomRedis[denomTrace.hash] = denomTrace.baseDenom;
+      });
+      await this.broker.cacher?.set(REDIS_KEY.IBC_DENOM, ibcDenomRedis);
+    }
 
     accounts.forEach((account) => {
       account.balances.forEach((balance) => {
-        if (
-          balance.denom.startsWith('ibc/') &&
-          !balance.base_denom &&
-          ibcDenomRedis
-        ) {
+        if (balance.denom.startsWith('ibc/') && ibcDenomRedis) {
           balance.base_denom = ibcDenomRedis[balance.denom];
         }
       });
