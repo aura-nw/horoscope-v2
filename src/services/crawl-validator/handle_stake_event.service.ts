@@ -34,7 +34,7 @@ export default class HandleStakeEventService extends BullableService {
       BULL_JOB_NAME.HANDLE_STAKE_EVENT,
       'crawl',
       {
-        listTxMsgIds: ctx.params.txMsgIds,
+        txMsgIds: ctx.params.txMsgIds,
       },
       {
         removeOnComplete: true,

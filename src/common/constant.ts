@@ -43,6 +43,7 @@ export const BULL_JOB_NAME = {
   HANDLE_TRANSACTION: 'handle:transaction',
   CRAWL_PROPOSAL: 'crawl:proposal',
   CRAWL_TALLY_PROPOSAL: 'crawl:tally-proposal',
+  CRAWL_GENESIS: 'crawl:genesis',
 };
 
 export const SERVICE = {
@@ -99,6 +100,10 @@ export const SERVICE = {
         path: 'v1.CrawlTransactionService.CrawlTxByHeight',
       },
     },
+    CrawlGenesisService: {
+      key: 'CrawlGenesisService',
+      name: 'v1.CrawlGenesisService',
+    },
   },
 };
 
@@ -127,10 +132,12 @@ export const MSG_TYPE = {
   MSG_DELEGATE: '/cosmos.staking.v1beta1.MsgDelegate',
   MSG_REDELEGATE: '/cosmos.staking.v1beta1.MsgBeginRedelegate',
   MSG_UNDELEGATE: '/cosmos.staking.v1beta1.MsgUndelegate',
+  MSG_CREATE_VALIDATOR: '/cosmos.staking.v1beta1.MsgCreateValidator',
 };
 
 export const ABCI_QUERY_PATH = {
   ACCOUNT_ALL_BALANCES: '/cosmos.bank.v1beta1.Query/AllBalances',
   ACCOUNT_SPENDABLE_BALANCES: '/cosmos.bank.v1beta1.Query/SpendableBalances',
+  DENOM_TRACE: '/ibc.applications.transfer.v1.Query/DenomTrace',
   VALIDATOR_DELEGATION: '/cosmos.staking.v1beta1.Query/Delegation',
 };

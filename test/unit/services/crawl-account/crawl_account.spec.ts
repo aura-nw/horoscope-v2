@@ -16,22 +16,13 @@ import {
   defaultSendFee,
   defaultSigningClientOptions,
 } from '../../../helper/constant';
-import {
-  Account,
-  AccountVesting,
-  BlockCheckpoint,
-} from '../../../../src/models';
+import { Account, AccountVesting } from '../../../../src/models';
 import CrawlAccountService from '../../../../src/services/crawl-account/crawl_account.service';
 import config from '../../../../config.json' assert { type: 'json' };
 import network from '../../../../network.json' assert { type: 'json' };
 
 @Describe('Test crawl_account service')
 export default class CrawlAccountTest {
-  blockCheckpoint: BlockCheckpoint = BlockCheckpoint.fromJson({
-    job_name: BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
-    height: 1,
-  });
-
   accounts: Account[] = [
     // Base Account
     Account.fromJson({
@@ -81,16 +72,10 @@ export default class CrawlAccountTest {
   @BeforeAll()
   async initSuite() {
     await this.broker.start();
-    await BlockCheckpoint.query().delete(true);
-    await BlockCheckpoint.query().insert(this.blockCheckpoint);
     this.crawlAccountService = this.broker.createService(
       CrawlAccountService
     ) as CrawlAccountService;
     await Promise.all([
-      this.crawlAccountService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT)
-        .empty(),
       this.crawlAccountService
         .getQueueManager()
         .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH)
@@ -115,7 +100,6 @@ export default class CrawlAccountTest {
 
   @AfterAll()
   async tearDown() {
-    await BlockCheckpoint.query().delete(true);
     await AccountVesting.query().delete(true);
     await Account.query().delete(true);
     await this.broker.stop();

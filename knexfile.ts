@@ -14,7 +14,7 @@ const config: { [key: string]: Knex.Config } = {
     connection: {
       database: network.find((item) => item.chainId === configJson.chainId)
         ?.databaseName,
-      host: 'localhost',
+      host: Config.POSTGRES_HOST,
       user: Config.POSTGRES_USER,
       password: Config.POSTGRES_PASSWORD,
     },

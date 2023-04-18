@@ -5,8 +5,8 @@ import {
   Block,
   BlockCheckpoint,
   Transaction,
-  TransactionEvent,
-  TransactionEventAttribute,
+  Event,
+  EventAttribute,
   Validator,
 } from '../../../../src/models';
 import CrawlSigningInfoService from '../../../../src/services/crawl-validator/crawl_signing_info.service';
@@ -14,11 +14,6 @@ import CrawlValidatorService from '../../../../src/services/crawl-validator/craw
 
 @Describe('Test crawl_validator service')
 export default class CrawlValidatorTest {
-  blockCheckpoint: BlockCheckpoint = BlockCheckpoint.fromJson({
-    job_name: BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
-    height: 1,
-  });
-
   block: Block = Block.fromJson({
     height: 3967530,
     hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9F',
@@ -61,7 +56,6 @@ export default class CrawlValidatorTest {
   @BeforeAll()
   async initSuite() {
     await this.broker.start();
-    await BlockCheckpoint.query().insert(this.blockCheckpoint);
     this.crawlSigningInfoService = this.broker.createService(
       CrawlSigningInfoService
     ) as CrawlSigningInfoService;
@@ -75,19 +69,15 @@ export default class CrawlValidatorTest {
         .empty(),
       this.crawlValidatorService
         .getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR)
-        .empty(),
-      this.crawlValidatorService
-        .getQueueManager()
         .getQueue(BULL_JOB_NAME.CRAWL_VALIDATOR)
         .empty(),
     ]);
     await Promise.all([
       Validator.query().delete(true),
-      TransactionEventAttribute.query().delete(true),
+      EventAttribute.query().delete(true),
       BlockCheckpoint.query().delete(true),
     ]);
-    await TransactionEvent.query().delete(true);
+    await Event.query().delete(true);
     await Transaction.query().delete(true);
     await Block.query().delete(true);
     await Block.query().insert(this.block);
@@ -98,10 +88,10 @@ export default class CrawlValidatorTest {
   async tearDown() {
     await Promise.all([
       Validator.query().delete(true),
-      TransactionEventAttribute.query().delete(true),
+      EventAttribute.query().delete(true),
       BlockCheckpoint.query().delete(true),
     ]);
-    await TransactionEvent.query().delete(true);
+    await Event.query().delete(true);
     await Transaction.query().delete(true);
     await Block.query().delete(true);
     await this.broker.stop();

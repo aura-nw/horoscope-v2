@@ -101,7 +101,7 @@ export class Account extends BaseModel {
         },
       },
       vesting: {
-        relation: Model.BelongsToOneRelation,
+        relation: Model.HasOneRelation,
         modelClass: AccountVesting,
         join: {
           from: 'account.id',

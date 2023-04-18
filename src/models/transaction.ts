@@ -1,7 +1,7 @@
 /* eslint-disable import/no-cycle */
 import { Model } from 'objection';
 import BaseModel from './base';
-import { TransactionEvent } from './transaction_event';
+import { Event } from './event';
 import { TransactionMessage } from './transaction_message';
 
 export class Transaction extends BaseModel {
@@ -100,10 +100,10 @@ export class Transaction extends BaseModel {
       },
       events: {
         relation: Model.HasManyRelation,
-        modelClass: TransactionEvent,
+        modelClass: Event,
         join: {
           from: 'transaction.id',
-          to: 'transaction_event.tx_id',
+          to: 'event.tx_id',
         },
       },
     };
