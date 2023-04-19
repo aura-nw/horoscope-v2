@@ -62,10 +62,6 @@ export const SERVICE = {
     CrawlTallyProposalService: {
       name: 'v1.CrawlTallyProposalService',
       key: 'CrawlTallyProposalService',
-      UpdateProposalTally: {
-        key: 'UpdateProposalTally',
-        path: 'v1.CrawlTallyProposalService.UpdateProposalTally',
-      },
     },
     HandleStakeEventService: {
       key: 'HandleStakeEventService',

@@ -36,28 +36,6 @@ export default class CrawlTallyProposalService extends BullableService {
     this._httpBatchClient = getHttpBatchClient();
   }
 
-  // @Action({
-  //   name: SERVICE.V1.CrawlTallyProposalService.UpdateProposalTally.key,
-  //   params: {
-  //     proposalId: 'number',
-  //   },
-  // })
-  // public actionProposalTallyUpsert(ctx: Context<IProposalIdParam>) {
-  //   this.createJob(
-  //     BULL_JOB_NAME.CRAWL_TALLY_PROPOSAL,
-  //     'crawl',
-  //     {
-  //       proposalId: ctx.params.proposalId,
-  //     },
-  //     {
-  //       removeOnComplete: true,
-  //       removeOnFail: {
-  //         count: 3,
-  //       },
-  //     }
-  //   );
-  // }
-
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_TALLY_PROPOSAL,
     jobType: 'crawl',

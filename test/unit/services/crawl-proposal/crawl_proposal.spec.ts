@@ -18,7 +18,6 @@ import {
 } from '../../../../src/models';
 import { BULL_JOB_NAME } from '../../../../src/common';
 import CrawlProposalService from '../../../../src/services/crawl-proposal/crawl_proposal.service';
-import CrawlTallyProposalService from '../../../../src/services/crawl-proposal/crawl_tally_proposal.service';
 import config from '../../../../config.json' assert { type: 'json' };
 import network from '../../../../network.json' assert { type: 'json' };
 import {
@@ -190,25 +189,20 @@ export default class CrawlProposalTest {
 
   crawlProposalService?: CrawlProposalService;
 
-  crawlTallyProposalService?: CrawlTallyProposalService;
-
   @BeforeAll()
   async initSuite() {
     await this.broker.start();
     this.crawlProposalService = this.broker.createService(
       CrawlProposalService
     ) as CrawlProposalService;
-    this.crawlTallyProposalService = this.broker.createService(
-      CrawlTallyProposalService
-    ) as CrawlTallyProposalService;
     await Promise.all([
       this.crawlProposalService
         .getQueueManager()
         .getQueue(BULL_JOB_NAME.CRAWL_PROPOSAL)
         .empty(),
-      this.crawlTallyProposalService
+      this.crawlProposalService
         .getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_TALLY_PROPOSAL)
+        .getQueue(BULL_JOB_NAME.HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL)
         .empty(),
     ]);
     await Promise.all([
@@ -312,7 +306,8 @@ export default class CrawlProposalTest {
 
     const updateProposal = await Proposal.query()
       .select('*')
-      .findOne('proposal_id', 1);
+      .where('proposal_id', 1)
+      .first();
 
     expect(updateProposal?.status).toEqual(
       Proposal.STATUS.PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT

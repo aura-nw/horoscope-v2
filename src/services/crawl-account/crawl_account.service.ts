@@ -407,20 +407,17 @@ export default class CrawlAccountService extends BullableService {
   private async handleIbcDenom(balances: ICoin[]) {
     let ibcDenomRedis = await this.broker.cacher?.get(REDIS_KEY.IBC_DENOM);
     if (ibcDenomRedis === undefined || ibcDenomRedis === null)
-      ibcDenomRedis = [];
+      ibcDenomRedis = {};
 
     const result = await Promise.all(
       balances.map(async (balance) => {
         if (balance.denom.startsWith('ibc/')) {
           const hash = balance.denom.split('/')[1];
-          const ibcDenom = ibcDenomRedis?.find(
-            (ibc: any) => ibc.hash === balance.denom
-          );
-          if (ibcDenom) {
+          if (ibcDenomRedis && ibcDenomRedis[balance.denom]) {
             return {
               amount: balance.amount,
               denom: balance.denom,
-              base_denom: ibcDenom.base_denom,
+              base_denom: ibcDenomRedis[balance.denom],
             };
           }
 
@@ -431,10 +428,8 @@ export default class CrawlAccountService extends BullableService {
                 { hash }
               );
 
-            ibcDenomRedis?.push({
-              base_denom: denomResult.denom_trace.base_denom,
-              hash: balance.denom,
-            });
+            if (ibcDenomRedis)
+              ibcDenomRedis[balance.denom] = denomResult.denom_trace.base_denom;
             await this.broker.cacher?.set(REDIS_KEY.IBC_DENOM, ibcDenomRedis);
           } catch (error) {
             this.logger.error(error);
