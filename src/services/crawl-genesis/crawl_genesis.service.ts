@@ -137,14 +137,25 @@ export default class CrawlGenesisService extends BullableService {
   })
   public async crawlGenesisAccounts(_payload: object): Promise<void> {
     this.logger.info('Crawl genesis accounts');
-    let genesis = JSON.parse(fs.readFileSync('genesis.txt').toString());
-    if (genesis.result) genesis = genesis.result.genesis;
 
-    const accountsInDb: Account[] = await Account.query();
+    const [accountsInDb, genBlkChk]: [Account[], BlockCheckpoint | undefined] =
+      await Promise.all([
+        Account.query(),
+        BlockCheckpoint.query()
+          .select('*')
+          .findOne('job_name', BULL_JOB_NAME.CRAWL_GENESIS),
+      ]);
     if (accountsInDb.length > 0) {
       this.logger.error('DB already contains some accounts');
       return;
     }
+    if (genBlkChk?.height !== 1) {
+      this.logger.error('Job crawl genesis is still processing');
+      return;
+    }
+
+    let genesis = JSON.parse(fs.readFileSync('genesis.txt').toString());
+    if (genesis.result) genesis = genesis.result.genesis;
 
     const { balances } = genesis.app_state.bank;
     const auths: any = _.keyBy(
@@ -197,6 +208,17 @@ export default class CrawlGenesisService extends BullableService {
         })
       );
     }
+
+    await BlockCheckpoint.query()
+      .insert(
+        BlockCheckpoint.fromJson({
+          job_name: BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
+          height: 1,
+        })
+      )
+      .onConflict('job_name')
+      .merge()
+      .returning('id');
   }
 
   @QueueHandler({
@@ -206,6 +228,15 @@ export default class CrawlGenesisService extends BullableService {
   })
   public async crawlGenesisValidators(_payload: object): Promise<void> {
     this.logger.info('Crawl genesis validators');
+
+    const genBlkChk = await BlockCheckpoint.query()
+      .select('*')
+      .findOne('job_name', BULL_JOB_NAME.CRAWL_GENESIS);
+    if (genBlkChk?.height !== 1) {
+      this.logger.error('Job crawl genesis is still processing');
+      return;
+    }
+
     let genesis = JSON.parse(fs.readFileSync('genesis.txt').toString());
     if (genesis.result) genesis = genesis.result.genesis;
 
@@ -239,6 +270,17 @@ export default class CrawlGenesisService extends BullableService {
     await Validator.query()
       .insert(validators)
       .onConflict('operator_address')
+      .merge()
+      .returning('id');
+
+    await BlockCheckpoint.query()
+      .insert(
+        BlockCheckpoint.fromJson({
+          job_name: BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
+          height: 1,
+        })
+      )
+      .onConflict('job_name')
       .merge()
       .returning('id');
   }

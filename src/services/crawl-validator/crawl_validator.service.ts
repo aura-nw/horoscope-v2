@@ -50,24 +50,37 @@ export default class CrawlValidatorService extends BullableService {
   public async handleCrawlAllValidator(_payload: object): Promise<void> {
     this._lcdClient = await getLcdClient();
 
-    const [crawlValidatorBlockCheckpoint, latestBlock]: [
-      BlockCheckpoint | undefined,
+    const [blockCheck, latestBlock]: [
+      BlockCheckpoint[] | undefined,
       Block | undefined
     ] = await Promise.all([
       BlockCheckpoint.query()
         .select('*')
-        .findOne('job_name', BULL_JOB_NAME.CRAWL_VALIDATOR),
+        .whereIn('job_name', [
+          BULL_JOB_NAME.CRAWL_VALIDATOR,
+          BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
+        ]),
       Block.query().select('height').findOne({}).orderBy('height', 'desc'),
     ]);
-    this.logger.info(
-      `Block Checkpoint: ${JSON.stringify(crawlValidatorBlockCheckpoint)}`
-    );
+    this.logger.info(`Block Checkpoint: ${JSON.stringify(blockCheck)}`);
+
+    if (
+      blockCheck.find(
+        (check) => check.job_name === BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR
+      )?.height !== 1
+    ) {
+      this.logger.info('Crawl genesis validators not finished yet');
+      return;
+    }
 
     let lastHeight = 0;
     let updateBlockCheckpoint: BlockCheckpoint;
-    if (crawlValidatorBlockCheckpoint) {
-      lastHeight = crawlValidatorBlockCheckpoint.height;
-      updateBlockCheckpoint = crawlValidatorBlockCheckpoint;
+    const crawlValChk = blockCheck.find(
+      (check) => check.job_name === BULL_JOB_NAME.CRAWL_VALIDATOR
+    );
+    if (crawlValChk) {
+      lastHeight = crawlValChk.height;
+      updateBlockCheckpoint = crawlValChk;
     } else
       updateBlockCheckpoint = BlockCheckpoint.fromJson({
         job_name: BULL_JOB_NAME.CRAWL_VALIDATOR,

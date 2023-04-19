@@ -54,24 +54,37 @@ export default class HandleAddressService extends BullableService {
   public async handleJob(_payload: object): Promise<void> {
     const stakeTxs: any[] = [];
 
-    const [handleAddressBlockCheckpoint, latestBlock]: [
-      BlockCheckpoint | undefined,
+    const [blockCheck, latestBlock]: [
+      BlockCheckpoint[] | undefined,
       Block | undefined
     ] = await Promise.all([
       BlockCheckpoint.query()
         .select('*')
-        .findOne('job_name', BULL_JOB_NAME.HANDLE_ADDRESS),
+        .whereIn('job_name', [
+          BULL_JOB_NAME.HANDLE_ADDRESS,
+          BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
+        ]),
       Block.query().select('height').findOne({}).orderBy('height', 'desc'),
     ]);
-    this.logger.info(
-      `Block Checkpoint: ${JSON.stringify(handleAddressBlockCheckpoint)}`
-    );
+    this.logger.info(`Block Checkpoint: ${JSON.stringify(blockCheck)}`);
+
+    if (
+      blockCheck.find(
+        (check) => check.job_name === BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT
+      )?.height !== 1
+    ) {
+      this.logger.info('Crawl genesis accounts not finished yet');
+      return;
+    }
 
     let lastHeight = 0;
     let updateBlockCheckpoint: BlockCheckpoint;
-    if (handleAddressBlockCheckpoint) {
-      lastHeight = handleAddressBlockCheckpoint.height;
-      updateBlockCheckpoint = handleAddressBlockCheckpoint;
+    const handleAddrChk = blockCheck.find(
+      (check) => check.job_name === BULL_JOB_NAME.HANDLE_ADDRESS
+    );
+    if (handleAddrChk) {
+      lastHeight = handleAddrChk.height;
+      updateBlockCheckpoint = handleAddrChk;
     } else
       updateBlockCheckpoint = BlockCheckpoint.fromJson({
         job_name: BULL_JOB_NAME.HANDLE_ADDRESS,

@@ -14,6 +14,11 @@ import CrawlValidatorService from '../../../../src/services/crawl-validator/craw
 
 @Describe('Test crawl_validator service')
 export default class CrawlValidatorTest {
+  blockCheckpoint: BlockCheckpoint = BlockCheckpoint.fromJson({
+    job_name: BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
+    height: 1,
+  });
+
   block: Block = Block.fromJson({
     height: 3967530,
     hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9F',
@@ -82,6 +87,7 @@ export default class CrawlValidatorTest {
     await Block.query().delete(true);
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);
+    await BlockCheckpoint.query().insert(this.blockCheckpoint);
   }
 
   @AfterAll()

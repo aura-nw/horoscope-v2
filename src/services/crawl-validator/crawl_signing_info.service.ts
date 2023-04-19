@@ -13,7 +13,7 @@ import {
   IPagination,
   SERVICE,
 } from '../../common';
-import { Validator } from '../../models';
+import { BlockCheckpoint, Validator } from '../../models';
 
 @Service({
   name: SERVICE.V1.CrawlSigningInfoService.key,
@@ -33,6 +33,15 @@ export default class CrawlSigningInfoService extends BullableService {
   })
   public async handleJob(_payload: object): Promise<void> {
     this._lcdClient = await getLcdClient();
+
+    const crawlGenValChk: BlockCheckpoint | undefined =
+      await BlockCheckpoint.query()
+        .select('*')
+        .findOne('job_name', BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR);
+    if (crawlGenValChk?.height !== 1) {
+      this.logger.info('Crawl genesis validators not finished yet');
+      return;
+    }
 
     const updateValidators: Validator[] = [];
     const signingInfos: any[] = [];

@@ -1,11 +1,16 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { BULL_JOB_NAME } from '../../../../src/common';
-import { Validator } from '../../../../src/models';
+import { BlockCheckpoint, Validator } from '../../../../src/models';
 import CrawlSigningInfoService from '../../../../src/services/crawl-validator/crawl_signing_info.service';
 
 @Describe('Test crawl_signing_info service')
 export default class CrawlSigningInfoTest {
+  blockCheckpoint: BlockCheckpoint = BlockCheckpoint.fromJson({
+    job_name: BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
+    height: 1,
+  });
+
   validator: Validator = Validator.fromJson({
     commission: JSON.parse('{}'),
     operator_address: 'auravaloper1phaxpevm5wecex2jyaqty2a4v02qj7qmhyhvcg',
@@ -54,13 +59,22 @@ export default class CrawlSigningInfoTest {
       .getQueueManager()
       .getQueue(BULL_JOB_NAME.CRAWL_SIGNING_INFO)
       .empty();
-    await Validator.query().delete(true);
-    await Validator.query().insert(this.validator);
+    await Promise.all([
+      Validator.query().delete(true),
+      BlockCheckpoint.query().delete(true),
+    ]);
+    await Promise.all([
+      Validator.query().insert(this.validator),
+      BlockCheckpoint.query().insert(this.blockCheckpoint),
+    ]);
   }
 
   @AfterAll()
   async tearDown() {
-    await Validator.query().delete(true);
+    await Promise.all([
+      Validator.query().delete(true),
+      BlockCheckpoint.query().delete(true),
+    ]);
     await this.broker.stop();
   }
 
