@@ -13,8 +13,8 @@ import {
   BlockCheckpoint,
   Proposal,
   Transaction,
-  TransactionEvent,
-  TransactionEventAttribute,
+  Event,
+  EventAttribute,
 } from '../../../../src/models';
 import { BULL_JOB_NAME } from '../../../../src/common';
 import CrawlProposalService from '../../../../src/services/crawl-proposal/crawl_proposal.service';
@@ -214,10 +214,10 @@ export default class CrawlProposalTest {
     await Promise.all([
       Proposal.query().delete(true),
       BlockCheckpoint.query().delete(true),
-      TransactionEventAttribute.query().delete(true),
+      EventAttribute.query().delete(true),
     ]);
     await Account.query().delete(true);
-    await TransactionEvent.query().delete(true);
+    await Event.query().delete(true);
     await Transaction.query().delete(true);
     await Block.query().delete(true);
     await Block.query().insert(this.block);
@@ -230,10 +230,10 @@ export default class CrawlProposalTest {
     await Promise.all([
       Proposal.query().delete(true),
       BlockCheckpoint.query().delete(true),
-      TransactionEventAttribute.query().delete(true),
+      EventAttribute.query().delete(true),
     ]);
     await Account.query().delete(true);
-    await TransactionEvent.query().delete(true);
+    await Event.query().delete(true);
     await Transaction.query().delete(true);
     await Block.query().delete(true);
     await this.broker.stop();
