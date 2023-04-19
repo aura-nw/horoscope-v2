@@ -42,43 +42,6 @@ export default class CrawlValidatorService extends BullableService {
     this._httpBatchClient = getHttpBatchClient();
   }
 
-  // To crawl all validators at genesis
-  @QueueHandler({
-    queueName: BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
-    jobType: 'crawl',
-    prefix: `horoscope-v2-${config.chainId}`,
-  })
-  public async handleCrawlValidatorsAtGenesis(_payload: object): Promise<void> {
-    this._lcdClient = await getLcdClient();
-
-    const crawlGenesisValidatorBlockCheckpoint: BlockCheckpoint | undefined =
-      await BlockCheckpoint.query()
-        .select('*')
-        .findOne('job_name', BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR);
-
-    if (
-      crawlGenesisValidatorBlockCheckpoint?.height === 0 ||
-      !crawlGenesisValidatorBlockCheckpoint
-    ) {
-      await this.updateValidators();
-
-      let updateBlockCheckpoint: BlockCheckpoint;
-      if (crawlGenesisValidatorBlockCheckpoint) {
-        updateBlockCheckpoint = crawlGenesisValidatorBlockCheckpoint;
-        updateBlockCheckpoint.height = 1;
-      } else
-        updateBlockCheckpoint = BlockCheckpoint.fromJson({
-          job_name: BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
-          height: 1,
-        });
-      await BlockCheckpoint.query()
-        .insert(updateBlockCheckpoint)
-        .onConflict('job_name')
-        .merge()
-        .returning('id');
-    }
-  }
-
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_VALIDATOR,
     jobType: 'crawl',
@@ -276,19 +239,6 @@ export default class CrawlValidatorService extends BullableService {
   }
 
   public async _start() {
-    // To crawl all validators at genesis
-    this.createJob(
-      BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
-      'crawl',
-      {},
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-      }
-    );
-
     this.createJob(
       BULL_JOB_NAME.CRAWL_VALIDATOR,
       'crawl',

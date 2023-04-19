@@ -244,6 +244,9 @@ export default class CrawlTxService extends BullableService {
         });
       });
 
+      // set index to event
+      this.setMsgIndexToEvent(tx);
+
       const txInsert = {
         ...Transaction.fromJson({
           height: parseInt(tx.tx_response.height, 10),
@@ -258,7 +261,7 @@ export default class CrawlTxService extends BullableService {
           data: tx,
         }),
         events: tx.tx_response.events.map((event: any) => ({
-          tx_msg_index: 0,
+          tx_msg_index: event.msg_index ?? undefined,
           type: event.type,
           attributes: event.attributes.map((attribute: any) => ({
             block_height: parseInt(tx.tx_response.height, 10),
@@ -288,6 +291,60 @@ export default class CrawlTxService extends BullableService {
       listTxModel
     );
     this.logger.debug('result insert tx', resultInsertGraph);
+  }
+
+  private setMsgIndexToEvent(tx: any) {
+    const mapEventMsgIdx: Map<string, number[]> = new Map();
+
+    // set index_msg from log to mapEventMsgIdx
+    tx.tx_response.logs?.forEach((log: any, index: number) => {
+      log.events.forEach((event: any) => {
+        const { type } = event;
+        event.attributes.forEach((attribute: any) => {
+          const keyInMap = `${type}_${attribute.key}_${attribute.value}`;
+          if (mapEventMsgIdx.has(keyInMap)) {
+            const listIndex = mapEventMsgIdx.get(keyInMap);
+            listIndex?.push(listIndex.length);
+          } else {
+            mapEventMsgIdx.set(keyInMap, [index]);
+          }
+        });
+      });
+    });
+
+    // set index_msg from mapEventMsgIdx to event
+    tx.tx_response.events.forEach((event: any) => {
+      const { type } = event;
+      event.attributes.forEach((attribute: any) => {
+        const key = attribute?.key
+          ? fromUtf8(fromBase64(attribute?.key))
+          : null;
+        const value = attribute?.value
+          ? fromUtf8(fromBase64(attribute?.value))
+          : null;
+        const keyInMap = `${type}_${key}_${value}`;
+
+        const listIndex = mapEventMsgIdx.get(keyInMap);
+        // get first index with this key
+        const firstIndex = listIndex?.shift();
+
+        if (firstIndex != null) {
+          if (event.msg_index && event.msg_index !== firstIndex) {
+            this.logger.warn(
+              `something wrong: setting index ${firstIndex} to existed index ${event.msg_index}`
+            );
+          } else {
+            // eslint-disable-next-line no-param-reassign
+            event.msg_index = firstIndex;
+          }
+        }
+
+        // delete key in map if value is empty
+        if (listIndex?.length === 0) {
+          mapEventMsgIdx.delete(keyInMap);
+        }
+      });
+    });
   }
 
   private async _getRegistry(): Promise<Registry> {
