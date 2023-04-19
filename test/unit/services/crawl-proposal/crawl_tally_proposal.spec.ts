@@ -33,7 +33,7 @@ export default class CrawlTallyProposalTest {
     proposals: {
       proposal_id: 1,
       voting_start_time: '2023-04-10T07:28:12.328245471Z',
-      voting_end_time: '2023-04-10T07:38:12.328245471Z',
+      voting_end_time: new Date(new Date().getSeconds() - 10).toISOString(),
       submit_time: '2023-04-10T07:28:12.328245471Z',
       deposit_end_time: '2023-04-10T07:38:12.328245471Z',
       type: '/cosmos.gov.v1beta1.TextProposal',

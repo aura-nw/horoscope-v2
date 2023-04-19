@@ -13,7 +13,6 @@ import {
   BULL_JOB_NAME,
   getLcdClient,
   IAuraJSClientFactory,
-  PROPOSAL_STATUS,
   SERVICE,
 } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -156,15 +155,6 @@ export default class CrawlProposalService extends BullableService {
             }
 
             listProposals.push(proposalEntity);
-
-            if (
-              proposal.status === PROPOSAL_STATUS.PROPOSAL_STATUS_VOTING_PERIOD
-            ) {
-              this.broker.call(
-                SERVICE.V1.CrawlTallyProposalService.UpdateProposalTally.path,
-                { proposalId }
-              );
-            }
           })
         );
 
@@ -221,11 +211,25 @@ export default class CrawlProposalService extends BullableService {
     return [proposerId, initialDeposit];
   }
 
-  public async _start() {
-    await this.broker.waitForServices([
-      SERVICE.V1.CrawlTallyProposalService.name,
-    ]);
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL,
+    jobType: 'crawl',
+    prefix: `horoscope-v2-${config.chainId}`,
+  })
+  public async handleNotEnoughDepositProposals(
+    _payload: object
+  ): Promise<void> {
+    const now = new Date(new Date().getSeconds() - 10);
 
+    await Proposal.query()
+      .patch({
+        status: Proposal.STATUS.PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT,
+      })
+      .where('status', Proposal.STATUS.PROPOSAL_STATUS_DEPOSIT_PERIOD)
+      .andWhere('deposit_end_time', '<=', now);
+  }
+
+  public async _start() {
     this.createJob(
       BULL_JOB_NAME.CRAWL_PROPOSAL,
       'crawl',
@@ -236,7 +240,23 @@ export default class CrawlProposalService extends BullableService {
           count: 3,
         },
         repeat: {
-          every: config.crawlProposal.millisecondCrawl,
+          every: config.crawlProposal.crawlProposal.millisecondCrawl,
+        },
+      }
+    );
+    this.createJob(
+      BULL_JOB_NAME.HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL,
+      'crawl',
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        repeat: {
+          every:
+            config.crawlProposal.handleNotEnoughDepositProposal
+              .millisecondCrawl,
         },
       }
     );

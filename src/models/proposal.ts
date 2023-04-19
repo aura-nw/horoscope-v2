@@ -50,6 +50,18 @@ export class Proposal extends BaseModel {
     return ['content', 'tally', 'initial_deposit', 'total_deposit'];
   }
 
+  static get STATUS() {
+    return {
+      PROPOSAL_STATUS_UNSPECIFIED: 'PROPOSAL_STATUS_UNSPECIFIED',
+      PROPOSAL_STATUS_DEPOSIT_PERIOD: 'PROPOSAL_STATUS_DEPOSIT_PERIOD',
+      PROPOSAL_STATUS_VOTING_PERIOD: 'PROPOSAL_STATUS_VOTING_PERIOD',
+      PROPOSAL_STATUS_PASSED: 'PROPOSAL_STATUS_PASSED',
+      PROPOSAL_STATUS_REJECTED: 'PROPOSAL_STATUS_REJECTED',
+      PROPOSAL_STATUS_FAILED: 'PROPOSAL_STATUS_FAILED',
+      PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT: 'PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT',
+    };
+  }
+
   static get jsonSchema() {
     return {
       type: 'object',

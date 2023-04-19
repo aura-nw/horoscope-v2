@@ -298,4 +298,22 @@ export default class CrawlProposalTest {
     expect(newProposal?.title).toEqual('Community Pool Spend test 1');
     expect(newProposal?.description).toEqual('Test 1');
   }
+
+  @Test('Handle not enough deposit proposal success')
+  public async testHandleNotEnoughDepositProposal() {
+    await Proposal.query()
+      .patch({
+        deposit_end_time: new Date(new Date().getSeconds() - 10).toISOString(),
+        status: Proposal.STATUS.PROPOSAL_STATUS_DEPOSIT_PERIOD,
+      })
+      .where('proposal_id', 1);
+
+    await this.crawlProposalService?.handleNotEnoughDepositProposals({});
+
+    const updateProposal = await Proposal.query().findOne('proposal_id', 1);
+
+    expect(updateProposal?.status).toEqual(
+      Proposal.STATUS.PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT
+    );
+  }
 }

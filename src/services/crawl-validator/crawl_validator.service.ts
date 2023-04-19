@@ -188,26 +188,24 @@ export default class CrawlValidatorService extends BullableService {
 
     const pool = await this._lcdClient.auranw.cosmos.staking.v1beta1.pool();
 
-    await Promise.all(
-      validators.map(async (validator: Validator) => {
-        const request: QueryDelegationRequest = {
-          delegatorAddr: validator.account_address,
-          validatorAddr: validator.operator_address,
-        };
-        const data = toHex(
-          cosmos.staking.v1beta1.QueryDelegationRequest.encode(request).finish()
-        );
+    validators.forEach((validator: Validator) => {
+      const request: QueryDelegationRequest = {
+        delegatorAddr: validator.account_address,
+        validatorAddr: validator.operator_address,
+      };
+      const data = toHex(
+        cosmos.staking.v1beta1.QueryDelegationRequest.encode(request).finish()
+      );
 
-        batchQueries.push(
-          this._httpBatchClient.execute(
-            createJsonRpcRequest('abci_query', {
-              path: ABCI_QUERY_PATH.VALIDATOR_DELEGATION,
-              data,
-            })
-          )
-        );
-      })
-    );
+      batchQueries.push(
+        this._httpBatchClient.execute(
+          createJsonRpcRequest('abci_query', {
+            path: ABCI_QUERY_PATH.VALIDATOR_DELEGATION,
+            data,
+          })
+        )
+      );
+    });
 
     const result: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
     const delegations: (QueryDelegationResponse | null)[] = result.map(
