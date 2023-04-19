@@ -20,6 +20,10 @@ export default class CW721Tx extends BaseModel {
 
   updated_at?: Date;
 
+  from?: string;
+
+  to?: string;
+
   static get tableName() {
     return 'cw721_tx';
   }

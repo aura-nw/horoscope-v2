@@ -34,6 +34,8 @@ export async function up(knex: Knex): Promise<void> {
     table.string('action');
     table.string('contract_address').index().notNullable();
     table.string('token_id').index();
+    table.string('from');
+    table.string('to');
     table.unique(['tx_hash', 'contract_address', 'action', 'token_id']);
     table.foreign('contract_address').references('cw721_contract.address');
     table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));

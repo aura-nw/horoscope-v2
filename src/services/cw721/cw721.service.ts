@@ -18,8 +18,8 @@ import {
   Block,
   BlockCheckpoint,
   Transaction,
-  TransactionEvent,
-  TransactionEventAttribute,
+  Event,
+  EventAttribute,
   TransactionMessage,
 } from '../../models';
 import Codeid from '../../models/code_id';
@@ -70,21 +70,21 @@ export default class Cw721HandlerService extends BullableService {
   async handlerCw721Transfer(transferMsgs: IContractMsgInfo[]): Promise<void> {
     // eslint-disable-next-line no-restricted-syntax
     for (const transferMsg of transferMsgs) {
-      const newOwner = this.getAttributeFrom(
+      const recipient = this.getAttributeFrom(
         transferMsg.wasm_attributes,
-        TransactionEventAttribute.EVENT_KEY.RECIPIENT
+        EventAttribute.EVENT_KEY.RECIPIENT
       );
       const tokenId = this.getAttributeFrom(
         transferMsg.wasm_attributes,
-        TransactionEventAttribute.EVENT_KEY.TOKEN_ID
+        EventAttribute.EVENT_KEY.TOKEN_ID
       );
-      if (tokenId && newOwner) {
+      if (tokenId && recipient) {
         // eslint-disable-next-line no-await-in-loop
         await CW721Token.query()
           .where('contract_address', transferMsg.contractAddress)
           .andWhere('token_id', tokenId)
           .patch({
-            owner: newOwner,
+            owner: recipient,
             last_updated_height: transferMsg.tx.height,
           });
       } else {
@@ -103,7 +103,7 @@ export default class Cw721HandlerService extends BullableService {
           mintMsgs.map((mintMsg) => {
             const tokenId = this.getAttributeFrom(
               mintMsg.wasm_attributes,
-              TransactionEventAttribute.EVENT_KEY.TOKEN_ID
+              EventAttribute.EVENT_KEY.TOKEN_ID
             );
             const tokenUri = JSON.parse(mintMsg.content)[CW721_ACTION.MINT]
               ?.token_uri;
@@ -115,7 +115,7 @@ export default class Cw721HandlerService extends BullableService {
               extension,
               owner: this.getAttributeFrom(
                 mintMsg.wasm_attributes,
-                TransactionEventAttribute.EVENT_KEY.OWNER
+                EventAttribute.EVENT_KEY.OWNER
               ),
               contract_address: mintMsg.contractAddress,
               last_updated_height: mintMsg.tx.height,
@@ -135,7 +135,7 @@ export default class Cw721HandlerService extends BullableService {
         burnMsgs.forEach((burnMsg) => {
           const tokenId = this.getAttributeFrom(
             burnMsg.wasm_attributes,
-            TransactionEventAttribute.EVENT_KEY.TOKEN_ID
+            EventAttribute.EVENT_KEY.TOKEN_ID
           );
           if (tokenId) {
             const query = CW721Token.query()
@@ -255,7 +255,7 @@ export default class Cw721HandlerService extends BullableService {
     const cw721Txs = listCw721Msgs.map((cw721Msg) => {
       const tokenId = this.getAttributeFrom(
         cw721Msg.wasm_attributes,
-        TransactionEventAttribute.EVENT_KEY.TOKEN_ID
+        EventAttribute.EVENT_KEY.TOKEN_ID
       );
       return CW721Tx.fromJson({
         action: cw721Msg.action,
@@ -350,8 +350,7 @@ export default class Cw721HandlerService extends BullableService {
 
   // checked
   async getContractMsgs(startBlock: number, endBlock: number) {
-    const listContractMsgInfo: (IContractMsgInfo | IInstantiateMsgInfo)[] = [];
-    // from, from+1, ... to
+    const contractMsgsInfo: (IContractMsgInfo | IInstantiateMsgInfo)[] = [];
     const txs = await Transaction.query()
       .alias('tx')
       .whereBetween('tx.height', [startBlock, endBlock])
@@ -369,19 +368,16 @@ export default class Cw721HandlerService extends BullableService {
         if (message.type === MSG_TYPE.MSG_EXECUTE_CONTRACT) {
           const content = message.content as MsgExecuteContract;
           const wasmEvent = tx.data.tx_response.logs[index].events.find(
-            (event: any) => event.type === TransactionEvent.EVENT_TYPE.WASM
+            (event: any) => event.type === Event.EVENT_TYPE.WASM
           );
           if (wasmEvent) {
             // split into wasm sub-events
-            const listWasmSubEventAttrs = wasmEvent.attributes.reduce(
+            const wasmEventByContracts = wasmEvent.attributes.reduce(
               (
                 acc: { key: string; value: string }[][],
                 curr: { key: string; value: string }
               ) => {
-                if (
-                  curr.key ===
-                  TransactionEventAttribute.EVENT_KEY._CONTRACT_ADDRESS
-                ) {
+                if (curr.key === EventAttribute.EVENT_KEY._CONTRACT_ADDRESS) {
                   acc.push([curr]); // start a new sub-array with the current element
                 } else if (acc.length > 0) {
                   acc[acc.length - 1].push(curr); // add the current element to the last sub-array
@@ -391,15 +387,15 @@ export default class Cw721HandlerService extends BullableService {
               []
             );
             const { sender } = content;
-            listWasmSubEventAttrs.forEach((wasmSubEventAttrs: any) => {
+            wasmEventByContracts.forEach((wasmSubEventAttrs: any) => {
               const action = this.getAttributeFrom(
                 wasmSubEventAttrs,
-                TransactionEventAttribute.EVENT_KEY.ACTION
+                EventAttribute.EVENT_KEY.ACTION
               );
-              listContractMsgInfo.push({
+              contractMsgsInfo.push({
                 contractAddress: this.getAttributeFrom(
                   wasmSubEventAttrs,
-                  TransactionEventAttribute.EVENT_KEY._CONTRACT_ADDRESS
+                  EventAttribute.EVENT_KEY._CONTRACT_ADDRESS
                 ),
                 sender,
                 action,
@@ -413,11 +409,10 @@ export default class Cw721HandlerService extends BullableService {
           }
         } else if (message.type === MSG_TYPE.MSG_INSTANTIATE_CONTRACT) {
           const content = message.content as MsgInstantiateContract;
-          const action = TransactionEvent.EVENT_TYPE.INSTANTIATE;
+          const action = Event.EVENT_TYPE.INSTANTIATE;
           const { sender } = content;
           const instantiateEvent = tx.data.tx_response.logs[index].events.find(
-            (event: any) =>
-              event.type === TransactionEvent.EVENT_TYPE.INSTANTIATE
+            (event: any) => event.type === Event.EVENT_TYPE.INSTANTIATE
           );
           if (instantiateEvent) {
             const { low, high }: { low: number; high: number } =
@@ -429,10 +424,10 @@ export default class Cw721HandlerService extends BullableService {
               codeId = high.toString() + codeId;
             }
             // not cover submessage
-            listContractMsgInfo.push({
+            contractMsgsInfo.push({
               contractAddress: this.getAttributeFrom(
                 instantiateEvent.attributes,
-                TransactionEventAttribute.EVENT_KEY._CONTRACT_ADDRESS
+                EventAttribute.EVENT_KEY._CONTRACT_ADDRESS
               ),
               sender,
               action,
@@ -446,7 +441,7 @@ export default class Cw721HandlerService extends BullableService {
         }
       });
     }
-    return listContractMsgInfo;
+    return contractMsgsInfo;
   }
 
   // checked
