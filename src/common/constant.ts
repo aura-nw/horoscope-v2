@@ -7,16 +7,6 @@ export const URL_TYPE_CONSTANTS = {
   RPC: 'RPC',
 };
 
-export const PROPOSAL_STATUS = {
-  PROPOSAL_STATUS_UNSPECIFIED: 'PROPOSAL_STATUS_UNSPECIFIED',
-  PROPOSAL_STATUS_DEPOSIT_PERIOD: 'PROPOSAL_STATUS_DEPOSIT_PERIOD',
-  PROPOSAL_STATUS_VOTING_PERIOD: 'PROPOSAL_STATUS_VOTING_PERIOD',
-  PROPOSAL_STATUS_PASSED: 'PROPOSAL_STATUS_PASSED',
-  PROPOSAL_STATUS_REJECTED: 'PROPOSAL_STATUS_REJECTED',
-  PROPOSAL_STATUS_FAILED: 'PROPOSAL_STATUS_FAILED',
-  PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT: 'PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT',
-};
-
 export const MODULE_PARAM = {
   BANK: 'bank',
   GOVERNANCE: 'gov',
@@ -41,6 +31,9 @@ export const BULL_JOB_NAME = {
   CRAWL_BLOCK: 'crawl:block',
   CRAWL_TRANSACTION: 'crawl:transaction',
   HANDLE_TRANSACTION: 'handle:transaction',
+  CRAWL_PROPOSAL: 'crawl:proposal',
+  CRAWL_TALLY_PROPOSAL: 'crawl:tally-proposal',
+  HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL: 'handle:not-enough-deposit-proposal',
   CRAWL_GENESIS: 'crawl:genesis',
 };
 
@@ -61,6 +54,14 @@ export const SERVICE = {
         key: 'CrawlNewAccountApi',
         path: 'v1.HandleAddressService.CrawlNewAccountApi',
       },
+    },
+    CrawlProposalService: {
+      name: 'v1.CrawlProposalService',
+      key: 'CrawlProposalService',
+    },
+    CrawlTallyProposalService: {
+      name: 'v1.CrawlTallyProposalService',
+      key: 'CrawlTallyProposalService',
     },
     HandleStakeEventService: {
       key: 'HandleStakeEventService',
@@ -126,4 +127,6 @@ export const ABCI_QUERY_PATH = {
   ACCOUNT_SPENDABLE_BALANCES: '/cosmos.bank.v1beta1.Query/SpendableBalances',
   DENOM_TRACE: '/ibc.applications.transfer.v1.Query/DenomTrace',
   VALIDATOR_DELEGATION: '/cosmos.staking.v1beta1.Query/Delegation',
+  PROPOSAL: '/cosmos.gov.v1beta1.Query/Proposal',
+  TALLY_RESULT: '/cosmos.gov.v1beta1.Query/TallyResult',
 };

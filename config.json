@@ -22,5 +22,16 @@
     "handleVestingAccount": {
       "millisecondCrawl": 30000
     }
+  },
+  "crawlProposal": {
+    "crawlProposal": {
+      "millisecondCrawl": 5000
+    },
+    "handleNotEnoughDepositProposal": {
+      "millisecondCrawl": 30000
+    }
+  },
+  "crawlTallyProposal": {
+    "millisecondCrawl": 10000
   }
 }
