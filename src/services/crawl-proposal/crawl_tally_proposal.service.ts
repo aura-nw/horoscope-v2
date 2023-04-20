@@ -117,7 +117,11 @@ export default class CrawlTallyProposalService extends BullableService {
       .insert(votingProposals)
       .onConflict('proposal_id')
       .merge()
-      .returning('proposal_id');
+      .returning('proposal_id')
+      .catch((error) => {
+        this.logger.error('Error update proposals tally');
+        this.logger.error(error);
+      });
   }
 
   public async _start() {
