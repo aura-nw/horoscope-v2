@@ -155,8 +155,8 @@ export default class CrawlValidatorService extends BullableService {
         this.logger.info(`Update validator: ${validator.operator_address}`);
 
         const foundValidator = validatorInDB.find(
-          (validatorInDB: Validator) =>
-            validatorInDB.operator_address === validator.operator_address
+          (val: Validator) =>
+            val.operator_address === validator.operator_address
         );
 
         let validatorEntity: Validator;
