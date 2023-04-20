@@ -2,6 +2,26 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import {
+  QueryProposalRequest,
+  QueryProposalResponse,
+} from '@aura-nw/aurajs/types/codegen/cosmos/gov/v1beta1/query';
+import Long from 'long';
+import { fromBase64, toHex } from '@cosmjs/encoding';
+import { cosmos } from '@aura-nw/aurajs';
+import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
+import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
+import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
+import config from '../../../config.json' assert { type: 'json' };
+import BullableService, { QueueHandler } from '../../base/bullable.service';
+import {
+  ABCI_QUERY_PATH,
+  BULL_JOB_NAME,
+  getHttpBatchClient,
+  getLcdClient,
+  IAuraJSClientFactory,
+  SERVICE,
+} from '../../common';
+import {
   Account,
   Block,
   BlockCheckpoint,
@@ -9,14 +29,6 @@ import {
   Transaction,
   EventAttribute,
 } from '../../models';
-import {
-  BULL_JOB_NAME,
-  getLcdClient,
-  IAuraJSClientFactory,
-  SERVICE,
-} from '../../common';
-import BullableService, { QueueHandler } from '../../base/bullable.service';
-import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
   name: SERVICE.V1.CrawlProposalService.key,
@@ -25,8 +37,11 @@ import config from '../../../config.json' assert { type: 'json' };
 export default class CrawlProposalService extends BullableService {
   private _lcdClient!: IAuraJSClientFactory;
 
+  private _httpBatchClient: HttpBatchClient;
+
   public constructor(public broker: ServiceBroker) {
     super(broker);
+    this._httpBatchClient = getHttpBatchClient();
   }
 
   @QueueHandler({
@@ -219,14 +234,67 @@ export default class CrawlProposalService extends BullableService {
   public async handleNotEnoughDepositProposals(
     _payload: object
   ): Promise<void> {
+    const batchQueries: any[] = [];
+
     const now = new Date(new Date().getSeconds() - 10);
 
-    await Proposal.query()
-      .patch({
-        status: Proposal.STATUS.PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT,
-      })
+    const depositProposals = await Proposal.query()
+      // .patch({
+      //   status: Proposal.STATUS.PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT,
+      // })
       .where('status', Proposal.STATUS.PROPOSAL_STATUS_DEPOSIT_PERIOD)
       .andWhere('deposit_end_time', '<=', now);
+
+    depositProposals.forEach((proposal: Proposal) => {
+      const request: QueryProposalRequest = {
+        proposalId: Long.fromInt(proposal.proposal_id),
+      };
+      const data = toHex(
+        cosmos.gov.v1beta1.QueryProposalRequest.encode(request).finish()
+      );
+
+      batchQueries.push(
+        this._httpBatchClient.execute(
+          createJsonRpcRequest('abci_query', {
+            path: ABCI_QUERY_PATH.PROPOSAL,
+            data,
+          })
+        )
+      );
+    });
+
+    const result: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
+    const resultProposals: (QueryProposalResponse | null)[] = result.map(
+      (res: JsonRpcSuccessResponse) =>
+        res.result.response.value
+          ? cosmos.gov.v1beta1.QueryProposalResponse.decode(
+              fromBase64(res.result.response.value)
+            )
+          : null
+    );
+
+    depositProposals.forEach((proposal: Proposal) => {
+      const onchainPro = resultProposals.find(
+        (pro) =>
+          pro?.proposal?.proposalId === Long.fromInt(proposal.proposal_id)
+      );
+
+      if (!onchainPro)
+        // eslint-disable-next-line no-param-reassign
+        proposal.status = Proposal.STATUS.PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT;
+    });
+
+    await Proposal.query()
+      .insert(depositProposals)
+      .onConflict('proposal_id')
+      .merge()
+      .returning('proposal_id')
+      .catch((error) => {
+        this.logger.error(
+          'Error update status for not enough deposit proposals'
+        );
+        this.logger.error(error);
+      });
   }
 
   public async _start() {

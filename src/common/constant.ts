@@ -127,5 +127,6 @@ export const ABCI_QUERY_PATH = {
   ACCOUNT_SPENDABLE_BALANCES: '/cosmos.bank.v1beta1.Query/SpendableBalances',
   DENOM_TRACE: '/ibc.applications.transfer.v1.Query/DenomTrace',
   VALIDATOR_DELEGATION: '/cosmos.staking.v1beta1.Query/Delegation',
+  PROPOSAL: '/cosmos.gov.v1beta1.Query/Proposal',
   TALLY_RESULT: '/cosmos.gov.v1beta1.Query/TallyResult',
 };
