@@ -209,6 +209,8 @@ export default class AssetIndexerTest {
     ],
   };
 
+  txInsertInstantiate = {};
+
   codeId = CodeId.fromJson({
     code_id: '100',
     type: 'CW721',

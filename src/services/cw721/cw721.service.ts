@@ -198,6 +198,7 @@ export default class Cw721HandlerService extends BullableService {
     // get range txs for proccessing
     const startBlock: number = this._currentAssetHandlerBlock;
     const latestBlock = await Block.query()
+      .limit(1)
       .orderBy('height', 'DESC')
       .first()
       .throwIfNotFound();
@@ -332,6 +333,7 @@ export default class Cw721HandlerService extends BullableService {
     if (!blockCheckpoint) {
       // min Tx from DB
       const minBlock = await Block.query()
+        .limit(1)
         .orderBy('height', 'ASC')
         .first()
         .throwIfNotFound();
@@ -361,7 +363,6 @@ export default class Cw721HandlerService extends BullableService {
         MSG_TYPE.MSG_INSTANTIATE_CONTRACT,
       ])
       .orderBy('id', 'ASC');
-
     // eslint-disable-next-line no-restricted-syntax
     for (const tx of txs) {
       tx.messages.forEach((message: TransactionMessage, index: number) => {
@@ -415,32 +416,47 @@ export default class Cw721HandlerService extends BullableService {
             (event: any) => event.type === Event.EVENT_TYPE.INSTANTIATE
           );
           if (instantiateEvent) {
-            const { low, high }: { low: number; high: number } =
-              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-              // @ts-ignore
-              content.code_id;
-            let codeId = low.toString();
-            if (high) {
-              codeId = high.toString() + codeId;
-            }
-            // not cover submessage
-            contractMsgsInfo.push({
-              contractAddress: this.getAttributeFrom(
-                instantiateEvent.attributes,
-                EventAttribute.EVENT_KEY._CONTRACT_ADDRESS
-              ),
-              sender,
-              action,
-              code_id: codeId,
-              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-              // @ts-ignore
-              content: content.msg,
-              tx,
-            });
+            const instantiateEventByContracts =
+              instantiateEvent.attributes.reduce(
+                (
+                  acc: { key: string; value: string }[][],
+                  curr: { key: string; value: string }
+                ) => {
+                  if (curr.key === EventAttribute.EVENT_KEY._CONTRACT_ADDRESS) {
+                    acc.push([curr]); // start a new sub-array with the current element
+                  } else if (acc.length > 0) {
+                    acc[acc.length - 1].push(curr); // add the current element to the last sub-array
+                  }
+                  return acc;
+                },
+                []
+              );
+            instantiateEventByContracts.forEach(
+              (instantiateSubEventAttrs: any) => {
+                const codeId = this.getAttributeFrom(
+                  instantiateSubEventAttrs,
+                  EventAttribute.EVENT_KEY.CODE_ID
+                );
+                contractMsgsInfo.push({
+                  contractAddress: this.getAttributeFrom(
+                    instantiateSubEventAttrs,
+                    EventAttribute.EVENT_KEY._CONTRACT_ADDRESS
+                  ),
+                  sender,
+                  action,
+                  code_id: codeId,
+                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                  // @ts-ignore
+                  content: content.msg,
+                  tx,
+                });
+              }
+            );
           }
         }
       });
     }
+    console.log(contractMsgsInfo);
     return contractMsgsInfo;
   }
 
