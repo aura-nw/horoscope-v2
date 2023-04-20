@@ -86,7 +86,7 @@ export default class CrawlTxService extends BullableService {
     jobType: BULL_JOB_NAME.HANDLE_TRANSACTION,
     prefix: `horoscope-v2-${config.chainId}`,
   })
-  private async jobHandlerTx(_payload: any): Promise<void> {
+  async jobHandlerTx(_payload: any): Promise<void> {
     const { listTx, timestamp, height } = _payload;
     const listHandleTx: any[] = [];
     if (listTx.total_count === '0') {
@@ -304,7 +304,7 @@ export default class CrawlTxService extends BullableService {
           const keyInMap = `${type}_${attribute.key}_${attribute.value}`;
           if (mapEventMsgIdx.has(keyInMap)) {
             const listIndex = mapEventMsgIdx.get(keyInMap);
-            listIndex?.push(listIndex.length);
+            listIndex?.push(index);
           } else {
             mapEventMsgIdx.set(keyInMap, [index]);
           }
