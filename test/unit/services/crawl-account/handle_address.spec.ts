@@ -6,13 +6,11 @@ import {
   Block,
   BlockCheckpoint,
   Transaction,
-  Event,
-  EventAttribute,
-  TransactionMessage,
 } from '../../../../src/models';
 import CrawlAccountService from '../../../../src/services/crawl-account/crawl_account.service';
 import HandleStakeEventService from '../../../../src/services/crawl-validator/handle_stake_event.service';
 import HandleAddressService from '../../../../src/services/crawl-account/handle_address.service';
+import knex from '../../../../src/common/utils/db_connection';
 
 @Describe('Test handle_address service')
 export default class HandleAddressTest {
@@ -133,13 +131,9 @@ export default class HandleAddressTest {
     ]);
     await Promise.all([
       Account.query().delete(true),
-      TransactionMessage.query().delete(true),
-      EventAttribute.query().delete(true),
       BlockCheckpoint.query().delete(true),
+      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
     ]);
-    await Event.query().delete(true);
-    await Transaction.query().delete(true);
-    await Block.query().delete(true);
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);
   }
@@ -148,13 +142,9 @@ export default class HandleAddressTest {
   async tearDown() {
     await Promise.all([
       Account.query().delete(true),
-      TransactionMessage.query().delete(true),
-      EventAttribute.query().delete(true),
       BlockCheckpoint.query().delete(true),
+      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
     ]);
-    await Event.query().delete(true);
-    await Transaction.query().delete(true);
-    await Block.query().delete(true);
     await this.broker.stop();
   }
 

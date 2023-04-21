@@ -17,6 +17,7 @@ import {
   defaultSendFee,
   defaultSigningClientOptions,
 } from '../../../helper/constant';
+import knex from '../../../../src/common/utils/db_connection';
 
 @Describe('Test crawl_tally_proposal service')
 export default class CrawlTallyProposalTest {
@@ -81,15 +82,13 @@ export default class CrawlTallyProposalTest {
       .getQueueManager()
       .getQueue(BULL_JOB_NAME.CRAWL_TALLY_PROPOSAL)
       .empty();
-    await Proposal.query().delete(true);
-    await Account.query().delete(true);
+    await knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE');
     await Account.query().insertGraph(this.account).returning('*');
   }
 
   @AfterAll()
   async tearDown() {
-    await Proposal.query().delete(true);
-    await Account.query().delete(true);
+    await knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE');
     await this.broker.stop();
   }
 

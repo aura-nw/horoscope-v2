@@ -10,6 +10,7 @@ import {
   Validator,
 } from '../../../../src/models';
 import HandleStakeEventService from '../../../../src/services/crawl-validator/handle_stake_event.service';
+import knex from '../../../../src/common/utils/db_connection';
 
 @Describe('Test handle_stake_event service')
 export default class HandleStakeEventTest {
@@ -66,6 +67,88 @@ export default class HandleStakeEventTest {
             amount: '1000000',
           },
         },
+      },
+    ],
+    events: [
+      {
+        tx_msg_index: 0,
+        type: 'delegate',
+        attributes: [
+          {
+            key: 'validator',
+            value: 'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx',
+          },
+          {
+            key: 'amount',
+            value: '1000000utaura',
+          },
+          {
+            key: 'new_shares',
+            value: '1000000.000000000000000000',
+          },
+        ],
+      },
+      {
+        tx_msg_index: 0,
+        type: 'message',
+        attributes: [
+          {
+            key: 'action',
+            value: '/cosmos.staking.v1beta1.MsgDelegate',
+          },
+          {
+            key: 'module',
+            value: 'staking',
+          },
+          {
+            key: 'sender',
+            value: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
+          },
+        ],
+      },
+      {
+        tx_msg_index: 1,
+        type: 'redelegate',
+        attributes: [
+          {
+            key: 'source_validator',
+            value: 'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx',
+          },
+          {
+            key: 'destination_validator',
+            value: 'auravaloper1edw4lwcz3esnlgzcw60ra8m38k3zygz2xtl2qh',
+          },
+          {
+            key: 'amount',
+            value: '1000000utaura',
+          },
+          {
+            key: 'completion_time',
+            value: '2023-04-05T02:45:20Z',
+          },
+        ],
+      },
+      {
+        tx_msg_index: 1,
+        type: 'message',
+        attributes: [
+          {
+            key: 'action',
+            value: '/cosmos.staking.v1beta1.MsgBeginRedelegate',
+          },
+          {
+            key: 'sender',
+            value: 'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+          },
+          {
+            key: 'module',
+            value: 'staking',
+          },
+          {
+            key: 'sender',
+            value: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
+          },
+        ],
       },
     ],
   };
@@ -152,15 +235,10 @@ export default class HandleStakeEventTest {
       .getQueue(BULL_JOB_NAME.HANDLE_STAKE_EVENT)
       .empty();
     await Promise.all([
-      TransactionMessage.query().delete(true),
-      PowerEvent.query().delete(true),
-    ]);
-    await Promise.all([
-      Account.query().delete(true),
       Validator.query().delete(true),
+      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE'),
     ]);
-    await Transaction.query().delete(true);
-    await Block.query().delete(true);
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);
     await Account.query().insert(this.account);
@@ -170,15 +248,10 @@ export default class HandleStakeEventTest {
   @AfterAll()
   async tearDown() {
     await Promise.all([
-      TransactionMessage.query().delete(true),
-      PowerEvent.query().delete(true),
-    ]);
-    await Promise.all([
-      Account.query().delete(true),
       Validator.query().delete(true),
+      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE'),
     ]);
-    await Transaction.query().delete(true);
-    await Block.query().delete(true);
     await this.broker.stop();
   }
 
@@ -187,7 +260,7 @@ export default class HandleStakeEventTest {
     const txMessages: TransactionMessage[] = await TransactionMessage.query();
 
     await this.handleStakeEventService?.handleJob({
-      txMsgIds: txMessages.map((tx) => tx.id),
+      txIds: txMessages.map((tx) => tx.id),
     });
 
     const [powerEvents, validators]: [PowerEvent[], Validator[]] =
