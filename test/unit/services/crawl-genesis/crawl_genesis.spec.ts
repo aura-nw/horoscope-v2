@@ -48,7 +48,7 @@ export default class CrawlGenesisTest {
       Validator.query().delete(true),
     ]);
     await Account.query().delete(true);
-    execSync('cp ./test/helper/genesis.txt .');
+    execSync('cp ./test/unit/services/crawl-genesis/genesis.txt .');
   }
 
   @AfterAll()

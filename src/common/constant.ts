@@ -35,6 +35,8 @@ export const BULL_JOB_NAME = {
   CRAWL_TALLY_PROPOSAL: 'crawl:tally-proposal',
   HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL: 'handle:not-enough-deposit-proposal',
   CRAWL_GENESIS: 'crawl:genesis',
+  CRAWL_CODE_ID: 'crawl:code-id',
+  CRAWL_SMART_CONTRACT: 'crawl:smart-contract',
 };
 
 export const SERVICE = {
@@ -91,6 +93,14 @@ export const SERVICE = {
       key: 'CrawlGenesisService',
       name: 'v1.CrawlGenesisService',
     },
+    CrawlCodeIdService: {
+      key: 'CrawlCodeIdService',
+      name: 'v1.CrawlCodeIdService',
+    },
+    CrawlSmartContractService: {
+      key: 'CrawlSmartContractService',
+      name: 'v1.CrawlSmartContractService',
+    },
   },
 };
 
@@ -129,4 +139,7 @@ export const ABCI_QUERY_PATH = {
   VALIDATOR_DELEGATION: '/cosmos.staking.v1beta1.Query/Delegation',
   PROPOSAL: '/cosmos.gov.v1beta1.Query/Proposal',
   TALLY_RESULT: '/cosmos.gov.v1beta1.Query/TallyResult',
+  CODE: '/cosmwasm.wasm.v1.Query/Code',
+  RAW_CONTRACT_STATE: '/cosmwasm.wasm.v1.Query/RawContractState',
+  SMART_CONTRACT_STATE: '/cosmwasm.wasm.v1.Query/SmartContractState',
 };

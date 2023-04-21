@@ -50,6 +50,10 @@ export class Proposal extends BaseModel {
     return ['content', 'tally', 'initial_deposit', 'total_deposit'];
   }
 
+  static get idColumn(): string | string[] {
+    return 'proposal_id';
+  }
+
   static get STATUS() {
     return {
       PROPOSAL_STATUS_UNSPECIFIED: 'PROPOSAL_STATUS_UNSPECIFIED',

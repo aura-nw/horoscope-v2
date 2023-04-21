@@ -27,6 +27,7 @@ import {
   BlockCheckpoint,
   Proposal,
   Transaction,
+  Event,
   EventAttribute,
 } from '../../models';
 
@@ -90,7 +91,7 @@ export default class CrawlProposalService extends BullableService {
           .andWhere('transaction.code', 0)
           .andWhere(
             'events:attributes.key',
-            EventAttribute.EVENT_KEY.PROPOSAL_ID
+            EventAttribute.ATTRIBUTE_KEY.PROPOSAL_ID
           )
           .select(
             'transaction.id',
@@ -197,8 +198,11 @@ export default class CrawlProposalService extends BullableService {
     const tx = await Transaction.query()
       .joinRelated('events.[attributes]')
       .where('transaction.code', 0)
-      .andWhere('events.type', EventAttribute.EVENT_KEY.SUBMIT_PROPOSAL)
-      .andWhere('events:attributes.key', EventAttribute.EVENT_KEY.PROPOSAL_ID)
+      .andWhere('events.type', Event.EVENT_TYPE.SUBMIT_PROPOSAL)
+      .andWhere(
+        'events:attributes.key',
+        EventAttribute.ATTRIBUTE_KEY.PROPOSAL_ID
+      )
       .andWhere('events:attributes.value', proposalId.toString())
       .select('transaction.data')
       .limit(1)
@@ -207,12 +211,9 @@ export default class CrawlProposalService extends BullableService {
     const msgIndex = tx[0].data.tx_response.logs.find(
       (log: any) =>
         log.events
-          .find(
-            (event: any) =>
-              event.type === EventAttribute.EVENT_KEY.SUBMIT_PROPOSAL
-          )
+          .find((event: any) => event.type === Event.EVENT_TYPE.SUBMIT_PROPOSAL)
           .attributes.find(
-            (attr: any) => attr.key === EventAttribute.EVENT_KEY.PROPOSAL_ID
+            (attr: any) => attr.key === EventAttribute.ATTRIBUTE_KEY.PROPOSAL_ID
           ).value === proposalId.toString()
     ).msg_index;
 
