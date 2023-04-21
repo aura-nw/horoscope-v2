@@ -13,8 +13,6 @@ import {
   BlockCheckpoint,
   Proposal,
   Transaction,
-  Event,
-  EventAttribute,
 } from '../../../../src/models';
 import { BULL_JOB_NAME } from '../../../../src/common';
 import CrawlProposalService from '../../../../src/services/crawl-proposal/crawl_proposal.service';
@@ -25,6 +23,7 @@ import {
   defaultSendFee,
   defaultSigningClientOptions,
 } from '../../../helper/constant';
+import knex from '../../../../src/common/utils/db_connection';
 
 @Describe('Test crawl_proposal service')
 export default class CrawlProposalTest {
@@ -218,12 +217,9 @@ export default class CrawlProposalTest {
     await Promise.all([
       Proposal.query().delete(true),
       BlockCheckpoint.query().delete(true),
-      EventAttribute.query().delete(true),
+      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
     ]);
     await Account.query().delete(true);
-    await Event.query().delete(true);
-    await Transaction.query().delete(true);
-    await Block.query().delete(true);
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);
     await Account.query().insert(this.account);
@@ -234,12 +230,9 @@ export default class CrawlProposalTest {
     await Promise.all([
       Proposal.query().delete(true),
       BlockCheckpoint.query().delete(true),
-      EventAttribute.query().delete(true),
+      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
     ]);
     await Account.query().delete(true);
-    await Event.query().delete(true);
-    await Transaction.query().delete(true);
-    await Block.query().delete(true);
     await this.broker.stop();
   }
 

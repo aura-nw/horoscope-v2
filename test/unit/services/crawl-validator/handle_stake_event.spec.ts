@@ -10,6 +10,7 @@ import {
   Validator,
 } from '../../../../src/models';
 import HandleStakeEventService from '../../../../src/services/crawl-validator/handle_stake_event.service';
+import knex from '../../../../src/common/utils/db_connection';
 
 @Describe('Test handle_stake_event service')
 export default class HandleStakeEventTest {
@@ -151,16 +152,12 @@ export default class HandleStakeEventTest {
       .getQueueManager()
       .getQueue(BULL_JOB_NAME.HANDLE_STAKE_EVENT)
       .empty();
-    await Promise.all([
-      TransactionMessage.query().delete(true),
-      PowerEvent.query().delete(true),
-    ]);
+    await PowerEvent.query().delete(true);
     await Promise.all([
       Account.query().delete(true),
       Validator.query().delete(true),
+      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
     ]);
-    await Transaction.query().delete(true);
-    await Block.query().delete(true);
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);
     await Account.query().insert(this.account);
@@ -169,16 +166,12 @@ export default class HandleStakeEventTest {
 
   @AfterAll()
   async tearDown() {
-    await Promise.all([
-      TransactionMessage.query().delete(true),
-      PowerEvent.query().delete(true),
-    ]);
+    await PowerEvent.query().delete(true);
     await Promise.all([
       Account.query().delete(true),
       Validator.query().delete(true),
+      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
     ]);
-    await Transaction.query().delete(true);
-    await Block.query().delete(true);
     await this.broker.stop();
   }
 

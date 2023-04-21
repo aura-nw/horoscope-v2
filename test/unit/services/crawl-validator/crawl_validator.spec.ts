@@ -5,12 +5,11 @@ import {
   Block,
   BlockCheckpoint,
   Transaction,
-  Event,
-  EventAttribute,
   Validator,
 } from '../../../../src/models';
 import CrawlSigningInfoService from '../../../../src/services/crawl-validator/crawl_signing_info.service';
 import CrawlValidatorService from '../../../../src/services/crawl-validator/crawl_validator.service';
+import knex from '../../../../src/common/utils/db_connection';
 
 @Describe('Test crawl_validator service')
 export default class CrawlValidatorTest {
@@ -74,12 +73,9 @@ export default class CrawlValidatorTest {
     ]);
     await Promise.all([
       Validator.query().delete(true),
-      EventAttribute.query().delete(true),
       BlockCheckpoint.query().delete(true),
+      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
     ]);
-    await Event.query().delete(true);
-    await Transaction.query().delete(true);
-    await Block.query().delete(true);
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);
   }
@@ -88,12 +84,9 @@ export default class CrawlValidatorTest {
   async tearDown() {
     await Promise.all([
       Validator.query().delete(true),
-      EventAttribute.query().delete(true),
       BlockCheckpoint.query().delete(true),
+      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
     ]);
-    await Event.query().delete(true);
-    await Transaction.query().delete(true);
-    await Block.query().delete(true);
     await this.broker.stop();
   }
 
