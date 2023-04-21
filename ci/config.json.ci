@@ -33,5 +33,11 @@
   },
   "crawlTallyProposal": {
     "millisecondCrawl": 10000
+  },
+  "crawlCodeId": {
+    "millisecondCrawl": 5000
+  },
+  "crawlSmartContract": {
+    "millisecondCrawl": 5000
   }
 }
