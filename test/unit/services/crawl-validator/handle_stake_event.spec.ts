@@ -235,7 +235,7 @@ export default class HandleStakeEventTest {
       .getQueue(BULL_JOB_NAME.HANDLE_STAKE_EVENT)
       .empty();
     await Promise.all([
-      Validator.query().delete(true),
+      knex.raw('TRUNCATE TABLE validator RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE'),
     ]);
@@ -248,7 +248,7 @@ export default class HandleStakeEventTest {
   @AfterAll()
   async tearDown() {
     await Promise.all([
-      Validator.query().delete(true),
+      knex.raw('TRUNCATE TABLE validator RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE'),
     ]);
