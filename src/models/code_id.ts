@@ -1,27 +1,41 @@
+/* eslint-disable import/no-cycle */
 import { Model } from 'objection';
 import BaseModel from './base';
-// eslint-disable-next-line import/no-cycle
-import CW721Contract from './cw721_contract';
+import { SmartContract } from './smart_contract';
 
-export default class CodeId extends BaseModel {
-  id?: number;
+export interface IInstantiatePermission {
+  permission: string;
+  address: string;
+  addresses: string[];
+}
 
-  code_id!: string;
+export class CodeId extends BaseModel {
+  code_id!: number;
 
-  type!: string;
+  creator!: string;
 
-  contract_name?: string;
+  data_hash!: string;
 
-  contract_version?: string;
+  instantiate_permission!: IInstantiatePermission[];
 
-  status!: string;
+  type: string | undefined;
 
-  created_at?: Date;
+  status: string | undefined;
 
-  updated_at?: Date;
+  store_hash!: string;
+
+  store_height!: number;
 
   static get tableName() {
     return 'code_id';
+  }
+
+  static get idColumn(): string | string[] {
+    return 'code_id';
+  }
+
+  static get jsonAttributes() {
+    return ['instantiate_permission'];
   }
 
   static get jsonSchema() {
@@ -29,29 +43,40 @@ export default class CodeId extends BaseModel {
       type: 'object',
       required: [
         'code_id',
-        'type',
-        'contract_name',
-        'contract_version',
-        'status',
+        'creator',
+        'data_hash',
+        'instantiate_permission',
+        'store_hash',
+        'store_height',
       ],
       properties: {
-        code_id: { type: 'string' },
-        type: { type: 'string' },
-        contract_name: { type: 'string' },
-        contract_version: { type: 'string' },
-        status: { type: 'string' },
+        code_id: { type: 'number' },
+        creator: { type: 'string' },
+        data_hash: { type: 'string' },
+        instantiate_permission: {
+          type: 'object',
+          properties: {
+            permission: { type: 'string' },
+            address: { type: 'string' },
+            addresses: { type: 'array', items: { type: 'string' } },
+          },
+        },
+        type: { type: ['string', 'null'] },
+        status: { type: ['string', 'null'] },
+        store_hash: { type: 'string' },
+        store_height: { type: 'number' },
       },
     };
   }
 
   static get relationMappings() {
     return {
-      cw721_contracts: {
+      contracts: {
         relation: Model.HasManyRelation,
-        modelClass: CW721Contract,
+        modelClass: SmartContract,
         join: {
           from: 'code_id.code_id',
-          to: 'cw721_contract.code_id',
+          to: 'smart_contract.code_id',
         },
       },
     };

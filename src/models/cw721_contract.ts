@@ -3,12 +3,12 @@ import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
 import CW721Token from './cw721_token';
 // eslint-disable-next-line import/no-cycle
-import CW721Tx from './cw721_tx';
-// eslint-disable-next-line import/no-cycle
-import CodeId from './code_id';
+import CW721Activity from './cw721_tx';
 
 export default class CW721Contract extends BaseModel {
-  code_id!: string;
+  [relation: string]: any;
+
+  code_id!: number;
 
   address!: string;
 
@@ -35,7 +35,7 @@ export default class CW721Contract extends BaseModel {
       type: 'object',
       required: ['code_id', 'address'],
       properties: {
-        code_id: { type: 'string' },
+        code_id: { type: 'number' },
         address: { type: 'string' },
         minter: { type: 'string' },
       },
@@ -48,24 +48,16 @@ export default class CW721Contract extends BaseModel {
         relation: Model.HasManyRelation,
         modelClass: CW721Token,
         join: {
-          from: 'cw721_contract.address',
-          to: 'cw721_token.contract_address',
+          from: 'cw721_contract.id',
+          to: 'cw721_token.cw721_contract_id',
         },
       },
-      txs: {
+      activities: {
         relation: Model.HasManyRelation,
-        modelClass: CW721Tx,
+        modelClass: CW721Activity,
         join: {
-          from: 'cw721_contract.address',
-          to: 'cw721_tx.contract_address',
-        },
-      },
-      codeid: {
-        relation: Model.BelongsToOneRelation,
-        modelClass: CodeId,
-        join: {
-          from: 'cw721_contract.code_id',
-          to: 'code_id.code_id',
+          from: 'cw721_contract.id',
+          to: 'cw721_activity.cw721_contract_id',
         },
       },
     };

@@ -1,6 +1,6 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
-import CodeId from '../../../../src/models/code_id';
+import CW721Activity from '../../../../src/models/cw721_tx';
 import CW721Token from '../../../../src/models/cw721_token';
 import CW721Contract from '../../../../src/models/cw721_contract';
 import { BULL_JOB_NAME } from '../../../../src/common';
@@ -8,6 +8,7 @@ import knex from '../../../../src/common/utils/db_connection';
 import { Block, Transaction } from '../../../../src/models';
 import config from '../../../../config.json' assert { type: 'json' };
 import Cw721HandlerService from '../../../../src/services/cw721/cw721.service';
+import { CodeId } from '../../../../src/models/code_id';
 
 @Describe('Test cw721 service')
 export default class AssetIndexerTest {
@@ -15,7 +16,7 @@ export default class AssetIndexerTest {
 
   mockInitContract = {
     ...CW721Contract.fromJson({
-      code_id: 'code_id',
+      code_id: 100,
       address: 'mock_contract_address',
       name: 'name',
       symbol: 'symbol',
@@ -23,19 +24,47 @@ export default class AssetIndexerTest {
     }),
     tokens: [
       {
-        token_id: 'token_id1',
+        onchain_token_id: 'token_id1',
         token_uri: 'token_uri',
         extension: null,
         owner: 'owner1',
-        contract_address: 'mock_contract_address',
+        cw721_contract_id: 1,
         last_updated_height: 1000,
       },
       {
-        token_id: 'token_id2',
+        onchain_token_id: 'token_id2',
         token_uri: 'token_uri',
         extension: null,
         owner: 'owner2',
-        contract_address: 'mock_contract_address',
+        cw721_contract_id: 1,
+        last_updated_height: 2000,
+      },
+    ],
+  };
+
+  mockInitContract_2 = {
+    ...CW721Contract.fromJson({
+      code_id: 100,
+      address: 'mock_contract_address_2',
+      name: 'name',
+      symbol: 'symbol',
+      minter: 'minter',
+    }),
+    tokens: [
+      {
+        onchain_token_id: 'token_id1',
+        token_uri: 'token_uri',
+        extension: null,
+        owner: 'owner1',
+        cw721_contract_id: 2,
+        last_updated_height: 1000,
+      },
+      {
+        onchain_token_id: 'token_id2',
+        token_uri: 'token_uri',
+        extension: null,
+        owner: 'owner2',
+        cw721_contract_id: 2,
         last_updated_height: 2000,
       },
     ],
@@ -212,11 +241,13 @@ export default class AssetIndexerTest {
   txInsertInstantiate = {};
 
   codeId = CodeId.fromJson({
-    code_id: '100',
+    creator: 'code_id_creator',
+    code_id: 100,
+    data_hash: 'code_id_data_hash',
+    instantiate_permission: { permission: '', address: '', addresses: [] },
+    store_hash: 'code_id_store_hash',
+    store_height: 1000,
     type: 'CW721',
-    contract_name: '',
-    contract_version: '',
-    status: 'VALID',
   });
 
   @BeforeAll()
@@ -229,12 +260,13 @@ export default class AssetIndexerTest {
     ]);
     await this.broker.start();
     await knex.raw(
-      'TRUNCATE TABLE event_attribute, transaction_message, event, transaction, block, block_checkpoint, cw721_token, cw721_contract, cw721_tx, code_id RESTART IDENTITY CASCADE'
+      'TRUNCATE TABLE event_attribute, transaction_message, event, transaction, block, block_checkpoint, cw721_token, cw721_contract, cw721_activity, code_id RESTART IDENTITY CASCADE'
     );
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);
     await CodeId.query().insert(this.codeId);
     await CW721Contract.query().insertGraph(this.mockInitContract);
+    await CW721Contract.query().insertGraph(this.mockInitContract_2);
   }
 
   @AfterAll()
@@ -355,7 +387,7 @@ export default class AssetIndexerTest {
           {
             _id: '63fda557271e5f65ee32114c',
             key: 'token_id',
-            value: this.mockInitContract.tokens[0].token_id,
+            value: this.mockInitContract.tokens[0].onchain_token_id,
           },
         ],
         tx: Transaction.fromJson({
@@ -400,7 +432,7 @@ export default class AssetIndexerTest {
           {
             _id: '63fda557271e5f65ee32114c',
             key: 'token_id',
-            value: this.mockInitContract.tokens[1].token_id,
+            value: this.mockInitContract.tokens[1].onchain_token_id,
           },
         ],
         tx: Transaction.fromJson({
@@ -421,12 +453,18 @@ export default class AssetIndexerTest {
       mockContractTransferMsg
     );
     const token1 = await CW721Token.query()
-      .where('contract_address', this.mockInitContract.address)
-      .andWhere('token_id', this.mockInitContract.tokens[0].token_id)
+      .where('cw721_contract_id', 1)
+      .andWhere(
+        'onchain_token_id',
+        this.mockInitContract.tokens[0].onchain_token_id
+      )
       .first();
     const token2 = await CW721Token.query()
-      .where('contract_address', this.mockInitContract.address)
-      .andWhere('token_id', this.mockInitContract.tokens[1].token_id)
+      .where('cw721_contract_id', 1)
+      .andWhere(
+        'onchain_token_id',
+        this.mockInitContract.tokens[1].onchain_token_id
+      )
       .first();
     expect(token1?.owner).toEqual(
       mockContractTransferMsg[0].wasm_attributes[2].value
@@ -535,17 +573,23 @@ export default class AssetIndexerTest {
     await this.cw721HandlerService.handlerCw721Mint(mockContractMintMsg);
     const token1 = await CW721Token.query()
       .where(
-        'contract_address',
-        this.mockInitContract.tokens[0].contract_address
+        'cw721_contract_id',
+        this.mockInitContract.tokens[0].cw721_contract_id
       )
-      .andWhere('token_id', mockContractMintMsg[0].wasm_attributes[4].value)
+      .andWhere(
+        'onchain_token_id',
+        mockContractMintMsg[0].wasm_attributes[4].value
+      )
       .first();
     const token2 = await CW721Token.query()
       .where(
-        'contract_address',
-        this.mockInitContract.tokens[1].contract_address
+        'cw721_contract_id',
+        this.mockInitContract.tokens[1].cw721_contract_id
       )
-      .andWhere('token_id', mockContractMintMsg[1].wasm_attributes[4].value)
+      .andWhere(
+        'onchain_token_id',
+        mockContractMintMsg[1].wasm_attributes[4].value
+      )
       .first();
     expect(token1?.owner).toEqual(
       mockContractMintMsg[0].wasm_attributes[3].value
@@ -567,7 +611,7 @@ export default class AssetIndexerTest {
           {
             _id: '63a55d044c1864001244a47b',
             key: '_contract_address',
-            value: this.mockInitContract.tokens[0].contract_address,
+            value: this.mockInitContract.address,
           },
           {
             _id: '63a55d044c1864001244a47c',
@@ -582,7 +626,7 @@ export default class AssetIndexerTest {
           {
             _id: '63a55d044c1864001244a47e',
             key: 'token_id',
-            value: this.mockInitContract.tokens[0].token_id,
+            value: this.mockInitContract.tokens[0].onchain_token_id,
           },
         ],
         tx: Transaction.fromJson({
@@ -607,7 +651,7 @@ export default class AssetIndexerTest {
           {
             _id: '63a55d044c1864001244a47b',
             key: '_contract_address',
-            value: this.mockInitContract.tokens[1].contract_address,
+            value: this.mockInitContract.address,
           },
           {
             _id: '63a55d044c1864001244a47c',
@@ -622,7 +666,7 @@ export default class AssetIndexerTest {
           {
             _id: '63a55d044c1864001244a47e',
             key: 'token_id',
-            value: this.mockInitContract.tokens[1].token_id,
+            value: this.mockInitContract.tokens[1].onchain_token_id,
           },
         ],
         tx: Transaction.fromJson({
@@ -641,15 +685,112 @@ export default class AssetIndexerTest {
     ];
     await this.cw721HandlerService.handlerCw721Burn(mockBurnMsg);
     const token1 = await CW721Token.query()
-      .where('contract_address', this.mockInitContract.address)
-      .andWhere('token_id', this.mockInitContract.tokens[0].token_id)
+      .where(
+        'cw721_contract_id',
+        this.mockInitContract.tokens[0].cw721_contract_id
+      )
+      .andWhere(
+        'onchain_token_id',
+        this.mockInitContract.tokens[0].onchain_token_id
+      )
       .first();
     const token2 = await CW721Token.query()
-      .where('contract_address', this.mockInitContract.address)
-      .andWhere('token_id', this.mockInitContract.tokens[1].token_id)
+      .where(
+        'cw721_contract_id',
+        this.mockInitContract.tokens[0].cw721_contract_id
+      )
+      .andWhere(
+        'onchain_token_id',
+        this.mockInitContract.tokens[1].onchain_token_id
+      )
       .first();
     expect(token1?.burned).toEqual(true);
     expect(token2?.burned).toEqual(true);
+  }
+
+  @Test('test Cw721 Re-Mint')
+  public async testhandlerCw721ReMint() {
+    const mockContractMintMsg = [
+      {
+        contractAddress: this.mockInitContract.address,
+        sender: '',
+        action: 'mint',
+        content:
+          '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
+        wasm_attributes: [
+          {
+            _id: '63fda557271e5f3bc9321148',
+            key: '_contract_address',
+            value: this.mockInitContract.address,
+          },
+          {
+            _id: '63fda557271e5f2e69321149',
+            key: 'action',
+            value: 'mint',
+          },
+          {
+            _id: '63f82910dda9e6288755bd8a',
+            key: 'minter',
+            value: 'pham_phong_re_mint_minter',
+          },
+          {
+            _id: '63f82910dda9e626e055bd8b',
+            key: 'owner',
+            value: 'phamphong_test_re_mint_owner',
+          },
+          {
+            _id: '63fda557271e5f65ee32114c',
+            key: 'token_id',
+            value: this.mockInitContract.tokens[0].onchain_token_id,
+          },
+        ],
+        tx: Transaction.fromJson({
+          height: 100000,
+          hash: '',
+          code: 0,
+          gas_used: '123035',
+          gas_wanted: '141106',
+          gas_limit: '141106',
+          fee: 353,
+          timestamp: '2023-01-12T01:53:57.000Z',
+          codespace: '',
+          data: {},
+        }),
+      },
+    ];
+    const burnedToken = await CW721Token.query()
+      .where(
+        'cw721_contract_id',
+        this.mockInitContract.tokens[0].cw721_contract_id
+      )
+      .andWhere(
+        'onchain_token_id',
+        mockContractMintMsg[0].wasm_attributes[4].value
+      )
+      .first();
+    expect(burnedToken?.burned).toEqual(true);
+    expect(burnedToken?.extension).toEqual(
+      this.mockInitContract.tokens[0].extension
+    );
+    await this.cw721HandlerService.handlerCw721Mint(mockContractMintMsg);
+    const reMintedToken = await CW721Token.query()
+      .where(
+        'cw721_contract_id',
+        this.mockInitContract.tokens[0].cw721_contract_id
+      )
+      .andWhere(
+        'onchain_token_id',
+        mockContractMintMsg[0].wasm_attributes[4].value
+      )
+      .first();
+    expect(reMintedToken?.owner).toEqual(
+      mockContractMintMsg[0].wasm_attributes[3].value
+    );
+    expect(reMintedToken?.id).toEqual(burnedToken?.id);
+    expect(reMintedToken?.extension).toEqual(
+      JSON.parse(mockContractMintMsg[0].content).mint?.extension
+    );
+    expect(reMintedToken?.burned).toEqual(false);
   }
 
   @Test('test handlerCw721Instantiate')
@@ -659,6 +800,9 @@ export default class AssetIndexerTest {
       symbol: 'BASEZ',
       minter: 'aura1ahwqzlu0wzd0uyp53x6l2ygftxmquy57tz6jj5',
     };
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const codeId: number = this.codeId.code_id;
     const mockInstantiateMsg = [
       {
         contractAddress: 'phamphong_test_instantiate',
@@ -678,7 +822,7 @@ export default class AssetIndexerTest {
           codespace: '',
           data: {},
         }),
-        code_id: '100',
+        code_id: codeId,
       },
     ];
     await this.cw721HandlerService.handleInstantiateMsgs(mockInstantiateMsg);
@@ -694,15 +838,15 @@ export default class AssetIndexerTest {
   @Test('test handle conflict')
   public async testHandleConflict() {
     const mockToken = {
-      token_id: 'test conflict',
+      onchain_token_id: 'test conflict',
       token_uri: null,
       extension: null,
       owner: 'phamphong_test',
-      contract_address: this.mockInitContract.address,
+      cw721_contract_id: this.mockInitContract.tokens[0].cw721_contract_id,
       last_updated_height: 12345678,
     };
     const conflictOwner = 'phamphong_test_conflict';
-    await CW721Token.query().insert(
+    const token = await CW721Token.query().insertAndFetch(
       CW721Token.fromJson({
         ...mockToken,
       })
@@ -714,8 +858,209 @@ export default class AssetIndexerTest {
           owner: conflictOwner,
         })
       )
-      .onConflict(['token_id', 'contract_address', 'last_updated_height'])
+      .onConflict(['onchain_token_id', 'cw721_contract_id'])
       .merge();
     expect(mergeToken.owner).toEqual(conflictOwner);
+    expect(token.id).toEqual(mergeToken.id);
+  }
+
+  @Test('test getIdsForTokens')
+  public async testGetIdsForTokens() {
+    const mockTokens = [
+      {
+        contractAddress: this.mockInitContract.address,
+        onchainTokenId: 'token_id1',
+        id: 1,
+      },
+      {
+        contractAddress: this.mockInitContract.address,
+        onchainTokenId: 'token_id2',
+        id: 2,
+      },
+      {
+        contractAddress: this.mockInitContract.address,
+        onchainTokenId: 'bump',
+        id: 5,
+      },
+      {
+        contractAddress: this.mockInitContract.address,
+        onchainTokenId: 'nunu',
+        id: 6,
+      },
+      {
+        contractAddress: this.mockInitContract.address,
+        onchainTokenId: 'test conflict',
+        id: 8,
+      },
+      {
+        contractAddress: this.mockInitContract_2.address,
+        onchainTokenId: 'token_id1',
+        id: 3,
+      },
+      {
+        contractAddress: this.mockInitContract_2.address,
+        onchainTokenId: 'token_id3',
+        id: null,
+      },
+    ];
+    const results = await this.cw721HandlerService.getIdsForTokens(mockTokens);
+    mockTokens.forEach((token, index) => {
+      const result = results.find(
+        (item) =>
+          item.contract_address === token.contractAddress &&
+          item.onchain_token_id === token.onchainTokenId
+      );
+      if (index !== mockTokens.length - 1) {
+        expect(result?.contract_address).toEqual(token.contractAddress);
+        expect(result?.onchain_token_id).toEqual(token.onchainTokenId);
+        expect(result?.cw721_token_id).toEqual(token.id);
+      } else {
+        expect(result).toBeUndefined();
+      }
+    });
+  }
+
+  @Test('test handle activity')
+  public async testHandleActivity() {
+    const mockActivityMsgs = [
+      {
+        contractAddress: this.mockInitContract.address,
+        sender: '',
+        action: 'mint',
+        content:
+          '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
+        wasm_attributes: [
+          {
+            _id: '63fda557271e5f3bc9321148',
+            key: '_contract_address',
+            value: this.mockInitContract.address,
+          },
+          {
+            _id: '63fda557271e5f2e69321149',
+            key: 'action',
+            value: 'mint',
+          },
+          {
+            _id: '63f82910dda9e6288755bd8a',
+            key: 'minter',
+            value: 'pham_phong_re_mint_minter',
+          },
+          {
+            _id: '63f82910dda9e626e055bd8b',
+            key: 'owner',
+            value: 'phamphong_test_re_mint_owner',
+          },
+          {
+            _id: '63fda557271e5f65ee32114c',
+            key: 'token_id',
+            value: this.mockInitContract.tokens[0].onchain_token_id,
+          },
+        ],
+        tx: Transaction.fromJson({
+          height: 100000,
+          hash: 'cxvxcvxcvxcbvxcb',
+          code: 0,
+          gas_used: '123035',
+          gas_wanted: '141106',
+          gas_limit: '141106',
+          fee: 353,
+          timestamp: '2023-01-12T01:53:57.000Z',
+          codespace: '',
+          data: {},
+        }),
+      },
+      {
+        contractAddress: this.mockInitContract.address,
+        sender: '',
+        action: 'transfer_nft',
+        content: '',
+        wasm_attributes: [
+          {
+            _id: '63fda557271e5f3bc9321148',
+            key: '_contract_address',
+            value: this.mockInitContract.address,
+          },
+          {
+            _id: '63fda557271e5f2e69321149',
+            key: 'action',
+            value: 'transfer_nft',
+          },
+          {
+            _id: '63fda557271e5f2b7a32114a',
+            key: 'recipient',
+            value: 'phamphong_transfer',
+          },
+          {
+            _id: '63fda557271e5f515032114b',
+            key: 'sender',
+            value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
+          },
+        ],
+        tx: Transaction.fromJson({
+          height: 100000,
+          hash: 'fghgfhgfhfhdf',
+          code: 0,
+          gas_used: '123035',
+          gas_wanted: '141106',
+          gas_limit: '141106',
+          fee: 353,
+          timestamp: '2023-01-12T01:53:57.000Z',
+          codespace: '',
+          data: {},
+        }),
+      },
+      {
+        contractAddress: this.mockInitContract.address,
+        sender: '',
+        action: 'burn',
+        content: '',
+        wasm_attributes: [
+          {
+            _id: '63a55d044c1864001244a47b',
+            key: '_contract_address',
+            value: this.mockInitContract.address,
+          },
+          {
+            _id: '63a55d044c1864001244a47c',
+            key: 'action',
+            value: 'burn',
+          },
+          {
+            _id: '63a55d044c1864001244a47d',
+            key: 'sender',
+            value: 'aura15f6wn3nymdnhnh5ddlqletuptjag09tryrtpq5',
+          },
+          {
+            _id: '63a55d044c1864001244a47e',
+            key: 'token_id',
+            value: this.mockInitContract.tokens[1].onchain_token_id,
+          },
+        ],
+        tx: Transaction.fromJson({
+          height: 500000,
+          hash: 'sdfdasrqewrasdEWEQE',
+          code: 0,
+          gas_used: '123035',
+          gas_wanted: '141106',
+          gas_limit: '141106',
+          fee: 353,
+          timestamp: '2023-01-12T01:53:57.000Z',
+          codespace: '',
+          data: {},
+        }),
+      },
+    ];
+    await this.cw721HandlerService.handleCW721Activity(mockActivityMsgs);
+    const cw721Activities = await CW721Activity.query();
+    cw721Activities.forEach((cw721Activity, index) => {
+      expect(cw721Activity.action).toEqual(mockActivityMsgs[index].action);
+      expect(cw721Activity.cw721_contract_id).toEqual(
+        this.mockInitContract.tokens[0].cw721_contract_id
+      );
+      expect(cw721Activity.tx_hash).toEqual(mockActivityMsgs[index].tx.hash);
+    });
+    expect(cw721Activities[0].cw721_token_id).toEqual(1);
+    expect(cw721Activities[1].cw721_token_id).toEqual(0);
+    expect(cw721Activities[2].cw721_token_id).toEqual(2);
   }
 }
