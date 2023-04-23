@@ -4,6 +4,7 @@ import { ICoin } from '../common';
 import { AccountVesting } from './account_vesting';
 import BaseModel from './base';
 import { PowerEvent } from './power_event';
+import { Proposal } from './proposal';
 
 export interface IPubkey {
   type: string;
@@ -83,6 +84,14 @@ export class Account extends BaseModel {
 
   static get relationMappings() {
     return {
+      proposals: {
+        relation: Model.HasManyRelation,
+        modelClass: Proposal,
+        join: {
+          from: 'account.id',
+          to: 'proposal.proposer_id',
+        },
+      },
       power_events: {
         relation: Model.HasManyRelation,
         modelClass: PowerEvent,
