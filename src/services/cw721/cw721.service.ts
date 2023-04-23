@@ -66,7 +66,7 @@ export default class Cw721HandlerService extends BullableService {
     super(broker);
   }
 
-  // checked + tested
+  // update new owner and last_update_height
   async handlerCw721Transfer(transferMsgs: IContractMsgInfo[]): Promise<void> {
     // get Ids for contracts
     const cw721ContractDbRecords = await CW721Contract.query()
@@ -112,7 +112,7 @@ export default class Cw721HandlerService extends BullableService {
     }
   }
 
-  // checked + tested
+  // Insert new token if it haven't been in cw721_token table, or update burned to false if it already have been there
   async handlerCw721Mint(mintMsgs: IContractMsgInfo[]): Promise<void> {
     if (mintMsgs.length > 0) {
       // from list contract address, get those ids
@@ -160,7 +160,7 @@ export default class Cw721HandlerService extends BullableService {
     }
   }
 
-  // checked
+  // update burned field in cw721_token to true, last updated height
   async handlerCw721Burn(burnMsgs: IContractMsgInfo[]): Promise<void> {
     try {
       // get Ids for contracts
@@ -201,7 +201,7 @@ export default class Cw721HandlerService extends BullableService {
           }
         });
         await Promise.all(queries) // Once every query is written
-          .then(trx.commit) // We try to execute all of them
+          .then(trx.commit) // Try to execute all of them
           .catch(trx.rollback); // And rollback in case any of them goes wrong
       });
     } catch (err) {
@@ -209,7 +209,6 @@ export default class Cw721HandlerService extends BullableService {
     }
   }
 
-  // checked
   @QueueHandler({
     queueName: BULL_JOB_NAME.FILTER_CW721_TRANSACTION,
     jobType: BULL_JOB_NAME.FILTER_CW721_TRANSACTION,
@@ -220,7 +219,6 @@ export default class Cw721HandlerService extends BullableService {
     }
   }
 
-  // checked
   async _start(): Promise<void> {
     this._blocksPerBatch = config.cw721.blocksPerBatch
       ? config.cw721.blocksPerBatch
@@ -245,6 +243,7 @@ export default class Cw721HandlerService extends BullableService {
     return super._start();
   }
 
+  // main function
   async handleJob() {
     // get range txs for proccessing
     const startBlock: number = this._currentAssetHandlerBlock;
@@ -301,7 +300,7 @@ export default class Cw721HandlerService extends BullableService {
     this._currentAssetHandlerBlock = endBlock + 1;
   }
 
-  // checked + tested
+  // Insert new activities into cw721_activity table
   async handleCW721Activity(listCw721Msgs: IContractMsgInfo[]) {
     // from list onchain token-ids, get cw721-token-id
     const cw721TokenIds = await this.getIdsForTokens(
@@ -340,7 +339,7 @@ export default class Cw721HandlerService extends BullableService {
           cw721TokenId = foundRecord.cw721_token_id;
         } else {
           this.logger.error(
-            `Token ${onchainTokenId} in smart contract ${cw721Msg.contractAddress} not found in DB`
+            `From tx ${cw721Msg.tx.hash}: Token ${onchainTokenId} in smart contract ${cw721Msg.contractAddress} not found in DB`
           );
         }
       }
@@ -365,7 +364,7 @@ export default class Cw721HandlerService extends BullableService {
     }
   }
 
-  // checked
+  // handle Instantiate Msgs
   async handleInstantiateMsgs(msgsInstantiate: IInstantiateMsgInfo[]) {
     // get all code_id which is cw721 and in above list msgs
     const cw721CodeIds = (
@@ -398,7 +397,7 @@ export default class Cw721HandlerService extends BullableService {
     }
   }
 
-  // checked
+  // handle Cw721 Msg Execute
   async handleCw721MsgExec(cw721MsgsExecute: IContractMsgInfo[]) {
     // handle mint
     await this.handlerCw721Mint(
@@ -414,7 +413,7 @@ export default class Cw721HandlerService extends BullableService {
     );
   }
 
-  // checked
+  // init enviroment variable before start service
   async initEnv() {
     // DB -> Config -> MinDB
     // Get handled blocks from db
@@ -441,7 +440,13 @@ export default class Cw721HandlerService extends BullableService {
     );
   }
 
-  // checked
+  // from startBlock to endBlock, get all msgs (activities) relating to execute/instantiate contract, each item correspond to an activity
+  // contractAddress: contract address whom msg intract to
+  // sender: sender of tx
+  // action: INSTANTIATE / MINT / TRANSFER_NFT / BURN
+  // content: input of contract
+  // wasm_attributes: output of an activity in contract (it may have multiple output activities relate to one input)
+  // tx: tx data
   async getContractMsgs(startBlock: number, endBlock: number) {
     const contractMsgsInfo: (IContractMsgInfo | IInstantiateMsgInfo)[] = [];
     const txs = await Transaction.query()
@@ -458,95 +463,9 @@ export default class Cw721HandlerService extends BullableService {
     for (const tx of txs) {
       tx.messages.forEach((message: TransactionMessage, index: number) => {
         if (message.type === MSG_TYPE.MSG_EXECUTE_CONTRACT) {
-          const content = message.content as MsgExecuteContract;
-          const wasmEvent = tx.data.tx_response.logs[index].events.find(
-            (event: any) => event.type === Event.EVENT_TYPE.WASM
-          );
-          if (wasmEvent) {
-            // split into wasm sub-events
-            const wasmEventByContracts = wasmEvent.attributes.reduce(
-              (
-                acc: { key: string; value: string }[][],
-                curr: { key: string; value: string }
-              ) => {
-                if (curr.key === EventAttribute.EVENT_KEY._CONTRACT_ADDRESS) {
-                  acc.push([curr]); // start a new sub-array with the current element
-                } else if (acc.length > 0) {
-                  acc[acc.length - 1].push(curr); // add the current element to the last sub-array
-                }
-                return acc;
-              },
-              []
-            );
-            const { sender } = content;
-            wasmEventByContracts.forEach((wasmSubEventAttrs: any) => {
-              const action = this.getAttributeFrom(
-                wasmSubEventAttrs,
-                EventAttribute.EVENT_KEY.ACTION
-              );
-              contractMsgsInfo.push({
-                contractAddress: this.getAttributeFrom(
-                  wasmSubEventAttrs,
-                  EventAttribute.EVENT_KEY._CONTRACT_ADDRESS
-                ),
-                sender,
-                action,
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                content: content.msg,
-                wasm_attributes: wasmSubEventAttrs,
-                tx,
-              });
-            });
-          }
+          this.extractActivitiesInExecMsg(tx, index, contractMsgsInfo);
         } else if (message.type === MSG_TYPE.MSG_INSTANTIATE_CONTRACT) {
-          const content = message.content as MsgInstantiateContract;
-          const action = Event.EVENT_TYPE.INSTANTIATE;
-          const { sender } = content;
-          const instantiateEvent = tx.data.tx_response.logs[index].events.find(
-            (event: any) => event.type === Event.EVENT_TYPE.INSTANTIATE
-          );
-          if (instantiateEvent) {
-            const instantiateEventByContracts =
-              instantiateEvent.attributes.reduce(
-                (
-                  acc: { key: string; value: string }[][],
-                  curr: { key: string; value: string }
-                ) => {
-                  if (curr.key === EventAttribute.EVENT_KEY._CONTRACT_ADDRESS) {
-                    acc.push([curr]); // start a new sub-array with the current element
-                  } else if (acc.length > 0) {
-                    acc[acc.length - 1].push(curr); // add the current element to the last sub-array
-                  }
-                  return acc;
-                },
-                []
-              );
-            instantiateEventByContracts.forEach(
-              (instantiateSubEventAttrs: any) => {
-                const codeId = parseInt(
-                  this.getAttributeFrom(
-                    instantiateSubEventAttrs,
-                    EventAttribute.EVENT_KEY.CODE_ID
-                  ),
-                  10
-                );
-                contractMsgsInfo.push({
-                  contractAddress: this.getAttributeFrom(
-                    instantiateSubEventAttrs,
-                    EventAttribute.EVENT_KEY._CONTRACT_ADDRESS
-                  ),
-                  sender,
-                  action,
-                  code_id: codeId,
-                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                  // @ts-ignore
-                  content: content.msg,
-                  tx,
-                });
-              }
-            );
-          }
+          this.extractActivitiesInInstantiateMsg(tx, index, contractMsgsInfo);
         }
       });
     }
@@ -554,13 +473,114 @@ export default class Cw721HandlerService extends BullableService {
     return contractMsgsInfo;
   }
 
-  // checked + tested
+  // extract all activites in specified execute message (index is the message's index in transaction), and push those activites into contractMsgsInfo
+  extractActivitiesInExecMsg(
+    tx: Transaction,
+    index: number,
+    contractMsgsInfo: (IContractMsgInfo | IInstantiateMsgInfo)[]
+  ) {
+    const content = tx.messages[index].content as MsgExecuteContract;
+    const wasmEvent = tx.data.tx_response.logs[index].events.find(
+      (event: any) => event.type === Event.EVENT_TYPE.WASM
+    );
+    if (wasmEvent) {
+      // split into wasm sub-events
+      const wasmEventByContracts = wasmEvent.attributes.reduce(
+        (
+          acc: { key: string; value: string }[][],
+          curr: { key: string; value: string }
+        ) => {
+          if (curr.key === EventAttribute.EVENT_KEY._CONTRACT_ADDRESS) {
+            acc.push([curr]); // start a new sub-array with the current element
+          } else if (acc.length > 0) {
+            acc[acc.length - 1].push(curr); // add the current element to the last sub-array
+          }
+          return acc;
+        },
+        []
+      );
+      const { sender } = content;
+      wasmEventByContracts.forEach((wasmSubEventAttrs: any) => {
+        const action = this.getAttributeFrom(
+          wasmSubEventAttrs,
+          EventAttribute.EVENT_KEY.ACTION
+        );
+        contractMsgsInfo.push({
+          contractAddress: this.getAttributeFrom(
+            wasmSubEventAttrs,
+            EventAttribute.EVENT_KEY._CONTRACT_ADDRESS
+          ),
+          sender,
+          action,
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          content: content.msg,
+          wasm_attributes: wasmSubEventAttrs,
+          tx,
+        });
+      });
+    }
+  }
+
+  // extract all activites in specified instantiate message (index is the message's index in transaction), and push those activites into contractMsgsInfo
+  extractActivitiesInInstantiateMsg(
+    tx: Transaction,
+    index: number,
+    contractMsgsInfo: (IContractMsgInfo | IInstantiateMsgInfo)[]
+  ) {
+    const content = tx.messages[index].content as MsgInstantiateContract;
+    const action = Event.EVENT_TYPE.INSTANTIATE;
+    const { sender } = content;
+    const instantiateEvent = tx.data.tx_response.logs[index].events.find(
+      (event: any) => event.type === Event.EVENT_TYPE.INSTANTIATE
+    );
+    if (instantiateEvent) {
+      const instantiateEventByContracts = instantiateEvent.attributes.reduce(
+        (
+          acc: { key: string; value: string }[][],
+          curr: { key: string; value: string }
+        ) => {
+          if (curr.key === EventAttribute.EVENT_KEY._CONTRACT_ADDRESS) {
+            acc.push([curr]); // start a new sub-array with the current element
+          } else if (acc.length > 0) {
+            acc[acc.length - 1].push(curr); // add the current element to the last sub-array
+          }
+          return acc;
+        },
+        []
+      );
+      instantiateEventByContracts.forEach((instantiateSubEventAttrs: any) => {
+        const codeId = parseInt(
+          this.getAttributeFrom(
+            instantiateSubEventAttrs,
+            EventAttribute.EVENT_KEY.CODE_ID
+          ),
+          10
+        );
+        contractMsgsInfo.push({
+          contractAddress: this.getAttributeFrom(
+            instantiateSubEventAttrs,
+            EventAttribute.EVENT_KEY._CONTRACT_ADDRESS
+          ),
+          sender,
+          action,
+          code_id: codeId,
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          content: content.msg,
+          tx,
+        });
+      });
+    }
+  }
+
+  // get Attribute value by specified key from array of attributes
   getAttributeFrom(listAttributes: any, attributeType: string) {
     return listAttributes?.find((attr: any) => attr.key === attributeType)
       ?.value;
   }
 
-  // checked + tested
+  // From list of tokens, get those appropriate ids in DB
   async getIdsForTokens(
     tokens: { contractAddress: string; onchainTokenId: string }[]
   ) {
