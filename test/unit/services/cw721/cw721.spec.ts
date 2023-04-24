@@ -24,7 +24,7 @@ export default class AssetIndexerTest {
     }),
     tokens: [
       {
-        onchain_token_id: 'token_id1',
+        token_id: 'token_id1',
         token_uri: 'token_uri',
         extension: null,
         owner: 'owner1',
@@ -32,7 +32,7 @@ export default class AssetIndexerTest {
         last_updated_height: 1000,
       },
       {
-        onchain_token_id: 'token_id2',
+        token_id: 'token_id2',
         token_uri: 'token_uri',
         extension: null,
         owner: 'owner2',
@@ -52,7 +52,7 @@ export default class AssetIndexerTest {
     }),
     tokens: [
       {
-        onchain_token_id: 'token_id1',
+        token_id: 'token_id1',
         token_uri: 'token_uri',
         extension: null,
         owner: 'owner1',
@@ -60,7 +60,7 @@ export default class AssetIndexerTest {
         last_updated_height: 1000,
       },
       {
-        onchain_token_id: 'token_id2',
+        token_id: 'token_id2',
         token_uri: 'token_uri',
         extension: null,
         owner: 'owner2',
@@ -387,7 +387,7 @@ export default class AssetIndexerTest {
           {
             _id: '63fda557271e5f65ee32114c',
             key: 'token_id',
-            value: this.mockInitContract.tokens[0].onchain_token_id,
+            value: this.mockInitContract.tokens[0].token_id,
           },
         ],
         tx: Transaction.fromJson({
@@ -432,7 +432,7 @@ export default class AssetIndexerTest {
           {
             _id: '63fda557271e5f65ee32114c',
             key: 'token_id',
-            value: this.mockInitContract.tokens[1].onchain_token_id,
+            value: this.mockInitContract.tokens[1].token_id,
           },
         ],
         tx: Transaction.fromJson({
@@ -454,17 +454,11 @@ export default class AssetIndexerTest {
     );
     const token1 = await CW721Token.query()
       .where('cw721_contract_id', 1)
-      .andWhere(
-        'onchain_token_id',
-        this.mockInitContract.tokens[0].onchain_token_id
-      )
+      .andWhere('token_id', this.mockInitContract.tokens[0].token_id)
       .first();
     const token2 = await CW721Token.query()
       .where('cw721_contract_id', 1)
-      .andWhere(
-        'onchain_token_id',
-        this.mockInitContract.tokens[1].onchain_token_id
-      )
+      .andWhere('token_id', this.mockInitContract.tokens[1].token_id)
       .first();
     expect(token1?.owner).toEqual(
       mockContractTransferMsg[0].wasm_attributes[2].value
@@ -576,20 +570,14 @@ export default class AssetIndexerTest {
         'cw721_contract_id',
         this.mockInitContract.tokens[0].cw721_contract_id
       )
-      .andWhere(
-        'onchain_token_id',
-        mockContractMintMsg[0].wasm_attributes[4].value
-      )
+      .andWhere('token_id', mockContractMintMsg[0].wasm_attributes[4].value)
       .first();
     const token2 = await CW721Token.query()
       .where(
         'cw721_contract_id',
         this.mockInitContract.tokens[1].cw721_contract_id
       )
-      .andWhere(
-        'onchain_token_id',
-        mockContractMintMsg[1].wasm_attributes[4].value
-      )
+      .andWhere('token_id', mockContractMintMsg[1].wasm_attributes[4].value)
       .first();
     expect(token1?.owner).toEqual(
       mockContractMintMsg[0].wasm_attributes[3].value
@@ -626,7 +614,7 @@ export default class AssetIndexerTest {
           {
             _id: '63a55d044c1864001244a47e',
             key: 'token_id',
-            value: this.mockInitContract.tokens[0].onchain_token_id,
+            value: this.mockInitContract.tokens[0].token_id,
           },
         ],
         tx: Transaction.fromJson({
@@ -666,7 +654,7 @@ export default class AssetIndexerTest {
           {
             _id: '63a55d044c1864001244a47e',
             key: 'token_id',
-            value: this.mockInitContract.tokens[1].onchain_token_id,
+            value: this.mockInitContract.tokens[1].token_id,
           },
         ],
         tx: Transaction.fromJson({
@@ -689,20 +677,14 @@ export default class AssetIndexerTest {
         'cw721_contract_id',
         this.mockInitContract.tokens[0].cw721_contract_id
       )
-      .andWhere(
-        'onchain_token_id',
-        this.mockInitContract.tokens[0].onchain_token_id
-      )
+      .andWhere('token_id', this.mockInitContract.tokens[0].token_id)
       .first();
     const token2 = await CW721Token.query()
       .where(
         'cw721_contract_id',
         this.mockInitContract.tokens[0].cw721_contract_id
       )
-      .andWhere(
-        'onchain_token_id',
-        this.mockInitContract.tokens[1].onchain_token_id
-      )
+      .andWhere('token_id', this.mockInitContract.tokens[1].token_id)
       .first();
     expect(token1?.burned).toEqual(true);
     expect(token2?.burned).toEqual(true);
@@ -741,7 +723,7 @@ export default class AssetIndexerTest {
           {
             _id: '63fda557271e5f65ee32114c',
             key: 'token_id',
-            value: this.mockInitContract.tokens[0].onchain_token_id,
+            value: this.mockInitContract.tokens[0].token_id,
           },
         ],
         tx: Transaction.fromJson({
@@ -763,10 +745,7 @@ export default class AssetIndexerTest {
         'cw721_contract_id',
         this.mockInitContract.tokens[0].cw721_contract_id
       )
-      .andWhere(
-        'onchain_token_id',
-        mockContractMintMsg[0].wasm_attributes[4].value
-      )
+      .andWhere('token_id', mockContractMintMsg[0].wasm_attributes[4].value)
       .first();
     expect(burnedToken?.burned).toEqual(true);
     expect(burnedToken?.extension).toEqual(
@@ -778,10 +757,7 @@ export default class AssetIndexerTest {
         'cw721_contract_id',
         this.mockInitContract.tokens[0].cw721_contract_id
       )
-      .andWhere(
-        'onchain_token_id',
-        mockContractMintMsg[0].wasm_attributes[4].value
-      )
+      .andWhere('token_id', mockContractMintMsg[0].wasm_attributes[4].value)
       .first();
     expect(reMintedToken?.owner).toEqual(
       mockContractMintMsg[0].wasm_attributes[3].value
@@ -838,7 +814,7 @@ export default class AssetIndexerTest {
   @Test('test handle conflict')
   public async testHandleConflict() {
     const mockToken = {
-      onchain_token_id: 'test conflict',
+      token_id: 'test conflict',
       token_uri: null,
       extension: null,
       owner: 'phamphong_test',
@@ -858,7 +834,7 @@ export default class AssetIndexerTest {
           owner: conflictOwner,
         })
       )
-      .onConflict(['onchain_token_id', 'cw721_contract_id'])
+      .onConflict(['token_id', 'cw721_contract_id'])
       .merge();
     expect(mergeToken.owner).toEqual(conflictOwner);
     expect(token.id).toEqual(mergeToken.id);
@@ -908,11 +884,11 @@ export default class AssetIndexerTest {
       const result = results.find(
         (item) =>
           item.contract_address === token.contractAddress &&
-          item.onchain_token_id === token.onchainTokenId
+          item.token_id === token.onchainTokenId
       );
       if (index !== mockTokens.length - 1) {
         expect(result?.contract_address).toEqual(token.contractAddress);
-        expect(result?.onchain_token_id).toEqual(token.onchainTokenId);
+        expect(result?.token_id).toEqual(token.onchainTokenId);
         expect(result?.cw721_token_id).toEqual(token.id);
       } else {
         expect(result).toBeUndefined();
@@ -953,7 +929,7 @@ export default class AssetIndexerTest {
           {
             _id: '63fda557271e5f65ee32114c',
             key: 'token_id',
-            value: this.mockInitContract.tokens[0].onchain_token_id,
+            value: this.mockInitContract.tokens[0].token_id,
           },
         ],
         tx: Transaction.fromJson({
@@ -1033,7 +1009,7 @@ export default class AssetIndexerTest {
           {
             _id: '63a55d044c1864001244a47e',
             key: 'token_id',
-            value: this.mockInitContract.tokens[1].onchain_token_id,
+            value: this.mockInitContract.tokens[1].token_id,
           },
         ],
         tx: Transaction.fromJson({

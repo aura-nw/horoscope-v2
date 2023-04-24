@@ -6,7 +6,7 @@ import CW721Contract from './cw721_contract';
 export default class CW721Token extends BaseModel {
   [relation: string]: any;
 
-  onchain_token_id!: string;
+  token_id!: string;
 
   token_uri?: string;
 
@@ -31,13 +31,9 @@ export default class CW721Token extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: [
-        'onchain_token_id',
-        'cw721_contract_id',
-        'last_updated_height',
-      ],
+      required: ['token_id', 'cw721_contract_id', 'last_updated_height'],
       properties: {
-        onchain_token_id: { type: 'string' },
+        token_id: { type: 'string' },
         cw721_contract_id: { type: 'number' },
         owner: { type: 'string' },
         last_updated_height: { type: 'number' },

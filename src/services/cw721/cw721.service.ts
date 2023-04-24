@@ -94,7 +94,7 @@ export default class Cw721HandlerService extends BullableService {
           // eslint-disable-next-line no-await-in-loop
           await CW721Token.query()
             .where('cw721_contract_id', cw721ContractId)
-            .andWhere('onchain_token_id', tokenId)
+            .andWhere('token_id', tokenId)
             .patch({
               owner: recipient,
               last_updated_height: transferMsg.tx.height,
@@ -141,7 +141,7 @@ export default class Cw721HandlerService extends BullableService {
           );
         }
         return CW721Token.fromJson({
-          onchain_token_id: tokenId,
+          token_id: tokenId,
           token_uri: tokenUri,
           extension,
           owner: this.getAttributeFrom(
@@ -155,7 +155,7 @@ export default class Cw721HandlerService extends BullableService {
       });
       await CW721Token.query()
         .insert(newTokens)
-        .onConflict(['onchain_token_id', 'cw721_contract_id'])
+        .onConflict(['token_id', 'cw721_contract_id'])
         .merge();
     }
   }
@@ -191,7 +191,7 @@ export default class Cw721HandlerService extends BullableService {
           if (tokenId) {
             const query = CW721Token.query()
               .where('cw721_contract_id', cw721ContractId)
-              .andWhere('onchain_token_id', tokenId)
+              .andWhere('token_id', tokenId)
               .patch({
                 last_updated_height: burnMsg.tx.height,
                 burned: true,
@@ -333,7 +333,7 @@ export default class Cw721HandlerService extends BullableService {
         const foundRecord = cw721TokenIds.find(
           (item) =>
             item.contract_address === cw721Msg.contractAddress &&
-            item.onchain_token_id === onchainTokenId
+            item.token_id === onchainTokenId
         );
         if (foundRecord) {
           cw721TokenId = foundRecord.cw721_token_id;
@@ -352,15 +352,7 @@ export default class Cw721HandlerService extends BullableService {
       });
     });
     if (CW721Activities.length > 0) {
-      await CW721Activity.query()
-        .insert(CW721Activities)
-        .onConflict([
-          'tx_hash',
-          'cw721_contract_id',
-          'action',
-          'cw721_token_id',
-        ])
-        .merge();
+      await CW721Activity.query().insert(CW721Activities);
     }
   }
 
@@ -479,11 +471,11 @@ export default class Cw721HandlerService extends BullableService {
     index: number,
     contractMsgsInfo: (IContractMsgInfo | IInstantiateMsgInfo)[]
   ) {
-    const content = tx.messages[index].content as MsgExecuteContract;
     const wasmEvent = tx.data.tx_response.logs[index].events.find(
       (event: any) => event.type === Event.EVENT_TYPE.WASM
     );
     if (wasmEvent) {
+      const content = tx.messages[index].content as MsgExecuteContract;
       // split into wasm sub-events
       const wasmEventByContracts = wasmEvent.attributes.reduce(
         (
@@ -528,13 +520,13 @@ export default class Cw721HandlerService extends BullableService {
     index: number,
     contractMsgsInfo: (IContractMsgInfo | IInstantiateMsgInfo)[]
   ) {
-    const content = tx.messages[index].content as MsgInstantiateContract;
-    const action = Event.EVENT_TYPE.INSTANTIATE;
-    const { sender } = content;
     const instantiateEvent = tx.data.tx_response.logs[index].events.find(
       (event: any) => event.type === Event.EVENT_TYPE.INSTANTIATE
     );
     if (instantiateEvent) {
+      const content = tx.messages[index].content as MsgInstantiateContract;
+      const action = Event.EVENT_TYPE.INSTANTIATE;
+      const { sender } = content;
       const instantiateEventByContracts = instantiateEvent.attributes.reduce(
         (
           acc: { key: string; value: string }[][],
@@ -588,7 +580,7 @@ export default class Cw721HandlerService extends BullableService {
       .alias('cw721_token')
       .withGraphJoined('contract')
       .whereIn(
-        ['contract.address', 'cw721_token.onchain_token_id'],
+        ['contract.address', 'cw721_token.token_id'],
         tokens
           .map((token) => ({
             contract_address: token.contractAddress,
@@ -599,7 +591,7 @@ export default class Cw721HandlerService extends BullableService {
       )
       .select(
         'contract.address as contract_address',
-        'cw721_token.onchain_token_id as onchain_token_id',
+        'cw721_token.token_id as token_id',
         'cw721_token.id as cw721_token_id'
       );
   }
