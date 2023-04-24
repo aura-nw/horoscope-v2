@@ -132,6 +132,7 @@ export default class CrawlSmartContractService extends BullableService {
         const [contractCw2s, contractInfos] = await this.getContractInfo(
           queryAddresses
         );
+
         smartContracts.forEach((contract, index) => {
           if (contractCw2s[index]?.data) {
             const data = JSON.parse(

@@ -8,7 +8,6 @@ import {
 import { cosmwasm } from '@aura-nw/aurajs';
 import fs from 'fs';
 import _ from 'lodash';
-import Long from 'long';
 import { toUtf8 } from '@cosmjs/encoding';
 import {
   BULL_JOB_NAME,
@@ -25,7 +24,6 @@ import {
   Block,
   BlockCheckpoint,
   Code,
-  EventAttribute,
   SmartContract,
   Transaction,
 } from '../../../../src/models';
@@ -67,7 +65,8 @@ export default class CrawlSmartContractTest {
         attributes: [
           {
             key: '_contract_address',
-            value: '',
+            value:
+              'aura14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9swserkw',
           },
         ],
       },
@@ -193,15 +192,6 @@ export default class CrawlSmartContractTest {
     );
     assertIsDeliverTxSuccess(result);
 
-    const instantiateContract =
-      await this._lcdClient.cosmwasm.cosmwasm.wasm.v1.contractsByCode({
-        codeId: Long.fromInt(1),
-      });
-
-    await EventAttribute.query().patch({
-      value: instantiateContract.contracts[0],
-    });
-
     await this.crawlSmartContractService?.handleJob({});
 
     const smartContract = await SmartContract.query().first();
@@ -209,7 +199,8 @@ export default class CrawlSmartContractTest {
     expect(_.omit(smartContract, ['created_at', 'updated_at'])).toEqual({
       id: 1,
       name: 'crates.io:cw20-base',
-      address: instantiateContract.contracts[0],
+      address:
+        'aura14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9swserkw',
       creator: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
       code_id: 1,
       instantiate_hash:
