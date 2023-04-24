@@ -30,10 +30,10 @@ import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 
 @Service({
-  name: SERVICE.V1.CrawlCodeIdService.key,
+  name: SERVICE.V1.CrawlCodeService.key,
   version: 1,
 })
-export default class CrawlCodeIdService extends BullableService {
+export default class CrawlCodeService extends BullableService {
   private _httpBatchClient: HttpBatchClient;
 
   public constructor(public broker: ServiceBroker) {
@@ -42,7 +42,7 @@ export default class CrawlCodeIdService extends BullableService {
   }
 
   @QueueHandler({
-    queueName: BULL_JOB_NAME.CRAWL_CODE_ID,
+    queueName: BULL_JOB_NAME.CRAWL_CODE,
     jobType: 'crawl',
     prefix: `horoscope-v2-${config.chainId}`,
   })
@@ -55,7 +55,7 @@ export default class CrawlCodeIdService extends BullableService {
     ] = await Promise.all([
       BlockCheckpoint.query()
         .select('*')
-        .findOne('job_name', BULL_JOB_NAME.CRAWL_CODE_ID),
+        .findOne('job_name', BULL_JOB_NAME.CRAWL_CODE),
       Block.query().select('height').findOne({}).orderBy('height', 'desc'),
     ]);
 
@@ -66,7 +66,7 @@ export default class CrawlCodeIdService extends BullableService {
       updateBlockCheckpoint = codeIdCheckpoint;
     } else
       updateBlockCheckpoint = BlockCheckpoint.fromJson({
-        job_name: BULL_JOB_NAME.CRAWL_CODE_ID,
+        job_name: BULL_JOB_NAME.CRAWL_CODE,
         height: 0,
       });
 
@@ -78,7 +78,7 @@ export default class CrawlCodeIdService extends BullableService {
         height: number;
         codeId: Long;
       }[] = [];
-      let offset = 0;
+      let page = 0;
       let done = false;
       while (!done) {
         const resultTx = await Transaction.query()
@@ -97,7 +97,7 @@ export default class CrawlCodeIdService extends BullableService {
             'events:attributes.key',
             'events:attributes.value'
           )
-          .page(offset, 1000);
+          .page(page, 1000);
         this.logger.info(
           `Result get Tx from height ${lastHeight} to ${latestBlock.height}:`
         );
@@ -112,7 +112,7 @@ export default class CrawlCodeIdService extends BullableService {
             })
           );
 
-          offset += 1;
+          page += 1;
         } else done = true;
       }
 
@@ -147,9 +147,11 @@ export default class CrawlCodeIdService extends BullableService {
 
         const codeEntities = onchainCodeIds.map((code, index) =>
           Code.fromJson({
-            code_id: codeIds[index].codeId,
+            code_id: parseInt(codeIds[index].codeId.toString(), 10),
             creator: code.codeInfo?.creator,
-            data_hash: code.codeInfo?.dataHash,
+            data_hash: toHex(
+              code.codeInfo?.dataHash || new Uint8Array()
+            ).toLowerCase(),
             instantiate_permission: code.codeInfo?.instantiatePermission,
             type: null,
             status: null,
@@ -180,7 +182,7 @@ export default class CrawlCodeIdService extends BullableService {
 
   public async _start() {
     this.createJob(
-      BULL_JOB_NAME.CRAWL_CODE_ID,
+      BULL_JOB_NAME.CRAWL_CODE,
       'crawl',
       {},
       {

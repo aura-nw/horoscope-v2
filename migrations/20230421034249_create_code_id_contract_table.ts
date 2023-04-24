@@ -18,7 +18,7 @@ export async function up(knex: Knex): Promise<void> {
     table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
     table.timestamp('updated_at').notNullable().defaultTo(knex.raw('now()'));
     table.string('name').index();
-    table.string('address').index().notNullable();
+    table.string('address').unique().notNullable();
     table.string('creator').index().notNullable();
     table.integer('code_id').index().notNullable();
     table.string('instantiate_hash').index().notNullable();

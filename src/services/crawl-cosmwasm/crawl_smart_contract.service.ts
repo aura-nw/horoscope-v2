@@ -3,7 +3,12 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
-import { QueryRawContractStateRequest } from '@aura-nw/aurajs/types/codegen/cosmwasm/wasm/v1/query';
+import {
+  QueryContractInfoRequest,
+  QueryContractInfoResponse,
+  QueryRawContractStateRequest,
+  QueryRawContractStateResponse,
+} from '@aura-nw/aurajs/types/codegen/cosmwasm/wasm/v1/query';
 import { fromBase64, fromUtf8, toHex } from '@cosmjs/encoding';
 import { cosmwasm } from '@aura-nw/aurajs';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
@@ -51,7 +56,7 @@ export default class CrawlSmartContractService extends BullableService {
         .select('*')
         .whereIn('job_name', [
           BULL_JOB_NAME.CRAWL_SMART_CONTRACT,
-          BULL_JOB_NAME.CRAWL_CODE_ID,
+          BULL_JOB_NAME.CRAWL_CODE,
         ]);
 
     let lastHeight = 0;
@@ -69,27 +74,32 @@ export default class CrawlSmartContractService extends BullableService {
       });
 
     const codeIdCheckpoint = cosmwasmCheckpoint.find(
-      (check) => check.job_name === BULL_JOB_NAME.CRAWL_CODE_ID
+      (check) => check.job_name === BULL_JOB_NAME.CRAWL_CODE
     );
     if (codeIdCheckpoint) {
       if (codeIdCheckpoint.height <= lastHeight) return;
 
-      const instantiateTxs: Transaction[] = [];
+      const instantiateTxs: any[] = [];
       let offset = 0;
       let done = false;
       while (!done) {
         // eslint-disable-next-line no-await-in-loop
         const resultTx = await Transaction.query()
-          .joinRelated('events')
-          .whereIn('events.type', [
-            Event.EVENT_TYPE.MESSAGE,
-            Event.EVENT_TYPE.INSTANTIATE,
-            Event.EVENT_TYPE.EXECUTE,
-          ])
+          .joinRelated('events.[attributes]')
+          .where('events.type', Event.EVENT_TYPE.INSTANTIATE)
+          .andWhere(
+            'events:attributes.key',
+            EventAttribute.ATTRIBUTE_KEY._CONTRACT_ADDRESS
+          )
           .andWhere('transaction.height', '>', lastHeight)
           .andWhere('transaction.height', '<=', codeIdCheckpoint.height)
           .andWhere('transaction.code', 0)
-          .select('transaction.hash', 'transaction.height', 'transaction.data')
+          .select(
+            'transaction.hash',
+            'transaction.height',
+            'events:attributes.key',
+            'events:attributes.value'
+          )
           .page(offset, 1000);
         this.logger.info(
           `Result get Tx from height ${lastHeight} to ${codeIdCheckpoint.height}:`
@@ -105,81 +115,38 @@ export default class CrawlSmartContractService extends BullableService {
 
       if (instantiateTxs.length > 0) {
         instantiateTxs.forEach((transaction) => {
-          transaction.data.tx_response.logs
-            .filter((log: any) =>
-              log.events.find(
-                (event: any) => event.type === Event.EVENT_TYPE.INSTANTIATE
-              )
-            )
-            .forEach((log: any) => {
-              const instantiateHeight = transaction.height;
-              const instantiateHash = transaction.hash;
-              const creator =
-                log.events // Msg Instantiate Contract
-                  .find((event: any) => event.type === Event.EVENT_TYPE.MESSAGE)
-                  .attributes.find(
-                    (attr: any) =>
-                      attr.key === EventAttribute.ATTRIBUTE_KEY.SENDER
-                  ).value ||
-                log.events // Msg Execute Contract
-                  .find((event: any) => event.type === Event.EVENT_TYPE.EXECUTE)
-                  .attributes.find(
-                    (attr: any) =>
-                      attr.key ===
-                      EventAttribute.ATTRIBUTE_KEY._CONTRACT_ADDRESS
-                  ).value;
-
-              let contractAddresses: string[];
-              let codeIds: string[];
-              try {
-                contractAddresses = log.events
-                  .find(
-                    (event: any) => event.type === Event.EVENT_TYPE.INSTANTIATE
-                  )
-                  .attributes.filter(
-                    (attr: any) =>
-                      attr.key ===
-                      EventAttribute.ATTRIBUTE_KEY._CONTRACT_ADDRESS
-                  );
-                codeIds = log.events
-                  .find(
-                    (event: any) => event.type === Event.EVENT_TYPE.INSTANTIATE
-                  )
-                  .attributes.filter(
-                    (attr: any) =>
-                      attr.key === EventAttribute.ATTRIBUTE_KEY.CODE_ID
-                  );
-
-                queryAddresses.push(...contractAddresses);
-                contractAddresses.forEach((address, index) => {
-                  smartContracts.push(
-                    SmartContract.fromJson({
-                      name: null,
-                      address,
-                      creator,
-                      code_id: parseInt(codeIds[index], 10),
-                      instantiate_hash: instantiateHash,
-                      instantiate_height: instantiateHeight,
-                      version: null,
-                    })
-                  );
-                });
-              } catch (error) {
-                this.logger.error(
-                  `Error get attributes at TxHash ${instantiateHash}`
-                );
-              }
-            });
+          queryAddresses.push(transaction.value);
+          smartContracts.push(
+            SmartContract.fromJson({
+              name: null,
+              address: transaction.value,
+              creator: '',
+              code_id: 0,
+              instantiate_hash: transaction.hash,
+              instantiate_height: transaction.height,
+              version: null,
+            })
+          );
         });
 
-        const contractInfos = await this.getContractInfo(queryAddresses);
+        const [contractCw2s, contractInfos] = await this.getContractInfo(
+          queryAddresses
+        );
         smartContracts.forEach((contract, index) => {
-          if (contractInfos[index]?.data) {
+          if (contractCw2s[index]?.data) {
             const data = JSON.parse(
-              fromUtf8(contractInfos[index]?.data || new Uint8Array())
+              fromUtf8(contractCw2s[index]?.data || new Uint8Array())
             );
             contract.name = data.contract;
             contract.version = data.version;
+          }
+          if (contractInfos[index]?.contractInfo) {
+            contract.code_id = parseInt(
+              contractInfos[index]?.contractInfo?.codeId.toString() || '0',
+              10
+            );
+            contract.creator =
+              contractInfos[index]?.contractInfo?.creator || '';
           }
         });
 
@@ -203,8 +170,16 @@ export default class CrawlSmartContractService extends BullableService {
     }
   }
 
-  private async getContractInfo(addresses: string[]) {
+  private async getContractInfo(
+    addresses: string[]
+  ): Promise<
+    [
+      (QueryRawContractStateResponse | null)[],
+      (QueryContractInfoResponse | null)[]
+    ]
+  > {
     const batchQueriesCw2: any[] = [];
+    const batchQueriesContractInfo: any[] = [];
 
     addresses.forEach((address) => {
       const requestCw2: QueryRawContractStateRequest = {
@@ -217,6 +192,15 @@ export default class CrawlSmartContractService extends BullableService {
         ).finish()
       );
 
+      const requestContractInfo: QueryContractInfoRequest = {
+        address,
+      };
+      const dataContractInfo = toHex(
+        cosmwasm.wasm.v1.QueryContractInfoRequest.encode(
+          requestContractInfo
+        ).finish()
+      );
+
       batchQueriesCw2.push(
         this._httpBatchClient.execute(
           createJsonRpcRequest('abci_query', {
@@ -225,23 +209,45 @@ export default class CrawlSmartContractService extends BullableService {
           })
         )
       );
+      batchQueriesContractInfo.push(
+        this._httpBatchClient.execute(
+          createJsonRpcRequest('abci_query', {
+            path: ABCI_QUERY_PATH.CONTRACT_INFO,
+            data: dataContractInfo,
+          })
+        )
+      );
     });
 
     const resultCw2: JsonRpcSuccessResponse[] = await Promise.all(
       batchQueriesCw2
     );
-    return resultCw2.map((res: JsonRpcSuccessResponse) =>
+    const resultContractInfo: JsonRpcSuccessResponse[] = await Promise.all(
+      batchQueriesContractInfo
+    );
+
+    const contractCw2s = resultCw2.map((res: JsonRpcSuccessResponse) =>
       res.result.response.value
         ? cosmwasm.wasm.v1.QueryRawContractStateResponse.decode(
             fromBase64(res.result.response.value)
           )
         : null
     );
+    const contractInfos = resultContractInfo.map(
+      (res: JsonRpcSuccessResponse) =>
+        res.result.response.value
+          ? cosmwasm.wasm.v1.QueryContractInfoResponse.decode(
+              fromBase64(res.result.response.value)
+            )
+          : null
+    );
+
+    return [contractCw2s, contractInfos];
   }
 
   public async _start() {
     this.createJob(
-      BULL_JOB_NAME.CRAWL_CODE_ID,
+      BULL_JOB_NAME.CRAWL_SMART_CONTRACT,
       'crawl',
       {},
       {
@@ -250,7 +256,7 @@ export default class CrawlSmartContractService extends BullableService {
           count: 3,
         },
         repeat: {
-          every: config.crawlCodeId.millisecondCrawl,
+          every: config.crawlSmartContract.millisecondCrawl,
         },
       }
     );
