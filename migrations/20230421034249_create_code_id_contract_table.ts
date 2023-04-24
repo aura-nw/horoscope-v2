@@ -1,7 +1,7 @@
 import { Knex } from 'knex';
 
 export async function up(knex: Knex): Promise<void> {
-  await knex.schema.createTable('code_id', (table: any) => {
+  await knex.schema.createTable('code', (table: any) => {
     table.integer('code_id').primary();
     table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
     table.timestamp('updated_at').notNullable().defaultTo(knex.raw('now()'));
@@ -24,7 +24,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('instantiate_hash').index().notNullable();
     table.integer('instantiate_height').index().notNullable();
     table.string('version').index();
-    table.foreign('code_id').references('code_id.code_id');
+    table.foreign('code_id').references('code.code_id');
   });
 }
 

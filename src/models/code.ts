@@ -9,7 +9,7 @@ export interface IInstantiatePermission {
   addresses: string[];
 }
 
-export class CodeId extends BaseModel {
+export class Code extends BaseModel {
   code_id!: number;
 
   creator!: string;
@@ -27,7 +27,7 @@ export class CodeId extends BaseModel {
   store_height!: number;
 
   static get tableName() {
-    return 'code_id';
+    return 'code';
   }
 
   static get jsonAttributes() {
@@ -75,7 +75,7 @@ export class CodeId extends BaseModel {
         relation: Model.HasManyRelation,
         modelClass: SmartContract,
         join: {
-          from: 'code_id.code_id',
+          from: 'code.code_id',
           to: 'smart_contract.code_id',
         },
       },

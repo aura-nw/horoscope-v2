@@ -15,5 +15,5 @@ export * from './power_event';
 export * from './validator';
 export * from './checkpoint';
 export * from './proposal';
-export * from './code_id';
+export * from './code';
 export * from './smart_contract';

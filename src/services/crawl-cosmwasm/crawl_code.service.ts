@@ -15,7 +15,7 @@ import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import {
   Block,
   BlockCheckpoint,
-  CodeId,
+  Code,
   Event,
   EventAttribute,
   Transaction,
@@ -49,7 +49,7 @@ export default class CrawlCodeIdService extends BullableService {
   public async handleJob(_payload: object): Promise<void> {
     const batchQueries: any[] = [];
 
-    const [crawlCidBlkChk, latestBlock]: [
+    const [codeIdCheckpoint, latestBlock]: [
       BlockCheckpoint | undefined,
       Block | undefined
     ] = await Promise.all([
@@ -61,9 +61,9 @@ export default class CrawlCodeIdService extends BullableService {
 
     let lastHeight = 0;
     let updateBlockCheckpoint: BlockCheckpoint;
-    if (crawlCidBlkChk) {
-      lastHeight = crawlCidBlkChk.height;
-      updateBlockCheckpoint = crawlCidBlkChk;
+    if (codeIdCheckpoint) {
+      lastHeight = codeIdCheckpoint.height;
+      updateBlockCheckpoint = codeIdCheckpoint;
     } else
       updateBlockCheckpoint = BlockCheckpoint.fromJson({
         job_name: BULL_JOB_NAME.CRAWL_CODE_ID,
@@ -97,13 +97,13 @@ export default class CrawlCodeIdService extends BullableService {
             'events:attributes.key',
             'events:attributes.value'
           )
-          .page(offset, 100);
+          .page(offset, 1000);
         this.logger.info(
           `Result get Tx from height ${lastHeight} to ${latestBlock.height}:`
         );
         this.logger.info(JSON.stringify(resultTx));
 
-        if (resultTx.results.length > 0)
+        if (resultTx.results.length > 0) {
           resultTx.results.map((res: any) =>
             codeIds.push({
               hash: res.hash,
@@ -112,8 +112,8 @@ export default class CrawlCodeIdService extends BullableService {
             })
           );
 
-        if (resultTx.results.length === 100) offset += 1;
-        else done = true;
+          offset += 1;
+        } else done = true;
       }
 
       if (codeIds.length > 0) {
@@ -145,8 +145,8 @@ export default class CrawlCodeIdService extends BullableService {
             )
         );
 
-        const codeIdEntities = onchainCodeIds.map((code, index) =>
-          CodeId.fromJson({
+        const codeEntities = onchainCodeIds.map((code, index) =>
+          Code.fromJson({
             code_id: codeIds[index].codeId,
             creator: code.codeInfo?.creator,
             data_hash: code.codeInfo?.dataHash,
@@ -158,8 +158,8 @@ export default class CrawlCodeIdService extends BullableService {
           })
         );
 
-        await CodeId.query()
-          .insert(codeIdEntities)
+        await Code.query()
+          .insert(codeEntities)
           .onConflict('code_id')
           .merge()
           .returning('code_id')

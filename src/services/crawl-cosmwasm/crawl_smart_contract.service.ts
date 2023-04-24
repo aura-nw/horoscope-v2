@@ -10,7 +10,6 @@ import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import {
-  Block,
   BlockCheckpoint,
   Event,
   Transaction,
@@ -21,7 +20,6 @@ import {
   ABCI_QUERY_PATH,
   BULL_JOB_NAME,
   getHttpBatchClient,
-  getLcdClient,
   SERVICE,
 } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
@@ -45,34 +43,36 @@ export default class CrawlSmartContractService extends BullableService {
     prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: object): Promise<void> {
-    this._lcdClient = await getLcdClient();
-
     const queryAddresses: string[] = [];
     const smartContracts: SmartContract[] = [];
 
-    const [crawlContractBlkChk, latestBlock]: [
-      BlockCheckpoint | undefined,
-      Block | undefined
-    ] = await Promise.all([
-      BlockCheckpoint.query()
+    const cosmwasmCheckpoint: BlockCheckpoint[] | undefined =
+      await BlockCheckpoint.query()
         .select('*')
-        .findOne('job_name', BULL_JOB_NAME.CRAWL_SMART_CONTRACT),
-      Block.query().select('height').findOne({}).orderBy('height', 'desc'),
-    ]);
+        .whereIn('job_name', [
+          BULL_JOB_NAME.CRAWL_SMART_CONTRACT,
+          BULL_JOB_NAME.CRAWL_CODE_ID,
+        ]);
 
     let lastHeight = 0;
     let updateBlockCheckpoint: BlockCheckpoint;
-    if (crawlContractBlkChk) {
-      lastHeight = crawlContractBlkChk.height;
-      updateBlockCheckpoint = crawlContractBlkChk;
+    const contractCheckpoint = cosmwasmCheckpoint.find(
+      (check) => check.job_name === BULL_JOB_NAME.CRAWL_SMART_CONTRACT
+    );
+    if (contractCheckpoint) {
+      lastHeight = contractCheckpoint.height;
+      updateBlockCheckpoint = contractCheckpoint;
     } else
       updateBlockCheckpoint = BlockCheckpoint.fromJson({
         job_name: BULL_JOB_NAME.CRAWL_SMART_CONTRACT,
         height: 0,
       });
 
-    if (latestBlock) {
-      if (latestBlock.height === lastHeight) return;
+    const codeIdCheckpoint = cosmwasmCheckpoint.find(
+      (check) => check.job_name === BULL_JOB_NAME.CRAWL_CODE_ID
+    );
+    if (codeIdCheckpoint) {
+      if (codeIdCheckpoint.height <= lastHeight) return;
 
       const instantiateTxs: Transaction[] = [];
       let offset = 0;
@@ -80,28 +80,27 @@ export default class CrawlSmartContractService extends BullableService {
       while (!done) {
         // eslint-disable-next-line no-await-in-loop
         const resultTx = await Transaction.query()
-          .joinRelated('events.[attributes]')
-          .where('transaction.height', '>', lastHeight)
-          .andWhere('transaction.height', '<=', latestBlock.height)
+          .joinRelated('events')
+          .whereIn('events.type', [
+            Event.EVENT_TYPE.MESSAGE,
+            Event.EVENT_TYPE.INSTANTIATE,
+            Event.EVENT_TYPE.EXECUTE,
+          ])
+          .andWhere('transaction.height', '>', lastHeight)
+          .andWhere('transaction.height', '<=', codeIdCheckpoint.height)
           .andWhere('transaction.code', 0)
-          .andWhere((builder) =>
-            builder
-              .where('events.type', Event.EVENT_TYPE.MESSAGE)
-              .orWhere('events.type', Event.EVENT_TYPE.INSTANTIATE)
-              .orWhere('events.type', Event.EVENT_TYPE.EXECUTE)
-          )
           .select('transaction.hash', 'transaction.height', 'transaction.data')
-          .page(offset, 100);
+          .page(offset, 1000);
         this.logger.info(
-          `Result get Tx from height ${lastHeight} to ${latestBlock.height}:`
+          `Result get Tx from height ${lastHeight} to ${codeIdCheckpoint.height}:`
         );
         this.logger.info(JSON.stringify(resultTx));
 
-        if (resultTx.results.length > 0)
+        if (resultTx.results.length > 0) {
           resultTx.results.map((res: any) => instantiateTxs.push(res));
 
-        if (resultTx.results.length === 100) offset += 1;
-        else done = true;
+          offset += 1;
+        } else done = true;
       }
 
       if (instantiateTxs.length > 0) {
@@ -195,7 +194,7 @@ export default class CrawlSmartContractService extends BullableService {
           });
       }
 
-      updateBlockCheckpoint.height = latestBlock.height;
+      updateBlockCheckpoint.height = codeIdCheckpoint.height;
       await BlockCheckpoint.query()
         .insert(updateBlockCheckpoint)
         .onConflict('job_name')
