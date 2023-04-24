@@ -5,9 +5,10 @@ import {
   Account,
   Block,
   Transaction,
-  TransactionMessage,
+  // TransactionMessage,
   PowerEvent,
   Validator,
+  BlockCheckpoint,
 } from '../../../../src/models';
 import HandleStakeEventService from '../../../../src/services/crawl-validator/handle_stake_event.service';
 import knex from '../../../../src/common/utils/db_connection';
@@ -235,6 +236,7 @@ export default class HandleStakeEventTest {
       .getQueue(BULL_JOB_NAME.HANDLE_STAKE_EVENT)
       .empty();
     await Promise.all([
+      BlockCheckpoint.query().delete(true),
       knex.raw('TRUNCATE TABLE validator RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE'),
@@ -248,6 +250,7 @@ export default class HandleStakeEventTest {
   @AfterAll()
   async tearDown() {
     await Promise.all([
+      BlockCheckpoint.query().delete(true),
       knex.raw('TRUNCATE TABLE validator RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE'),
@@ -257,10 +260,10 @@ export default class HandleStakeEventTest {
 
   @Test('Handle stake event success and insert power_event to DB')
   public async testHandleStakeEvent() {
-    const txMessages: TransactionMessage[] = await TransactionMessage.query();
+    // const txMessages: TransactionMessage[] = await TransactionMessage.query();
 
     await this.handleStakeEventService?.handleJob({
-      txIds: txMessages.map((tx) => tx.id),
+      // txIds: txMessages.map((tx) => tx.id),
     });
 
     const [powerEvents, validators]: [PowerEvent[], Validator[]] =
