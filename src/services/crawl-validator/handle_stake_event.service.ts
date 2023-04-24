@@ -63,7 +63,7 @@ export default class HandleStakeEventService extends BullableService {
       if (latestBlock.height === lastHeight) return;
 
       const stakeTxs: any[] = [];
-      let offset = 0;
+      let page = 0;
       let done = false;
       this.logger.info(
         `Start query Tx from height ${lastHeight} to ${latestBlock.height}`
@@ -89,18 +89,18 @@ export default class HandleStakeEventService extends BullableService {
           .andWhere('transaction.height', '>', lastHeight)
           .andWhere('transaction.height', '<=', latestBlock.height)
           .andWhere('transaction.code', 0)
-          .page(offset, 1000);
+          .page(page, 1000);
 
         this.logger.info(
           `Query Tx from height ${lastHeight} to ${
             latestBlock.height
-          } at page ${offset + 1}`
+          } at page ${page + 1}`
         );
 
         if (resultTx.results.length > 0) {
           stakeTxs.push(...resultTx.results);
 
-          offset += 1;
+          page += 1;
         } else done = true;
       }
 

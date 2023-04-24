@@ -68,7 +68,7 @@ export default class HandleAddressService extends BullableService {
       if (latestBlock.height === lastHeight) return;
 
       const eventAddresses: string[] = [];
-      let offset = 0;
+      let page = 0;
       let done = false;
       this.logger.info(
         `Start query Tx from height ${lastHeight} to ${latestBlock.height}`
@@ -92,17 +92,17 @@ export default class HandleAddressService extends BullableService {
             'events:attributes.key',
             'events:attributes.value'
           )
-          .page(offset, 1000);
+          .page(page, 1000);
         this.logger.info(
           `Query Tx from height ${lastHeight} to ${
             latestBlock.height
-          } at page ${offset + 1}`
+          } at page ${page + 1}`
         );
 
         if (resultTx.results.length > 0) {
           resultTx.results.map((res: any) => eventAddresses.push(res.value));
 
-          offset += 1;
+          page += 1;
         } else done = true;
       }
 
