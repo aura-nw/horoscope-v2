@@ -108,26 +108,26 @@ export default class HandleStakeEventService extends BullableService {
       const validatorKeys = _.keyBy(validators, 'operator_address');
 
       const powerEvents: PowerEvent[] = stakeTxs
-        .filter((stake) => this.eventStakes.includes(stake.type))
         .filter(
-          (stake) =>
-            stake.key === EventAttribute.EVENT_KEY.VALIDATOR ||
-            stake.key === EventAttribute.EVENT_KEY.SOURCE_VALIDATOR
+          (event) =>
+            this.eventStakes.includes(event.type) &&
+            (event.key === EventAttribute.EVENT_KEY.VALIDATOR ||
+              event.key === EventAttribute.EVENT_KEY.SOURCE_VALIDATOR)
         )
-        .map((stake) => {
-          this.logger.info(`Handle event stake ${JSON.stringify(stake)}`);
+        .map((stakeEvent) => {
+          this.logger.info(`Handle event stake ${JSON.stringify(stakeEvent)}`);
           const stakeEvents = stakeTxs.filter(
-            (tx) => tx.event_id === stake.event_id
+            (tx) => tx.event_id === stakeEvent.event_id
           );
 
           let validatorSrcId;
           let validatorDstId;
-          switch (stake.type) {
+          switch (stakeEvent.type) {
             case PowerEvent.TYPES.DELEGATE:
-              validatorDstId = validatorKeys[stake.value].id;
+              validatorDstId = validatorKeys[stakeEvent.value].id;
               break;
             case PowerEvent.TYPES.REDELEGATE:
-              validatorSrcId = validatorKeys[stake.value].id;
+              validatorSrcId = validatorKeys[stakeEvent.value].id;
               validatorDstId =
                 validatorKeys[
                   stakeEvents.find(
@@ -138,16 +138,16 @@ export default class HandleStakeEventService extends BullableService {
                 ].id;
               break;
             case PowerEvent.TYPES.UNBOND:
-              validatorSrcId = validatorKeys[stake.value].id;
+              validatorSrcId = validatorKeys[stakeEvent.value].id;
               break;
             default:
               break;
           }
 
           const powerEvent: PowerEvent = PowerEvent.fromJson({
-            tx_id: stake.id,
-            height: stake.height,
-            type: stake.type,
+            tx_id: stakeEvent.id,
+            height: stakeEvent.height,
+            type: stakeEvent.type,
             validator_src_id: validatorSrcId,
             validator_dst_id: validatorDstId,
             amount: parseCoins(
@@ -155,7 +155,7 @@ export default class HandleStakeEventService extends BullableService {
                 (event) => event.key === EventAttribute.EVENT_KEY.AMOUNT
               ).value
             )[0].amount,
-            time: stake.timestamp.toISOString(),
+            time: stakeEvent.timestamp.toISOString(),
           });
 
           return powerEvent;
