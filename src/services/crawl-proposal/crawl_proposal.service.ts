@@ -80,7 +80,7 @@ export default class CrawlProposalService extends BullableService {
       if (latestBlock.height === lastHeight) return;
 
       const proposalIds: number[] = [];
-      let offset = 0;
+      let page = 0;
       let done = false;
       while (!done) {
         // eslint-disable-next-line no-await-in-loop
@@ -99,7 +99,7 @@ export default class CrawlProposalService extends BullableService {
             'events:attributes.key',
             'events:attributes.value'
           )
-          .page(offset, 100);
+          .page(page, 100);
         this.logger.info(
           `Result get Tx from height ${lastHeight} to ${latestBlock.height}:`
         );
@@ -110,7 +110,7 @@ export default class CrawlProposalService extends BullableService {
             proposalIds.push(Number.parseInt(res.value, 10))
           );
 
-        if (resultTx.results.length === 100) offset += 1;
+        if (resultTx.results.length === 100) page += 1;
         else done = true;
       }
 

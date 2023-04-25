@@ -9,6 +9,7 @@ import {
 } from '../../../../src/models';
 import CrawlGenesisService from '../../../../src/services/crawl-genesis/crawl_genesis.service';
 import { BULL_JOB_NAME } from '../../../../src/common';
+import knex from '../../../../src/common/utils/db_connection';
 
 @Describe('Test crawl_genesis service')
 export default class CrawlGenesisTest {
@@ -44,8 +45,8 @@ export default class CrawlGenesisTest {
         .empty(),
     ]);
     await Promise.all([
-      AccountVesting.query().delete(true),
       Validator.query().delete(true),
+      knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE'),
     ]);
     await Account.query().delete(true);
     execSync('cp ./test/unit/services/crawl-genesis/genesis.txt .');
@@ -56,10 +57,9 @@ export default class CrawlGenesisTest {
     execSync('rm -rf genesis.txt');
     await Promise.all([
       BlockCheckpoint.query().delete(true),
-      AccountVesting.query().delete(true),
       Validator.query().delete(true),
+      knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE'),
     ]);
-    await Account.query().delete(true);
     await this.broker.stop();
   }
 

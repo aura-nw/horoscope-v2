@@ -34,6 +34,9 @@
   "crawlTallyProposal": {
     "millisecondCrawl": 10000
   },
+  "handleStakeEvent": {
+    "millisecondCrawl": 5000
+  },
   "crawlCodeId": {
     "millisecondCrawl": 5000
   },

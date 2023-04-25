@@ -215,11 +215,10 @@ export default class CrawlProposalTest {
         .empty(),
     ]);
     await Promise.all([
-      Proposal.query().delete(true),
       BlockCheckpoint.query().delete(true),
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE'),
     ]);
-    await Account.query().delete(true);
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);
     await Account.query().insert(this.account);
@@ -228,11 +227,10 @@ export default class CrawlProposalTest {
   @AfterAll()
   async tearDown() {
     await Promise.all([
-      Proposal.query().delete(true),
       BlockCheckpoint.query().delete(true),
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE'),
     ]);
-    await Account.query().delete(true);
     await this.broker.stop();
   }
 

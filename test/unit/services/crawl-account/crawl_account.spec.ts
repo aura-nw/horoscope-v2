@@ -20,6 +20,7 @@ import { Account, AccountVesting } from '../../../../src/models';
 import CrawlAccountService from '../../../../src/services/crawl-account/crawl_account.service';
 import config from '../../../../config.json' assert { type: 'json' };
 import network from '../../../../network.json' assert { type: 'json' };
+import knex from '../../../../src/common/utils/db_connection';
 
 @Describe('Test crawl_account service')
 export default class CrawlAccountTest {
@@ -93,8 +94,7 @@ export default class CrawlAccountTest {
         .getQueue(BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT)
         .empty(),
     ]);
-    await AccountVesting.query().delete(true);
-    await Account.query().delete(true);
+    await knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE');
     await Account.query().insert(this.accounts);
   }
 

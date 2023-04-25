@@ -12,13 +12,7 @@ import {
 } from '../../models';
 import Utils from '../../common/utils/utils';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import {
-  BULL_JOB_NAME,
-  Config,
-  IAddressesParam,
-  MSG_TYPE,
-  SERVICE,
-} from '../../common';
+import { BULL_JOB_NAME, Config, IAddressesParam, SERVICE } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
@@ -26,12 +20,6 @@ import config from '../../../config.json' assert { type: 'json' };
   version: 1,
 })
 export default class HandleAddressService extends BullableService {
-  private msgStakes = [
-    MSG_TYPE.MSG_DELEGATE,
-    MSG_TYPE.MSG_REDELEGATE,
-    MSG_TYPE.MSG_UNDELEGATE,
-  ];
-
   public constructor(public broker: ServiceBroker) {
     super(broker);
   }
@@ -52,9 +40,7 @@ export default class HandleAddressService extends BullableService {
     prefix: `horoscope-v2-${Config.CHAIN_ID}`,
   })
   public async handleJob(_payload: object): Promise<void> {
-    const stakeTxs: any[] = [];
-
-    const [handleAddressBlockCheckpoint, latestBlock]: [
+    const [handleAddrCheckpoint, latestBlock]: [
       BlockCheckpoint | undefined,
       Block | undefined
     ] = await Promise.all([
@@ -64,14 +50,14 @@ export default class HandleAddressService extends BullableService {
       Block.query().select('height').findOne({}).orderBy('height', 'desc'),
     ]);
     this.logger.info(
-      `Block Checkpoint: ${JSON.stringify(handleAddressBlockCheckpoint)}`
+      `Block Checkpoint: ${JSON.stringify(handleAddrCheckpoint)}`
     );
 
     let lastHeight = 0;
     let updateBlockCheckpoint: BlockCheckpoint;
-    if (handleAddressBlockCheckpoint) {
-      lastHeight = handleAddressBlockCheckpoint.height;
-      updateBlockCheckpoint = handleAddressBlockCheckpoint;
+    if (handleAddrCheckpoint) {
+      lastHeight = handleAddrCheckpoint.height;
+      updateBlockCheckpoint = handleAddrCheckpoint;
     } else
       updateBlockCheckpoint = BlockCheckpoint.fromJson({
         job_name: BULL_JOB_NAME.HANDLE_ADDRESS,
@@ -82,7 +68,7 @@ export default class HandleAddressService extends BullableService {
       if (latestBlock.height === lastHeight) return;
 
       const eventAddresses: string[] = [];
-      let offset = 0;
+      let page = 0;
       let done = false;
       this.logger.info(
         `Start query Tx from height ${lastHeight} to ${latestBlock.height}`
@@ -90,7 +76,7 @@ export default class HandleAddressService extends BullableService {
       while (!done) {
         // eslint-disable-next-line no-await-in-loop
         const resultTx = await Transaction.query()
-          .joinRelated('[messages, events.[attributes]]')
+          .joinRelated('events.[attributes]')
           .whereIn('events:attributes.key', [
             EventAttribute.ATTRIBUTE_KEY.RECEIVER,
             EventAttribute.ATTRIBUTE_KEY.SPENDER,
@@ -102,30 +88,22 @@ export default class HandleAddressService extends BullableService {
             'transaction.id',
             'transaction.height',
             'transaction.timestamp',
-            'messages.id as tx_msg_id',
-            'messages.type',
+            'events.type',
             'events:attributes.key',
             'events:attributes.value'
           )
-          .page(offset, 1000);
+          .page(page, 1000);
         this.logger.info(
           `Query Tx from height ${lastHeight} to ${
             latestBlock.height
-          } at page ${offset + 1}`
+          } at page ${page + 1}`
         );
 
         if (resultTx.results.length > 0) {
           resultTx.results.map((res: any) => eventAddresses.push(res.value));
 
-          stakeTxs.push(
-            ...resultTx.results.filter((res: any) =>
-              this.msgStakes.includes(res.type)
-            )
-          );
-        }
-
-        if (resultTx.results.length === 1000) offset += 1;
-        else done = true;
+          page += 1;
+        } else done = true;
       }
 
       const addresses = Array.from(
@@ -137,9 +115,6 @@ export default class HandleAddressService extends BullableService {
       );
 
       if (addresses.length > 0) await this.insertNewAccountAndUpdate(addresses);
-
-      if (stakeTxs && stakeTxs.length > 0)
-        await this.handlePowerEvent(stakeTxs);
 
       updateBlockCheckpoint.height = latestBlock.height;
       await BlockCheckpoint.query()
@@ -179,24 +154,8 @@ export default class HandleAddressService extends BullableService {
     });
   }
 
-  private async handlePowerEvent(stakeTxs: any[]) {
-    const txMsgIds = Array.from(
-      new Set(stakeTxs.map((txStake) => txStake.tx_msg_id))
-    );
-
-    await this.broker.call(
-      SERVICE.V1.HandleStakeEventService.UpdatePowerEvent.path,
-      {
-        txMsgIds,
-      }
-    );
-  }
-
   public async _start() {
-    await this.broker.waitForServices([
-      SERVICE.V1.CrawlAccountService.name,
-      SERVICE.V1.HandleStakeEventService.name,
-    ]);
+    await this.broker.waitForServices(SERVICE.V1.CrawlAccountService.name);
 
     this.createJob(
       BULL_JOB_NAME.HANDLE_ADDRESS,
