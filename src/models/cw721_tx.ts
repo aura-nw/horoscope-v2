@@ -25,6 +25,8 @@ export default class CW721Activity extends BaseModel {
 
   to?: string;
 
+  height?: number;
+
   static get tableName() {
     return 'cw721_activity';
   }
@@ -32,13 +34,14 @@ export default class CW721Activity extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['tx_hash', 'cw721_contract_id'],
+      required: ['tx_hash', 'cw721_contract_id', 'height'],
       properties: {
         tx_hash: { type: 'string' },
         cw721_contract_id: { type: 'number' },
         sender: { type: 'string' },
         action: { type: 'string' },
         cw721_token_id: { type: 'number' },
+        height: { type: 'number' },
       },
     };
   }

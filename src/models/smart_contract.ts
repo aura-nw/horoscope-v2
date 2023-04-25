@@ -48,7 +48,7 @@ export class SmartContract extends BaseModel {
 
   static get relationMappings() {
     return {
-      code_id: {
+      code: {
         relation: Model.BelongsToOneRelation,
         modelClass: CodeId,
         join: {

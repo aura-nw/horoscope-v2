@@ -3,12 +3,10 @@ import { Knex } from 'knex';
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('cw721_contract', (table) => {
     table.increments('id').primary();
-    table.integer('code_id').index().notNullable();
-    table.string('address').unique().index().notNullable();
-    table.string('name').index();
+    table.integer('contract_id').unique().index().notNullable();
     table.string('symbol');
     table.string('minter');
-    table.string('creator');
+    table.foreign('contract_id').references('smart_contract.id');
     table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
     table.timestamp('updated_at').notNullable().defaultTo(knex.raw('now()'));
   });
@@ -36,6 +34,7 @@ export async function up(knex: Knex): Promise<void> {
     table.integer('cw721_token_id').index();
     table.string('from');
     table.string('to');
+    table.integer('height').index();
     table.foreign('cw721_contract_id').references('cw721_contract.id');
     table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
     table.timestamp('updated_at').notNullable().defaultTo(knex.raw('now()'));

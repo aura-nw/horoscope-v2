@@ -16,9 +16,7 @@ export default class AssetIndexerTest {
 
   mockInitContract = {
     ...CW721Contract.fromJson({
-      code_id: 100,
-      address: 'mock_contract_address',
-      name: 'name',
+      contract_id: 1,
       symbol: 'symbol',
       minter: 'minter',
     }),
@@ -40,13 +38,19 @@ export default class AssetIndexerTest {
         last_updated_height: 2000,
       },
     ],
+    smart_contract: {
+      code_id: 100,
+      address: 'mock_contract_address_2',
+      name: 'name',
+      creator: 'phamphong_creator 2',
+      instantiate_hash: 'abc',
+      instantiate_height: 300000,
+    },
   };
 
   mockInitContract_2 = {
     ...CW721Contract.fromJson({
-      code_id: 100,
-      address: 'mock_contract_address_2',
-      name: 'name',
+      contract_id: 2,
       symbol: 'symbol',
       minter: 'minter',
     }),
@@ -68,6 +72,14 @@ export default class AssetIndexerTest {
         last_updated_height: 2000,
       },
     ],
+    smart_contract: {
+      name: 'Base Contract 2',
+      address: 'mock_contract_address',
+      creator: 'phamphong_creator',
+      code_id: 100,
+      instantiate_hash: 'abc',
+      instantiate_height: 300000,
+    },
   };
 
   cw721HandlerService = this.broker.createService(
@@ -240,15 +252,35 @@ export default class AssetIndexerTest {
 
   txInsertInstantiate = {};
 
-  codeId = CodeId.fromJson({
-    creator: 'code_id_creator',
-    code_id: 100,
-    data_hash: 'code_id_data_hash',
-    instantiate_permission: { permission: '', address: '', addresses: [] },
-    store_hash: 'code_id_store_hash',
-    store_height: 1000,
-    type: 'CW721',
-  });
+  codeId = {
+    ...CodeId.fromJson({
+      creator: 'code_id_creator',
+      code_id: 100,
+      data_hash: 'code_id_data_hash',
+      instantiate_permission: { permission: '', address: '', addresses: [] },
+      store_hash: 'code_id_store_hash',
+      store_height: 1000,
+      type: 'CW721',
+    }),
+    // contracts: [
+    //   {
+    //     name: 'Base Contract 2',
+    //     address: 'mock_contract_address',
+    //     creator: 'phamphong_creator',
+    //     code_id: 100,
+    //     instantiate_hash: 'abc',
+    //     instantiate_height: 300000,
+    //   },
+    //   {
+    //     code_id: 100,
+    //     address: 'mock_contract_address_2',
+    //     name: 'name',
+    //     creator: 'phamphong_creator 2',
+    //     instantiate_hash: 'abc',
+    //     instantiate_height: 300000,
+    //   },
+    // ],
+  };
 
   @BeforeAll()
   async initSuite() {
@@ -264,7 +296,7 @@ export default class AssetIndexerTest {
     );
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);
-    await CodeId.query().insert(this.codeId);
+    await CodeId.query().insertGraph(this.codeId);
     await CW721Contract.query().insertGraph(this.mockInitContract);
     await CW721Contract.query().insertGraph(this.mockInitContract_2);
   }
@@ -359,7 +391,7 @@ export default class AssetIndexerTest {
   public async testjobHandlerCw721Transfer() {
     const mockContractTransferMsg = [
       {
-        contractAddress: this.mockInitContract.address,
+        contractAddress: this.mockInitContract.smart_contract.address,
         sender: '',
         action: 'transfer_nft',
         content: '',
@@ -367,7 +399,7 @@ export default class AssetIndexerTest {
           {
             _id: '63fda557271e5f3bc9321148',
             key: '_contract_address',
-            value: this.mockInitContract.address,
+            value: this.mockInitContract.smart_contract.address,
           },
           {
             _id: '63fda557271e5f2e69321149',
@@ -404,7 +436,7 @@ export default class AssetIndexerTest {
         }),
       },
       {
-        contractAddress: this.mockInitContract.address,
+        contractAddress: this.mockInitContract.smart_contract.address,
         sender: '',
         action: 'transfer_nft',
         content: '',
@@ -412,7 +444,7 @@ export default class AssetIndexerTest {
           {
             _id: '63fda557271e5f3bc9321148',
             key: '_contract_address',
-            value: this.mockInitContract.address,
+            value: this.mockInitContract.smart_contract.address,
           },
           {
             _id: '63fda557271e5f2e69321149',
@@ -472,7 +504,7 @@ export default class AssetIndexerTest {
   public async testjobHandlerCw721Mint() {
     const mockContractMintMsg = [
       {
-        contractAddress: this.mockInitContract.address,
+        contractAddress: this.mockInitContract.smart_contract.address,
         sender: '',
         action: 'transfer_nft',
         content:
@@ -481,7 +513,7 @@ export default class AssetIndexerTest {
           {
             _id: '63fda557271e5f3bc9321148',
             key: '_contract_address',
-            value: this.mockInitContract.address,
+            value: this.mockInitContract.smart_contract.address,
           },
           {
             _id: '63fda557271e5f2e69321149',
@@ -518,7 +550,7 @@ export default class AssetIndexerTest {
         }),
       },
       {
-        contractAddress: this.mockInitContract.address,
+        contractAddress: this.mockInitContract.smart_contract.address,
         sender: '',
         action: 'transfer_nft',
         content:
@@ -527,7 +559,7 @@ export default class AssetIndexerTest {
           {
             _id: '63fda557271e5f3bc9321148',
             key: '_contract_address',
-            value: this.mockInitContract.address,
+            value: this.mockInitContract.smart_contract.address,
           },
           {
             _id: '63fda557271e5f2e69321149',
@@ -591,7 +623,7 @@ export default class AssetIndexerTest {
   public async testjobHandlerCw721Burn() {
     const mockBurnMsg = [
       {
-        contractAddress: this.mockInitContract.address,
+        contractAddress: this.mockInitContract.smart_contract.address,
         sender: '',
         action: 'burn',
         content: '',
@@ -599,7 +631,7 @@ export default class AssetIndexerTest {
           {
             _id: '63a55d044c1864001244a47b',
             key: '_contract_address',
-            value: this.mockInitContract.address,
+            value: this.mockInitContract.smart_contract.address,
           },
           {
             _id: '63a55d044c1864001244a47c',
@@ -631,7 +663,7 @@ export default class AssetIndexerTest {
         }),
       },
       {
-        contractAddress: this.mockInitContract.address,
+        contractAddress: this.mockInitContract.smart_contract.address,
         sender: '',
         action: 'burn',
         content: '',
@@ -639,7 +671,7 @@ export default class AssetIndexerTest {
           {
             _id: '63a55d044c1864001244a47b',
             key: '_contract_address',
-            value: this.mockInitContract.address,
+            value: this.mockInitContract.smart_contract.address,
           },
           {
             _id: '63a55d044c1864001244a47c',
@@ -694,7 +726,7 @@ export default class AssetIndexerTest {
   public async testhandlerCw721ReMint() {
     const mockContractMintMsg = [
       {
-        contractAddress: this.mockInitContract.address,
+        contractAddress: this.mockInitContract.smart_contract.address,
         sender: '',
         action: 'mint',
         content:
@@ -703,7 +735,7 @@ export default class AssetIndexerTest {
           {
             _id: '63fda557271e5f3bc9321148',
             key: '_contract_address',
-            value: this.mockInitContract.address,
+            value: this.mockInitContract.smart_contract.address,
           },
           {
             _id: '63fda557271e5f2e69321149',
@@ -771,24 +803,30 @@ export default class AssetIndexerTest {
 
   @Test('test handlerCw721Instantiate')
   public async testHandlerCw721Instantiate() {
-    const content = {
-      name: 'Base Contract 2',
-      symbol: 'BASEZ',
-      minter: 'aura1ahwqzlu0wzd0uyp53x6l2ygftxmquy57tz6jj5',
-    };
+    const mockContractsInfo = [
+      {
+        address: this.mockInitContract.smart_contract.address,
+        name: this.mockInitContract.smart_contract.name,
+        symbol: 'symbol_1',
+        minter: 'minter_1',
+      },
+    ];
+    this.cw721HandlerService.getContractsInfo = jest.fn(() =>
+      Promise.resolve(mockContractsInfo)
+    );
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     const codeId: number = this.codeId.code_id;
     const mockInstantiateMsg = [
       {
-        contractAddress: 'phamphong_test_instantiate',
+        contractAddress: this.mockInitContract.smart_contract.address,
         sender: '',
         action: 'instantiate',
-        content: JSON.stringify(content),
+        content: '',
         wasm_attributes: [],
         tx: Transaction.fromJson({
-          height: 300000,
-          hash: '',
+          height: this.mockInitContract.smart_contract.instantiate_height,
+          hash: this.mockInitContract.smart_contract.instantiate_hash,
           code: 0,
           gas_used: '123035',
           gas_wanted: '141106',
@@ -803,12 +841,18 @@ export default class AssetIndexerTest {
     ];
     await this.cw721HandlerService.handleInstantiateMsgs(mockInstantiateMsg);
     const contract = await CW721Contract.query()
-      .where('address', mockInstantiateMsg[0].contractAddress)
+      .alias('cw721_contract')
+      .withGraphJoined('smart_contract')
+      .where('cw721_contract.contract_id', this.mockInitContract.contract_id)
+      .select(
+        'smart_contract.name as name',
+        'cw721_contract.minter as minter',
+        'cw721_contract.symbol as symbol'
+      )
       .first();
-    expect(contract?.minter).toEqual(content.minter);
-    expect(contract?.name).toEqual(content.name);
-    expect(contract?.symbol).toEqual(content.symbol);
-    expect(contract?.code_id).toEqual(mockInstantiateMsg[0].code_id);
+    expect(contract?.minter).toEqual(mockContractsInfo[0].minter);
+    expect(contract?.symbol).toEqual(mockContractsInfo[0].symbol);
+    expect(contract?.name).toEqual(mockContractsInfo[0].name);
   }
 
   @Test('test handle conflict')
@@ -840,46 +884,48 @@ export default class AssetIndexerTest {
     expect(token.id).toEqual(mergeToken.id);
   }
 
-  @Test('test getIdsForTokens')
-  public async testGetIdsForTokens() {
+  @Test('test getCw721TokensRecords')
+  public async getCw721TokensRecords() {
     const mockTokens = [
       {
-        contractAddress: this.mockInitContract.address,
+        contractAddress: this.mockInitContract.smart_contract.address,
         onchainTokenId: 'token_id1',
         id: 1,
       },
       {
-        contractAddress: this.mockInitContract.address,
+        contractAddress: this.mockInitContract.smart_contract.address,
         onchainTokenId: 'token_id2',
         id: 2,
       },
       {
-        contractAddress: this.mockInitContract.address,
+        contractAddress: this.mockInitContract.smart_contract.address,
         onchainTokenId: 'bump',
         id: 5,
       },
       {
-        contractAddress: this.mockInitContract.address,
+        contractAddress: this.mockInitContract.smart_contract.address,
         onchainTokenId: 'nunu',
         id: 6,
       },
       {
-        contractAddress: this.mockInitContract.address,
+        contractAddress: this.mockInitContract.smart_contract.address,
         onchainTokenId: 'test conflict',
         id: 8,
       },
       {
-        contractAddress: this.mockInitContract_2.address,
+        contractAddress: this.mockInitContract_2.smart_contract.address,
         onchainTokenId: 'token_id1',
         id: 3,
       },
       {
-        contractAddress: this.mockInitContract_2.address,
+        contractAddress: this.mockInitContract_2.smart_contract.address,
         onchainTokenId: 'token_id3',
         id: null,
       },
     ];
-    const results = await this.cw721HandlerService.getIdsForTokens(mockTokens);
+    const results = await this.cw721HandlerService.getCw721TokensRecords(
+      mockTokens
+    );
     mockTokens.forEach((token, index) => {
       const result = results.find(
         (item) =>
@@ -896,11 +942,22 @@ export default class AssetIndexerTest {
     });
   }
 
+  @Test('test getCw721ContractsRecords')
+  public async testGetCw721ContractsRecords() {
+    const results = await this.cw721HandlerService.getCw721ContractsRecords([
+      this.mockInitContract.smart_contract.address,
+    ]);
+    expect(results[0].address).toEqual(
+      this.mockInitContract.smart_contract.address
+    );
+    expect(results[0].id).toEqual(1);
+  }
+
   @Test('test handle activity')
   public async testHandleActivity() {
     const mockActivityMsgs = [
       {
-        contractAddress: this.mockInitContract.address,
+        contractAddress: this.mockInitContract.smart_contract.address,
         sender: '',
         action: 'mint',
         content:
@@ -909,7 +966,7 @@ export default class AssetIndexerTest {
           {
             _id: '63fda557271e5f3bc9321148',
             key: '_contract_address',
-            value: this.mockInitContract.address,
+            value: this.mockInitContract.smart_contract.address,
           },
           {
             _id: '63fda557271e5f2e69321149',
@@ -946,7 +1003,7 @@ export default class AssetIndexerTest {
         }),
       },
       {
-        contractAddress: this.mockInitContract.address,
+        contractAddress: this.mockInitContract.smart_contract.address,
         sender: '',
         action: 'transfer_nft',
         content: '',
@@ -954,7 +1011,7 @@ export default class AssetIndexerTest {
           {
             _id: '63fda557271e5f3bc9321148',
             key: '_contract_address',
-            value: this.mockInitContract.address,
+            value: this.mockInitContract.smart_contract.address,
           },
           {
             _id: '63fda557271e5f2e69321149',
@@ -986,7 +1043,7 @@ export default class AssetIndexerTest {
         }),
       },
       {
-        contractAddress: this.mockInitContract.address,
+        contractAddress: this.mockInitContract.smart_contract.address,
         sender: '',
         action: 'burn',
         content: '',
@@ -994,7 +1051,7 @@ export default class AssetIndexerTest {
           {
             _id: '63a55d044c1864001244a47b',
             key: '_contract_address',
-            value: this.mockInitContract.address,
+            value: this.mockInitContract.smart_contract.address,
           },
           {
             _id: '63a55d044c1864001244a47c',
