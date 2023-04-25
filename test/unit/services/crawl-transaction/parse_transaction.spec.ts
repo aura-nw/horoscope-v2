@@ -1,4 +1,4 @@
-import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
+import { BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { Log } from '@cosmjs/stargate/build/logs';
 import { Attribute, Event } from '@cosmjs/stargate/build/events';
@@ -126,9 +126,11 @@ export default class CrawlTransactionTest {
         });
       });
     }
+    // }
+    // );
   }
 
-  @AfterAll()
+  @BeforeAll()
   async tearDown() {
     // await Promise.all([
     //   this.crawlTxService
