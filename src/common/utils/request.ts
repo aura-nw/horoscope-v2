@@ -5,6 +5,6 @@ export interface IAddressesParam {
 export interface IProposalIdParam {
   proposalId: number;
 }
-export interface ITxMsgIdsParam {
-  txMsgIds: number[];
+export interface ITxIdsParam {
+  txIds: number[];
 }

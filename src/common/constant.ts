@@ -66,10 +66,6 @@ export const SERVICE = {
     HandleStakeEventService: {
       key: 'HandleStakeEventService',
       name: 'v1.HandleStakeEventService',
-      UpdatePowerEvent: {
-        key: 'UpdatePowerEvent',
-        path: 'v1.HandleStakeEventService.UpdatePowerEvent',
-      },
     },
     CrawlValidatorService: {
       key: 'CrawlValidatorService',
