@@ -31,6 +31,11 @@ import config from '../../../config.json' assert { type: 'json' };
 export default class CrawlGenesisService extends BullableService {
   private _httpBatchClient: HttpBatchClient;
 
+  private genesisJobs: string[] = [
+    BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
+    BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
+  ];
+
   public constructor(public broker: ServiceBroker) {
     super(broker);
     this._httpBatchClient = getHttpBatchClient();
@@ -110,28 +115,19 @@ export default class CrawlGenesisService extends BullableService {
       .merge()
       .returning('id');
 
-    this.createJob(
-      BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
-      'crawl',
-      {},
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-      }
-    );
-    this.createJob(
-      BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
-      'crawl',
-      {},
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-      }
-    );
+    this.genesisJobs.forEach(async (job) => {
+      await this.createJob(
+        job,
+        'crawl',
+        {},
+        {
+          removeOnComplete: true,
+          removeOnFail: {
+            count: 3,
+          },
+        }
+      );
+    });
   }
 
   @QueueHandler({
@@ -295,26 +291,6 @@ export default class CrawlGenesisService extends BullableService {
     await this.terminateProcess();
   }
 
-  private async terminateProcess() {
-    const checkpoint = await BlockCheckpoint.query().whereIn('job_name', [
-      BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
-      BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
-    ]);
-
-    if (
-      checkpoint.find(
-        (check) => check.job_name === BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT
-      )?.height !== 1 ||
-      checkpoint.find(
-        (check) => check.job_name === BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR
-      )?.height !== 1
-    ) {
-      this.logger.info('Crawl genesis jobs are still processing');
-      return;
-    }
-    process.exit();
-  }
-
   private async handleIbcDenom(accounts: Account[]): Promise<Account[]> {
     if (accounts.length === 0) return [];
 
@@ -383,6 +359,22 @@ export default class CrawlGenesisService extends BullableService {
     });
 
     return accounts;
+  }
+
+  private async terminateProcess() {
+    const checkpoint = await BlockCheckpoint.query().whereIn(
+      'job_name',
+      this.genesisJobs
+    );
+
+    if (
+      checkpoint.length < this.genesisJobs.length ||
+      checkpoint.find((check) => check.height !== 1)
+    ) {
+      this.logger.info('Crawl genesis jobs are still processing');
+      return;
+    }
+    process.exit();
   }
 
   public async _start() {
