@@ -2,6 +2,9 @@ export interface IAddressesParam {
   addresses: string[];
 }
 
-export interface ITxMsgIdsParam {
-  txMsgIds: number[];
+export interface IProposalIdParam {
+  proposalId: number;
+}
+export interface ITxIdsParam {
+  txIds: number[];
 }

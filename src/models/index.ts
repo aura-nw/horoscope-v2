@@ -14,3 +14,4 @@ export * from './transaction_message_receiver';
 export * from './power_event';
 export * from './validator';
 export * from './checkpoint';
+export * from './proposal';

@@ -33,7 +33,7 @@ export class Transaction extends BaseModel {
 
   timstamp!: Date;
 
-  data!: JSON;
+  data!: any;
 
   static get tableName() {
     return 'transaction';
