@@ -161,12 +161,14 @@ export default class HandleStakeEventService extends BullableService {
           return powerEvent;
         });
 
-      await PowerEvent.query()
+      if (powerEvents.length > 0) {
+        await PowerEvent.query()
         .insert(powerEvents)
         .catch((error) => {
           this.logger.error("Error insert validator's power events");
           this.logger.error(error);
         });
+      }
 
       updateBlockCheckpoint.height = latestBlock.height;
       await BlockCheckpoint.query()
