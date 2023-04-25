@@ -68,5 +68,8 @@ export class Event extends BaseModel {
     INSTANTIATE: 'instantiate',
     MESSAGE: 'message',
     EXECUTE: 'execute',
+    DELEGATE: 'delegate',
+    REDELEGATE: 'redelegate',
+    UNBOND: 'unbond',
   };
 }

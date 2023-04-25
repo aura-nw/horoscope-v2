@@ -72,8 +72,5 @@ export class EventAttribute extends BaseModel {
     CODE_ID: 'code_id',
     PROPOSAL_ID: 'proposal_id',
     STAKING: 'staking',
-    DELEGATE: 'delegate',
-    REDELEGATE: 'redelegate',
-    UNBOND: 'unbond',
   };
 }

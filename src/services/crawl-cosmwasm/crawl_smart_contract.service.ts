@@ -179,8 +179,7 @@ export default class CrawlSmartContractService extends BullableService {
       (QueryContractInfoResponse | null)[]
     ]
   > {
-    const batchQueriesCw2: any[] = [];
-    const batchQueriesContractInfo: any[] = [];
+    const batchQueries: any[] = [];
 
     addresses.forEach((address) => {
       const requestCw2: QueryRawContractStateRequest = {
@@ -202,15 +201,13 @@ export default class CrawlSmartContractService extends BullableService {
         ).finish()
       );
 
-      batchQueriesCw2.push(
+      batchQueries.push(
         this._httpBatchClient.execute(
           createJsonRpcRequest('abci_query', {
             path: ABCI_QUERY_PATH.RAW_CONTRACT_STATE,
             data: dataCw2,
           })
-        )
-      );
-      batchQueriesContractInfo.push(
+        ),
         this._httpBatchClient.execute(
           createJsonRpcRequest('abci_query', {
             path: ABCI_QUERY_PATH.CONTRACT_INFO,
@@ -220,28 +217,26 @@ export default class CrawlSmartContractService extends BullableService {
       );
     });
 
-    const resultCw2: JsonRpcSuccessResponse[] = await Promise.all(
-      batchQueriesCw2
-    );
-    const resultContractInfo: JsonRpcSuccessResponse[] = await Promise.all(
-      batchQueriesContractInfo
-    );
+    const results: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
 
-    const contractCw2s = resultCw2.map((res: JsonRpcSuccessResponse) =>
-      res.result.response.value
-        ? cosmwasm.wasm.v1.QueryRawContractStateResponse.decode(
-            fromBase64(res.result.response.value)
-          )
-        : null
-    );
-    const contractInfos = resultContractInfo.map(
-      (res: JsonRpcSuccessResponse) =>
-        res.result.response.value
-          ? cosmwasm.wasm.v1.QueryContractInfoResponse.decode(
-              fromBase64(res.result.response.value)
+    const contractCw2s: any[] = [];
+    const contractInfos: any[] = [];
+    for (let i = 0; i < results.length; i += 2) {
+      contractCw2s.push(
+        results[i].result.response.value
+          ? cosmwasm.wasm.v1.QueryRawContractStateResponse.decode(
+              fromBase64(results[i].result.response.value)
             )
           : null
-    );
+      );
+      contractInfos.push(
+        results[i + 1].result.response.value
+          ? cosmwasm.wasm.v1.QueryContractInfoResponse.decode(
+              fromBase64(results[i + 1].result.response.value)
+            )
+          : null
+      );
+    }
 
     return [contractCw2s, contractInfos];
   }

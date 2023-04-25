@@ -48,7 +48,6 @@ export default class CrawlGenesisTest {
       Validator.query().delete(true),
       knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE'),
     ]);
-    await Account.query().delete(true);
     execSync('cp ./test/unit/services/crawl-genesis/genesis.txt .');
   }
 
