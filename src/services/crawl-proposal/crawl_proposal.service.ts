@@ -19,6 +19,7 @@ import {
   getHttpBatchClient,
   getLcdClient,
   IAuraJSClientFactory,
+  MSG_TYPE,
   SERVICE,
 } from '../../common';
 import {
@@ -29,6 +30,7 @@ import {
   Transaction,
   EventAttribute,
 } from '../../models';
+import knex from '../../common/utils/db_connection';
 
 @Service({
   name: SERVICE.V1.CrawlProposalService.key,
@@ -199,30 +201,19 @@ export default class CrawlProposalService extends BullableService {
   }
 
   private async getProposerBySearchTx(proposalId: number) {
-    const tx = await Transaction.query()
-      .joinRelated('events.[attributes]')
+    const tx: any = await Transaction.query()
+      .joinRelated('[messages, events.[attributes]]')
       .where('transaction.code', 0)
+      .andWhere('messages.type', MSG_TYPE.MSG_SUBMIT_PROPOSAL)
       .andWhere('events.type', EventAttribute.EVENT_KEY.SUBMIT_PROPOSAL)
       .andWhere('events:attributes.key', EventAttribute.EVENT_KEY.PROPOSAL_ID)
       .andWhere('events:attributes.value', proposalId.toString())
-      .select('transaction.data')
+      .andWhere(knex.raw('messages.index = events.tx_msg_index'))
+      .select('messages.content')
       .first();
 
-    const msgIndex =
-      tx?.data.tx_response.logs.find(
-        (log: any) =>
-          log.events
-            .find(
-              (event: any) =>
-                event.type === EventAttribute.EVENT_KEY.SUBMIT_PROPOSAL
-            )
-            .attributes.find(
-              (attr: any) => attr.key === EventAttribute.EVENT_KEY.PROPOSAL_ID
-            ).value === proposalId.toString()
-      ).msg_index || 0;
-
-    const initialDeposit = tx?.data.tx.body.messages[msgIndex].initial_deposit;
-    const proposerAddress = tx?.data.tx.body.messages[msgIndex].proposer;
+    const initialDeposit = tx?.content.initial_deposit;
+    const proposerAddress = tx?.content.proposer;
     const proposerId = (
       await Account.query().findOne('address', proposerAddress)
     )?.id;
