@@ -27,6 +27,7 @@ import {
   BlockCheckpoint,
   Proposal,
   Transaction,
+  Event,
   EventAttribute,
 } from '../../models';
 
@@ -63,6 +64,9 @@ export default class CrawlProposalService extends BullableService {
         .findOne('job_name', BULL_JOB_NAME.CRAWL_PROPOSAL),
       Block.query().select('height').findOne({}).orderBy('height', 'desc'),
     ]);
+    this.logger.info(
+      `Block Checkpoint: ${JSON.stringify(crawlProposalBlockCheckpoint)}`
+    );
 
     let lastHeight = 0;
     let updateBlockCheckpoint: BlockCheckpoint;
@@ -90,7 +94,7 @@ export default class CrawlProposalService extends BullableService {
           .andWhere('transaction.code', 0)
           .andWhere(
             'events:attributes.key',
-            EventAttribute.EVENT_KEY.PROPOSAL_ID
+            EventAttribute.ATTRIBUTE_KEY.PROPOSAL_ID
           )
           .select(
             'transaction.id',
@@ -173,15 +177,16 @@ export default class CrawlProposalService extends BullableService {
           })
         );
 
-        await Proposal.query()
-          .insert(listProposals)
-          .onConflict('proposal_id')
-          .merge()
-          .returning('proposal_id')
-          .catch((error) => {
-            this.logger.error('Error insert or update proposals');
-            this.logger.error(error);
-          });
+        if (listProposals.length > 0)
+          await Proposal.query()
+            .insert(listProposals)
+            .onConflict('proposal_id')
+            .merge()
+            .returning('proposal_id')
+            .catch((error) => {
+              this.logger.error('Error insert or update proposals');
+              this.logger.error(error);
+            });
       }
 
       updateBlockCheckpoint.height = latestBlock.height;
@@ -197,8 +202,11 @@ export default class CrawlProposalService extends BullableService {
     const tx = await Transaction.query()
       .joinRelated('events.[attributes]')
       .where('transaction.code', 0)
-      .andWhere('events.type', EventAttribute.EVENT_KEY.SUBMIT_PROPOSAL)
-      .andWhere('events:attributes.key', EventAttribute.EVENT_KEY.PROPOSAL_ID)
+      .andWhere('events.type', Event.EVENT_TYPE.SUBMIT_PROPOSAL)
+      .andWhere(
+        'events:attributes.key',
+        EventAttribute.ATTRIBUTE_KEY.PROPOSAL_ID
+      )
       .andWhere('events:attributes.value', proposalId.toString())
       .select('transaction.data')
       .limit(1)
@@ -207,12 +215,9 @@ export default class CrawlProposalService extends BullableService {
     const msgIndex = tx[0].data.tx_response.logs.find(
       (log: any) =>
         log.events
-          .find(
-            (event: any) =>
-              event.type === EventAttribute.EVENT_KEY.SUBMIT_PROPOSAL
-          )
+          .find((event: any) => event.type === Event.EVENT_TYPE.SUBMIT_PROPOSAL)
           .attributes.find(
-            (attr: any) => attr.key === EventAttribute.EVENT_KEY.PROPOSAL_ID
+            (attr: any) => attr.key === EventAttribute.ATTRIBUTE_KEY.PROPOSAL_ID
           ).value === proposalId.toString()
     ).msg_index;
 
@@ -239,11 +244,11 @@ export default class CrawlProposalService extends BullableService {
     const now = new Date(new Date().getSeconds() - 10);
 
     const depositProposals = await Proposal.query()
-      // .patch({
-      //   status: Proposal.STATUS.PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT,
-      // })
       .where('status', Proposal.STATUS.PROPOSAL_STATUS_DEPOSIT_PERIOD)
       .andWhere('deposit_end_time', '<=', now);
+    this.logger.info(
+      `List not enough deposit proposals: ${JSON.stringify(depositProposals)}`
+    );
 
     depositProposals.forEach((proposal: Proposal) => {
       const request: QueryProposalRequest = {
@@ -284,17 +289,18 @@ export default class CrawlProposalService extends BullableService {
         proposal.status = Proposal.STATUS.PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT;
     });
 
-    await Proposal.query()
-      .insert(depositProposals)
-      .onConflict('proposal_id')
-      .merge()
-      .returning('proposal_id')
-      .catch((error) => {
-        this.logger.error(
-          'Error update status for not enough deposit proposals'
-        );
-        this.logger.error(error);
-      });
+    if (depositProposals.length > 0)
+      await Proposal.query()
+        .insert(depositProposals)
+        .onConflict('proposal_id')
+        .merge()
+        .returning('proposal_id')
+        .catch((error) => {
+          this.logger.error(
+            'Error update status for not enough deposit proposals'
+          );
+          this.logger.error(error);
+        });
   }
 
   public async _start() {

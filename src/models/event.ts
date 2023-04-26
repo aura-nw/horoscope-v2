@@ -54,12 +54,6 @@ export class Event extends BaseModel {
     };
   }
 
-  static EVENT_TYPE = {
-    WASM: 'wasm',
-    EXECUTE: 'execute',
-    INSTANTIATE: 'instantiate',
-  };
-
   static get SOURCE() {
     return {
       BEGIN_BLOCK_EVENT: 'BEGIN_BLOCK_EVENT',
@@ -67,4 +61,16 @@ export class Event extends BaseModel {
       TX_EVENT: 'TX_EVENT',
     };
   }
+
+  static EVENT_TYPE = {
+    STORE_CODE: 'store_code',
+    SUBMIT_PROPOSAL: 'submit_proposal',
+    INSTANTIATE: 'instantiate',
+    MESSAGE: 'message',
+    EXECUTE: 'execute',
+    DELEGATE: 'delegate',
+    REDELEGATE: 'redelegate',
+    UNBOND: 'unbond',
+    WASM: 'wasm',
+  };
 }

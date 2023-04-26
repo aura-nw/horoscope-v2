@@ -6,6 +6,7 @@ import { BULL_JOB_NAME, SERVICE } from '../../common';
 import {
   PowerEvent,
   Validator,
+  Event,
   EventAttribute,
   Transaction,
   BlockCheckpoint,
@@ -20,9 +21,9 @@ import config from '../../../config.json' assert { type: 'json' };
 })
 export default class HandleStakeEventService extends BullableService {
   private eventStakes = [
-    EventAttribute.EVENT_KEY.DELEGATE,
-    EventAttribute.EVENT_KEY.REDELEGATE,
-    EventAttribute.EVENT_KEY.UNBOND,
+    Event.EVENT_TYPE.DELEGATE,
+    Event.EVENT_TYPE.REDELEGATE,
+    Event.EVENT_TYPE.UNBOND,
   ];
 
   public constructor(public broker: ServiceBroker) {
@@ -81,11 +82,7 @@ export default class HandleStakeEventService extends BullableService {
             'events:attributes.key',
             'events:attributes.value'
           )
-          .whereIn('events.type', [
-            EventAttribute.EVENT_KEY.DELEGATE,
-            EventAttribute.EVENT_KEY.REDELEGATE,
-            EventAttribute.EVENT_KEY.UNBOND,
-          ])
+          .whereIn('events.type', this.eventStakes)
           .andWhere('transaction.height', '>', lastHeight)
           .andWhere('transaction.height', '<=', latestBlock.height)
           .andWhere('transaction.code', 0)
@@ -111,8 +108,8 @@ export default class HandleStakeEventService extends BullableService {
         .filter(
           (event) =>
             this.eventStakes.includes(event.type) &&
-            (event.key === EventAttribute.EVENT_KEY.VALIDATOR ||
-              event.key === EventAttribute.EVENT_KEY.SOURCE_VALIDATOR)
+            (event.key === EventAttribute.ATTRIBUTE_KEY.VALIDATOR ||
+              event.key === EventAttribute.ATTRIBUTE_KEY.SOURCE_VALIDATOR)
         )
         .map((stakeEvent) => {
           this.logger.info(`Handle event stake ${JSON.stringify(stakeEvent)}`);
@@ -133,7 +130,7 @@ export default class HandleStakeEventService extends BullableService {
                   stakeEvents.find(
                     (event) =>
                       event.key ===
-                      EventAttribute.EVENT_KEY.DESTINATION_VALIDATOR
+                      EventAttribute.ATTRIBUTE_KEY.DESTINATION_VALIDATOR
                   ).value
                 ].id;
               break;
@@ -152,7 +149,7 @@ export default class HandleStakeEventService extends BullableService {
             validator_dst_id: validatorDstId,
             amount: parseCoins(
               stakeEvents.find(
-                (event) => event.key === EventAttribute.EVENT_KEY.AMOUNT
+                (event) => event.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT
               ).value
             )[0].amount,
             time: stakeEvent.timestamp.toISOString(),
@@ -161,12 +158,13 @@ export default class HandleStakeEventService extends BullableService {
           return powerEvent;
         });
 
-      await PowerEvent.query()
-        .insert(powerEvents)
-        .catch((error) => {
-          this.logger.error("Error insert validator's power events");
-          this.logger.error(error);
-        });
+      if (powerEvents.length > 0)
+        await PowerEvent.query()
+          .insert(powerEvents)
+          .catch((error) => {
+            this.logger.error("Error insert validator's power events");
+            this.logger.error(error);
+          });
 
       updateBlockCheckpoint.height = latestBlock.height;
       await BlockCheckpoint.query()

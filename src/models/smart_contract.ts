@@ -1,7 +1,7 @@
 /* eslint-disable import/no-cycle */
 import { Model } from 'objection';
 import BaseModel from './base';
-import { CodeId } from './code_id';
+import { Code } from './code';
 
 export class SmartContract extends BaseModel {
   id!: number;
@@ -50,10 +50,10 @@ export class SmartContract extends BaseModel {
     return {
       code: {
         relation: Model.BelongsToOneRelation,
-        modelClass: CodeId,
+        modelClass: Code,
         join: {
           from: 'smart_contract.code_id',
-          to: 'code_id.code_id',
+          to: 'code.code_id',
         },
       },
     };
