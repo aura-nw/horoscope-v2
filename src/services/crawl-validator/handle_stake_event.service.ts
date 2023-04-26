@@ -1,15 +1,15 @@
-import {
-  Action,
-  Service,
-} from '@ourparentcenter/moleculer-decorators-extended';
-import { Context, ServiceBroker } from 'moleculer';
+import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+import { ServiceBroker } from 'moleculer';
 import _ from 'lodash';
-import { BULL_JOB_NAME, ITxMsgIdsParam, SERVICE } from '../../common';
+import { parseCoins } from '@cosmjs/proto-signing';
+import { BULL_JOB_NAME, SERVICE } from '../../common';
 import {
-  Account,
-  TransactionMessage,
   PowerEvent,
   Validator,
+  EventAttribute,
+  Transaction,
+  BlockCheckpoint,
+  Block,
 } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
@@ -19,30 +19,14 @@ import config from '../../../config.json' assert { type: 'json' };
   version: 1,
 })
 export default class HandleStakeEventService extends BullableService {
+  private eventStakes = [
+    EventAttribute.EVENT_KEY.DELEGATE,
+    EventAttribute.EVENT_KEY.REDELEGATE,
+    EventAttribute.EVENT_KEY.UNBOND,
+  ];
+
   public constructor(public broker: ServiceBroker) {
     super(broker);
-  }
-
-  @Action({
-    name: SERVICE.V1.HandleStakeEventService.UpdatePowerEvent.key,
-    params: {
-      txMsgIds: 'number[]',
-    },
-  })
-  public actionUpdatePowerEvent(ctx: Context<ITxMsgIdsParam>) {
-    this.createJob(
-      BULL_JOB_NAME.HANDLE_STAKE_EVENT,
-      'crawl',
-      {
-        txMsgIds: ctx.params.txMsgIds,
-      },
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-      }
-    );
   }
 
   @QueueHandler({
@@ -50,68 +34,165 @@ export default class HandleStakeEventService extends BullableService {
     jobType: 'crawl',
     prefix: `horoscope-v2-${config.chainId}`,
   })
-  public async handleJob(_payload: ITxMsgIdsParam): Promise<void> {
-    const stakeTxMsgs: any[] = await TransactionMessage.query()
-      .joinRelated('transaction')
-      .select(
-        'transaction_message.*',
-        'transaction.timestamp',
-        'transaction.height'
-      )
-      .whereIn('transaction_message.id', _payload.txMsgIds)
-      .andWhere('transaction.code', 0);
-
-    const [validators, accounts]: [Validator[], Account[]] = await Promise.all([
-      Validator.query(),
-      Account.query().whereIn(
-        'address',
-        stakeTxMsgs.map((tx) => tx.sender)
-      ),
+  public async handleJob(_payload: object): Promise<void> {
+    const [stakeEventCheckpoint, latestBlock]: [
+      BlockCheckpoint | undefined,
+      Block | undefined
+    ] = await Promise.all([
+      BlockCheckpoint.query()
+        .select('*')
+        .findOne('job_name', BULL_JOB_NAME.HANDLE_STAKE_EVENT),
+      Block.query().select('height').findOne({}).orderBy('height', 'desc'),
     ]);
-    const validatorKeys = _.keyBy(validators, 'operator_address');
-    const accountKeys = _.keyBy(accounts, 'address');
+    this.logger.info(
+      `Block Checkpoint: ${JSON.stringify(stakeEventCheckpoint)}`
+    );
 
-    const powerEvents: PowerEvent[] = stakeTxMsgs.map((stake) => {
-      this.logger.info(`Handle message stake ${JSON.stringify(stake)}`);
+    let lastHeight = 0;
+    let updateBlockCheckpoint: BlockCheckpoint;
+    if (stakeEventCheckpoint) {
+      lastHeight = stakeEventCheckpoint.height;
+      updateBlockCheckpoint = stakeEventCheckpoint;
+    } else
+      updateBlockCheckpoint = BlockCheckpoint.fromJson({
+        job_name: BULL_JOB_NAME.HANDLE_STAKE_EVENT,
+        height: 0,
+      });
 
-      let validatorSrcId;
-      let validatorDstId;
-      switch (stake.type) {
-        case PowerEvent.TYPES.DELEGATE:
-          validatorDstId = validatorKeys[stake.content.validator_address].id;
-          break;
-        case PowerEvent.TYPES.REDELEGATE:
-          validatorSrcId =
-            validatorKeys[stake.content.validator_src_address].id;
-          validatorDstId =
-            validatorKeys[stake.content.validator_dst_address].id;
-          break;
-        case PowerEvent.TYPES.UNBOND:
-          validatorSrcId = validatorKeys[stake.content.validator_address].id;
-          break;
-        default:
-          break;
+    if (latestBlock) {
+      if (latestBlock.height === lastHeight) return;
+
+      const stakeTxs: any[] = [];
+      let page = 0;
+      let done = false;
+      this.logger.info(
+        `Start query Tx from height ${lastHeight} to ${latestBlock.height}`
+      );
+      while (!done) {
+        // eslint-disable-next-line no-await-in-loop
+        const resultTx = await Transaction.query()
+          .joinRelated('events.[attributes]')
+          .select(
+            'transaction.id',
+            'transaction.timestamp',
+            'transaction.height',
+            'events.id as event_id',
+            'events.type',
+            'events:attributes.key',
+            'events:attributes.value'
+          )
+          .whereIn('events.type', [
+            EventAttribute.EVENT_KEY.DELEGATE,
+            EventAttribute.EVENT_KEY.REDELEGATE,
+            EventAttribute.EVENT_KEY.UNBOND,
+          ])
+          .andWhere('transaction.height', '>', lastHeight)
+          .andWhere('transaction.height', '<=', latestBlock.height)
+          .andWhere('transaction.code', 0)
+          .page(page, 1000);
+
+        this.logger.info(
+          `Query Tx from height ${lastHeight} to ${
+            latestBlock.height
+          } at page ${page + 1}`
+        );
+
+        if (resultTx.results.length > 0) {
+          stakeTxs.push(...resultTx.results);
+
+          page += 1;
+        } else done = true;
       }
 
-      const powerEvent: PowerEvent = PowerEvent.fromJson({
-        tx_id: stake.tx_id,
-        height: stake.height,
-        type: stake.type,
-        delegator_id: accountKeys[stake.sender].id,
-        validator_src_id: validatorSrcId,
-        validator_dst_id: validatorDstId,
-        amount: stake.content.amount.amount,
-        time: stake.timestamp.toISOString(),
-      });
+      const validators: Validator[] = await Validator.query();
+      const validatorKeys = _.keyBy(validators, 'operator_address');
 
-      return powerEvent;
-    });
+      const powerEvents: PowerEvent[] = stakeTxs
+        .filter(
+          (event) =>
+            this.eventStakes.includes(event.type) &&
+            (event.key === EventAttribute.EVENT_KEY.VALIDATOR ||
+              event.key === EventAttribute.EVENT_KEY.SOURCE_VALIDATOR)
+        )
+        .map((stakeEvent) => {
+          this.logger.info(`Handle event stake ${JSON.stringify(stakeEvent)}`);
+          const stakeEvents = stakeTxs.filter(
+            (tx) => tx.event_id === stakeEvent.event_id
+          );
 
-    await PowerEvent.query()
-      .insert(powerEvents)
-      .catch((error) => {
-        this.logger.error("Error insert validator's power events");
-        this.logger.error(error);
-      });
+          let validatorSrcId;
+          let validatorDstId;
+          switch (stakeEvent.type) {
+            case PowerEvent.TYPES.DELEGATE:
+              validatorDstId = validatorKeys[stakeEvent.value].id;
+              break;
+            case PowerEvent.TYPES.REDELEGATE:
+              validatorSrcId = validatorKeys[stakeEvent.value].id;
+              validatorDstId =
+                validatorKeys[
+                  stakeEvents.find(
+                    (event) =>
+                      event.key ===
+                      EventAttribute.EVENT_KEY.DESTINATION_VALIDATOR
+                  ).value
+                ].id;
+              break;
+            case PowerEvent.TYPES.UNBOND:
+              validatorSrcId = validatorKeys[stakeEvent.value].id;
+              break;
+            default:
+              break;
+          }
+
+          const powerEvent: PowerEvent = PowerEvent.fromJson({
+            tx_id: stakeEvent.id,
+            height: stakeEvent.height,
+            type: stakeEvent.type,
+            validator_src_id: validatorSrcId,
+            validator_dst_id: validatorDstId,
+            amount: parseCoins(
+              stakeEvents.find(
+                (event) => event.key === EventAttribute.EVENT_KEY.AMOUNT
+              ).value
+            )[0].amount,
+            time: stakeEvent.timestamp.toISOString(),
+          });
+
+          return powerEvent;
+        });
+
+      await PowerEvent.query()
+        .insert(powerEvents)
+        .catch((error) => {
+          this.logger.error("Error insert validator's power events");
+          this.logger.error(error);
+        });
+
+      updateBlockCheckpoint.height = latestBlock.height;
+      await BlockCheckpoint.query()
+        .insert(updateBlockCheckpoint)
+        .onConflict('job_name')
+        .merge()
+        .returning('id');
+    }
+  }
+
+  public async _start() {
+    this.createJob(
+      BULL_JOB_NAME.HANDLE_STAKE_EVENT,
+      'crawl',
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        repeat: {
+          every: config.handleStakeEvent.millisecondCrawl,
+        },
+      }
+    );
+
+    return super._start();
   }
 }

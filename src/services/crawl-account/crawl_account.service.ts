@@ -502,7 +502,7 @@ export default class CrawlAccountService extends BullableService {
     const now = Math.floor(
       new Date().setSeconds(new Date().getSeconds() - 6) / 1000
     );
-    let offset = 0;
+    let page = 0;
     let done = false;
     while (!done) {
       const result = await Account.query()
@@ -522,11 +522,11 @@ export default class CrawlAccountService extends BullableService {
             .andWhere('vesting.end_time', '>', now - 60)
         )
         .select('account.address')
-        .page(offset, 1000);
+        .page(page, 1000);
 
       if (result.results.length > 0) {
         result.results.map((res) => addresses.push(res.address));
-        offset += 1;
+        page += 1;
       } else done = true;
     }
 
