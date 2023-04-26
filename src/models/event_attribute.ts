@@ -16,6 +16,8 @@ export class EventAttribute extends BaseModel {
 
   tx_id!: number;
 
+  index!: number;
+
   static get tableName() {
     return 'event_attribute';
   }
@@ -31,6 +33,7 @@ export class EventAttribute extends BaseModel {
         composite_key: { type: 'string' },
         block_height: { type: 'number' },
         tx_id: { type: 'number' },
+        index: { type: 'number' },
       },
     };
   }
