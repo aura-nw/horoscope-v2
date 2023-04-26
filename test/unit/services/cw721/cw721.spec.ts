@@ -8,7 +8,7 @@ import knex from '../../../../src/common/utils/db_connection';
 import { Block, Transaction } from '../../../../src/models';
 import config from '../../../../config.json' assert { type: 'json' };
 import Cw721HandlerService from '../../../../src/services/cw721/cw721.service';
-import { CodeId } from '../../../../src/models/code_id';
+import { Code } from '../../../../src/models/code';
 
 @Describe('Test cw721 service')
 export default class AssetIndexerTest {
@@ -253,7 +253,7 @@ export default class AssetIndexerTest {
   txInsertInstantiate = {};
 
   codeId = {
-    ...CodeId.fromJson({
+    ...Code.fromJson({
       creator: 'code_id_creator',
       code_id: 100,
       data_hash: 'code_id_data_hash',
@@ -292,11 +292,11 @@ export default class AssetIndexerTest {
     ]);
     await this.broker.start();
     await knex.raw(
-      'TRUNCATE TABLE event_attribute, transaction_message, event, transaction, block, block_checkpoint, cw721_token, cw721_contract, cw721_activity, code_id RESTART IDENTITY CASCADE'
+      'TRUNCATE TABLE event_attribute, transaction_message, event, transaction, block, block_checkpoint, cw721_token, cw721_contract, cw721_activity, code RESTART IDENTITY CASCADE'
     );
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);
-    await CodeId.query().insertGraph(this.codeId);
+    await Code.query().insertGraph(this.codeId);
     await CW721Contract.query().insertGraph(this.mockInitContract);
     await CW721Contract.query().insertGraph(this.mockInitContract_2);
   }

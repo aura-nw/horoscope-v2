@@ -92,11 +92,11 @@ export default class Cw721HandlerService extends BullableService {
     for (const transferMsg of transferMsgs) {
       const recipient = this.getAttributeFrom(
         transferMsg.wasm_attributes,
-        EventAttribute.EVENT_KEY.RECIPIENT
+        EventAttribute.ATTRIBUTE_KEY.RECIPIENT
       );
       const tokenId = this.getAttributeFrom(
         transferMsg.wasm_attributes,
-        EventAttribute.EVENT_KEY.TOKEN_ID
+        EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
       );
       // find the id for correspond smart contract
       const cw721ContractId = cw721ContractDbRecords.find(
@@ -135,7 +135,7 @@ export default class Cw721HandlerService extends BullableService {
       const newTokens = mintMsgs.map((mintMsg) => {
         const tokenId = this.getAttributeFrom(
           mintMsg.wasm_attributes,
-          EventAttribute.EVENT_KEY.TOKEN_ID
+          EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
         );
         const tokenUri = JSON.parse(mintMsg.content)[CW721_ACTION.MINT]
           ?.token_uri;
@@ -155,7 +155,7 @@ export default class Cw721HandlerService extends BullableService {
           extension,
           owner: this.getAttributeFrom(
             mintMsg.wasm_attributes,
-            EventAttribute.EVENT_KEY.OWNER
+            EventAttribute.ATTRIBUTE_KEY.OWNER
           ),
           cw721_contract_id: cw721ContractId,
           last_updated_height: mintMsg.tx.height,
@@ -192,7 +192,7 @@ export default class Cw721HandlerService extends BullableService {
           }
           const tokenId = this.getAttributeFrom(
             burnMsg.wasm_attributes,
-            EventAttribute.EVENT_KEY.TOKEN_ID
+            EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
           );
           if (tokenId) {
             const query = CW721Token.query()
@@ -314,7 +314,7 @@ export default class Cw721HandlerService extends BullableService {
         contractAddress: cw721Msg.contractAddress,
         onchainTokenId: this.getAttributeFrom(
           cw721Msg.wasm_attributes,
-          EventAttribute.EVENT_KEY.TOKEN_ID
+          EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
         ),
       }))
     );
@@ -329,7 +329,7 @@ export default class Cw721HandlerService extends BullableService {
       )?.id;
       const onchainTokenId = this.getAttributeFrom(
         cw721Msg.wasm_attributes,
-        EventAttribute.EVENT_KEY.TOKEN_ID
+        EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
       );
       let cw721TokenId = null;
       if (onchainTokenId) {
@@ -489,7 +489,7 @@ export default class Cw721HandlerService extends BullableService {
           acc: { key: string; value: string }[][],
           curr: { key: string; value: string }
         ) => {
-          if (curr.key === EventAttribute.EVENT_KEY._CONTRACT_ADDRESS) {
+          if (curr.key === EventAttribute.ATTRIBUTE_KEY._CONTRACT_ADDRESS) {
             acc.push([curr]); // start a new sub-array with the current element
           } else if (acc.length > 0) {
             acc[acc.length - 1].push(curr); // add the current element to the last sub-array
@@ -502,12 +502,12 @@ export default class Cw721HandlerService extends BullableService {
       wasmEventByContracts.forEach((wasmSubEventAttrs: any) => {
         const action = this.getAttributeFrom(
           wasmSubEventAttrs,
-          EventAttribute.EVENT_KEY.ACTION
+          EventAttribute.ATTRIBUTE_KEY.ACTION
         );
         execActivities.push({
           contractAddress: this.getAttributeFrom(
             wasmSubEventAttrs,
-            EventAttribute.EVENT_KEY._CONTRACT_ADDRESS
+            EventAttribute.ATTRIBUTE_KEY._CONTRACT_ADDRESS
           ),
           sender,
           action,
@@ -537,7 +537,7 @@ export default class Cw721HandlerService extends BullableService {
           acc: { key: string; value: string }[][],
           curr: { key: string; value: string }
         ) => {
-          if (curr.key === EventAttribute.EVENT_KEY._CONTRACT_ADDRESS) {
+          if (curr.key === EventAttribute.ATTRIBUTE_KEY._CONTRACT_ADDRESS) {
             acc.push([curr]); // start a new sub-array with the current element
           } else if (acc.length > 0) {
             acc[acc.length - 1].push(curr); // add the current element to the last sub-array
@@ -550,7 +550,7 @@ export default class Cw721HandlerService extends BullableService {
         instantiateActivities.push({
           contractAddress: this.getAttributeFrom(
             instantiateSubEventAttrs,
-            EventAttribute.EVENT_KEY._CONTRACT_ADDRESS
+            EventAttribute.ATTRIBUTE_KEY._CONTRACT_ADDRESS
           ),
           sender,
           action,
