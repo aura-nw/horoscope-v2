@@ -260,11 +260,7 @@ export default class HandleStakeEventTest {
 
   @Test('Handle stake event success and insert power_event to DB')
   public async testHandleStakeEvent() {
-    // const txMessages: TransactionMessage[] = await TransactionMessage.query();
-
-    await this.handleStakeEventService?.handleJob({
-      // txIds: txMessages.map((tx) => tx.id),
-    });
+    await this.handleStakeEventService?.handleJob({});
 
     const [powerEvents, validators]: [PowerEvent[], Validator[]] =
       await Promise.all([PowerEvent.query(), Validator.query()]);
