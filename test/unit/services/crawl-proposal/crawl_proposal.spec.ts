@@ -58,131 +58,46 @@ export default class CrawlProposalTest {
       gas_limit: '141106',
       fee: 353,
       timestamp: '2023-01-12T01:53:57.000Z',
-      data: {
-        tx: {
-          body: {
-            messages: [
-              {
-                initial_deposit: [
-                  {
-                    denom: 'uaura',
-                    amount: '100000',
-                  },
-                ],
-                proposer: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
-              },
-            ],
-          },
-        },
-        tx_response: {
-          logs: [
-            {
-              msg_index: 0,
-              events: [
-                {
-                  type: 'coin_received',
-                  attributes: [
-                    {
-                      key: 'receiver',
-                      value: 'aura10d07y265gmmuvt4z0w9aw880jnsr700jp5y852',
-                    },
-                    {
-                      key: 'amount',
-                      value: '100000utaura',
-                    },
-                  ],
-                },
-                {
-                  type: 'coin_spent',
-                  attributes: [
-                    {
-                      key: 'spender',
-                      value: 'aura1gypt2w7xg5t9yr76hx6zemwd4xv72jckk03r6t',
-                    },
-                    {
-                      key: 'amount',
-                      value: '100000utaura',
-                    },
-                  ],
-                },
-                {
-                  type: 'message',
-                  attributes: [
-                    {
-                      key: 'action',
-                      value: '/cosmos.gov.v1beta1.MsgSubmitProposal',
-                    },
-                    {
-                      key: 'sender',
-                      value: 'aura1gypt2w7xg5t9yr76hx6zemwd4xv72jckk03r6t',
-                    },
-                    {
-                      key: 'module',
-                      value: 'governance',
-                    },
-                    {
-                      key: 'sender',
-                      value: 'aura1gypt2w7xg5t9yr76hx6zemwd4xv72jckk03r6t',
-                    },
-                  ],
-                },
-                {
-                  type: 'proposal_deposit',
-                  attributes: [
-                    {
-                      key: 'amount',
-                      value: '100000utaura',
-                    },
-                    {
-                      key: 'proposal_id',
-                      value: '1',
-                    },
-                  ],
-                },
-                {
-                  type: 'submit_proposal',
-                  attributes: [
-                    {
-                      key: 'proposal_id',
-                      value: '1',
-                    },
-                    {
-                      key: 'proposal_type',
-                      value: 'CommunityPoolSpend',
-                    },
-                  ],
-                },
-                {
-                  type: 'transfer',
-                  attributes: [
-                    {
-                      key: 'recipient',
-                      value: 'aura10d07y265gmmuvt4z0w9aw880jnsr700jp5y852',
-                    },
-                    {
-                      key: 'sender',
-                      value: 'aura1gypt2w7xg5t9yr76hx6zemwd4xv72jckk03r6t',
-                    },
-                    {
-                      key: 'amount',
-                      value: '100000utaura',
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-      },
+      data: {},
     }),
-    events: {
-      tx_msg_index: 0,
-      type: 'submit_proposal',
-      attributes: {
-        key: 'proposal_id',
-        value: '1',
+    messages: {
+      sender: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
+      index: 0,
+      type: '/cosmos.gov.v1beta1.MsgSubmitProposal',
+      content: {
+        initial_deposit: [
+          {
+            denom: 'uaura',
+            amount: '100000',
+          },
+        ],
+        proposer: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
       },
     },
+    events: [
+      {
+        tx_msg_index: 0,
+        type: 'submit_proposal',
+        attributes: {
+          key: 'proposal_id',
+          value: '1',
+        },
+      },
+      {
+        tx_msg_index: 0,
+        type: 'submit_proposal',
+        attributes: [
+          {
+            key: 'proposal_id',
+            value: '1',
+          },
+          {
+            key: 'proposal_type',
+            value: 'CommunityPoolSpend',
+          },
+        ],
+      },
+    ],
   };
 
   broker = new ServiceBroker({ logger: false });
