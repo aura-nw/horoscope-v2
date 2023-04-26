@@ -116,6 +116,7 @@ export const MSG_TYPE = {
   MSG_REDELEGATE: '/cosmos.staking.v1beta1.MsgBeginRedelegate',
   MSG_UNDELEGATE: '/cosmos.staking.v1beta1.MsgUndelegate',
   MSG_CREATE_VALIDATOR: '/cosmos.staking.v1beta1.MsgCreateValidator',
+  MSG_SUBMIT_PROPOSAL: '/cosmos.gov.v1beta1.MsgSubmitProposal',
 };
 
 export const ABCI_QUERY_PATH = {
