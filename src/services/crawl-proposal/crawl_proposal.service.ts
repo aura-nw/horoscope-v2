@@ -63,6 +63,9 @@ export default class CrawlProposalService extends BullableService {
         .findOne('job_name', BULL_JOB_NAME.CRAWL_PROPOSAL),
       Block.query().select('height').findOne({}).orderBy('height', 'desc'),
     ]);
+    this.logger.info(
+      `Block Checkpoint: ${JSON.stringify(crawlProposalBlockCheckpoint)}`
+    );
 
     let lastHeight = 0;
     let updateBlockCheckpoint: BlockCheckpoint;
@@ -78,7 +81,7 @@ export default class CrawlProposalService extends BullableService {
     if (latestBlock) {
       if (latestBlock.height === lastHeight) return;
 
-      const proposalIds: number[] = [];
+      const eventValues: number[] = [];
       let page = 0;
       let done = false;
       while (!done) {
@@ -98,21 +101,22 @@ export default class CrawlProposalService extends BullableService {
             'events:attributes.key',
             'events:attributes.value'
           )
-          .page(page, 100);
+          .page(page, 1000);
         this.logger.info(
           `Result get Tx from height ${lastHeight} to ${latestBlock.height}:`
         );
         this.logger.info(JSON.stringify(resultTx));
 
-        if (resultTx.results.length > 0)
+        if (resultTx.results.length > 0) {
           resultTx.results.map((res: any) =>
-            proposalIds.push(Number.parseInt(res.value, 10))
+            eventValues.push(Number.parseInt(res.value, 10))
           );
 
-        if (resultTx.results.length === 100) page += 1;
-        else done = true;
+          page += 1;
+        } else done = true;
       }
 
+      const proposalIds: number[] = Array.from(new Set(eventValues));
       if (proposalIds.length > 0) {
         const listProposalsInDb: Proposal[] = await Proposal.query().whereIn(
           'proposal_id',
@@ -173,15 +177,16 @@ export default class CrawlProposalService extends BullableService {
           })
         );
 
-        await Proposal.query()
-          .insert(listProposals)
-          .onConflict('proposal_id')
-          .merge()
-          .returning('proposal_id')
-          .catch((error) => {
-            this.logger.error('Error insert or update proposals');
-            this.logger.error(error);
-          });
+        if (listProposals.length > 0)
+          await Proposal.query()
+            .insert(listProposals)
+            .onConflict('proposal_id')
+            .merge()
+            .returning('proposal_id')
+            .catch((error) => {
+              this.logger.error('Error insert or update proposals');
+              this.logger.error(error);
+            });
       }
 
       updateBlockCheckpoint.height = latestBlock.height;
@@ -201,24 +206,23 @@ export default class CrawlProposalService extends BullableService {
       .andWhere('events:attributes.key', EventAttribute.EVENT_KEY.PROPOSAL_ID)
       .andWhere('events:attributes.value', proposalId.toString())
       .select('transaction.data')
-      .limit(1)
-      .offset(0);
+      .first();
 
-    const msgIndex = tx[0].data.tx_response.logs.find(
-      (log: any) =>
-        log.events
-          .find(
-            (event: any) =>
-              event.type === EventAttribute.EVENT_KEY.SUBMIT_PROPOSAL
-          )
-          .attributes.find(
-            (attr: any) => attr.key === EventAttribute.EVENT_KEY.PROPOSAL_ID
-          ).value === proposalId.toString()
-    ).msg_index;
+    const msgIndex =
+      tx?.data.tx_response.logs.find(
+        (log: any) =>
+          log.events
+            .find(
+              (event: any) =>
+                event.type === EventAttribute.EVENT_KEY.SUBMIT_PROPOSAL
+            )
+            .attributes.find(
+              (attr: any) => attr.key === EventAttribute.EVENT_KEY.PROPOSAL_ID
+            ).value === proposalId.toString()
+      ).msg_index || 0;
 
-    const initialDeposit =
-      tx[0].data.tx.body.messages[msgIndex].initial_deposit;
-    const proposerAddress = tx[0].data.tx.body.messages[msgIndex].proposer;
+    const initialDeposit = tx?.data.tx.body.messages[msgIndex].initial_deposit;
+    const proposerAddress = tx?.data.tx.body.messages[msgIndex].proposer;
     const proposerId = (
       await Account.query().findOne('address', proposerAddress)
     )?.id;
@@ -239,11 +243,11 @@ export default class CrawlProposalService extends BullableService {
     const now = new Date(new Date().getSeconds() - 10);
 
     const depositProposals = await Proposal.query()
-      // .patch({
-      //   status: Proposal.STATUS.PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT,
-      // })
       .where('status', Proposal.STATUS.PROPOSAL_STATUS_DEPOSIT_PERIOD)
       .andWhere('deposit_end_time', '<=', now);
+    this.logger.info(
+      `List not enough deposit proposals: ${JSON.stringify(depositProposals)}`
+    );
 
     depositProposals.forEach((proposal: Proposal) => {
       const request: QueryProposalRequest = {
@@ -284,17 +288,18 @@ export default class CrawlProposalService extends BullableService {
         proposal.status = Proposal.STATUS.PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT;
     });
 
-    await Proposal.query()
-      .insert(depositProposals)
-      .onConflict('proposal_id')
-      .merge()
-      .returning('proposal_id')
-      .catch((error) => {
-        this.logger.error(
-          'Error update status for not enough deposit proposals'
-        );
-        this.logger.error(error);
-      });
+    if (depositProposals.length > 0)
+      await Proposal.query()
+        .insert(depositProposals)
+        .onConflict('proposal_id')
+        .merge()
+        .returning('proposal_id')
+        .catch((error) => {
+          this.logger.error(
+            'Error update status for not enough deposit proposals'
+          );
+          this.logger.error(error);
+        });
   }
 
   public async _start() {
