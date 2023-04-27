@@ -18,6 +18,11 @@
   "handleAddress": {
     "millisecondCrawl": 5000
   },
+  "cw721": {
+    "blocksPerBatch": 100,
+    "millisecondRepeatJob": 5000,
+    "startBlock": 0
+  },
   "crawlAccount": {
     "handleVestingAccount": {
       "millisecondCrawl": 30000

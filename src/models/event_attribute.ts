@@ -70,7 +70,13 @@ export class EventAttribute extends BaseModel {
     PACKET_DATA: 'packet_data',
     _CONTRACT_ADDRESS: '_contract_address',
     CODE_ID: 'code_id',
+    EXECUTE: 'execute',
+    TOKEN_ID: 'token_id',
     PROPOSAL_ID: 'proposal_id',
     STAKING: 'staking',
+    DELEGATE: 'delegate',
+    REDELEGATE: 'redelegate',
+    UNBOND: 'unbond',
+    OWNER: 'owner',
   };
 }
