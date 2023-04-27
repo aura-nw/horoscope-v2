@@ -61,4 +61,15 @@ export class Event extends BaseModel {
       TX_EVENT: 'TX_EVENT',
     };
   }
+
+  static EVENT_TYPE = {
+    STORE_CODE: 'store_code',
+    SUBMIT_PROPOSAL: 'submit_proposal',
+    INSTANTIATE: 'instantiate',
+    MESSAGE: 'message',
+    EXECUTE: 'execute',
+    DELEGATE: 'delegate',
+    REDELEGATE: 'redelegate',
+    UNBOND: 'unbond',
+  };
 }

@@ -1,0 +1,149 @@
+import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
+import { ServiceBroker } from 'moleculer';
+import { DirectSecp256k1HdWallet, GeneratedType } from '@cosmjs/proto-signing';
+import {
+  SigningStargateClient,
+  assertIsDeliverTxSuccess,
+} from '@cosmjs/stargate';
+import { cosmwasm } from '@aura-nw/aurajs';
+import fs from 'fs';
+import _ from 'lodash';
+import { BULL_JOB_NAME } from '../../../../src/common';
+import CrawlCodeService from '../../../../src/services/crawl-cosmwasm/crawl_code.service';
+import config from '../../../../config.json' assert { type: 'json' };
+import network from '../../../../network.json' assert { type: 'json' };
+import {
+  defaultSendFee,
+  defaultSigningClientOptions,
+} from '../../../helper/constant';
+import { Block, Code, Transaction } from '../../../../src/models';
+import knex from '../../../../src/common/utils/db_connection';
+
+@Describe('Test crawl_code service')
+export default class CrawlCodeTest {
+  block: Block = Block.fromJson({
+    height: 3967530,
+    hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9F',
+    time: '2023-01-12T01:53:57.216Z',
+    proposer_address: 'auraomd;cvpio3j4eg',
+    data: {},
+  });
+
+  txInsert = {
+    ...Transaction.fromJson({
+      height: 3967530,
+      hash: '4A8B0DE950F563553A81360D4782F6EC451F6BEF7AC50E2459D1997FA168997D',
+      codespace: '',
+      code: 0,
+      gas_used: '123035',
+      gas_wanted: '141106',
+      gas_limit: '141106',
+      fee: 353,
+      timestamp: '2023-01-12T01:53:57.000Z',
+      data: {},
+    }),
+    events: [
+      {
+        tx_msg_index: 0,
+        type: 'store_code',
+        attributes: [
+          {
+            key: 'code_id',
+            value: '1',
+          },
+        ],
+      },
+    ],
+  };
+
+  broker = new ServiceBroker({ logger: false });
+
+  crawlCodeService?: CrawlCodeService;
+
+  @BeforeAll()
+  async initSuite() {
+    await this.broker.start();
+    this.crawlCodeService = this.broker.createService(
+      CrawlCodeService
+    ) as CrawlCodeService;
+    await this.crawlCodeService
+      .getQueueManager()
+      .getQueue(BULL_JOB_NAME.CRAWL_CODE)
+      .empty();
+    await Promise.all([
+      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      Code.query().delete(true),
+    ]);
+    await Block.query().insert(this.block);
+    await Transaction.query().insertGraph(this.txInsert);
+  }
+
+  @AfterAll()
+  async tearDown() {
+    await Promise.all([
+      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      Code.query().delete(true),
+    ]);
+    await this.broker.stop();
+  }
+
+  @Test('Crawl code id success')
+  public async testCrawlCode() {
+    const memo = 'test store code';
+
+    const wallet = await DirectSecp256k1HdWallet.fromMnemonic(
+      'symbol force gallery make bulk round subway violin worry mixture penalty kingdom boring survey tool fringe patrol sausage hard admit remember broken alien absorb',
+      {
+        prefix: 'aura',
+      }
+    );
+    const client = await SigningStargateClient.connectWithSigner(
+      network.find((net) => net.chainId === config.chainId)?.RPC[0] ?? '',
+      wallet,
+      defaultSigningClientOptions
+    );
+    client.registry.register(
+      '/cosmwasm.wasm.v1.MsgStoreCode',
+      cosmwasm.wasm.v1.MsgStoreCode as GeneratedType
+    );
+
+    const msgStoreCode = {
+      typeUrl: '/cosmwasm.wasm.v1.MsgStoreCode',
+      value: cosmwasm.wasm.v1.MsgStoreCode.fromPartial({
+        sender: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
+        wasmByteCode: new Uint8Array(
+          fs.readFileSync('./test/unit/services/crawl-cosmwasm/cw20_base.wasm')
+        ),
+      }),
+    };
+
+    const result = await client.signAndBroadcast(
+      'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
+      [msgStoreCode],
+      defaultSendFee,
+      memo
+    );
+    assertIsDeliverTxSuccess(result);
+
+    await this.crawlCodeService?.handleJob({});
+
+    const code = await Code.query().first();
+
+    expect(_.omit(code, ['created_at', 'updated_at'])).toEqual({
+      code_id: 1,
+      creator: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
+      data_hash:
+        '4169b4ca795d68de7c112b23b3526c082f788cb3d374a286eb99cf29f5173392',
+      instantiate_permission: {
+        permission: '3',
+        address: '',
+        addresses: [],
+      },
+      type: null,
+      status: null,
+      store_hash:
+        '4A8B0DE950F563553A81360D4782F6EC451F6BEF7AC50E2459D1997FA168997D',
+      store_height: 3967530,
+    });
+  }
+}

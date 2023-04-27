@@ -22,7 +22,7 @@
     "up": "docker-compose up -d",
     "stop": "docker-compose stop",
     "prepare": "husky install",
-    "jest": "NODE_OPTIONS='--loader ts-node/esm' jest test",
+    "jest": "NODE_OPTIONS='--loader ts-node/esm' jest",
     "test": "docker compose up -d aurad && yarn jest --verbose --runInBand --forceExit && docker compose stop aurad && docker rm aurad_erascope",
     "test-ci": "yarn jest --verbose --runInBand --forceExit",
     "test-watch": "yarn jest --watch",
