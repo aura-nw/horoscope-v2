@@ -5,6 +5,8 @@ import { Event } from './event';
 import { TransactionMessage } from './transaction_message';
 
 export class Transaction extends BaseModel {
+  [relation: string]: any;
+
   id!: number;
 
   height!: number;
