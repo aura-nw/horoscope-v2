@@ -584,6 +584,7 @@ export default class CrawlGenesisService extends BullableService {
           }
         });
 
+        this.logger.info('Insert genesis codes');
         await Code.query()
           .insert(codes)
           .onConflict('code_id')
@@ -745,6 +746,7 @@ export default class CrawlGenesisService extends BullableService {
         }
       });
 
+      this.logger.info('Insert genesis smart contracts');
       await SmartContract.query()
         .insert(contracts)
         .onConflict('address')
