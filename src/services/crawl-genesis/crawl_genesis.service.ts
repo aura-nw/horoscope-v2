@@ -155,6 +155,7 @@ export default class CrawlGenesisService extends BullableService {
   public async crawlGenesisAccounts(_payload: object): Promise<void> {
     this.logger.info('Crawl genesis accounts');
 
+    let done = false;
     const [accountsInDb, genesisCheckpoint]: [
       Account[],
       BlockCheckpoint[] | undefined
@@ -181,78 +182,83 @@ export default class CrawlGenesisService extends BullableService {
       )?.height === 1
     ) {
       this.logger.info('Job crawl genesis accounts had already been processed');
-      return;
+      done = true;
     }
     if (accountsInDb.length > 0) {
       this.logger.error('DB already contains some accounts');
-      return;
+      done = true;
     }
 
-    let genesis = JSON.parse(fs.readFileSync('genesis.txt').toString());
-    if (genesis.result) genesis = genesis.result.genesis;
+    if (!done) {
+      let genesis = JSON.parse(fs.readFileSync('genesis.txt').toString());
+      if (genesis.result) genesis = genesis.result.genesis;
 
-    const { balances } = genesis.app_state.bank;
-    const auths: any = _.keyBy(
-      genesis.result?.genesis.app_state.auth.accounts.map((acc: any) =>
-        Utils.flattenObject(acc)
-      ) ||
-        genesis.app_state.auth.accounts.map((acc: any) =>
+      const { balances } = genesis.app_state.bank;
+      const auths: any = _.keyBy(
+        genesis.result?.genesis.app_state.auth.accounts.map((acc: any) =>
           Utils.flattenObject(acc)
-        ),
-      'address'
-    );
-
-    let accounts: Account[] = [];
-
-    balances.forEach((bal: any) => {
-      const account: any = {
-        address: bal.address,
-        balances: bal.coins,
-        spendable_balances: bal.coins,
-        type: auths[bal.address]['@type'],
-        pubkey: auths[bal.address].pub_key,
-        account_number: Number.parseInt(auths[bal.address].account_number, 10),
-        sequence: Number.parseInt(auths[bal.address].sequence, 10),
-      };
-      if (
-        account.type === AccountType.CONTINUOUS_VESTING ||
-        account.type === AccountType.DELAYED_VESTING ||
-        account.type === AccountType.PERIODIC_VESTING
-      )
-        account.vesting = {
-          original_vesting: auths[bal.address].original_vesting,
-          delegated_free: auths[bal.address].delegated_free,
-          delegated_vesting: auths[bal.address].delegated_vesting,
-          start_time: auths[bal.address].start_time
-            ? Number.parseInt(auths[bal.address].start_time, 10)
-            : null,
-          end_time: auths[bal.address].end_time,
-        };
-
-      accounts.push(account);
-    });
-
-    accounts = await this.handleIbcDenom(accounts);
-
-    if (accounts.length > 0) {
-      await Promise.all(
-        _.chunk(accounts, 5000).map(async (chunkAccounts, index) => {
-          this.logger.info(`Insert batch of 5000 accounts number ${index}`);
-          await Account.query().insertGraph(chunkAccounts);
-        })
+        ) ||
+          genesis.app_state.auth.accounts.map((acc: any) =>
+            Utils.flattenObject(acc)
+          ),
+        'address'
       );
-    }
 
-    await BlockCheckpoint.query()
-      .insert(
-        BlockCheckpoint.fromJson({
-          job_name: BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
-          height: 1,
-        })
-      )
-      .onConflict('job_name')
-      .merge()
-      .returning('id');
+      let accounts: Account[] = [];
+
+      balances.forEach((bal: any) => {
+        const account: any = {
+          address: bal.address,
+          balances: bal.coins,
+          spendable_balances: bal.coins,
+          type: auths[bal.address]['@type'],
+          pubkey: auths[bal.address].pub_key,
+          account_number: Number.parseInt(
+            auths[bal.address].account_number,
+            10
+          ),
+          sequence: Number.parseInt(auths[bal.address].sequence, 10),
+        };
+        if (
+          account.type === AccountType.CONTINUOUS_VESTING ||
+          account.type === AccountType.DELAYED_VESTING ||
+          account.type === AccountType.PERIODIC_VESTING
+        )
+          account.vesting = {
+            original_vesting: auths[bal.address].original_vesting,
+            delegated_free: auths[bal.address].delegated_free,
+            delegated_vesting: auths[bal.address].delegated_vesting,
+            start_time: auths[bal.address].start_time
+              ? Number.parseInt(auths[bal.address].start_time, 10)
+              : null,
+            end_time: auths[bal.address].end_time,
+          };
+
+        accounts.push(account);
+      });
+
+      accounts = await this.handleIbcDenom(accounts);
+
+      if (accounts.length > 0) {
+        await Promise.all(
+          _.chunk(accounts, 5000).map(async (chunkAccounts, index) => {
+            this.logger.info(`Insert batch of 5000 accounts number ${index}`);
+            await Account.query().insertGraph(chunkAccounts);
+          })
+        );
+      }
+
+      await BlockCheckpoint.query()
+        .insert(
+          BlockCheckpoint.fromJson({
+            job_name: BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
+            height: 1,
+          })
+        )
+        .onConflict('job_name')
+        .merge()
+        .returning('id');
+    }
 
     await this.createJob(
       BULL_JOB_NAME.CRAWL_GENESIS_PROPOSAL,
@@ -493,6 +499,7 @@ export default class CrawlGenesisService extends BullableService {
     this.logger.info('Crawl genesis codes');
 
     const batchQueries: any[] = [];
+    let done = false;
 
     const genesisCheckpoint = await BlockCheckpoint.query()
       .select('*')
@@ -514,83 +521,87 @@ export default class CrawlGenesisService extends BullableService {
       )?.height === 1
     ) {
       this.logger.info('Job crawl genesis codes had already been processed');
-      return;
+      done = true;
     }
 
-    let genesis = JSON.parse(fs.readFileSync('genesis.txt').toString());
-    if (genesis.result) genesis = genesis.result.genesis;
+    if (!done) {
+      let genesis = JSON.parse(fs.readFileSync('genesis.txt').toString());
+      if (genesis.result) genesis = genesis.result.genesis;
 
-    const genCodes = genesis.app_state.wasm.codes;
+      const genCodes = genesis.app_state.wasm.codes;
 
-    if (genCodes.length > 0) {
-      const codes: Code[] = [];
-      const codeIds: string[] = [];
-      genCodes.forEach((code: any) => {
-        codeIds.push(code.code_id);
-        codes.push(
-          Code.fromJson({
-            code_id: parseInt(code.code_id, 10),
-            creator: code.code_info.creator,
-            data_hash: toHex(toUtf8(code.code_info.code_hash)).toLowerCase(),
-            instantiate_permission: code.code_info.instantiate_config,
-            type: null,
-            status: null,
-            store_hash: '',
-            store_height: 0,
-          })
-        );
-      });
-
-      codeIds.forEach((id) => {
-        const request: GetTxsEventRequest = {
-          events: [`store_code.code_id='${id}'`],
-          orderBy: 0,
-        };
-        const data = toHex(
-          cosmos.tx.v1beta1.GetTxsEventRequest.encode(request).finish()
-        );
-
-        batchQueries.push(
-          this._httpBatchClient.execute(
-            createJsonRpcRequest('abci_query', {
-              path: ABCI_QUERY_PATH.GET_TXS_EVENT,
-              data,
+      if (genCodes.length > 0) {
+        const codes: Code[] = [];
+        const codeIds: string[] = [];
+        genCodes.forEach((code: any) => {
+          codeIds.push(code.code_id);
+          codes.push(
+            Code.fromJson({
+              code_id: parseInt(code.code_id, 10),
+              creator: code.code_info.creator,
+              data_hash: toHex(toUtf8(code.code_info.code_hash)).toLowerCase(),
+              instantiate_permission: code.code_info.instantiate_config,
+              type: null,
+              status: null,
+              store_hash: '',
+              store_height: 0,
             })
+          );
+        });
+
+        codeIds.forEach((id) => {
+          const request: GetTxsEventRequest = {
+            events: [`store_code.code_id='${id}'`],
+            orderBy: 0,
+          };
+          const data = toHex(
+            cosmos.tx.v1beta1.GetTxsEventRequest.encode(request).finish()
+          );
+
+          batchQueries.push(
+            this._httpBatchClient.execute(
+              createJsonRpcRequest('abci_query', {
+                path: ABCI_QUERY_PATH.GET_TXS_EVENT,
+                data,
+              })
+            )
+          );
+        });
+
+        const result: JsonRpcSuccessResponse[] = await Promise.all(
+          batchQueries
+        );
+        const txStoreCode: any[] = result.map((res: JsonRpcSuccessResponse) =>
+          cosmos.tx.v1beta1.GetTxsEventResponse.decode(
+            fromBase64(res.result.response.value)
           )
         );
-      });
 
-      const result: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
-      const txStoreCode: any[] = result.map((res: JsonRpcSuccessResponse) =>
-        cosmos.tx.v1beta1.GetTxsEventResponse.decode(
-          fromBase64(res.result.response.value)
+        txStoreCode.forEach((tx, index) => {
+          if (tx.txs.length > 0) {
+            codes[index].store_hash = tx.tx_responses[0].txhash;
+            codes[index].store_height = tx.tx_responses[0].height;
+          }
+        });
+
+        await Code.query()
+          .insert(codes)
+          .onConflict('code_id')
+          .merge()
+          .returning('code_id');
+      }
+
+      await BlockCheckpoint.query()
+        .insert(
+          BlockCheckpoint.fromJson({
+            job_name: BULL_JOB_NAME.CRAWL_GENESIS_CODE,
+            height: 1,
+          })
         )
-      );
-
-      txStoreCode.forEach((tx, index) => {
-        if (tx.txs.length > 0) {
-          codes[index].store_hash = tx.tx_responses[0].txhash;
-          codes[index].store_height = tx.tx_responses[0].height;
-        }
-      });
-
-      await Code.query()
-        .insert(codes)
-        .onConflict('code_id')
+        .onConflict('job_name')
         .merge()
-        .returning('code_id');
+        .returning('id');
     }
-
-    await BlockCheckpoint.query()
-      .insert(
-        BlockCheckpoint.fromJson({
-          job_name: BULL_JOB_NAME.CRAWL_GENESIS_CODE,
-          height: 1,
-        })
-      )
-      .onConflict('job_name')
-      .merge()
-      .returning('id');
 
     await this.createJob(
       BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT,
