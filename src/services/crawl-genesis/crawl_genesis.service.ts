@@ -287,7 +287,7 @@ export default class CrawlGenesisService extends BullableService {
       .select('*')
       .whereIn('job_name', [
         BULL_JOB_NAME.CRAWL_GENESIS,
-        BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
+        BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
       ]);
     if (
       genesisCheckpoint.find(
