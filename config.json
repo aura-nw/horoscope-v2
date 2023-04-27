@@ -7,10 +7,15 @@
     "millisecondCrawl": 5000,
     "queryPageLimit": 50
   },
+  "cw721": {
+    "blocksPerBatch": 100,
+    "millisecondRepeatJob": 5000,
+    "startBlock": 0
+  },
   "crawlBlock": {
     "millisecondCrawl": 5000,
     "numberOfBlockPerCall": 100,
-    "startBlock": 5294817
+    "startBlock": 4860000
   },
   "crawlSigningInfo": {
     "millisecondCrawl": 5000

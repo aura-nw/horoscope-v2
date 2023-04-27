@@ -71,5 +71,6 @@ export class Event extends BaseModel {
     DELEGATE: 'delegate',
     REDELEGATE: 'redelegate',
     UNBOND: 'unbond',
+    WASM: 'wasm',
   };
 }

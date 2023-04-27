@@ -9,7 +9,7 @@
   },
   "scripts": {
     "clean": "rimraf ./dist/",
-    "start": "cd dist ;  node --es-module-specifier-resolution=node ../node_modules/moleculer/bin/moleculer-runner.mjs --env --config ./src/moleculer.config.js",
+    "start": "cd dist ; node --es-module-specifier-resolution=node ../node_modules/moleculer/bin/moleculer-runner.mjs --env --config ./src/moleculer.config.js",
     "dev": "ts-node -r tsconfig-paths/register ./node_modules/moleculer/bin/moleculer-runner.mjs --hot --repl --env --config src/moleculer.config.ts",
     "watch": "nodemon",
     "db:migrate:make": "ts-node ./node_modules/.bin/knex migrate:make --knexfile knexfile.ts -x ts",
@@ -44,6 +44,8 @@
   },
   "dependencies": {
     "@aura-nw/aurajs": "^0.1.1-alpha",
+    "@bull-board/api": "^5.1.1",
+    "@bull-board/express": "^5.1.1",
     "@cosmjs/cosmwasm-stargate": "^0.30.0",
     "@cosmjs/encoding": "^0.29.5",
     "@cosmjs/json-rpc": "^0.29.5",
@@ -75,6 +77,7 @@
     "pg": "^8.8.0",
     "pg-hstore": "^2.3.4",
     "protobufjs": "^7.1.2",
+    "redisuri": "^1.1.2",
     "reflect-metadata": "^0.1.13",
     "resilient": "^0.4.0",
     "util": "^0.12.4"

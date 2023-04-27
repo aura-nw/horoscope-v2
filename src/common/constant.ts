@@ -31,6 +31,8 @@ export const BULL_JOB_NAME = {
   CRAWL_BLOCK: 'crawl:block',
   CRAWL_TRANSACTION: 'crawl:transaction',
   HANDLE_TRANSACTION: 'handle:transaction',
+  FILTER_CW721_TRANSACTION: 'filter:cw721-tx',
+  HANDLE_CW721_EXECUTE: 'handle:cw721-execute',
   CRAWL_PROPOSAL: 'crawl:proposal',
   CRAWL_TALLY_PROPOSAL: 'crawl:tally-proposal',
   HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL: 'handle:not-enough-deposit-proposal',
@@ -58,6 +60,13 @@ export const SERVICE = {
       CrawlNewAccountApi: {
         key: 'CrawlNewAccountApi',
         path: 'v1.HandleAddressService.CrawlNewAccountApi',
+      },
+    },
+    Cw721: {
+      name: 'v1.Cw721Service',
+      HandleCw721: {
+        key: 'handleCw721',
+        path: 'v1.Cw721Service.handleCw721',
       },
     },
     CrawlProposalService: {
@@ -105,6 +114,7 @@ export const SERVICE = {
 
 export const SERVICE_NAME = {
   CRAWL_BLOCK: 'CrawlBlockService',
+  CW721: 'Cw721Service',
   CRAWL_TRANSACTION: 'CrawlTransactionService',
 };
 
@@ -118,6 +128,7 @@ export enum AccountType {
 
 export const BLOCK_CHECKPOINT_JOB_NAME = {
   BLOCK_HEIGHT_CRAWLED: 'BLOCK_HEIGHT_CRAWLED',
+  CW721_HANDLER: 'CW721_HANDLER',
 };
 
 export const MSG_TYPE = {

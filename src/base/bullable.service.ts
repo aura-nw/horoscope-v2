@@ -18,6 +18,8 @@ const DEFAULT_JOB_OTION: JobOptions = {
 const DEFAULT_REDIS_URL =
   process.env.BULL_REDIS_URL || 'redis://127.0.0.1:6379';
 
+export const DEFAULT_PREFIX = `${process.env.NAMESPACE}` || 'bull';
+
 export default class BullableService extends BaseService {
   private qm?: QueueManager;
 
@@ -90,7 +92,7 @@ export function QueueHandler(opt?: QueueOptions) {
       jobType: propertyKey,
       redisUrl: DEFAULT_REDIS_URL,
       reuseRedis: true,
-      prefix: 'bull',
+      prefix: DEFAULT_PREFIX,
     };
 
     const qOpt = { ...defaultOpt, ...opt };

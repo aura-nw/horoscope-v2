@@ -32,13 +32,13 @@ export class Validator extends BaseModel {
 
   delegator_shares!: string;
 
-  description!: JSON;
+  description!: any;
 
   unbonding_height!: number;
 
   unbonding_time!: string;
 
-  commission!: JSON;
+  commission!: any;
 
   min_self_delegation!: string;
 
