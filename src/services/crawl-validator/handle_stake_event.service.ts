@@ -49,10 +49,11 @@ export default class HandleStakeEventService extends BullableService {
       `Block Checkpoint: ${JSON.stringify(stakeEventCheckpoint)}`
     );
 
-    let lastHeight = 0;
+    let startHeight = 0;
+    let endHeight = 0;
     let updateBlockCheckpoint: BlockCheckpoint;
     if (stakeEventCheckpoint) {
-      lastHeight = stakeEventCheckpoint.height;
+      startHeight = stakeEventCheckpoint.height;
       updateBlockCheckpoint = stakeEventCheckpoint;
     } else
       updateBlockCheckpoint = BlockCheckpoint.fromJson({
@@ -61,45 +62,34 @@ export default class HandleStakeEventService extends BullableService {
       });
 
     if (latestBlock) {
-      if (latestBlock.height === lastHeight) return;
+      if (latestBlock.height === startHeight) return;
+      endHeight = Math.min(
+        startHeight + config.handleStakeEvent.blocksPerCall,
+        latestBlock.height - 1
+      );
 
       const stakeTxs: any[] = [];
-      let page = 0;
-      let done = false;
       this.logger.info(
-        `Start query Tx from height ${lastHeight} to ${latestBlock.height}`
+        `Query Tx from height ${startHeight} to ${latestBlock.height}`
       );
-      while (!done) {
-        // eslint-disable-next-line no-await-in-loop
-        const resultTx = await Transaction.query()
-          .joinRelated('events.[attributes]')
-          .select(
-            'transaction.id',
-            'transaction.timestamp',
-            'transaction.height',
-            'events.id as event_id',
-            'events.type',
-            'events:attributes.key',
-            'events:attributes.value'
-          )
-          .whereIn('events.type', this.eventStakes)
-          .andWhere('transaction.height', '>', lastHeight)
-          .andWhere('transaction.height', '<=', latestBlock.height)
-          .andWhere('transaction.code', 0)
-          .page(page, 1000);
+      const resultTx = await Transaction.query()
+        .joinRelated('events.[attributes]')
+        .select(
+          'transaction.id',
+          'transaction.timestamp',
+          'transaction.height',
+          'events.id as event_id',
+          'events.type',
+          'events:attributes.key',
+          'events:attributes.value',
+          'events:attributes.index'
+        )
+        .whereIn('events.type', this.eventStakes)
+        .andWhere('transaction.height', '>', startHeight)
+        .andWhere('transaction.height', '<=', endHeight)
+        .andWhere('transaction.code', 0);
 
-        this.logger.info(
-          `Query Tx from height ${lastHeight} to ${
-            latestBlock.height
-          } at page ${page + 1}`
-        );
-
-        if (resultTx.results.length > 0) {
-          stakeTxs.push(...resultTx.results);
-
-          page += 1;
-        } else done = true;
-      }
+      if (resultTx.length > 0) stakeTxs.push(...resultTx);
 
       const validators: Validator[] = await Validator.query();
       const validatorKeys = _.keyBy(validators, 'operator_address');
@@ -119,6 +109,7 @@ export default class HandleStakeEventService extends BullableService {
 
           let validatorSrcId;
           let validatorDstId;
+          let amount;
           switch (stakeEvent.type) {
             case PowerEvent.TYPES.DELEGATE:
               validatorDstId = validatorKeys[stakeEvent.value].id;
@@ -130,9 +121,17 @@ export default class HandleStakeEventService extends BullableService {
                   stakeEvents.find(
                     (event) =>
                       event.key ===
-                      EventAttribute.ATTRIBUTE_KEY.DESTINATION_VALIDATOR
+                        EventAttribute.ATTRIBUTE_KEY.DESTINATION_VALIDATOR &&
+                      event.index === stakeEvent.index + 1
                   ).value
                 ].id;
+              amount = parseCoins(
+                stakeEvents.find(
+                  (event) =>
+                    event.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT &&
+                    event.index === stakeEvent.index + 2
+                ).value
+              )[0].amount;
               break;
             case PowerEvent.TYPES.UNBOND:
               validatorSrcId = validatorKeys[stakeEvent.value].id;
@@ -147,11 +146,15 @@ export default class HandleStakeEventService extends BullableService {
             type: stakeEvent.type,
             validator_src_id: validatorSrcId,
             validator_dst_id: validatorDstId,
-            amount: parseCoins(
-              stakeEvents.find(
-                (event) => event.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT
-              ).value
-            )[0].amount,
+            amount:
+              amount ??
+              parseCoins(
+                stakeEvents.find(
+                  (event) =>
+                    event.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT &&
+                    event.index === stakeEvent.index + 1
+                ).value
+              )[0].amount,
             time: stakeEvent.timestamp.toISOString(),
           });
 
@@ -166,7 +169,7 @@ export default class HandleStakeEventService extends BullableService {
             this.logger.error(error);
           });
 
-      updateBlockCheckpoint.height = latestBlock.height;
+      updateBlockCheckpoint.height = endHeight;
       await BlockCheckpoint.query()
         .insert(updateBlockCheckpoint)
         .onConflict('job_name')

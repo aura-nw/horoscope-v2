@@ -69,10 +69,11 @@ export default class CrawlProposalService extends BullableService {
       `Block Checkpoint: ${JSON.stringify(crawlProposalBlockCheckpoint)}`
     );
 
-    let lastHeight = 0;
+    let startHeight = 0;
+    let endHeight = 0;
     let updateBlockCheckpoint: BlockCheckpoint;
     if (crawlProposalBlockCheckpoint) {
-      lastHeight = crawlProposalBlockCheckpoint.height;
+      startHeight = crawlProposalBlockCheckpoint.height;
       updateBlockCheckpoint = crawlProposalBlockCheckpoint;
     } else
       updateBlockCheckpoint = BlockCheckpoint.fromJson({
@@ -81,42 +82,27 @@ export default class CrawlProposalService extends BullableService {
       });
 
     if (latestBlock) {
-      if (latestBlock.height === lastHeight) return;
+      if (latestBlock.height === startHeight) return;
+      endHeight = Math.min(
+        startHeight + config.crawlProposal.crawlProposal.blocksPerCall,
+        latestBlock.height - 1
+      );
 
-      const proposalIds: number[] = [];
-      let page = 0;
-      let done = false;
-      while (!done) {
-        // eslint-disable-next-line no-await-in-loop
-        const resultTx = await Transaction.query()
-          .joinRelated('events.[attributes]')
-          .where('transaction.height', '>', lastHeight)
-          .andWhere('transaction.height', '<=', latestBlock.height)
-          .andWhere('transaction.code', 0)
-          .andWhere(
-            'events:attributes.key',
-            EventAttribute.ATTRIBUTE_KEY.PROPOSAL_ID
-          )
-          .select(
-            'transaction.id',
-            'transaction.height',
-            'events:attributes.key',
-            'events:attributes.value'
-          )
-          .page(page, 100);
-        this.logger.info(
-          `Result get Tx from height ${lastHeight} to ${latestBlock.height}:`
+      let proposalIds: number[] = [];
+      const resultTx = await EventAttribute.query()
+        .where('block_height', '>', startHeight)
+        .andWhere('block_height', '<=', endHeight)
+        .andWhere('key', EventAttribute.ATTRIBUTE_KEY.PROPOSAL_ID)
+        .select('value');
+      this.logger.info(
+        `Result get Tx from height ${startHeight} to ${endHeight}:`
+      );
+      this.logger.info(JSON.stringify(resultTx));
+
+      if (resultTx.length > 0)
+        proposalIds = Array.from(
+          new Set(resultTx.map((res: any) => parseInt(res.value, 10)))
         );
-        this.logger.info(JSON.stringify(resultTx));
-
-        if (resultTx.results.length > 0)
-          resultTx.results.map((res: any) =>
-            proposalIds.push(Number.parseInt(res.value, 10))
-          );
-
-        if (resultTx.results.length === 100) page += 1;
-        else done = true;
-      }
 
       if (proposalIds.length > 0) {
         const listProposalsInDb: Proposal[] = await Proposal.query().whereIn(
@@ -171,7 +157,7 @@ export default class CrawlProposalService extends BullableService {
             });
       }
 
-      updateBlockCheckpoint.height = latestBlock.height;
+      updateBlockCheckpoint.height = endHeight;
       await BlockCheckpoint.query()
         .insert(updateBlockCheckpoint)
         .onConflict('job_name')

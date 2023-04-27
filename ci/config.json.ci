@@ -16,12 +16,8 @@
     "millisecondCrawl": 5000
   },
   "handleAddress": {
-    "millisecondCrawl": 5000
-  },
-  "cw721": {
-    "blocksPerBatch": 100,
-    "millisecondRepeatJob": 5000,
-    "startBlock": 0
+    "millisecondCrawl": 5000,
+    "blocksPerCall": 100
   },
   "crawlAccount": {
     "handleVestingAccount": {
@@ -30,7 +26,8 @@
   },
   "crawlProposal": {
     "crawlProposal": {
-      "millisecondCrawl": 5000
+      "millisecondCrawl": 5000,
+      "blocksPerCall": 100
     },
     "handleNotEnoughDepositProposal": {
       "millisecondCrawl": 30000
@@ -40,12 +37,15 @@
     "millisecondCrawl": 10000
   },
   "handleStakeEvent": {
-    "millisecondCrawl": 5000
+    "millisecondCrawl": 5000,
+    "blocksPerCall": 100
   },
   "crawlCodeId": {
-    "millisecondCrawl": 5000
+    "millisecondCrawl": 5000,
+    "blocksPerCall": 100
   },
   "crawlSmartContract": {
-    "millisecondCrawl": 5000
+    "millisecondCrawl": 5000,
+    "blocksPerCall": 100
   }
 }

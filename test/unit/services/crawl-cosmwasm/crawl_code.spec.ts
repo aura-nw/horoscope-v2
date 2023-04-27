@@ -16,22 +16,41 @@ import {
   defaultSendFee,
   defaultSigningClientOptions,
 } from '../../../helper/constant';
-import { Block, Code, Transaction } from '../../../../src/models';
+import {
+  Block,
+  BlockCheckpoint,
+  Code,
+  Transaction,
+} from '../../../../src/models';
 import knex from '../../../../src/common/utils/db_connection';
 
 @Describe('Test crawl_code service')
 export default class CrawlCodeTest {
-  block: Block = Block.fromJson({
-    height: 3967530,
-    hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9F',
-    time: '2023-01-12T01:53:57.216Z',
-    proposer_address: 'auraomd;cvpio3j4eg',
-    data: {},
+  blockCheckpoint = BlockCheckpoint.fromJson({
+    job_name: BULL_JOB_NAME.CRAWL_CODE,
+    height: 3967500,
   });
+
+  blocks: Block[] = [
+    Block.fromJson({
+      height: 3967529,
+      hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9A',
+      time: '2023-01-12T01:53:57.216Z',
+      proposer_address: 'auraomd;cvpio3j4eg',
+      data: {},
+    }),
+    Block.fromJson({
+      height: 3967530,
+      hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9F',
+      time: '2023-01-12T01:53:57.216Z',
+      proposer_address: 'auraomd;cvpio3j4eg',
+      data: {},
+    }),
+  ];
 
   txInsert = {
     ...Transaction.fromJson({
-      height: 3967530,
+      height: 3967529,
       hash: '4A8B0DE950F563553A81360D4782F6EC451F6BEF7AC50E2459D1997FA168997D',
       codespace: '',
       code: 0,
@@ -69,9 +88,11 @@ export default class CrawlCodeTest {
     await Promise.all([
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       Code.query().delete(true),
+      BlockCheckpoint.query().delete(true),
     ]);
-    await Block.query().insert(this.block);
+    await Block.query().insert(this.blocks);
     await Transaction.query().insertGraph(this.txInsert);
+    await BlockCheckpoint.query().insert(this.blockCheckpoint);
   }
 
   @AfterAll()
@@ -79,6 +100,7 @@ export default class CrawlCodeTest {
     await Promise.all([
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       Code.query().delete(true),
+      BlockCheckpoint.query().delete(true),
     ]);
     await this.broker.stop();
   }
@@ -139,7 +161,7 @@ export default class CrawlCodeTest {
       status: null,
       store_hash:
         '4A8B0DE950F563553A81360D4782F6EC451F6BEF7AC50E2459D1997FA168997D',
-      store_height: 3967530,
+      store_height: 3967529,
     });
   }
 }

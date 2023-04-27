@@ -63,10 +63,11 @@ export default class CrawlValidatorService extends BullableService {
       `Block Checkpoint: ${JSON.stringify(crawlValidatorBlockCheckpoint)}`
     );
 
-    let lastHeight = 0;
+    let startHeight = 0;
+    let endHeight = 0;
     let updateBlockCheckpoint: BlockCheckpoint;
     if (crawlValidatorBlockCheckpoint) {
-      lastHeight = crawlValidatorBlockCheckpoint.height;
+      startHeight = crawlValidatorBlockCheckpoint.height;
       updateBlockCheckpoint = crawlValidatorBlockCheckpoint;
     } else
       updateBlockCheckpoint = BlockCheckpoint.fromJson({
@@ -75,34 +76,29 @@ export default class CrawlValidatorService extends BullableService {
       });
 
     if (latestBlock) {
-      if (latestBlock.height === lastHeight) return;
+      if (latestBlock.height === startHeight) return;
+      endHeight = latestBlock.height - 1;
 
       const resultTx = await EventAttribute.query()
-        .joinRelated('event.[transaction]')
-        .whereIn('event_attribute.key', [
+        .whereIn('key', [
           EventAttribute.ATTRIBUTE_KEY.VALIDATOR,
           EventAttribute.ATTRIBUTE_KEY.SOURCE_VALIDATOR,
           EventAttribute.ATTRIBUTE_KEY.DESTINATION_VALIDATOR,
         ])
-        .andWhere('event:transaction.height', '>', lastHeight)
-        .andWhere('event:transaction.height', '<=', latestBlock.height)
-        .select(
-          'event:transaction.id',
-          'event:transaction.height',
-          'event_attribute.key',
-          'event_attribute.value'
-        )
+        .andWhere('block_height', '>', startHeight)
+        .andWhere('block_height', '<=', endHeight)
+        .select('value')
         .limit(1)
         .offset(0);
       this.logger.info(
-        `Query Tx from height ${lastHeight} to ${latestBlock.height}`
+        `Query Tx from height ${startHeight} to ${latestBlock.height}`
       );
 
       if (resultTx.length > 0) {
         await this.updateValidators();
       }
 
-      updateBlockCheckpoint.height = latestBlock.height;
+      updateBlockCheckpoint.height = endHeight;
       await BlockCheckpoint.query()
         .insert(updateBlockCheckpoint)
         .onConflict('job_name')
@@ -142,8 +138,8 @@ export default class CrawlValidatorService extends BullableService {
         this.logger.info(`Update validator: ${validator.operator_address}`);
 
         const foundValidator = validatorInDB.find(
-          (validatorInDB: Validator) =>
-            validatorInDB.operator_address === validator.operator_address
+          (val: Validator) =>
+            val.operator_address === validator.operator_address
         );
 
         let validatorEntity: Validator;

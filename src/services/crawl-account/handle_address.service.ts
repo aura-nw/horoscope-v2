@@ -3,13 +3,7 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
-import {
-  Account,
-  Block,
-  BlockCheckpoint,
-  Transaction,
-  EventAttribute,
-} from '../../models';
+import { Account, Block, BlockCheckpoint, EventAttribute } from '../../models';
 import Utils from '../../common/utils/utils';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, Config, IAddressesParam, SERVICE } from '../../common';
@@ -53,10 +47,11 @@ export default class HandleAddressService extends BullableService {
       `Block Checkpoint: ${JSON.stringify(handleAddrCheckpoint)}`
     );
 
-    let lastHeight = 0;
+    let startHeight = 0;
+    let endHeight = 0;
     let updateBlockCheckpoint: BlockCheckpoint;
     if (handleAddrCheckpoint) {
-      lastHeight = handleAddrCheckpoint.height;
+      startHeight = handleAddrCheckpoint.height;
       updateBlockCheckpoint = handleAddrCheckpoint;
     } else
       updateBlockCheckpoint = BlockCheckpoint.fromJson({
@@ -65,46 +60,26 @@ export default class HandleAddressService extends BullableService {
       });
 
     if (latestBlock) {
-      if (latestBlock.height === lastHeight) return;
+      if (latestBlock.height === startHeight) return;
+      endHeight = Math.min(
+        startHeight + config.handleAddress.blocksPerCall,
+        latestBlock.height - 1
+      );
 
       const eventAddresses: string[] = [];
-      let page = 0;
-      let done = false;
-      this.logger.info(
-        `Start query Tx from height ${lastHeight} to ${latestBlock.height}`
-      );
-      while (!done) {
-        // eslint-disable-next-line no-await-in-loop
-        const resultTx = await Transaction.query()
-          .joinRelated('events.[attributes]')
-          .whereIn('events:attributes.key', [
-            EventAttribute.ATTRIBUTE_KEY.RECEIVER,
-            EventAttribute.ATTRIBUTE_KEY.SPENDER,
-            EventAttribute.ATTRIBUTE_KEY.SENDER,
-          ])
-          .andWhere('transaction.height', '>', lastHeight)
-          .andWhere('transaction.height', '<=', latestBlock.height)
-          .select(
-            'transaction.id',
-            'transaction.height',
-            'transaction.timestamp',
-            'events.type',
-            'events:attributes.key',
-            'events:attributes.value'
-          )
-          .page(page, 1000);
-        this.logger.info(
-          `Query Tx from height ${lastHeight} to ${
-            latestBlock.height
-          } at page ${page + 1}`
-        );
+      this.logger.info(`Query Tx from height ${startHeight} to ${endHeight}`);
+      const resultTx = await EventAttribute.query()
+        .whereIn('key', [
+          EventAttribute.ATTRIBUTE_KEY.RECEIVER,
+          EventAttribute.ATTRIBUTE_KEY.SPENDER,
+          EventAttribute.ATTRIBUTE_KEY.SENDER,
+        ])
+        .andWhere('block_height', '>', startHeight)
+        .andWhere('block_height', '<=', endHeight)
+        .select('value');
 
-        if (resultTx.results.length > 0) {
-          resultTx.results.map((res: any) => eventAddresses.push(res.value));
-
-          page += 1;
-        } else done = true;
-      }
+      if (resultTx.length > 0)
+        resultTx.map((res: any) => eventAddresses.push(res.value));
 
       const addresses = Array.from(
         new Set(
@@ -116,7 +91,7 @@ export default class HandleAddressService extends BullableService {
 
       if (addresses.length > 0) await this.insertNewAccountAndUpdate(addresses);
 
-      updateBlockCheckpoint.height = latestBlock.height;
+      updateBlockCheckpoint.height = endHeight;
       await BlockCheckpoint.query()
         .insert(updateBlockCheckpoint)
         .onConflict('job_name')

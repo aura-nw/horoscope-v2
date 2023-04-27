@@ -1,4 +1,3 @@
-/* eslint-disable no-await-in-loop */
 /* eslint-disable import/no-extraneous-dependencies */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
@@ -59,10 +58,11 @@ export default class CrawlCodeService extends BullableService {
       Block.query().select('height').findOne({}).orderBy('height', 'desc'),
     ]);
 
-    let lastHeight = 0;
+    let startHeight = 0;
+    let endHeight = 0;
     let updateBlockCheckpoint: BlockCheckpoint;
     if (codeIdCheckpoint) {
-      lastHeight = codeIdCheckpoint.height;
+      startHeight = codeIdCheckpoint.height;
       updateBlockCheckpoint = codeIdCheckpoint;
     } else
       updateBlockCheckpoint = BlockCheckpoint.fromJson({
@@ -71,50 +71,45 @@ export default class CrawlCodeService extends BullableService {
       });
 
     if (latestBlock) {
-      if (latestBlock.height === lastHeight) return;
+      if (latestBlock.height === startHeight) return;
+      endHeight = Math.min(
+        startHeight + config.crawlCodeId.blocksPerCall,
+        latestBlock.height - 1
+      );
 
       const codeIds: {
         hash: string;
         height: number;
         codeId: Long;
       }[] = [];
-      let page = 0;
-      let done = false;
-      while (!done) {
-        const resultTx = await Transaction.query()
-          .joinRelated('events.[attributes]')
-          .where('transaction.height', '>', lastHeight)
-          .andWhere('transaction.height', '<=', latestBlock.height)
-          .andWhere('transaction.code', 0)
-          .andWhere('events.type', Event.EVENT_TYPE.STORE_CODE)
-          .andWhere(
-            'events:attributes.key',
-            EventAttribute.ATTRIBUTE_KEY.CODE_ID
-          )
-          .select(
-            'transaction.hash',
-            'transaction.height',
-            'events:attributes.key',
-            'events:attributes.value'
-          )
-          .page(page, 1000);
-        this.logger.info(
-          `Result get Tx from height ${lastHeight} to ${latestBlock.height}:`
+      this.logger.info(`Query Tx from height ${startHeight} to ${endHeight}`);
+
+      const resultTx = await Transaction.query()
+        .joinRelated('events.[attributes]')
+        .where('transaction.height', '>', startHeight)
+        .andWhere('transaction.height', '<=', endHeight)
+        .andWhere('transaction.code', 0)
+        .andWhere('events.type', Event.EVENT_TYPE.STORE_CODE)
+        .andWhere('events:attributes.key', EventAttribute.ATTRIBUTE_KEY.CODE_ID)
+        .select(
+          'transaction.hash',
+          'transaction.height',
+          'events:attributes.key',
+          'events:attributes.value'
         );
-        this.logger.info(JSON.stringify(resultTx));
+      this.logger.info(
+        `Result get Tx from height ${startHeight} to ${endHeight}:`
+      );
+      this.logger.info(JSON.stringify(resultTx));
 
-        if (resultTx.results.length > 0) {
-          resultTx.results.map((res: any) =>
-            codeIds.push({
-              hash: res.hash,
-              height: res.height,
-              codeId: Long.fromString(res.value),
-            })
-          );
-
-          page += 1;
-        } else done = true;
-      }
+      if (resultTx.length > 0)
+        resultTx.map((res: any) =>
+          codeIds.push({
+            hash: res.hash,
+            height: res.height,
+            codeId: Long.fromString(res.value),
+          })
+        );
 
       if (codeIds.length > 0) {
         codeIds.forEach((code) => {
@@ -171,7 +166,7 @@ export default class CrawlCodeService extends BullableService {
           });
       }
 
-      updateBlockCheckpoint.height = latestBlock.height;
+      updateBlockCheckpoint.height = endHeight;
       await BlockCheckpoint.query()
         .insert(updateBlockCheckpoint)
         .onConflict('job_name')

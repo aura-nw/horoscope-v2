@@ -68,14 +68,14 @@ export default class CrawlAccountService extends BullableService {
     const accountVestings: AccountVesting[] = [];
 
     if (_payload.addresses.length > 0) {
+      this.logger.info(`Crawl account auth addresses: ${_payload.addresses}`);
+
       const accountsInDb: Account[] = await Account.query()
         .select('*')
         .whereIn('address', _payload.addresses);
 
       await Promise.all(
         accountsInDb.map(async (acc) => {
-          this.logger.info(`Crawl account auth address: ${acc.address}`);
-
           let resultCallApi;
           try {
             resultCallApi =
