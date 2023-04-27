@@ -14,7 +14,7 @@ export interface ITally {
 export class Proposal extends BaseModel {
   proposal_id!: number;
 
-  proposer_id!: number;
+  proposer_id: number | undefined;
 
   voting_start_time!: string;
 
@@ -71,7 +71,6 @@ export class Proposal extends BaseModel {
       type: 'object',
       required: [
         'proposal_id',
-        'proposer_id',
         'voting_start_time',
         'voting_end_time',
         'submit_time',
@@ -88,7 +87,7 @@ export class Proposal extends BaseModel {
       ],
       properties: {
         proposal_id: { type: 'number' },
-        proposer_id: { type: 'number' },
+        proposer_id: { type: ['number', 'null'] },
         voting_start_time: { type: 'string', format: 'date-time' },
         voting_end_time: { type: 'string', format: 'date-time' },
         submit_time: { type: 'string', format: 'date-time' },

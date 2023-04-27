@@ -37,6 +37,9 @@ export const BULL_JOB_NAME = {
   CRAWL_GENESIS: 'crawl:genesis',
   CRAWL_CODE: 'crawl:code',
   CRAWL_SMART_CONTRACT: 'crawl:smart-contract',
+  CRAWL_GENESIS_PROPOSAL: 'crawl:genesis-proposal',
+  CRAWL_GENESIS_CODE: 'crawl:genesis-code',
+  CRAWL_GENESIS_CONTRACT: 'crawl:genesis-contract',
 };
 
 export const SERVICE = {
@@ -126,6 +129,7 @@ export const MSG_TYPE = {
   MSG_REDELEGATE: '/cosmos.staking.v1beta1.MsgBeginRedelegate',
   MSG_UNDELEGATE: '/cosmos.staking.v1beta1.MsgUndelegate',
   MSG_CREATE_VALIDATOR: '/cosmos.staking.v1beta1.MsgCreateValidator',
+  MSG_SUBMIT_PROPOSAL: '/cosmos.gov.v1beta1.MsgSubmitProposal',
 };
 
 export const ABCI_QUERY_PATH = {
@@ -138,4 +142,5 @@ export const ABCI_QUERY_PATH = {
   CODE: '/cosmwasm.wasm.v1.Query/Code',
   RAW_CONTRACT_STATE: '/cosmwasm.wasm.v1.Query/RawContractState',
   CONTRACT_INFO: '/cosmwasm.wasm.v1.Query/ContractInfo',
+  GET_TXS_EVENT: '/cosmos.tx.v1beta1.Service/GetTxsEvent',
 };
