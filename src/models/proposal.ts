@@ -1,7 +1,5 @@
 /* eslint-disable import/no-cycle */
-import { Model } from 'objection';
 import { ICoin } from '../common/types/interfaces';
-import { Account } from './account';
 import BaseModel from './base';
 
 export interface ITally {
@@ -14,7 +12,7 @@ export interface ITally {
 export class Proposal extends BaseModel {
   proposal_id!: number;
 
-  proposer_id: number | undefined;
+  proposer_address: string | undefined;
 
   voting_start_time!: string;
 
@@ -87,7 +85,7 @@ export class Proposal extends BaseModel {
       ],
       properties: {
         proposal_id: { type: 'number' },
-        proposer_id: { type: ['number', 'null'] },
+        proposer_address: { type: ['string', 'null'] },
         voting_start_time: { type: 'string', format: 'date-time' },
         voting_end_time: { type: 'string', format: 'date-time' },
         submit_time: { type: 'string', format: 'date-time' },
@@ -131,15 +129,26 @@ export class Proposal extends BaseModel {
   }
 
   static get relationMappings() {
-    return {
-      proposer: {
-        relation: Model.BelongsToOneRelation,
-        modelClass: Account,
-        join: {
-          from: 'proposal.proposer_id',
-          to: 'account.id',
-        },
-      },
-    };
+    return {};
+  }
+
+  static createNewProposal(proposal: any): Proposal {
+    return Proposal.fromJson({
+      proposal_id: proposal.proposal_id,
+      proposer_address: null,
+      voting_start_time: proposal.voting_start_time,
+      voting_end_time: proposal.voting_end_time,
+      submit_time: proposal.submit_time,
+      deposit_end_time: proposal.deposit_end_time,
+      type: proposal.content['@type'],
+      title: proposal.content.title ?? '',
+      description: proposal.content.description ?? '',
+      content: proposal.content,
+      status: proposal.status,
+      tally: proposal.final_tally_result,
+      initial_deposit: [],
+      total_deposit: proposal.total_deposit,
+      turnout: 0,
+    });
   }
 }

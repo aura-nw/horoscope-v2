@@ -128,10 +128,7 @@ export default class CrawlGenesisService extends BullableService {
       .returning('id');
 
     this.genesisJobs.forEach(async (job) => {
-      if (
-        job !== BULL_JOB_NAME.CRAWL_GENESIS_PROPOSAL &&
-        job !== BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT
-      ) {
+      if (job !== BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT) {
         await this.createJob(
           job,
           'crawl',
@@ -259,18 +256,6 @@ export default class CrawlGenesisService extends BullableService {
         .merge()
         .returning('id');
     }
-
-    await this.createJob(
-      BULL_JOB_NAME.CRAWL_GENESIS_PROPOSAL,
-      'crawl',
-      {},
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-      }
-    );
 
     await this.terminateProcess();
   }
@@ -403,29 +388,8 @@ export default class CrawlGenesisService extends BullableService {
       const proposalIds: string[] = [];
       genProposals.forEach((propose: any) => {
         proposalIds.push(propose.proposal_id);
-        proposals.push(
-          Proposal.fromJson({
-            proposal_id: propose.proposal_id,
-            proposer_id: null,
-            voting_start_time: propose.voting_start_time,
-            voting_end_time: propose.voting_end_time,
-            submit_time: propose.submit_time,
-            deposit_end_time: propose.deposit_end_time,
-            type: propose.content['@type'],
-            title: propose.content.title ?? '',
-            description: propose.content.description ?? '',
-            content: propose.content,
-            status: propose.status,
-            tally: propose.final_tally_result,
-            initial_deposit: [],
-            total_deposit: propose.total_deposit,
-            turnout: 0,
-          })
-        );
+        proposals.push(Proposal.createNewProposal(propose));
       });
-
-      const accounts: Account[] = await Account.query();
-      const accountKeys = _.keyBy(accounts, 'address');
 
       proposalIds.forEach((id) => {
         const request: GetTxsEventRequest = {
@@ -456,12 +420,9 @@ export default class CrawlGenesisService extends BullableService {
 
       txSubmitProposals.forEach((tx, index) => {
         if (tx.txs.length > 0) {
-          proposals[index].proposer_id =
-            accountKeys[
-              tx.txs[0].body?.messages.find(
-                (msg: any) => msg['@type'] === MSG_TYPE.MSG_SUBMIT_PROPOSAL
-              )?.proposer
-            ].id;
+          proposals[index].proposer_address = tx.txs[0].body?.messages.find(
+            (msg: any) => msg['@type'] === MSG_TYPE.MSG_SUBMIT_PROPOSAL
+          )?.proposer;
           proposals[index].initial_deposit = tx.txs[0].body?.messages.find(
             (msg: any) => msg['@type'] === MSG_TYPE.MSG_SUBMIT_PROPOSAL
           )?.initial_deposit;
