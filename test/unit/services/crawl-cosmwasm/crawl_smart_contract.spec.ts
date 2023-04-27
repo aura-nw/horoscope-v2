@@ -58,19 +58,15 @@ export default class CrawlSmartContractTest {
       timestamp: '2023-01-12T01:53:57.000Z',
       data: {},
     }),
-    events: [
-      {
-        tx_msg_index: 0,
-        type: 'instantiate',
-        attributes: [
-          {
-            key: '_contract_address',
-            value:
-              'aura14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9swserkw',
-          },
-        ],
+    events: {
+      tx_msg_index: 0,
+      type: 'instantiate',
+      attributes: {
+        key: '_contract_address',
+        value:
+          'aura14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9swserkw',
       },
-    ],
+    },
   };
 
   code: Code = Code.fromJson({
@@ -163,7 +159,7 @@ export default class CrawlSmartContractTest {
       }),
     };
 
-    let result = await client.signAndBroadcast(
+    const result = await client.signAndBroadcast(
       'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
       [msgStoreCode],
       defaultSendFee,
@@ -184,13 +180,15 @@ export default class CrawlSmartContractTest {
       }),
     };
 
-    result = await client.signAndBroadcast(
+    const resultInstantiate = await client.signAndBroadcast(
       'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
       [msgInstantiate],
       defaultSendFee,
       memo
     );
-    assertIsDeliverTxSuccess(result);
+    assertIsDeliverTxSuccess(resultInstantiate);
+    // eslint-disable-next-line no-promise-executor-return
+    await new Promise((resolve) => setTimeout(resolve, 10000));
 
     await this.crawlSmartContractService?.handleJob({});
 
