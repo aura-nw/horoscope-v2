@@ -194,18 +194,21 @@ export default class CrawlBlockService extends BullableService {
             ),
             events: events.map((event: any) => ({
               type: event.type,
-              attributes: event.attributes.map((attribute: any) => ({
-                block_height: block?.block?.header?.height,
-                composite_key: attribute?.key
-                  ? `${event.type}.${fromUtf8(fromBase64(attribute?.key))}`
-                  : null,
-                key: attribute?.key
-                  ? fromUtf8(fromBase64(attribute?.key))
-                  : null,
-                value: attribute?.value
-                  ? fromUtf8(fromBase64(attribute?.value))
-                  : null,
-              })),
+              attributes: event.attributes.map(
+                (attribute: any, index: number) => ({
+                  block_height: block?.block?.header?.height,
+                  index,
+                  composite_key: attribute?.key
+                    ? `${event.type}.${fromUtf8(fromBase64(attribute?.key))}`
+                    : null,
+                  key: attribute?.key
+                    ? fromUtf8(fromBase64(attribute?.key))
+                    : null,
+                  value: attribute?.value
+                    ? fromUtf8(fromBase64(attribute?.value))
+                    : null,
+                })
+              ),
               source: event.source,
             })),
           });
