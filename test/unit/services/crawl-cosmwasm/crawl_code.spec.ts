@@ -42,14 +42,18 @@ export default class CrawlCodeTest {
       timestamp: '2023-01-12T01:53:57.000Z',
       data: {},
     }),
-    events: {
-      tx_msg_index: 0,
-      type: 'store_code',
-      attributes: {
-        key: 'code_id',
-        value: '1',
+    events: [
+      {
+        tx_msg_index: 0,
+        type: 'store_code',
+        attributes: [
+          {
+            key: 'code_id',
+            value: '1',
+          },
+        ],
       },
-    },
+    ],
   };
 
   broker = new ServiceBroker({ logger: false });

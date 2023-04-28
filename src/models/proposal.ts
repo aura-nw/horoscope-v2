@@ -176,8 +176,8 @@ export class Proposal extends BaseModel {
       .select('messages.content')
       .first();
 
-    const initialDeposit = tx?.content.initial_deposit;
-    const proposerAddress = tx?.content.proposer;
+    const initialDeposit = tx?.content.initial_deposit || [];
+    const proposerAddress = tx?.content.proposer || null;
 
     return [proposerAddress, initialDeposit];
   }
