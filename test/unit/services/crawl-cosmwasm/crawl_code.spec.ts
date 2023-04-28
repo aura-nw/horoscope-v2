@@ -91,7 +91,7 @@ export default class CrawlCodeTest {
       .empty();
     await Promise.all([
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
-      Code.query().delete(true),
+      knex.raw('TRUNCATE TABLE code RESTART IDENTITY CASCADE'),
       BlockCheckpoint.query().delete(true),
     ]);
     await Block.query().insert(this.blocks);
@@ -103,7 +103,7 @@ export default class CrawlCodeTest {
   async tearDown() {
     await Promise.all([
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
-      Code.query().delete(true),
+      knex.raw('TRUNCATE TABLE code RESTART IDENTITY CASCADE'),
       BlockCheckpoint.query().delete(true),
     ]);
     await this.broker.stop();
