@@ -25,6 +25,8 @@ export class Transaction extends BaseModel {
 
   fee!: string;
 
+  memo!: string;
+
   // fee_payer!: string;
 
   // fee_granter!: string;
@@ -78,6 +80,7 @@ export class Transaction extends BaseModel {
         // signer_public_key_type: { type: 'string' },
         // signer_public_key_threshold: { type: 'number' },
         timestamp: { type: 'string', format: 'date-time' },
+        memo: { type: 'string' },
       },
     };
   }
