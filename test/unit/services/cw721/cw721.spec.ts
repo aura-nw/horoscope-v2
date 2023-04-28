@@ -107,116 +107,7 @@ export default class AssetIndexerTest {
       timestamp: '2023-01-12T01:53:57.000Z',
       data: {
         tx_response: {
-          logs: [
-            {
-              msg_index: 0,
-              log: '',
-              events: [
-                {
-                  _id: '642266867cace8e64d9b637d',
-                  type: 'execute',
-                  attributes: [
-                    {
-                      _id: '642266867cace800f59b637e',
-                      key: '_contract_address',
-                      value:
-                        'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8xe8',
-                    },
-                    {
-                      _id: '642266867cace800f59b637e',
-                      key: '_contract_address',
-                      value:
-                        'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnw456131',
-                    },
-                  ],
-                },
-                {
-                  _id: '642266867cace8e64d9b637d',
-                  type: 'wasm',
-                  attributes: [
-                    {
-                      _id: '642266867cace800f59b637e',
-                      key: '_contract_address',
-                      value:
-                        'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8xe8',
-                    },
-                    {
-                      _id: '642266867cace800f59b637e',
-                      key: 'action',
-                      value: 'phamphong_action',
-                    },
-                    {
-                      _id: '642266867cace800f59b637e',
-                      key: '_contract_address',
-                      value:
-                        'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnw456131',
-                    },
-                    {
-                      _id: '642266867cace800f59b637e',
-                      key: 'action',
-                      value: 'add_mint_phase',
-                    },
-                    {
-                      _id: '642266867cace800f59b637e',
-                      key: 'token_id',
-                      value: 'test1',
-                    },
-                  ],
-                },
-              ],
-            },
-            {
-              msg_index: 0,
-              log: '',
-              events: [
-                {
-                  _id: '642266867cace8e64d9b637d',
-                  type: 'execute',
-                  attributes: [
-                    {
-                      _id: '642266867cace800f59b637e',
-                      key: '_contract_address',
-                      value:
-                        'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8777',
-                    },
-                  ],
-                },
-                {
-                  _id: '642266867cace8e64d9b637d',
-                  type: 'wasm',
-                  attributes: [
-                    {
-                      _id: '642266867cace800f59b637e',
-                      key: '_contract_address',
-                      value:
-                        'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8777',
-                    },
-                    {
-                      _id: '642266867cace800f59b637e',
-                      key: 'action',
-                      value: 'add_whitelist',
-                    },
-                    {
-                      _id: '642266867cace800f59b637e',
-                      key: 'token_id',
-                      value: 'test2',
-                    },
-                    {
-                      _id: '642266867cace800f59b637e',
-                      key: '_contract_address',
-                      value:
-                        'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8777',
-                    },
-                    {
-                      _id: '642266867cace800f59b637e',
-                      key: 'token_id',
-                      value: 'test3',
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
+          logs: [],
         },
       },
     }),
@@ -233,6 +124,113 @@ export default class AssetIndexerTest {
           contract:
             'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8xe8',
         },
+        events: [
+          {
+            type: 'execute',
+            block_height: 3967530,
+            source: 'TX_EVENT',
+            attributes: [
+              {
+                index: 0,
+                block_height: 3967530,
+                composite_key: 'execute._contract_address',
+                key: '_contract_address',
+                value:
+                  'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8xe8',
+              },
+              {
+                index: 1,
+                block_height: 3967530,
+                // tx_id: 1,
+                composite_key: 'execute._contract_address',
+                key: '_contract_address',
+                value:
+                  'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnw456131',
+              },
+            ],
+          },
+          {
+            block_height: 3967530,
+            source: 'TX_EVENT',
+            type: 'instantiate',
+            attributes: [
+              {
+                index: 0,
+                block_height: 3967530,
+                composite_key: 'execute._contract_address',
+                key: '_contract_address',
+                value:
+                  'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8777',
+              },
+              {
+                index: 1,
+                block_height: 3967530,
+                composite_key: 'execute._contract_address',
+                key: 'code_id',
+                value: '6',
+              },
+              {
+                index: 2,
+                block_height: 3967530,
+                composite_key: 'execute._contract_address',
+                key: '_contract_address',
+                value:
+                  'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8777',
+              },
+              {
+                index: 3,
+                block_height: 3967530,
+                composite_key: 'execute._contract_address',
+                key: 'code_id',
+                value: '2',
+              },
+            ],
+          },
+          {
+            block_height: 3967530,
+            source: 'TX_EVENT',
+            type: 'wasm',
+            attributes: [
+              {
+                index: 0,
+                block_height: 3967530,
+                composite_key: 'execute._contract_address',
+                key: '_contract_address',
+                value:
+                  'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8xe8',
+              },
+              {
+                index: 1,
+                block_height: 3967530,
+                composite_key: 'execute._contract_address',
+                key: 'action',
+                value: 'phamphong_action',
+              },
+              {
+                index: 2,
+                block_height: 3967530,
+                composite_key: 'execute._contract_address',
+                key: '_contract_address',
+                value:
+                  'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnw456131',
+              },
+              {
+                index: 3,
+                block_height: 3967530,
+                composite_key: 'execute._contract_address',
+                key: 'action',
+                value: 'add_mint_phase',
+              },
+              {
+                index: 4,
+                block_height: 3967530,
+                composite_key: 'execute._contract_address',
+                key: 'token_id',
+                value: 'test1',
+              },
+            ],
+          },
+        ],
       },
       {
         index: 2,
@@ -246,6 +244,67 @@ export default class AssetIndexerTest {
           contract:
             'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8777',
         },
+        events: [
+          {
+            block_height: 3967530,
+            source: 'TX_EVENT',
+            type: 'execute',
+            attributes: [
+              {
+                index: 0,
+                block_height: 3967530,
+                composite_key: 'execute._contract_address',
+                key: '_contract_address',
+                value:
+                  'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8777',
+              },
+            ],
+          },
+          {
+            block_height: 3967530,
+            source: 'TX_EVENT',
+            type: 'wasm',
+            attributes: [
+              {
+                index: 0,
+                block_height: 3967530,
+                composite_key: 'execute._contract_address',
+                key: '_contract_address',
+                value:
+                  'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8777',
+              },
+              {
+                index: 1,
+                block_height: 3967530,
+                composite_key: 'execute._contract_address',
+                key: 'action',
+                value: 'add_whitelist',
+              },
+              {
+                index: 2,
+                block_height: 3967530,
+                composite_key: 'execute._contract_address',
+                key: 'token_id',
+                value: 'test2',
+              },
+              {
+                index: 3,
+                block_height: 3967530,
+                composite_key: 'execute._contract_address',
+                key: '_contract_address',
+                value:
+                  'aura1lgt3dmtr3ln5wfaydh6mxw524xd2su0hc0tvq750a95jk54jnwvqed8777',
+              },
+              {
+                index: 4,
+                block_height: 3967530,
+                composite_key: 'execute._contract_address',
+                key: 'token_id',
+                value: 'test3',
+              },
+            ],
+          },
+        ],
       },
     ],
   };
@@ -320,9 +379,9 @@ export default class AssetIndexerTest {
     );
   }
 
-  @Test('test getContractMsgs function')
-  public async testGetContractMsgs() {
-    const extractData = await this.cw721HandlerService.getContractMsgs(
+  @Test('test getContractActivities function')
+  public async testGetContractActivities() {
+    const extractData = await this.cw721HandlerService.getContractActivities(
       this.block.height,
       this.block.height
     );
@@ -336,53 +395,72 @@ export default class AssetIndexerTest {
       }))
     ).toEqual([
       {
-        action:
-          this.txInsert.data.tx_response.logs[0].events[1].attributes[1].value,
+        action: 'instantiate',
         sender: this.txInsert.messages[0].sender,
         contractAddress:
-          this.txInsert.data.tx_response.logs[0].events[1].attributes[0].value,
+          this.txInsert.messages[0].events[1].attributes[0].value,
         content: this.txInsert.messages[0].content.msg,
         wasm_attributes: [
-          this.txInsert.data.tx_response.logs[0].events[1].attributes[0],
-          this.txInsert.data.tx_response.logs[0].events[1].attributes[1],
-        ],
+          this.txInsert.messages[0].events[1].attributes[0],
+          this.txInsert.messages[0].events[1].attributes[1],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
       },
       {
-        action:
-          this.txInsert.data.tx_response.logs[0].events[1].attributes[3].value,
+        action: 'instantiate',
         sender: this.txInsert.messages[0].sender,
         contractAddress:
-          this.txInsert.data.tx_response.logs[0].events[1].attributes[2].value,
+          this.txInsert.messages[0].events[1].attributes[0].value,
         content: this.txInsert.messages[0].content.msg,
         wasm_attributes: [
-          this.txInsert.data.tx_response.logs[0].events[1].attributes[2],
-          this.txInsert.data.tx_response.logs[0].events[1].attributes[3],
-          this.txInsert.data.tx_response.logs[0].events[1].attributes[4],
-        ],
+          this.txInsert.messages[0].events[1].attributes[2],
+          this.txInsert.messages[0].events[1].attributes[3],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
       },
       {
-        action:
-          this.txInsert.data.tx_response.logs[1].events[1].attributes[1].value,
+        action: this.txInsert.messages[0].events[2].attributes[1].value,
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.messages[0].events[2].attributes[0].value,
+        content: this.txInsert.messages[0].content.msg,
+        wasm_attributes: [
+          this.txInsert.messages[0].events[2].attributes[0],
+          this.txInsert.messages[0].events[2].attributes[1],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+      },
+      {
+        action: this.txInsert.messages[0].events[2].attributes[3].value,
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.messages[0].events[2].attributes[2].value,
+        content: this.txInsert.messages[0].content.msg,
+        wasm_attributes: [
+          this.txInsert.messages[0].events[2].attributes[2],
+          this.txInsert.messages[0].events[2].attributes[3],
+          this.txInsert.messages[0].events[2].attributes[4],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+      },
+      {
+        action: this.txInsert.messages[1].events[1].attributes[1].value,
         sender: this.txInsert.messages[1].sender,
         contractAddress:
-          this.txInsert.data.tx_response.logs[1].events[1].attributes[0].value,
+          this.txInsert.messages[1].events[1].attributes[0].value,
         content: this.txInsert.messages[1].content.msg,
         wasm_attributes: [
-          this.txInsert.data.tx_response.logs[1].events[1].attributes[0],
-          this.txInsert.data.tx_response.logs[1].events[1].attributes[1],
-          this.txInsert.data.tx_response.logs[1].events[1].attributes[2],
-        ],
+          this.txInsert.messages[1].events[1].attributes[0],
+          this.txInsert.messages[1].events[1].attributes[1],
+          this.txInsert.messages[1].events[1].attributes[2],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
       },
       {
         action: undefined,
         sender: this.txInsert.messages[1].sender,
         contractAddress:
-          this.txInsert.data.tx_response.logs[1].events[1].attributes[0].value,
+          this.txInsert.messages[1].events[1].attributes[0].value,
         content: this.txInsert.messages[1].content.msg,
         wasm_attributes: [
-          this.txInsert.data.tx_response.logs[1].events[1].attributes[3],
-          this.txInsert.data.tx_response.logs[1].events[1].attributes[4],
-        ],
+          this.txInsert.messages[1].events[1].attributes[3],
+          this.txInsert.messages[1].events[1].attributes[4],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
       },
     ]);
   }

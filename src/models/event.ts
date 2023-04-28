@@ -3,8 +3,11 @@ import { Model } from 'objection';
 import BaseModel from './base';
 import { Transaction } from './transaction';
 import { EventAttribute } from './event_attribute';
+import { TransactionMessage } from './transaction_message';
 
 export class Event extends BaseModel {
+  [relation: string]: any;
+
   tx_id!: number;
 
   tx_msg_index: number | undefined;
@@ -49,6 +52,14 @@ export class Event extends BaseModel {
         join: {
           from: 'event.id',
           to: 'event_attribute.event_id',
+        },
+      },
+      message: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: TransactionMessage,
+        join: {
+          from: ['event.tx_id', 'event.tx_msg_index'],
+          to: ['transaction_message.tx_id', 'transaction_message.index'],
         },
       },
     };
