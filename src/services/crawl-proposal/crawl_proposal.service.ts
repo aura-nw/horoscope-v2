@@ -22,12 +22,10 @@ import {
   SERVICE,
 } from '../../common';
 import {
-  Account,
   Block,
   BlockCheckpoint,
   Proposal,
   Transaction,
-  Event,
   EventAttribute,
 } from '../../models';
 
@@ -142,31 +140,9 @@ export default class CrawlProposalService extends BullableService {
 
             let proposalEntity: Proposal;
             if (!foundProposal) {
-              const [proposerId, initialDeposit] =
-                await this.getProposerBySearchTx(proposalId);
-
-              proposalEntity = Proposal.fromJson({
-                proposal_id: proposalId,
-                proposer_id: proposerId,
-                voting_start_time: proposal.proposal.voting_start_time,
-                voting_end_time: proposal.proposal.voting_end_time,
-                submit_time: proposal.proposal.submit_time,
-                deposit_end_time: proposal.proposal.deposit_end_time,
-                type: proposal.proposal.content['@type'],
-                title: proposal.proposal.content.title ?? '',
-                description: proposal.proposal.content.description ?? '',
-                content: proposal.proposal.content,
-                status: proposal.proposal.status,
-                tally: {
-                  yes: '0',
-                  no: '0',
-                  abstain: '0',
-                  no_with_veto: '0',
-                },
-                initial_deposit: initialDeposit,
-                total_deposit: proposal.proposal.total_deposit,
-                turnout: 0,
-              });
+              proposalEntity = await Proposal.createNewProposal(
+                proposal.proposal
+              );
             } else {
               proposalEntity = foundProposal;
               proposalEntity.status = proposal.proposal.status;
@@ -196,39 +172,6 @@ export default class CrawlProposalService extends BullableService {
         .merge()
         .returning('id');
     }
-  }
-
-  private async getProposerBySearchTx(proposalId: number) {
-    const tx = await Transaction.query()
-      .joinRelated('events.[attributes]')
-      .where('transaction.code', 0)
-      .andWhere('events.type', Event.EVENT_TYPE.SUBMIT_PROPOSAL)
-      .andWhere(
-        'events:attributes.key',
-        EventAttribute.ATTRIBUTE_KEY.PROPOSAL_ID
-      )
-      .andWhere('events:attributes.value', proposalId.toString())
-      .select('transaction.data')
-      .limit(1)
-      .offset(0);
-
-    const msgIndex = tx[0].data.tx_response.logs.find(
-      (log: any) =>
-        log.events
-          .find((event: any) => event.type === Event.EVENT_TYPE.SUBMIT_PROPOSAL)
-          .attributes.find(
-            (attr: any) => attr.key === EventAttribute.ATTRIBUTE_KEY.PROPOSAL_ID
-          ).value === proposalId.toString()
-    ).msg_index;
-
-    const initialDeposit =
-      tx[0].data.tx.body.messages[msgIndex].initial_deposit;
-    const proposerAddress = tx[0].data.tx.body.messages[msgIndex].proposer;
-    const proposerId = (
-      await Account.query().findOne('address', proposerAddress)
-    )?.id;
-
-    return [proposerId, initialDeposit];
   }
 
   @QueueHandler({

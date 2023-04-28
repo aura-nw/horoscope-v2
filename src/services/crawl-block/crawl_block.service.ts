@@ -13,14 +13,13 @@ import {
   getLcdClient,
   IAuraJSClientFactory,
   SERVICE,
-  SERVICE_NAME,
 } from '../../common';
 import { Block, BlockCheckpoint, Event } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
-  name: SERVICE_NAME.CRAWL_BLOCK,
+  name: SERVICE.V1.CrawlBlock.key,
   version: 1,
 })
 export default class CrawlBlockService extends BullableService {
