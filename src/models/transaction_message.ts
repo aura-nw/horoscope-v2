@@ -17,6 +17,8 @@ export class TransactionMessage extends BaseModel {
 
   content!: any;
 
+  parent_id!: number;
+
   static get tableName() {
     return 'transaction_message';
   }
@@ -34,6 +36,7 @@ export class TransactionMessage extends BaseModel {
         index: { type: 'number' },
         type: { type: 'string' },
         sender: { type: 'string' },
+        parent_id: { type: 'number' },
       },
     };
   }
