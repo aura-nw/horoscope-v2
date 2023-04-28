@@ -124,7 +124,6 @@ export enum AccountType {
 }
 
 export const BLOCK_CHECKPOINT_JOB_NAME = {
-  BLOCK_HEIGHT_CRAWLED: 'BLOCK_HEIGHT_CRAWLED',
   CW721_HANDLER: 'CW721_HANDLER',
 };
 
