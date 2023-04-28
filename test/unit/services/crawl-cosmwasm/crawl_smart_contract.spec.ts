@@ -9,11 +9,7 @@ import { cosmwasm } from '@aura-nw/aurajs';
 import fs from 'fs';
 import _ from 'lodash';
 import { toUtf8 } from '@cosmjs/encoding';
-import {
-  BULL_JOB_NAME,
-  IAuraJSClientFactory,
-  getLcdClient,
-} from '../../../../src/common';
+import { BULL_JOB_NAME } from '../../../../src/common';
 import config from '../../../../config.json' assert { type: 'json' };
 import network from '../../../../network.json' assert { type: 'json' };
 import {
@@ -32,10 +28,16 @@ import CrawlSmartContractService from '../../../../src/services/crawl-cosmwasm/c
 
 @Describe('Test crawl_smart_contract service')
 export default class CrawlSmartContractTest {
-  blockCheckpoint = BlockCheckpoint.fromJson({
-    job_name: BULL_JOB_NAME.CRAWL_CODE,
-    height: 3967531,
-  });
+  blockCheckpoint = [
+    BlockCheckpoint.fromJson({
+      job_name: BULL_JOB_NAME.CRAWL_CODE,
+      height: 3967531,
+    }),
+    BlockCheckpoint.fromJson({
+      job_name: BULL_JOB_NAME.CRAWL_SMART_CONTRACT,
+      height: 3967500,
+    }),
+  ];
 
   block: Block = Block.fromJson({
     height: 3967530,
@@ -90,8 +92,6 @@ export default class CrawlSmartContractTest {
     store_height: 3967530,
   });
 
-  private _lcdClient!: IAuraJSClientFactory;
-
   broker = new ServiceBroker({ logger: false });
 
   crawlSmartContractService?: CrawlSmartContractService;
@@ -129,8 +129,6 @@ export default class CrawlSmartContractTest {
 
   @Test('Crawl smart contract success')
   public async testCrawlSmartContract() {
-    this._lcdClient = await getLcdClient();
-
     const memo = 'test store code and instantiate smart contract';
 
     const wallet = await DirectSecp256k1HdWallet.fromMnemonic(
@@ -163,7 +161,7 @@ export default class CrawlSmartContractTest {
       }),
     };
 
-    let result = await client.signAndBroadcast(
+    const result = await client.signAndBroadcast(
       'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
       [msgStoreCode],
       defaultSendFee,
@@ -184,13 +182,15 @@ export default class CrawlSmartContractTest {
       }),
     };
 
-    result = await client.signAndBroadcast(
+    const resultInstantiate = await client.signAndBroadcast(
       'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
       [msgInstantiate],
       defaultSendFee,
       memo
     );
-    assertIsDeliverTxSuccess(result);
+    assertIsDeliverTxSuccess(resultInstantiate);
+    // eslint-disable-next-line no-promise-executor-return
+    await new Promise((resolve) => setTimeout(resolve, 30000));
 
     await this.crawlSmartContractService?.handleJob({});
 

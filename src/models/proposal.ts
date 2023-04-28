@@ -1,8 +1,11 @@
 /* eslint-disable import/no-cycle */
-import { Model } from 'objection';
 import { ICoin } from '../common/types/interfaces';
-import { Account } from './account';
 import BaseModel from './base';
+import knex from '../common/utils/db_connection';
+import { Transaction } from './transaction';
+import { Event } from './event';
+import { MSG_TYPE } from '../common';
+import { EventAttribute } from './event_attribute';
 
 export interface ITally {
   yes: string;
@@ -14,7 +17,7 @@ export interface ITally {
 export class Proposal extends BaseModel {
   proposal_id!: number;
 
-  proposer_id!: number;
+  proposer_address: string | undefined;
 
   voting_start_time!: string;
 
@@ -71,7 +74,6 @@ export class Proposal extends BaseModel {
       type: 'object',
       required: [
         'proposal_id',
-        'proposer_id',
         'voting_start_time',
         'voting_end_time',
         'submit_time',
@@ -88,7 +90,7 @@ export class Proposal extends BaseModel {
       ],
       properties: {
         proposal_id: { type: 'number' },
-        proposer_id: { type: 'number' },
+        proposer_address: { type: ['string', 'null'] },
         voting_start_time: { type: 'string', format: 'date-time' },
         voting_end_time: { type: 'string', format: 'date-time' },
         submit_time: { type: 'string', format: 'date-time' },
@@ -132,15 +134,51 @@ export class Proposal extends BaseModel {
   }
 
   static get relationMappings() {
-    return {
-      proposer: {
-        relation: Model.BelongsToOneRelation,
-        modelClass: Account,
-        join: {
-          from: 'proposal.proposer_id',
-          to: 'account.id',
-        },
-      },
-    };
+    return {};
+  }
+
+  static async createNewProposal(proposal: any): Promise<Proposal> {
+    const [proposerAddress, initialDeposit] = await this.getProposerBySearchTx(
+      proposal.proposal_id
+    );
+
+    return Proposal.fromJson({
+      proposal_id: proposal.proposal_id,
+      proposer_address: proposerAddress,
+      voting_start_time: proposal.voting_start_time,
+      voting_end_time: proposal.voting_end_time,
+      submit_time: proposal.submit_time,
+      deposit_end_time: proposal.deposit_end_time,
+      type: proposal.content['@type'],
+      title: proposal.content.title ?? '',
+      description: proposal.content.description ?? '',
+      content: proposal.content,
+      status: proposal.status,
+      tally: proposal.final_tally_result,
+      initial_deposit: initialDeposit,
+      total_deposit: proposal.total_deposit,
+      turnout: 0,
+    });
+  }
+
+  static async getProposerBySearchTx(proposalId: number) {
+    const tx: any = await Transaction.query()
+      .joinRelated('[messages, events.[attributes]]')
+      .where('transaction.code', 0)
+      .andWhere('messages.type', MSG_TYPE.MSG_SUBMIT_PROPOSAL)
+      .andWhere('events.type', Event.EVENT_TYPE.SUBMIT_PROPOSAL)
+      .andWhere(
+        'events:attributes.key',
+        EventAttribute.ATTRIBUTE_KEY.PROPOSAL_ID
+      )
+      .andWhere('events:attributes.value', proposalId.toString())
+      .andWhere(knex.raw('messages.index = events.tx_msg_index'))
+      .select('messages.content')
+      .first();
+
+    const initialDeposit = tx?.content.initial_deposit || [];
+    const proposerAddress = tx?.content.proposer || null;
+
+    return [proposerAddress, initialDeposit];
   }
 }
