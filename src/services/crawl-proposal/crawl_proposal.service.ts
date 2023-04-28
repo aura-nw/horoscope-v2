@@ -21,13 +21,7 @@ import {
   IAuraJSClientFactory,
   SERVICE,
 } from '../../common';
-import {
-  Block,
-  BlockCheckpoint,
-  Proposal,
-  Transaction,
-  EventAttribute,
-} from '../../models';
+import { Block, BlockCheckpoint, Proposal, EventAttribute } from '../../models';
 
 @Service({
   name: SERVICE.V1.CrawlProposalService.key,
