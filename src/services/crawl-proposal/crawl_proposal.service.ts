@@ -19,7 +19,6 @@ import {
   getHttpBatchClient,
   getLcdClient,
   IAuraJSClientFactory,
-  MSG_TYPE,
   SERVICE,
 } from '../../common';
 import {
@@ -27,10 +26,8 @@ import {
   BlockCheckpoint,
   Proposal,
   Transaction,
-  Event,
   EventAttribute,
 } from '../../models';
-import knex from '../../common/utils/db_connection';
 
 @Service({
   name: SERVICE.V1.CrawlProposalService.key,
@@ -129,12 +126,9 @@ export default class CrawlProposalService extends BullableService {
 
             let proposalEntity: Proposal;
             if (!foundProposal) {
-              const [proposerAddress, initialDeposit] =
-                await this.getProposerBySearchTx(proposalId);
-
-              proposalEntity = Proposal.createNewProposal(proposal.proposal);
-              proposalEntity.proposer_address = proposerAddress;
-              proposalEntity.initial_deposit = initialDeposit;
+              proposalEntity = await Proposal.createNewProposal(
+                proposal.proposal
+              );
             } else {
               proposalEntity = foundProposal;
               proposalEntity.status = proposal.proposal.status;
@@ -164,27 +158,6 @@ export default class CrawlProposalService extends BullableService {
         .merge()
         .returning('id');
     }
-  }
-
-  private async getProposerBySearchTx(proposalId: number) {
-    const tx: any = await Transaction.query()
-      .joinRelated('[messages, events.[attributes]]')
-      .where('transaction.code', 0)
-      .andWhere('messages.type', MSG_TYPE.MSG_SUBMIT_PROPOSAL)
-      .andWhere('events.type', Event.EVENT_TYPE.SUBMIT_PROPOSAL)
-      .andWhere(
-        'events:attributes.key',
-        EventAttribute.ATTRIBUTE_KEY.PROPOSAL_ID
-      )
-      .andWhere('events:attributes.value', proposalId.toString())
-      .andWhere(knex.raw('messages.index = events.tx_msg_index'))
-      .select('messages.content')
-      .first();
-
-    const initialDeposit = tx?.content.initial_deposit;
-    const proposerAddress = tx?.content.proposer;
-
-    return [proposerAddress, initialDeposit];
   }
 
   @QueueHandler({

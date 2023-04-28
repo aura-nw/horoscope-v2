@@ -60,15 +60,19 @@ export default class CrawlSmartContractTest {
       timestamp: '2023-01-12T01:53:57.000Z',
       data: {},
     }),
-    events: {
-      tx_msg_index: 0,
-      type: 'instantiate',
-      attributes: {
-        key: '_contract_address',
-        value:
-          'aura14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9swserkw',
+    events: [
+      {
+        tx_msg_index: 0,
+        type: 'instantiate',
+        attributes: [
+          {
+            key: '_contract_address',
+            value:
+              'aura14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9swserkw',
+          },
+        ],
       },
-    },
+    ],
   };
 
   code: Code = Code.fromJson({
