@@ -8,7 +8,6 @@ import {
 } from '@cosmjs/stargate';
 import { cosmos } from '@aura-nw/aurajs';
 import {
-  Account,
   Block,
   BlockCheckpoint,
   Proposal,
@@ -27,18 +26,6 @@ import knex from '../../../../src/common/utils/db_connection';
 
 @Describe('Test crawl_proposal service')
 export default class CrawlProposalTest {
-  account: Account = Account.fromJson(
-    Account.fromJson({
-      address: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
-      balances: [],
-      spendable_balances: [],
-      type: null,
-      pubkey: {},
-      account_number: 0,
-      sequence: 0,
-    })
-  );
-
   block: Block = Block.fromJson({
     height: 3967530,
     hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9F',
@@ -63,6 +50,7 @@ export default class CrawlProposalTest {
           body: {
             messages: [
               {
+                type: '/cosmos.gov.v1beta1.MsgSubmitProposal',
                 initial_deposit: [
                   {
                     denom: 'uaura',
@@ -183,6 +171,21 @@ export default class CrawlProposalTest {
         value: '1',
       },
     },
+    messages: {
+      index: 0,
+      sender: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
+      type: '/cosmos.gov.v1beta1.MsgSubmitProposal',
+      content: {
+        type: '/cosmos.gov.v1beta1.MsgSubmitProposal',
+        initial_deposit: [
+          {
+            denom: 'uaura',
+            amount: '100000',
+          },
+        ],
+        proposer: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
+      },
+    },
   };
 
   broker = new ServiceBroker({ logger: false });
@@ -217,11 +220,9 @@ export default class CrawlProposalTest {
     await Promise.all([
       BlockCheckpoint.query().delete(true),
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
-      knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE'),
     ]);
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);
-    await Account.query().insert(this.account);
   }
 
   @AfterAll()
@@ -229,7 +230,6 @@ export default class CrawlProposalTest {
     await Promise.all([
       BlockCheckpoint.query().delete(true),
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
-      knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE'),
     ]);
     await this.broker.stop();
   }
@@ -279,16 +279,12 @@ export default class CrawlProposalTest {
 
     await this.crawlProposalService?.handleCrawlProposals({});
 
-    const [newProposal, proposer]: [Proposal | undefined, Account | undefined] =
-      await Promise.all([
-        Proposal.query().where('proposal_id', 1).first(),
-        Account.query()
-          .where('address', 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk')
-          .first(),
-      ]);
+    const newProposal = await Proposal.query().where('proposal_id', 1).first();
 
     expect(newProposal?.proposal_id).toEqual(1);
-    expect(newProposal?.proposer_id).toEqual(proposer?.id);
+    expect(newProposal?.proposer_address).toEqual(
+      'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'
+    );
     expect(newProposal?.type).toEqual('/cosmos.gov.v1beta1.TextProposal');
     expect(newProposal?.title).toEqual('Community Pool Spend test 1');
     expect(newProposal?.description).toEqual('Test 1');
