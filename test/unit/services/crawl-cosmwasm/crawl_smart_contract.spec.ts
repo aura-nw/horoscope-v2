@@ -186,7 +186,7 @@ export default class CrawlSmartContractTest {
     );
     assertIsDeliverTxSuccess(resultInstantiate);
     // eslint-disable-next-line no-promise-executor-return
-    await new Promise((resolve) => setTimeout(resolve, 10000));
+    await new Promise((resolve) => setTimeout(resolve, 30000));
 
     await this.crawlSmartContractService?.handleJob({});
 
