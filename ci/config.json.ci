@@ -47,5 +47,9 @@
   },
   "crawlSmartContract": {
     "millisecondCrawl": 5000
+  },
+  "handleAuthzTx": {
+    "numberOfRowPerCall": 100,
+    "millisecondCrawl": 5000
   }
 }
