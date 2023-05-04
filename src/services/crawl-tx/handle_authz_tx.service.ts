@@ -13,46 +13,54 @@ import AuraRegistry from './aura.registry';
 export default class HandleAuthzTxService extends BullableService {
   private _currentTxMsgId = 0;
 
-  private registry = new AuraRegistry().registry;
+  private _checkpoint!: Checkpoint | undefined;
+
+  private _registry!: AuraRegistry;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
+    this._registry = new AuraRegistry(this.logger);
   }
 
   async initEnv() {
-    const checkpoint = await Checkpoint.query().findOne({
+    this._checkpoint = await Checkpoint.query().findOne({
       job_name: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
     });
-    if (!checkpoint) {
-      await Checkpoint.query().insert(
-        Checkpoint.fromJson({
-          job_name: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
-          data: {
-            transaction_message_id: 0,
-          },
-        })
-      );
-    } else if (!checkpoint.data.transaction_message_id) {
-      this._currentTxMsgId = checkpoint.data.transaction_message_id;
+    if (!this._checkpoint) {
+      this._checkpoint = Checkpoint.fromJson({
+        job_name: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
+        data: {
+          transaction_message_id: 0,
+        },
+      });
+      await Checkpoint.query().insert(this._checkpoint);
+    } else if (this._checkpoint.data.transaction_message_id) {
+      this._currentTxMsgId = this._checkpoint.data.transaction_message_id;
     } else {
-      checkpoint.data.transaction_message_id = 0;
-      await Checkpoint.query().update(checkpoint);
+      this._checkpoint.data.transaction_message_id = 0;
+      await Checkpoint.query().update(this._checkpoint);
     }
+    this.logger.info(
+      'Handle Authz Message from id: ',
+      this._checkpoint.data.transaction_message_id
+    );
   }
 
   async handleJob() {
+    // query numberOfRow tx message has type authz and has no parent_id
     const listTxMsgs = await TransactionMessage.query()
       .orderBy('id', 'asc')
       .where('id', '>', this._currentTxMsgId)
       .andWhere('type', MSG_TYPE.MSG_AUTHZ_EXEC)
       .andWhere('parent_id', null)
-      .limit(100);
+      .limit(config.handleAuthzTx.numberOfRowPerCall);
     const listSubTxAuthz: TransactionMessage[] = [];
 
     listTxMsgs.forEach(async (txMsg) => {
+      this.logger.debug('Handling tx msg id: ', txMsg.id);
       txMsg?.content?.msgs.forEach(async (msg: any, index: number) => {
         const decoded = this._camelizeKeys(
-          this.registry.decode({
+          this._registry.decodeMsg({
             value: new Uint8Array(Object.values(msg.value)),
             typeUrl: msg.type_url,
           })
@@ -72,12 +80,23 @@ export default class HandleAuthzTxService extends BullableService {
     if (listSubTxAuthz.length > 0) {
       await TransactionMessage.query().insert(listSubTxAuthz);
     }
-    await Checkpoint.query().update({
-      job_name: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
-      data: {
-        transaction_message_id: listTxMsgs[listTxMsgs.length - 1].id,
-      },
-    });
+
+    if (listTxMsgs.length) {
+      if (this._checkpoint) {
+        this._checkpoint.data.transaction_message_id =
+          listTxMsgs[listTxMsgs.length - 1].id;
+
+        await Checkpoint.query().update(this._checkpoint);
+      } else {
+        this._checkpoint = Checkpoint.fromJson({
+          job_name: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
+          data: {
+            transaction_message_id: 0,
+          },
+        });
+        await Checkpoint.query().insert(this._checkpoint);
+      }
+    }
   }
 
   // convert camelcase to underscore
