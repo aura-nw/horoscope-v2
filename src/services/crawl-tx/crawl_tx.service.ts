@@ -126,6 +126,11 @@ export default class CrawlTxService extends BullableService {
         parsedTx.tx = {
           body: {
             messages: decodedMsgs,
+            memo: decodedTx.body?.memo,
+            timeout_height: decodedTx.body?.timeoutHeight,
+            extension_options: decodedTx.body?.extensionOptions,
+            non_critical_extension_options:
+              decodedTx.body?.nonCriticalExtensionOptions,
           },
           auth_info: {
             fee: {
@@ -258,6 +263,7 @@ export default class CrawlTxService extends BullableService {
           fee: JSON.stringify(tx.tx.auth_info.fee.amount),
           timestamp,
           data: tx,
+          memo: tx.tx.body.memo,
         }),
         events: tx.tx_response.events.map((event: any) => ({
           tx_msg_index: event.msg_index ?? undefined,
