@@ -8,20 +8,18 @@ import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { fromBase64, fromUtf8 } from '@cosmjs/encoding';
 import {
-  BLOCK_CHECKPOINT_JOB_NAME,
   BULL_JOB_NAME,
   getHttpBatchClient,
   getLcdClient,
   IAuraJSClientFactory,
   SERVICE,
-  SERVICE_NAME,
 } from '../../common';
 import { Block, BlockCheckpoint, Event } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
-  name: SERVICE_NAME.CRAWL_BLOCK,
+  name: SERVICE.V1.CrawlBlock.key,
   version: 1,
 })
 export default class CrawlBlockService extends BullableService {
@@ -51,12 +49,12 @@ export default class CrawlBlockService extends BullableService {
 
     // Get handled block from db
     let blockHeightCrawled = await BlockCheckpoint.query().findOne({
-      job_name: BLOCK_CHECKPOINT_JOB_NAME.BLOCK_HEIGHT_CRAWLED,
+      job_name: BULL_JOB_NAME.CRAWL_BLOCK,
     });
 
     if (!blockHeightCrawled) {
       blockHeightCrawled = await BlockCheckpoint.query().insert({
-        job_name: BLOCK_CHECKPOINT_JOB_NAME.BLOCK_HEIGHT_CRAWLED,
+        job_name: BULL_JOB_NAME.CRAWL_BLOCK,
         height: config.crawlBlock.startBlock,
       });
     }
@@ -118,12 +116,12 @@ export default class CrawlBlockService extends BullableService {
         await BlockCheckpoint.query()
           .update(
             BlockCheckpoint.fromJson({
-              job_name: BLOCK_CHECKPOINT_JOB_NAME.BLOCK_HEIGHT_CRAWLED,
+              job_name: BULL_JOB_NAME.CRAWL_BLOCK,
               height: endBlock,
             })
           )
           .where({
-            job_name: BLOCK_CHECKPOINT_JOB_NAME.BLOCK_HEIGHT_CRAWLED,
+            job_name: BULL_JOB_NAME.CRAWL_BLOCK,
           });
         this._currentBlock = endBlock;
       }
