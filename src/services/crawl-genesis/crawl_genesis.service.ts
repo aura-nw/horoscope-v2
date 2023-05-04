@@ -30,6 +30,7 @@ import {
   SERVICE,
 } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
+import knex from '../../common/utils/db_connection';
 
 @Service({
   name: SERVICE.V1.CrawlGenesisService.key,
@@ -229,25 +230,32 @@ export default class CrawlGenesisService extends BullableService {
 
     accounts = await this.handleIbcDenom(accounts);
 
-    if (accounts.length > 0) {
-      await Promise.all(
-        _.chunk(accounts, 5000).map(async (chunkAccounts, index) => {
-          this.logger.info(`Insert batch of 5000 accounts number ${index}`);
-          await Account.query().insertGraph(chunkAccounts);
-        })
-      );
-    }
+    await knex
+      .transaction(async (trx) => {
+        if (accounts.length > 0)
+          await Promise.all(
+            _.chunk(accounts, 5000).map(async (chunkAccounts, index) => {
+              this.logger.info(`Insert batch of 5000 accounts number ${index}`);
+              await Account.query().insertGraph(chunkAccounts).transacting(trx);
+            })
+          );
 
-    await BlockCheckpoint.query()
-      .insert(
-        BlockCheckpoint.fromJson({
-          job_name: BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
-          height: 1,
-        })
-      )
-      .onConflict('job_name')
-      .merge()
-      .returning('id');
+        await BlockCheckpoint.query()
+          .insert(
+            BlockCheckpoint.fromJson({
+              job_name: BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
+              height: 1,
+            })
+          )
+          .onConflict('job_name')
+          .merge()
+          .returning('id')
+          .transacting(trx);
+      })
+      .catch((error) => {
+        this.logger.error(error);
+        throw error;
+      });
 
     await this.terminateProcess();
   }
@@ -314,23 +322,32 @@ export default class CrawlGenesisService extends BullableService {
       validators.push(Validator.createNewValidator(genVal));
     });
 
-    this.logger.info('Insert genesis validators');
-    await Validator.query()
-      .insert(validators)
-      .onConflict('operator_address')
-      .merge()
-      .returning('id');
+    await knex
+      .transaction(async (trx) => {
+        this.logger.info('Insert genesis validators');
+        await Validator.query()
+          .insert(validators)
+          .onConflict('operator_address')
+          .merge()
+          .returning('id')
+          .transacting(trx);
 
-    await BlockCheckpoint.query()
-      .insert(
-        BlockCheckpoint.fromJson({
-          job_name: BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
-          height: 1,
-        })
-      )
-      .onConflict('job_name')
-      .merge()
-      .returning('id');
+        await BlockCheckpoint.query()
+          .insert(
+            BlockCheckpoint.fromJson({
+              job_name: BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
+              height: 1,
+            })
+          )
+          .onConflict('job_name')
+          .merge()
+          .returning('id')
+          .transacting(trx);
+      })
+      .catch((error) => {
+        this.logger.error(error);
+        throw error;
+      });
 
     await this.terminateProcess();
   }
@@ -373,30 +390,39 @@ export default class CrawlGenesisService extends BullableService {
 
     const genProposals = genesis.app_state.gov.proposals;
 
-    if (genProposals.length > 0) {
-      const proposals: Proposal[] = [];
-      genProposals.forEach(async (propose: any) => {
-        proposals.push(await Proposal.createNewProposal(propose));
+    await knex
+      .transaction(async (trx) => {
+        if (genProposals.length > 0) {
+          const proposals: Proposal[] = [];
+          genProposals.forEach(async (propose: any) => {
+            proposals.push(await Proposal.createNewProposal(propose));
+          });
+
+          this.logger.info('Insert genesis proposals');
+          await Proposal.query()
+            .insert(proposals)
+            .onConflict('proposal_id')
+            .merge()
+            .returning('proposal_id')
+            .transacting(trx);
+        }
+
+        await BlockCheckpoint.query()
+          .insert(
+            BlockCheckpoint.fromJson({
+              job_name: BULL_JOB_NAME.CRAWL_GENESIS_PROPOSAL,
+              height: 1,
+            })
+          )
+          .onConflict('job_name')
+          .merge()
+          .returning('id')
+          .transacting(trx);
+      })
+      .catch((error) => {
+        this.logger.error(error);
+        throw error;
       });
-
-      this.logger.info('Insert genesis proposals');
-      await Proposal.query()
-        .insert(proposals)
-        .onConflict('proposal_id')
-        .merge()
-        .returning('proposal_id');
-    }
-
-    await BlockCheckpoint.query()
-      .insert(
-        BlockCheckpoint.fromJson({
-          job_name: BULL_JOB_NAME.CRAWL_GENESIS_PROPOSAL,
-          height: 1,
-        })
-      )
-      .onConflict('job_name')
-      .merge()
-      .returning('id');
 
     await this.terminateProcess();
   }
@@ -440,41 +466,52 @@ export default class CrawlGenesisService extends BullableService {
 
       const genCodes = genesis.app_state.wasm.codes;
 
-      if (genCodes.length > 0) {
-        const codes: Code[] = [];
-        genCodes.forEach((code: any) => {
-          codes.push(
-            Code.fromJson({
-              code_id: parseInt(code.code_id, 10),
-              creator: code.code_info.creator,
-              data_hash: toHex(toUtf8(code.code_info.code_hash)).toLowerCase(),
-              instantiate_permission: code.code_info.instantiate_config,
-              type: null,
-              status: null,
-              store_hash: '',
-              store_height: 0,
-            })
-          );
+      await knex
+        .transaction(async (trx) => {
+          if (genCodes.length > 0) {
+            const codes: Code[] = [];
+            genCodes.forEach((code: any) => {
+              codes.push(
+                Code.fromJson({
+                  code_id: parseInt(code.code_id, 10),
+                  creator: code.code_info.creator,
+                  data_hash: toHex(
+                    toUtf8(code.code_info.code_hash)
+                  ).toLowerCase(),
+                  instantiate_permission: code.code_info.instantiate_config,
+                  type: null,
+                  status: null,
+                  store_hash: '',
+                  store_height: 0,
+                })
+              );
+            });
+
+            this.logger.info('Insert genesis codes');
+            await Code.query()
+              .insert(codes)
+              .onConflict('code_id')
+              .merge()
+              .returning('code_id')
+              .transacting(trx);
+          }
+
+          await BlockCheckpoint.query()
+            .insert(
+              BlockCheckpoint.fromJson({
+                job_name: BULL_JOB_NAME.CRAWL_GENESIS_CODE,
+                height: 1,
+              })
+            )
+            .onConflict('job_name')
+            .merge()
+            .returning('id')
+            .transacting(trx);
+        })
+        .catch((error) => {
+          this.logger.error(error);
+          throw error;
         });
-
-        this.logger.info('Insert genesis codes');
-        await Code.query()
-          .insert(codes)
-          .onConflict('code_id')
-          .merge()
-          .returning('code_id');
-      }
-
-      await BlockCheckpoint.query()
-        .insert(
-          BlockCheckpoint.fromJson({
-            job_name: BULL_JOB_NAME.CRAWL_GENESIS_CODE,
-            height: 1,
-          })
-        )
-        .onConflict('job_name')
-        .merge()
-        .returning('id');
     }
 
     await this.createJob(
@@ -530,40 +567,49 @@ export default class CrawlGenesisService extends BullableService {
 
     const genContracts = genesis.app_state.wasm.contracts;
 
-    if (genContracts.length > 0) {
-      const contracts: SmartContract[] = [];
-      genContracts.forEach((contract: any) => {
-        contracts.push(
-          SmartContract.fromJson({
-            name: null,
-            address: contract.contract_address,
-            creator: contract.contract_info.creator,
-            code_id: contract.contract_info.code_id,
-            instantiate_hash: '',
-            instantiate_height: 0,
-            version: null,
-          })
-        );
+    await knex
+      .transaction(async (trx) => {
+        if (genContracts.length > 0) {
+          const contracts: SmartContract[] = [];
+          genContracts.forEach((contract: any) => {
+            contracts.push(
+              SmartContract.fromJson({
+                name: null,
+                address: contract.contract_address,
+                creator: contract.contract_info.creator,
+                code_id: contract.contract_info.code_id,
+                instantiate_hash: '',
+                instantiate_height: 0,
+                version: null,
+              })
+            );
+          });
+
+          this.logger.info('Insert genesis smart contracts');
+          await SmartContract.query()
+            .insert(contracts)
+            .onConflict('address')
+            .merge()
+            .returning('address')
+            .transacting(trx);
+        }
+
+        await BlockCheckpoint.query()
+          .insert(
+            BlockCheckpoint.fromJson({
+              job_name: BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT,
+              height: 1,
+            })
+          )
+          .onConflict('job_name')
+          .merge()
+          .returning('id')
+          .transacting(trx);
+      })
+      .catch((error) => {
+        this.logger.error(error);
+        throw error;
       });
-
-      this.logger.info('Insert genesis smart contracts');
-      await SmartContract.query()
-        .insert(contracts)
-        .onConflict('address')
-        .merge()
-        .returning('address');
-    }
-
-    await BlockCheckpoint.query()
-      .insert(
-        BlockCheckpoint.fromJson({
-          job_name: BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT,
-          height: 1,
-        })
-      )
-      .onConflict('job_name')
-      .merge()
-      .returning('id');
 
     await this.terminateProcess();
   }

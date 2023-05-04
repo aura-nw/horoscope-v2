@@ -11,6 +11,7 @@ import { cosmos } from '@aura-nw/aurajs';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
+import knex from '../../common/utils/db_connection';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
@@ -21,7 +22,7 @@ import {
   IAuraJSClientFactory,
   SERVICE,
 } from '../../common';
-import { Block, BlockCheckpoint, Proposal, EventAttribute } from '../../models';
+import { BlockCheckpoint, Proposal, EventAttribute } from '../../models';
 
 @Service({
   name: SERVICE.V1.CrawlProposalService.key,
@@ -49,12 +50,15 @@ export default class CrawlProposalService extends BullableService {
 
     const [crawlProposalBlockCheckpoint, latestBlock]: [
       BlockCheckpoint | undefined,
-      Block | undefined
+      EventAttribute | undefined
     ] = await Promise.all([
       BlockCheckpoint.query()
         .select('*')
         .findOne('job_name', BULL_JOB_NAME.CRAWL_PROPOSAL),
-      Block.query().select('height').findOne({}).orderBy('height', 'desc'),
+      EventAttribute.query()
+        .select('block_height')
+        .findOne({})
+        .orderBy('block_height', 'desc'),
     ]);
     this.logger.info(
       `Block Checkpoint: ${JSON.stringify(crawlProposalBlockCheckpoint)}`
@@ -73,10 +77,10 @@ export default class CrawlProposalService extends BullableService {
       });
 
     if (latestBlock) {
-      if (latestBlock.height === startHeight) return;
+      if (latestBlock.block_height === startHeight) return;
       endHeight = Math.min(
         startHeight + config.crawlProposal.crawlProposal.blocksPerCall,
-        latestBlock.height - 1
+        latestBlock.block_height
       );
 
       let proposalIds: number[] = [];
@@ -95,62 +99,71 @@ export default class CrawlProposalService extends BullableService {
           new Set(resultTx.map((res: any) => parseInt(res.value, 10)))
         );
 
-      if (proposalIds.length > 0) {
-        const listProposalsInDb: Proposal[] = await Proposal.query().whereIn(
-          'proposal_id',
-          proposalIds
-        );
+      await knex
+        .transaction(async (trx) => {
+          if (proposalIds.length > 0) {
+            const listProposalsInDb: Proposal[] =
+              await Proposal.query().whereIn('proposal_id', proposalIds);
 
-        await Promise.all(
-          proposalIds.map(async (proposalId: number) => {
-            const proposal =
-              await this._lcdClient.auranw.cosmos.gov.v1beta1.proposal({
-                proposalId,
-              });
+            await Promise.all(
+              proposalIds.map(async (proposalId: number) => {
+                const proposal =
+                  await this._lcdClient.auranw.cosmos.gov.v1beta1.proposal({
+                    proposalId,
+                  });
 
-            this.logger.info(
-              `Proposal ${proposalId} content: ${JSON.stringify(
-                proposal.proposal.content
-              )}`
+                this.logger.info(
+                  `Proposal ${proposalId} content: ${JSON.stringify(
+                    proposal.proposal.content
+                  )}`
+                );
+
+                const foundProposal: Proposal | undefined =
+                  listProposalsInDb.find(
+                    (pro: Proposal) => pro.proposal_id === proposalId
+                  );
+
+                let proposalEntity: Proposal;
+                if (!foundProposal) {
+                  proposalEntity = await Proposal.createNewProposal(
+                    proposal.proposal
+                  );
+                } else {
+                  proposalEntity = foundProposal;
+                  proposalEntity.status = proposal.proposal.status;
+                  proposalEntity.total_deposit =
+                    proposal.proposal.total_deposit;
+                }
+
+                listProposals.push(proposalEntity);
+              })
             );
 
-            const foundProposal: Proposal | undefined = listProposalsInDb.find(
-              (pro: Proposal) => pro.proposal_id === proposalId
-            );
+            if (listProposals.length > 0)
+              await Proposal.query()
+                .insert(listProposals)
+                .onConflict('proposal_id')
+                .merge()
+                .returning('proposal_id')
+                .transacting(trx)
+                .catch((error) => {
+                  this.logger.error('Error insert or update proposals');
+                  this.logger.error(error);
+                });
+          }
 
-            let proposalEntity: Proposal;
-            if (!foundProposal) {
-              proposalEntity = await Proposal.createNewProposal(
-                proposal.proposal
-              );
-            } else {
-              proposalEntity = foundProposal;
-              proposalEntity.status = proposal.proposal.status;
-              proposalEntity.total_deposit = proposal.proposal.total_deposit;
-            }
-
-            listProposals.push(proposalEntity);
-          })
-        );
-
-        if (listProposals.length > 0)
-          await Proposal.query()
-            .insert(listProposals)
-            .onConflict('proposal_id')
+          updateBlockCheckpoint.height = endHeight;
+          await BlockCheckpoint.query()
+            .insert(updateBlockCheckpoint)
+            .onConflict('job_name')
             .merge()
-            .returning('proposal_id')
-            .catch((error) => {
-              this.logger.error('Error insert or update proposals');
-              this.logger.error(error);
-            });
-      }
-
-      updateBlockCheckpoint.height = endHeight;
-      await BlockCheckpoint.query()
-        .insert(updateBlockCheckpoint)
-        .onConflict('job_name')
-        .merge()
-        .returning('id');
+            .returning('id')
+            .transacting(trx);
+        })
+        .catch((error) => {
+          this.logger.error(error);
+          throw error;
+        });
     }
   }
 

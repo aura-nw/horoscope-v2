@@ -69,6 +69,7 @@ export default class CrawlCodeTest {
           {
             key: 'code_id',
             value: '1',
+            block_height: 3967529,
           },
         ],
       },

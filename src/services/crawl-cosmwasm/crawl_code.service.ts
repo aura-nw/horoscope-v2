@@ -12,7 +12,6 @@ import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import {
-  Block,
   BlockCheckpoint,
   Code,
   Event,
@@ -27,6 +26,7 @@ import {
 } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
+import knex from '../../common/utils/db_connection';
 
 @Service({
   name: SERVICE.V1.CrawlCodeService.key,
@@ -50,12 +50,15 @@ export default class CrawlCodeService extends BullableService {
 
     const [codeIdCheckpoint, latestBlock]: [
       BlockCheckpoint | undefined,
-      Block | undefined
+      EventAttribute | undefined
     ] = await Promise.all([
       BlockCheckpoint.query()
         .select('*')
         .findOne('job_name', BULL_JOB_NAME.CRAWL_CODE),
-      Block.query().select('height').findOne({}).orderBy('height', 'desc'),
+      EventAttribute.query()
+        .select('block_height')
+        .findOne({})
+        .orderBy('block_height', 'desc'),
     ]);
 
     let startHeight = 0;
@@ -71,10 +74,10 @@ export default class CrawlCodeService extends BullableService {
       });
 
     if (latestBlock) {
-      if (latestBlock.height === startHeight) return;
+      if (latestBlock.block_height === startHeight) return;
       endHeight = Math.min(
         startHeight + config.crawlCodeId.blocksPerCall,
-        latestBlock.height - 1
+        latestBlock.block_height
       );
 
       const codeIds: {
@@ -111,67 +114,77 @@ export default class CrawlCodeService extends BullableService {
           })
         );
 
-      if (codeIds.length > 0) {
-        codeIds.forEach((code) => {
-          const request: QueryCodeRequest = {
-            codeId: code.codeId,
-          };
-          const data = toHex(
-            cosmwasm.wasm.v1.QueryCodeRequest.encode(request).finish()
-          );
+      await knex
+        .transaction(async (trx) => {
+          if (codeIds.length > 0) {
+            codeIds.forEach((code) => {
+              const request: QueryCodeRequest = {
+                codeId: code.codeId,
+              };
+              const data = toHex(
+                cosmwasm.wasm.v1.QueryCodeRequest.encode(request).finish()
+              );
 
-          batchQueries.push(
-            this._httpBatchClient.execute(
-              createJsonRpcRequest('abci_query', {
-                path: ABCI_QUERY_PATH.CODE,
-                data,
+              batchQueries.push(
+                this._httpBatchClient.execute(
+                  createJsonRpcRequest('abci_query', {
+                    path: ABCI_QUERY_PATH.CODE,
+                    data,
+                  })
+                )
+              );
+            });
+
+            const result: JsonRpcSuccessResponse[] = await Promise.all(
+              batchQueries
+            );
+            const onchainCodeIds: QueryCodeResponse[] = result.map(
+              (res: JsonRpcSuccessResponse) =>
+                cosmwasm.wasm.v1.QueryCodeResponse.decode(
+                  fromBase64(res.result.response.value)
+                )
+            );
+
+            const codeEntities = onchainCodeIds.map((code, index) =>
+              Code.fromJson({
+                code_id: parseInt(codeIds[index].codeId.toString(), 10),
+                creator: code.codeInfo?.creator,
+                data_hash: toHex(
+                  code.codeInfo?.dataHash || new Uint8Array()
+                ).toLowerCase(),
+                instantiate_permission: code.codeInfo?.instantiatePermission,
+                type: null,
+                status: null,
+                store_hash: codeIds[index].hash,
+                store_height: codeIds[index].height,
               })
-            )
-          );
+            );
+
+            if (codeEntities.length > 0)
+              await Code.query()
+                .insert(codeEntities)
+                .onConflict('code_id')
+                .merge()
+                .returning('code_id')
+                .transacting(trx)
+                .catch((error) => {
+                  this.logger.error('Error insert or update code ids');
+                  this.logger.error(error);
+                });
+          }
+
+          updateBlockCheckpoint.height = endHeight;
+          await BlockCheckpoint.query()
+            .insert(updateBlockCheckpoint)
+            .onConflict('job_name')
+            .merge()
+            .returning('id')
+            .transacting(trx);
+        })
+        .catch((error) => {
+          this.logger.error(error);
+          throw error;
         });
-
-        const result: JsonRpcSuccessResponse[] = await Promise.all(
-          batchQueries
-        );
-        const onchainCodeIds: QueryCodeResponse[] = result.map(
-          (res: JsonRpcSuccessResponse) =>
-            cosmwasm.wasm.v1.QueryCodeResponse.decode(
-              fromBase64(res.result.response.value)
-            )
-        );
-
-        const codeEntities = onchainCodeIds.map((code, index) =>
-          Code.fromJson({
-            code_id: parseInt(codeIds[index].codeId.toString(), 10),
-            creator: code.codeInfo?.creator,
-            data_hash: toHex(
-              code.codeInfo?.dataHash || new Uint8Array()
-            ).toLowerCase(),
-            instantiate_permission: code.codeInfo?.instantiatePermission,
-            type: null,
-            status: null,
-            store_hash: codeIds[index].hash,
-            store_height: codeIds[index].height,
-          })
-        );
-
-        await Code.query()
-          .insert(codeEntities)
-          .onConflict('code_id')
-          .merge()
-          .returning('code_id')
-          .catch((error) => {
-            this.logger.error('Error insert or update code ids');
-            this.logger.error(error);
-          });
-      }
-
-      updateBlockCheckpoint.height = endHeight;
-      await BlockCheckpoint.query()
-        .insert(updateBlockCheckpoint)
-        .onConflict('job_name')
-        .merge()
-        .returning('id');
     }
   }
 

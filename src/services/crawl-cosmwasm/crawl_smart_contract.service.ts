@@ -14,6 +14,7 @@ import { cosmwasm } from '@aura-nw/aurajs';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
+import knex from '../../common/utils/db_connection';
 import {
   BlockCheckpoint,
   Event,
@@ -81,7 +82,7 @@ export default class CrawlSmartContractService extends BullableService {
       if (codeIdCheckpoint.height <= startHeight) return;
       endHeight = Math.min(
         startHeight + config.crawlSmartContract.blocksPerCall,
-        codeIdCheckpoint.height - 1
+        codeIdCheckpoint.height
       );
 
       const instantiateTxs: any[] = [];
@@ -110,61 +111,71 @@ export default class CrawlSmartContractService extends BullableService {
       if (resultTx.length > 0)
         resultTx.map((res: any) => instantiateTxs.push(res));
 
-      if (instantiateTxs.length > 0) {
-        instantiateTxs.forEach((transaction) => {
-          queryAddresses.push(transaction.value);
-          smartContracts.push(
-            SmartContract.fromJson({
-              name: null,
-              address: transaction.value,
-              creator: '',
-              code_id: 0,
-              instantiate_hash: transaction.hash,
-              instantiate_height: transaction.height,
-              version: null,
-            })
-          );
-        });
+      await knex
+        .transaction(async (trx) => {
+          if (instantiateTxs.length > 0) {
+            instantiateTxs.forEach((transaction) => {
+              queryAddresses.push(transaction.value);
+              smartContracts.push(
+                SmartContract.fromJson({
+                  name: null,
+                  address: transaction.value,
+                  creator: '',
+                  code_id: 0,
+                  instantiate_hash: transaction.hash,
+                  instantiate_height: transaction.height,
+                  version: null,
+                })
+              );
+            });
 
-        const [contractCw2s, contractInfos] = await this.getContractInfo(
-          queryAddresses
-        );
-
-        smartContracts.forEach((contract, index) => {
-          if (contractCw2s[index]?.data) {
-            const data = JSON.parse(
-              fromUtf8(contractCw2s[index]?.data || new Uint8Array())
+            const [contractCw2s, contractInfos] = await this.getContractInfo(
+              queryAddresses
             );
-            contract.name = data.contract;
-            contract.version = data.version;
+
+            smartContracts.forEach((contract, index) => {
+              if (contractCw2s[index]?.data) {
+                const data = JSON.parse(
+                  fromUtf8(contractCw2s[index]?.data || new Uint8Array())
+                );
+                contract.name = data.contract;
+                contract.version = data.version;
+              }
+              if (contractInfos[index]?.contractInfo) {
+                contract.code_id = parseInt(
+                  contractInfos[index]?.contractInfo?.codeId.toString() || '0',
+                  10
+                );
+                contract.creator =
+                  contractInfos[index]?.contractInfo?.creator || '';
+              }
+            });
+
+            if (smartContracts.length > 0)
+              await SmartContract.query()
+                .insert(smartContracts)
+                .onConflict('address')
+                .merge()
+                .returning('address')
+                .transacting(trx)
+                .catch((error) => {
+                  this.logger.error('Error insert new smart contracts');
+                  this.logger.error(error);
+                });
           }
-          if (contractInfos[index]?.contractInfo) {
-            contract.code_id = parseInt(
-              contractInfos[index]?.contractInfo?.codeId.toString() || '0',
-              10
-            );
-            contract.creator =
-              contractInfos[index]?.contractInfo?.creator || '';
-          }
+
+          updateBlockCheckpoint.height = endHeight;
+          await BlockCheckpoint.query()
+            .insert(updateBlockCheckpoint)
+            .onConflict('job_name')
+            .merge()
+            .returning('id')
+            .transacting(trx);
+        })
+        .catch((error) => {
+          this.logger.error(error);
+          throw error;
         });
-
-        await SmartContract.query()
-          .insert(smartContracts)
-          .onConflict('address')
-          .merge()
-          .returning('address')
-          .catch((error) => {
-            this.logger.error('Error insert new smart contracts');
-            this.logger.error(error);
-          });
-      }
-
-      updateBlockCheckpoint.height = endHeight;
-      await BlockCheckpoint.query()
-        .insert(updateBlockCheckpoint)
-        .onConflict('job_name')
-        .merge()
-        .returning('id');
     }
   }
 

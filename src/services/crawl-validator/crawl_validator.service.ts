@@ -13,6 +13,7 @@ import {
   QueryDelegationResponse,
 } from '@aura-nw/aurajs/types/codegen/cosmos/staking/v1beta1/query';
 import { fromBase64, toHex } from '@cosmjs/encoding';
+import { Knex } from 'knex';
 import { Validator } from '../../models/validator';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import knex from '../../common/utils/db_connection';
@@ -26,7 +27,7 @@ import {
   IPagination,
   SERVICE,
 } from '../../common';
-import { Block, BlockCheckpoint, EventAttribute } from '../../models';
+import { BlockCheckpoint, EventAttribute } from '../../models';
 
 @Service({
   name: SERVICE.V1.CrawlValidatorService.key,
@@ -52,12 +53,15 @@ export default class CrawlValidatorService extends BullableService {
 
     const [crawlValidatorBlockCheckpoint, latestBlock]: [
       BlockCheckpoint | undefined,
-      Block | undefined
+      EventAttribute | undefined
     ] = await Promise.all([
       BlockCheckpoint.query()
         .select('*')
         .findOne('job_name', BULL_JOB_NAME.CRAWL_VALIDATOR),
-      Block.query().select('height').findOne({}).orderBy('height', 'desc'),
+      EventAttribute.query()
+        .select('block_height')
+        .findOne({})
+        .orderBy('block_height', 'desc'),
     ]);
     this.logger.info(
       `Block Checkpoint: ${JSON.stringify(crawlValidatorBlockCheckpoint)}`
@@ -76,8 +80,8 @@ export default class CrawlValidatorService extends BullableService {
       });
 
     if (latestBlock) {
-      if (latestBlock.height === startHeight) return;
-      endHeight = latestBlock.height - 1;
+      if (latestBlock.block_height === startHeight) return;
+      endHeight = latestBlock.block_height;
 
       const resultTx = await EventAttribute.query()
         .whereIn('key', [
@@ -90,24 +94,25 @@ export default class CrawlValidatorService extends BullableService {
         .select('value')
         .limit(1)
         .offset(0);
-      this.logger.info(
-        `Query Tx from height ${startHeight} to ${latestBlock.height}`
-      );
+      this.logger.info(`Query Tx from height ${startHeight} to ${endHeight}`);
 
-      if (resultTx.length > 0) {
-        await this.updateValidators();
-      }
+      await knex.transaction(async (trx) => {
+        if (resultTx.length > 0) {
+          await this.updateValidators(trx);
+        }
 
-      updateBlockCheckpoint.height = endHeight;
-      await BlockCheckpoint.query()
-        .insert(updateBlockCheckpoint)
-        .onConflict('job_name')
-        .merge()
-        .returning('id');
+        updateBlockCheckpoint.height = endHeight;
+        await BlockCheckpoint.query()
+          .insert(updateBlockCheckpoint)
+          .onConflict('job_name')
+          .merge()
+          .returning('id')
+          .transacting(trx);
+      });
     }
   }
 
-  private async updateValidators() {
+  private async updateValidators(trx: Knex.Transaction) {
     let updateValidators: Validator[] = [];
     const validators: any[] = [];
 
@@ -173,6 +178,7 @@ export default class CrawlValidatorService extends BullableService {
       .onConflict('operator_address')
       .merge()
       .returning('id')
+      .transacting(trx)
       .catch((error) => {
         this.logger.error('Error insert or update validators');
         this.logger.error(error);

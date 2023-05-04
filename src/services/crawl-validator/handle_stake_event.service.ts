@@ -2,6 +2,7 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import _ from 'lodash';
 import { parseCoins } from '@cosmjs/proto-signing';
+import knex from '../../common/utils/db_connection';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
 import {
   PowerEvent,
@@ -10,7 +11,6 @@ import {
   EventAttribute,
   Transaction,
   BlockCheckpoint,
-  Block,
 } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
@@ -38,12 +38,15 @@ export default class HandleStakeEventService extends BullableService {
   public async handleJob(_payload: object): Promise<void> {
     const [stakeEventCheckpoint, latestBlock]: [
       BlockCheckpoint | undefined,
-      Block | undefined
+      EventAttribute | undefined
     ] = await Promise.all([
       BlockCheckpoint.query()
         .select('*')
         .findOne('job_name', BULL_JOB_NAME.HANDLE_STAKE_EVENT),
-      Block.query().select('height').findOne({}).orderBy('height', 'desc'),
+      EventAttribute.query()
+        .select('block_height')
+        .findOne({})
+        .orderBy('block_height', 'desc'),
     ]);
     this.logger.info(
       `Block Checkpoint: ${JSON.stringify(stakeEventCheckpoint)}`
@@ -62,16 +65,14 @@ export default class HandleStakeEventService extends BullableService {
       });
 
     if (latestBlock) {
-      if (latestBlock.height === startHeight) return;
+      if (latestBlock.block_height === startHeight) return;
       endHeight = Math.min(
         startHeight + config.handleStakeEvent.blocksPerCall,
-        latestBlock.height - 1
+        latestBlock.block_height
       );
 
       const stakeTxs: any[] = [];
-      this.logger.info(
-        `Query Tx from height ${startHeight} to ${latestBlock.height}`
-      );
+      this.logger.info(`Query Tx from height ${startHeight} to ${endHeight}`);
       const resultTx = await Transaction.query()
         .joinRelated('events.[attributes]')
         .select(
@@ -161,20 +162,24 @@ export default class HandleStakeEventService extends BullableService {
           return powerEvent;
         });
 
-      if (powerEvents.length > 0)
-        await PowerEvent.query()
-          .insert(powerEvents)
-          .catch((error) => {
-            this.logger.error("Error insert validator's power events");
-            this.logger.error(error);
-          });
+      await knex.transaction(async (trx) => {
+        if (powerEvents.length > 0)
+          await PowerEvent.query()
+            .insert(powerEvents)
+            .transacting(trx)
+            .catch((error) => {
+              this.logger.error("Error insert validator's power events");
+              this.logger.error(error);
+            });
 
-      updateBlockCheckpoint.height = endHeight;
-      await BlockCheckpoint.query()
-        .insert(updateBlockCheckpoint)
-        .onConflict('job_name')
-        .merge()
-        .returning('id');
+        updateBlockCheckpoint.height = endHeight;
+        await BlockCheckpoint.query()
+          .insert(updateBlockCheckpoint)
+          .onConflict('job_name')
+          .merge()
+          .returning('id')
+          .transacting(trx);
+      });
     }
   }
 
