@@ -24,14 +24,13 @@ import {
   getHttpBatchClient,
   MSG_TYPE,
   SERVICE,
-  SERVICE_NAME,
 } from '../../common';
 import { Event, Transaction } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
-  name: SERVICE_NAME.CRAWL_TRANSACTION,
+  name: SERVICE.V1.CrawlTransaction.key,
   version: 1,
 })
 export default class CrawlTxService extends BullableService {
