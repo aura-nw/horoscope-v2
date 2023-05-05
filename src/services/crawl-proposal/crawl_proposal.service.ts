@@ -11,6 +11,7 @@ import { cosmos } from '@aura-nw/aurajs';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
+import knex from '../../common/utils/db_connection';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
@@ -21,13 +22,7 @@ import {
   IAuraJSClientFactory,
   SERVICE,
 } from '../../common';
-import {
-  Block,
-  BlockCheckpoint,
-  Proposal,
-  Transaction,
-  EventAttribute,
-} from '../../models';
+import { BlockCheckpoint, Proposal, EventAttribute } from '../../models';
 
 @Service({
   name: SERVICE.V1.CrawlProposalService.key,
@@ -53,125 +48,103 @@ export default class CrawlProposalService extends BullableService {
 
     const listProposals: Proposal[] = [];
 
-    const [crawlProposalBlockCheckpoint, latestBlock]: [
-      BlockCheckpoint | undefined,
-      Block | undefined
-    ] = await Promise.all([
-      BlockCheckpoint.query()
-        .select('*')
-        .findOne('job_name', BULL_JOB_NAME.CRAWL_PROPOSAL),
-      Block.query().select('height').findOne({}).orderBy('height', 'desc'),
-    ]);
+    const [startHeight, endHeight, updateBlockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.CRAWL_PROPOSAL,
+        config.crawlProposal.key
+      );
+    this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
+    if (startHeight >= endHeight) return;
+
+    let proposalIds: number[] = [];
+    const resultTx = await EventAttribute.query()
+      .where('block_height', '>', startHeight)
+      .andWhere('block_height', '<=', endHeight)
+      .andWhere('key', EventAttribute.ATTRIBUTE_KEY.PROPOSAL_ID)
+      .select('value');
     this.logger.info(
-      `Block Checkpoint: ${JSON.stringify(crawlProposalBlockCheckpoint)}`
+      `Result get Tx from height ${startHeight} to ${endHeight}:`
     );
+    this.logger.info(JSON.stringify(resultTx));
 
-    let lastHeight = 0;
-    let updateBlockCheckpoint: BlockCheckpoint;
-    if (crawlProposalBlockCheckpoint) {
-      lastHeight = crawlProposalBlockCheckpoint.height;
-      updateBlockCheckpoint = crawlProposalBlockCheckpoint;
-    } else
-      updateBlockCheckpoint = BlockCheckpoint.fromJson({
-        job_name: BULL_JOB_NAME.CRAWL_PROPOSAL,
-        height: 0,
-      });
+    if (resultTx.length > 0)
+      proposalIds = Array.from(
+        new Set(resultTx.map((res: any) => parseInt(res.value, 10)))
+      );
 
-    if (latestBlock) {
-      if (latestBlock.height === lastHeight) return;
-
-      const proposalIds: number[] = [];
-      let page = 0;
-      let done = false;
-      while (!done) {
-        // eslint-disable-next-line no-await-in-loop
-        const resultTx = await Transaction.query()
-          .joinRelated('events.[attributes]')
-          .where('transaction.height', '>', lastHeight)
-          .andWhere('transaction.height', '<=', latestBlock.height)
-          .andWhere('transaction.code', 0)
-          .andWhere(
-            'events:attributes.key',
-            EventAttribute.ATTRIBUTE_KEY.PROPOSAL_ID
-          )
-          .select(
-            'transaction.id',
-            'transaction.height',
-            'events:attributes.key',
-            'events:attributes.value'
-          )
-          .page(page, 100);
-        this.logger.info(
-          `Result get Tx from height ${lastHeight} to ${latestBlock.height}:`
-        );
-        this.logger.info(JSON.stringify(resultTx));
-
-        if (resultTx.results.length > 0)
-          resultTx.results.map((res: any) =>
-            proposalIds.push(Number.parseInt(res.value, 10))
+    await knex
+      .transaction(async (trx) => {
+        if (proposalIds.length > 0) {
+          const listProposalsInDb: Proposal[] = await Proposal.query().whereIn(
+            'proposal_id',
+            proposalIds
           );
 
-        if (resultTx.results.length === 100) page += 1;
-        else done = true;
-      }
+          await Promise.all(
+            proposalIds.map(async (proposalId: number) => {
+              const proposal =
+                await this._lcdClient.auranw.cosmos.gov.v1beta1.proposal({
+                  proposalId,
+                });
 
-      if (proposalIds.length > 0) {
-        const listProposalsInDb: Proposal[] = await Proposal.query().whereIn(
-          'proposal_id',
-          proposalIds
-        );
-
-        await Promise.all(
-          proposalIds.map(async (proposalId: number) => {
-            const proposal =
-              await this._lcdClient.auranw.cosmos.gov.v1beta1.proposal({
-                proposalId,
-              });
-
-            this.logger.info(
-              `Proposal ${proposalId} content: ${JSON.stringify(
-                proposal.proposal.content
-              )}`
-            );
-
-            const foundProposal: Proposal | undefined = listProposalsInDb.find(
-              (pro: Proposal) => pro.proposal_id === proposalId
-            );
-
-            let proposalEntity: Proposal;
-            if (!foundProposal) {
-              proposalEntity = await Proposal.createNewProposal(
-                proposal.proposal
+              this.logger.info(
+                `Proposal ${proposalId} content: ${JSON.stringify(
+                  proposal.proposal.content
+                )}`
               );
-            } else {
-              proposalEntity = foundProposal;
-              proposalEntity.status = proposal.proposal.status;
-              proposalEntity.total_deposit = proposal.proposal.total_deposit;
-            }
 
-            listProposals.push(proposalEntity);
-          })
-        );
+              const foundProposal: Proposal | undefined =
+                listProposalsInDb.find(
+                  (pro: Proposal) => pro.proposal_id === proposalId
+                );
 
-        if (listProposals.length > 0)
-          await Proposal.query()
-            .insert(listProposals)
-            .onConflict('proposal_id')
-            .merge()
-            .returning('proposal_id')
-            .catch((error) => {
-              this.logger.error('Error insert or update proposals');
-              this.logger.error(error);
-            });
-      }
+              let proposalEntity: Proposal;
+              if (!foundProposal) {
+                const [proposerAddress, initialDeposit] =
+                  await Proposal.getProposerBySearchTx(
+                    proposal.proposal.proposal_id
+                  );
 
-      updateBlockCheckpoint.height = latestBlock.height;
-      await BlockCheckpoint.query()
-        .insert(updateBlockCheckpoint)
-        .onConflict('job_name')
-        .merge()
-        .returning('id');
-    }
+                proposalEntity = Proposal.createNewProposal(
+                  proposal.proposal,
+                  proposerAddress,
+                  initialDeposit
+                );
+              } else {
+                proposalEntity = foundProposal;
+                proposalEntity.status = proposal.proposal.status;
+                proposalEntity.total_deposit = proposal.proposal.total_deposit;
+              }
+
+              listProposals.push(proposalEntity);
+            })
+          );
+
+          if (listProposals.length > 0)
+            await Proposal.query()
+              .insert(listProposals)
+              .onConflict('proposal_id')
+              .merge()
+              .returning('proposal_id')
+              .transacting(trx)
+              .catch((error) => {
+                this.logger.error('Error insert or update proposals');
+                this.logger.error(error);
+              });
+        }
+
+        updateBlockCheckpoint.height = endHeight;
+        await BlockCheckpoint.query()
+          .insert(updateBlockCheckpoint)
+          .onConflict('job_name')
+          .merge()
+          .returning('id')
+          .transacting(trx);
+      })
+      .catch((error) => {
+        this.logger.error(error);
+        throw error;
+      });
   }
 
   @QueueHandler({

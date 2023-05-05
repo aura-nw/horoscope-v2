@@ -21,7 +21,9 @@
     "millisecondCrawl": 5000
   },
   "handleAddress": {
-    "millisecondCrawl": 5000
+    "key": "handleAddress",
+    "millisecondCrawl": 5000,
+    "blocksPerCall": 100
   },
   "crawlAccount": {
     "handleVestingAccount": {
@@ -29,6 +31,8 @@
     }
   },
   "crawlProposal": {
+    "key": "crawlProposal",
+    "blocksPerCall": 100,
     "crawlProposal": {
       "millisecondCrawl": 5000
     },
@@ -40,12 +44,24 @@
     "millisecondCrawl": 10000
   },
   "handleStakeEvent": {
-    "millisecondCrawl": 5000
+    "key": "handleStakeEvent",
+    "millisecondCrawl": 5000,
+    "blocksPerCall": 100
   },
   "crawlCodeId": {
-    "millisecondCrawl": 5000
+    "key": "crawlCodeId",
+    "millisecondCrawl": 5000,
+    "blocksPerCall": 100
   },
   "crawlSmartContract": {
-    "millisecondCrawl": 5000
+    "key": "crawlSmartContract",
+    "millisecondCrawl": 5000,
+    "blocksPerCall": 100
+  },
+  "crawlGenesis": {
+    "accountsPerBatch": 3000,
+    "proposalsPerBatch": 3000,
+    "codesPerBatch": 5000,
+    "smartContractsPerBatch": 5000
   }
 }
