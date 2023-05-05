@@ -84,9 +84,9 @@ export default class CrawlSmartContractService extends BullableService {
         startHeight + config.crawlSmartContract.blocksPerCall,
         codeIdCheckpoint.height
       );
+      this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
 
       const instantiateTxs: any[] = [];
-      this.logger.info(`Query Tx from height ${startHeight} to ${endHeight}`);
       const resultTx = await Transaction.query()
         .joinRelated('events.[attributes]')
         .where('events.type', Event.EVENT_TYPE.INSTANTIATE)
