@@ -15,17 +15,31 @@ import knex from '../../../../src/common/utils/db_connection';
 
 @Describe('Test handle_stake_event service')
 export default class HandleStakeEventTest {
-  block: Block = Block.fromJson({
-    height: 3967530,
-    hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9F',
-    time: '2023-01-12T01:53:57.216Z',
-    proposer_address: 'auraomd;cvpio3j4eg',
-    data: {},
+  blockCheckpoint = BlockCheckpoint.fromJson({
+    job_name: BULL_JOB_NAME.HANDLE_STAKE_EVENT,
+    height: 3967500,
   });
+
+  blocks: Block[] = [
+    Block.fromJson({
+      height: 3967529,
+      hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9A',
+      time: '2023-01-12T01:53:57.216Z',
+      proposer_address: 'auraomd;cvpio3j4eg',
+      data: {},
+    }),
+    Block.fromJson({
+      height: 3967530,
+      hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9F',
+      time: '2023-01-12T01:53:57.216Z',
+      proposer_address: 'auraomd;cvpio3j4eg',
+      data: {},
+    }),
+  ];
 
   txInsert = {
     ...Transaction.fromJson({
-      height: 3967530,
+      height: 3967529,
       hash: '4A8B0DE950F563553A81360D4782F6EC451F6BEF7AC50E2459D1997FA168997D',
       codespace: '',
       code: 0,
@@ -78,14 +92,20 @@ export default class HandleStakeEventTest {
           {
             key: 'validator',
             value: 'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx',
+            index: 0,
+            block_height: 3967529,
           },
           {
             key: 'amount',
             value: '1000000utaura',
+            index: 1,
+            block_height: 3967529,
           },
           {
             key: 'new_shares',
             value: '1000000.000000000000000000',
+            index: 2,
+            block_height: 3967529,
           },
         ],
       },
@@ -96,14 +116,20 @@ export default class HandleStakeEventTest {
           {
             key: 'action',
             value: '/cosmos.staking.v1beta1.MsgDelegate',
+            index: 0,
+            block_height: 3967529,
           },
           {
             key: 'module',
             value: 'staking',
+            index: 1,
+            block_height: 3967529,
           },
           {
             key: 'sender',
             value: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
+            index: 2,
+            block_height: 3967529,
           },
         ],
       },
@@ -114,18 +140,26 @@ export default class HandleStakeEventTest {
           {
             key: 'source_validator',
             value: 'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx',
+            index: 0,
+            block_height: 3967529,
           },
           {
             key: 'destination_validator',
             value: 'auravaloper1edw4lwcz3esnlgzcw60ra8m38k3zygz2xtl2qh',
+            index: 1,
+            block_height: 3967529,
           },
           {
             key: 'amount',
             value: '1000000utaura',
+            index: 2,
+            block_height: 3967529,
           },
           {
             key: 'completion_time',
             value: '2023-04-05T02:45:20Z',
+            index: 3,
+            block_height: 3967529,
           },
         ],
       },
@@ -136,18 +170,26 @@ export default class HandleStakeEventTest {
           {
             key: 'action',
             value: '/cosmos.staking.v1beta1.MsgBeginRedelegate',
+            index: 0,
+            block_height: 3967529,
           },
           {
             key: 'sender',
             value: 'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+            index: 1,
+            block_height: 3967529,
           },
           {
             key: 'module',
             value: 'staking',
+            index: 2,
+            block_height: 3967529,
           },
           {
             key: 'sender',
             value: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
+            index: 3,
+            block_height: 3967529,
           },
         ],
       },
@@ -241,10 +283,11 @@ export default class HandleStakeEventTest {
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE'),
     ]);
-    await Block.query().insert(this.block);
+    await Block.query().insert(this.blocks);
     await Transaction.query().insertGraph(this.txInsert);
     await Account.query().insert(this.account);
     await Validator.query().insert(this.validators);
+    await BlockCheckpoint.query().insert(this.blockCheckpoint);
   }
 
   @AfterAll()
@@ -282,7 +325,7 @@ export default class HandleStakeEventTest {
     expect(
       powerEvents.find((event) => event.type === PowerEvent.TYPES.DELEGATE)
         ?.height
-    ).toEqual(3967530);
+    ).toEqual(3967529);
 
     expect(
       powerEvents.find((event) => event.type === PowerEvent.TYPES.REDELEGATE)
@@ -311,6 +354,6 @@ export default class HandleStakeEventTest {
     expect(
       powerEvents.find((event) => event.type === PowerEvent.TYPES.REDELEGATE)
         ?.height
-    ).toEqual(3967530);
+    ).toEqual(3967529);
   }
 }

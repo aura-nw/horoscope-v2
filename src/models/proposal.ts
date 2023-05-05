@@ -137,14 +137,14 @@ export class Proposal extends BaseModel {
     return {};
   }
 
-  static async createNewProposal(proposal: any): Promise<Proposal> {
-    const [proposerAddress, initialDeposit] = await this.getProposerBySearchTx(
-      proposal.proposal_id
-    );
-
+  static createNewProposal(
+    proposal: any,
+    proposerAddress?: string,
+    initialDeposit?: ICoin[]
+  ) {
     return Proposal.fromJson({
       proposal_id: proposal.proposal_id,
-      proposer_address: proposerAddress,
+      proposer_address: proposerAddress ?? null,
       voting_start_time: proposal.voting_start_time,
       voting_end_time: proposal.voting_end_time,
       submit_time: proposal.submit_time,
@@ -155,13 +155,13 @@ export class Proposal extends BaseModel {
       content: proposal.content,
       status: proposal.status,
       tally: proposal.final_tally_result,
-      initial_deposit: initialDeposit,
+      initial_deposit: initialDeposit ?? [],
       total_deposit: proposal.total_deposit,
       turnout: 0,
     });
   }
 
-  static async getProposerBySearchTx(proposalId: number) {
+  static async getProposerBySearchTx(proposalId: string) {
     const tx: any = await Transaction.query()
       .joinRelated('[messages, events.[attributes]]')
       .where('transaction.code', 0)
@@ -171,13 +171,13 @@ export class Proposal extends BaseModel {
         'events:attributes.key',
         EventAttribute.ATTRIBUTE_KEY.PROPOSAL_ID
       )
-      .andWhere('events:attributes.value', proposalId.toString())
+      .andWhere('events:attributes.value', proposalId)
       .andWhere(knex.raw('messages.index = events.tx_msg_index'))
       .select('messages.content')
       .first();
 
-    const initialDeposit = tx?.content.initial_deposit || [];
-    const proposerAddress = tx?.content.proposer || null;
+    const initialDeposit = tx?.content.initial_deposit;
+    const proposerAddress = tx?.content.proposer;
 
     return [proposerAddress, initialDeposit];
   }

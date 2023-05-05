@@ -22,7 +22,7 @@ import {
 export default class CrawlTallyProposalTest {
   proposal = Proposal.fromJson({
     proposal_id: 1,
-    proposer_address: 'aura136v0nmlv0saryev8wqz89w80edzdu3quzm0ve9',
+    proposer_address: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
     voting_start_time: '2023-04-10T07:28:12.328245471Z',
     voting_end_time: new Date(new Date().getSeconds() - 10).toISOString(),
     submit_time: '2023-04-10T07:28:12.328245471Z',

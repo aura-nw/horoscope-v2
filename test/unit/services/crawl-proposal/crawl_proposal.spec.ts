@@ -26,17 +26,31 @@ import knex from '../../../../src/common/utils/db_connection';
 
 @Describe('Test crawl_proposal service')
 export default class CrawlProposalTest {
-  block: Block = Block.fromJson({
-    height: 3967530,
-    hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9F',
-    time: '2023-01-12T01:53:57.216Z',
-    proposer_address: 'auraomd;cvpio3j4eg',
-    data: {},
+  blockCheckpoint = BlockCheckpoint.fromJson({
+    job_name: BULL_JOB_NAME.CRAWL_PROPOSAL,
+    height: 3967500,
   });
+
+  blocks: Block[] = [
+    Block.fromJson({
+      height: 3967529,
+      hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9A',
+      time: '2023-01-12T01:53:57.216Z',
+      proposer_address: 'auraomd;cvpio3j4eg',
+      data: {},
+    }),
+    Block.fromJson({
+      height: 3967530,
+      hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9F',
+      time: '2023-01-12T01:53:57.216Z',
+      proposer_address: 'auraomd;cvpio3j4eg',
+      data: {},
+    }),
+  ];
 
   txInsert = {
     ...Transaction.fromJson({
-      height: 3967530,
+      height: 3967529,
       hash: '4A8B0DE950F563553A81360D4782F6EC451F6BEF7AC50E2459D1997FA168997D',
       codespace: '',
       code: 0,
@@ -73,10 +87,12 @@ export default class CrawlProposalTest {
                     {
                       key: 'receiver',
                       value: 'aura10d07y265gmmuvt4z0w9aw880jnsr700jp5y852',
+                      block_height: 3967529,
                     },
                     {
                       key: 'amount',
                       value: '100000utaura',
+                      block_height: 3967529,
                     },
                   ],
                 },
@@ -86,10 +102,12 @@ export default class CrawlProposalTest {
                     {
                       key: 'spender',
                       value: 'aura1gypt2w7xg5t9yr76hx6zemwd4xv72jckk03r6t',
+                      block_height: 3967529,
                     },
                     {
                       key: 'amount',
                       value: '100000utaura',
+                      block_height: 3967529,
                     },
                   ],
                 },
@@ -99,18 +117,22 @@ export default class CrawlProposalTest {
                     {
                       key: 'action',
                       value: '/cosmos.gov.v1beta1.MsgSubmitProposal',
+                      block_height: 3967529,
                     },
                     {
                       key: 'sender',
                       value: 'aura1gypt2w7xg5t9yr76hx6zemwd4xv72jckk03r6t',
+                      block_height: 3967529,
                     },
                     {
                       key: 'module',
                       value: 'governance',
+                      block_height: 3967529,
                     },
                     {
                       key: 'sender',
                       value: 'aura1gypt2w7xg5t9yr76hx6zemwd4xv72jckk03r6t',
+                      block_height: 3967529,
                     },
                   ],
                 },
@@ -120,10 +142,12 @@ export default class CrawlProposalTest {
                     {
                       key: 'amount',
                       value: '100000utaura',
+                      block_height: 3967529,
                     },
                     {
                       key: 'proposal_id',
                       value: '1',
+                      block_height: 3967529,
                     },
                   ],
                 },
@@ -133,10 +157,12 @@ export default class CrawlProposalTest {
                     {
                       key: 'proposal_id',
                       value: '1',
+                      block_height: 3967529,
                     },
                     {
                       key: 'proposal_type',
                       value: 'CommunityPoolSpend',
+                      block_height: 3967529,
                     },
                   ],
                 },
@@ -146,14 +172,17 @@ export default class CrawlProposalTest {
                     {
                       key: 'recipient',
                       value: 'aura10d07y265gmmuvt4z0w9aw880jnsr700jp5y852',
+                      block_height: 3967529,
                     },
                     {
                       key: 'sender',
                       value: 'aura1gypt2w7xg5t9yr76hx6zemwd4xv72jckk03r6t',
+                      block_height: 3967529,
                     },
                     {
                       key: 'amount',
                       value: '100000utaura',
+                      block_height: 3967529,
                     },
                   ],
                 },
@@ -169,6 +198,7 @@ export default class CrawlProposalTest {
       attributes: {
         key: 'proposal_id',
         value: '1',
+        block_height: 3967529,
       },
     },
     messages: {
@@ -221,8 +251,9 @@ export default class CrawlProposalTest {
       BlockCheckpoint.query().delete(true),
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
     ]);
-    await Block.query().insert(this.block);
+    await Block.query().insert(this.blocks);
     await Transaction.query().insertGraph(this.txInsert);
+    await BlockCheckpoint.query().insert(this.blockCheckpoint);
   }
 
   @AfterAll()

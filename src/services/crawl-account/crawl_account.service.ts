@@ -16,6 +16,7 @@ import {
   QuerySpendableBalancesRequest,
   QuerySpendableBalancesResponse,
 } from '@aura-nw/aurajs/types/codegen/cosmos/bank/v1beta1/query';
+import knex from '../../common/utils/db_connection';
 import {
   AccountType,
   BULL_JOB_NAME,
@@ -52,8 +53,8 @@ export default class CrawlAccountService extends BullableService {
       addresses: 'string[]',
     },
   })
-  public actionUpdateAccount(ctx: Context<IAddressesParam>) {
-    this.createJobAccount(ctx.params.addresses);
+  private async actionUpdateAccount(ctx: Context<IAddressesParam>) {
+    await this.createJobAccount(ctx.params.addresses);
   }
 
   @QueueHandler({
@@ -68,14 +69,14 @@ export default class CrawlAccountService extends BullableService {
     const accountVestings: AccountVesting[] = [];
 
     if (_payload.addresses.length > 0) {
+      this.logger.info(`Crawl account auth addresses: ${_payload.addresses}`);
+
       const accountsInDb: Account[] = await Account.query()
         .select('*')
         .whereIn('address', _payload.addresses);
 
       await Promise.all(
         accountsInDb.map(async (acc) => {
-          this.logger.info(`Crawl account auth address: ${acc.address}`);
-
           let resultCallApi;
           try {
             resultCallApi =
@@ -155,27 +156,35 @@ export default class CrawlAccountService extends BullableService {
         })
       );
 
-      await Account.query()
-        .insert(accounts)
-        .onConflict('address')
-        .merge()
-        .returning('id')
-        .catch((error) => {
-          this.logger.error('Error insert account auth');
-          this.logger.error(error);
-        });
+      await knex
+        .transaction(async (trx) => {
+          await Account.query()
+            .insert(accounts)
+            .onConflict('address')
+            .merge()
+            .returning('id')
+            .transacting(trx)
+            .catch((error) => {
+              this.logger.error('Error insert account auth');
+              this.logger.error(error);
+            });
 
-      if (accountVestings.length > 0) {
-        await AccountVesting.query()
-          .insert(accountVestings)
-          .onConflict('account_id')
-          .merge()
-          .returning('id')
-          .catch((error) => {
-            this.logger.error('Error insert account vesting');
-            this.logger.error(error);
-          });
-      }
+          if (accountVestings.length > 0)
+            await AccountVesting.query()
+              .insert(accountVestings)
+              .onConflict('account_id')
+              .merge()
+              .returning('id')
+              .transacting(trx)
+              .catch((error) => {
+                this.logger.error('Error insert account vesting');
+                this.logger.error(error);
+              });
+        })
+        .catch((error) => {
+          this.logger.error(error);
+          throw error;
+        });
     }
   }
 
@@ -449,46 +458,48 @@ export default class CrawlAccountService extends BullableService {
     return result;
   }
 
-  private createJobAccount(addresses: string[]) {
-    this.createJob(
-      BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH,
-      'crawl',
-      {
-        addresses,
-      },
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
+  private async createJobAccount(addresses: string[]) {
+    await Promise.all([
+      this.createJob(
+        BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH,
+        'crawl',
+        {
+          addresses,
         },
-      }
-    );
-    this.createJob(
-      BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
-      'crawl',
-      {
-        addresses,
-      },
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
+        {
+          removeOnComplete: true,
+          removeOnFail: {
+            count: 3,
+          },
+        }
+      ),
+      this.createJob(
+        BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
+        'crawl',
+        {
+          addresses,
         },
-      }
-    );
-    this.createJob(
-      BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES,
-      'crawl',
-      {
-        addresses,
-      },
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
+        {
+          removeOnComplete: true,
+          removeOnFail: {
+            count: 3,
+          },
+        }
+      ),
+      this.createJob(
+        BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES,
+        'crawl',
+        {
+          addresses,
         },
-      }
-    );
+        {
+          removeOnComplete: true,
+          removeOnFail: {
+            count: 3,
+          },
+        }
+      ),
+    ]);
   }
 
   @QueueHandler({
