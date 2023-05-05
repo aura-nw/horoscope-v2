@@ -80,6 +80,8 @@
     "redisuri": "^1.1.2",
     "reflect-metadata": "^0.1.13",
     "resilient": "^0.4.0",
+    "stream-chain": "^2.2.5",
+    "stream-json": "^1.7.5",
     "util": "^0.12.4"
   },
   "devDependencies": {
@@ -93,6 +95,8 @@
     "@types/lodash": "^4.14.191",
     "@types/mkdirp": "^1.0.2",
     "@types/node": "^18.11.11",
+    "@types/stream-chain": "^2.0.1",
+    "@types/stream-json": "^1.7.3",
     "@typescript-eslint/eslint-plugin": "^5.40.1",
     "@typescript-eslint/parser": "^5.40.1",
     "ajv-formats": "^2.1.1",

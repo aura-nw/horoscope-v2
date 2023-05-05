@@ -5,7 +5,11 @@ import { ServiceBroker } from 'moleculer';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { fromBase64, fromUtf8, toHex, toUtf8 } from '@cosmjs/encoding';
+import fs from 'fs';
 import _ from 'lodash';
+import Chain from 'stream-chain';
+import Pick from 'stream-json/filters/Pick';
+import StreamArr from 'stream-json/streamers/StreamArray';
 import { QueryDenomTraceRequest } from '@aura-nw/aurajs/types/codegen/ibc/applications/transfer/v1/query';
 import { ibc } from '@aura-nw/aurajs';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
@@ -38,8 +42,6 @@ import knex from '../../common/utils/db_connection';
 export default class CrawlGenesisService extends BullableService {
   private _httpBatchClient: HttpBatchClient;
 
-  private genesisData: any;
-
   private genesisJobs: string[] = [
     BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
     BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
@@ -70,13 +72,13 @@ export default class CrawlGenesisService extends BullableService {
       return;
     }
 
-    let genesisStr = '';
+    if (!fs.existsSync('genesis.txt')) fs.appendFileSync('genesis.txt', '');
     try {
       const genesis = await this._httpBatchClient.execute(
         createJsonRpcRequest('genesis')
       );
 
-      genesisStr = JSON.stringify(genesis);
+      fs.appendFileSync('genesis.txt', JSON.stringify(genesis.result.genesis));
     } catch (error: any) {
       if (JSON.parse(error.message).code !== -32603) {
         this.logger.error(error);
@@ -94,7 +96,10 @@ export default class CrawlGenesisService extends BullableService {
             })
           );
 
-          genesisStr += fromUtf8(fromBase64(resultChunk.result.data));
+          fs.appendFileSync(
+            'genesis.txt',
+            fromUtf8(fromBase64(resultChunk.result.data))
+          );
           index += 1;
         } catch (err) {
           if (JSON.parse(error.message).code !== -32603) {
@@ -107,9 +112,7 @@ export default class CrawlGenesisService extends BullableService {
       }
     }
 
-    this.genesisData = JSON.parse(genesisStr);
-    if (this.genesisData.result)
-      this.genesisData = this.genesisData.result.genesis;
+    fs.renameSync('genesis.txt', 'genesis.json');
 
     let updateBlkCheck: BlockCheckpoint;
     if (genesisBlkCheck) {
@@ -161,14 +164,36 @@ export default class CrawlGenesisService extends BullableService {
       return;
     }
 
-    const { balances } = this.genesisData.app_state.bank;
-    const auths: any = _.keyBy(
-      this.genesisData.result?.genesis.app_state.auth.accounts.map((acc: any) =>
-        Utils.flattenObject(acc)
-      ) ||
-        this.genesisData.app_state.auth.accounts.map((acc: any) =>
-          Utils.flattenObject(acc)
-        ),
+    const pipelineBalances = Chain.chain([
+      fs.createReadStream('genesis.json'),
+      Pick.withParser({ filter: 'app_state.bank.balances' }),
+      StreamArr.streamArray(),
+    ]);
+    const balances: any[] = await new Promise((resolve, reject) => {
+      const bal: any[] = [];
+      pipelineBalances
+        .on('data', (data) => {
+          bal.push(data.value);
+        })
+        .on('end', () => resolve(bal))
+        .on('error', (error) => reject(error));
+    });
+    const pipelineAuth = Chain.chain([
+      fs.createReadStream('genesis.json'),
+      Pick.withParser({ filter: 'app_state.auth.accounts' }),
+      StreamArr.streamArray(),
+    ]);
+    let auths: any = await new Promise((resolve, reject) => {
+      const auth: any[] = [];
+      pipelineAuth
+        .on('data', (data) => {
+          auth.push(data.value);
+        })
+        .on('end', () => resolve(auth))
+        .on('error', (error) => reject(error));
+    });
+    auths = _.keyBy(
+      auths.map((acc: any) => Utils.flattenObject(acc)),
       'address'
     );
 
@@ -253,16 +278,41 @@ export default class CrawlGenesisService extends BullableService {
     );
     if (genesisProcess !== 0) return;
 
-    let genValidators = this.genesisData.app_state.genutil.gen_txs
-      .map((genTx: any) =>
-        genTx.body.messages.filter(
-          (msg: any) => msg['@type'] === MSG_TYPE.MSG_CREATE_VALIDATOR
-        )
-      )
-      .flat();
-    if (genValidators.length === 0)
-      genValidators = this.genesisData.app_state.staking.validators;
-    else
+    const pipelineValidators = Chain.chain([
+      fs.createReadStream('genesis.json'),
+      Pick.withParser({ filter: 'app_state.genutil.gen_txs' }),
+      StreamArr.streamArray(),
+    ]);
+    let genValidators: any[] = await new Promise((resolve, reject) => {
+      const val: any[] = [];
+      pipelineValidators
+        .on('data', (data) => {
+          val.push(
+            data.value.body.messages.filter(
+              (msg: any) => msg['@type'] === MSG_TYPE.MSG_CREATE_VALIDATOR
+            )
+          );
+        })
+        .on('end', () => resolve(val))
+        .on('error', (error) => reject(error));
+    });
+    if (genValidators.length === 0) {
+      const pipelineStaking = Chain.chain([
+        fs.createReadStream('genesis.json'),
+        Pick.withParser({ filter: 'app_state.staking.validators' }),
+        StreamArr.streamArray(),
+      ]);
+      genValidators = await new Promise((resolve, reject) => {
+        const val: any[] = [];
+        pipelineStaking
+          .on('data', (data) => {
+            val.push(data.value);
+          })
+          .on('end', () => resolve(val))
+          .on('error', (error) => reject(error));
+      });
+    } else {
+      genValidators = genValidators.flat();
       genValidators.forEach((genVal: any) => {
         genVal.consensus_pubkey = genVal.pubkey;
         genVal.operator_address = genVal.validator_address;
@@ -273,6 +323,7 @@ export default class CrawlGenesisService extends BullableService {
         genVal.unbonding_height = '0';
         genVal.unbonding_time = new Date(0).toISOString();
       });
+    }
 
     const validators: Validator[] = [];
     genValidators.forEach((genVal: any) => {
@@ -322,7 +373,20 @@ export default class CrawlGenesisService extends BullableService {
     );
     if (genesisProcess !== 0) return;
 
-    const genProposals = this.genesisData.app_state.gov.proposals;
+    const pipelineProposals = Chain.chain([
+      fs.createReadStream('genesis.json'),
+      Pick.withParser({ filter: 'app_state.gov.proposals' }),
+      StreamArr.streamArray(),
+    ]);
+    const genProposals: any[] = await new Promise((resolve, reject) => {
+      const bal: any[] = [];
+      pipelineProposals
+        .on('data', (data) => {
+          bal.push(data.value);
+        })
+        .on('end', () => resolve(bal))
+        .on('error', (error) => reject(error));
+    });
 
     await knex
       .transaction(async (trx) => {
@@ -384,7 +448,20 @@ export default class CrawlGenesisService extends BullableService {
     else if (genesisProcess === 1) return;
 
     if (!done) {
-      const genCodes = this.genesisData.app_state.wasm.codes;
+      const pipelineCodes = Chain.chain([
+        fs.createReadStream('genesis.json'),
+        Pick.withParser({ filter: 'app_state.wasm.codes' }),
+        StreamArr.streamArray(),
+      ]);
+      const genCodes: any[] = await new Promise((resolve, reject) => {
+        const bal: any[] = [];
+        pipelineCodes
+          .on('data', (data) => {
+            bal.push(data.value);
+          })
+          .on('end', () => resolve(bal))
+          .on('error', (error) => reject(error));
+      });
 
       await knex
         .transaction(async (trx) => {
@@ -467,7 +544,20 @@ export default class CrawlGenesisService extends BullableService {
     );
     if (genesisProcess !== 0) return;
 
-    const genContracts = this.genesisData.app_state.wasm.contracts;
+    const pipelineContracts = Chain.chain([
+      fs.createReadStream('genesis.json'),
+      Pick.withParser({ filter: 'app_state.wasm.contracts' }),
+      StreamArr.streamArray(),
+    ]);
+    const genContracts: any[] = await new Promise((resolve, reject) => {
+      const bal: any[] = [];
+      pipelineContracts
+        .on('data', (data) => {
+          bal.push(data.value);
+        })
+        .on('end', () => resolve(bal))
+        .on('error', (error) => reject(error));
+    });
 
     await knex
       .transaction(async (trx) => {
