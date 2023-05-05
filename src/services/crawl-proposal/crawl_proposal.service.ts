@@ -48,123 +48,103 @@ export default class CrawlProposalService extends BullableService {
 
     const listProposals: Proposal[] = [];
 
-    const [crawlProposalBlockCheckpoint, latestBlock]: [
-      BlockCheckpoint | undefined,
-      EventAttribute | undefined
-    ] = await Promise.all([
-      BlockCheckpoint.query()
-        .select('*')
-        .findOne('job_name', BULL_JOB_NAME.CRAWL_PROPOSAL),
-      EventAttribute.query()
-        .select('block_height')
-        .findOne({})
-        .orderBy('block_height', 'desc'),
-    ]);
+    const [startHeight, endHeight, updateBlockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.CRAWL_PROPOSAL,
+        config.crawlProposal.key
+      );
+    this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
+    if (startHeight >= endHeight) return;
+
+    let proposalIds: number[] = [];
+    const resultTx = await EventAttribute.query()
+      .where('block_height', '>', startHeight)
+      .andWhere('block_height', '<=', endHeight)
+      .andWhere('key', EventAttribute.ATTRIBUTE_KEY.PROPOSAL_ID)
+      .select('value');
     this.logger.info(
-      `Block Checkpoint: ${JSON.stringify(crawlProposalBlockCheckpoint)}`
+      `Result get Tx from height ${startHeight} to ${endHeight}:`
     );
+    this.logger.info(JSON.stringify(resultTx));
 
-    let startHeight = 0;
-    let endHeight = 0;
-    let updateBlockCheckpoint: BlockCheckpoint;
-    if (crawlProposalBlockCheckpoint) {
-      startHeight = crawlProposalBlockCheckpoint.height;
-      updateBlockCheckpoint = crawlProposalBlockCheckpoint;
-    } else
-      updateBlockCheckpoint = BlockCheckpoint.fromJson({
-        job_name: BULL_JOB_NAME.CRAWL_PROPOSAL,
-        height: 0,
-      });
-
-    if (latestBlock) {
-      if (latestBlock.block_height === startHeight) return;
-      endHeight = Math.min(
-        startHeight + config.crawlProposal.crawlProposal.blocksPerCall,
-        latestBlock.block_height
+    if (resultTx.length > 0)
+      proposalIds = Array.from(
+        new Set(resultTx.map((res: any) => parseInt(res.value, 10)))
       );
 
-      let proposalIds: number[] = [];
-      const resultTx = await EventAttribute.query()
-        .where('block_height', '>', startHeight)
-        .andWhere('block_height', '<=', endHeight)
-        .andWhere('key', EventAttribute.ATTRIBUTE_KEY.PROPOSAL_ID)
-        .select('value');
-      this.logger.info(
-        `Result get Tx from height ${startHeight} to ${endHeight}:`
-      );
-      this.logger.info(JSON.stringify(resultTx));
+    await knex
+      .transaction(async (trx) => {
+        if (proposalIds.length > 0) {
+          const listProposalsInDb: Proposal[] = await Proposal.query().whereIn(
+            'proposal_id',
+            proposalIds
+          );
 
-      if (resultTx.length > 0)
-        proposalIds = Array.from(
-          new Set(resultTx.map((res: any) => parseInt(res.value, 10)))
-        );
+          await Promise.all(
+            proposalIds.map(async (proposalId: number) => {
+              const proposal =
+                await this._lcdClient.auranw.cosmos.gov.v1beta1.proposal({
+                  proposalId,
+                });
 
-      await knex
-        .transaction(async (trx) => {
-          if (proposalIds.length > 0) {
-            const listProposalsInDb: Proposal[] =
-              await Proposal.query().whereIn('proposal_id', proposalIds);
+              this.logger.info(
+                `Proposal ${proposalId} content: ${JSON.stringify(
+                  proposal.proposal.content
+                )}`
+              );
 
-            await Promise.all(
-              proposalIds.map(async (proposalId: number) => {
-                const proposal =
-                  await this._lcdClient.auranw.cosmos.gov.v1beta1.proposal({
-                    proposalId,
-                  });
-
-                this.logger.info(
-                  `Proposal ${proposalId} content: ${JSON.stringify(
-                    proposal.proposal.content
-                  )}`
+              const foundProposal: Proposal | undefined =
+                listProposalsInDb.find(
+                  (pro: Proposal) => pro.proposal_id === proposalId
                 );
 
-                const foundProposal: Proposal | undefined =
-                  listProposalsInDb.find(
-                    (pro: Proposal) => pro.proposal_id === proposalId
+              let proposalEntity: Proposal;
+              if (!foundProposal) {
+                const [proposerAddress, initialDeposit] =
+                  await Proposal.getProposerBySearchTx(
+                    proposal.proposal.proposal_id
                   );
 
-                let proposalEntity: Proposal;
-                if (!foundProposal) {
-                  proposalEntity = await Proposal.createNewProposal(
-                    proposal.proposal
-                  );
-                } else {
-                  proposalEntity = foundProposal;
-                  proposalEntity.status = proposal.proposal.status;
-                  proposalEntity.total_deposit =
-                    proposal.proposal.total_deposit;
-                }
+                proposalEntity = Proposal.createNewProposal(
+                  proposal.proposal,
+                  proposerAddress,
+                  initialDeposit
+                );
+              } else {
+                proposalEntity = foundProposal;
+                proposalEntity.status = proposal.proposal.status;
+                proposalEntity.total_deposit = proposal.proposal.total_deposit;
+              }
 
-                listProposals.push(proposalEntity);
-              })
-            );
+              listProposals.push(proposalEntity);
+            })
+          );
 
-            if (listProposals.length > 0)
-              await Proposal.query()
-                .insert(listProposals)
-                .onConflict('proposal_id')
-                .merge()
-                .returning('proposal_id')
-                .transacting(trx)
-                .catch((error) => {
-                  this.logger.error('Error insert or update proposals');
-                  this.logger.error(error);
-                });
-          }
+          if (listProposals.length > 0)
+            await Proposal.query()
+              .insert(listProposals)
+              .onConflict('proposal_id')
+              .merge()
+              .returning('proposal_id')
+              .transacting(trx)
+              .catch((error) => {
+                this.logger.error('Error insert or update proposals');
+                this.logger.error(error);
+              });
+        }
 
-          updateBlockCheckpoint.height = endHeight;
-          await BlockCheckpoint.query()
-            .insert(updateBlockCheckpoint)
-            .onConflict('job_name')
-            .merge()
-            .returning('id')
-            .transacting(trx);
-        })
-        .catch((error) => {
-          this.logger.error(error);
-          throw error;
-        });
-    }
+        updateBlockCheckpoint.height = endHeight;
+        await BlockCheckpoint.query()
+          .insert(updateBlockCheckpoint)
+          .onConflict('job_name')
+          .merge()
+          .returning('id')
+          .transacting(trx);
+      })
+      .catch((error) => {
+        this.logger.error(error);
+        throw error;
+      });
   }
 
   @QueueHandler({

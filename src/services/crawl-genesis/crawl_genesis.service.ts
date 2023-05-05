@@ -5,7 +5,6 @@ import { ServiceBroker } from 'moleculer';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { fromBase64, fromUtf8, toHex, toUtf8 } from '@cosmjs/encoding';
-import fs from 'fs';
 import _ from 'lodash';
 import { QueryDenomTraceRequest } from '@aura-nw/aurajs/types/codegen/ibc/applications/transfer/v1/query';
 import { ibc } from '@aura-nw/aurajs';
@@ -39,6 +38,8 @@ import knex from '../../common/utils/db_connection';
 export default class CrawlGenesisService extends BullableService {
   private _httpBatchClient: HttpBatchClient;
 
+  private genesisData: any;
+
   private genesisJobs: string[] = [
     BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
     BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
@@ -69,15 +70,13 @@ export default class CrawlGenesisService extends BullableService {
       return;
     }
 
-    if (!fs.existsSync('genesis.txt')) fs.appendFileSync('genesis.txt', '');
-
-    let genesis;
+    let genesisStr = '';
     try {
-      genesis = await this._httpBatchClient.execute(
+      const genesis = await this._httpBatchClient.execute(
         createJsonRpcRequest('genesis')
       );
 
-      fs.appendFileSync('genesis.txt', JSON.stringify(genesis));
+      genesisStr = JSON.stringify(genesis);
     } catch (error: any) {
       if (JSON.parse(error.message).code !== -32603) {
         this.logger.error(error);
@@ -95,10 +94,7 @@ export default class CrawlGenesisService extends BullableService {
             })
           );
 
-          fs.appendFileSync(
-            'genesis.txt',
-            fromUtf8(fromBase64(resultChunk.result.data))
-          );
+          genesisStr += fromUtf8(fromBase64(resultChunk.result.data));
           index += 1;
         } catch (err) {
           if (JSON.parse(error.message).code !== -32603) {
@@ -110,6 +106,10 @@ export default class CrawlGenesisService extends BullableService {
         }
       }
     }
+
+    this.genesisData = JSON.parse(genesisStr);
+    if (this.genesisData.result)
+      this.genesisData = this.genesisData.result.genesis;
 
     let updateBlkCheck: BlockCheckpoint;
     if (genesisBlkCheck) {
@@ -151,48 +151,22 @@ export default class CrawlGenesisService extends BullableService {
   public async crawlGenesisAccounts(_payload: object): Promise<void> {
     this.logger.info('Crawl genesis accounts');
 
-    const [accountsInDb, genesisCheckpoint]: [
-      Account[],
-      BlockCheckpoint[] | undefined
-    ] = await Promise.all([
-      Account.query(),
-      BlockCheckpoint.query()
-        .select('*')
-        .whereIn('job_name', [
-          BULL_JOB_NAME.CRAWL_GENESIS,
-          BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
-        ]),
-    ]);
-    if (
-      genesisCheckpoint.find(
-        (check) => check.job_name === BULL_JOB_NAME.CRAWL_GENESIS
-      )?.height !== 1
-    ) {
-      this.logger.info('Job crawl genesis is still processing');
-      return;
-    }
-    if (
-      genesisCheckpoint.find(
-        (check) => check.job_name === BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT
-      )?.height === 1
-    ) {
-      this.logger.info('Job crawl genesis accounts had already been processed');
-      return;
-    }
-    if (accountsInDb.length > 0) {
+    const genesisProcess = await this.checckGenesisJobProcess(
+      BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT
+    );
+    if (genesisProcess !== 0) return;
+    const accountsInDb = await Account.query().findOne({});
+    if (accountsInDb) {
       this.logger.error('DB already contains some accounts');
       return;
     }
 
-    let genesis = JSON.parse(fs.readFileSync('genesis.txt').toString());
-    if (genesis.result) genesis = genesis.result.genesis;
-
-    const { balances } = genesis.app_state.bank;
+    const { balances } = this.genesisData.app_state.bank;
     const auths: any = _.keyBy(
-      genesis.result?.genesis.app_state.auth.accounts.map((acc: any) =>
+      this.genesisData.result?.genesis.app_state.auth.accounts.map((acc: any) =>
         Utils.flattenObject(acc)
       ) ||
-        genesis.app_state.auth.accounts.map((acc: any) =>
+        this.genesisData.app_state.auth.accounts.map((acc: any) =>
           Utils.flattenObject(acc)
         ),
       'address'
@@ -234,10 +208,16 @@ export default class CrawlGenesisService extends BullableService {
       .transaction(async (trx) => {
         if (accounts.length > 0)
           await Promise.all(
-            _.chunk(accounts, 5000).map(async (chunkAccounts, index) => {
-              this.logger.info(`Insert batch of 5000 accounts number ${index}`);
-              await Account.query().insertGraph(chunkAccounts).transacting(trx);
-            })
+            _.chunk(accounts, config.crawlGenesis.accountsPerBatch).map(
+              async (chunkAccounts, index) => {
+                this.logger.info(
+                  `Insert batch of ${config.crawlGenesis.accountsPerBatch} genesis accounts number ${index}`
+                );
+                await Account.query()
+                  .insertGraph(chunkAccounts)
+                  .transacting(trx);
+              }
+            )
           );
 
         await BlockCheckpoint.query()
@@ -268,35 +248,12 @@ export default class CrawlGenesisService extends BullableService {
   public async crawlGenesisValidators(_payload: object): Promise<void> {
     this.logger.info('Crawl genesis validators');
 
-    const genesisCheckpoint = await BlockCheckpoint.query()
-      .select('*')
-      .whereIn('job_name', [
-        BULL_JOB_NAME.CRAWL_GENESIS,
-        BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
-      ]);
-    if (
-      genesisCheckpoint.find(
-        (check) => check.job_name === BULL_JOB_NAME.CRAWL_GENESIS
-      )?.height !== 1
-    ) {
-      this.logger.info('Job crawl genesis is still processing');
-      return;
-    }
-    if (
-      genesisCheckpoint.find(
-        (check) => check.job_name === BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR
-      )?.height === 1
-    ) {
-      this.logger.info(
-        'Job crawl genesis validators had already been processed'
-      );
-      return;
-    }
+    const genesisProcess = await this.checckGenesisJobProcess(
+      BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR
+    );
+    if (genesisProcess !== 0) return;
 
-    let genesis = JSON.parse(fs.readFileSync('genesis.txt').toString());
-    if (genesis.result) genesis = genesis.result.genesis;
-
-    let genValidators = genesis.app_state.genutil.gen_txs
+    let genValidators = this.genesisData.app_state.genutil.gen_txs
       .map((genTx: any) =>
         genTx.body.messages.filter(
           (msg: any) => msg['@type'] === MSG_TYPE.MSG_CREATE_VALIDATOR
@@ -304,7 +261,7 @@ export default class CrawlGenesisService extends BullableService {
       )
       .flat();
     if (genValidators.length === 0)
-      genValidators = genesis.app_state.staking.validators;
+      genValidators = this.genesisData.app_state.staking.validators;
     else
       genValidators.forEach((genVal: any) => {
         genVal.consensus_pubkey = genVal.pubkey;
@@ -360,51 +317,34 @@ export default class CrawlGenesisService extends BullableService {
   public async crawlGenesisProposals(_payload: object): Promise<void> {
     this.logger.info('Crawl genesis proposals');
 
-    const genesisCheckpoint = await BlockCheckpoint.query()
-      .select('*')
-      .whereIn('job_name', [
-        BULL_JOB_NAME.CRAWL_GENESIS,
-        BULL_JOB_NAME.CRAWL_GENESIS_PROPOSAL,
-      ]);
-    if (
-      genesisCheckpoint.find(
-        (check) => check.job_name === BULL_JOB_NAME.CRAWL_GENESIS
-      )?.height !== 1
-    ) {
-      this.logger.info('Job crawl genesis is still processing');
-      return;
-    }
-    if (
-      genesisCheckpoint.find(
-        (check) => check.job_name === BULL_JOB_NAME.CRAWL_GENESIS_PROPOSAL
-      )?.height === 1
-    ) {
-      this.logger.info(
-        'Job crawl genesis proposals had already been processed'
-      );
-      return;
-    }
+    const genesisProcess = await this.checckGenesisJobProcess(
+      BULL_JOB_NAME.CRAWL_GENESIS_PROPOSAL
+    );
+    if (genesisProcess !== 0) return;
 
-    let genesis = JSON.parse(fs.readFileSync('genesis.txt').toString());
-    if (genesis.result) genesis = genesis.result.genesis;
-
-    const genProposals = genesis.app_state.gov.proposals;
+    const genProposals = this.genesisData.app_state.gov.proposals;
 
     await knex
       .transaction(async (trx) => {
         if (genProposals.length > 0) {
-          const proposals: Proposal[] = [];
-          genProposals.forEach(async (propose: any) => {
-            proposals.push(await Proposal.createNewProposal(propose));
-          });
-
-          this.logger.info('Insert genesis proposals');
-          await Proposal.query()
-            .insert(proposals)
-            .onConflict('proposal_id')
-            .merge()
-            .returning('proposal_id')
-            .transacting(trx);
+          const proposals: Proposal[] = genProposals.map((propose: any) =>
+            Proposal.createNewProposal(propose)
+          );
+          await Promise.all(
+            _.chunk(proposals, config.crawlGenesis.proposalsPerBatch).map(
+              async (chunkProposals, index) => {
+                this.logger.info(
+                  `Insert batch of ${config.crawlGenesis.proposalsPerBatch} genesis proposals number ${index}`
+                );
+                await Proposal.query()
+                  .insert(chunkProposals)
+                  .onConflict('proposal_id')
+                  .merge()
+                  .returning('proposal_id')
+                  .transacting(trx);
+              }
+            )
+          );
         }
 
         await BlockCheckpoint.query()
@@ -437,63 +377,48 @@ export default class CrawlGenesisService extends BullableService {
 
     let done = false;
 
-    const genesisCheckpoint = await BlockCheckpoint.query()
-      .select('*')
-      .whereIn('job_name', [
-        BULL_JOB_NAME.CRAWL_GENESIS,
-        BULL_JOB_NAME.CRAWL_GENESIS_CODE,
-      ]);
-    if (
-      genesisCheckpoint.find(
-        (check) => check.job_name === BULL_JOB_NAME.CRAWL_GENESIS
-      )?.height !== 1
-    ) {
-      this.logger.info('Job crawl genesis is still processing');
-      return;
-    }
-    if (
-      genesisCheckpoint.find(
-        (check) => check.job_name === BULL_JOB_NAME.CRAWL_GENESIS_CODE
-      )?.height === 1
-    ) {
-      this.logger.info('Job crawl genesis codes had already been processed');
-      done = true;
-    }
+    const genesisProcess = await this.checckGenesisJobProcess(
+      BULL_JOB_NAME.CRAWL_GENESIS_CODE
+    );
+    if (genesisProcess === 2) done = true;
+    else if (genesisProcess === 1) return;
 
     if (!done) {
-      let genesis = JSON.parse(fs.readFileSync('genesis.txt').toString());
-      if (genesis.result) genesis = genesis.result.genesis;
-
-      const genCodes = genesis.app_state.wasm.codes;
+      const genCodes = this.genesisData.app_state.wasm.codes;
 
       await knex
         .transaction(async (trx) => {
           if (genCodes.length > 0) {
-            const codes: Code[] = [];
-            genCodes.forEach((code: any) => {
-              codes.push(
-                Code.fromJson({
-                  code_id: parseInt(code.code_id, 10),
-                  creator: code.code_info.creator,
-                  data_hash: toHex(
-                    toUtf8(code.code_info.code_hash)
-                  ).toLowerCase(),
-                  instantiate_permission: code.code_info.instantiate_config,
-                  type: null,
-                  status: null,
-                  store_hash: '',
-                  store_height: 0,
-                })
-              );
-            });
+            const codes: Code[] = genCodes.map((code: any) =>
+              Code.fromJson({
+                code_id: parseInt(code.code_id, 10),
+                creator: code.code_info.creator,
+                data_hash: toHex(
+                  toUtf8(code.code_info.code_hash)
+                ).toLowerCase(),
+                instantiate_permission: code.code_info.instantiate_config,
+                type: null,
+                status: null,
+                store_hash: '',
+                store_height: 0,
+              })
+            );
 
-            this.logger.info('Insert genesis codes');
-            await Code.query()
-              .insert(codes)
-              .onConflict('code_id')
-              .merge()
-              .returning('code_id')
-              .transacting(trx);
+            await Promise.all(
+              _.chunk(codes, config.crawlGenesis.codesPerBatch).map(
+                async (chunkCodes, index) => {
+                  this.logger.info(
+                    `Insert batch of ${config.crawlGenesis.codesPerBatch} genesis codes number ${index}`
+                  );
+                  await Code.query()
+                    .insert(chunkCodes)
+                    .onConflict('code_id')
+                    .merge()
+                    .returning('code_id')
+                    .transacting(trx);
+                }
+              )
+            );
           }
 
           await BlockCheckpoint.query()
@@ -537,61 +462,43 @@ export default class CrawlGenesisService extends BullableService {
   public async crawlGenesisContracts(_payload: object): Promise<void> {
     this.logger.info('Crawl genesis contracts');
 
-    const genesisCheckpoint = await BlockCheckpoint.query()
-      .select('*')
-      .whereIn('job_name', [
-        BULL_JOB_NAME.CRAWL_GENESIS,
-        BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT,
-      ]);
-    if (
-      genesisCheckpoint.find(
-        (check) => check.job_name === BULL_JOB_NAME.CRAWL_GENESIS
-      )?.height !== 1
-    ) {
-      this.logger.info('Job crawl genesis is still processing');
-      return;
-    }
-    if (
-      genesisCheckpoint.find(
-        (check) => check.job_name === BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT
-      )?.height === 1
-    ) {
-      this.logger.info(
-        'Job crawl genesis contracts had already been processed'
-      );
-      return;
-    }
+    const genesisProcess = await this.checckGenesisJobProcess(
+      BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT
+    );
+    if (genesisProcess !== 0) return;
 
-    let genesis = JSON.parse(fs.readFileSync('genesis.txt').toString());
-    if (genesis.result) genesis = genesis.result.genesis;
-
-    const genContracts = genesis.app_state.wasm.contracts;
+    const genContracts = this.genesisData.app_state.wasm.contracts;
 
     await knex
       .transaction(async (trx) => {
         if (genContracts.length > 0) {
-          const contracts: SmartContract[] = [];
-          genContracts.forEach((contract: any) => {
-            contracts.push(
-              SmartContract.fromJson({
-                name: null,
-                address: contract.contract_address,
-                creator: contract.contract_info.creator,
-                code_id: contract.contract_info.code_id,
-                instantiate_hash: '',
-                instantiate_height: 0,
-                version: null,
-              })
-            );
-          });
+          const contracts: SmartContract[] = genContracts.map((contract: any) =>
+            SmartContract.fromJson({
+              name: null,
+              address: contract.contract_address,
+              creator: contract.contract_info.creator,
+              code_id: contract.contract_info.code_id,
+              instantiate_hash: '',
+              instantiate_height: 0,
+              version: null,
+            })
+          );
 
-          this.logger.info('Insert genesis smart contracts');
-          await SmartContract.query()
-            .insert(contracts)
-            .onConflict('address')
-            .merge()
-            .returning('address')
-            .transacting(trx);
+          await Promise.all(
+            _.chunk(contracts, config.crawlGenesis.smartContractsPerBatch).map(
+              async (chunkContracts, index) => {
+                this.logger.info(
+                  `Insert batch of ${config.crawlGenesis.smartContractsPerBatch} genesis contracts number ${index}`
+                );
+                await SmartContract.query()
+                  .insert(chunkContracts)
+                  .onConflict('address')
+                  .merge()
+                  .returning('address')
+                  .transacting(trx);
+              }
+            )
+          );
         }
 
         await BlockCheckpoint.query()
@@ -682,6 +589,28 @@ export default class CrawlGenesisService extends BullableService {
     });
 
     return accounts;
+  }
+
+  private async checckGenesisJobProcess(jobName: string): Promise<number> {
+    const genesisCheckpoint = await BlockCheckpoint.query()
+      .select('*')
+      .whereIn('job_name', [BULL_JOB_NAME.CRAWL_GENESIS, jobName]);
+    if (
+      genesisCheckpoint.find(
+        (check) => check.job_name === BULL_JOB_NAME.CRAWL_GENESIS
+      )?.height !== 1
+    ) {
+      this.logger.info('Job crawl genesis is still processing');
+      return 1;
+    }
+    if (
+      genesisCheckpoint.find((check) => check.job_name === jobName)?.height ===
+      1
+    ) {
+      this.logger.info(`Job ${jobName} had already been processed`);
+      return 2;
+    }
+    return 0;
   }
 
   private async terminateProcess() {

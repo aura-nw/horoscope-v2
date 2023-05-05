@@ -51,65 +51,37 @@ export default class CrawlValidatorService extends BullableService {
   public async handleCrawlAllValidator(_payload: object): Promise<void> {
     this._lcdClient = await getLcdClient();
 
-    const [crawlValidatorBlockCheckpoint, latestBlock]: [
-      BlockCheckpoint | undefined,
-      EventAttribute | undefined
-    ] = await Promise.all([
-      BlockCheckpoint.query()
-        .select('*')
-        .findOne('job_name', BULL_JOB_NAME.CRAWL_VALIDATOR),
-      EventAttribute.query()
-        .select('block_height')
-        .findOne({})
-        .orderBy('block_height', 'desc'),
-    ]);
-    this.logger.info(
-      `Block Checkpoint: ${JSON.stringify(crawlValidatorBlockCheckpoint)}`
-    );
+    const [startHeight, endHeight, updateBlockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(BULL_JOB_NAME.CRAWL_VALIDATOR);
+    this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
+    if (startHeight >= endHeight) return;
 
-    let startHeight = 0;
-    let endHeight = 0;
-    let updateBlockCheckpoint: BlockCheckpoint;
-    if (crawlValidatorBlockCheckpoint) {
-      startHeight = crawlValidatorBlockCheckpoint.height;
-      updateBlockCheckpoint = crawlValidatorBlockCheckpoint;
-    } else
-      updateBlockCheckpoint = BlockCheckpoint.fromJson({
-        job_name: BULL_JOB_NAME.CRAWL_VALIDATOR,
-        height: 0,
-      });
+    const resultTx = await EventAttribute.query()
+      .whereIn('key', [
+        EventAttribute.ATTRIBUTE_KEY.VALIDATOR,
+        EventAttribute.ATTRIBUTE_KEY.SOURCE_VALIDATOR,
+        EventAttribute.ATTRIBUTE_KEY.DESTINATION_VALIDATOR,
+      ])
+      .andWhere('block_height', '>', startHeight)
+      .andWhere('block_height', '<=', endHeight)
+      .select('value')
+      .limit(1)
+      .offset(0);
+    this.logger.info(`Query Tx from height ${startHeight} to ${endHeight}`);
 
-    if (latestBlock) {
-      if (latestBlock.block_height === startHeight) return;
-      endHeight = latestBlock.block_height;
+    await knex.transaction(async (trx) => {
+      if (resultTx.length > 0) {
+        await this.updateValidators(trx);
+      }
 
-      const resultTx = await EventAttribute.query()
-        .whereIn('key', [
-          EventAttribute.ATTRIBUTE_KEY.VALIDATOR,
-          EventAttribute.ATTRIBUTE_KEY.SOURCE_VALIDATOR,
-          EventAttribute.ATTRIBUTE_KEY.DESTINATION_VALIDATOR,
-        ])
-        .andWhere('block_height', '>', startHeight)
-        .andWhere('block_height', '<=', endHeight)
-        .select('value')
-        .limit(1)
-        .offset(0);
-      this.logger.info(`Query Tx from height ${startHeight} to ${endHeight}`);
-
-      await knex.transaction(async (trx) => {
-        if (resultTx.length > 0) {
-          await this.updateValidators(trx);
-        }
-
-        updateBlockCheckpoint.height = endHeight;
-        await BlockCheckpoint.query()
-          .insert(updateBlockCheckpoint)
-          .onConflict('job_name')
-          .merge()
-          .returning('id')
-          .transacting(trx);
-      });
-    }
+      updateBlockCheckpoint.height = endHeight;
+      await BlockCheckpoint.query()
+        .insert(updateBlockCheckpoint)
+        .onConflict('job_name')
+        .merge()
+        .returning('id')
+        .transacting(trx);
+    });
   }
 
   private async updateValidators(trx: Knex.Transaction) {

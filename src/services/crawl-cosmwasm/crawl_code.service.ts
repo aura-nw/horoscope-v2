@@ -48,144 +48,119 @@ export default class CrawlCodeService extends BullableService {
   public async handleJob(_payload: object): Promise<void> {
     const batchQueries: any[] = [];
 
-    const [codeIdCheckpoint, latestBlock]: [
-      BlockCheckpoint | undefined,
-      EventAttribute | undefined
-    ] = await Promise.all([
-      BlockCheckpoint.query()
-        .select('*')
-        .findOne('job_name', BULL_JOB_NAME.CRAWL_CODE),
-      EventAttribute.query()
-        .select('block_height')
-        .findOne({})
-        .orderBy('block_height', 'desc'),
-    ]);
-
-    let startHeight = 0;
-    let endHeight = 0;
-    let updateBlockCheckpoint: BlockCheckpoint;
-    if (codeIdCheckpoint) {
-      startHeight = codeIdCheckpoint.height;
-      updateBlockCheckpoint = codeIdCheckpoint;
-    } else
-      updateBlockCheckpoint = BlockCheckpoint.fromJson({
-        job_name: BULL_JOB_NAME.CRAWL_CODE,
-        height: 0,
-      });
-
-    if (latestBlock) {
-      if (latestBlock.block_height === startHeight) return;
-      endHeight = Math.min(
-        startHeight + config.crawlCodeId.blocksPerCall,
-        latestBlock.block_height
+    const [startHeight, endHeight, updateBlockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.CRAWL_CODE,
+        config.crawlCodeId.key
       );
+    this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
+    if (startHeight >= endHeight) return;
 
-      const codeIds: {
-        hash: string;
-        height: number;
-        codeId: Long;
-      }[] = [];
-      this.logger.info(`Query Tx from height ${startHeight} to ${endHeight}`);
+    const codeIds: {
+      hash: string;
+      height: number;
+      codeId: Long;
+    }[] = [];
+    this.logger.info(`Query Tx from height ${startHeight} to ${endHeight}`);
 
-      const resultTx = await Transaction.query()
-        .joinRelated('events.[attributes]')
-        .where('transaction.height', '>', startHeight)
-        .andWhere('transaction.height', '<=', endHeight)
-        .andWhere('transaction.code', 0)
-        .andWhere('events.type', Event.EVENT_TYPE.STORE_CODE)
-        .andWhere('events:attributes.key', EventAttribute.ATTRIBUTE_KEY.CODE_ID)
-        .select(
-          'transaction.hash',
-          'transaction.height',
-          'events:attributes.key',
-          'events:attributes.value'
-        );
-      this.logger.info(
-        `Result get Tx from height ${startHeight} to ${endHeight}:`
+    const resultTx = await Transaction.query()
+      .joinRelated('events.[attributes]')
+      .where('transaction.height', '>', startHeight)
+      .andWhere('transaction.height', '<=', endHeight)
+      .andWhere('transaction.code', 0)
+      .andWhere('events.type', Event.EVENT_TYPE.STORE_CODE)
+      .andWhere('events:attributes.key', EventAttribute.ATTRIBUTE_KEY.CODE_ID)
+      .select(
+        'transaction.hash',
+        'transaction.height',
+        'events:attributes.key',
+        'events:attributes.value'
       );
-      this.logger.info(JSON.stringify(resultTx));
+    this.logger.info(
+      `Result get Tx from height ${startHeight} to ${endHeight}:`
+    );
+    this.logger.info(JSON.stringify(resultTx));
 
-      if (resultTx.length > 0)
-        resultTx.map((res: any) =>
-          codeIds.push({
-            hash: res.hash,
-            height: res.height,
-            codeId: Long.fromString(res.value),
-          })
-        );
-
-      await knex
-        .transaction(async (trx) => {
-          if (codeIds.length > 0) {
-            codeIds.forEach((code) => {
-              const request: QueryCodeRequest = {
-                codeId: code.codeId,
-              };
-              const data = toHex(
-                cosmwasm.wasm.v1.QueryCodeRequest.encode(request).finish()
-              );
-
-              batchQueries.push(
-                this._httpBatchClient.execute(
-                  createJsonRpcRequest('abci_query', {
-                    path: ABCI_QUERY_PATH.CODE,
-                    data,
-                  })
-                )
-              );
-            });
-
-            const result: JsonRpcSuccessResponse[] = await Promise.all(
-              batchQueries
-            );
-            const onchainCodeIds: QueryCodeResponse[] = result.map(
-              (res: JsonRpcSuccessResponse) =>
-                cosmwasm.wasm.v1.QueryCodeResponse.decode(
-                  fromBase64(res.result.response.value)
-                )
-            );
-
-            const codeEntities = onchainCodeIds.map((code, index) =>
-              Code.fromJson({
-                code_id: parseInt(codeIds[index].codeId.toString(), 10),
-                creator: code.codeInfo?.creator,
-                data_hash: toHex(
-                  code.codeInfo?.dataHash || new Uint8Array()
-                ).toLowerCase(),
-                instantiate_permission: code.codeInfo?.instantiatePermission,
-                type: null,
-                status: null,
-                store_hash: codeIds[index].hash,
-                store_height: codeIds[index].height,
-              })
-            );
-
-            if (codeEntities.length > 0)
-              await Code.query()
-                .insert(codeEntities)
-                .onConflict('code_id')
-                .merge()
-                .returning('code_id')
-                .transacting(trx)
-                .catch((error) => {
-                  this.logger.error('Error insert or update code ids');
-                  this.logger.error(error);
-                });
-          }
-
-          updateBlockCheckpoint.height = endHeight;
-          await BlockCheckpoint.query()
-            .insert(updateBlockCheckpoint)
-            .onConflict('job_name')
-            .merge()
-            .returning('id')
-            .transacting(trx);
+    if (resultTx.length > 0)
+      resultTx.map((res: any) =>
+        codeIds.push({
+          hash: res.hash,
+          height: res.height,
+          codeId: Long.fromString(res.value),
         })
-        .catch((error) => {
-          this.logger.error(error);
-          throw error;
-        });
-    }
+      );
+
+    await knex
+      .transaction(async (trx) => {
+        if (codeIds.length > 0) {
+          codeIds.forEach((code) => {
+            const request: QueryCodeRequest = {
+              codeId: code.codeId,
+            };
+            const data = toHex(
+              cosmwasm.wasm.v1.QueryCodeRequest.encode(request).finish()
+            );
+
+            batchQueries.push(
+              this._httpBatchClient.execute(
+                createJsonRpcRequest('abci_query', {
+                  path: ABCI_QUERY_PATH.CODE,
+                  data,
+                })
+              )
+            );
+          });
+
+          const result: JsonRpcSuccessResponse[] = await Promise.all(
+            batchQueries
+          );
+          const onchainCodeIds: QueryCodeResponse[] = result.map(
+            (res: JsonRpcSuccessResponse) =>
+              cosmwasm.wasm.v1.QueryCodeResponse.decode(
+                fromBase64(res.result.response.value)
+              )
+          );
+
+          const codeEntities = onchainCodeIds.map((code, index) =>
+            Code.fromJson({
+              code_id: parseInt(codeIds[index].codeId.toString(), 10),
+              creator: code.codeInfo?.creator,
+              data_hash: toHex(
+                code.codeInfo?.dataHash || new Uint8Array()
+              ).toLowerCase(),
+              instantiate_permission: code.codeInfo?.instantiatePermission,
+              type: null,
+              status: null,
+              store_hash: codeIds[index].hash,
+              store_height: codeIds[index].height,
+            })
+          );
+
+          if (codeEntities.length > 0)
+            await Code.query()
+              .insert(codeEntities)
+              .onConflict('code_id')
+              .merge()
+              .returning('code_id')
+              .transacting(trx)
+              .catch((error) => {
+                this.logger.error('Error insert or update code ids');
+                this.logger.error(error);
+              });
+        }
+
+        updateBlockCheckpoint.height = endHeight;
+        await BlockCheckpoint.query()
+          .insert(updateBlockCheckpoint)
+          .onConflict('job_name')
+          .merge()
+          .returning('id')
+          .transacting(trx);
+      })
+      .catch((error) => {
+        this.logger.error(error);
+        throw error;
+      });
   }
 
   public async _start() {

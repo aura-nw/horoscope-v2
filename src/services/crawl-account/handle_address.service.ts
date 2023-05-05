@@ -38,82 +38,53 @@ export default class HandleAddressService extends BullableService {
     prefix: `horoscope-v2-${Config.CHAIN_ID}`,
   })
   public async handleJob(_payload: object): Promise<void> {
-    const [handleAddrCheckpoint, latestBlock]: [
-      BlockCheckpoint | undefined,
-      EventAttribute | undefined
-    ] = await Promise.all([
-      BlockCheckpoint.query()
-        .select('*')
-        .findOne('job_name', BULL_JOB_NAME.HANDLE_ADDRESS),
-      EventAttribute.query()
-        .select('block_height')
-        .findOne({})
-        .orderBy('block_height', 'desc'),
-    ]);
-    this.logger.info(
-      `Block Checkpoint: ${JSON.stringify(handleAddrCheckpoint)}`
+    const [startHeight, endHeight, updateBlockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.HANDLE_ADDRESS,
+        config.handleAddress.key
+      );
+    this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
+    if (startHeight >= endHeight) return;
+
+    const eventAddresses: string[] = [];
+    const resultTx = await EventAttribute.query()
+      .whereIn('key', [
+        EventAttribute.ATTRIBUTE_KEY.RECEIVER,
+        EventAttribute.ATTRIBUTE_KEY.SPENDER,
+        EventAttribute.ATTRIBUTE_KEY.SENDER,
+      ])
+      .andWhere('block_height', '>', startHeight)
+      .andWhere('block_height', '<=', endHeight)
+      .select('value');
+
+    if (resultTx.length > 0)
+      resultTx.map((res: any) => eventAddresses.push(res.value));
+
+    const addresses = Array.from(
+      new Set(
+        eventAddresses.filter((addr: string) =>
+          Utils.isValidAccountAddress(addr, config.networkPrefixAddress, 20)
+        )
+      )
     );
 
-    let startHeight = 0;
-    let endHeight = 0;
-    let updateBlockCheckpoint: BlockCheckpoint;
-    if (handleAddrCheckpoint) {
-      startHeight = handleAddrCheckpoint.height;
-      updateBlockCheckpoint = handleAddrCheckpoint;
-    } else
-      updateBlockCheckpoint = BlockCheckpoint.fromJson({
-        job_name: BULL_JOB_NAME.HANDLE_ADDRESS,
-        height: 0,
+    await knex
+      .transaction(async (trx) => {
+        if (addresses.length > 0)
+          await this.insertNewAccountAndUpdate(addresses, trx);
+
+        updateBlockCheckpoint.height = endHeight;
+        await BlockCheckpoint.query()
+          .insert(updateBlockCheckpoint)
+          .onConflict('job_name')
+          .merge()
+          .returning('id')
+          .transacting(trx);
+      })
+      .catch((error) => {
+        this.logger.error(error);
+        throw error;
       });
-
-    if (latestBlock) {
-      if (latestBlock.block_height === startHeight) return;
-      endHeight = Math.min(
-        startHeight + config.handleAddress.blocksPerCall,
-        latestBlock.block_height
-      );
-
-      const eventAddresses: string[] = [];
-      this.logger.info(`Query Tx from height ${startHeight} to ${endHeight}`);
-      const resultTx = await EventAttribute.query()
-        .whereIn('key', [
-          EventAttribute.ATTRIBUTE_KEY.RECEIVER,
-          EventAttribute.ATTRIBUTE_KEY.SPENDER,
-          EventAttribute.ATTRIBUTE_KEY.SENDER,
-        ])
-        .andWhere('block_height', '>', startHeight)
-        .andWhere('block_height', '<=', endHeight)
-        .select('value');
-
-      if (resultTx.length > 0)
-        resultTx.map((res: any) => eventAddresses.push(res.value));
-
-      const addresses = Array.from(
-        new Set(
-          eventAddresses.filter((addr: string) =>
-            Utils.isValidAccountAddress(addr, config.networkPrefixAddress, 20)
-          )
-        )
-      );
-
-      await knex
-        .transaction(async (trx) => {
-          if (addresses.length > 0)
-            await this.insertNewAccountAndUpdate(addresses, trx);
-
-          updateBlockCheckpoint.height = endHeight;
-          await BlockCheckpoint.query()
-            .insert(updateBlockCheckpoint)
-            .onConflict('job_name')
-            .merge()
-            .returning('id')
-            .transacting(trx);
-        })
-        .catch((error) => {
-          this.logger.error(error);
-          throw error;
-        });
-    }
   }
 
   private async insertNewAccountAndUpdate(
