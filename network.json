@@ -3,35 +3,30 @@
     "chainId": "xstaxy-1",
     "RPC": ["https://rpc.aura.network"],
     "LCD": ["https://lcd.aura.network"],
-    "databaseName": "local_xstaxy1",
-    "redisDBNumber": 0
+    "databaseName": "local_xstaxy1"
   },
   {
     "chainId": "euphoria-2",
     "RPC": ["https://rpc.euphoria.aura.network"],
     "LCD": ["https://lcd.euphoria.aura.network"],
-    "databaseName": "local_euphoria1",
-    "redisDBNumber": 1
+    "databaseName": "local_euphoria1"
   },
   {
     "chainId": "serenity-testnet-001",
     "RPC": ["https://rpc.serenity.aura.network"],
     "LCD": ["https://lcd.serenity.aura.network"],
-    "databaseName": "horoscope_dev_serenitytestnet001",
-    "redisDBNumber": 2
+    "databaseName": "horoscope_dev_serenitytestnet001"
   },
   {
     "chainId": "aura-testnet-2",
     "RPC": ["https://rpc.dev.aura.network"],
     "LCD": ["https://lcd.dev.aura.network"],
-    "databaseName": "horoscope_dev_auratestnet1",
-    "redisDBNumber": 3
+    "databaseName": "horoscope_dev_auratestnet1"
   },
   {
     "chainId": "aura-testnet",
     "RPC": ["http://localhost:26657"],
     "LCD": ["http://localhost:1317"],
-    "databaseName": "horoscope_dev_auratestnet1",
-    "redisDBNumber": 4
+    "databaseName": "horoscope_dev_auratestnet1"
   }
 ]
