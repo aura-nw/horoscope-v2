@@ -2,7 +2,7 @@
 
 Cw721 service is one of services which Horoscope-v2 provide. From transactions, it filter all transactions relating to Cw721: instantiate, mint, transfer, burn, then handle it to update status of all user in Aura network.
 
-![image](docs/images/cw721.png)
+![image](../../../docs/images/cw721.png)
 
 ## Database
 
