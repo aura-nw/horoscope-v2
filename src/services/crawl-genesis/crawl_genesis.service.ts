@@ -72,13 +72,13 @@ export default class CrawlGenesisService extends BullableService {
       return;
     }
 
-    if (!fs.existsSync('genesis.txt')) fs.appendFileSync('genesis.txt', '');
+    if (!fs.existsSync('genesis.json')) fs.appendFileSync('genesis.json', '');
     try {
       const genesis = await this._httpBatchClient.execute(
         createJsonRpcRequest('genesis')
       );
 
-      fs.appendFileSync('genesis.txt', JSON.stringify(genesis.result.genesis));
+      fs.appendFileSync('genesis.json', JSON.stringify(genesis.result.genesis));
     } catch (error: any) {
       if (JSON.parse(error.message).code !== -32603) {
         this.logger.error(error);
@@ -97,7 +97,7 @@ export default class CrawlGenesisService extends BullableService {
           );
 
           fs.appendFileSync(
-            'genesis.txt',
+            'genesis.json',
             fromUtf8(fromBase64(resultChunk.result.data))
           );
           index += 1;
@@ -112,7 +112,7 @@ export default class CrawlGenesisService extends BullableService {
       }
     }
 
-    fs.renameSync('genesis.txt', 'genesis.json');
+    // fs.renameSync('genesis.txt', 'genesis.json');
 
     let updateBlkCheck: BlockCheckpoint;
     if (genesisBlkCheck) {
@@ -154,6 +154,9 @@ export default class CrawlGenesisService extends BullableService {
   public async crawlGenesisAccounts(_payload: object): Promise<void> {
     this.logger.info('Crawl genesis accounts');
 
+    let accounts: Account[] = [];
+    let done = false;
+
     const genesisProcess = await this.checckGenesisJobProcess(
       BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT
     );
@@ -161,73 +164,76 @@ export default class CrawlGenesisService extends BullableService {
     const accountsInDb = await Account.query().findOne({});
     if (accountsInDb) {
       this.logger.error('DB already contains some accounts');
-      return;
+      done = true;
     }
 
-    const pipelineBalances = Chain.chain([
-      fs.createReadStream('genesis.json'),
-      Pick.withParser({ filter: 'app_state.bank.balances' }),
-      StreamArr.streamArray(),
-    ]);
-    const balances: any[] = await new Promise((resolve, reject) => {
-      const bal: any[] = [];
-      pipelineBalances
-        .on('data', (data) => {
-          bal.push(data.value);
-        })
-        .on('end', () => resolve(bal))
-        .on('error', (error) => reject(error));
-    });
-    const pipelineAuth = Chain.chain([
-      fs.createReadStream('genesis.json'),
-      Pick.withParser({ filter: 'app_state.auth.accounts' }),
-      StreamArr.streamArray(),
-    ]);
-    let auths: any = await new Promise((resolve, reject) => {
-      const auth: any[] = [];
-      pipelineAuth
-        .on('data', (data) => {
-          auth.push(data.value);
-        })
-        .on('end', () => resolve(auth))
-        .on('error', (error) => reject(error));
-    });
-    auths = _.keyBy(
-      auths.map((acc: any) => Utils.flattenObject(acc)),
-      'address'
-    );
+    if (!done) {
+      const pipelineBalances = Chain.chain([
+        fs.createReadStream('genesis.json'),
+        Pick.withParser({ filter: 'app_state.bank.balances' }),
+        StreamArr.streamArray(),
+      ]);
+      const balances: any[] = await new Promise((resolve, reject) => {
+        const bal: any[] = [];
+        pipelineBalances
+          .on('data', (data) => {
+            bal.push(data.value);
+          })
+          .on('end', () => resolve(bal))
+          .on('error', (error) => reject(error));
+      });
+      const pipelineAuth = Chain.chain([
+        fs.createReadStream('genesis.json'),
+        Pick.withParser({ filter: 'app_state.auth.accounts' }),
+        StreamArr.streamArray(),
+      ]);
+      let auths: any = await new Promise((resolve, reject) => {
+        const auth: any[] = [];
+        pipelineAuth
+          .on('data', (data) => {
+            auth.push(data.value);
+          })
+          .on('end', () => resolve(auth))
+          .on('error', (error) => reject(error));
+      });
+      auths = _.keyBy(
+        auths.map((acc: any) => Utils.flattenObject(acc)),
+        'address'
+      );
 
-    let accounts: Account[] = [];
-
-    balances.forEach((bal: any) => {
-      const account: any = {
-        address: bal.address,
-        balances: bal.coins,
-        spendable_balances: bal.coins,
-        type: auths[bal.address]['@type'],
-        pubkey: auths[bal.address].pub_key,
-        account_number: Number.parseInt(auths[bal.address].account_number, 10),
-        sequence: Number.parseInt(auths[bal.address].sequence, 10),
-      };
-      if (
-        account.type === AccountType.CONTINUOUS_VESTING ||
-        account.type === AccountType.DELAYED_VESTING ||
-        account.type === AccountType.PERIODIC_VESTING
-      )
-        account.vesting = {
-          original_vesting: auths[bal.address].original_vesting,
-          delegated_free: auths[bal.address].delegated_free,
-          delegated_vesting: auths[bal.address].delegated_vesting,
-          start_time: auths[bal.address].start_time
-            ? Number.parseInt(auths[bal.address].start_time, 10)
-            : null,
-          end_time: auths[bal.address].end_time,
+      balances.forEach((bal: any) => {
+        const account: any = {
+          address: bal.address,
+          balances: bal.coins,
+          spendable_balances: bal.coins,
+          type: auths[bal.address]['@type'],
+          pubkey: auths[bal.address].pub_key,
+          account_number: Number.parseInt(
+            auths[bal.address].account_number,
+            10
+          ),
+          sequence: Number.parseInt(auths[bal.address].sequence, 10),
         };
+        if (
+          account.type === AccountType.CONTINUOUS_VESTING ||
+          account.type === AccountType.DELAYED_VESTING ||
+          account.type === AccountType.PERIODIC_VESTING
+        )
+          account.vesting = {
+            original_vesting: auths[bal.address].original_vesting,
+            delegated_free: auths[bal.address].delegated_free,
+            delegated_vesting: auths[bal.address].delegated_vesting,
+            start_time: auths[bal.address].start_time
+              ? Number.parseInt(auths[bal.address].start_time, 10)
+              : null,
+            end_time: auths[bal.address].end_time,
+          };
 
-      accounts.push(account);
-    });
+        accounts.push(account);
+      });
 
-    accounts = await this.handleIbcDenom(accounts);
+      accounts = await this.handleIbcDenom(accounts);
+    }
 
     await knex
       .transaction(async (trx) => {
