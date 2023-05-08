@@ -9,12 +9,12 @@
 
 import ApiGateway from 'moleculer-web';
 import { ServiceBroker } from 'moleculer';
-
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import BaseService from '../../base/base.service';
+import { bullBoardMixin } from '../../mixins/bullBoard/bullBoard.mixin';
 
 @Service({
-  mixins: [ApiGateway],
+  mixins: [ApiGateway, bullBoardMixin()],
   settings: {
     routes: [
       {

@@ -1,10 +1,12 @@
+/* eslint-disable import/no-cycle */
 import { Model } from 'objection';
 import BaseModel from './base';
-// eslint-disable-next-line import/no-cycle
-import { TransactionEvent } from './transaction_event';
+import { Event } from './event';
 import { TransactionMessage } from './transaction_message';
 
 export class Transaction extends BaseModel {
+  [relation: string]: any;
+
   id!: number;
 
   height!: number;
@@ -23,6 +25,8 @@ export class Transaction extends BaseModel {
 
   fee!: string;
 
+  memo!: string;
+
   // fee_payer!: string;
 
   // fee_granter!: string;
@@ -33,7 +37,7 @@ export class Transaction extends BaseModel {
 
   timstamp!: Date;
 
-  data!: JSON;
+  data!: any;
 
   static get tableName() {
     return 'transaction';
@@ -76,6 +80,7 @@ export class Transaction extends BaseModel {
         // signer_public_key_type: { type: 'string' },
         // signer_public_key_threshold: { type: 'number' },
         timestamp: { type: 'string', format: 'date-time' },
+        memo: { type: 'string' },
       },
     };
   }
@@ -100,10 +105,10 @@ export class Transaction extends BaseModel {
       },
       events: {
         relation: Model.HasManyRelation,
-        modelClass: TransactionEvent,
+        modelClass: Event,
         join: {
           from: 'transaction.id',
-          to: 'transaction_event.tx_id',
+          to: 'event.tx_id',
         },
       },
     };

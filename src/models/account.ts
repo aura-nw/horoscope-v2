@@ -83,7 +83,7 @@ export class Account extends BaseModel {
   static get relationMappings() {
     return {
       vesting: {
-        relation: Model.BelongsToOneRelation,
+        relation: Model.HasOneRelation,
         modelClass: AccountVesting,
         join: {
           from: 'account.id',

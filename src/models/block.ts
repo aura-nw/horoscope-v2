@@ -1,7 +1,10 @@
+/* eslint-disable import/no-cycle */
 import { Model } from 'objection';
 import BaseModel from './base';
 import { BlockSignature } from './block_signature';
+import { PowerEvent } from './power_event';
 import { Transaction } from './transaction';
+import { Event } from './event';
 
 export class Block extends BaseModel {
   height!: number;
@@ -12,7 +15,7 @@ export class Block extends BaseModel {
 
   proposer_address!: string;
 
-  data!: JSON;
+  data!: any;
 
   static get tableName() {
     return 'block';
@@ -55,6 +58,22 @@ export class Block extends BaseModel {
         join: {
           from: 'block.height',
           to: 'transaction.height',
+        },
+      },
+      power_events: {
+        relation: Model.HasManyRelation,
+        modelClass: PowerEvent,
+        join: {
+          from: 'block.height',
+          to: 'power_event.height',
+        },
+      },
+      events: {
+        relation: Model.HasManyRelation,
+        modelClass: Event,
+        join: {
+          from: 'block.height',
+          to: 'event.block_height',
         },
       },
     };

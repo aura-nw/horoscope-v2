@@ -3,26 +3,16 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
-import {
-  Account,
-  Block,
-  BlockCheckpoint,
-  Transaction,
-  TransactionEventAttribute,
-} from '../../models';
+import { Knex } from 'knex';
+import knex from '../../common/utils/db_connection';
+import { Account, BlockCheckpoint, EventAttribute } from '../../models';
 import Utils from '../../common/utils/utils';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import {
-  BULL_JOB_NAME,
-  Config,
-  IListAddressesParam,
-  SERVICE,
-  SERVICE_NAME,
-} from '../../common';
+import { BULL_JOB_NAME, Config, IAddressesParam, SERVICE } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
-  name: SERVICE_NAME.HANDLE_ADDRESS,
+  name: SERVICE.V1.HandleAddressService.key,
   version: 1,
 })
 export default class HandleAddressService extends BullableService {
@@ -31,13 +21,15 @@ export default class HandleAddressService extends BullableService {
   }
 
   @Action({
-    name: SERVICE.V1.HandleAddress.CrawlNewAccountApi.key,
+    name: SERVICE.V1.HandleAddressService.CrawlNewAccountApi.key,
     params: {
       listAddresses: 'string[]',
     },
   })
-  public async actionCrawlNewAccountApi(ctx: Context<IListAddressesParam>) {
-    await this.insertNewAccountAndCallActionUpdate(ctx.params.listAddresses);
+  public async actionCrawlNewAccountApi(ctx: Context<IAddressesParam>) {
+    await knex.transaction(async (trx) =>
+      this.insertNewAccountAndUpdate(ctx.params.addresses, trx)
+    );
   }
 
   @QueueHandler({
@@ -46,107 +38,66 @@ export default class HandleAddressService extends BullableService {
     prefix: `horoscope-v2-${Config.CHAIN_ID}`,
   })
   public async handleJob(_payload: object): Promise<void> {
-    const [handleAddressBlockCheckpoint, latestBlock]: [
-      BlockCheckpoint | undefined,
-      Block | undefined
-    ] = await Promise.all([
-      BlockCheckpoint.query()
-        .select('*')
-        .findOne('job_name', BULL_JOB_NAME.HANDLE_ADDRESS),
-      Block.query().select('height').findOne({}).orderBy('height', 'desc'),
-    ]);
-    this.logger.info(
-      `Block Checkpoint: ${JSON.stringify(handleAddressBlockCheckpoint)}`
+    const [startHeight, endHeight, updateBlockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.HANDLE_ADDRESS,
+        config.handleAddress.key
+      );
+    this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
+    if (startHeight >= endHeight) return;
+
+    const eventAddresses: string[] = [];
+    const resultTx = await EventAttribute.query()
+      .whereIn('key', [
+        EventAttribute.ATTRIBUTE_KEY.RECEIVER,
+        EventAttribute.ATTRIBUTE_KEY.SPENDER,
+        EventAttribute.ATTRIBUTE_KEY.SENDER,
+      ])
+      .andWhere('block_height', '>', startHeight)
+      .andWhere('block_height', '<=', endHeight)
+      .select('value');
+
+    if (resultTx.length > 0)
+      resultTx.map((res: any) => eventAddresses.push(res.value));
+
+    const addresses = Array.from(
+      new Set(
+        eventAddresses.filter((addr: string) =>
+          Utils.isValidAccountAddress(addr, config.networkPrefixAddress, 20)
+        )
+      )
     );
 
-    let lastHeight = 0;
-    let updateBlockCheckpoint: BlockCheckpoint;
-    if (handleAddressBlockCheckpoint) {
-      lastHeight = handleAddressBlockCheckpoint.height;
-      updateBlockCheckpoint = handleAddressBlockCheckpoint;
-    } else
-      updateBlockCheckpoint = BlockCheckpoint.fromJson({
-        job_name: BULL_JOB_NAME.HANDLE_ADDRESS,
-        height: 0,
-      });
+    await knex
+      .transaction(async (trx) => {
+        if (addresses.length > 0)
+          await this.insertNewAccountAndUpdate(addresses, trx);
 
-    if (latestBlock) {
-      if (latestBlock.height === lastHeight) return;
-
-      const eventAddresses: string[] = [];
-      let offset = 0;
-      let done = false;
-      this.logger.info(
-        `Start query Tx from height ${lastHeight} to ${latestBlock.height}`
-      );
-      while (!done) {
-        // eslint-disable-next-line no-await-in-loop
-        const resultTx = await Transaction.query()
-          .joinRelated('[messages, events.[attributes]]')
-          .whereIn('events:attributes.key', [
-            TransactionEventAttribute.EVENT_KEY.RECEIVER,
-            TransactionEventAttribute.EVENT_KEY.SPENDER,
-            TransactionEventAttribute.EVENT_KEY.SENDER,
-          ])
-          .andWhere('transaction.height', '>', lastHeight)
-          .andWhere('transaction.height', '<=', latestBlock.height)
-          .select(
-            'transaction.id',
-            'transaction.height',
-            'transaction.timestamp',
-            'messages.id as tx_msg_id',
-            'messages.type',
-            'events:attributes.key',
-            'events:attributes.value'
-          )
-          .page(offset, 100);
-        this.logger.info(
-          `Query Tx from height ${lastHeight} to ${
-            latestBlock.height
-          } at page ${offset + 1}`
-        );
-
-        if (resultTx.results.length > 0) {
-          resultTx.results.map((res: any) => eventAddresses.push(res.value));
-        }
-
-        if (resultTx.results.length === 100) offset += 1;
-        else done = true;
-      }
-
-      const listAddresses = Array.from(
-        new Set(
-          eventAddresses.filter((addr: string) =>
-            Utils.isValidAccountAddress(addr, config.networkPrefixAddress, 20)
-          )
-        )
-      );
-
-      if (listAddresses.length > 0) {
-        await this.insertNewAccountAndCallActionUpdate(listAddresses);
-
-        this.broker.call(SERVICE.V1.CrawlAccount.UpdateAccount.path, {
-          listAddresses: Array.from(listAddresses),
-        });
-
-        updateBlockCheckpoint.height = latestBlock.height;
+        updateBlockCheckpoint.height = endHeight;
         await BlockCheckpoint.query()
           .insert(updateBlockCheckpoint)
           .onConflict('job_name')
           .merge()
-          .returning('id');
-      }
-    }
+          .returning('id')
+          .transacting(trx);
+      })
+      .catch((error) => {
+        this.logger.error(error);
+        throw error;
+      });
   }
 
-  private async insertNewAccountAndCallActionUpdate(listAddresses: string[]) {
-    const listAccounts: Account[] = [];
+  private async insertNewAccountAndUpdate(
+    addresses: string[],
+    trx: Knex.Transaction
+  ) {
+    const accounts: Account[] = [];
 
     const existedAccounts: string[] = (
-      await Account.query().select('*').whereIn('address', listAddresses)
+      await Account.query().select('*').whereIn('address', addresses)
     ).map((account: Account) => account.address);
 
-    listAddresses.forEach((address: string) => {
+    addresses.forEach((address: string) => {
       if (!existedAccounts.includes(address)) {
         const account: Account = Account.fromJson({
           address,
@@ -157,19 +108,20 @@ export default class HandleAddressService extends BullableService {
           account_number: 0,
           sequence: 0,
         });
-        listAccounts.push(account);
+        accounts.push(account);
       }
     });
 
-    if (listAccounts.length > 0) await Account.query().insert(listAccounts);
+    if (accounts.length > 0)
+      await Account.query().insert(accounts).transacting(trx);
 
-    await this.broker.call(SERVICE.V1.CrawlAccount.UpdateAccount.path, {
-      listAddresses,
+    await this.broker.call(SERVICE.V1.CrawlAccountService.UpdateAccount.path, {
+      addresses,
     });
   }
 
   public async _start() {
-    await this.broker.waitForServices([SERVICE.V1.CrawlAccount.name]);
+    await this.broker.waitForServices(SERVICE.V1.CrawlAccountService.name);
 
     this.createJob(
       BULL_JOB_NAME.HANDLE_ADDRESS,

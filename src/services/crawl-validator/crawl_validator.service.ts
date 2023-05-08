@@ -13,6 +13,7 @@ import {
   QueryDelegationResponse,
 } from '@aura-nw/aurajs/types/codegen/cosmos/staking/v1beta1/query';
 import { fromBase64, toHex } from '@cosmjs/encoding';
+import { Knex } from 'knex';
 import { Validator } from '../../models/validator';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import knex from '../../common/utils/db_connection';
@@ -24,16 +25,12 @@ import {
   getLcdClient,
   IAuraJSClientFactory,
   IPagination,
-  SERVICE_NAME,
+  SERVICE,
 } from '../../common';
-import {
-  Block,
-  BlockCheckpoint,
-  TransactionEventAttribute,
-} from '../../models';
+import { BlockCheckpoint, EventAttribute } from '../../models';
 
 @Service({
-  name: SERVICE_NAME.CRAWL_VALIDATOR,
+  name: SERVICE.V1.CrawlValidatorService.key,
   version: 1,
 })
 export default class CrawlValidatorService extends BullableService {
@@ -46,43 +43,6 @@ export default class CrawlValidatorService extends BullableService {
     this._httpBatchClient = getHttpBatchClient();
   }
 
-  // To crawl all validators at genesis
-  @QueueHandler({
-    queueName: BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
-    jobType: 'crawl',
-    prefix: `horoscope-v2-${config.chainId}`,
-  })
-  public async handleCrawlValidatorsAtGenesis(_payload: object): Promise<void> {
-    this._lcdClient = await getLcdClient();
-
-    const crawlGenesisValidatorBlockCheckpoint: BlockCheckpoint | undefined =
-      await BlockCheckpoint.query()
-        .select('*')
-        .findOne('job_name', BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR);
-
-    if (
-      crawlGenesisValidatorBlockCheckpoint?.height === 0 ||
-      !crawlGenesisValidatorBlockCheckpoint
-    ) {
-      await this.updateValidators();
-
-      let updateBlockCheckpoint: BlockCheckpoint;
-      if (crawlGenesisValidatorBlockCheckpoint) {
-        updateBlockCheckpoint = crawlGenesisValidatorBlockCheckpoint;
-        updateBlockCheckpoint.height = 1;
-      } else
-        updateBlockCheckpoint = BlockCheckpoint.fromJson({
-          job_name: BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
-          height: 1,
-        });
-      await BlockCheckpoint.query()
-        .insert(updateBlockCheckpoint)
-        .onConflict('job_name')
-        .merge()
-        .returning('id');
-    }
-  }
-
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_VALIDATOR,
     jobType: 'crawl',
@@ -91,70 +51,42 @@ export default class CrawlValidatorService extends BullableService {
   public async handleCrawlAllValidator(_payload: object): Promise<void> {
     this._lcdClient = await getLcdClient();
 
-    const [crawlValidatorBlockCheckpoint, latestBlock]: [
-      BlockCheckpoint | undefined,
-      Block | undefined
-    ] = await Promise.all([
-      BlockCheckpoint.query()
-        .select('*')
-        .findOne('job_name', BULL_JOB_NAME.CRAWL_VALIDATOR),
-      Block.query().select('height').findOne({}).orderBy('height', 'desc'),
-    ]);
-    this.logger.info(
-      `Block Checkpoint: ${JSON.stringify(crawlValidatorBlockCheckpoint)}`
-    );
+    const [startHeight, endHeight, updateBlockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(BULL_JOB_NAME.CRAWL_VALIDATOR);
+    this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
+    if (startHeight >= endHeight) return;
 
-    let lastHeight = 0;
-    let updateBlockCheckpoint: BlockCheckpoint;
-    if (crawlValidatorBlockCheckpoint) {
-      lastHeight = crawlValidatorBlockCheckpoint.height;
-      updateBlockCheckpoint = crawlValidatorBlockCheckpoint;
-    } else
-      updateBlockCheckpoint = BlockCheckpoint.fromJson({
-        job_name: BULL_JOB_NAME.CRAWL_VALIDATOR,
-        height: 0,
-      });
+    const resultTx = await EventAttribute.query()
+      .whereIn('key', [
+        EventAttribute.ATTRIBUTE_KEY.VALIDATOR,
+        EventAttribute.ATTRIBUTE_KEY.SOURCE_VALIDATOR,
+        EventAttribute.ATTRIBUTE_KEY.DESTINATION_VALIDATOR,
+      ])
+      .andWhere('block_height', '>', startHeight)
+      .andWhere('block_height', '<=', endHeight)
+      .select('value')
+      .limit(1)
+      .offset(0);
+    this.logger.info(`Query Tx from height ${startHeight} to ${endHeight}`);
 
-    if (latestBlock) {
-      if (latestBlock.height === lastHeight) return;
-
-      const resultTx = await TransactionEventAttribute.query()
-        .joinRelated('event.[transaction]')
-        .whereIn('transaction_event_attribute.key', [
-          TransactionEventAttribute.EVENT_KEY.VALIDATOR,
-          TransactionEventAttribute.EVENT_KEY.SOURCE_VALIDATOR,
-          TransactionEventAttribute.EVENT_KEY.DESTINATION_VALIDATOR,
-        ])
-        .andWhere('event:transaction.height', '>', lastHeight)
-        .andWhere('event:transaction.height', '<=', latestBlock.height)
-        .select(
-          'event:transaction.id',
-          'event:transaction.height',
-          'transaction_event_attribute.key',
-          'transaction_event_attribute.value'
-        )
-        .limit(1)
-        .offset(0);
-      this.logger.info(
-        `Query Tx from height ${lastHeight} to ${latestBlock.height}`
-      );
-
+    await knex.transaction(async (trx) => {
       if (resultTx.length > 0) {
-        await this.updateValidators();
+        await this.updateValidators(trx);
       }
 
-      updateBlockCheckpoint.height = latestBlock.height;
+      updateBlockCheckpoint.height = endHeight;
       await BlockCheckpoint.query()
         .insert(updateBlockCheckpoint)
         .onConflict('job_name')
         .merge()
-        .returning('id');
-    }
+        .returning('id')
+        .transacting(trx);
+    });
   }
 
-  private async updateValidators() {
-    let listUpdateValidators: Validator[] = [];
-    const listValidator: any[] = [];
+  private async updateValidators(trx: Knex.Transaction) {
+    let updateValidators: Validator[] = [];
+    const validators: any[] = [];
 
     let resultCallApi;
     let done = false;
@@ -168,7 +100,7 @@ export default class CrawlValidatorService extends BullableService {
           pagination,
         });
 
-      listValidator.push(...resultCallApi.validators);
+      validators.push(...resultCallApi.validators);
       if (resultCallApi.pagination.next_key === null) {
         done = true;
       } else {
@@ -176,15 +108,15 @@ export default class CrawlValidatorService extends BullableService {
       }
     }
 
-    const listValidatorInDB: Validator[] = await knex('validator').select('*');
+    const validatorInDB: Validator[] = await knex('validator').select('*');
 
     await Promise.all(
-      listValidator.map(async (validator) => {
+      validators.map(async (validator) => {
         this.logger.info(`Update validator: ${validator.operator_address}`);
 
-        const foundValidator = listValidatorInDB.find(
-          (validatorInDB: Validator) =>
-            validatorInDB.operator_address === validator.operator_address
+        const foundValidator = validatorInDB.find(
+          (val: Validator) =>
+            val.operator_address === validator.operator_address
         );
 
         let validatorEntity: Validator;
@@ -207,68 +139,67 @@ export default class CrawlValidatorService extends BullableService {
           ).toISOString();
         }
 
-        listUpdateValidators.push(validatorEntity);
+        updateValidators.push(validatorEntity);
       })
     );
 
-    listUpdateValidators = await this.loadCustomInfo(listUpdateValidators);
+    updateValidators = await this.loadCustomInfo(updateValidators);
 
     await Validator.query()
-      .insert(listUpdateValidators)
+      .insert(updateValidators)
       .onConflict('operator_address')
       .merge()
       .returning('id')
+      .transacting(trx)
       .catch((error) => {
         this.logger.error('Error insert or update validators');
         this.logger.error(error);
       });
   }
 
-  private async loadCustomInfo(
-    listValidators: Validator[]
-  ): Promise<Validator[]> {
-    const listPromise: any[] = [];
+  private async loadCustomInfo(validators: Validator[]): Promise<Validator[]> {
+    const batchQueries: any[] = [];
 
     const pool = await this._lcdClient.auranw.cosmos.staking.v1beta1.pool();
 
-    await Promise.all(
-      listValidators.map(async (validator: Validator) => {
-        const request: QueryDelegationRequest = {
-          delegatorAddr: validator.account_address,
-          validatorAddr: validator.operator_address,
-        };
-        const data = toHex(
-          cosmos.staking.v1beta1.QueryDelegationRequest.encode(request).finish()
-        );
+    validators.forEach((validator: Validator) => {
+      const request: QueryDelegationRequest = {
+        delegatorAddr: validator.account_address,
+        validatorAddr: validator.operator_address,
+      };
+      const data = toHex(
+        cosmos.staking.v1beta1.QueryDelegationRequest.encode(request).finish()
+      );
 
-        listPromise.push(
-          this._httpBatchClient.execute(
-            createJsonRpcRequest('abci_query', {
-              path: ABCI_QUERY_PATH.VALIDATOR_DELEGATION,
-              data,
-            })
-          )
-        );
-      })
-    );
-
-    const result: JsonRpcSuccessResponse[] = await Promise.all(listPromise);
-    const delegations: QueryDelegationResponse[] = result.map(
-      (res: JsonRpcSuccessResponse) =>
-        cosmos.staking.v1beta1.QueryDelegationResponse.decode(
-          fromBase64(res.result.response.value)
+      batchQueries.push(
+        this._httpBatchClient.execute(
+          createJsonRpcRequest('abci_query', {
+            path: ABCI_QUERY_PATH.VALIDATOR_DELEGATION,
+            data,
+          })
         )
+      );
+    });
+
+    const result: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
+    const delegations: (QueryDelegationResponse | null)[] = result.map(
+      (res: JsonRpcSuccessResponse) =>
+        res.result.response.value
+          ? cosmos.staking.v1beta1.QueryDelegationResponse.decode(
+              fromBase64(res.result.response.value)
+            )
+          : null
     );
 
-    listValidators.forEach((val: Validator) => {
+    validators.forEach((val: Validator) => {
       const delegation = delegations.find(
-        (dele: QueryDelegationResponse) =>
-          dele.delegationResponse?.delegation?.validatorAddress ===
+        (dele) =>
+          dele?.delegationResponse?.delegation?.validatorAddress ===
           val.operator_address
       );
 
       val.self_delegation_balance =
-        delegation?.delegationResponse?.balance?.amount ?? '';
+        delegation?.delegationResponse?.balance?.amount ?? '0';
       val.percent_voting_power =
         Number(
           (BigInt(val.tokens) * BigInt(100000000)) /
@@ -276,23 +207,10 @@ export default class CrawlValidatorService extends BullableService {
         ) / 1000000;
     });
 
-    return listValidators;
+    return validators;
   }
 
   public async _start() {
-    // To crawl all validators at genesis
-    this.createJob(
-      BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
-      'crawl',
-      {},
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-      }
-    );
-
     this.createJob(
       BULL_JOB_NAME.CRAWL_VALIDATOR,
       'crawl',

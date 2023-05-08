@@ -1,7 +1,10 @@
+/* eslint-disable import/no-cycle */
 import { fromBase64, fromBech32, toBech32, toHex } from '@cosmjs/encoding';
 import { pubkeyToRawAddress } from '@cosmjs/tendermint-rpc';
+import { Model } from 'objection';
 import config from '../../config.json' assert { type: 'json' };
 import BaseModel from './base';
+import { PowerEvent } from './power_event';
 
 export interface IConsensusPubkey {
   type: string;
@@ -29,13 +32,13 @@ export class Validator extends BaseModel {
 
   delegator_shares!: string;
 
-  description!: JSON;
+  description!: any;
 
   unbonding_height!: number;
 
   unbonding_time!: string;
 
-  commission!: JSON;
+  commission!: any;
 
   min_self_delegation!: string;
 
@@ -122,7 +125,24 @@ export class Validator extends BaseModel {
   }
 
   static get relationMappings() {
-    return {};
+    return {
+      src_power_event: {
+        relation: Model.HasManyRelation,
+        modelClass: PowerEvent,
+        join: {
+          from: 'validator.id',
+          to: 'power_event.validator_src_id',
+        },
+      },
+      dst_power_event: {
+        relation: Model.HasManyRelation,
+        modelClass: PowerEvent,
+        join: {
+          from: 'validator.id',
+          to: 'power_event.validator_dst_id',
+        },
+      },
+    };
   }
 
   static createNewValidator(validator: any): Validator {
