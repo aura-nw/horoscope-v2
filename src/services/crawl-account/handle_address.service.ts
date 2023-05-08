@@ -3,13 +3,9 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
-import {
-  Account,
-  Block,
-  BlockCheckpoint,
-  Transaction,
-  EventAttribute,
-} from '../../models';
+import { Knex } from 'knex';
+import knex from '../../common/utils/db_connection';
+import { Account, BlockCheckpoint, EventAttribute } from '../../models';
 import Utils from '../../common/utils/utils';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, Config, IAddressesParam, SERVICE } from '../../common';
@@ -31,7 +27,9 @@ export default class HandleAddressService extends BullableService {
     },
   })
   public async actionCrawlNewAccountApi(ctx: Context<IAddressesParam>) {
-    await this.insertNewAccountAndUpdate(ctx.params.addresses);
+    await knex.transaction(async (trx) =>
+      this.insertNewAccountAndUpdate(ctx.params.addresses, trx)
+    );
   }
 
   @QueueHandler({
@@ -40,92 +38,59 @@ export default class HandleAddressService extends BullableService {
     prefix: `horoscope-v2-${Config.CHAIN_ID}`,
   })
   public async handleJob(_payload: object): Promise<void> {
-    const [handleAddrCheckpoint, latestBlock]: [
-      BlockCheckpoint | undefined,
-      Block | undefined
-    ] = await Promise.all([
-      BlockCheckpoint.query()
-        .select('*')
-        .findOne('job_name', BULL_JOB_NAME.HANDLE_ADDRESS),
-      Block.query().select('height').findOne({}).orderBy('height', 'desc'),
-    ]);
-    this.logger.info(
-      `Block Checkpoint: ${JSON.stringify(handleAddrCheckpoint)}`
+    const [startHeight, endHeight, updateBlockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.HANDLE_ADDRESS,
+        config.handleAddress.key
+      );
+    this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
+    if (startHeight >= endHeight) return;
+
+    const eventAddresses: string[] = [];
+    const resultTx = await EventAttribute.query()
+      .whereIn('key', [
+        EventAttribute.ATTRIBUTE_KEY.RECEIVER,
+        EventAttribute.ATTRIBUTE_KEY.SPENDER,
+        EventAttribute.ATTRIBUTE_KEY.SENDER,
+      ])
+      .andWhere('block_height', '>', startHeight)
+      .andWhere('block_height', '<=', endHeight)
+      .select('value');
+
+    if (resultTx.length > 0)
+      resultTx.map((res: any) => eventAddresses.push(res.value));
+
+    const addresses = Array.from(
+      new Set(
+        eventAddresses.filter((addr: string) =>
+          Utils.isValidAccountAddress(addr, config.networkPrefixAddress, 20)
+        )
+      )
     );
 
-    let lastHeight = 0;
-    let updateBlockCheckpoint: BlockCheckpoint;
-    if (handleAddrCheckpoint) {
-      lastHeight = handleAddrCheckpoint.height;
-      updateBlockCheckpoint = handleAddrCheckpoint;
-    } else
-      updateBlockCheckpoint = BlockCheckpoint.fromJson({
-        job_name: BULL_JOB_NAME.HANDLE_ADDRESS,
-        height: 0,
+    await knex
+      .transaction(async (trx) => {
+        if (addresses.length > 0)
+          await this.insertNewAccountAndUpdate(addresses, trx);
+
+        updateBlockCheckpoint.height = endHeight;
+        await BlockCheckpoint.query()
+          .insert(updateBlockCheckpoint)
+          .onConflict('job_name')
+          .merge()
+          .returning('id')
+          .transacting(trx);
+      })
+      .catch((error) => {
+        this.logger.error(error);
+        throw error;
       });
-
-    if (latestBlock) {
-      if (latestBlock.height === lastHeight) return;
-
-      const eventAddresses: string[] = [];
-      let page = 0;
-      let done = false;
-      this.logger.info(
-        `Start query Tx from height ${lastHeight} to ${latestBlock.height}`
-      );
-      while (!done) {
-        // eslint-disable-next-line no-await-in-loop
-        const resultTx = await Transaction.query()
-          .joinRelated('events.[attributes]')
-          .whereIn('events:attributes.key', [
-            EventAttribute.ATTRIBUTE_KEY.RECEIVER,
-            EventAttribute.ATTRIBUTE_KEY.SPENDER,
-            EventAttribute.ATTRIBUTE_KEY.SENDER,
-          ])
-          .andWhere('transaction.height', '>', lastHeight)
-          .andWhere('transaction.height', '<=', latestBlock.height)
-          .select(
-            'transaction.id',
-            'transaction.height',
-            'transaction.timestamp',
-            'events.type',
-            'events:attributes.key',
-            'events:attributes.value'
-          )
-          .page(page, 1000);
-        this.logger.info(
-          `Query Tx from height ${lastHeight} to ${
-            latestBlock.height
-          } at page ${page + 1}`
-        );
-
-        if (resultTx.results.length > 0) {
-          resultTx.results.map((res: any) => eventAddresses.push(res.value));
-
-          page += 1;
-        } else done = true;
-      }
-
-      const addresses = Array.from(
-        new Set(
-          eventAddresses.filter((addr: string) =>
-            Utils.isValidAccountAddress(addr, config.networkPrefixAddress, 20)
-          )
-        )
-      );
-
-      if (addresses.length > 0) await this.insertNewAccountAndUpdate(addresses);
-
-      updateBlockCheckpoint.height = latestBlock.height;
-      await BlockCheckpoint.query()
-        .insert(updateBlockCheckpoint)
-        .onConflict('job_name')
-        .merge()
-        .returning('id');
-    }
   }
 
-  private async insertNewAccountAndUpdate(addresses: string[]) {
+  private async insertNewAccountAndUpdate(
+    addresses: string[],
+    trx: Knex.Transaction
+  ) {
     const accounts: Account[] = [];
 
     const existedAccounts: string[] = (
@@ -147,7 +112,8 @@ export default class HandleAddressService extends BullableService {
       }
     });
 
-    if (accounts.length > 0) await Account.query().insert(accounts);
+    if (accounts.length > 0)
+      await Account.query().insert(accounts).transacting(trx);
 
     await this.broker.call(SERVICE.V1.CrawlAccountService.UpdateAccount.path, {
       addresses,

@@ -14,6 +14,7 @@ import { cosmwasm } from '@aura-nw/aurajs';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
+import knex from '../../common/utils/db_connection';
 import {
   BlockCheckpoint,
   Event,
@@ -59,13 +60,14 @@ export default class CrawlSmartContractService extends BullableService {
           BULL_JOB_NAME.CRAWL_CODE,
         ]);
 
-    let lastHeight = 0;
+    let startHeight = 0;
+    let endHeight = 0;
     let updateBlockCheckpoint: BlockCheckpoint;
     const contractCheckpoint = cosmwasmCheckpoint.find(
       (check) => check.job_name === BULL_JOB_NAME.CRAWL_SMART_CONTRACT
     );
     if (contractCheckpoint) {
-      lastHeight = contractCheckpoint.height;
+      startHeight = contractCheckpoint.height;
       updateBlockCheckpoint = contractCheckpoint;
     } else
       updateBlockCheckpoint = BlockCheckpoint.fromJson({
@@ -77,97 +79,103 @@ export default class CrawlSmartContractService extends BullableService {
       (check) => check.job_name === BULL_JOB_NAME.CRAWL_CODE
     );
     if (codeIdCheckpoint) {
-      if (codeIdCheckpoint.height <= lastHeight) return;
+      if (codeIdCheckpoint.height <= startHeight) return;
+      endHeight = Math.min(
+        startHeight + config.crawlSmartContract.blocksPerCall,
+        codeIdCheckpoint.height
+      );
 
       const instantiateTxs: any[] = [];
-      let offset = 0;
-      let done = false;
-      while (!done) {
-        // eslint-disable-next-line no-await-in-loop
-        const resultTx = await Transaction.query()
-          .joinRelated('events.[attributes]')
-          .where('events.type', Event.EVENT_TYPE.INSTANTIATE)
-          .andWhere(
-            'events:attributes.key',
-            EventAttribute.ATTRIBUTE_KEY._CONTRACT_ADDRESS
-          )
-          .andWhere('transaction.height', '>', lastHeight)
-          .andWhere('transaction.height', '<=', codeIdCheckpoint.height)
-          .andWhere('transaction.code', 0)
-          .select(
-            'transaction.hash',
-            'transaction.height',
-            'events:attributes.key',
-            'events:attributes.value'
-          )
-          .page(offset, 1000);
-        this.logger.info(
-          `Result get Tx from height ${lastHeight} to ${codeIdCheckpoint.height}:`
+      this.logger.info(`Query Tx from height ${startHeight} to ${endHeight}`);
+      const resultTx = await Transaction.query()
+        .joinRelated('events.[attributes]')
+        .where('events.type', Event.EVENT_TYPE.INSTANTIATE)
+        .andWhere(
+          'events:attributes.key',
+          EventAttribute.ATTRIBUTE_KEY._CONTRACT_ADDRESS
+        )
+        .andWhere('transaction.height', '>', startHeight)
+        .andWhere('transaction.height', '<=', endHeight)
+        .andWhere('transaction.code', 0)
+        .select(
+          'transaction.hash',
+          'transaction.height',
+          'events:attributes.key',
+          'events:attributes.value'
         );
-        this.logger.info(JSON.stringify(resultTx));
+      this.logger.info(
+        `Result get Tx from height ${startHeight} to ${endHeight}:`
+      );
+      this.logger.info(JSON.stringify(resultTx));
 
-        if (resultTx.results.length > 0) {
-          resultTx.results.map((res: any) => instantiateTxs.push(res));
+      if (resultTx.length > 0)
+        resultTx.map((res: any) => instantiateTxs.push(res));
 
-          offset += 1;
-        } else done = true;
-      }
+      await knex
+        .transaction(async (trx) => {
+          if (instantiateTxs.length > 0) {
+            instantiateTxs.forEach((transaction) => {
+              queryAddresses.push(transaction.value);
+              smartContracts.push(
+                SmartContract.fromJson({
+                  name: null,
+                  address: transaction.value,
+                  creator: '',
+                  code_id: 0,
+                  instantiate_hash: transaction.hash,
+                  instantiate_height: transaction.height,
+                  version: null,
+                })
+              );
+            });
 
-      if (instantiateTxs.length > 0) {
-        instantiateTxs.forEach((transaction) => {
-          queryAddresses.push(transaction.value);
-          smartContracts.push(
-            SmartContract.fromJson({
-              name: null,
-              address: transaction.value,
-              creator: '',
-              code_id: 0,
-              instantiate_hash: transaction.hash,
-              instantiate_height: transaction.height,
-              version: null,
-            })
-          );
-        });
-
-        const [contractCw2s, contractInfos] = await this.getContractInfo(
-          queryAddresses
-        );
-
-        smartContracts.forEach((contract, index) => {
-          if (contractCw2s[index]?.data) {
-            const data = JSON.parse(
-              fromUtf8(contractCw2s[index]?.data || new Uint8Array())
+            const [contractCw2s, contractInfos] = await this.getContractInfo(
+              queryAddresses
             );
-            contract.name = data.contract;
-            contract.version = data.version;
+
+            smartContracts.forEach((contract, index) => {
+              if (contractCw2s[index]?.data) {
+                const data = JSON.parse(
+                  fromUtf8(contractCw2s[index]?.data || new Uint8Array())
+                );
+                contract.name = data.contract;
+                contract.version = data.version;
+              }
+              if (contractInfos[index]?.contractInfo) {
+                contract.code_id = parseInt(
+                  contractInfos[index]?.contractInfo?.codeId.toString() || '0',
+                  10
+                );
+                contract.creator =
+                  contractInfos[index]?.contractInfo?.creator || '';
+              }
+            });
+
+            if (smartContracts.length > 0)
+              await SmartContract.query()
+                .insert(smartContracts)
+                .onConflict('address')
+                .merge()
+                .returning('address')
+                .transacting(trx)
+                .catch((error) => {
+                  this.logger.error('Error insert new smart contracts');
+                  this.logger.error(error);
+                });
           }
-          if (contractInfos[index]?.contractInfo) {
-            contract.code_id = parseInt(
-              contractInfos[index]?.contractInfo?.codeId.toString() || '0',
-              10
-            );
-            contract.creator =
-              contractInfos[index]?.contractInfo?.creator || '';
-          }
+
+          updateBlockCheckpoint.height = endHeight;
+          await BlockCheckpoint.query()
+            .insert(updateBlockCheckpoint)
+            .onConflict('job_name')
+            .merge()
+            .returning('id')
+            .transacting(trx);
+        })
+        .catch((error) => {
+          this.logger.error(error);
+          throw error;
         });
-
-        await SmartContract.query()
-          .insert(smartContracts)
-          .onConflict('address')
-          .merge()
-          .returning('address')
-          .catch((error) => {
-            this.logger.error('Error insert new smart contracts');
-            this.logger.error(error);
-          });
-      }
-
-      updateBlockCheckpoint.height = codeIdCheckpoint.height;
-      await BlockCheckpoint.query()
-        .insert(updateBlockCheckpoint)
-        .onConflict('job_name')
-        .merge()
-        .returning('id');
     }
   }
 
