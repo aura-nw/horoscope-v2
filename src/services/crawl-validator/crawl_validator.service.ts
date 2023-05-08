@@ -14,6 +14,7 @@ import {
 } from '@aura-nw/aurajs/types/codegen/cosmos/staking/v1beta1/query';
 import { fromBase64, toHex } from '@cosmjs/encoding';
 import { Knex } from 'knex';
+import { Job } from 'bull';
 import { Validator } from '../../models/validator';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import knex from '../../common/utils/db_connection';
@@ -225,7 +226,23 @@ export default class CrawlValidatorService extends BullableService {
         },
       }
     );
-
+    this.getQueueManager()
+      .getQueue(BULL_JOB_NAME.CRAWL_VALIDATOR)
+      .on('completed', (job: Job) => {
+        this.logger.info(
+          `Job #${job.id} completed!, result: ${job.returnvalue}`
+        );
+      });
+    this.getQueueManager()
+      .getQueue(BULL_JOB_NAME.CRAWL_VALIDATOR)
+      .on('failed', (job: Job) => {
+        this.logger.error(`Job #${job.id} failed!, error: ${job.failedReason}`);
+      });
+    this.getQueueManager()
+      .getQueue(BULL_JOB_NAME.CRAWL_VALIDATOR)
+      .on('progress', (job: Job) => {
+        this.logger.info(`Job #${job.id} progress: ${job.progress()}%`);
+      });
     return super._start();
   }
 }
