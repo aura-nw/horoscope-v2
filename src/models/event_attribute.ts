@@ -1,17 +1,25 @@
 import { Model } from 'objection';
 import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
-import { TransactionEvent } from './transaction_event';
+import { Event } from './event';
 
-export class TransactionEventAttribute extends BaseModel {
+export class EventAttribute extends BaseModel {
   event_id!: number;
 
   key!: string;
 
   value!: string;
 
+  composite_key!: string;
+
+  block_height!: number;
+
+  tx_id!: number;
+
+  index!: number;
+
   static get tableName() {
-    return 'transaction_event_attribute';
+    return 'event_attribute';
   }
 
   static get jsonSchema() {
@@ -22,6 +30,10 @@ export class TransactionEventAttribute extends BaseModel {
         event_id: { type: 'number' },
         key: { type: 'string' },
         value: { type: 'string' },
+        composite_key: { type: 'string' },
+        block_height: { type: 'number' },
+        tx_id: { type: 'number' },
+        index: { type: 'number' },
       },
     };
   }
@@ -30,21 +42,20 @@ export class TransactionEventAttribute extends BaseModel {
     return {
       event: {
         relation: Model.BelongsToOneRelation,
-        modelClass: TransactionEvent,
+        modelClass: Event,
         join: {
-          from: 'transaction_event_attribute.event_id',
-          to: 'transaction_event.id',
+          from: 'event_attribute.event_id',
+          to: 'event.id',
         },
       },
     };
   }
 
-  static EVENT_KEY = {
+  static ATTRIBUTE_KEY = {
     BALANCES: 'balances',
     DELEGATION_RESPONSES: 'delegation_responses',
     REDELEGATION_RESPONSES: 'redelegation_responses',
     UNBONDING_RESPONSES: 'unbonding_responses',
-    MESSAGE: 'message',
     ACTION: 'action',
     TRANSFER: 'transfer',
     SENDER: 'sender',
@@ -60,9 +71,15 @@ export class TransactionEventAttribute extends BaseModel {
     DESTINATION_VALIDATOR: 'destination_validator',
     RECV_PACKET: 'recv_packet',
     PACKET_DATA: 'packet_data',
-    INSTANTIATE: 'instantiate',
     _CONTRACT_ADDRESS: '_contract_address',
     CODE_ID: 'code_id',
     EXECUTE: 'execute',
+    TOKEN_ID: 'token_id',
+    PROPOSAL_ID: 'proposal_id',
+    STAKING: 'staking',
+    DELEGATE: 'delegate',
+    REDELEGATE: 'redelegate',
+    UNBOND: 'unbond',
+    OWNER: 'owner',
   };
 }
