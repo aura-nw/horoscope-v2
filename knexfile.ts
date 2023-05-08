@@ -17,6 +17,11 @@ const config: { [key: string]: Knex.Config } = {
       host: Config.POSTGRES_HOST,
       user: Config.POSTGRES_USER,
       password: Config.POSTGRES_PASSWORD,
+      port: Config.POSTGRES_PORT,
+    },
+    pool: {
+      min: 1,
+      max: parseInt(Config.POSTGRES_POOL_MAX ?? '5', 10),
     },
   },
   test: {
@@ -29,48 +34,27 @@ const config: { [key: string]: Knex.Config } = {
       host: 'localhost',
       user: Config.POSTGRES_USER,
       password: Config.POSTGRES_PASSWORD,
+      port: Config.POSTGRES_PORT,
     },
   },
   production: {
-    client: 'mysql',
+    client: 'pg',
+    migrations: {
+      directory: './migrations',
+    },
     connection: {
-      database: 'objection',
-      user: 'root',
-      password: '123456',
+      database: network.find((item) => item.chainId === configJson.chainId)
+        ?.databaseName,
+      host: Config.POSTGRES_HOST,
+      user: Config.POSTGRES_USER,
+      password: Config.POSTGRES_PASSWORD,
+      port: Config.POSTGRES_PORT,
+    },
+    pool: {
+      min: 1,
+      max: parseInt(Config.POSTGRES_POOL_MAX ?? '5', 10),
     },
   },
-
-  // staging: {
-  //   client: 'mysql',
-  //   connection: {
-  //     database: 'objection',
-  //     user: 'root',
-  //     password: '123456'
-  //   },
-  //   pool: {
-  //     min: 2,
-  //     max: 10
-  //   },
-  //   migrations: {
-  //     tableName: 'knex_migrations'
-  //   }
-  // },
-  //
-  // production: {
-  //   client: 'postgresql',
-  //   connection: {
-  //     database: 'my_db',
-  //     user: 'username',
-  //     password: 'password'
-  //   },
-  //   pool: {
-  //     min: 2,
-  //     max: 10
-  //   },
-  //   migrations: {
-  //     tableName: 'knex_migrations'
-  //   }
-  // }
 };
 
 export default config;
