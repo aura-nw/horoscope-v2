@@ -44,19 +44,19 @@ export default class HandleAuthzTxService extends BullableService {
         .where('job_name', BULL_JOB_NAME.HANDLE_AUTHZ_TX);
     }
 
-    const latestBlockCrawled = await BlockCheckpoint.query().findOne({
-      job_name: BULL_JOB_NAME.CRAWL_BLOCK,
+    const latestTxHeightCrawled = await BlockCheckpoint.query().findOne({
+      job_name: BULL_JOB_NAME.HANDLE_TRANSACTION,
     });
 
-    if (latestBlockCrawled) {
+    if (latestTxHeightCrawled) {
       if (
-        latestBlockCrawled.height >
+        latestTxHeightCrawled.height >
         this._startBlock + config.handleAuthzTx.blocksPerCall - 1
       ) {
         this._endBlock =
           this._startBlock + config.handleAuthzTx.blocksPerCall - 1;
       } else {
-        this._endBlock = latestBlockCrawled.height;
+        this._endBlock = latestTxHeightCrawled.height;
       }
     }
   }
