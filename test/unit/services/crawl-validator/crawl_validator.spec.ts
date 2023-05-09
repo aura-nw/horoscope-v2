@@ -47,6 +47,7 @@ export default class CrawlValidatorTest {
       fee: 353,
       timestamp: '2023-01-12T01:53:57.000Z',
       data: {},
+      index: 0,
     }),
     events: {
       tx_msg_index: 0,

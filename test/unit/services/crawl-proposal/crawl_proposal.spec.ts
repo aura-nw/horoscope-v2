@@ -59,6 +59,7 @@ export default class CrawlProposalTest {
       gas_limit: '141106',
       fee: 353,
       timestamp: '2023-01-12T01:53:57.000Z',
+      index: 0,
       data: {
         tx: {
           body: {
