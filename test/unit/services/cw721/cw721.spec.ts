@@ -105,6 +105,7 @@ export default class AssetIndexerTest {
       gas_limit: '141106',
       fee: 353,
       timestamp: '2023-01-12T01:53:57.000Z',
+      index: 0,
       data: {
         tx_response: {
           logs: [
@@ -433,6 +434,7 @@ export default class AssetIndexerTest {
           timestamp: '2023-01-12T01:53:57.000Z',
           codespace: '',
           data: {},
+          index: 0,
         }),
       },
       {
@@ -478,6 +480,7 @@ export default class AssetIndexerTest {
           timestamp: '2023-01-12T01:53:57.000Z',
           codespace: '',
           data: {},
+          index: 0,
         }),
       },
     ];
@@ -547,6 +550,7 @@ export default class AssetIndexerTest {
           timestamp: '2023-01-12T01:53:57.000Z',
           codespace: '',
           data: {},
+          index: 0,
         }),
       },
       {
@@ -593,6 +597,7 @@ export default class AssetIndexerTest {
           timestamp: '2023-01-12T01:53:57.000Z',
           codespace: '',
           data: {},
+          index: 0,
         }),
       },
     ];
@@ -660,6 +665,7 @@ export default class AssetIndexerTest {
           timestamp: '2023-01-12T01:53:57.000Z',
           codespace: '',
           data: {},
+          index: 0,
         }),
       },
       {
@@ -700,6 +706,7 @@ export default class AssetIndexerTest {
           timestamp: '2023-01-12T01:53:57.000Z',
           codespace: '',
           data: {},
+          index: 0,
         }),
       },
     ];
@@ -769,6 +776,7 @@ export default class AssetIndexerTest {
           timestamp: '2023-01-12T01:53:57.000Z',
           codespace: '',
           data: {},
+          index: 0,
         }),
       },
     ];
@@ -835,6 +843,7 @@ export default class AssetIndexerTest {
           timestamp: '2023-01-12T01:53:57.000Z',
           codespace: '',
           data: {},
+          index: 0,
         }),
         code_id: codeId,
       },
@@ -1000,6 +1009,7 @@ export default class AssetIndexerTest {
           timestamp: '2023-01-12T01:53:57.000Z',
           codespace: '',
           data: {},
+          index: 0,
         }),
       },
       {
@@ -1040,6 +1050,7 @@ export default class AssetIndexerTest {
           timestamp: '2023-01-12T01:53:57.000Z',
           codespace: '',
           data: {},
+          index: 0,
         }),
       },
       {
@@ -1080,6 +1091,7 @@ export default class AssetIndexerTest {
           timestamp: '2023-01-12T01:53:57.000Z',
           codespace: '',
           data: {},
+          index: 0,
         }),
       },
     ];
