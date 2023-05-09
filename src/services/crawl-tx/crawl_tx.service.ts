@@ -25,9 +25,10 @@ import {
   MSG_TYPE,
   SERVICE,
 } from '../../common';
-import { Event, Transaction } from '../../models';
+import { BlockCheckpoint, Event, Transaction } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
+import knex from '../../common/utils/db_connection';
 
 @Service({
   name: SERVICE.V1.CrawlTransaction.key,
@@ -102,7 +103,7 @@ export default class CrawlTxService extends BullableService {
 
       const registry = await this._getRegistry();
       // parse tx to format LCD return
-      listTx.txs.forEach((tx: any) => {
+      listTx.txs.forEach((tx: any, index: number) => {
         this.logger.info(`Handle txhash ${tx.hash}`);
         if (mapExistedTx.get(tx.hash)) {
           return;
@@ -173,6 +174,7 @@ export default class CrawlTxService extends BullableService {
           gas_wanted: tx.tx_result.gas_wanted,
           gas_used: tx.tx_result.gas_used,
           tx: tx.tx,
+          index,
           events: tx.tx_result.events,
           timestamp,
         };
@@ -253,6 +255,7 @@ export default class CrawlTxService extends BullableService {
 
       const txInsert = {
         ...Transaction.fromJson({
+          index: tx.tx_response.index,
           height: parseInt(tx.tx_response.height, 10),
           hash: tx.tx_response.txhash,
           codespace: tx.tx_response.codespace,
@@ -293,10 +296,42 @@ export default class CrawlTxService extends BullableService {
       listTxModel.push(txInsert);
     });
 
-    const resultInsertGraph = await Transaction.query().insertGraph(
-      listTxModel
-    );
-    this.logger.debug('result insert tx', resultInsertGraph);
+    knex.transaction(async (trx) => {
+      const resultInsertGraph = await Transaction.query()
+        .insertGraph(listTxModel)
+        .transacting(trx);
+      this.logger.debug('result insert tx', resultInsertGraph);
+
+      // get current checkpoint in db
+      const blockHeightCheckpoint = await BlockCheckpoint.query().findOne({
+        job_name: BULL_JOB_NAME.HANDLE_TRANSACTION,
+      });
+
+      if (blockHeightCheckpoint) {
+        if (blockHeightCheckpoint?.height < height) {
+          await BlockCheckpoint.query()
+            .update(
+              BlockCheckpoint.fromJson({
+                job_name: BULL_JOB_NAME.HANDLE_TRANSACTION,
+                height,
+              })
+            )
+            .where({
+              job_name: BULL_JOB_NAME.HANDLE_TRANSACTION,
+            })
+            .transacting(trx);
+        }
+      } else {
+        await BlockCheckpoint.query()
+          .insert(
+            BlockCheckpoint.fromJson({
+              job_name: BULL_JOB_NAME.HANDLE_TRANSACTION,
+              height,
+            })
+          )
+          .transacting(trx);
+      }
+    });
   }
 
   private setMsgIndexToEvent(tx: any) {
