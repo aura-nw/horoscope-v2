@@ -1,7 +1,7 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import _ from 'lodash';
-import { Checkpoint, TransactionMessage } from '../../models';
+import { BlockCheckpoint, TransactionMessage } from '../../models';
 import { BULL_JOB_NAME, MSG_TYPE, SERVICE } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
@@ -12,11 +12,13 @@ import knex from '../../common/utils/db_connection';
   name: SERVICE.V1.HandleAuthzTx.key,
 })
 export default class HandleAuthzTxService extends BullableService {
-  private _currentTxMsgId = 0;
-
-  private _checkpoint!: Checkpoint | undefined;
+  private _blockCheckpoint!: BlockCheckpoint | undefined;
 
   private _registry!: AuraRegistry;
+
+  private _startBlock = 0;
+
+  private _endBlock = 0;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -24,37 +26,52 @@ export default class HandleAuthzTxService extends BullableService {
   }
 
   async initEnv() {
-    this._checkpoint = await Checkpoint.query().findOne({
+    this._blockCheckpoint = await BlockCheckpoint.query().findOne({
       job_name: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
     });
-    if (!this._checkpoint) {
-      this._checkpoint = Checkpoint.fromJson({
+    if (!this._blockCheckpoint) {
+      this._blockCheckpoint = BlockCheckpoint.fromJson({
         job_name: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
-        data: {
-          transaction_message_id: 0,
-        },
+        height: 0,
       });
-      await Checkpoint.query().insert(this._checkpoint);
-    } else if (this._checkpoint.data.transaction_message_id) {
-      this._currentTxMsgId = this._checkpoint.data.transaction_message_id;
+      await BlockCheckpoint.query().insert(this._blockCheckpoint);
+    } else if (this._blockCheckpoint.height) {
+      this._startBlock = this._blockCheckpoint.height;
     } else {
-      this._checkpoint.data.transaction_message_id = 0;
-      await Checkpoint.query().update(this._checkpoint);
+      this._blockCheckpoint.height = 0;
+      await BlockCheckpoint.query()
+        .update(this._blockCheckpoint)
+        .where('job_name', BULL_JOB_NAME.HANDLE_AUTHZ_TX);
     }
-    this.logger.info(
-      'Handle Authz Message from id: ',
-      this._checkpoint.data.transaction_message_id
-    );
+
+    const latestBlockCrawled = await BlockCheckpoint.query().findOne({
+      job_name: BULL_JOB_NAME.CRAWL_BLOCK,
+    });
+
+    if (latestBlockCrawled) {
+      if (
+        latestBlockCrawled.height >
+        this._startBlock + config.handleAuthzTx.blocksPerCall - 1
+      ) {
+        this._endBlock =
+          this._startBlock + config.handleAuthzTx.blocksPerCall - 1;
+      } else {
+        this._endBlock = latestBlockCrawled.height;
+      }
+    }
   }
 
   async handleJob() {
+    this.logger.info(
+      `Handle Authz Message from ${this._startBlock} to ${this._endBlock}`
+    );
     // query numberOfRow tx message has type authz and has no parent_id
     const listTxMsgs = await TransactionMessage.query()
-      .orderBy('id', 'asc')
-      .where('id', '>', this._currentTxMsgId)
+      .joinRelated('transaction')
+      .where('height', '>=', this._startBlock)
+      .andWhere('height', '<=', this._endBlock)
       .andWhere('type', MSG_TYPE.MSG_AUTHZ_EXEC)
-      .andWhere('parent_id', null)
-      .limit(config.handleAuthzTx.numberOfRowPerCall);
+      .andWhere('parent_id', null);
     const listSubTxAuthz: TransactionMessage[] = [];
 
     listTxMsgs.forEach(async (txMsg) => {
@@ -85,21 +102,21 @@ export default class HandleAuthzTxService extends BullableService {
           .transacting(trx);
       }
 
-      if (listTxMsgs.length) {
-        if (this._checkpoint) {
-          this._checkpoint.data.transaction_message_id =
-            listTxMsgs[listTxMsgs.length - 1].id;
+      if (this._blockCheckpoint) {
+        this._blockCheckpoint.height = this._endBlock;
 
-          await Checkpoint.query().update(this._checkpoint).transacting(trx);
-        } else {
-          this._checkpoint = Checkpoint.fromJson({
-            job_name: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
-            data: {
-              transaction_message_id: 0,
-            },
-          });
-          await Checkpoint.query().insert(this._checkpoint).transacting(trx);
-        }
+        await BlockCheckpoint.query()
+          .update(this._blockCheckpoint)
+          .where('job_name', BULL_JOB_NAME.HANDLE_AUTHZ_TX)
+          .transacting(trx);
+      } else {
+        this._blockCheckpoint = BlockCheckpoint.fromJson({
+          job_name: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
+          height: 0,
+        });
+        await BlockCheckpoint.query()
+          .insert(this._blockCheckpoint)
+          .transacting(trx);
       }
     });
   }

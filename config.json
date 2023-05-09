@@ -54,7 +54,7 @@
     "blocksPerCall": 100
   },
   "handleAuthzTx": {
-    "numberOfRowPerCall": 100,
+    "blocksPerCall": 100,
     "millisecondCrawl": 5000
   },
   "crawlSmartContract": {
