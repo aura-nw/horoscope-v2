@@ -445,13 +445,29 @@ export default class Cw721HandlerService extends BullableService {
     const contractActivities: IContractMsgInfo[] = [];
     const wasmEvents = await Event.query()
       .alias('event')
-      .withGraphJoined('[attributes, message, transaction]')
+      .withGraphJoined(
+        '[attributes(selectAttribute), message(selectMessage), transaction(filterSuccess,selectTransaction)]'
+      )
+      .modifiers({
+        selectAttribute(builder) {
+          builder.select('id', 'key', 'value');
+        },
+        selectMessage(builder) {
+          builder.select('sender', 'content');
+        },
+        selectTransaction(builder) {
+          builder.select('hash', 'height');
+        },
+        filterSuccess(builder) {
+          builder.where('code', 0);
+        },
+      })
       .whereIn('event.type', [
         Event.EVENT_TYPE.WASM,
         Event.EVENT_TYPE.INSTANTIATE,
       ])
       .andWhereBetween('event.block_height', [fromBlock, toBlock])
-      .andWhere('transaction.code', 0);
+      .orderBy('attributes.id', 'ASC');
 
     wasmEvents.forEach((wasmEvent) => {
       const wasmActivities: { key: string; value: string }[][] =
