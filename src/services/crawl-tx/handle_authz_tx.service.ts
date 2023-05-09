@@ -6,6 +6,7 @@ import { BULL_JOB_NAME, MSG_TYPE, SERVICE } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import AuraRegistry from './aura.registry';
+import knex from '../../common/utils/db_connection';
 
 @Service({
   name: SERVICE.V1.HandleAuthzTx.key,
@@ -77,26 +78,30 @@ export default class HandleAuthzTxService extends BullableService {
         );
       });
     });
-    if (listSubTxAuthz.length > 0) {
-      await TransactionMessage.query().insert(listSubTxAuthz);
-    }
-
-    if (listTxMsgs.length) {
-      if (this._checkpoint) {
-        this._checkpoint.data.transaction_message_id =
-          listTxMsgs[listTxMsgs.length - 1].id;
-
-        await Checkpoint.query().update(this._checkpoint);
-      } else {
-        this._checkpoint = Checkpoint.fromJson({
-          job_name: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
-          data: {
-            transaction_message_id: 0,
-          },
-        });
-        await Checkpoint.query().insert(this._checkpoint);
+    await knex.transaction(async (trx) => {
+      if (listSubTxAuthz.length > 0) {
+        await TransactionMessage.query()
+          .insert(listSubTxAuthz)
+          .transacting(trx);
       }
-    }
+
+      if (listTxMsgs.length) {
+        if (this._checkpoint) {
+          this._checkpoint.data.transaction_message_id =
+            listTxMsgs[listTxMsgs.length - 1].id;
+
+          await Checkpoint.query().update(this._checkpoint).transacting(trx);
+        } else {
+          this._checkpoint = Checkpoint.fromJson({
+            job_name: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
+            data: {
+              transaction_message_id: 0,
+            },
+          });
+          await Checkpoint.query().insert(this._checkpoint).transacting(trx);
+        }
+      }
+    });
   }
 
   // convert camelcase to underscore
