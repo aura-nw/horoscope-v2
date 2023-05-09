@@ -27,6 +27,8 @@ export class Transaction extends BaseModel {
 
   memo!: string;
 
+  index!: number;
+
   // fee_payer!: string;
 
   // fee_granter!: string;
@@ -59,6 +61,7 @@ export class Transaction extends BaseModel {
         'gas_wanted',
         'gas_limit',
         'fee',
+        'index',
         // 'fee_payer',
         // 'fee_granter',
         // 'signer_public_key_type',
@@ -74,6 +77,7 @@ export class Transaction extends BaseModel {
         gas_used: { type: 'string' },
         gas_wanted: { type: 'string' },
         gas_limit: { type: 'string' },
+        index: { type: 'number' },
         // fee: { type: 'number' },
         // fee_payer: { type: 'string' },
         // fee_granter: { type: 'string' },
