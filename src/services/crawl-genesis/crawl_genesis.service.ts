@@ -261,23 +261,13 @@ export default class CrawlGenesisService extends BullableService {
     if (genesisProcess !== 0) return;
 
     let genValidators: any[] = await this.readStreamGenesis(
-      'app_state.genutil.gen_txs'
+      'app_state.genutil.gen_txs',
+      this.filterTx
     );
     if (genValidators.length === 0) {
-      const pipelineStaking = Chain.chain([
-        fs.createReadStream('genesis.json'),
-        Pick.withParser({ filter: 'app_state.staking.validators' }),
-        StreamArr.streamArray(),
-      ]);
-      genValidators = await new Promise((resolve, reject) => {
-        const val: any[] = [];
-        pipelineStaking
-          .on('data', (data) => {
-            val.push(data.value);
-          })
-          .on('end', () => resolve(val))
-          .on('error', (error) => reject(error));
-      });
+      genValidators = await this.readStreamGenesis(
+        'app_state.staking.validators'
+      );
     } else {
       genValidators = genValidators.flat();
       genValidators.forEach((genVal: any) => {
@@ -637,7 +627,16 @@ export default class CrawlGenesisService extends BullableService {
     return 0;
   }
 
-  private async readStreamGenesis(data: string, isVal?: boolean): Promise<any> {
+  private filterTx(data: any) {
+    return data.value.body.messages.filter(
+      (msg: any) => msg['@type'] === MSG_TYPE.MSG_CREATE_VALIDATOR
+    );
+  }
+
+  private async readStreamGenesis(
+    data: string,
+    filter?: (data: any) => void
+  ): Promise<any> {
     const pipeline = Chain.chain([
       fs.createReadStream('genesis.json'),
       Pick.withParser({ filter: data }),
@@ -647,13 +646,7 @@ export default class CrawlGenesisService extends BullableService {
       const bal: any[] = [];
       pipeline
         .on('data', (data) => {
-          bal.push(
-            isVal
-              ? data.value.body.messages.filter(
-                  (msg: any) => msg['@type'] === MSG_TYPE.MSG_CREATE_VALIDATOR
-                )
-              : data.value
-          );
+          bal.push(filter ? filter(data) : data.value);
         })
         .on('end', () => resolve(bal))
         .on('error', (error) => reject(error));
