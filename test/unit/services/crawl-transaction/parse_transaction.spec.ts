@@ -35,6 +35,9 @@ export default class CrawlTransactionTest {
         .getQueue(BULL_JOB_NAME.HANDLE_TRANSACTION)
         .empty(),
       knex.raw('TRUNCATE TABLE transaction RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE checkpoint RESTART IDENTITY CASCADE'),
     ]);
   }
 
@@ -143,7 +146,10 @@ export default class CrawlTransactionTest {
         .empty(),
     ]);
     await Promise.all([
+      knex.raw('TRUNCATE TABLE transaction RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE checkpoint RESTART IDENTITY CASCADE'),
       this.crawlTxService?._stop(),
       this.broker.stop(),
     ]);
