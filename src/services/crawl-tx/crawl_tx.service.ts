@@ -296,7 +296,7 @@ export default class CrawlTxService extends BullableService {
       listTxModel.push(txInsert);
     });
 
-    knex.transaction(async (trx) => {
+    await knex.transaction(async (trx) => {
       const resultInsertGraph = await Transaction.query()
         .insertGraph(listTxModel)
         .transacting(trx);
