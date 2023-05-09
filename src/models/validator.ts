@@ -5,10 +5,16 @@ import { Model } from 'objection';
 import config from '../../config.json' assert { type: 'json' };
 import BaseModel from './base';
 import { PowerEvent } from './power_event';
+import { Delegator } from './delegator';
 
 export interface IConsensusPubkey {
   type: string;
   key: string;
+}
+
+export interface IDelegators {
+  total: number;
+  height: number;
 }
 
 export class Validator extends BaseModel {
@@ -58,12 +64,14 @@ export class Validator extends BaseModel {
 
   missed_blocks_counter!: number;
 
+  delegators: IDelegators | undefined;
+
   static get tableName() {
     return 'validator';
   }
 
   static get jsonAttributes() {
-    return ['consensus_pubkey', 'description', 'commission'];
+    return ['consensus_pubkey', 'description', 'commission', 'delegators'];
   }
 
   static get jsonSchema() {
@@ -120,6 +128,13 @@ export class Validator extends BaseModel {
         jailed_until: { type: 'string', format: 'date-time' },
         tombstoned: { type: 'boolean' },
         missed_blocks_counter: { type: 'number' },
+        delegators: {
+          type: 'object',
+          properties: {
+            total: { type: 'number' },
+            height: { type: 'number' },
+          },
+        },
       },
     };
   }
@@ -140,6 +155,14 @@ export class Validator extends BaseModel {
         join: {
           from: 'validator.id',
           to: 'power_event.validator_dst_id',
+        },
+      },
+      delegators: {
+        relation: Model.HasManyRelation,
+        modelClass: Delegator,
+        join: {
+          from: 'validator.id',
+          to: 'delegator.validator_id',
         },
       },
     };
