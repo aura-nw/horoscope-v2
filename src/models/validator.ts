@@ -12,11 +12,6 @@ export interface IConsensusPubkey {
   key: string;
 }
 
-export interface IDelegators {
-  total: number;
-  height: number;
-}
-
 export class Validator extends BaseModel {
   id!: number;
 
@@ -64,14 +59,16 @@ export class Validator extends BaseModel {
 
   missed_blocks_counter!: number;
 
-  delegators: IDelegators | undefined;
+  delegators_count!: number;
+
+  delegators_last_height!: number;
 
   static get tableName() {
     return 'validator';
   }
 
   static get jsonAttributes() {
-    return ['consensus_pubkey', 'description', 'commission', 'delegators'];
+    return ['consensus_pubkey', 'description', 'commission'];
   }
 
   static get jsonSchema() {
@@ -100,6 +97,8 @@ export class Validator extends BaseModel {
         'jailed_until',
         'tombstoned',
         'missed_blocks_counter',
+        'delegators_count',
+        'delegators_last_height',
       ],
       properties: {
         operator_address: { type: 'string' },
@@ -128,13 +127,8 @@ export class Validator extends BaseModel {
         jailed_until: { type: 'string', format: 'date-time' },
         tombstoned: { type: 'boolean' },
         missed_blocks_counter: { type: 'number' },
-        delegators: {
-          type: 'object',
-          properties: {
-            total: { type: 'number' },
-            height: { type: 'number' },
-          },
-        },
+        delegators_count: { type: 'number' },
+        delegators_last_height: { type: 'number' },
       },
     };
   }
@@ -218,6 +212,8 @@ export class Validator extends BaseModel {
       jailed_until: new Date(0).toISOString(),
       tombstoned: false,
       missed_blocks_counter: 0,
+      delegators_count: 0,
+      delegators_last_height: 0,
     });
 
     return validatorEntity;

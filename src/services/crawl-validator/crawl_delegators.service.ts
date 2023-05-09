@@ -43,7 +43,7 @@ export default class CrawlDelegatorsService extends BullableService {
         {
           id: val.id,
           address: val.operator_address,
-          height: val.delegators?.height ?? 0,
+          height: val.delegators_last_height,
         },
         {
           removeOnComplete: true,
@@ -113,9 +113,8 @@ export default class CrawlDelegatorsService extends BullableService {
       await Promise.all([
         Delegator.query()
           .insert(delegators)
-          .onConflict('id')
+          .onConflict(['validator_id', 'delegator_address'])
           .merge()
-          .returning('id')
           .transacting(trx)
           .catch((error) => {
             this.logger.error('Insert or update validator delegators error');
@@ -131,46 +130,32 @@ export default class CrawlDelegatorsService extends BullableService {
           .transacting(trx),
         Validator.query()
           .patch({
-            delegators: {
-              total: delegations.length,
-              height: latestBlock ? latestBlock.height : _payload.height,
-            },
+            delegators_count: delegations.length,
+            delegators_last_height: latestBlock
+              ? latestBlock.height
+              : _payload.height,
           })
           .where('id', _payload.id)
-          .transacting(trx)
-          .catch((error) => {
-            this.logger.error('Update validator error');
-            this.logger.error(error);
-          }),
+          .transacting(trx),
       ]);
     });
   }
 
   public async _start() {
-    // this.createJob(
-    //   BULL_JOB_NAME.CRAWL_DELEGATORS,
-    //   'crawl',
-    //   {},
-    //   {
-    //     removeOnComplete: true,
-    //     removeOnFail: {
-    //       count: 3,
-    //     },
-    //     // repeat: {
-    //     //   every: config.crawlDelegators.millisecondCrawl,
-    //     // },
-    //   }
-    // );
-    this.logger.info(
-      await Validator.query()
-        .patch({ delegators: { total: 12, height: 23 } })
-        .where('id', 1)
-        .catch((error) => {
-          this.logger.error('Update validator error');
-          this.logger.error(error);
-        })
+    this.createJob(
+      BULL_JOB_NAME.CRAWL_DELEGATORS,
+      'crawl',
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        repeat: {
+          every: config.crawlDelegators.millisecondCrawl,
+        },
+      }
     );
-    this.logger.info('done');
 
     return super._start();
   }
