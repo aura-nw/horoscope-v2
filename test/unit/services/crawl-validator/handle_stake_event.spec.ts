@@ -40,6 +40,7 @@ export default class HandleStakeEventTest {
   txInsert = {
     ...Transaction.fromJson({
       height: 3967529,
+      index: 0,
       hash: '4A8B0DE950F563553A81360D4782F6EC451F6BEF7AC50E2459D1997FA168997D',
       codespace: '',
       code: 0,
