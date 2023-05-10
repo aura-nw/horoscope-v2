@@ -53,9 +53,13 @@
     "millisecondCrawl": 5000,
     "blocksPerCall": 100
   },
+  "handleAuthzTx": {
+    "blocksPerCall": 100,
+    "millisecondCrawl": 5000
+  },
   "crawlSmartContract": {
-    "key": "crawlSmartContract",
     "millisecondCrawl": 5000,
+    "key": "crawlSmartContract",
     "blocksPerCall": 100
   },
   "crawlGenesis": {
