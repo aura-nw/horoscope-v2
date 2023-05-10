@@ -1,4 +1,3 @@
-import { LoggerInstance } from 'moleculer';
 import { Transaction, Event, EventAttribute } from '../../models';
 
 export interface IContractMsgInfo {
@@ -22,8 +21,7 @@ export interface IContractMsgInfo {
 // tx: tx data
 export async function getContractActivities(
   fromBlock: number,
-  toBlock: number,
-  logger?: LoggerInstance
+  toBlock: number
 ) {
   const contractActivities: IContractMsgInfo[] = [];
   const wasmEvents = await Event.query()
@@ -91,9 +89,6 @@ export async function getContractActivities(
       });
     });
   });
-  if (logger) {
-    logger.debug(contractActivities);
-  }
   return contractActivities;
 }
 

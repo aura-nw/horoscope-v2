@@ -249,9 +249,9 @@ export default class Cw721HandlerService extends BullableService {
         // get all contract Msg in above range blocks
         const listContractMsg = await getContractActivities(
           startBlock,
-          endBlock,
-          this.logger
+          endBlock
         );
+        this.logger.debug(listContractMsg);
         if (listContractMsg.length > 0) {
           // handle instantiate cw721 contracts
           await this.handleInstantiateMsgs(
