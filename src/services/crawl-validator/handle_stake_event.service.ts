@@ -39,6 +39,7 @@ export default class HandleStakeEventService extends BullableService {
     const [startHeight, endHeight, updateBlockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.HANDLE_STAKE_EVENT,
+        BULL_JOB_NAME.HANDLE_TRANSACTION,
         config.handleStakeEvent.key
       );
     this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
@@ -61,6 +62,10 @@ export default class HandleStakeEventService extends BullableService {
       .andWhere('transaction.height', '>', startHeight)
       .andWhere('transaction.height', '<=', endHeight)
       .andWhere('transaction.code', 0);
+    this.logger.info(
+      `Result get Tx from height ${startHeight} to ${endHeight}:`
+    );
+    this.logger.info(JSON.stringify(resultTx));
 
     if (resultTx.length > 0) stakeTxs.push(...resultTx);
 
