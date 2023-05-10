@@ -1,42 +1,36 @@
+import { cosmwasm } from '@aura-nw/aurajs';
 import {
-  MsgExecuteContract,
-  MsgInstantiateContract,
-} from '@aura-nw/aurajs/types/codegen/cosmwasm/wasm/v1/tx';
-import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { ServiceBroker } from 'moleculer';
-import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
-import {
+  fromBase64,
+  fromUtf8,
+  toBase64,
   toHex,
   toUtf8,
-  toBase64,
-  fromUtf8,
-  fromBase64,
 } from '@cosmjs/encoding';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
-import { cosmwasm } from '@aura-nw/aurajs';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
-import { SmartContract } from '../../models/smart_contract';
-import knex from '../../common/utils/db_connection';
+import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
+import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+import { ServiceBroker } from 'moleculer';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { Config, getHttpBatchClient } from '../../common';
 import {
   BLOCK_CHECKPOINT_JOB_NAME,
   BULL_JOB_NAME,
-  MSG_TYPE,
   SERVICE_NAME,
 } from '../../common/constant';
+import knex from '../../common/utils/db_connection';
 import {
   Block,
   BlockCheckpoint,
-  Transaction,
   Event,
   EventAttribute,
-  TransactionMessage,
+  Transaction,
 } from '../../models';
 import CW721Contract from '../../models/cw721_contract';
 import CW721Token from '../../models/cw721_token';
 import CW721Activity from '../../models/cw721_tx';
+import { SmartContract } from '../../models/smart_contract';
 
 const { NODE_ENV } = Config;
 
@@ -267,7 +261,7 @@ export default class Cw721HandlerService extends BullableService {
     if (endBlock >= startBlock) {
       try {
         // get all contract Msg in above range blocks
-        const listContractMsg = await this.getContractMsgs(
+        const listContractMsg = await this.getContractActivities(
           startBlock,
           endBlock
         );
@@ -447,121 +441,78 @@ export default class Cw721HandlerService extends BullableService {
   // content: input of contract
   // wasm_attributes: output of an activity in contract (it may have multiple output activities relate to one input)
   // tx: tx data
-  async getContractMsgs(startBlock: number, endBlock: number) {
-    const contractMsgsInfo: IContractMsgInfo[] = [];
-    const txs = await Transaction.query()
-      .alias('tx')
-      .whereBetween('tx.height', [startBlock, endBlock])
-      .andWhere('tx.code', 0)
-      .withGraphJoined('messages')
-      .whereIn('messages.type', [
-        MSG_TYPE.MSG_EXECUTE_CONTRACT,
-        MSG_TYPE.MSG_INSTANTIATE_CONTRACT,
+  async getContractActivities(fromBlock: number, toBlock: number) {
+    const contractActivities: IContractMsgInfo[] = [];
+    const wasmEvents = await Event.query()
+      .alias('event')
+      .withGraphJoined(
+        '[attributes(selectAttribute), message(selectMessage), transaction(filterSuccess,selectTransaction)]'
+      )
+      .modifiers({
+        selectAttribute(builder) {
+          builder.select('id', 'key', 'value');
+        },
+        selectMessage(builder) {
+          builder.select('sender', 'content');
+        },
+        selectTransaction(builder) {
+          builder.select('hash', 'height');
+        },
+        filterSuccess(builder) {
+          builder.where('code', 0);
+        },
+      })
+      .whereIn('event.type', [
+        Event.EVENT_TYPE.WASM,
+        Event.EVENT_TYPE.INSTANTIATE,
       ])
-      .orderBy('id', 'ASC');
-    // eslint-disable-next-line no-restricted-syntax
-    for (const tx of txs) {
-      tx.messages.forEach((_: TransactionMessage, index: number) => {
-        const execActivities = this.extractActivitiesInExecMsg(tx, index);
-        const instantiateActivities = this.extractActivitiesInInstantiateMsg(
-          tx,
-          index
-        );
-        contractMsgsInfo.push(...execActivities);
-        contractMsgsInfo.push(...instantiateActivities);
-      });
-    }
-    this.logger.debug(contractMsgsInfo);
-    return contractMsgsInfo;
-  }
+      .andWhereBetween('event.block_height', [fromBlock, toBlock])
+      .orderBy('attributes.id', 'ASC');
 
-  // extract all activites in specified execute message (index is the message's index in transaction)
-  extractActivitiesInExecMsg(tx: Transaction, index: number) {
-    const execActivities: IContractMsgInfo[] = [];
-    const wasmEvent = tx.data.tx_response.logs[index].events.find(
-      (event: any) => event.type === Event.EVENT_TYPE.WASM
-    );
-    if (wasmEvent) {
-      const content = tx.messages[index].content as MsgExecuteContract;
-      // split into wasm sub-events
-      const wasmEventByContracts = wasmEvent.attributes.reduce(
-        (
-          acc: { key: string; value: string }[][],
-          curr: { key: string; value: string }
-        ) => {
-          if (curr.key === EventAttribute.ATTRIBUTE_KEY._CONTRACT_ADDRESS) {
-            acc.push([curr]); // start a new sub-array with the current element
-          } else if (acc.length > 0) {
-            acc[acc.length - 1].push(curr); // add the current element to the last sub-array
-          }
-          return acc;
-        },
-        []
-      );
-      const { sender } = content;
-      wasmEventByContracts.forEach((wasmSubEventAttrs: any) => {
-        const action = this.getAttributeFrom(
-          wasmSubEventAttrs,
-          EventAttribute.ATTRIBUTE_KEY.ACTION
-        );
-        execActivities.push({
+    wasmEvents.forEach((wasmEvent) => {
+      const wasmActivities: { key: string; value: string }[][] =
+        wasmEvent.attributes
+          .map((attribute: EventAttribute) => ({
+            key: attribute.key,
+            value: attribute.value,
+          }))
+          .reduce(
+            (
+              acc: { key: string; value: string }[][],
+              curr: { key: string; value: string }
+            ) => {
+              if (curr.key === EventAttribute.ATTRIBUTE_KEY._CONTRACT_ADDRESS) {
+                acc.push([curr]);
+              } else if (acc.length > 0) {
+                acc[acc.length - 1].push(curr);
+              }
+              return acc;
+            },
+            []
+          );
+      wasmActivities.forEach((wasmActivity) => {
+        const action =
+          wasmEvent.type === Event.EVENT_TYPE.INSTANTIATE
+            ? Event.EVENT_TYPE.INSTANTIATE
+            : this.getAttributeFrom(
+                wasmActivity,
+                EventAttribute.ATTRIBUTE_KEY.ACTION
+              );
+        contractActivities.push({
           contractAddress: this.getAttributeFrom(
-            wasmSubEventAttrs,
+            wasmActivity,
             EventAttribute.ATTRIBUTE_KEY._CONTRACT_ADDRESS
           ),
-          sender,
+          sender: wasmEvent.message.sender,
           action,
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          content: content.msg,
-          wasm_attributes: wasmSubEventAttrs,
-          tx,
+          content: wasmEvent.message.content.msg,
+          wasm_attributes: wasmActivity,
+          tx: wasmEvent.transaction,
         });
       });
-    }
-    return execActivities;
-  }
-
-  // extract all activites in specified instantiate message (index is the message's index in transaction)
-  extractActivitiesInInstantiateMsg(tx: Transaction, index: number) {
-    const instantiateActivities: IContractMsgInfo[] = [];
-    const instantiateEvent = tx.data.tx_response.logs[index].events.find(
-      (event: any) => event.type === Event.EVENT_TYPE.INSTANTIATE
-    );
-    if (instantiateEvent) {
-      const content = tx.messages[index].content as MsgInstantiateContract;
-      const action = Event.EVENT_TYPE.INSTANTIATE;
-      const { sender } = content;
-      const instantiateEventByContracts = instantiateEvent.attributes.reduce(
-        (
-          acc: { key: string; value: string }[][],
-          curr: { key: string; value: string }
-        ) => {
-          if (curr.key === EventAttribute.ATTRIBUTE_KEY._CONTRACT_ADDRESS) {
-            acc.push([curr]); // start a new sub-array with the current element
-          } else if (acc.length > 0) {
-            acc[acc.length - 1].push(curr); // add the current element to the last sub-array
-          }
-          return acc;
-        },
-        []
-      );
-      instantiateEventByContracts.forEach((instantiateSubEventAttrs: any) => {
-        instantiateActivities.push({
-          contractAddress: this.getAttributeFrom(
-            instantiateSubEventAttrs,
-            EventAttribute.ATTRIBUTE_KEY._CONTRACT_ADDRESS
-          ),
-          sender,
-          action,
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          content: content.msg,
-          tx,
-        });
-      });
-    }
-    return instantiateActivities;
+    });
+    this.logger.debug(contractActivities);
+    return contractActivities;
   }
 
   // get Attribute value by specified key from array of attributes

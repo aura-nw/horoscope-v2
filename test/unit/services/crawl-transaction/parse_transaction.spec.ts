@@ -1,4 +1,4 @@
-import { BeforeAll, Describe, Test } from '@jest-decorated/core';
+import { AfterEach, BeforeEach, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { Log } from '@cosmjs/stargate/build/logs';
 import { Attribute, Event } from '@cosmjs/stargate/build/events';
@@ -7,7 +7,7 @@ import {
   Event as EventModel,
   Block,
 } from '../../../../src/models';
-import { BULL_JOB_NAME } from '../../../../src/common';
+import { BULL_JOB_NAME, sleep } from '../../../../src/common';
 import CrawlTxService from '../../../../src/services/crawl-tx/crawl_tx.service';
 import knex from '../../../../src/common/utils/db_connection';
 import tx_fixture from './tx.fixture.json' assert { type: 'json' };
@@ -19,13 +19,12 @@ export default class CrawlTransactionTest {
 
   crawlTxService?: CrawlTxService;
 
-  @BeforeAll()
+  @BeforeEach()
   async initSuite() {
-    this.broker.start();
     this.crawlTxService = this.broker.createService(
       CrawlTxService
     ) as CrawlTxService;
-    return Promise.all([
+    await Promise.all([
       this.crawlTxService
         ?.getQueueManager()
         .getQueue(BULL_JOB_NAME.CRAWL_TRANSACTION)
@@ -39,6 +38,7 @@ export default class CrawlTransactionTest {
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE checkpoint RESTART IDENTITY CASCADE'),
     ]);
+    this.crawlTxService._start();
   }
 
   @Test('Parse transaction and insert to DB')
@@ -57,6 +57,7 @@ export default class CrawlTransactionTest {
       height: 423136,
       timestamp: '2023-04-17T03:44:41.000Z',
     });
+    await sleep(2000);
     const tx = await Transaction.query().findOne(
       'hash',
       '5F38B0C3E9FAB4423C37FB6306AC06D983AF50013BC7BCFBD9F684D6BFB0AF23'
@@ -133,7 +134,7 @@ export default class CrawlTransactionTest {
     // );
   }
 
-  @BeforeAll()
+  @AfterEach()
   async tearDown() {
     await Promise.all([
       this.crawlTxService
