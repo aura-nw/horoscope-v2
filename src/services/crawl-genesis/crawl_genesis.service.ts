@@ -5,7 +5,11 @@ import { ServiceBroker } from 'moleculer';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { fromBase64, fromUtf8, toHex, toUtf8 } from '@cosmjs/encoding';
+import fs from 'fs';
 import _ from 'lodash';
+import Chain from 'stream-chain';
+import Pick from 'stream-json/filters/Pick';
+import StreamArr from 'stream-json/streamers/StreamArray';
 import { QueryDenomTraceRequest } from '@aura-nw/aurajs/types/codegen/ibc/applications/transfer/v1/query';
 import { ibc } from '@aura-nw/aurajs';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
@@ -38,8 +42,6 @@ import knex from '../../common/utils/db_connection';
 export default class CrawlGenesisService extends BullableService {
   private _httpBatchClient: HttpBatchClient;
 
-  private genesisData: any;
-
   private genesisJobs: string[] = [
     BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
     BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
@@ -70,13 +72,13 @@ export default class CrawlGenesisService extends BullableService {
       return;
     }
 
-    let genesisStr = '';
+    if (!fs.existsSync('genesis.json')) fs.appendFileSync('genesis.json', '');
     try {
       const genesis = await this._httpBatchClient.execute(
         createJsonRpcRequest('genesis')
       );
 
-      genesisStr = JSON.stringify(genesis);
+      fs.appendFileSync('genesis.json', JSON.stringify(genesis.result.genesis));
     } catch (error: any) {
       if (JSON.parse(error.message).code !== -32603) {
         this.logger.error(error);
@@ -94,7 +96,10 @@ export default class CrawlGenesisService extends BullableService {
             })
           );
 
-          genesisStr += fromUtf8(fromBase64(resultChunk.result.data));
+          fs.appendFileSync(
+            'genesis.json',
+            fromUtf8(fromBase64(resultChunk.result.data))
+          );
           index += 1;
         } catch (err) {
           if (JSON.parse(error.message).code !== -32603) {
@@ -107,9 +112,7 @@ export default class CrawlGenesisService extends BullableService {
       }
     }
 
-    this.genesisData = JSON.parse(genesisStr);
-    if (this.genesisData.result)
-      this.genesisData = this.genesisData.result.genesis;
+    // fs.renameSync('genesis.txt', 'genesis.json');
 
     let updateBlkCheck: BlockCheckpoint;
     if (genesisBlkCheck) {
@@ -151,6 +154,9 @@ export default class CrawlGenesisService extends BullableService {
   public async crawlGenesisAccounts(_payload: object): Promise<void> {
     this.logger.info('Crawl genesis accounts');
 
+    let accounts: Account[] = [];
+    let done = false;
+
     const genesisProcess = await this.checckGenesisJobProcess(
       BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT
     );
@@ -158,51 +164,52 @@ export default class CrawlGenesisService extends BullableService {
     const accountsInDb = await Account.query().findOne({});
     if (accountsInDb) {
       this.logger.error('DB already contains some accounts');
-      return;
+      done = true;
     }
 
-    const { balances } = this.genesisData.app_state.bank;
-    const auths: any = _.keyBy(
-      this.genesisData.result?.genesis.app_state.auth.accounts.map((acc: any) =>
-        Utils.flattenObject(acc)
-      ) ||
-        this.genesisData.app_state.auth.accounts.map((acc: any) =>
-          Utils.flattenObject(acc)
-        ),
-      'address'
-    );
+    if (!done) {
+      const balances: any[] = await this.readStreamGenesis(
+        'app_state.bank.balances'
+      );
+      let auths: any = await this.readStreamGenesis('app_state.auth.accounts');
+      auths = _.keyBy(
+        auths.map((acc: any) => Utils.flattenObject(acc)),
+        'address'
+      );
 
-    let accounts: Account[] = [];
-
-    balances.forEach((bal: any) => {
-      const account: any = {
-        address: bal.address,
-        balances: bal.coins,
-        spendable_balances: bal.coins,
-        type: auths[bal.address]['@type'],
-        pubkey: auths[bal.address].pub_key,
-        account_number: Number.parseInt(auths[bal.address].account_number, 10),
-        sequence: Number.parseInt(auths[bal.address].sequence, 10),
-      };
-      if (
-        account.type === AccountType.CONTINUOUS_VESTING ||
-        account.type === AccountType.DELAYED_VESTING ||
-        account.type === AccountType.PERIODIC_VESTING
-      )
-        account.vesting = {
-          original_vesting: auths[bal.address].original_vesting,
-          delegated_free: auths[bal.address].delegated_free,
-          delegated_vesting: auths[bal.address].delegated_vesting,
-          start_time: auths[bal.address].start_time
-            ? Number.parseInt(auths[bal.address].start_time, 10)
-            : null,
-          end_time: auths[bal.address].end_time,
+      balances.forEach((bal: any) => {
+        const account: any = {
+          address: bal.address,
+          balances: bal.coins,
+          spendable_balances: bal.coins,
+          type: auths[bal.address]['@type'],
+          pubkey: auths[bal.address].pub_key,
+          account_number: Number.parseInt(
+            auths[bal.address].account_number,
+            10
+          ),
+          sequence: Number.parseInt(auths[bal.address].sequence, 10),
         };
+        if (
+          account.type === AccountType.CONTINUOUS_VESTING ||
+          account.type === AccountType.DELAYED_VESTING ||
+          account.type === AccountType.PERIODIC_VESTING
+        )
+          account.vesting = {
+            original_vesting: auths[bal.address].original_vesting,
+            delegated_free: auths[bal.address].delegated_free,
+            delegated_vesting: auths[bal.address].delegated_vesting,
+            start_time: auths[bal.address].start_time
+              ? Number.parseInt(auths[bal.address].start_time, 10)
+              : null,
+            end_time: auths[bal.address].end_time,
+          };
 
-      accounts.push(account);
-    });
+        accounts.push(account);
+      });
 
-    accounts = await this.handleIbcDenom(accounts);
+      accounts = await this.handleIbcDenom(accounts);
+    }
 
     await knex
       .transaction(async (trx) => {
@@ -253,16 +260,16 @@ export default class CrawlGenesisService extends BullableService {
     );
     if (genesisProcess !== 0) return;
 
-    let genValidators = this.genesisData.app_state.genutil.gen_txs
-      .map((genTx: any) =>
-        genTx.body.messages.filter(
-          (msg: any) => msg['@type'] === MSG_TYPE.MSG_CREATE_VALIDATOR
-        )
-      )
-      .flat();
-    if (genValidators.length === 0)
-      genValidators = this.genesisData.app_state.staking.validators;
-    else
+    let genValidators: any[] = await this.readStreamGenesis(
+      'app_state.genutil.gen_txs',
+      this.filterTx
+    );
+    if (genValidators.length === 0) {
+      genValidators = await this.readStreamGenesis(
+        'app_state.staking.validators'
+      );
+    } else {
+      genValidators = genValidators.flat();
       genValidators.forEach((genVal: any) => {
         genVal.consensus_pubkey = genVal.pubkey;
         genVal.operator_address = genVal.validator_address;
@@ -273,6 +280,7 @@ export default class CrawlGenesisService extends BullableService {
         genVal.unbonding_height = '0';
         genVal.unbonding_time = new Date(0).toISOString();
       });
+    }
 
     const validators: Validator[] = [];
     genValidators.forEach((genVal: any) => {
@@ -322,7 +330,9 @@ export default class CrawlGenesisService extends BullableService {
     );
     if (genesisProcess !== 0) return;
 
-    const genProposals = this.genesisData.app_state.gov.proposals;
+    const genProposals: any[] = await this.readStreamGenesis(
+      'app_state.gov.proposals'
+    );
 
     await knex
       .transaction(async (trx) => {
@@ -384,7 +394,9 @@ export default class CrawlGenesisService extends BullableService {
     else if (genesisProcess === 1) return;
 
     if (!done) {
-      const genCodes = this.genesisData.app_state.wasm.codes;
+      const genCodes: any[] = await this.readStreamGenesis(
+        'app_state.wasm.codes'
+      );
 
       await knex
         .transaction(async (trx) => {
@@ -467,7 +479,9 @@ export default class CrawlGenesisService extends BullableService {
     );
     if (genesisProcess !== 0) return;
 
-    const genContracts = this.genesisData.app_state.wasm.contracts;
+    const genContracts: any[] = await this.readStreamGenesis(
+      'app_state.wasm.contracts'
+    );
 
     await knex
       .transaction(async (trx) => {
@@ -611,6 +625,32 @@ export default class CrawlGenesisService extends BullableService {
       return 2;
     }
     return 0;
+  }
+
+  private filterTx(data: any) {
+    return data.value.body.messages.filter(
+      (msg: any) => msg['@type'] === MSG_TYPE.MSG_CREATE_VALIDATOR
+    );
+  }
+
+  private async readStreamGenesis(
+    data: string,
+    filter?: (data: any) => void
+  ): Promise<any> {
+    const pipeline = Chain.chain([
+      fs.createReadStream('genesis.json'),
+      Pick.withParser({ filter: data }),
+      StreamArr.streamArray(),
+    ]);
+    return new Promise((resolve, reject) => {
+      const bal: any[] = [];
+      pipeline
+        .on('data', (data) => {
+          bal.push(filter ? filter(data) : data.value);
+        })
+        .on('end', () => resolve(bal))
+        .on('error', (error) => reject(error));
+    });
   }
 
   private async terminateProcess() {

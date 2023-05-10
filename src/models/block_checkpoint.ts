@@ -34,6 +34,7 @@ export class BlockCheckpoint extends BaseModel {
       EventAttribute.query()
         .select('block_height')
         .findOne({})
+        .limit(1)
         .orderBy('block_height', 'desc'),
     ]);
 

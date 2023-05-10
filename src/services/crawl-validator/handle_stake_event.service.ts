@@ -45,7 +45,6 @@ export default class HandleStakeEventService extends BullableService {
     if (startHeight >= endHeight) return;
 
     const stakeTxs: any[] = [];
-    this.logger.info(`Query Tx from height ${startHeight} to ${endHeight}`);
     const resultTx = await Transaction.query()
       .joinRelated('events.[attributes]')
       .select(
