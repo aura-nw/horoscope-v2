@@ -8,17 +8,27 @@ import {
 } from '@cosmjs/stargate';
 import { coins, DirectSecp256k1HdWallet } from '@cosmjs/proto-signing';
 import { cosmos } from '@aura-nw/aurajs';
-import { Checkpoint, Transaction, Vote } from '../../models';
-import { BULL_JOB_NAME, SERVICE_NAME } from '../../common/constant';
+import Long from 'long';
+import {
+  BlockCheckpoint,
+  Transaction,
+  TransactionMessage,
+  Vote,
+} from '../../models';
+import { BULL_JOB_NAME, SERVICE } from '../../common/constant';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
-  name: SERVICE_NAME.HANDLE_VOTE_TX,
+  name: SERVICE.V1.HandleVoteTx.key,
   version: 1,
 })
-export default class HandleTxVote extends BullableService {
-  private _currentTxId = 0;
+export default class HandleTxVoteService extends BullableService {
+  private _blockCheckpoint!: BlockCheckpoint | undefined;
+
+  private _startBlock = 0;
+
+  private _endBlock = 0;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -34,20 +44,89 @@ export default class HandleTxVote extends BullableService {
   }
 
   async initEnv() {
-    const checkpoint = (
-      await Checkpoint.query().findOne({
+    this._blockCheckpoint = await BlockCheckpoint.query().findOne({
+      job_name: BULL_JOB_NAME.HANDLE_VOTE_TX,
+    });
+    if (!this._blockCheckpoint) {
+      this._blockCheckpoint = BlockCheckpoint.fromJson({
         job_name: BULL_JOB_NAME.HANDLE_VOTE_TX,
-      })
-    )?.data.tx_id;
-    if (checkpoint == null) {
-      await Checkpoint.query().insert({
-        job_name: BULL_JOB_NAME.HANDLE_VOTE_TX,
-        data: {
-          tx_id: config.handleVoteTx.startTxId,
-        },
+        height: 0,
       });
+      await BlockCheckpoint.query().insert(this._blockCheckpoint);
+    } else if (this._blockCheckpoint.height) {
+      this._startBlock = this._blockCheckpoint.height;
+    } else {
+      this._blockCheckpoint.height = 0;
+      await BlockCheckpoint.query()
+        .update(this._blockCheckpoint)
+        .where('job_name', BULL_JOB_NAME.HANDLE_VOTE_TX);
     }
-    this._currentTxId = checkpoint ?? 0;
+
+    const latestTxHeightCrawled = await BlockCheckpoint.query().findOne({
+      job_name: BULL_JOB_NAME.HANDLE_TRANSACTION,
+    });
+
+    if (latestTxHeightCrawled) {
+      if (
+        latestTxHeightCrawled.height >
+        this._startBlock + config.handleVoteTx.blocksPerCall - 1
+      ) {
+        this._endBlock =
+          this._startBlock + config.handleVoteTx.blocksPerCall - 1;
+      } else {
+        this._endBlock = latestTxHeightCrawled.height;
+      }
+    }
+  }
+
+  async handleJob() {
+    this.logger.info(
+      `Handle Vote Message from ${this._startBlock} to ${this._endBlock}`
+    );
+    // const listTxMsgs = await TransactionMessage.query()
+    //   .joinRelated('transaction')
+    //   .where('height', '>=', this._startBlock)
+    //   .andWhere('height', '<=', this._endBlock)
+    //   .andWhere('type', MSG_TYPE.MSG_VOTE)
+    //   .andWhere('code', 0)
+    //   .orderBy('height');
+    const listTxMsgs = await TransactionMessage.query()
+      .select('transaction.hash', 'transaction.height', 'transaction_message.*')
+      .joinRelated('transaction')
+      .where('transaction_message.id', 34);
+    listTxMsgs.forEach(async (txMsg) => {
+      const { content } = txMsg;
+      let proposalId;
+      try {
+        const longProposalId = Long.fromValue(content.proposal_id);
+        if (Long.isLong(longProposalId)) {
+          proposalId = longProposalId.toString();
+        }
+      } catch (error) {
+        this.logger.warn('proposal id is not long');
+        proposalId = content.proposal_id.toString();
+      }
+
+      this.logger.info(proposalId);
+      this.logger.info(this.getVoteMessageByConstant(content.option));
+      this.logger.info(txMsg.height);
+      this.logger.info(txMsg.hash);
+    });
+  }
+
+  getVoteMessageByConstant(option: number) {
+    switch (option) {
+      case 1:
+        return 'VOTE_OPTION_YES';
+      case 2:
+        return 'VOTE_OPTION_ABSTAIN';
+      case 3:
+        return 'VOTE_OPTION_NO';
+      case 4:
+        return 'VOTE_OPTION_NO_WITH_VETO';
+      default:
+        return 'VOTE_OPTION_EMPTY';
+    }
   }
 
   async handleTx() {
@@ -70,7 +149,7 @@ export default class HandleTxVote extends BullableService {
       .andWhere('transaction.code', 0)
       .orderBy('transaction.id')
       .groupBy('transaction.id')
-      .limit(config.handleVoteTx.numberOfTxPerCall)
+      // .limit(config.handleVoteTx.numberOfTxPerCall)
       .select(
         'transaction.data',
         'transaction.id',
@@ -278,7 +357,7 @@ export default class HandleTxVote extends BullableService {
 
   public async _start(): Promise<void> {
     // await this.testVote();
-    await this.testExec();
+    // await this.testExec();
     // this.createJob(
     //   BULL_JOB_NAME.HANDLE_VOTE_TX,
     //   BULL_JOB_NAME.HANDLE_VOTE_TX,
@@ -293,6 +372,7 @@ export default class HandleTxVote extends BullableService {
     //     },
     //   }
     // );
+    await this.handleJob();
     return super._start();
   }
 }
