@@ -13,10 +13,16 @@ import knex from '../../../../src/common/utils/db_connection';
 
 @Describe('Test crawl_validator service')
 export default class CrawlValidatorTest {
-  blockCheckpoint = BlockCheckpoint.fromJson({
-    job_name: BULL_JOB_NAME.CRAWL_VALIDATOR,
-    height: 3967500,
-  });
+  blockCheckpoint = [
+    BlockCheckpoint.fromJson({
+      job_name: BULL_JOB_NAME.CRAWL_VALIDATOR,
+      height: 3967500,
+    }),
+    BlockCheckpoint.fromJson({
+      job_name: BULL_JOB_NAME.HANDLE_TRANSACTION,
+      height: 3967529,
+    }),
+  ];
 
   blocks: Block[] = [
     Block.fromJson({
