@@ -61,7 +61,6 @@ export default class CrawlCodeService extends BullableService {
       height: number;
       codeId: Long;
     }[] = [];
-    this.logger.info(`Query Tx from height ${startHeight} to ${endHeight}`);
 
     const resultTx = await Transaction.query()
       .joinRelated('events.[attributes]')
