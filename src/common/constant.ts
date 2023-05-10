@@ -42,6 +42,8 @@ export const BULL_JOB_NAME = {
   CRAWL_GENESIS_PROPOSAL: 'crawl:genesis-proposal',
   CRAWL_GENESIS_CODE: 'crawl:genesis-code',
   CRAWL_GENESIS_CONTRACT: 'crawl:genesis-contract',
+  CRAWL_DELEGATORS: 'crawl:delegators',
+  CRAWL_VALIDATOR_DELEGATORS: 'crawl:validator-delegators',
 };
 
 export const SERVICE = {
@@ -110,6 +112,10 @@ export const SERVICE = {
     CrawlSmartContractService: {
       key: 'CrawlSmartContractService',
       name: 'v1.CrawlSmartContractService',
+    },
+    CrawlDelegatorsService: {
+      key: 'CrawlDelegatorsService',
+      name: 'v1.CrawlDelegatorsService',
     },
   },
 };

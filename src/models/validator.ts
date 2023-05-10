@@ -5,6 +5,7 @@ import { Model } from 'objection';
 import config from '../../config.json' assert { type: 'json' };
 import BaseModel from './base';
 import { PowerEvent } from './power_event';
+import { Delegator } from './delegator';
 
 export interface IConsensusPubkey {
   type: string;
@@ -58,6 +59,10 @@ export class Validator extends BaseModel {
 
   missed_blocks_counter!: number;
 
+  delegators_count!: number;
+
+  delegators_last_height!: number;
+
   static get tableName() {
     return 'validator';
   }
@@ -92,6 +97,8 @@ export class Validator extends BaseModel {
         'jailed_until',
         'tombstoned',
         'missed_blocks_counter',
+        'delegators_count',
+        'delegators_last_height',
       ],
       properties: {
         operator_address: { type: 'string' },
@@ -120,6 +127,8 @@ export class Validator extends BaseModel {
         jailed_until: { type: 'string', format: 'date-time' },
         tombstoned: { type: 'boolean' },
         missed_blocks_counter: { type: 'number' },
+        delegators_count: { type: 'number' },
+        delegators_last_height: { type: 'number' },
       },
     };
   }
@@ -140,6 +149,14 @@ export class Validator extends BaseModel {
         join: {
           from: 'validator.id',
           to: 'power_event.validator_dst_id',
+        },
+      },
+      delegators: {
+        relation: Model.HasManyRelation,
+        modelClass: Delegator,
+        join: {
+          from: 'validator.id',
+          to: 'delegator.validator_id',
         },
       },
     };
@@ -195,6 +212,8 @@ export class Validator extends BaseModel {
       jailed_until: new Date(0).toISOString(),
       tombstoned: false,
       missed_blocks_counter: 0,
+      delegators_count: 0,
+      delegators_last_height: 0,
     });
 
     return validatorEntity;
