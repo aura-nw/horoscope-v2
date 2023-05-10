@@ -68,7 +68,6 @@ export default class CrawlValidatorService extends BullableService {
       .select('value')
       .limit(1)
       .offset(0);
-    this.logger.info(`Query Tx from height ${startHeight} to ${endHeight}`);
 
     await knex.transaction(async (trx) => {
       if (resultTx.length > 0) {
