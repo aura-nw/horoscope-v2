@@ -42,6 +42,7 @@ export const BULL_JOB_NAME = {
   CRAWL_GENESIS_PROPOSAL: 'crawl:genesis-proposal',
   CRAWL_GENESIS_CODE: 'crawl:genesis-code',
   CRAWL_GENESIS_CONTRACT: 'crawl:genesis-contract',
+  HANDLE_AUTHZ_TX: 'handle:authz-tx',
 };
 
 export const SERVICE = {
@@ -111,6 +112,10 @@ export const SERVICE = {
       key: 'CrawlSmartContractService',
       name: 'v1.CrawlSmartContractService',
     },
+    HandleAuthzTx: {
+      key: 'HandleAuthzTxService',
+      name: 'v1.HandleAuthzTxService',
+    },
   },
 };
 
@@ -140,6 +145,7 @@ export const MSG_TYPE = {
   MSG_UNDELEGATE: '/cosmos.staking.v1beta1.MsgUndelegate',
   MSG_CREATE_VALIDATOR: '/cosmos.staking.v1beta1.MsgCreateValidator',
   MSG_SUBMIT_PROPOSAL: '/cosmos.gov.v1beta1.MsgSubmitProposal',
+  MSG_AUTHZ_EXEC: '/cosmos.authz.v1beta1.MsgExec',
 };
 
 export const ABCI_QUERY_PATH = {
