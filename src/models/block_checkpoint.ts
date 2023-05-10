@@ -1,5 +1,4 @@
 import BaseModel from './base';
-import { EventAttribute } from './event_attribute';
 import config from '../../config.json' assert { type: 'json' };
 
 export class BlockCheckpoint extends BaseModel {
@@ -24,39 +23,38 @@ export class BlockCheckpoint extends BaseModel {
 
   static async getCheckpoint(
     jobName: string,
+    lastHeightJobName: string,
     configName?: string
   ): Promise<[number, number, BlockCheckpoint]> {
-    const [checkpoint, latestBlock]: [
-      BlockCheckpoint | undefined,
-      EventAttribute | undefined
-    ] = await Promise.all([
-      BlockCheckpoint.query().select('*').findOne('job_name', jobName),
-      EventAttribute.query()
-        .select('block_height')
-        .findOne({})
-        .limit(1)
-        .orderBy('block_height', 'desc'),
-    ]);
+    const checkpoint: BlockCheckpoint[] = await BlockCheckpoint.query()
+      .select('*')
+      .whereIn('job_name', [jobName, lastHeightJobName]);
 
     let startHeight = 0;
     let endHeight = 0;
     let updateBlockCheckpoint: BlockCheckpoint;
-    if (checkpoint) {
-      startHeight = checkpoint.height;
-      updateBlockCheckpoint = checkpoint;
+    const jobCheckpoint = checkpoint.find(
+      (check) => check.job_name === jobName
+    );
+    const lastHeightCheckpoint = checkpoint.find(
+      (check) => check.job_name === lastHeightJobName
+    );
+    if (jobCheckpoint) {
+      startHeight = jobCheckpoint.height;
+      updateBlockCheckpoint = jobCheckpoint;
     } else
       updateBlockCheckpoint = BlockCheckpoint.fromJson({
         job_name: jobName,
         height: 0,
       });
 
-    if (latestBlock)
+    if (lastHeightCheckpoint)
       endHeight = configName
         ? Math.min(
             startHeight + config[configName].blocksPerCall,
-            latestBlock.block_height
+            lastHeightCheckpoint.height
           )
-        : latestBlock.block_height;
+        : lastHeightCheckpoint.height;
 
     return [startHeight, endHeight, updateBlockCheckpoint];
   }

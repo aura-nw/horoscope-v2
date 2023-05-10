@@ -2,9 +2,12 @@
 import { Model } from 'objection';
 import BaseModel from './base';
 import { Transaction } from './transaction';
+import { Event } from './event';
 import { TransactionMessageReceiver } from './transaction_message_receiver';
 
 export class TransactionMessage extends BaseModel {
+  [relation: string]: any;
+
   id!: number;
 
   tx_id!: number;
@@ -16,6 +19,8 @@ export class TransactionMessage extends BaseModel {
   sender!: string;
 
   content!: any;
+
+  parent_id!: number;
 
   static get tableName() {
     return 'transaction_message';
@@ -34,6 +39,7 @@ export class TransactionMessage extends BaseModel {
         index: { type: 'number' },
         type: { type: 'string' },
         sender: { type: 'string' },
+        parent_id: { type: 'number' },
       },
     };
   }
@@ -54,6 +60,14 @@ export class TransactionMessage extends BaseModel {
         join: {
           from: 'transaction_message.id',
           to: 'transaction_message_receiver.tx_msg_id',
+        },
+      },
+      events: {
+        relation: Model.HasManyRelation,
+        modelClass: Event,
+        join: {
+          from: ['transaction_message.tx_id', 'transaction_message.index'],
+          to: ['event.tx_id', 'event.tx_msg_index'],
         },
       },
     };

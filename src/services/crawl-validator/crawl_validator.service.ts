@@ -53,7 +53,10 @@ export default class CrawlValidatorService extends BullableService {
     this._lcdClient = await getLcdClient();
 
     const [startHeight, endHeight, updateBlockCheckpoint] =
-      await BlockCheckpoint.getCheckpoint(BULL_JOB_NAME.CRAWL_VALIDATOR);
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.CRAWL_VALIDATOR,
+        BULL_JOB_NAME.HANDLE_TRANSACTION
+      );
     this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
     if (startHeight >= endHeight) return;
 
@@ -68,6 +71,10 @@ export default class CrawlValidatorService extends BullableService {
       .select('value')
       .limit(1)
       .offset(0);
+    this.logger.info(
+      `Result get Tx from height ${startHeight} to ${endHeight}:`
+    );
+    this.logger.info(JSON.stringify(resultTx));
 
     await knex.transaction(async (trx) => {
       if (resultTx.length > 0) {
