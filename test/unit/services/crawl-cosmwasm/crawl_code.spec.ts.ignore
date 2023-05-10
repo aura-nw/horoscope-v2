@@ -28,7 +28,7 @@ import knex from '../../../../src/common/utils/db_connection';
 export default class CrawlCodeTest {
   blockCheckpoint = [
     BlockCheckpoint.fromJson({
-      job_name: BULL_JOB_NAME.HANDLE_ADDRESS,
+      job_name: BULL_JOB_NAME.CRAWL_CODE,
       height: 3967500,
     }),
     BlockCheckpoint.fromJson({

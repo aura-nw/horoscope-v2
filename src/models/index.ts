@@ -17,3 +17,4 @@ export * from './checkpoint';
 export * from './proposal';
 export * from './code';
 export * from './smart_contract';
+export * from './delegator';
