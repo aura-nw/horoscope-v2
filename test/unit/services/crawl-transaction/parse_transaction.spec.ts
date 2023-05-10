@@ -1,4 +1,4 @@
-import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
+import { AfterEach, BeforeEach, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { Log } from '@cosmjs/stargate/build/logs';
 import { Attribute, Event } from '@cosmjs/stargate/build/events';
@@ -19,7 +19,7 @@ export default class CrawlTransactionTest {
 
   crawlTxService?: CrawlTxService;
 
-  @BeforeAll()
+  @BeforeEach()
   async initSuite() {
     this.broker.start();
     this.crawlTxService = this.broker.createService(
@@ -133,7 +133,7 @@ export default class CrawlTransactionTest {
     // );
   }
 
-  @AfterAll()
+  @AfterEach()
   async tearDown() {
     await Promise.all([
       this.crawlTxService
