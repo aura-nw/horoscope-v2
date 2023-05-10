@@ -1,6 +1,11 @@
-import { BeforeAll, Describe, Test } from '@jest-decorated/core';
+import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
-import { Transaction, Block, TransactionMessage } from '../../../../src/models';
+import {
+  Transaction,
+  Block,
+  TransactionMessage,
+  BlockCheckpoint,
+} from '../../../../src/models';
 import { BULL_JOB_NAME, sleep } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
 import tx_fixture_authz from './tx_authz.fixture.json' assert { type: 'json' };
@@ -17,18 +22,17 @@ export default class HandleAuthzTxMsgTest {
 
   @BeforeAll()
   async initSuite() {
-    this.broker.start();
-    await this.handleAuthzTxServive
-      ?.getQueueManager()
-      .getQueue(BULL_JOB_NAME.HANDLE_AUTHZ_TX)
-      .empty();
     this.handleAuthzTxServive = this.broker.createService(
       HandleAuthzTxService
     ) as HandleAuthzTxService;
     this.crawlTxService = this.broker.createService(
       CrawlTxService
     ) as CrawlTxService;
-    Promise.all([
+    await Promise.all([
+      this.handleAuthzTxServive
+        ?.getQueueManager()
+        .getQueue(BULL_JOB_NAME.HANDLE_AUTHZ_TX)
+        .empty(),
       this.crawlTxService
         ?.getQueueManager()
         .getQueue(BULL_JOB_NAME.CRAWL_TRANSACTION)
@@ -38,12 +42,22 @@ export default class HandleAuthzTxMsgTest {
         .getQueue(BULL_JOB_NAME.HANDLE_TRANSACTION)
         .empty(),
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
-      knex.raw('TRUNCATE TABLE checkpoint RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
     ]);
+
+    await this.crawlTxService._start();
+    await this.handleAuthzTxServive._start();
   }
 
   @Test('Parse transaction authz and insert to DB')
   public async testHandleTransactionAuthz() {
+    await BlockCheckpoint.query().insert(
+      BlockCheckpoint.fromJson({
+        job_name: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
+        height: 452000,
+      })
+    );
+
     await Block.query().insert(
       Block.fromJson({
         height: 452049,
@@ -59,7 +73,7 @@ export default class HandleAuthzTxMsgTest {
       timestamp: '2023-04-17T03:44:41.000Z',
     });
     // await sleep to wait handle authz tx message
-    await sleep(6000);
+    await sleep(5000);
     const tx = await Transaction.query().findOne(
       'hash',
       '14B177CFD3AC22F6AF1B46EF24C376B757B2379023E9EE075CB81A5E2FF18FAC'
@@ -73,7 +87,7 @@ export default class HandleAuthzTxMsgTest {
     }
   }
 
-  @BeforeAll()
+  @AfterAll()
   async tearDown() {
     await Promise.all([
       this.handleAuthzTxServive
@@ -91,8 +105,9 @@ export default class HandleAuthzTxMsgTest {
     ]);
     await Promise.all([
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
-      knex.raw('TRUNCATE TABLE checkpoint RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
       this.handleAuthzTxServive?._stop(),
+      this.crawlTxService?._stop(),
       this.broker.stop(),
     ]);
   }
