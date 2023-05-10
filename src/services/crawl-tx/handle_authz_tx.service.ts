@@ -10,6 +10,7 @@ import knex from '../../common/utils/db_connection';
 
 @Service({
   name: SERVICE.V1.HandleAuthzTx.key,
+  version: 1,
 })
 export default class HandleAuthzTxService extends BullableService {
   private _blockCheckpoint!: BlockCheckpoint | undefined;
