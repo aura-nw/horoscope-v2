@@ -5,7 +5,7 @@
   "validatorPrefixAddress": "valoper",
   "crawlValidator": {
     "millisecondCrawl": 5000,
-    "queryPageLimit": 50
+    "queryPageLimit": 100
   },
   "cw721": {
     "blocksPerBatch": 100,
@@ -67,5 +67,9 @@
     "proposalsPerBatch": 3000,
     "codesPerBatch": 5000,
     "smartContractsPerBatch": 5000
+  },
+  "crawlDelegators": {
+    "millisecondCrawl": 3600000,
+    "queryPageLimit": 100
   }
 }
