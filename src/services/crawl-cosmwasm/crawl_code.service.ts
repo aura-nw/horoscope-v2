@@ -51,6 +51,7 @@ export default class CrawlCodeService extends BullableService {
     const [startHeight, endHeight, updateBlockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.CRAWL_CODE,
+        BULL_JOB_NAME.HANDLE_TRANSACTION,
         config.crawlCodeId.key
       );
     this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);

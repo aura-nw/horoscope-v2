@@ -46,3 +46,9 @@ export interface IAllBalances {
   address: string;
   pagination?: IPagination;
 }
+
+export interface IValidatorDelegators {
+  id: number;
+  address: string;
+  height: number;
+}
