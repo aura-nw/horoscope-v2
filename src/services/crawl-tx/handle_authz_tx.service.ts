@@ -143,7 +143,7 @@ export default class HandleAuthzTxService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
-    jobType: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
+    jobName: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
     prefix: `horoscope-v2-${config.chainId}`,
   })
   async jobHandler() {

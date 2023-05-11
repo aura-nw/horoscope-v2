@@ -34,7 +34,7 @@ export default class HandleAddressService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_ADDRESS,
-    jobType: 'crawl',
+    jobName: 'crawl',
     prefix: `horoscope-v2-${Config.CHAIN_ID}`,
   })
   public async handleJob(_payload: object): Promise<void> {
