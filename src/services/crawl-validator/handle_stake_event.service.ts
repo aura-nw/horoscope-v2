@@ -32,7 +32,7 @@ export default class HandleStakeEventService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_STAKE_EVENT,
-    jobType: 'crawl',
+    jobName: 'crawl',
     prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: object): Promise<void> {

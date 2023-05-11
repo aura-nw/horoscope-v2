@@ -27,7 +27,7 @@ import {
 } from '../../common';
 import { BlockCheckpoint, Event, Transaction } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import config from '../../../config.json' assert { type: 'json' };
+// import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
 
 @Service({
@@ -44,8 +44,8 @@ export default class CrawlTxService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_TRANSACTION,
-    jobType: BULL_JOB_NAME.CRAWL_TRANSACTION,
-    prefix: `horoscope-v2-${config.chainId}`,
+    jobName: BULL_JOB_NAME.CRAWL_TRANSACTION,
+    // prefix: `horoscope-v2-${config.chainId}`,
   })
   private async jobHandlerCrawlTx(_payload: {
     listBlock: [{ height: number; timestamp: string }];
@@ -83,8 +83,8 @@ export default class CrawlTxService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_TRANSACTION,
-    jobType: BULL_JOB_NAME.HANDLE_TRANSACTION,
-    prefix: `horoscope-v2-${config.chainId}`,
+    jobName: BULL_JOB_NAME.HANDLE_TRANSACTION,
+    // prefix: `horoscope-v2-${config.chainId}`,
   })
   async jobHandlerTx(_payload: any): Promise<void> {
     const { listTx, timestamp, height } = _payload;

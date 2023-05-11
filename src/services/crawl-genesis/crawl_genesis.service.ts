@@ -57,7 +57,7 @@ export default class CrawlGenesisService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_GENESIS,
-    jobType: 'crawl',
+    jobName: 'crawl',
     prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleGenesis(_payload: object): Promise<void> {
@@ -148,7 +148,7 @@ export default class CrawlGenesisService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
-    jobType: 'crawl',
+    jobName: 'crawl',
     prefix: `horoscope-v2-${config.chainId}`,
   })
   public async crawlGenesisAccounts(_payload: object): Promise<void> {
@@ -249,7 +249,7 @@ export default class CrawlGenesisService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
-    jobType: 'crawl',
+    jobName: 'crawl',
     prefix: `horoscope-v2-${config.chainId}`,
   })
   public async crawlGenesisValidators(_payload: object): Promise<void> {
@@ -319,7 +319,7 @@ export default class CrawlGenesisService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_GENESIS_PROPOSAL,
-    jobType: 'crawl',
+    jobName: 'crawl',
     prefix: `horoscope-v2-${config.chainId}`,
   })
   public async crawlGenesisProposals(_payload: object): Promise<void> {
@@ -379,7 +379,7 @@ export default class CrawlGenesisService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_GENESIS_CODE,
-    jobType: 'crawl',
+    jobName: 'crawl',
     prefix: `horoscope-v2-${config.chainId}`,
   })
   public async crawlGenesisCodes(_payload: object): Promise<void> {
@@ -468,7 +468,7 @@ export default class CrawlGenesisService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT,
-    jobType: 'crawl',
+    jobName: 'crawl',
     prefix: `horoscope-v2-${config.chainId}`,
   })
   public async crawlGenesisContracts(_payload: object): Promise<void> {
