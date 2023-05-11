@@ -6,29 +6,16 @@ import {
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
-import { GeneratedType, Registry, decodeTxRaw } from '@cosmjs/proto-signing';
-import { defaultRegistryTypes as defaultStargateTypes } from '@cosmjs/stargate';
-
-import { wasmTypes } from '@cosmjs/cosmwasm-stargate/build/modules';
-import { Header } from 'cosmjs-types/ibc/lightclients/tendermint/v1/tendermint';
-import {
-  BasicAllowance,
-  PeriodicAllowance,
-} from 'cosmjs-types/cosmos/feegrant/v1beta1/feegrant';
-import { cosmos } from '@aura-nw/aurajs';
+import { decodeTxRaw } from '@cosmjs/proto-signing';
 import { toBase64, fromBase64, fromUtf8 } from '@cosmjs/encoding';
 import _ from 'lodash';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
-import {
-  BULL_JOB_NAME,
-  getHttpBatchClient,
-  MSG_TYPE,
-  SERVICE,
-} from '../../common';
+import { BULL_JOB_NAME, getHttpBatchClient, SERVICE } from '../../common';
 import { BlockCheckpoint, Event, Transaction } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
+import AuraRegistry from './aura.registry';
 
 @Service({
   name: SERVICE.V1.CrawlTransaction.key,
@@ -37,9 +24,12 @@ import knex from '../../common/utils/db_connection';
 export default class CrawlTxService extends BullableService {
   private _httpBatchClient: HttpBatchClient;
 
+  private _registry!: AuraRegistry;
+
   public constructor(public broker: ServiceBroker) {
     super(broker);
     this._httpBatchClient = getHttpBatchClient();
+    this._registry = new AuraRegistry(this.logger);
   }
 
   @QueueHandler({
@@ -101,7 +91,7 @@ export default class CrawlTxService extends BullableService {
         mapExistedTx.set(tx.hash, true);
       });
 
-      const registry = await this._getRegistry();
+      // const registry = await this._getRegistry();
       // parse tx to format LCD return
       listTx.txs.forEach((tx: any, index: number) => {
         this.logger.info(`Handle txhash ${tx.hash}`);
@@ -118,8 +108,7 @@ export default class CrawlTxService extends BullableService {
         );
 
         const decodedMsgs = decodedTx.body.messages.map((msg) => {
-          let decodedMsg = this._decodedMsg(registry, msg);
-          decodedMsg = this._camelizeKeys(decodedMsg);
+          const decodedMsg = this._camelizeKeys(this._registry.decodeMsg(msg));
           decodedMsg['@type'] = msg.typeUrl;
           return decodedMsg;
         });
@@ -390,34 +379,6 @@ export default class CrawlTxService extends BullableService {
     });
   }
 
-  private async _getRegistry(): Promise<Registry> {
-    if (this.registry) {
-      return this.registry;
-    }
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const registry = new Registry([...defaultStargateTypes, ...wasmTypes]);
-    registry.register(
-      '/cosmos.feegrant.v1beta1.BasicAllowance',
-      BasicAllowance
-    );
-    registry.register(
-      '/cosmos.feegrant.v1beta1.PeriodicAllowance',
-      PeriodicAllowance
-    );
-    registry.register('/ibc.lightclients.tendermint.v1.Header', Header);
-    registry.register(
-      '/cosmos.feegrant.v1beta1.AllowedContractAllowance',
-      cosmos.feegrant.v1beta1.AllowedContractAllowance as GeneratedType
-    );
-    registry.register(
-      '/cosmos.vesting.v1beta1.MsgCreatePeriodicVestingAccount',
-      cosmos.vesting.v1beta1.MsgCreatePeriodicVestingAccount as GeneratedType
-    );
-    this.registry = registry;
-    return this.registry;
-  }
-
   // convert camelcase to underscore
   private _camelizeKeys(obj: any): any {
     if (Array.isArray(obj)) {
@@ -435,46 +396,6 @@ export default class CrawlTxService extends BullableService {
       );
     }
     return obj;
-  }
-
-  private _decodedMsg(registry: Registry, msg: any): any {
-    const result: any = {};
-    if (!msg) {
-      return;
-    }
-    if (msg.typeUrl) {
-      result['@type'] = msg.typeUrl;
-      const found = registry.lookupType(msg.typeUrl);
-      if (!found) {
-        const decodedBase64 = toBase64(msg.value);
-        this.logger.info(decodedBase64);
-        result.value = decodedBase64;
-        this.logger.error('This typeUrl is not supported');
-        this.logger.error(msg.typeUrl);
-      } else {
-        const decoded = registry.decode(msg);
-
-        Object.keys(decoded).forEach((key) => {
-          result[key] = decoded[key];
-        });
-      }
-
-      if (
-        msg.typeUrl === MSG_TYPE.MSG_EXECUTE_CONTRACT ||
-        msg.typeUrl === MSG_TYPE.MSG_INSTANTIATE_CONTRACT
-      ) {
-        if (result.msg && result.msg instanceof Uint8Array) {
-          result.msg = fromUtf8(result.msg);
-        }
-      } else if (msg.typeUrl === MSG_TYPE.MSG_UPDATE_CLIENT) {
-        if (result.header?.value && result.header?.typeUrl) {
-          result.header = registry.decode(result.header);
-        }
-      }
-    }
-
-    // eslint-disable-next-line consistent-return
-    return result;
   }
 
   private _findAttribute(

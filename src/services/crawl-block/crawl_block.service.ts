@@ -17,6 +17,7 @@ import {
 import { Block, BlockCheckpoint, Event } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
+import knex from '../../common/utils/db_connection';
 
 @Service({
   name: SERVICE.V1.CrawlBlock.key,
@@ -214,19 +215,23 @@ export default class CrawlBlockService extends BullableService {
       });
 
       if (listBlockModel.length) {
-        const result: any = await Block.query().insertGraph(listBlockModel);
-        this.logger.debug('result insert list block: ', result);
+        await knex.transaction(async (trx) => {
+          const result: any = await Block.query()
+            .insertGraph(listBlockModel)
+            .transacting(trx);
+          this.logger.debug('result insert list block: ', result);
 
-        // insert tx by block height
-        const listBlockWithTime: any = [];
-        listBlockModel.forEach((block) => {
-          listBlockWithTime.push({
-            height: block.height,
-            timestamp: block.time,
+          // insert tx by block height
+          const listBlockWithTime: any = [];
+          listBlockModel.forEach((block) => {
+            listBlockWithTime.push({
+              height: block.height,
+              timestamp: block.time,
+            });
           });
-        });
-        this.broker.call(SERVICE.V1.CrawlTransaction.CrawlTxByHeight.path, {
-          listBlock: listBlockWithTime,
+          this.broker.call(SERVICE.V1.CrawlTransaction.CrawlTxByHeight.path, {
+            listBlock: listBlockWithTime,
+          });
         });
       }
     } catch (error) {
