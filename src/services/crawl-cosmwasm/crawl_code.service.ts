@@ -1,6 +1,9 @@
 /* eslint-disable import/no-extraneous-dependencies */
-import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { ServiceBroker } from 'moleculer';
+import {
+  Action,
+  Service,
+} from '@ourparentcenter/moleculer-decorators-extended';
+import { Context, ServiceBroker } from 'moleculer';
 import Long from 'long';
 import {
   QueryCodeRequest,
@@ -11,6 +14,7 @@ import { cosmwasm } from '@aura-nw/aurajs';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
+import { Knex } from 'knex';
 import {
   BlockCheckpoint,
   Code,
@@ -21,6 +25,8 @@ import {
 import {
   ABCI_QUERY_PATH,
   BULL_JOB_NAME,
+  IContextStoreCodes,
+  IStoreCodes,
   SERVICE,
   getHttpBatchClient,
 } from '../../common';
@@ -40,14 +46,24 @@ export default class CrawlCodeService extends BullableService {
     this._httpBatchClient = getHttpBatchClient();
   }
 
+  @Action({
+    name: SERVICE.V1.CrawlCodeService.CrawlMissingCode.key,
+    params: {
+      codeIds: 'any[]',
+    },
+  })
+  private async actionCrawlMissingCode(ctx: Context<IContextStoreCodes>) {
+    await knex.transaction(async (trx) => {
+      await this.insertNewCodes(ctx.params.codeIds, trx);
+    });
+  }
+
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_CODE,
     jobType: 'crawl',
     prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: object): Promise<void> {
-    const batchQueries: any[] = [];
-
     const [startHeight, endHeight, updateBlockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.CRAWL_CODE,
@@ -57,11 +73,7 @@ export default class CrawlCodeService extends BullableService {
     this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
     if (startHeight >= endHeight) return;
 
-    const codeIds: {
-      hash: string;
-      height: number;
-      codeId: Long;
-    }[] = [];
+    const codeIds: IStoreCodes[] = [];
 
     const resultTx = await Transaction.query()
       .joinRelated('events.[attributes]')
@@ -92,62 +104,7 @@ export default class CrawlCodeService extends BullableService {
 
     await knex
       .transaction(async (trx) => {
-        if (codeIds.length > 0) {
-          codeIds.forEach((code) => {
-            const request: QueryCodeRequest = {
-              codeId: code.codeId,
-            };
-            const data = toHex(
-              cosmwasm.wasm.v1.QueryCodeRequest.encode(request).finish()
-            );
-
-            batchQueries.push(
-              this._httpBatchClient.execute(
-                createJsonRpcRequest('abci_query', {
-                  path: ABCI_QUERY_PATH.CODE,
-                  data,
-                })
-              )
-            );
-          });
-
-          const result: JsonRpcSuccessResponse[] = await Promise.all(
-            batchQueries
-          );
-          const onchainCodeIds: QueryCodeResponse[] = result.map(
-            (res: JsonRpcSuccessResponse) =>
-              cosmwasm.wasm.v1.QueryCodeResponse.decode(
-                fromBase64(res.result.response.value)
-              )
-          );
-
-          const codeEntities = onchainCodeIds.map((code, index) =>
-            Code.fromJson({
-              code_id: parseInt(codeIds[index].codeId.toString(), 10),
-              creator: code.codeInfo?.creator,
-              data_hash: toHex(
-                code.codeInfo?.dataHash || new Uint8Array()
-              ).toLowerCase(),
-              instantiate_permission: code.codeInfo?.instantiatePermission,
-              type: null,
-              status: null,
-              store_hash: codeIds[index].hash,
-              store_height: codeIds[index].height,
-            })
-          );
-
-          if (codeEntities.length > 0)
-            await Code.query()
-              .insert(codeEntities)
-              .onConflict('code_id')
-              .merge()
-              .returning('code_id')
-              .transacting(trx)
-              .catch((error) => {
-                this.logger.error('Error insert or update code ids');
-                this.logger.error(error);
-              });
-        }
+        await this.insertNewCodes(codeIds, trx);
 
         updateBlockCheckpoint.height = endHeight;
         await BlockCheckpoint.query()
@@ -161,6 +118,65 @@ export default class CrawlCodeService extends BullableService {
         this.logger.error(error);
         throw error;
       });
+  }
+
+  private async insertNewCodes(codeIds: IStoreCodes[], trx: Knex.Transaction) {
+    const batchQueries: any[] = [];
+
+    if (codeIds.length > 0) {
+      codeIds.forEach((code) => {
+        const request: QueryCodeRequest = {
+          codeId: code.codeId,
+        };
+        const data = toHex(
+          cosmwasm.wasm.v1.QueryCodeRequest.encode(request).finish()
+        );
+
+        batchQueries.push(
+          this._httpBatchClient.execute(
+            createJsonRpcRequest('abci_query', {
+              path: ABCI_QUERY_PATH.CODE,
+              data,
+            })
+          )
+        );
+      });
+
+      const result: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
+      const onchainCodeIds: QueryCodeResponse[] = result.map(
+        (res: JsonRpcSuccessResponse) =>
+          cosmwasm.wasm.v1.QueryCodeResponse.decode(
+            fromBase64(res.result.response.value)
+          )
+      );
+
+      const codeEntities = onchainCodeIds.map((code, index) =>
+        Code.fromJson({
+          code_id: parseInt(codeIds[index].codeId.toString(), 10),
+          creator: code.codeInfo?.creator,
+          data_hash: toHex(
+            code.codeInfo?.dataHash || new Uint8Array()
+          ).toLowerCase(),
+          instantiate_permission: code.codeInfo?.instantiatePermission,
+          type: null,
+          status: null,
+          store_hash: codeIds[index].hash,
+          store_height: codeIds[index].height,
+        })
+      );
+
+      if (codeEntities.length > 0)
+        await Code.query()
+          .insert(codeEntities)
+          .onConflict('code_id')
+          .merge()
+          .returning('code_id')
+          .transacting(trx)
+          .catch((error) => {
+            this.logger.error('Error insert or update code ids');
+            this.logger.error(error);
+          });
+    }
   }
 
   public async _start() {
