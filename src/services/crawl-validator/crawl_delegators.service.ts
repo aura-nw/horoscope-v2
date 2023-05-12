@@ -29,8 +29,8 @@ export default class CrawlDelegatorsService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_DELEGATORS,
-    jobType: 'crawl',
-    prefix: `horoscope-v2-${config.chainId}`,
+    jobName: 'crawl',
+    // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: object): Promise<void> {
     this.logger.info('Update validator delegators');
@@ -57,8 +57,8 @@ export default class CrawlDelegatorsService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_VALIDATOR_DELEGATORS,
-    jobType: 'crawl',
-    prefix: `horoscope-v2-${config.chainId}`,
+    jobName: 'crawl',
+    // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJobCrawlValidatorDelegators(
     _payload: IValidatorDelegators
