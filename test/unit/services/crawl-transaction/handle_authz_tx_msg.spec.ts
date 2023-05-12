@@ -6,7 +6,7 @@ import {
   TransactionMessage,
   BlockCheckpoint,
 } from '../../../../src/models';
-import { BULL_JOB_NAME, sleep } from '../../../../src/common';
+import { BULL_JOB_NAME } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
 import tx_fixture_authz from './tx_authz.fixture.json' assert { type: 'json' };
 import HandleAuthzTxService from '../../../../src/services/crawl-tx/handle_authz_tx.service';
@@ -28,19 +28,9 @@ export default class HandleAuthzTxMsgTest {
     this.crawlTxService = this.broker.createService(
       CrawlTxService
     ) as CrawlTxService;
+    this.crawlTxService?.getQueueManager().stopAll();
+    this.handleAuthzTxServive?.getQueueManager().stopAll();
     await Promise.all([
-      this.handleAuthzTxServive
-        ?.getQueueManager()
-        .getQueue(BULL_JOB_NAME.HANDLE_AUTHZ_TX)
-        .empty(),
-      this.crawlTxService
-        ?.getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_TRANSACTION)
-        .empty(),
-      this.crawlTxService
-        ?.getQueueManager()
-        .getQueue(BULL_JOB_NAME.HANDLE_TRANSACTION)
-        .empty(),
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
     ]);
@@ -72,8 +62,8 @@ export default class HandleAuthzTxMsgTest {
       height: 452049,
       timestamp: '2023-04-17T03:44:41.000Z',
     });
-    // await sleep to wait handle authz tx message
-    await sleep(5000);
+    await this.handleAuthzTxServive?.initEnv();
+    await this.handleAuthzTxServive?.handleJob();
     const tx = await Transaction.query().findOne(
       'hash',
       '14B177CFD3AC22F6AF1B46EF24C376B757B2379023E9EE075CB81A5E2FF18FAC'
@@ -89,20 +79,8 @@ export default class HandleAuthzTxMsgTest {
 
   @AfterAll()
   async tearDown() {
-    await Promise.all([
-      this.handleAuthzTxServive
-        ?.getQueueManager()
-        .getQueue(BULL_JOB_NAME.HANDLE_AUTHZ_TX)
-        .empty(),
-      this.crawlTxService
-        ?.getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_TRANSACTION)
-        .empty(),
-      this.crawlTxService
-        ?.getQueueManager()
-        .getQueue(BULL_JOB_NAME.HANDLE_TRANSACTION)
-        .empty(),
-    ]);
+    this.handleAuthzTxServive?.getQueueManager().stopAll();
+    this.crawlTxService?.getQueueManager().stopAll();
     await Promise.all([
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
