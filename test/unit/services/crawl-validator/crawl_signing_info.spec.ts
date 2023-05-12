@@ -38,6 +38,8 @@ export default class CrawlSigningInfoTest {
     tombstoned: false,
     missed_blocks_counter: 0,
     self_delegation_balance: '102469134',
+    delegators_count: 0,
+    delegators_last_height: 0,
   });
 
   broker = new ServiceBroker({ logger: false });

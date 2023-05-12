@@ -44,6 +44,8 @@ export const BULL_JOB_NAME = {
   CRAWL_GENESIS_CONTRACT: 'crawl:genesis-contract',
   HANDLE_AUTHZ_TX: 'handle:authz-tx',
   HANDLE_VOTE_TX: 'handle:vote-tx',
+  CRAWL_DELEGATORS: 'crawl:delegators',
+  CRAWL_VALIDATOR_DELEGATORS: 'crawl:validator-delegators',
 };
 
 export const SERVICE = {
@@ -120,6 +122,10 @@ export const SERVICE = {
     HandleVoteTx: {
       key: 'HandleVoteTxService',
       name: 'v1.HandleVoteTxService',
+    },
+    CrawlDelegatorsService: {
+      key: 'CrawlDelegatorsService',
+      name: 'v1.CrawlDelegatorsService',
     },
   },
 };

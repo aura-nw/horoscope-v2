@@ -51,6 +51,7 @@ export default class CrawlProposalService extends BullableService {
     const [startHeight, endHeight, updateBlockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.CRAWL_PROPOSAL,
+        BULL_JOB_NAME.HANDLE_TRANSACTION,
         config.crawlProposal.key
       );
     this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
@@ -82,41 +83,47 @@ export default class CrawlProposalService extends BullableService {
 
           await Promise.all(
             proposalIds.map(async (proposalId: number) => {
-              const proposal =
-                await this._lcdClient.auranw.cosmos.gov.v1beta1.proposal({
-                  proposalId,
-                });
+              try {
+                const proposal =
+                  await this._lcdClient.auranw.cosmos.gov.v1beta1.proposal({
+                    proposalId,
+                  });
 
-              this.logger.info(
-                `Proposal ${proposalId} content: ${JSON.stringify(
-                  proposal.proposal.content
-                )}`
-              );
-
-              const foundProposal: Proposal | undefined =
-                listProposalsInDb.find(
-                  (pro: Proposal) => pro.proposal_id === proposalId
+                this.logger.info(
+                  `Proposal ${proposalId} content: ${JSON.stringify(
+                    proposal.proposal.content
+                  )}`
                 );
 
-              let proposalEntity: Proposal;
-              if (!foundProposal) {
-                const [proposerAddress, initialDeposit] =
-                  await Proposal.getProposerBySearchTx(
-                    proposal.proposal.proposal_id
+                const foundProposal: Proposal | undefined =
+                  listProposalsInDb.find(
+                    (pro: Proposal) => pro.proposal_id === proposalId
                   );
 
-                proposalEntity = Proposal.createNewProposal(
-                  proposal.proposal,
-                  proposerAddress,
-                  initialDeposit
-                );
-              } else {
-                proposalEntity = foundProposal;
-                proposalEntity.status = proposal.proposal.status;
-                proposalEntity.total_deposit = proposal.proposal.total_deposit;
-              }
+                let proposalEntity: Proposal;
+                if (!foundProposal) {
+                  const [proposerAddress, initialDeposit] =
+                    await Proposal.getProposerBySearchTx(
+                      proposal.proposal.proposal_id
+                    );
 
-              listProposals.push(proposalEntity);
+                  proposalEntity = Proposal.createNewProposal(
+                    proposal.proposal,
+                    proposerAddress,
+                    initialDeposit
+                  );
+                } else {
+                  proposalEntity = foundProposal;
+                  proposalEntity.status = proposal.proposal.status;
+                  proposalEntity.total_deposit =
+                    proposal.proposal.total_deposit;
+                }
+
+                listProposals.push(proposalEntity);
+              } catch (error) {
+                this.logger.error(`Error get proposal ${proposalId}`);
+                this.logger.debug(error);
+              }
             })
           );
 
