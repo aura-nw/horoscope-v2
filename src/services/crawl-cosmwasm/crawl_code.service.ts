@@ -43,7 +43,7 @@ export default class CrawlCodeService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_CODE,
     jobName: 'crawl',
-    prefix: `horoscope-v2-${config.chainId}`,
+    // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: object): Promise<void> {
     const batchQueries: any[] = [];

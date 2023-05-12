@@ -45,7 +45,7 @@ export default class CrawlTxService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_TRANSACTION,
     jobName: BULL_JOB_NAME.CRAWL_TRANSACTION,
-    // prefix: `horoscope-v2-${config.chainId}`,
+    // // prefix: `horoscope-v2-${config.chainId}`,
   })
   private async jobHandlerCrawlTx(_payload: {
     listBlock: [{ height: number; timestamp: string }];
@@ -84,7 +84,7 @@ export default class CrawlTxService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_TRANSACTION,
     jobName: BULL_JOB_NAME.HANDLE_TRANSACTION,
-    // prefix: `horoscope-v2-${config.chainId}`,
+    // // prefix: `horoscope-v2-${config.chainId}`,
   })
   async jobHandlerTx(_payload: any): Promise<void> {
     const { listTx, timestamp, height } = _payload;
