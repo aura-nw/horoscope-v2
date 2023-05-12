@@ -10,6 +10,7 @@ export async function up(knex: Knex): Promise<void> {
     table.foreign('tx_id').references('transaction.id');
     table.string('vote_option').notNullable().index();
     table.string('proposal_id').notNullable().index();
+    table.unique(['voter', 'proposal_id']);
     table.string('txhash').notNullable();
     table.integer('height').notNullable();
   });
