@@ -37,7 +37,7 @@ export default class HandleAuthzTxService extends BullableService {
       });
       await BlockCheckpoint.query().insert(this._blockCheckpoint);
     } else if (this._blockCheckpoint.height) {
-      this._startBlock = this._blockCheckpoint.height;
+      this._startBlock = this._blockCheckpoint.height + 1;
     } else {
       this._blockCheckpoint.height = 0;
       await BlockCheckpoint.query()
@@ -64,7 +64,7 @@ export default class HandleAuthzTxService extends BullableService {
 
   async handleJob() {
     this.logger.info(
-      `Handle Authz Message from ${this._startBlock} to ${this._endBlock}`
+      `Handle Authz Message from block ${this._startBlock} to block ${this._endBlock}`
     );
     // query numberOfRow tx message has type authz and has no parent_id
     const listTxMsgs = await TransactionMessage.query()
