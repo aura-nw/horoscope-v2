@@ -14,10 +14,16 @@ import knex from '../../../../src/common/utils/db_connection';
 
 @Describe('Test handle_address service')
 export default class HandleAddressTest {
-  blockCheckpoint = BlockCheckpoint.fromJson({
-    job_name: BULL_JOB_NAME.HANDLE_ADDRESS,
-    height: 3967500,
-  });
+  blockCheckpoint = [
+    BlockCheckpoint.fromJson({
+      job_name: BULL_JOB_NAME.HANDLE_ADDRESS,
+      height: 3967500,
+    }),
+    BlockCheckpoint.fromJson({
+      job_name: BULL_JOB_NAME.HANDLE_TRANSACTION,
+      height: 3967529,
+    }),
+  ];
 
   blocks: Block[] = [
     Block.fromJson({
