@@ -37,7 +37,7 @@ export default class CrawlBlockService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_BLOCK,
     jobName: BULL_JOB_NAME.CRAWL_BLOCK,
-    // prefix: `horoscope-v2-${config.chainId}`,
+    // // prefix: `horoscope-v2-${config.chainId}`,
   })
   private async jobHandler(_payload: any): Promise<void> {
     await this.initEnv();
