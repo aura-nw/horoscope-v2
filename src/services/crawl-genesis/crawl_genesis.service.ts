@@ -4,7 +4,7 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
-import { fromBase64, fromUtf8, toHex, toUtf8 } from '@cosmjs/encoding';
+import { fromBase64, fromUtf8, toHex } from '@cosmjs/encoding';
 import fs from 'fs';
 import _ from 'lodash';
 import Chain from 'stream-chain';
@@ -405,9 +405,10 @@ export default class CrawlGenesisService extends BullableService {
               Code.fromJson({
                 code_id: parseInt(code.code_id, 10),
                 creator: code.code_info.creator,
-                data_hash: toHex(
-                  toUtf8(code.code_info.code_hash)
-                ).toLowerCase(),
+                data_hash: Buffer.from(
+                  code.code_info.code_hash,
+                  'base64'
+                ).toString('hex'),
                 instantiate_permission: code.code_info.instantiate_config,
                 type: null,
                 status: null,
