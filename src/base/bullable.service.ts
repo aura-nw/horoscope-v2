@@ -7,6 +7,7 @@ import { JobOption, QueueOptions } from '../common/queue/queue-manager-types';
 import BaseService from './base.service';
 
 // const BULL_REDIS_KEY = process.env.BULL_REDIS_KEY || 'BULL_REDIS_KEY';
+export const DEFAULT_PREFIX = process.env.DEFAULT_PREFIX || 'bull';
 
 export default class BullableService extends BaseService {
   private qm?: QueueManager;
@@ -68,7 +69,7 @@ export function QueueHandler(opt: Partial<QueueOptions>) {
     const qOpt = _.defaults(opt, {
       queueName: target.constructor.name,
       jobType: propertyKey,
-      prefix: 'bull',
+      prefix: DEFAULT_PREFIX,
     });
 
     target.setHandler(qOpt, target[propertyKey]);
