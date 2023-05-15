@@ -86,12 +86,16 @@ export default class HandleTxVoteServiceTest {
 
   @Test('Handle voting in authz tx')
   async handleVoteAuthzTx() {
-    await BlockCheckpoint.query().insert(
+    await BlockCheckpoint.query().insert([
       BlockCheckpoint.fromJson({
         job_name: BULL_JOB_NAME.HANDLE_VOTE_TX,
         height: 4279300,
-      })
-    );
+      }),
+      BlockCheckpoint.fromJson({
+        job_name: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
+        height: 4279300,
+      }),
+    ]);
 
     await Block.query().insert(
       Block.fromJson({
