@@ -233,13 +233,6 @@ export default class Cw721MediaService extends BullableService {
     return tokensMediaInfo;
   }
 
-  // query ipfs get metadata from token_uris
-  async getMetadata(tokenUri: string) {
-    const metadataUrl = parseIPFSUri(tokenUri);
-    const metadata = await downloadAttachment(metadataUrl);
-    return JSON.parse(metadata.toString());
-  }
-
   // query ipfs get list metadata from token_uris
   async getlistMetadata(tokenUris: string[]) {
     const listMetadata = await Promise.all(
@@ -310,6 +303,7 @@ export default class Cw721MediaService extends BullableService {
     return null;
   }
 
+  // update s3 media link
   async updateMediaS3(tokensMediaInfo: ITokenMediaInfo[]) {
     const listMediaImageUrl = await Promise.all(
       tokensMediaInfo.map((tokenMediaInfo) =>
