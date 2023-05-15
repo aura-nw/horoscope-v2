@@ -241,6 +241,7 @@ export default class CrawlProposalTest {
       CrawlTallyProposalService
     ) as CrawlTallyProposalService;
     this.crawlProposalService.getQueueManager().stopAll();
+    this.crawlTallyProposalService.getQueueManager().stopAll();
     await Promise.all([
       BlockCheckpoint.query().delete(true),
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
