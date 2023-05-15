@@ -8,7 +8,7 @@ import knex from '../../common/utils/db_connection';
 import { Account, BlockCheckpoint, EventAttribute } from '../../models';
 import Utils from '../../common/utils/utils';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { BULL_JOB_NAME, Config, IAddressesParam, SERVICE } from '../../common';
+import { BULL_JOB_NAME, IAddressesParam, SERVICE } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
@@ -35,7 +35,7 @@ export default class HandleAddressService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_ADDRESS,
     jobName: 'crawl',
-    prefix: `horoscope-v2-${Config.CHAIN_ID}`,
+    // prefix: `horoscope-v2-${Config.CHAIN_ID}`,
   })
   public async handleJob(_payload: object): Promise<void> {
     const [startHeight, endHeight, updateBlockCheckpoint] =
