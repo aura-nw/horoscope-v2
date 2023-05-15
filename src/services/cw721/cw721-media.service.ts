@@ -27,6 +27,7 @@ import {
   parseIPFSUri,
   downloadAttachment,
   parseFilename,
+  isValidURI,
 } from '../../common/utils/smart_contract';
 import { S3Service } from '../../common/utils/s3';
 import knex from '../../common/utils/db_connection';
@@ -269,7 +270,7 @@ export default class Cw721MediaService extends BullableService {
   // download image/animation from media_uri, then upload to S3
   async uploadMediaToS3(media_uri?: string) {
     if (media_uri) {
-      if (this.validURI(media_uri)) {
+      if (isValidURI(media_uri)) {
         const uploadAttachmentToS3 = async (type: any, buffer: any) => {
           const params = {
             Key: parseFilename(media_uri),
@@ -333,15 +334,5 @@ export default class Cw721MediaService extends BullableService {
         listMediaAnimationUrl[index]?.key;
     });
     return tokensMediaInfo;
-  }
-
-  validURI(str: string) {
-    try {
-      // eslint-disable-next-line no-new
-      new URL(str);
-    } catch (error) {
-      return false;
-    }
-    return true;
   }
 }

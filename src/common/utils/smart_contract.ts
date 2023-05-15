@@ -149,3 +149,13 @@ export function parseFilename(media_uri: string) {
   // eslint-disable-next-line no-useless-escape
   return media_uri.replace(/^.*[\\\/]/, '');
 }
+
+export function isValidURI(str: string) {
+  try {
+    // eslint-disable-next-line no-new
+    new URL(str);
+  } catch (error) {
+    return false;
+  }
+  return true;
+}
