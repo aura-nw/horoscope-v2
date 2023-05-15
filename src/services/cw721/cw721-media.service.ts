@@ -42,7 +42,7 @@ interface ITokenMediaInfo {
     extension?: any;
     metadata?: any;
   };
-  s3: {
+  offchain: {
     image: {
       url?: string;
       content_type?: string;
@@ -106,8 +106,11 @@ export default class Cw721MediaService extends BullableService {
             .where('id', tokenMediaInfo.cw721_token_id)
             .patch({
               media_info: {
-                onchain: tokenMediaInfo.onchain,
-                s3: tokenMediaInfo.s3,
+                onchain: {
+                  token_uri: tokenMediaInfo.onchain.token_uri,
+                  metadata: tokenMediaInfo.onchain.metadata,
+                },
+                offchain: tokenMediaInfo.offchain,
               },
             })
             .transacting(trx);
@@ -193,7 +196,7 @@ export default class Cw721MediaService extends BullableService {
             token_uri: tokenInfo.info.token_uri,
             extension: tokenInfo.info.extension,
           },
-          s3: {
+          offchain: {
             image: {
               url: undefined,
               content_type: undefined,
@@ -215,7 +218,7 @@ export default class Cw721MediaService extends BullableService {
             token_uri: undefined,
             extension: undefined,
           },
-          s3: {
+          offchain: {
             image: {
               url: undefined,
               content_type: undefined,
@@ -311,10 +314,10 @@ export default class Cw721MediaService extends BullableService {
       )
     );
     tokensMediaInfo.forEach((tokenMediaInfo, index) => {
-      tokenMediaInfo.s3.image.url = listMediaImageUrl[index]?.linkS3;
-      tokenMediaInfo.s3.image.content_type =
+      tokenMediaInfo.offchain.image.url = listMediaImageUrl[index]?.linkS3;
+      tokenMediaInfo.offchain.image.content_type =
         listMediaImageUrl[index]?.contentType;
-      tokenMediaInfo.s3.image.file_path = listMediaImageUrl[index]?.key;
+      tokenMediaInfo.offchain.image.file_path = listMediaImageUrl[index]?.key;
     });
     const listMediaAnimationUrl = await Promise.all(
       tokensMediaInfo.map((tokenMediaInfo) =>
@@ -322,10 +325,12 @@ export default class Cw721MediaService extends BullableService {
       )
     );
     tokensMediaInfo.forEach((tokenMediaInfo, index) => {
-      tokenMediaInfo.s3.animation.url = listMediaAnimationUrl[index]?.linkS3;
-      tokenMediaInfo.s3.animation.content_type =
+      tokenMediaInfo.offchain.animation.url =
+        listMediaAnimationUrl[index]?.linkS3;
+      tokenMediaInfo.offchain.animation.content_type =
         listMediaAnimationUrl[index]?.contentType;
-      tokenMediaInfo.s3.animation.file_path = listMediaAnimationUrl[index]?.key;
+      tokenMediaInfo.offchain.animation.file_path =
+        listMediaAnimationUrl[index]?.key;
     });
     return tokensMediaInfo;
   }
