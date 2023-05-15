@@ -140,6 +140,8 @@ export default class HandleAddressService extends BullableService {
         repeat: {
           every: config.handleAddress.millisecondCrawl,
         },
+        attempts: config.jobRetryAttempt,
+        backoff: config.jobRetryBackoff,
       }
     );
 

@@ -471,6 +471,8 @@ export default class CrawlAccountService extends BullableService {
           removeOnFail: {
             count: 3,
           },
+          attempts: config.jobRetryAttempt,
+          backoff: config.jobRetryBackoff,
         }
       ),
       this.createJob(
@@ -484,6 +486,8 @@ export default class CrawlAccountService extends BullableService {
           removeOnFail: {
             count: 3,
           },
+          attempts: config.jobRetryAttempt,
+          backoff: config.jobRetryBackoff,
         }
       ),
       this.createJob(
@@ -497,6 +501,8 @@ export default class CrawlAccountService extends BullableService {
           removeOnFail: {
             count: 3,
           },
+          attempts: config.jobRetryAttempt,
+          backoff: config.jobRetryBackoff,
         }
       ),
     ]);
@@ -559,6 +565,8 @@ export default class CrawlAccountService extends BullableService {
         repeat: {
           every: config.crawlAccount.handleVestingAccount.millisecondCrawl,
         },
+        attempts: config.jobRetryAttempt,
+        backoff: config.jobRetryBackoff,
       }
     );
 

@@ -50,6 +50,8 @@ export default class CrawlDelegatorsService extends BullableService {
           removeOnFail: {
             count: 3,
           },
+          attempts: config.jobRetryAttempt,
+          backoff: config.jobRetryBackoff,
         }
       );
     });
@@ -154,6 +156,8 @@ export default class CrawlDelegatorsService extends BullableService {
         repeat: {
           every: config.crawlDelegators.millisecondCrawl,
         },
+        attempts: config.jobRetryAttempt,
+        backoff: config.jobRetryBackoff,
       }
     );
 
