@@ -1,5 +1,14 @@
+// eslint-disable-next-line import/no-extraneous-dependencies
+import parse from 'parse-uri';
+import axios from 'axios';
 import { Transaction, Event, EventAttribute } from '../../models';
+import config from '../../../config.json' assert { type: 'json' };
 
+const IPFS_PREFIX = 'ipfs';
+const IPFS_GATEWAY = config.ipfs.gateway;
+const REQUEST_IPFS_TIMEOUT = config.ipfs.timeout;
+const MAX_CONTENT_LENGTH_BYTE = 100000000;
+const MAX_BODY_LENGTH_BYTE = 100000000;
 export interface IContractMsgInfo {
   sender: string;
   contractAddress: string;
@@ -12,6 +21,7 @@ export interface IContractMsgInfo {
   }[];
   tx: Transaction;
 }
+
 // from startBlock to endBlock, get all msgs (activities) relating to execute/instantiate contract, each item correspond to an activity
 // contractAddress: contract address whom msg intract to
 // sender: sender of tx
@@ -95,4 +105,47 @@ export async function getContractActivities(
 // get Attribute value by specified key from array of attributes
 export function getAttributeFrom(listAttributes: any, attributeType: string) {
   return listAttributes?.find((attr: any) => attr.key === attributeType)?.value;
+}
+
+// from IPFS uri, parse to http url
+export function parseIPFSUri(uri: string) {
+  const parsed = parse(uri);
+  let url = '';
+  if (parsed.protocol === IPFS_PREFIX) {
+    const cid = parsed.host;
+    url = `${IPFS_GATEWAY}${cid}`;
+    if (parsed.path) {
+      url += `${parsed.path}`;
+    }
+  } else {
+    url = uri;
+  }
+  return url;
+}
+
+export async function downloadAttachment(url: string) {
+  const axiosClient = axios.create({
+    responseType: 'arraybuffer',
+    timeout: REQUEST_IPFS_TIMEOUT,
+    maxContentLength: MAX_CONTENT_LENGTH_BYTE,
+    maxBodyLength: MAX_BODY_LENGTH_BYTE,
+  });
+
+  return axiosClient.get(url).then((response: any) => {
+    const buffer = Buffer.from(response.data, 'base64');
+    return buffer;
+  });
+}
+
+export function parseFilename(media_uri: string) {
+  const parsed = parse(media_uri);
+  if (parsed.protocol === IPFS_PREFIX) {
+    const cid = parsed.host;
+    if (parsed.path) {
+      return `${cid}${parsed.path}`;
+    }
+    return cid;
+  }
+  // eslint-disable-next-line no-useless-escape
+  return media_uri.replace(/^.*[\\\/]/, '');
 }

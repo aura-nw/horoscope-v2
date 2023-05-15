@@ -45,6 +45,8 @@ export const BULL_JOB_NAME = {
   HANDLE_AUTHZ_TX: 'handle:authz-tx',
   CRAWL_DELEGATORS: 'crawl:delegators',
   CRAWL_VALIDATOR_DELEGATORS: 'crawl:validator-delegators',
+  FILTER_UNPROCESS_CW721_MEDIA: 'filter:unprocess-cw721-media',
+  HANDLE_CW721_TOKEN_MEDIA: 'handle:cw721-token-media',
 };
 
 export const SERVICE = {
@@ -70,6 +72,10 @@ export const SERVICE = {
       HandleCw721: {
         key: 'handleCw721',
         path: 'v1.Cw721Service.handleCw721',
+      },
+      UpdateMedia: {
+        key: 'updateCw721Media',
+        path: 'v1.Cw721Service.updateCw721Media',
       },
     },
     CrawlProposalService: {
@@ -123,10 +129,6 @@ export const SERVICE = {
       name: 'v1.CrawlDelegatorsService',
     },
   },
-};
-
-export const SERVICE_NAME = {
-  CW721: 'Cw721Service',
 };
 
 export enum AccountType {

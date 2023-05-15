@@ -17,7 +17,7 @@ import { Config, getHttpBatchClient } from '../../common';
 import {
   BLOCK_CHECKPOINT_JOB_NAME,
   BULL_JOB_NAME,
-  SERVICE_NAME,
+  SERVICE,
 } from '../../common/constant';
 import knex from '../../common/utils/db_connection';
 import { Block, BlockCheckpoint, EventAttribute } from '../../models';
@@ -48,7 +48,7 @@ const CW721_ACTION = {
 };
 
 @Service({
-  name: SERVICE_NAME.CW721,
+  name: SERVICE.V1.Cw721.HandleCw721.key,
   version: 1,
 })
 export default class Cw721HandlerService extends BullableService {
@@ -117,10 +117,7 @@ export default class Cw721HandlerService extends BullableService {
           mintMsg.wasm_attributes,
           EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
         );
-        const tokenUri = JSON.parse(mintMsg.content)[CW721_ACTION.MINT]
-          ?.token_uri;
-        const extension = JSON.parse(mintMsg.content)[CW721_ACTION.MINT]
-          ?.extension;
+        const mediaInfo = null;
         const cw721ContractId = cw721ContractDbRecords.find(
           (item) => item.address === mintMsg.contractAddress
         )?.id;
@@ -131,8 +128,7 @@ export default class Cw721HandlerService extends BullableService {
         }
         return CW721Token.fromJson({
           token_id: tokenId,
-          token_uri: tokenUri,
-          extension,
+          media_info: mediaInfo,
           owner: getAttributeFrom(
             mintMsg.wasm_attributes,
             EventAttribute.ATTRIBUTE_KEY.OWNER
@@ -178,6 +174,7 @@ export default class Cw721HandlerService extends BullableService {
             const query = CW721Token.query()
               .where('cw721_contract_id', cw721ContractId)
               .andWhere('token_id', tokenId)
+              .andWhere('last_updated_height', '<', burnMsg.tx.height)
               .patch({
                 last_updated_height: burnMsg.tx.height,
                 burned: true,
@@ -384,13 +381,13 @@ export default class Cw721HandlerService extends BullableService {
     await this.handlerCw721Mint(
       cw721MsgsExecute.filter((msg) => msg.action === CW721_ACTION.MINT)
     );
-    // handle transfer
-    await this.handlerCw721Transfer(
-      cw721MsgsExecute.filter((msg) => msg.action === CW721_ACTION.TRANSFER)
-    );
     // handle burn
     await this.handlerCw721Burn(
       cw721MsgsExecute.filter((msg) => msg.action === CW721_ACTION.BURN)
+    );
+    // handle transfer
+    await this.handlerCw721Transfer(
+      cw721MsgsExecute.filter((msg) => msg.action === CW721_ACTION.TRANSFER)
     );
   }
 
