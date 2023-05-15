@@ -872,6 +872,7 @@ export default class CrawlBlockTest {
     ) as CrawlTxService;
     this.crawlBlockService.getQueueManager().stopAll();
     this.crawlTxService.getQueueManager().stopAll();
+    await knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE');
   }
 
   @Test('Parse block and insert to DB')
