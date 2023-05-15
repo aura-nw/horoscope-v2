@@ -211,7 +211,7 @@ export default class Cw721HandlerService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.FILTER_CW721_TRANSACTION,
-    jobType: BULL_JOB_NAME.FILTER_CW721_TRANSACTION,
+    jobName: BULL_JOB_NAME.FILTER_CW721_TRANSACTION,
   })
   async jobHandler(): Promise<void> {
     if (this._currentAssetHandlerBlock) {
