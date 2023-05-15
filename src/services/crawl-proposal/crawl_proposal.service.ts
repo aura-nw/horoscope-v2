@@ -239,6 +239,8 @@ export default class CrawlProposalService extends BullableService {
         repeat: {
           every: config.crawlProposal.crawlProposal.millisecondCrawl,
         },
+        attempts: config.jobRetryAttempt,
+        backoff: config.jobRetryBackoff,
       }
     );
     this.createJob(
@@ -255,6 +257,8 @@ export default class CrawlProposalService extends BullableService {
             config.crawlProposal.handleNotEnoughDepositProposal
               .millisecondCrawl,
         },
+        attempts: config.jobRetryAttempt,
+        backoff: config.jobRetryBackoff,
       }
     );
 

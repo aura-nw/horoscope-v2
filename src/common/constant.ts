@@ -110,6 +110,10 @@ export const SERVICE = {
     CrawlCodeService: {
       key: 'CrawlCodeService',
       name: 'v1.CrawlCodeService',
+      CrawlMissingCode: {
+        key: 'CrawlMissingCode',
+        path: 'v1.CrawlCodeService.CrawlMissingCode',
+      },
     },
     CrawlSmartContractService: {
       key: 'CrawlSmartContractService',

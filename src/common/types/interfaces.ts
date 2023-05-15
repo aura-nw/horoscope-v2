@@ -52,3 +52,13 @@ export interface IValidatorDelegators {
   address: string;
   height: number;
 }
+
+export interface IStoreCodes {
+  hash: string;
+  height: number;
+  codeId: Long;
+}
+
+export interface IContextStoreCodes {
+  codeIds: IStoreCodes[];
+}
