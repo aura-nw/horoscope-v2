@@ -140,6 +140,8 @@ export default class CrawlGenesisService extends BullableService {
             removeOnFail: {
               count: 3,
             },
+            attempts: config.jobRetryAttempt,
+            backoff: config.jobRetryBackoff,
           }
         );
       }
@@ -461,6 +463,8 @@ export default class CrawlGenesisService extends BullableService {
         removeOnFail: {
           count: 3,
         },
+        attempts: config.jobRetryAttempt,
+        backoff: config.jobRetryBackoff,
       }
     );
 
@@ -680,6 +684,8 @@ export default class CrawlGenesisService extends BullableService {
         removeOnFail: {
           count: 3,
         },
+        attempts: config.jobRetryAttempt,
+        backoff: config.jobRetryBackoff,
       }
     );
 

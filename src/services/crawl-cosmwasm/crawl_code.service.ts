@@ -192,6 +192,8 @@ export default class CrawlCodeService extends BullableService {
         repeat: {
           every: config.crawlCodeId.millisecondCrawl,
         },
+        attempts: config.jobRetryAttempt,
+        backoff: config.jobRetryBackoff,
       }
     );
 

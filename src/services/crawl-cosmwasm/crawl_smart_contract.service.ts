@@ -267,6 +267,8 @@ export default class CrawlSmartContractService extends BullableService {
         repeat: {
           every: config.crawlSmartContract.millisecondCrawl,
         },
+        attempts: config.jobRetryAttempt,
+        backoff: config.jobRetryBackoff,
       }
     );
 
