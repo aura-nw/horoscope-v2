@@ -13,6 +13,8 @@
     "awsRegion": "ap-southeast-1",
     "bucket": "nft.aurascan.io"
   },
+  "jobRetryAttempt": 5,
+  "jobRetryBackoff": 1000,
   "crawlValidator": {
     "millisecondCrawl": 5000,
     "queryPageLimit": 100
