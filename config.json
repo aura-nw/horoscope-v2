@@ -3,6 +3,16 @@
   "networkPrefixAddress": "aura",
   "consensusPrefixAddress": "valcons",
   "validatorPrefixAddress": "valoper",
+  "ipfs": {
+    "gateway": "http://34.236.67.6:8080/ipfs/",
+    "timeout": 300000
+  },
+  "s3": {
+    "awsSecretAccessKey": "pI8I01CkAiwJd/wXEifupguGYmtpFsvBvybo/v4z",
+    "awsAccessKeyId": "AKIAQZA5SPA62NZHSSIZ",
+    "awsRegion": "ap-southeast-1",
+    "bucket": "nft.aurascan.io"
+  },
   "crawlValidator": {
     "millisecondCrawl": 5000,
     "queryPageLimit": 100
@@ -10,7 +20,9 @@
   "cw721": {
     "blocksPerBatch": 100,
     "millisecondRepeatJob": 5000,
-    "startBlock": 0
+    "startBlock": 0,
+    "millisecondRepeatJobMedia": 10000,
+    "mediaPerBatch": 20
   },
   "crawlBlock": {
     "millisecondCrawl": 5000,
