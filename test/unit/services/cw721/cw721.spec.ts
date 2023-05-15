@@ -9,6 +9,7 @@ import { Block, Transaction } from '../../../../src/models';
 import config from '../../../../config.json' assert { type: 'json' };
 import Cw721HandlerService from '../../../../src/services/cw721/cw721.service';
 import { Code } from '../../../../src/models/code';
+import { getContractActivities } from '../../../../src/common/utils/smart_contract';
 
 @Describe('Test cw721 service')
 export default class AssetIndexerTest {
@@ -382,7 +383,7 @@ export default class AssetIndexerTest {
 
   @Test('test getContractActivities function')
   public async testGetContractActivities() {
-    const extractData = await this.cw721HandlerService.getContractActivities(
+    const extractData = await getContractActivities(
       this.block.height,
       this.block.height
     );
