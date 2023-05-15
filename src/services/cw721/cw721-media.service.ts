@@ -74,7 +74,7 @@ export default class Cw721MediaService extends BullableService {
     queueName: BULL_JOB_NAME.HANDLE_CW721_TOKEN_MEDIA,
     jobType: BULL_JOB_NAME.HANDLE_CW721_TOKEN_MEDIA,
   })
-  async jobHandlerFilter(): Promise<void> {
+  async jobHandler(): Promise<void> {
     const tokensUnprocess = await CW721Token.query()
       .alias('cw721_token')
       .withGraphJoined('contract.smart_contract')
