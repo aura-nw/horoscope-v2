@@ -14,6 +14,8 @@ import { cosmwasm } from '@aura-nw/aurajs';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
+import _ from 'lodash';
+import Long from 'long';
 import knex from '../../common/utils/db_connection';
 import {
   BlockCheckpoint,
@@ -21,11 +23,13 @@ import {
   Transaction,
   EventAttribute,
   SmartContract,
+  Code,
 } from '../../models';
 import {
   ABCI_QUERY_PATH,
   BULL_JOB_NAME,
   getHttpBatchClient,
+  IStoreCodes,
   SERVICE,
 } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
@@ -108,6 +112,7 @@ export default class CrawlSmartContractService extends BullableService {
             queryAddresses
           );
 
+          const codeIds: number[] = [];
           smartContracts.forEach((contract, index) => {
             if (contractCw2s[index]?.data) {
               const data = JSON.parse(
@@ -123,8 +128,32 @@ export default class CrawlSmartContractService extends BullableService {
               );
               contract.creator =
                 contractInfos[index]?.contractInfo?.creator || '';
+
+              codeIds.push(
+                parseInt(
+                  contractInfos[index]?.contractInfo?.codeId.toString() || '0',
+                  10
+                )
+              );
             }
           });
+
+          const codes: Code[] = await Code.query().whereIn('code_id', codeIds);
+          const codeKeys = _.keyBy(codes, 'code_id');
+          const missingCodeIds: IStoreCodes[] = [];
+          codeIds.forEach((codeId) => {
+            if (!codeKeys[codeId])
+              missingCodeIds.push({
+                codeId: Long.fromInt(codeId),
+                hash: '',
+                height: 0,
+              });
+          });
+          if (missingCodeIds.length > 0)
+            await this.broker.call(
+              SERVICE.V1.CrawlCodeService.CrawlMissingCode.path,
+              { codeIds: missingCodeIds }
+            );
 
           if (smartContracts.length > 0)
             await SmartContract.query()
@@ -224,6 +253,8 @@ export default class CrawlSmartContractService extends BullableService {
   }
 
   public async _start() {
+    await this.broker.waitForServices(SERVICE.V1.CrawlCodeService.name);
+
     this.createJob(
       BULL_JOB_NAME.CRAWL_SMART_CONTRACT,
       'crawl',
@@ -236,6 +267,8 @@ export default class CrawlSmartContractService extends BullableService {
         repeat: {
           every: config.crawlSmartContract.millisecondCrawl,
         },
+        attempts: config.jobRetryAttempt,
+        backoff: config.jobRetryBackoff,
       }
     );
 
