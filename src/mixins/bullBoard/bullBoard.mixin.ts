@@ -27,7 +27,7 @@ export const bullBoardMixin = () => ({
     const listQueues = Object.values(BULL_JOB_NAME).map(
       (queueName) =>
         new BullAdapter(
-          Queue(queueName, Config.BULL_REDIS_URL, {
+          Queue(queueName, Config.QUEUE_JOB_REDIS, {
             prefix: DEFAULT_PREFIX,
           })
         )
