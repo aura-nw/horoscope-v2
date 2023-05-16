@@ -3,10 +3,11 @@ import { Knex } from 'knex';
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('contract_event', (table) => {
     table.increments('id').primary();
-    table.integer('contract_id').unique().index().notNullable();
+    table.integer('smart_contract_id').unique().index().notNullable();
     table.string('action');
     table.integer('event_id').index().notNullable();
-    table.foreign('contract_id').references('smart_contract.id');
+    table.integer('index');
+    table.foreign('smart_contract_id').references('smart_contract.id');
     table.foreign('event_id').references('event.id');
     table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
     table.timestamp('updated_at').notNullable().defaultTo(knex.raw('now()'));
