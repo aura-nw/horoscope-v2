@@ -1,38 +1,25 @@
 /* eslint-disable no-param-reassign */
+import { cosmwasm } from '@aura-nw/aurajs';
+import { fromBase64, fromUtf8 } from '@cosmjs/encoding';
+import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
-import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
-import {
-  fromBase64,
-  fromUtf8,
-  toHex,
-  toUtf8,
-  toBase64,
-} from '@cosmjs/encoding';
-import { cosmwasm } from '@aura-nw/aurajs';
-import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
-import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import * as FileType from 'file-type';
-import CW721Token from '../../models/cw721_token';
-import {
-  BULL_JOB_NAME,
-  Config,
-  SERVICE,
-  getHttpBatchClient,
-} from '../../common';
-import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
-import {
-  parseIPFSUri,
-  downloadAttachment,
-  parseFilename,
-  isValidURI,
-} from '../../common/utils/smart_contract';
+import BullableService, { QueueHandler } from '../../base/bullable.service';
+import { BULL_JOB_NAME, Config, SERVICE } from '../../common';
 import { S3Service } from '../../common/utils/s3';
-import knex from '../../common/utils/db_connection';
+import {
+  downloadAttachment,
+  isValidURI,
+  parseFilename,
+  parseIPFSUri,
+  querySmartContractState,
+} from '../../common/utils/smart_contract';
+import CW721Token from '../../models/cw721_token';
 
-const { NODE_ENV } = Config;
+const { NODE_ENV, BUCKET } = Config;
 
 interface ITokenMediaInfo {
   cw721_token_id: number;
@@ -41,7 +28,7 @@ interface ITokenMediaInfo {
   onchain: {
     token_uri?: string;
     extension?: any;
-    metadata?: any;
+    metadata: IMetadata;
   };
   offchain: {
     image: {
@@ -56,26 +43,57 @@ interface ITokenMediaInfo {
     };
   };
 }
+
+interface IMetadata {
+  image?: string;
+  animation_url?: string;
+}
 const s3Client = new S3Service().connectS3();
-const BUCKET = config.s3.bucket;
 
 @Service({
   name: SERVICE.V1.Cw721.UpdateMedia.key,
   version: 1,
 })
 export default class Cw721MediaService extends BullableService {
-  _httpBatchClient: HttpBatchClient;
-
   public constructor(public broker: ServiceBroker) {
     super(broker);
-    this._httpBatchClient = getHttpBatchClient();
   }
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_CW721_TOKEN_MEDIA,
     jobType: BULL_JOB_NAME.HANDLE_CW721_TOKEN_MEDIA,
   })
-  async jobHandler(): Promise<void> {
+  async jobHandlerTokenMedia(_payload: { tokenMedia: ITokenMediaInfo }) {
+    let { tokenMedia } = _payload;
+    // update metadata
+    if (tokenMedia.onchain.token_uri) {
+      tokenMedia.onchain.metadata = await this.getMetadata(
+        tokenMedia.onchain.token_uri
+      );
+    } else {
+      tokenMedia.onchain.metadata = tokenMedia.onchain.extension;
+    }
+    // upload & update link s3
+    tokenMedia = await this.updateMediaS3(tokenMedia);
+    this.logger.debug(tokenMedia);
+    await CW721Token.query()
+      .where('id', tokenMedia.cw721_token_id)
+      .patch({
+        media_info: {
+          onchain: {
+            token_uri: tokenMedia.onchain.token_uri,
+            metadata: tokenMedia.onchain.metadata,
+          },
+          offchain: tokenMedia.offchain,
+        },
+      });
+  }
+
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.FILTER_TOKEN_MEDIA_UNPROCESS,
+    jobType: BULL_JOB_NAME.FILTER_TOKEN_MEDIA_UNPROCESS,
+  })
+  async jobHandlerFilter(): Promise<void> {
     const tokensUnprocess = await CW721Token.query()
       .alias('cw721_token')
       .withGraphJoined('contract.smart_contract')
@@ -90,45 +108,37 @@ export default class Cw721MediaService extends BullableService {
       );
     if (tokensUnprocess.length > 0) {
       // get token_uri and extension
-      let tokensMediaInfo = await this.getTokensMediaInfo(
+      const tokensMediaInfo = await this.getTokensMediaInfo(
         tokensUnprocess.map((token) => ({
           cw721_token_id: token.cw721_token_id,
           contractAddress: token.contract_address,
           onchainTokenId: token.token_id,
         }))
       );
-      tokensMediaInfo = await this.updateMetadata(tokensMediaInfo);
-      tokensMediaInfo = await this.updateMediaS3(tokensMediaInfo);
-      this.logger.debug(tokensMediaInfo);
-      await knex.transaction(async (trx) => {
-        const queries: any[] = [];
-        tokensMediaInfo.forEach((tokenMediaInfo) => {
-          const query = CW721Token.query()
-            .where('id', tokenMediaInfo.cw721_token_id)
-            .patch({
-              media_info: {
-                onchain: {
-                  token_uri: tokenMediaInfo.onchain.token_uri,
-                  metadata: tokenMediaInfo.onchain.metadata,
-                },
-                offchain: tokenMediaInfo.offchain,
+      await Promise.all(
+        tokensMediaInfo.map((tokenMedia) =>
+          this.createJob(
+            BULL_JOB_NAME.HANDLE_CW721_TOKEN_MEDIA,
+            BULL_JOB_NAME.HANDLE_CW721_TOKEN_MEDIA,
+            { tokenMedia },
+            {
+              removeOnComplete: true,
+              removeOnFail: {
+                count: 3,
               },
-            })
-            .transacting(trx);
-          queries.push(query);
-        });
-        await Promise.all(queries) // Once every query is written
-          .then(trx.commit) // Try to execute all of them
-          .catch(trx.rollback); // And rollback in case any of them goes wrong
-      });
+              jobId: `${tokenMedia.address}_${tokenMedia.token_id}`,
+            }
+          )
+        )
+      );
     }
   }
 
   async _start(): Promise<void> {
     if (NODE_ENV !== 'test') {
       await this.createJob(
-        BULL_JOB_NAME.HANDLE_CW721_TOKEN_MEDIA,
-        BULL_JOB_NAME.HANDLE_CW721_TOKEN_MEDIA,
+        BULL_JOB_NAME.FILTER_TOKEN_MEDIA_UNPROCESS,
+        BULL_JOB_NAME.FILTER_TOKEN_MEDIA_UNPROCESS,
         {},
         {
           removeOnComplete: true,
@@ -157,22 +167,9 @@ export default class Cw721MediaService extends BullableService {
     tokens.forEach(
       (token: { contractAddress: string; onchainTokenId: string }) => {
         promises.push(
-          this._httpBatchClient.execute(
-            createJsonRpcRequest('abci_query', {
-              path: '/cosmwasm.wasm.v1.Query/SmartContractState',
-              data: toHex(
-                cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
-                  address: token.contractAddress,
-                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                  // @ts-ignore
-                  queryData: toBase64(
-                    toUtf8(
-                      `{"all_nft_info":{"token_id": "${token.onchainTokenId}"}}`
-                    )
-                  ),
-                }).finish()
-              ),
-            })
+          querySmartContractState(
+            token.contractAddress,
+            `{"all_nft_info":{"token_id": "${token.onchainTokenId}"}}`
           )
         );
       }
@@ -196,6 +193,7 @@ export default class Cw721MediaService extends BullableService {
           onchain: {
             token_uri: tokenInfo.info.token_uri,
             extension: tokenInfo.info.extension,
+            metadata: {},
           },
           offchain: {
             image: {
@@ -210,7 +208,7 @@ export default class Cw721MediaService extends BullableService {
             },
           },
         });
-      } catch (error) {
+      } catch {
         tokensMediaInfo.push({
           address: tokens[index].contractAddress,
           token_id: tokens[index].onchainTokenId,
@@ -218,6 +216,7 @@ export default class Cw721MediaService extends BullableService {
           onchain: {
             token_uri: undefined,
             extension: undefined,
+            metadata: {},
           },
           offchain: {
             image: {
@@ -238,40 +237,19 @@ export default class Cw721MediaService extends BullableService {
   }
 
   // query ipfs get list metadata from token_uris
-  async getlistMetadata(tokenUris: string[]) {
-    const listMetadata = await Promise.all(
-      tokenUris.map((tokenUri) => downloadAttachment(parseIPFSUri(tokenUri)))
-    );
-    return listMetadata.map((metadata) => JSON.parse(metadata.toString()));
-  }
-
-  // update Metadata
-  async updateMetadata(tokensMediaInfo: ITokenMediaInfo[]) {
-    const mediasWithUri = tokensMediaInfo.filter(
-      (tokenMediaInfo) => tokenMediaInfo.onchain.token_uri
-    );
-    const listMetadata = await this.getlistMetadata(
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      mediasWithUri.map((mediaWithUri) => mediaWithUri.onchain.token_uri)
-    );
-    mediasWithUri.forEach((mediaWithUri, index) => {
-      mediaWithUri.onchain.metadata = listMetadata[index];
-    });
-    const mediasWithoutUri = tokensMediaInfo.filter(
-      (tokenMediaInfo) => !tokenMediaInfo.onchain.token_uri
-    );
-    mediasWithoutUri.forEach((mediaWithoutUri) => {
-      mediaWithoutUri.onchain.metadata = mediaWithoutUri.onchain.extension;
-    });
-    return [...mediasWithUri, ...mediasWithoutUri];
+  async getMetadata(token_uri: string): Promise<IMetadata> {
+    const metadata = await downloadAttachment(parseIPFSUri(token_uri));
+    return JSON.parse(metadata.toString());
   }
 
   // download image/animation from media_uri, then upload to S3
   async uploadMediaToS3(media_uri?: string) {
     if (media_uri) {
       if (isValidURI(media_uri)) {
-        const uploadAttachmentToS3 = async (type: any, buffer: any) => {
+        const uploadAttachmentToS3 = async (
+          type: string | undefined,
+          buffer: Buffer
+        ) => {
           const params = {
             Key: parseFilename(media_uri),
             Body: buffer,
@@ -282,57 +260,44 @@ export default class Cw721MediaService extends BullableService {
             .upload(params)
             .promise()
             .then(
-              (response: any) => ({
+              (response: { Location: string; Key: string }) => ({
                 linkS3: response.Location,
                 contentType: type,
                 key: response.Key,
               }),
-              (err: any) => {
+              (err: string) => {
                 throw new Error(err);
               }
             );
         };
-
-        return downloadAttachment(parseIPFSUri(media_uri)).then(
-          async (buffer) => {
-            let type: any = (await FileType.fileTypeFromBuffer(buffer))?.mime;
-            if (type === 'application/xml') {
-              type = 'image/svg+xml';
-            }
-            return uploadAttachmentToS3(type, buffer);
-          }
-        );
+        const mediaBuffer = await downloadAttachment(parseIPFSUri(media_uri));
+        let type: string | undefined = (
+          await FileType.fileTypeFromBuffer(mediaBuffer)
+        )?.mime;
+        if (type === 'application/xml') {
+          type = 'image/svg+xml';
+        }
+        return uploadAttachmentToS3(type, mediaBuffer);
       }
     }
     return null;
   }
 
   // update s3 media link
-  async updateMediaS3(tokensMediaInfo: ITokenMediaInfo[]) {
-    const listMediaImageUrl = await Promise.all(
-      tokensMediaInfo.map((tokenMediaInfo) =>
-        this.uploadMediaToS3(tokenMediaInfo.onchain.metadata.image)
-      )
+  async updateMediaS3(tokenMediaInfo: ITokenMediaInfo) {
+    const mediaImageUrl = await this.uploadMediaToS3(
+      tokenMediaInfo.onchain.metadata.image
     );
-    tokensMediaInfo.forEach((tokenMediaInfo, index) => {
-      tokenMediaInfo.offchain.image.url = listMediaImageUrl[index]?.linkS3;
-      tokenMediaInfo.offchain.image.content_type =
-        listMediaImageUrl[index]?.contentType;
-      tokenMediaInfo.offchain.image.file_path = listMediaImageUrl[index]?.key;
-    });
-    const listMediaAnimationUrl = await Promise.all(
-      tokensMediaInfo.map((tokenMediaInfo) =>
-        this.uploadMediaToS3(tokenMediaInfo.onchain.metadata.animation_url)
-      )
+    tokenMediaInfo.offchain.image.url = mediaImageUrl?.linkS3;
+    tokenMediaInfo.offchain.image.content_type = mediaImageUrl?.contentType;
+    tokenMediaInfo.offchain.image.file_path = mediaImageUrl?.key;
+    const mediaAnimationUrl = await this.uploadMediaToS3(
+      tokenMediaInfo.onchain.metadata.animation_url
     );
-    tokensMediaInfo.forEach((tokenMediaInfo, index) => {
-      tokenMediaInfo.offchain.animation.url =
-        listMediaAnimationUrl[index]?.linkS3;
-      tokenMediaInfo.offchain.animation.content_type =
-        listMediaAnimationUrl[index]?.contentType;
-      tokenMediaInfo.offchain.animation.file_path =
-        listMediaAnimationUrl[index]?.key;
-    });
-    return tokensMediaInfo;
+    tokenMediaInfo.offchain.animation.url = mediaAnimationUrl?.linkS3;
+    tokenMediaInfo.offchain.animation.content_type =
+      mediaAnimationUrl?.contentType;
+    tokenMediaInfo.offchain.animation.file_path = mediaAnimationUrl?.key;
+    return tokenMediaInfo;
   }
 }

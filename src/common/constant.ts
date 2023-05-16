@@ -45,6 +45,7 @@ export const BULL_JOB_NAME = {
   HANDLE_AUTHZ_TX: 'handle:authz-tx',
   CRAWL_DELEGATORS: 'crawl:delegators',
   CRAWL_VALIDATOR_DELEGATORS: 'crawl:validator-delegators',
+  FILTER_TOKEN_MEDIA_UNPROCESS: 'filter:cw721-token-media-unprocess',
   HANDLE_CW721_TOKEN_MEDIA: 'handle:cw721-token-media',
 };
 

@@ -1,12 +1,15 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import parse from 'parse-uri';
 import axios from 'axios';
+import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
+import { toBase64, toHex, toUtf8 } from '@cosmjs/encoding';
+import { cosmwasm } from '@aura-nw/aurajs';
+import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { Transaction, Event, EventAttribute } from '../../models';
-import config from '../../../config.json' assert { type: 'json' };
+import { Config, getHttpBatchClient } from '..';
 
 const IPFS_PREFIX = 'ipfs';
-const IPFS_GATEWAY = config.ipfs.gateway;
-const REQUEST_IPFS_TIMEOUT = config.ipfs.timeout;
+const { IPFS_GATEWAY, REQUEST_IPFS_TIMEOUT } = Config;
 const MAX_CONTENT_LENGTH_BYTE = 100000000;
 const MAX_BODY_LENGTH_BYTE = 100000000;
 export interface IContractMsgInfo {
@@ -126,7 +129,7 @@ export function parseIPFSUri(uri: string) {
 export async function downloadAttachment(url: string) {
   const axiosClient = axios.create({
     responseType: 'arraybuffer',
-    timeout: REQUEST_IPFS_TIMEOUT,
+    timeout: parseInt(REQUEST_IPFS_TIMEOUT, 10),
     maxContentLength: MAX_CONTENT_LENGTH_BYTE,
     maxBodyLength: MAX_BODY_LENGTH_BYTE,
   });
@@ -158,4 +161,25 @@ export function isValidURI(str: string) {
     return false;
   }
   return true;
+}
+
+// query smart contract state over rpc
+export async function querySmartContractState(
+  contractAddress: string,
+  queryData: string
+): Promise<JsonRpcSuccessResponse> {
+  const httpBatchClient = getHttpBatchClient();
+  return httpBatchClient.execute(
+    createJsonRpcRequest('abci_query', {
+      path: '/cosmwasm.wasm.v1.Query/SmartContractState',
+      data: toHex(
+        cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
+          address: contractAddress,
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          queryData: toBase64(toUtf8(queryData)),
+        }).finish()
+      ),
+    })
+  );
 }
