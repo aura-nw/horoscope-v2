@@ -3,7 +3,6 @@ import { ServiceBroker } from 'moleculer';
 import CW721Activity from '../../../../src/models/cw721_tx';
 import CW721Token from '../../../../src/models/cw721_token';
 import CW721Contract from '../../../../src/models/cw721_contract';
-import { BULL_JOB_NAME } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
 import { Block, Transaction } from '../../../../src/models';
 import config from '../../../../config.json' assert { type: 'json' };
@@ -341,12 +340,7 @@ export default class AssetIndexerTest {
 
   @BeforeAll()
   async initSuite() {
-    await Promise.all([
-      this.cw721HandlerService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.FILTER_CW721_TRANSACTION)
-        .empty(),
-    ]);
+    this.cw721HandlerService.getQueueManager().stopAll();
     await this.broker.start();
     await knex.raw(
       'TRUNCATE TABLE event_attribute, transaction_message, event, transaction, block, block_checkpoint, cw721_token, cw721_contract, cw721_activity, code RESTART IDENTITY CASCADE'
