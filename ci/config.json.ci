@@ -3,16 +3,6 @@
   "networkPrefixAddress": "aura",
   "consensusPrefixAddress": "valcons",
   "validatorPrefixAddress": "valoper",
-  "ipfs": {
-    "gateway": "http://34.236.67.6:8080/ipfs/",
-    "timeout": 300000
-  },
-  "s3": {
-    "awsSecretAccessKey": "pI8I01CkAiwJd/wXEifupguGYmtpFsvBvybo/v4z",
-    "awsAccessKeyId": "AKIAQZA5SPA62NZHSSIZ",
-    "awsRegion": "ap-southeast-1",
-    "bucket": "nft.aurascan.io"
-  },
   "jobRetryAttempt": 5,
   "jobRetryBackoff": 1000,
   "crawlValidator": {
