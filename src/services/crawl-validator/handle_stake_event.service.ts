@@ -72,71 +72,77 @@ export default class HandleStakeEventService extends BullableService {
     const validators: Validator[] = await Validator.query();
     const validatorKeys = _.keyBy(validators, 'operator_address');
 
-    const powerEvents: PowerEvent[] = stakeTxs
+    const powerEvents: PowerEvent[] = [];
+    stakeTxs
       .filter(
         (event) =>
           this.eventStakes.includes(event.type) &&
           (event.key === EventAttribute.ATTRIBUTE_KEY.VALIDATOR ||
             event.key === EventAttribute.ATTRIBUTE_KEY.SOURCE_VALIDATOR)
       )
-      .map((stakeEvent) => {
+      .forEach((stakeEvent) => {
         this.logger.info(`Handle event stake ${JSON.stringify(stakeEvent)}`);
-        const stakeEvents = stakeTxs.filter(
-          (tx) => tx.event_id === stakeEvent.event_id
-        );
+        try {
+          const stakeEvents = stakeTxs.filter(
+            (tx) => tx.event_id === stakeEvent.event_id
+          );
 
-        let validatorSrcId;
-        let validatorDstId;
-        let amount;
-        switch (stakeEvent.type) {
-          case PowerEvent.TYPES.DELEGATE:
-            validatorDstId = validatorKeys[stakeEvent.value].id;
-            break;
-          case PowerEvent.TYPES.REDELEGATE:
-            validatorSrcId = validatorKeys[stakeEvent.value].id;
-            validatorDstId =
-              validatorKeys[
+          let validatorSrcId;
+          let validatorDstId;
+          let amount;
+          switch (stakeEvent.type) {
+            case PowerEvent.TYPES.DELEGATE:
+              validatorDstId = validatorKeys[stakeEvent.value].id;
+              break;
+            case PowerEvent.TYPES.REDELEGATE:
+              validatorSrcId = validatorKeys[stakeEvent.value].id;
+              validatorDstId =
+                validatorKeys[
+                  stakeEvents.find(
+                    (event) =>
+                      event.key ===
+                        EventAttribute.ATTRIBUTE_KEY.DESTINATION_VALIDATOR &&
+                      event.index === stakeEvent.index + 1
+                  ).value
+                ].id;
+              amount = parseCoins(
                 stakeEvents.find(
                   (event) =>
-                    event.key ===
-                      EventAttribute.ATTRIBUTE_KEY.DESTINATION_VALIDATOR &&
+                    event.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT &&
+                    event.index === stakeEvent.index + 2
+                ).value
+              )[0].amount;
+              break;
+            case PowerEvent.TYPES.UNBOND:
+              validatorSrcId = validatorKeys[stakeEvent.value].id;
+              break;
+            default:
+              break;
+          }
+
+          const powerEvent: PowerEvent = PowerEvent.fromJson({
+            tx_id: stakeEvent.id,
+            height: stakeEvent.height,
+            type: stakeEvent.type,
+            validator_src_id: validatorSrcId,
+            validator_dst_id: validatorDstId,
+            amount:
+              amount ??
+              parseCoins(
+                stakeEvents.find(
+                  (event) =>
+                    event.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT &&
                     event.index === stakeEvent.index + 1
                 ).value
-              ].id;
-            amount = parseCoins(
-              stakeEvents.find(
-                (event) =>
-                  event.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT &&
-                  event.index === stakeEvent.index + 2
-              ).value
-            )[0].amount;
-            break;
-          case PowerEvent.TYPES.UNBOND:
-            validatorSrcId = validatorKeys[stakeEvent.value].id;
-            break;
-          default:
-            break;
+              )[0].amount,
+            time: stakeEvent.timestamp.toISOString(),
+          });
+
+          powerEvents.push(powerEvent);
+        } catch (error) {
+          this.logger.error('Error create power event');
+          this.logger.error(error);
         }
-
-        const powerEvent: PowerEvent = PowerEvent.fromJson({
-          tx_id: stakeEvent.id,
-          height: stakeEvent.height,
-          type: stakeEvent.type,
-          validator_src_id: validatorSrcId,
-          validator_dst_id: validatorDstId,
-          amount:
-            amount ??
-            parseCoins(
-              stakeEvents.find(
-                (event) =>
-                  event.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT &&
-                  event.index === stakeEvent.index + 1
-              ).value
-            )[0].amount,
-          time: stakeEvent.timestamp.toISOString(),
-        });
-
-        return powerEvent;
       });
 
     await knex.transaction(async (trx) => {
@@ -172,8 +178,6 @@ export default class HandleStakeEventService extends BullableService {
         repeat: {
           every: config.handleStakeEvent.millisecondCrawl,
         },
-        attempts: config.jobRetryAttempt,
-        backoff: config.jobRetryBackoff,
       }
     );
 
