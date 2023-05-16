@@ -233,7 +233,6 @@ export default class CrawlValidatorService extends BullableService {
         backoff: config.jobRetryBackoff,
       }
     );
-
     return super._start();
   }
 }
