@@ -1,6 +1,8 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
+import { SmartContractEvent } from '../../models/smart_contract_event';
+import knex from '../../common/utils/db_connection';
 import { getContractActivities } from '../../common/utils/smart_contract';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -10,7 +12,7 @@ import {
   SERVICE,
   getHttpBatchClient,
 } from '../../common';
-import { Block, BlockCheckpoint } from '../../models';
+import { Block, BlockCheckpoint, SmartContract } from '../../models';
 
 const { NODE_ENV } = Config;
 @Service({
@@ -46,17 +48,65 @@ export default class CrawlCodeService extends BullableService {
       this.logger.info(`startBlock: ${startBlock} to endBlock: ${endBlock}`);
       if (endBlock >= startBlock) {
         try {
-          // get all contract Msg in above range blocks
-          const listContractMsg = await getContractActivities(
+          // get all contract event in above range blocks
+          const contractEvents = await getContractActivities(
             startBlock,
             endBlock
           );
-          this.logger.debug(listContractMsg);
+          const smartContractRecords = await this.getSmartContractRecords(
+            contractEvents.map((contractEvent) => contractEvent.contractAddress)
+          );
+          await knex.transaction(async (trx) => {
+            const queries: any[] = [];
+            contractEvents.forEach((contractEvent) => {
+              const smartContractId = smartContractRecords.find(
+                (item) => item.address === contractEvent.contractAddress
+              )?.id;
+
+              this.logger.debug({
+                contractAddress: contractEvent.contractAddress,
+                smart_contract_id: smartContractId,
+                action: contractEvent.action,
+                event_id: contractEvent.event_id,
+                index: contractEvent.index,
+              });
+              const query = SmartContractEvent.query()
+                .insertGraph({
+                  ...SmartContractEvent.fromJson({
+                    smart_contract_id: smartContractId,
+                    action: contractEvent.action,
+                    event_id: contractEvent.event_id,
+                    index: contractEvent.index,
+                  }),
+                  attributes: contractEvent.wasm_attributes,
+                })
+                .transacting(trx);
+              queries.push(query);
+            });
+            if (queries.length > 0) {
+              await Promise.all(queries) // Once every query is written
+                .then(trx.commit) // Try to execute all of them
+                .catch(trx.rollback); // And rollback in case any of them goes wrong
+            }
+          });
+          await BlockCheckpoint.query()
+            .patch({
+              height: endBlock + 1,
+            })
+            .where('job_name', BULL_JOB_NAME.CRAWL_CONTRACT_EVENT);
+          this._currentAssetHandlerBlock = endBlock + 1;
         } catch (error) {
           this.logger.error(error);
         }
       }
     }
+  }
+
+  // from list contract addresses, get those appopriate records in DB
+  async getSmartContractRecords(addresses: string[]) {
+    return SmartContract.query()
+      .whereIn('smart_contract.address', addresses)
+      .select('id', 'address');
   }
 
   // init enviroment variable before start service
