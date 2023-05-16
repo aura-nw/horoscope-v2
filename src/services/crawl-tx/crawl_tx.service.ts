@@ -13,7 +13,7 @@ import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { BULL_JOB_NAME, getHttpBatchClient, SERVICE } from '../../common';
 import { BlockCheckpoint, Event, Transaction } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-// import config from '../../../config.json' assert { type: 'json' };
+import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
 import AuraRegistry from './aura.registry';
 
@@ -65,6 +65,11 @@ export default class CrawlTxService extends BullableService {
             listTx: result.result,
             height: result.result.txs[0].height,
             timestamp: mapBlockTime[result.result.txs[0].height],
+          },
+          {
+            removeOnComplete: true,
+            attempts: config.jobRetryAttempt,
+            backoff: config.jobRetryBackoff,
           }
         );
       }
@@ -193,6 +198,11 @@ export default class CrawlTxService extends BullableService {
       BULL_JOB_NAME.CRAWL_TRANSACTION,
       {
         listBlock: ctx.params.listBlock,
+      },
+      {
+        removeOnComplete: true,
+        attempts: config.jobRetryAttempt,
+        backoff: config.jobRetryBackoff,
       }
     );
   }
