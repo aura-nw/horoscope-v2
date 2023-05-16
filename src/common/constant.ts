@@ -68,6 +68,7 @@ export const SERVICE = {
       },
     },
     Cw721: {
+      key: 'Cw721Service',
       name: 'v1.Cw721Service',
       HandleCw721: {
         key: 'handleCw721',

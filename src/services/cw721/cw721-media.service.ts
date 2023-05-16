@@ -1,26 +1,29 @@
 /* eslint-disable no-param-reassign */
 import { cosmwasm } from '@aura-nw/aurajs';
-import { fromBase64, fromUtf8 } from '@cosmjs/encoding';
+import { fromBase64, fromUtf8, toHex, toBase64 } from '@cosmjs/encoding';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import * as FileType from 'file-type';
+import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
+import parse from 'parse-uri';
+import axios from 'axios';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { BULL_JOB_NAME, Config, SERVICE } from '../../common';
-import { S3Service } from '../../common/utils/s3';
 import {
-  downloadAttachment,
-  isValidURI,
-  parseFilename,
-  parseIPFSUri,
-  querySmartContractState,
-} from '../../common/utils/smart_contract';
+  BULL_JOB_NAME,
+  Config,
+  SERVICE,
+  getHttpBatchClient,
+} from '../../common';
+import { S3Service } from '../../common/utils/s3';
 import CW721Token from '../../models/cw721_token';
 
-const { NODE_ENV, BUCKET } = Config;
-
+const { NODE_ENV, BUCKET, IPFS_GATEWAY, REQUEST_IPFS_TIMEOUT } = Config;
+const IPFS_PREFIX = 'ipfs';
+const MAX_CONTENT_LENGTH_BYTE = 100000000;
+const MAX_BODY_LENGTH_BYTE = 100000000;
 interface ITokenMediaInfo {
   cw721_token_id: number;
   address: string;
@@ -61,7 +64,7 @@ export default class Cw721MediaService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_CW721_TOKEN_MEDIA,
-    jobType: BULL_JOB_NAME.HANDLE_CW721_TOKEN_MEDIA,
+    jobName: BULL_JOB_NAME.HANDLE_CW721_TOKEN_MEDIA,
   })
   async jobHandlerTokenMedia(_payload: { tokenMedia: ITokenMediaInfo }) {
     let { tokenMedia } = _payload;
@@ -91,7 +94,7 @@ export default class Cw721MediaService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.FILTER_TOKEN_MEDIA_UNPROCESS,
-    jobType: BULL_JOB_NAME.FILTER_TOKEN_MEDIA_UNPROCESS,
+    jobName: BULL_JOB_NAME.FILTER_TOKEN_MEDIA_UNPROCESS,
   })
   async jobHandlerFilter(): Promise<void> {
     const tokensUnprocess = await CW721Token.query()
@@ -167,7 +170,7 @@ export default class Cw721MediaService extends BullableService {
     tokens.forEach(
       (token: { contractAddress: string; onchainTokenId: string }) => {
         promises.push(
-          querySmartContractState(
+          this.querySmartContractState(
             token.contractAddress,
             `{"all_nft_info":{"token_id": "${token.onchainTokenId}"}}`
           )
@@ -238,20 +241,22 @@ export default class Cw721MediaService extends BullableService {
 
   // query ipfs get list metadata from token_uris
   async getMetadata(token_uri: string): Promise<IMetadata> {
-    const metadata = await downloadAttachment(parseIPFSUri(token_uri));
+    const metadata = await this.downloadAttachment(
+      this.parseIPFSUri(token_uri)
+    );
     return JSON.parse(metadata.toString());
   }
 
   // download image/animation from media_uri, then upload to S3
   async uploadMediaToS3(media_uri?: string) {
     if (media_uri) {
-      if (isValidURI(media_uri)) {
+      if (this.isValidURI(media_uri)) {
         const uploadAttachmentToS3 = async (
           type: string | undefined,
           buffer: Buffer
         ) => {
           const params = {
-            Key: parseFilename(media_uri),
+            Key: this.parseFilename(media_uri),
             Body: buffer,
             Bucket: BUCKET,
             ContentType: type,
@@ -270,7 +275,9 @@ export default class Cw721MediaService extends BullableService {
               }
             );
         };
-        const mediaBuffer = await downloadAttachment(parseIPFSUri(media_uri));
+        const mediaBuffer = await this.downloadAttachment(
+          this.parseIPFSUri(media_uri)
+        );
         let type: string | undefined = (
           await FileType.fileTypeFromBuffer(mediaBuffer)
         )?.mime;
@@ -299,5 +306,78 @@ export default class Cw721MediaService extends BullableService {
       mediaAnimationUrl?.contentType;
     tokenMediaInfo.offchain.animation.file_path = mediaAnimationUrl?.key;
     return tokenMediaInfo;
+  }
+
+  async querySmartContractState(
+    contractAddress: string,
+    queryData: string
+  ): Promise<JsonRpcSuccessResponse> {
+    const httpBatchClient = getHttpBatchClient();
+    return httpBatchClient.execute(
+      createJsonRpcRequest('abci_query', {
+        path: '/cosmwasm.wasm.v1.Query/SmartContractState',
+        data: toHex(
+          cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
+            address: contractAddress,
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            queryData: toBase64(toUtf8(queryData)),
+          }).finish()
+        ),
+      })
+    );
+  }
+
+  // from IPFS uri, parse to http url
+  parseIPFSUri(uri: string) {
+    const parsed = parse(uri);
+    let url = '';
+    if (parsed.protocol === IPFS_PREFIX) {
+      const cid = parsed.host;
+      url = `${IPFS_GATEWAY}${cid}`;
+      if (parsed.path) {
+        url += `${parsed.path}`;
+      }
+    } else {
+      url = uri;
+    }
+    return url;
+  }
+
+  parseFilename(media_uri: string) {
+    const parsed = parse(media_uri);
+    if (parsed.protocol === IPFS_PREFIX) {
+      const cid = parsed.host;
+      if (parsed.path) {
+        return `${cid}${parsed.path}`;
+      }
+      return cid;
+    }
+    // eslint-disable-next-line no-useless-escape
+    return media_uri.replace(/^.*[\\\/]/, '');
+  }
+
+  async downloadAttachment(url: string) {
+    const axiosClient = axios.create({
+      responseType: 'arraybuffer',
+      timeout: parseInt(REQUEST_IPFS_TIMEOUT, 10),
+      maxContentLength: MAX_CONTENT_LENGTH_BYTE,
+      maxBodyLength: MAX_BODY_LENGTH_BYTE,
+    });
+
+    return axiosClient.get(url).then((response: any) => {
+      const buffer = Buffer.from(response.data, 'base64');
+      return buffer;
+    });
+  }
+
+  isValidURI(str: string) {
+    try {
+      // eslint-disable-next-line no-new
+      new URL(str);
+    } catch (error) {
+      return false;
+    }
+    return true;
   }
 }

@@ -1,14 +1,13 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
-import CW721Activity from '../../../../src/models/cw721_tx';
-import CW721Token from '../../../../src/models/cw721_token';
-import CW721Contract from '../../../../src/models/cw721_contract';
+import config from '../../../../config.json' assert { type: 'json' };
 import knex from '../../../../src/common/utils/db_connection';
 import { Block, Transaction } from '../../../../src/models';
-import config from '../../../../config.json' assert { type: 'json' };
-import Cw721HandlerService from '../../../../src/services/cw721/cw721.service';
 import { Code } from '../../../../src/models/code';
-import { getContractActivities } from '../../../../src/common/utils/smart_contract';
+import CW721Contract from '../../../../src/models/cw721_contract';
+import CW721Token from '../../../../src/models/cw721_token';
+import CW721Activity from '../../../../src/models/cw721_tx';
+import Cw721HandlerService from '../../../../src/services/cw721/cw721.service';
 
 @Describe('Test cw721 service')
 export default class AssetIndexerTest {
@@ -373,7 +372,7 @@ export default class AssetIndexerTest {
 
   @Test('test getContractActivities function')
   public async testGetContractActivities() {
-    const extractData = await getContractActivities(
+    const extractData = await this.cw721HandlerService.getContractActivities(
       this.block.height,
       this.block.height
     );
