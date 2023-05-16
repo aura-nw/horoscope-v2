@@ -45,6 +45,7 @@ export const BULL_JOB_NAME = {
   HANDLE_AUTHZ_TX: 'handle:authz-tx',
   CRAWL_DELEGATORS: 'crawl:delegators',
   CRAWL_VALIDATOR_DELEGATORS: 'crawl:validator-delegators',
+  CRAWL_CONTRACT_EVENT: 'crawl:contract-event',
 };
 
 export const SERVICE = {
@@ -117,6 +118,10 @@ export const SERVICE = {
     CrawlSmartContractService: {
       key: 'CrawlSmartContractService',
       name: 'v1.CrawlSmartContractService',
+      CrawlContractEventService: {
+        key: 'CrawlContractEventService',
+        name: 'v1.CrawlContractEventService',
+      },
     },
     HandleAuthzTx: {
       key: 'HandleAuthzTxService',
