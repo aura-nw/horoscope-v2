@@ -515,6 +515,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 10,
       },
       {
         contractAddress: this.mockInitContract.smart_contract.address,
@@ -561,6 +562,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 100,
       },
     ];
     await this.cw721HandlerService.handlerCw721Transfer(
@@ -631,6 +633,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 10,
       },
       {
         contractAddress: this.mockInitContract.smart_contract.address,
@@ -678,6 +681,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 100,
       },
     ];
     await this.cw721HandlerService.handlerCw721Mint(mockContractMintMsg);
@@ -746,6 +750,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 10,
       },
       {
         contractAddress: this.mockInitContract.smart_contract.address,
@@ -787,6 +792,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 100,
       },
     ];
     await this.cw721HandlerService.handlerCw721Burn(mockBurnMsg);
@@ -857,6 +863,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 100,
       },
     ];
     const burnedToken = await CW721Token.query()
@@ -925,6 +932,7 @@ export default class AssetIndexerTest {
           index: 0,
         }),
         code_id: codeId,
+        event_id: 100,
       },
     ];
     await this.cw721HandlerService.handleInstantiateMsgs(mockInstantiateMsg);
@@ -1090,6 +1098,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 100,
       },
       {
         contractAddress: this.mockInitContract.smart_contract.address,
@@ -1131,6 +1140,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 10,
       },
       {
         contractAddress: this.mockInitContract.smart_contract.address,
@@ -1172,6 +1182,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 100,
       },
     ];
     await this.cw721HandlerService.handleCW721Activity(mockActivityMsgs);
