@@ -29,7 +29,6 @@ export default class CrawlTxService extends BullableService {
   public constructor(public broker: ServiceBroker) {
     super(broker);
     this._httpBatchClient = getHttpBatchClient();
-    this._registry = new AuraRegistry(this.logger);
   }
 
   @QueueHandler({
@@ -432,6 +431,7 @@ export default class CrawlTxService extends BullableService {
   }
 
   public async _start() {
+    this._registry = new AuraRegistry(this.logger);
     return super._start();
   }
 }
