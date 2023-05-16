@@ -172,8 +172,6 @@ export default class HandleStakeEventService extends BullableService {
         repeat: {
           every: config.handleStakeEvent.millisecondCrawl,
         },
-        attempts: config.jobRetryAttempt,
-        backoff: config.jobRetryBackoff,
       }
     );
 

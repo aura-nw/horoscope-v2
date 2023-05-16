@@ -138,8 +138,6 @@ export default class CrawlTallyProposalService extends BullableService {
         repeat: {
           every: config.crawlTallyProposal.millisecondCrawl,
         },
-        attempts: config.jobRetryAttempt,
-        backoff: config.jobRetryBackoff,
       }
     );
 
