@@ -11,6 +11,8 @@ export interface IContractMsgInfo {
     value: string;
   }[];
   tx: Transaction;
+  event_id: number;
+  index?: number;
 }
 // from startBlock to endBlock, get all msgs (activities) relating to execute/instantiate contract, each item correspond to an activity
 // contractAddress: contract address whom msg intract to
@@ -71,7 +73,7 @@ export async function getContractActivities(
           },
           []
         );
-    wasmActivities.forEach((wasmActivity) => {
+    wasmActivities.forEach((wasmActivity, index) => {
       const action =
         wasmEvent.type === Event.EVENT_TYPE.INSTANTIATE
           ? Event.EVENT_TYPE.INSTANTIATE
@@ -86,6 +88,8 @@ export async function getContractActivities(
         content: wasmEvent.message.content.msg,
         wasm_attributes: wasmActivity,
         tx: wasmEvent.transaction,
+        event_id: wasmEvent.id,
+        index,
       });
     });
   });

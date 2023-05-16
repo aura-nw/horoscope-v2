@@ -3,8 +3,11 @@ import { Model } from 'objection';
 import BaseModel from './base';
 import { SmartContract } from './smart_contract';
 import { Event } from './event';
+import { SmartContractEventAttribute } from './smart_contract_event_attribute';
 
 export class SmartContractEvent extends BaseModel {
+  [relation: string]: any;
+
   id!: number;
 
   smart_contract_id!: number;
@@ -47,6 +50,14 @@ export class SmartContractEvent extends BaseModel {
         join: {
           from: 'smart_contract_event.event_id',
           to: 'event.id',
+        },
+      },
+      attributes: {
+        relation: Model.HasManyRelation,
+        modelClass: SmartContractEventAttribute,
+        join: {
+          from: 'smart_contract_event.id',
+          to: 'smart_contract_event_attribute.smart_contract_event_id',
         },
       },
     };
