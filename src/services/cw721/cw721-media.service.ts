@@ -57,7 +57,7 @@ interface IMetadata {
   image?: string;
   animation_url?: string;
 }
-const s3Client = new S3Service().connectS3();
+const s3Client = S3Service.connectS3();
 
 @Service({
   name: SERVICE.V1.Cw721.UpdateMedia.key,
@@ -187,60 +187,45 @@ export default class Cw721MediaService extends BullableService {
       promises
     );
     for (let index = 0; index < resultsTokensInfo.length; index += 1) {
+      let tokenInfo = {
+        info: {
+          token_uri: undefined,
+          extension: undefined,
+        },
+      };
       try {
-        const tokenInfo = JSON.parse(
+        tokenInfo = JSON.parse(
           fromUtf8(
             cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
               fromBase64(resultsTokensInfo[index].result.response.value)
             ).data
           )
         );
-        tokensMediaInfo.push({
-          address: tokens[index].contractAddress,
-          token_id: tokens[index].onchainTokenId,
-          cw721_token_id: tokens[index].cw721_token_id,
-          onchain: {
-            token_uri: tokenInfo.info.token_uri,
-            extension: tokenInfo.info.extension,
-            metadata: {},
-          },
-          offchain: {
-            image: {
-              url: undefined,
-              content_type: undefined,
-              file_path: undefined,
-            },
-            animation: {
-              url: undefined,
-              content_type: undefined,
-              file_path: undefined,
-            },
-          },
-        });
-      } catch {
-        tokensMediaInfo.push({
-          address: tokens[index].contractAddress,
-          token_id: tokens[index].onchainTokenId,
-          cw721_token_id: tokens[index].cw721_token_id,
-          onchain: {
-            token_uri: undefined,
-            extension: undefined,
-            metadata: {},
-          },
-          offchain: {
-            image: {
-              url: undefined,
-              content_type: undefined,
-              file_path: undefined,
-            },
-            animation: {
-              url: undefined,
-              content_type: undefined,
-              file_path: undefined,
-            },
-          },
-        });
+      } catch (error) {
+        this.logger.error(error);
       }
+      tokensMediaInfo.push({
+        address: tokens[index].contractAddress,
+        token_id: tokens[index].onchainTokenId,
+        cw721_token_id: tokens[index].cw721_token_id,
+        onchain: {
+          token_uri: tokenInfo.info.token_uri,
+          extension: tokenInfo.info.extension,
+          metadata: {},
+        },
+        offchain: {
+          image: {
+            url: undefined,
+            content_type: undefined,
+            file_path: undefined,
+          },
+          animation: {
+            url: undefined,
+            content_type: undefined,
+            file_path: undefined,
+          },
+        },
+      });
     }
     return tokensMediaInfo;
   }
