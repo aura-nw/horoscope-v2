@@ -166,6 +166,13 @@ export default class AssetIndexerTest {
                 key: 'code_id',
                 value: '6',
               },
+            ],
+          },
+          {
+            block_height: 3967530,
+            source: 'TX_EVENT',
+            type: 'instantiate',
+            attributes: [
               {
                 index: 2,
                 block_height: 3967530,
@@ -203,6 +210,13 @@ export default class AssetIndexerTest {
                 key: 'action',
                 value: 'phamphong_action',
               },
+            ],
+          },
+          {
+            block_height: 3967530,
+            source: 'TX_EVENT',
+            type: 'wasm',
+            attributes: [
               {
                 index: 2,
                 block_height: 3967530,
@@ -284,6 +298,13 @@ export default class AssetIndexerTest {
                 key: 'token_id',
                 value: 'test2',
               },
+            ],
+          },
+          {
+            block_height: 3967530,
+            source: 'TX_EVENT',
+            type: 'wasm',
+            attributes: [
               {
                 index: 3,
                 block_height: 3967530,
@@ -401,17 +422,6 @@ export default class AssetIndexerTest {
         action: 'instantiate',
         sender: this.txInsert.messages[0].sender,
         contractAddress:
-          this.txInsert.messages[0].events[1].attributes[0].value,
-        content: this.txInsert.messages[0].content.msg,
-        wasm_attributes: [
-          this.txInsert.messages[0].events[1].attributes[2],
-          this.txInsert.messages[0].events[1].attributes[3],
-        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
-      },
-      {
-        action: this.txInsert.messages[0].events[2].attributes[1].value,
-        sender: this.txInsert.messages[0].sender,
-        contractAddress:
           this.txInsert.messages[0].events[2].attributes[0].value,
         content: this.txInsert.messages[0].content.msg,
         wasm_attributes: [
@@ -420,15 +430,26 @@ export default class AssetIndexerTest {
         ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
       },
       {
-        action: this.txInsert.messages[0].events[2].attributes[3].value,
+        action: this.txInsert.messages[0].events[3].attributes[1].value,
         sender: this.txInsert.messages[0].sender,
         contractAddress:
-          this.txInsert.messages[0].events[2].attributes[2].value,
+          this.txInsert.messages[0].events[3].attributes[0].value,
         content: this.txInsert.messages[0].content.msg,
         wasm_attributes: [
-          this.txInsert.messages[0].events[2].attributes[2],
-          this.txInsert.messages[0].events[2].attributes[3],
-          this.txInsert.messages[0].events[2].attributes[4],
+          this.txInsert.messages[0].events[3].attributes[0],
+          this.txInsert.messages[0].events[3].attributes[1],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+      },
+      {
+        action: this.txInsert.messages[0].events[4].attributes[1].value,
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.messages[0].events[4].attributes[0].value,
+        content: this.txInsert.messages[0].content.msg,
+        wasm_attributes: [
+          this.txInsert.messages[0].events[4].attributes[0],
+          this.txInsert.messages[0].events[4].attributes[1],
+          this.txInsert.messages[0].events[4].attributes[2],
         ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
       },
       {
@@ -447,11 +468,11 @@ export default class AssetIndexerTest {
         action: undefined,
         sender: this.txInsert.messages[1].sender,
         contractAddress:
-          this.txInsert.messages[1].events[1].attributes[0].value,
+          this.txInsert.messages[1].events[2].attributes[0].value,
         content: this.txInsert.messages[1].content.msg,
         wasm_attributes: [
-          this.txInsert.messages[1].events[1].attributes[3],
-          this.txInsert.messages[1].events[1].attributes[4],
+          this.txInsert.messages[1].events[2].attributes[0],
+          this.txInsert.messages[1].events[2].attributes[1],
         ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
       },
     ]);
