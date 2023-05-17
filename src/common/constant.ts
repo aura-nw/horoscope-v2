@@ -159,6 +159,7 @@ export const MSG_TYPE = {
   MSG_CREATE_VALIDATOR: '/cosmos.staking.v1beta1.MsgCreateValidator',
   MSG_SUBMIT_PROPOSAL: '/cosmos.gov.v1beta1.MsgSubmitProposal',
   MSG_AUTHZ_EXEC: '/cosmos.authz.v1beta1.MsgExec',
+  MSG_ACKNOWLEDGEMENT: '/ibc.core.channel.v1.MsgAcknowledgement',
 };
 
 export const ABCI_QUERY_PATH = {
