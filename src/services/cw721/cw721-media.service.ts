@@ -1,6 +1,12 @@
 /* eslint-disable no-param-reassign */
 import { cosmwasm } from '@aura-nw/aurajs';
-import { fromBase64, fromUtf8, toHex, toBase64 } from '@cosmjs/encoding';
+import {
+  fromBase64,
+  fromUtf8,
+  toHex,
+  toBase64,
+  toUtf8,
+} from '@cosmjs/encoding';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
