@@ -13,6 +13,7 @@ import { toBase64, fromUtf8 } from '@cosmjs/encoding';
 import { LoggerInstance } from 'moleculer';
 import { MsgAcknowledgement } from '@aura-nw/aurajs/types/codegen/ibc/core/channel/v1/tx';
 import _ from 'lodash';
+import { fromTimestamp } from 'cosmjs-types/helpers';
 import { MSG_TYPE } from '../../common';
 
 export default class AuraRegistry {
@@ -191,6 +192,11 @@ export default class AuraRegistry {
         };
       }
     );
+
+    decodedIbcHeader.signedHeader.header.time = decodedIbcHeader.signedHeader
+      ?.header?.time
+      ? fromTimestamp(decodedIbcHeader.signedHeader?.header?.time)
+      : null;
     return decodedIbcHeader;
   }
 
