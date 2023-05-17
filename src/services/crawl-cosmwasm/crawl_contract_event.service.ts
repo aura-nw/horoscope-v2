@@ -30,7 +30,7 @@ export default class CrawlCodeService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_CONTRACT_EVENT,
-    jobType: BULL_JOB_NAME.CRAWL_CONTRACT_EVENT,
+    jobName: BULL_JOB_NAME.CRAWL_CONTRACT_EVENT,
   })
   async jobHandler(): Promise<void> {
     if (this._currentAssetHandlerBlock) {
