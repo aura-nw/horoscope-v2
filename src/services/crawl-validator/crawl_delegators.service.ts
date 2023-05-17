@@ -156,8 +156,6 @@ export default class CrawlDelegatorsService extends BullableService {
         repeat: {
           every: config.crawlDelegators.millisecondCrawl,
         },
-        attempts: config.jobRetryAttempt,
-        backoff: config.jobRetryBackoff,
       }
     );
 
