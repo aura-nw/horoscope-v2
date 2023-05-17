@@ -17,7 +17,7 @@ import { Config, getHttpBatchClient } from '../../common';
 import {
   BLOCK_CHECKPOINT_JOB_NAME,
   BULL_JOB_NAME,
-  SERVICE_NAME,
+  SERVICE,
 } from '../../common/constant';
 import knex from '../../common/utils/db_connection';
 import {
@@ -62,7 +62,7 @@ const CW721_ACTION = {
 };
 
 @Service({
-  name: SERVICE_NAME.CW721,
+  name: SERVICE.V1.Cw721.key,
   version: 1,
 })
 export default class Cw721HandlerService extends BullableService {
@@ -131,10 +131,7 @@ export default class Cw721HandlerService extends BullableService {
           mintMsg.wasm_attributes,
           EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
         );
-        const tokenUri = JSON.parse(mintMsg.content)[CW721_ACTION.MINT]
-          ?.token_uri;
-        const extension = JSON.parse(mintMsg.content)[CW721_ACTION.MINT]
-          ?.extension;
+        const mediaInfo = null;
         const cw721ContractId = cw721ContractDbRecords.find(
           (item) => item.address === mintMsg.contractAddress
         )?.id;
@@ -145,8 +142,7 @@ export default class Cw721HandlerService extends BullableService {
         }
         return CW721Token.fromJson({
           token_id: tokenId,
-          token_uri: tokenUri,
-          extension,
+          media_info: mediaInfo,
           owner: this.getAttributeFrom(
             mintMsg.wasm_attributes,
             EventAttribute.ATTRIBUTE_KEY.OWNER

@@ -1,13 +1,13 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
-import CW721Activity from '../../../../src/models/cw721_tx';
-import CW721Token from '../../../../src/models/cw721_token';
-import CW721Contract from '../../../../src/models/cw721_contract';
+import config from '../../../../config.json' assert { type: 'json' };
 import knex from '../../../../src/common/utils/db_connection';
 import { Block, Transaction } from '../../../../src/models';
-import config from '../../../../config.json' assert { type: 'json' };
-import Cw721HandlerService from '../../../../src/services/cw721/cw721.service';
 import { Code } from '../../../../src/models/code';
+import CW721Contract from '../../../../src/models/cw721_contract';
+import CW721Token from '../../../../src/models/cw721_token';
+import CW721Activity from '../../../../src/models/cw721_tx';
+import Cw721HandlerService from '../../../../src/services/cw721/cw721.service';
 
 @Describe('Test cw721 service')
 export default class AssetIndexerTest {
@@ -22,16 +22,14 @@ export default class AssetIndexerTest {
     tokens: [
       {
         token_id: 'token_id1',
-        token_uri: 'token_uri',
-        extension: null,
+        media_info: null,
         owner: 'owner1',
         cw721_contract_id: 1,
         last_updated_height: 1000,
       },
       {
         token_id: 'token_id2',
-        token_uri: 'token_uri',
-        extension: null,
+        media_info: null,
         owner: 'owner2',
         cw721_contract_id: 1,
         last_updated_height: 2000,
@@ -56,16 +54,14 @@ export default class AssetIndexerTest {
     tokens: [
       {
         token_id: 'token_id1',
-        token_uri: 'token_uri',
-        extension: null,
+        media_info: null,
         owner: 'owner1',
         cw721_contract_id: 2,
         last_updated_height: 1000,
       },
       {
         token_id: 'token_id2',
-        token_uri: 'token_uri',
-        extension: null,
+        media_info: null,
         owner: 'owner2',
         cw721_contract_id: 2,
         last_updated_height: 2000,
@@ -860,8 +856,8 @@ export default class AssetIndexerTest {
       .andWhere('token_id', mockContractMintMsg[0].wasm_attributes[4].value)
       .first();
     expect(burnedToken?.burned).toEqual(true);
-    expect(burnedToken?.extension).toEqual(
-      this.mockInitContract.tokens[0].extension
+    expect(burnedToken?.media_info).toEqual(
+      this.mockInitContract.tokens[0].media_info
     );
     await this.cw721HandlerService.handlerCw721Mint(mockContractMintMsg);
     const reMintedToken = await CW721Token.query()
@@ -875,9 +871,7 @@ export default class AssetIndexerTest {
       mockContractMintMsg[0].wasm_attributes[3].value
     );
     expect(reMintedToken?.id).toEqual(burnedToken?.id);
-    expect(reMintedToken?.extension).toEqual(
-      JSON.parse(mockContractMintMsg[0].content).mint?.extension
-    );
+    expect(reMintedToken?.media_info).toEqual(null);
     expect(reMintedToken?.burned).toEqual(false);
   }
 
@@ -940,8 +934,7 @@ export default class AssetIndexerTest {
   public async testHandleConflict() {
     const mockToken = {
       token_id: 'test conflict',
-      token_uri: null,
-      extension: null,
+      media_info: null,
       owner: 'phamphong_test',
       cw721_contract_id: this.mockInitContract.tokens[0].cw721_contract_id,
       last_updated_height: 12345678,
