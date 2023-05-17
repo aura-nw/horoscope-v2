@@ -4,7 +4,6 @@ export interface IContractMsgInfo {
   sender: string;
   contractAddress: string;
   action?: string;
-  contractType?: string;
   content: string;
   wasm_attributes?: {
     key: string;
