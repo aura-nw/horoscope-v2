@@ -118,7 +118,7 @@ export default class AuraRegistry {
       'trustedValidators.proposer.proposerPriority',
       'trustedValidators.totalVotingPower',
     ].forEach((key) => {
-      _.set(decodedIbcHeader, key, _.get(decodedIbcHeader, key).toString());
+      _.set(decodedIbcHeader, key, _.get(decodedIbcHeader, key)?.toString());
     });
 
     [
@@ -164,15 +164,17 @@ export default class AuraRegistry {
       (val: any, index: number, vals: any) => {
         vals[index] = {
           ...val,
-          address: val.address ? toBase64(val.address) : null,
+          address: val?.address ? toBase64(val.address) : null,
           pubKey: {
-            ed25519: val.pubKey?.ed25519 ? toBase64(val.pubKey?.ed25519) : null,
-            secp256k1: val.pubKey?.secp256k1
-              ? toBase64(val.pubKey?.secp256k1)
+            ed25519: val?.pubKey?.ed25519
+              ? toBase64(val?.pubKey?.ed25519)
+              : null,
+            secp256k1: val?.pubKey?.secp256k1
+              ? toBase64(val?.pubKey?.secp256k1)
               : null,
           },
-          votingPower: val.votingPower.toString(),
-          proposerPriority: val.proposerPriority.toString(),
+          votingPower: val?.votingPower?.toString(),
+          proposerPriority: val?.proposerPriority?.toString(),
         };
       }
     );
@@ -180,15 +182,17 @@ export default class AuraRegistry {
       (val: any, index: number, vals: any) => {
         vals[index] = {
           ...val,
-          address: val.address ? toBase64(val.address) : null,
+          address: val?.address ? toBase64(val?.address) : null,
           pubKey: {
-            ed25519: val.pubKey?.ed25519 ? toBase64(val.pubKey?.ed25519) : null,
-            secp256k1: val.pubKey?.secp256k1
-              ? toBase64(val.pubKey?.secp256k1)
+            ed25519: val?.pubKey?.ed25519
+              ? toBase64(val?.pubKey?.ed25519)
+              : null,
+            secp256k1: val?.pubKey?.secp256k1
+              ? toBase64(val?.pubKey?.secp256k1)
               : null,
           },
-          votingPower: val.votingPower.toString(),
-          proposerPriority: val.proposerPriority.toString(),
+          votingPower: val?.votingPower?.toString(),
+          proposerPriority: val?.proposerPriority?.toString(),
         };
       }
     );
@@ -219,7 +223,7 @@ export default class AuraRegistry {
       'proofHeight.revisionHeight',
       'proofHeight.revisionNumber',
     ].forEach((key) => {
-      _.set(decodedIbcAck, key, _.get(decodedIbcAck, key).toString());
+      _.set(decodedIbcAck, key, _.get(decodedIbcAck, key)?.toString() ?? null);
     });
 
     ['proofAcked'].forEach((key) => {
