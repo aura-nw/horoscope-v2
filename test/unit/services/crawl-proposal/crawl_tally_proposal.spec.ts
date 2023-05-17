@@ -8,7 +8,6 @@ import {
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { cosmos } from '@aura-nw/aurajs';
-import { BULL_JOB_NAME } from '../../../../src/common';
 import { Proposal } from '../../../../src/models';
 import CrawlTallyProposalService from '../../../../src/services/crawl-proposal/crawl_tally_proposal.service';
 import config from '../../../../config.json' assert { type: 'json' };
@@ -67,10 +66,8 @@ export default class CrawlTallyProposalTest {
     this.crawlTallyProposalService = this.broker.createService(
       CrawlTallyProposalService
     ) as CrawlTallyProposalService;
-    await this.crawlTallyProposalService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_TALLY_PROPOSAL)
-      .empty();
+    this.crawlTallyProposalService.getQueueManager().stopAll();
+
     await Proposal.query().delete(true);
     await Proposal.query().insert(this.proposal);
   }

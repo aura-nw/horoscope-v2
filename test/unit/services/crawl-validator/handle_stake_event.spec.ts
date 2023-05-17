@@ -284,10 +284,8 @@ export default class HandleStakeEventTest {
     this.handleStakeEventService = this.broker.createService(
       HandleStakeEventService
     ) as HandleStakeEventService;
-    await this.handleStakeEventService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.HANDLE_STAKE_EVENT)
-      .empty();
+    this.handleStakeEventService.getQueueManager().stopAll();
+
     await Promise.all([
       BlockCheckpoint.query().delete(true),
       knex.raw('TRUNCATE TABLE validator RESTART IDENTITY CASCADE'),

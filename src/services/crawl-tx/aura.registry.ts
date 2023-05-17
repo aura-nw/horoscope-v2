@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 import { Registry, GeneratedType } from '@cosmjs/proto-signing';
 import { defaultRegistryTypes as defaultStargateTypes } from '@cosmjs/stargate';
 
@@ -10,6 +11,8 @@ import {
 import { cosmos } from '@aura-nw/aurajs';
 import { toBase64, fromUtf8 } from '@cosmjs/encoding';
 import { LoggerInstance } from 'moleculer';
+import { MsgAcknowledgement } from '@aura-nw/aurajs/types/codegen/ibc/core/channel/v1/tx';
+import _ from 'lodash';
 import { MSG_TYPE } from '../../common';
 
 export default class AuraRegistry {
@@ -82,12 +85,145 @@ export default class AuraRegistry {
         }
       } else if (msg.typeUrl === MSG_TYPE.MSG_UPDATE_CLIENT) {
         if (result.header?.value && result.header?.typeUrl) {
-          result.header = this.registry.decode(result.header);
+          result.header = this.decodeIbcHeader(
+            this.registry.decode(result.header)
+          );
         }
+      } else if (msg.typeUrl === MSG_TYPE.MSG_ACKNOWLEDGEMENT) {
+        Object.assign(result, this.decodeIbcAck(result));
       }
     }
 
     // eslint-disable-next-line consistent-return
     return result;
+  }
+
+  decodeIbcHeader(header: Header) {
+    const decodedIbcHeader: any = { ...header };
+    [
+      'signedHeader.header.height',
+      'signedHeader.header.version.app',
+      'signedHeader.header.version.block',
+      'signedHeader.header.lastBlockId.partSetHeader.total',
+      'signedHeader.commit.round',
+      'signedHeader.commit.height',
+      'signedHeader.commit.blockId.partSetHeader.total',
+      'validatorSet.proposer.votingPower',
+      'validatorSet.proposer.proposerPriority',
+      'validatorSet.totalVotingPower',
+      'trustedHeight.revisionNumber',
+      'trustedHeight.revisionHeight',
+      'trustedValidators.proposer.votingPower',
+      'trustedValidators.proposer.proposerPriority',
+      'trustedValidators.totalVotingPower',
+    ].forEach((key) => {
+      _.set(decodedIbcHeader, key, _.get(decodedIbcHeader, key).toString());
+    });
+
+    [
+      'signedHeader.header.appHash',
+      'signedHeader.header.dataHash',
+      'signedHeader.header.evidenceHash',
+      'signedHeader.header.lastBlockId.hash',
+      'signedHeader.header.lastBlockId.partSetHeader.hash',
+      'signedHeader.header.consensusHash',
+      'signedHeader.header.validatorsHash',
+      'signedHeader.header.lastCommitHash',
+      'signedHeader.header.proposerAddress',
+      'signedHeader.header.lastResultsHash',
+      'signedHeader.header.nextValidatorsHash',
+      'signedHeader.commit.blockId.hash',
+      'signedHeader.commit.blockId.partSetHeader.hash',
+      'validatorSet.proposer.address',
+      'validatorSet.proposer.pubKey.ed25519',
+      'validatorSet.proposer.pubKey.secp256k1',
+      'trustedValidators.proposer.address',
+      'trustedValidators.proposer.pubKey.ed25519',
+      'trustedValidators.proposer.pubKey.secp256k1',
+    ].forEach((key) => {
+      _.set(
+        decodedIbcHeader,
+        key,
+        _.get(decodedIbcHeader, key)
+          ? toBase64(_.get(decodedIbcHeader, key))
+          : null
+      );
+    });
+
+    decodedIbcHeader.signedHeader?.commit?.signatures.forEach(
+      (sig: any, index: number, sigs: any) => {
+        sigs[index] = {
+          ...sig,
+          signature: toBase64(sig.signature),
+          validatorAddress: toBase64(sig.validatorAddress),
+        };
+      }
+    );
+    decodedIbcHeader.validatorSet?.validators.forEach(
+      (val: any, index: number, vals: any) => {
+        vals[index] = {
+          ...val,
+          address: val.address ? toBase64(val.address) : null,
+          pubKey: {
+            ed25519: val.pubKey?.ed25519 ? toBase64(val.pubKey?.ed25519) : null,
+            secp256k1: val.pubKey?.secp256k1
+              ? toBase64(val.pubKey?.secp256k1)
+              : null,
+          },
+          votingPower: val.votingPower.toString(),
+          proposerPriority: val.proposerPriority.toString(),
+        };
+      }
+    );
+    decodedIbcHeader.trustedValidators?.validators.forEach(
+      (val: any, index: number, vals: any) => {
+        vals[index] = {
+          ...val,
+          address: val.address ? toBase64(val.address) : null,
+          pubKey: {
+            ed25519: val.pubKey?.ed25519 ? toBase64(val.pubKey?.ed25519) : null,
+            secp256k1: val.pubKey?.secp256k1
+              ? toBase64(val.pubKey?.secp256k1)
+              : null,
+          },
+          votingPower: val.votingPower.toString(),
+          proposerPriority: val.proposerPriority.toString(),
+        };
+      }
+    );
+    return decodedIbcHeader;
+  }
+
+  decodeIbcAck(msg: MsgAcknowledgement) {
+    const decodedIbcAck: any = { ...msg };
+    ['packet.data', 'acknowledgement'].forEach((key) => {
+      _.set(
+        decodedIbcAck,
+        key,
+        _.get(decodedIbcAck, key)
+          ? JSON.parse(fromUtf8(_.get(decodedIbcAck, key)))
+          : null
+      );
+    });
+    [
+      'packet.sequence',
+      'packet.timeoutHeight.revisionHeight',
+      'packet.timeoutHeight.revisionNumber',
+      'packet.timeoutTimestamp',
+      'proofHeight.revisionHeight',
+      'proofHeight.revisionNumber',
+    ].forEach((key) => {
+      _.set(decodedIbcAck, key, _.get(decodedIbcAck, key).toString());
+    });
+
+    ['proofAcked'].forEach((key) => {
+      _.set(
+        decodedIbcAck,
+        key,
+        _.get(decodedIbcAck, key) ? toBase64(_.get(decodedIbcAck, key)) : null
+      );
+    });
+
+    return decodedIbcAck;
   }
 }

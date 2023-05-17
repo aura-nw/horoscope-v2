@@ -12,7 +12,9 @@
   "cw721": {
     "blocksPerBatch": 100,
     "millisecondRepeatJob": 5000,
-    "startBlock": 0
+    "startBlock": 0,
+    "millisecondRepeatJobMedia": 10000,
+    "mediaPerBatch": 10
   },
   "crawlBlock": {
     "millisecondCrawl": 5000,

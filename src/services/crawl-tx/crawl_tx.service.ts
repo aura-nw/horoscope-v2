@@ -29,13 +29,12 @@ export default class CrawlTxService extends BullableService {
   public constructor(public broker: ServiceBroker) {
     super(broker);
     this._httpBatchClient = getHttpBatchClient();
-    this._registry = new AuraRegistry(this.logger);
   }
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_TRANSACTION,
-    jobType: BULL_JOB_NAME.CRAWL_TRANSACTION,
-    prefix: `horoscope-v2-${config.chainId}`,
+    jobName: BULL_JOB_NAME.CRAWL_TRANSACTION,
+    // // prefix: `horoscope-v2-${config.chainId}`,
   })
   private async jobHandlerCrawlTx(_payload: {
     listBlock: [{ height: number; timestamp: string }];
@@ -65,6 +64,11 @@ export default class CrawlTxService extends BullableService {
             listTx: result.result,
             height: result.result.txs[0].height,
             timestamp: mapBlockTime[result.result.txs[0].height],
+          },
+          {
+            removeOnComplete: true,
+            attempts: config.jobRetryAttempt,
+            backoff: config.jobRetryBackoff,
           }
         );
       }
@@ -73,8 +77,8 @@ export default class CrawlTxService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_TRANSACTION,
-    jobType: BULL_JOB_NAME.HANDLE_TRANSACTION,
-    prefix: `horoscope-v2-${config.chainId}`,
+    jobName: BULL_JOB_NAME.HANDLE_TRANSACTION,
+    // // prefix: `horoscope-v2-${config.chainId}`,
   })
   async jobHandlerTx(_payload: any): Promise<void> {
     const { listTx, timestamp, height } = _payload;
@@ -193,6 +197,11 @@ export default class CrawlTxService extends BullableService {
       BULL_JOB_NAME.CRAWL_TRANSACTION,
       {
         listBlock: ctx.params.listBlock,
+      },
+      {
+        removeOnComplete: true,
+        attempts: config.jobRetryAttempt,
+        backoff: config.jobRetryBackoff,
       }
     );
   }
@@ -422,6 +431,7 @@ export default class CrawlTxService extends BullableService {
   }
 
   public async _start() {
+    this._registry = new AuraRegistry(this.logger);
     return super._start();
   }
 }
