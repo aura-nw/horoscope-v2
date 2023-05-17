@@ -621,4 +621,24 @@ export default class Cw721HandlerService extends BullableService {
     }
     return contractsInfo;
   }
+
+  // mergeContractEvents(contractEvents: IContractMsgInfo[]) {
+  //   contractEvents.reduce((acc: IContractMsgInfo[], curr) => {
+  //     const indexDuplicate = acc.findIndex(
+  //       (item) =>
+  //         item.contractAddress === curr.contractAddress &&
+  //         item.action === curr.action &&
+  //         this.getAttributeFrom(
+  //           item.wasm_attributes,
+  //           EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+  //         ) ===
+  //           this.getAttributeFrom(
+  //             curr.wasm_attributes,
+  //             EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+  //           )
+  //     );
+  // if(acc[indexDuplicate].tx.height<=curr.tx.height)
+  //     return acc;
+  //   }, []);
+  // }
 }
