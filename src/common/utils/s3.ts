@@ -11,10 +11,11 @@ export class S3Service {
     if (this.s3Client) {
       return this.s3Client;
     }
-    return new AWS.S3({
+    this.s3Client = new AWS.S3({
       accessKeyId: AWS_ACCESS_KEY_ID,
       region: AWS_REGION,
       secretAccessKey: AWS_SECRET_ACCESS_KEY,
     });
+    return this.s3Client;
   }
 }
