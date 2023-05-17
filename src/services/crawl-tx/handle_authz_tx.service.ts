@@ -23,7 +23,6 @@ export default class HandleAuthzTxService extends BullableService {
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
-    this._registry = new AuraRegistry(this.logger);
   }
 
   async initEnv() {
@@ -152,6 +151,7 @@ export default class HandleAuthzTxService extends BullableService {
   }
 
   public async _start(): Promise<void> {
+    this._registry = new AuraRegistry(this.logger);
     this.createJob(
       BULL_JOB_NAME.HANDLE_AUTHZ_TX,
       BULL_JOB_NAME.HANDLE_AUTHZ_TX,
