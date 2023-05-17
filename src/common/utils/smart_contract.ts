@@ -51,45 +51,28 @@ export async function getContractActivities(
     .andWhereBetween('event.block_height', [fromBlock, toBlock])
     .orderBy('attributes.id', 'ASC');
 
-  wasmEvents.forEach((wasmEvent) => {
-    const wasmActivities: { key: string; value: string }[][] =
-      wasmEvent.attributes
-        .map((attribute: EventAttribute) => ({
-          key: attribute.key,
-          value: attribute.value,
-        }))
-        .reduce(
-          (
-            acc: { key: string; value: string }[][],
-            curr: { key: string; value: string }
-          ) => {
-            if (curr.key === EventAttribute.ATTRIBUTE_KEY._CONTRACT_ADDRESS) {
-              acc.push([curr]);
-            } else if (acc.length > 0) {
-              acc[acc.length - 1].push(curr);
-            }
-            return acc;
-          },
-          []
-        );
-    wasmActivities.forEach((wasmActivity, index) => {
-      const action =
-        wasmEvent.type === Event.EVENT_TYPE.INSTANTIATE
-          ? Event.EVENT_TYPE.INSTANTIATE
-          : getAttributeFrom(wasmActivity, EventAttribute.ATTRIBUTE_KEY.ACTION);
-      contractActivities.push({
-        contractAddress: getAttributeFrom(
-          wasmActivity,
-          EventAttribute.ATTRIBUTE_KEY._CONTRACT_ADDRESS
-        ),
-        sender: wasmEvent.message.sender,
-        action,
-        content: wasmEvent.message.content.msg,
-        wasm_attributes: wasmActivity,
-        tx: wasmEvent.transaction,
-        event_id: wasmEvent.id,
-        index,
-      });
+  wasmEvents.forEach((wasmEvent, index) => {
+    const wasmAttribute: { key: string; value: string }[] =
+      wasmEvent.attributes.map((attribute: EventAttribute) => ({
+        key: attribute.key,
+        value: attribute.value,
+      }));
+    const action =
+      wasmEvent.type === Event.EVENT_TYPE.INSTANTIATE
+        ? Event.EVENT_TYPE.INSTANTIATE
+        : getAttributeFrom(wasmAttribute, EventAttribute.ATTRIBUTE_KEY.ACTION);
+    contractActivities.push({
+      contractAddress: getAttributeFrom(
+        wasmAttribute,
+        EventAttribute.ATTRIBUTE_KEY._CONTRACT_ADDRESS
+      ),
+      sender: wasmEvent.message.sender,
+      action,
+      content: wasmEvent.message.content.msg,
+      wasm_attributes: wasmAttribute,
+      tx: wasmEvent.transaction,
+      event_id: wasmEvent.id,
+      index,
     });
   });
   return contractActivities;
