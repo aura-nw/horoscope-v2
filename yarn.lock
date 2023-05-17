@@ -3425,6 +3425,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/underscore@npm:^1.11.4":
+  version: 1.11.4
+  resolution: "@types/underscore@npm:1.11.4"
+  checksum: db9f8486bc851b732259e51f42d62aad1ae2158be5724612dc125ece5f5d61c51447f9dea28284c2a0f79cb95e788d01cb5ce97709880019213e69fab0dd1696
+  languageName: node
+  linkType: hard
+
 "@types/yargs-parser@npm:*":
   version: 21.0.0
   resolution: "@types/yargs-parser@npm:21.0.0"
@@ -3590,11 +3597,13 @@ __metadata:
     "@types/node": ^18.11.11
     "@types/stream-chain": ^2.0.1
     "@types/stream-json": ^1.7.3
+    "@types/underscore": ^1.11.4
     "@typescript-eslint/eslint-plugin": ^5.40.1
     "@typescript-eslint/parser": ^5.40.1
     ajv-formats: ^2.1.1
     axios: ^1.3.4
     bull: ^4.10.2
+    bullmq: ^3.13.3
     cosmjs-types: ^0.6.1
     dotenv: ^16.0.3
     eslint: ^8.25.0
@@ -3634,6 +3643,7 @@ __metadata:
     ts-node: ^10.9.1
     tsconfig-paths: ^4.1.1
     typescript: ^4.8.4
+    underscore: ^1.13.6
     util: ^0.12.4
   languageName: unknown
   linkType: soft
@@ -4436,6 +4446,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"bullmq@npm:^3.13.3":
+  version: 3.13.4
+  resolution: "bullmq@npm:3.13.4"
+  dependencies:
+    cron-parser: ^4.6.0
+    glob: ^8.0.3
+    ioredis: ^5.3.2
+    lodash: ^4.17.21
+    msgpackr: ^1.6.2
+    semver: ^7.3.7
+    tslib: ^2.0.0
+    uuid: ^9.0.0
+  checksum: 6f40ca98f910bc5f4ebc23fc5488b1dfe205999b7d10c77940e1963cfbe6025449a9c4aaceabf5e5989b222820ffae6279e0afb432b15eebc9dfc17c1e5ad483
+  languageName: node
+  linkType: hard
+
 "bytes@npm:3.1.2":
   version: 3.1.2
   resolution: "bytes@npm:3.1.2"
@@ -5042,7 +5068,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cron-parser@npm:^4.2.1":
+"cron-parser@npm:^4.2.1, cron-parser@npm:^4.6.0":
   version: 4.8.1
   resolution: "cron-parser@npm:4.8.1"
   dependencies:
@@ -6526,7 +6552,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"glob@npm:^8.0.1":
+"glob@npm:^8.0.1, glob@npm:^8.0.3":
   version: 8.1.0
   resolution: "glob@npm:8.1.0"
   dependencies:
@@ -7078,7 +7104,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ioredis@npm:^5.0.0, ioredis@npm:^5.2.4":
+"ioredis@npm:^5.0.0, ioredis@npm:^5.2.4, ioredis@npm:^5.3.2":
   version: 5.3.2
   resolution: "ioredis@npm:5.3.2"
   dependencies:
@@ -9165,7 +9191,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"msgpackr@npm:^1.5.2":
+"msgpackr@npm:^1.5.2, msgpackr@npm:^1.6.2":
   version: 1.9.1
   resolution: "msgpackr@npm:1.9.1"
   dependencies:
@@ -11540,7 +11566,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:^2.1.0":
+"tslib@npm:^2.0.0, tslib@npm:^2.1.0":
   version: 2.5.0
   resolution: "tslib@npm:2.5.0"
   checksum: ae3ed5f9ce29932d049908ebfdf21b3a003a85653a9a140d614da6b767a93ef94f460e52c3d787f0e4f383546981713f165037dc2274df212ea9f8a4541004e1
@@ -11719,7 +11745,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"underscore@npm:^1.13.1":
+"underscore@npm:^1.13.1, underscore@npm:^1.13.6":
   version: 1.13.6
   resolution: "underscore@npm:1.13.6"
   checksum: d5cedd14a9d0d91dd38c1ce6169e4455bb931f0aaf354108e47bd46d3f2da7464d49b2171a5cf786d61963204a42d01ea1332a903b7342ad428deaafaf70ec36
@@ -11863,6 +11889,15 @@ __metadata:
   bin:
     uuid: dist/bin/uuid
   checksum: 5575a8a75c13120e2f10e6ddc801b2c7ed7d8f3c8ac22c7ed0c7b2ba6383ec0abda88c905085d630e251719e0777045ae3236f04c812184b7c765f63a70e58df
+  languageName: node
+  linkType: hard
+
+"uuid@npm:^9.0.0":
+  version: 9.0.0
+  resolution: "uuid@npm:9.0.0"
+  bin:
+    uuid: dist/bin/uuid
+  checksum: 8dd2c83c43ddc7e1c71e36b60aea40030a6505139af6bee0f382ebcd1a56f6cd3028f7f06ffb07f8cf6ced320b76aea275284b224b002b289f89fe89c389b028
   languageName: node
   linkType: hard
 
