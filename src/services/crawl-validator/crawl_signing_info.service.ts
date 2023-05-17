@@ -138,8 +138,6 @@ export default class CrawlSigningInfoService extends BullableService {
         repeat: {
           every: config.crawlSigningInfo.millisecondCrawl,
         },
-        attempts: config.jobRetryAttempt,
-        backoff: config.jobRetryBackoff,
       }
     );
 
