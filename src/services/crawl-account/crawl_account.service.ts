@@ -565,8 +565,6 @@ export default class CrawlAccountService extends BullableService {
         repeat: {
           every: config.crawlAccount.handleVestingAccount.millisecondCrawl,
         },
-        attempts: config.jobRetryAttempt,
-        backoff: config.jobRetryBackoff,
       }
     );
 

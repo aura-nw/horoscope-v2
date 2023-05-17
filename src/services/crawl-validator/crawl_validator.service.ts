@@ -229,8 +229,6 @@ export default class CrawlValidatorService extends BullableService {
         repeat: {
           every: config.crawlValidator.millisecondCrawl,
         },
-        attempts: config.jobRetryAttempt,
-        backoff: config.jobRetryBackoff,
       }
     );
     return super._start();
