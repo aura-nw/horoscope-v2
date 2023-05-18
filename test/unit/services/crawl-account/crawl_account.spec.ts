@@ -11,7 +11,7 @@ import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { cosmos } from '@aura-nw/aurajs';
 import Long from 'long';
-import { AccountType, BULL_JOB_NAME } from '../../../../src/common';
+import { AccountType } from '../../../../src/common';
 import {
   defaultSendFee,
   defaultSigningClientOptions,
@@ -76,24 +76,7 @@ export default class CrawlAccountTest {
     this.crawlAccountService = this.broker.createService(
       CrawlAccountService
     ) as CrawlAccountService;
-    await Promise.all([
-      this.crawlAccountService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH)
-        .empty(),
-      this.crawlAccountService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES)
-        .empty(),
-      this.crawlAccountService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES)
-        .empty(),
-      this.crawlAccountService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT)
-        .empty(),
-    ]);
+    this.crawlAccountService.getQueueManager().stopAll();
     await knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE');
     await Account.query().insert(this.accounts);
   }

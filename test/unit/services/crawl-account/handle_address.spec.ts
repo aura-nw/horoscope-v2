@@ -113,32 +113,10 @@ export default class HandleAddressTest {
     this.handleStakeEventService = this.broker.createService(
       HandleStakeEventService
     ) as HandleStakeEventService;
-    await Promise.all([
-      this.crawlAccountService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH)
-        .empty(),
-      this.crawlAccountService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES)
-        .empty(),
-      this.crawlAccountService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES)
-        .empty(),
-      this.crawlAccountService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT)
-        .empty(),
-      this.handleAddressService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.HANDLE_ADDRESS)
-        .empty(),
-      this.handleStakeEventService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.HANDLE_STAKE_EVENT)
-        .empty(),
-    ]);
+    this.crawlAccountService.getQueueManager().stopAll();
+    this.handleAddressService.getQueueManager().stopAll();
+    this.handleStakeEventService.getQueueManager().stopAll();
+
     await Promise.all([
       Account.query().delete(true),
       BlockCheckpoint.query().delete(true),
