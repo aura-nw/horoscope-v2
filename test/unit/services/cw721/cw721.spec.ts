@@ -492,7 +492,7 @@ export default class AssetIndexerTest {
           },
         ],
         tx: Transaction.fromJson({
-          height: 200000,
+          height: 4000,
           hash: '',
           code: 0,
           gas_used: '123035',
@@ -538,7 +538,7 @@ export default class AssetIndexerTest {
           },
         ],
         tx: Transaction.fromJson({
-          height: 100000,
+          height: 5000,
           hash: '',
           code: 0,
           gas_used: '123035',
@@ -584,7 +584,7 @@ export default class AssetIndexerTest {
           },
         ],
         tx: Transaction.fromJson({
-          height: 200000,
+          height: 3000,
           hash: '',
           code: 0,
           gas_used: '123035',
@@ -614,6 +614,12 @@ export default class AssetIndexerTest {
     );
     expect(token2?.owner).toEqual(
       mockContractTransferMsg[2].wasm_attributes[2].value
+    );
+    expect(token1?.last_updated_height).toEqual(
+      mockContractTransferMsg[1].tx.height
+    );
+    expect(token2?.last_updated_height).toEqual(
+      mockContractTransferMsg[2].tx.height
     );
   }
 
