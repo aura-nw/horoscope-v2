@@ -78,45 +78,53 @@ export default class Cw721HandlerService extends BullableService {
 
   // update new owner and last_update_height
   async handlerCw721Transfer(transferMsgs: IContractMsgInfo[]): Promise<void> {
+    // remove duplicate transfer event for same token
+    const distinctTransfers = this.removeDuplicate(transferMsgs);
     // get Ids for contracts
     const cw721ContractDbRecords = await this.getCw721ContractsRecords(
-      transferMsgs.map((transferMsg) => transferMsg.contractAddress)
+      distinctTransfers.map((transferMsg) => transferMsg.contractAddress)
     );
-    // eslint-disable-next-line no-restricted-syntax
-    for (const transferMsg of transferMsgs) {
-      const recipient = this.getAttributeFrom(
-        transferMsg.wasm_attributes,
-        EventAttribute.ATTRIBUTE_KEY.RECIPIENT
-      );
-      const tokenId = this.getAttributeFrom(
-        transferMsg.wasm_attributes,
-        EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
-      );
-      // find the id for correspond smart contract
-      const cw721ContractId = cw721ContractDbRecords.find(
-        (item) => item.address === transferMsg.contractAddress
-      )?.id;
-      if (cw721ContractId) {
-        if (tokenId && recipient) {
-          // eslint-disable-next-line no-await-in-loop
-          await CW721Token.query()
-            .where('cw721_contract_id', cw721ContractId)
-            .andWhere('token_id', tokenId)
-            .patch({
-              owner: recipient,
-              last_updated_height: transferMsg.tx.height,
-            });
+    await knex.transaction(async (trx) => {
+      const queries: any[] = [];
+      distinctTransfers.forEach((transferMsg) => {
+        const recipient = this.getAttributeFrom(
+          transferMsg.wasm_attributes,
+          EventAttribute.ATTRIBUTE_KEY.RECIPIENT
+        );
+        const tokenId = this.getAttributeFrom(
+          transferMsg.wasm_attributes,
+          EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+        );
+        // find the id for correspond smart contract
+        const cw721ContractId = cw721ContractDbRecords.find(
+          (item) => item.address === transferMsg.contractAddress
+        )?.id;
+        if (cw721ContractId) {
+          if (tokenId && recipient) {
+            queries.push(
+              CW721Token.query()
+                .where('cw721_contract_id', cw721ContractId)
+                .andWhere('token_id', tokenId)
+                .patch({
+                  owner: recipient,
+                  last_updated_height: transferMsg.tx.height,
+                })
+            );
+          } else {
+            throw new Error(
+              `Msg transfer in tx ${transferMsg.tx.hash} not found token id transfered or not found new owner`
+            );
+          }
         } else {
           throw new Error(
-            `Msg transfer in tx ${transferMsg.tx.hash} not found token id transfered or not found new owner`
+            `Msg transfer in tx ${transferMsg.tx.hash} not found contract address in cw721 contract DB`
           );
         }
-      } else {
-        throw new Error(
-          `Msg transfer in tx ${transferMsg.tx.hash} not found contract address in cw721 contract DB`
-        );
-      }
-    }
+      });
+      await Promise.all(queries) // Once every query is written
+        .then(trx.commit) // Try to execute all of them
+        .catch(trx.rollback); // And rollback in case any of them goes wrong
+    });
   }
 
   // Insert new token if it haven't been in cw721_token table, or update burned to false if it already have been there
@@ -622,23 +630,27 @@ export default class Cw721HandlerService extends BullableService {
     return contractsInfo;
   }
 
-  // mergeContractEvents(contractEvents: IContractMsgInfo[]) {
-  //   contractEvents.reduce((acc: IContractMsgInfo[], curr) => {
-  //     const indexDuplicate = acc.findIndex(
-  //       (item) =>
-  //         item.contractAddress === curr.contractAddress &&
-  //         item.action === curr.action &&
-  //         this.getAttributeFrom(
-  //           item.wasm_attributes,
-  //           EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
-  //         ) ===
-  //           this.getAttributeFrom(
-  //             curr.wasm_attributes,
-  //             EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
-  //           )
-  //     );
-  // if(acc[indexDuplicate].tx.height<=curr.tx.height)
-  //     return acc;
-  //   }, []);
-  // }
+  removeDuplicate(contractEvents: IContractMsgInfo[]) {
+    return contractEvents
+      .reduceRight((acc: IContractMsgInfo[], curr) => {
+        const indexDuplicate = acc.findIndex(
+          (item) =>
+            item.contractAddress === curr.contractAddress &&
+            item.action === curr.action &&
+            this.getAttributeFrom(
+              item.wasm_attributes,
+              EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+            ) ===
+              this.getAttributeFrom(
+                curr.wasm_attributes,
+                EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+              )
+        );
+        if (indexDuplicate === -1) {
+          acc.push(curr);
+        }
+        return acc;
+      }, [])
+      .reverse();
+  }
 }
