@@ -478,6 +478,52 @@ export default class AssetIndexerTest {
           {
             _id: '63fda557271e5f2b7a32114a',
             key: 'recipient',
+            value: 'phamphong_duplicate',
+          },
+          {
+            _id: '63fda557271e5f515032114b',
+            key: 'sender',
+            value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
+          },
+          {
+            _id: '63fda557271e5f65ee32114c',
+            key: 'token_id',
+            value: this.mockInitContract.tokens[1].token_id,
+          },
+        ],
+        tx: Transaction.fromJson({
+          height: 200000,
+          hash: '',
+          code: 0,
+          gas_used: '123035',
+          gas_wanted: '141106',
+          gas_limit: '141106',
+          fee: 353,
+          timestamp: '2023-01-12T01:53:57.000Z',
+          codespace: '',
+          data: {},
+          index: 0,
+        }),
+      },
+      {
+        contractAddress: this.mockInitContract.smart_contract.address,
+        sender: '',
+        action: 'transfer_nft',
+        content: '',
+        wasm_attributes: [
+          {
+            _id: '63fda557271e5f3bc9321148',
+            key: '_contract_address',
+            value: this.mockInitContract.smart_contract.address,
+          },
+          {
+            _id: '63fda557271e5f2e69321149',
+            key: 'action',
+            value: 'transfer_nft',
+          },
+          {
+            _id: '63fda557271e5f2b7a32114a',
+            key: 'recipient',
             value: 'phamphong_transfer',
           },
           {
@@ -564,10 +610,10 @@ export default class AssetIndexerTest {
       .andWhere('token_id', this.mockInitContract.tokens[1].token_id)
       .first();
     expect(token1?.owner).toEqual(
-      mockContractTransferMsg[0].wasm_attributes[2].value
+      mockContractTransferMsg[1].wasm_attributes[2].value
     );
     expect(token2?.owner).toEqual(
-      mockContractTransferMsg[1].wasm_attributes[2].value
+      mockContractTransferMsg[2].wasm_attributes[2].value
     );
   }
 
@@ -1172,5 +1218,196 @@ export default class AssetIndexerTest {
     expect(cw721Activities[0].cw721_token_id).toEqual(1);
     expect(cw721Activities[1].cw721_token_id).toEqual(0);
     expect(cw721Activities[2].cw721_token_id).toEqual(2);
+  }
+
+  @Test('test remove duplicate')
+  async testRemoveDuplicate() {
+    const mockContractEvents = [
+      {
+        contractAddress: this.mockInitContract.smart_contract.address,
+        sender: '',
+        action: 'mint',
+        content:
+          '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
+        wasm_attributes: [
+          {
+            _id: '63fda557271e5f3bc9321148',
+            key: '_contract_address',
+            value: this.mockInitContract.smart_contract.address,
+          },
+          {
+            _id: '63fda557271e5f2e69321149',
+            key: 'action',
+            value: 'mint',
+          },
+          {
+            _id: '63f82910dda9e6288755bd8a',
+            key: 'minter',
+            value: 'pham_phong_re_mint_minter',
+          },
+          {
+            _id: '63f82910dda9e626e055bd8b',
+            key: 'owner',
+            value: 'phamphong_test_re_mint_owner',
+          },
+          {
+            _id: '63fda557271e5f65ee32114c',
+            key: 'token_id',
+            value: this.mockInitContract.tokens[0].token_id,
+          },
+        ],
+        tx: Transaction.fromJson({
+          height: 100000,
+          hash: 'cxvxcvxcvxcbvxcb',
+          code: 0,
+          gas_used: '123035',
+          gas_wanted: '141106',
+          gas_limit: '141106',
+          fee: 353,
+          timestamp: '2023-01-12T01:53:57.000Z',
+          codespace: '',
+          data: {},
+          index: 0,
+        }),
+      },
+      {
+        contractAddress: this.mockInitContract.smart_contract.address,
+        sender: '',
+        action: 'transfer_nft',
+        content: '',
+        wasm_attributes: [
+          {
+            _id: '63fda557271e5f3bc9321148',
+            key: '_contract_address',
+            value: this.mockInitContract.smart_contract.address,
+          },
+          {
+            _id: '63fda557271e5f2e69321149',
+            key: 'action',
+            value: 'transfer_nft',
+          },
+          {
+            _id: '63fda557271e5f2b7a32114a',
+            key: 'recipient',
+            value: 'phamphong_transfer',
+          },
+          {
+            _id: '63fda557271e5f515032114b',
+            key: 'sender',
+            value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
+          },
+        ],
+        tx: Transaction.fromJson({
+          height: 100000,
+          hash: 'fghgfhgfhfhdf',
+          code: 0,
+          gas_used: '123035',
+          gas_wanted: '141106',
+          gas_limit: '141106',
+          fee: 353,
+          timestamp: '2023-01-12T01:53:57.000Z',
+          codespace: '',
+          data: {},
+          index: 0,
+        }),
+      },
+      {
+        contractAddress: this.mockInitContract.smart_contract.address,
+        sender: '',
+        action: 'burn',
+        content: '',
+        wasm_attributes: [
+          {
+            _id: '63a55d044c1864001244a47b',
+            key: '_contract_address',
+            value: this.mockInitContract.smart_contract.address,
+          },
+          {
+            _id: '63a55d044c1864001244a47c',
+            key: 'action',
+            value: 'burn',
+          },
+          {
+            _id: '63a55d044c1864001244a47d',
+            key: 'sender',
+            value: 'aura15f6wn3nymdnhnh5ddlqletuptjag09tryrtpq5',
+          },
+          {
+            _id: '63a55d044c1864001244a47e',
+            key: 'token_id',
+            value: this.mockInitContract.tokens[1].token_id,
+          },
+        ],
+        tx: Transaction.fromJson({
+          height: 500000,
+          hash: 'sdfdasrqewrasdEWEQE',
+          code: 0,
+          gas_used: '123035',
+          gas_wanted: '141106',
+          gas_limit: '141106',
+          fee: 353,
+          timestamp: '2023-01-12T01:53:57.000Z',
+          codespace: '',
+          data: {},
+          index: 0,
+        }),
+      },
+      {
+        contractAddress: this.mockInitContract.smart_contract.address,
+        sender: 'test_duplicate',
+        action: 'mint',
+        content:
+          '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
+        wasm_attributes: [
+          {
+            _id: '63fda557271e5f3bc9321148',
+            key: '_contract_address',
+            value: this.mockInitContract.smart_contract.address,
+          },
+          {
+            _id: '63fda557271e5f2e69321149',
+            key: 'action',
+            value: 'mint',
+          },
+          {
+            _id: '63f82910dda9e6288755bd8a',
+            key: 'minter',
+            value: 'pham_phong_re_mint_minter',
+          },
+          {
+            _id: '63f82910dda9e626e055bd8b',
+            key: 'owner',
+            value: 'phamphong_test_duplicate',
+          },
+          {
+            _id: '63fda557271e5f65ee32114c',
+            key: 'token_id',
+            value: this.mockInitContract.tokens[0].token_id,
+          },
+        ],
+        tx: Transaction.fromJson({
+          height: 100000,
+          hash: 'cxvxcvxcvxcbvxcb',
+          code: 0,
+          gas_used: '123035',
+          gas_wanted: '141106',
+          gas_limit: '141106',
+          fee: 353,
+          timestamp: '2023-01-12T01:53:57.000Z',
+          codespace: '',
+          data: {},
+          index: 0,
+        }),
+      },
+    ];
+    const contractEvents =
+      this.cw721HandlerService.removeDuplicate(mockContractEvents);
+    const objectsEqual: any = (o1: any, o2: any) =>
+      typeof o1 === 'object' && Object.keys(o1).length > 0
+        ? Object.keys(o1).length === Object.keys(o2).length &&
+          Object.keys(o1).every((p) => objectsEqual(o1[p], o2[p]))
+        : o1 === o2;
+    mockContractEvents.shift();
+    expect(objectsEqual(contractEvents, mockContractEvents)).toEqual(true);
   }
 }
