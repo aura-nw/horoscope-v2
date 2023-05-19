@@ -1,6 +1,7 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import _ from 'lodash';
+import { fromBase64 } from '@cosmjs/encoding';
 import { BlockCheckpoint, TransactionMessage } from '../../models';
 import { BULL_JOB_NAME, MSG_TYPE, SERVICE } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -79,7 +80,7 @@ export default class HandleAuthzTxService extends BullableService {
       txMsg?.content?.msgs.forEach(async (msg: any, index: number) => {
         const decoded = this._camelizeKeys(
           this._registry.decodeMsg({
-            value: new Uint8Array(Object.values(msg.value)),
+            value: fromBase64(msg.value),
             typeUrl: msg.type_url,
           })
         );

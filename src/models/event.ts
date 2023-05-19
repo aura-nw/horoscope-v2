@@ -8,6 +8,8 @@ import { TransactionMessage } from './transaction_message';
 export class Event extends BaseModel {
   [relation: string]: any;
 
+  id!: number;
+
   tx_id!: number;
 
   tx_msg_index: number | undefined;
