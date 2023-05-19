@@ -31,8 +31,7 @@ export const BULL_JOB_NAME = {
   CRAWL_BLOCK: 'crawl:block',
   CRAWL_TRANSACTION: 'crawl:transaction',
   HANDLE_TRANSACTION: 'handle:transaction',
-  FILTER_CW721_TRANSACTION: 'filter:cw721-tx',
-  HANDLE_CW721_EXECUTE: 'handle:cw721-execute',
+  HANDLE_CW721_TRANSACTION: 'handle:cw721-tx',
   CRAWL_PROPOSAL: 'crawl:proposal',
   CRAWL_TALLY_PROPOSAL: 'crawl:tally-proposal',
   HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL: 'handle:not-enough-deposit-proposal',
@@ -45,6 +44,7 @@ export const BULL_JOB_NAME = {
   HANDLE_AUTHZ_TX: 'handle:authz-tx',
   CRAWL_DELEGATORS: 'crawl:delegators',
   CRAWL_VALIDATOR_DELEGATORS: 'crawl:validator-delegators',
+  CRAWL_CONTRACT_EVENT: 'crawl:contract-event',
   FILTER_TOKEN_MEDIA_UNPROCESS: 'filter:cw721-token-media-unprocess',
   HANDLE_CW721_TOKEN_MEDIA: 'handle:cw721-token-media',
   HANDLE_CW20: 'handle:cw20',
@@ -125,6 +125,10 @@ export const SERVICE = {
     CrawlSmartContractService: {
       key: 'CrawlSmartContractService',
       name: 'v1.CrawlSmartContractService',
+      CrawlContractEventService: {
+        key: 'CrawlContractEventService',
+        name: 'v1.CrawlContractEventService',
+      },
     },
     HandleAuthzTx: {
       key: 'HandleAuthzTxService',
