@@ -155,6 +155,7 @@ export const BLOCK_CHECKPOINT_JOB_NAME = {
 export const MSG_TYPE = {
   MSG_STORE_CODE: '/cosmwasm.wasm.v1.MsgStoreCode',
   MSG_INSTANTIATE_CONTRACT: '/cosmwasm.wasm.v1.MsgInstantiateContract',
+  MSG_INSTANTIATE2_CONTRACT: '/cosmwasm.wasm.v1.MsgInstantiateContract2',
   MSG_EXECUTE_CONTRACT: '/cosmwasm.wasm.v1.MsgExecuteContract',
   MSG_UPDATE_CLIENT: '/ibc.core.client.v1.MsgUpdateClient',
   MSG_DELEGATE: '/cosmos.staking.v1beta1.MsgDelegate',
