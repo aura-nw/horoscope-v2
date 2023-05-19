@@ -24,7 +24,7 @@ export default class HandleTxVoteService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_VOTE_TX,
-    jobType: BULL_JOB_NAME.HANDLE_VOTE_TX,
+    jobName: BULL_JOB_NAME.HANDLE_VOTE_TX,
   })
   private async jobHandle(_payload: any): Promise<void> {
     await this.initEnv();

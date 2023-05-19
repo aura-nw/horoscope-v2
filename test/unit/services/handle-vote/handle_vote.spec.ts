@@ -30,26 +30,13 @@ export default class HandleTxVoteServiceTest {
     this.handleAuthzTxServive = this.broker.createService(
       HandleAuthzTxService
     ) as HandleAuthzTxService;
+    this.handleVoteTxService?.getQueueManager().stopAll();
+    this.crawlTxService?.getQueueManager().stopAll();
     await Promise.all([
-      this.handleVoteTxService
-        ?.getQueueManager()
-        .getQueue(BULL_JOB_NAME.HANDLE_VOTE_TX)
-        .empty(),
-      this.crawlTxService
-        ?.getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_TRANSACTION)
-        .empty(),
-      this.crawlTxService
-        ?.getQueueManager()
-        .getQueue(BULL_JOB_NAME.HANDLE_TRANSACTION)
-        .empty(),
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE vote RESTART IDENTITY CASCADE'),
     ]);
-
-    // await this.crawlTxService._start();
-    // await this.handleVoteTxService._start();
   }
 
   @Test('Handle voting simple tx')
@@ -127,20 +114,8 @@ export default class HandleTxVoteServiceTest {
 
   @AfterEach()
   async tearDown() {
-    await Promise.all([
-      this.handleVoteTxService
-        ?.getQueueManager()
-        .getQueue(BULL_JOB_NAME.HANDLE_VOTE_TX)
-        .empty(),
-      this.crawlTxService
-        ?.getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_TRANSACTION)
-        .empty(),
-      this.crawlTxService
-        ?.getQueueManager()
-        .getQueue(BULL_JOB_NAME.HANDLE_TRANSACTION)
-        .empty(),
-    ]);
+    this.handleVoteTxService?.getQueueManager().stopAll();
+    this.crawlTxService?.getQueueManager().stopAll();
     await Promise.all([
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
