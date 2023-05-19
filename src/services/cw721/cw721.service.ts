@@ -270,6 +270,7 @@ export default class Cw721HandlerService extends BullableService {
           const cw721Msgs = listContractMsg.filter((msg) =>
             cw721ListAddr.includes(msg.contractAddress)
           );
+          this.logger.debug(cw721Msgs);
           // handle all cw721 execute messages
           await this.handleCw721MsgExec(
             cw721Msgs.filter((msg) => msg.action !== CW721_ACTION.INSTANTIATE)
