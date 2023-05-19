@@ -1,6 +1,5 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
-import Long from 'long';
 import { BlockCheckpoint, TransactionMessage, Vote } from '../../models';
 import { BULL_JOB_NAME, MSG_TYPE, SERVICE } from '../../common/constant';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -82,24 +81,12 @@ export default class HandleTxVoteService extends BullableService {
     const votesInsert: Vote[] = [];
     txMsgs.forEach((txMsg) => {
       const { content } = txMsg;
-      let proposalId;
-      if (content.voter && content.option && content.proposal_id) {
-        try {
-          const longProposalId = Long.fromValue(content.proposal_id);
-          if (Long.isLong(longProposalId)) {
-            proposalId = longProposalId.toString();
-          }
-        } catch (error) {
-          this.logger.warn('proposal id is not long');
-          proposalId = content.proposal_id.toString();
-        }
-      }
       votesInsert.push(
         Vote.fromJson({
           voter: content.voter,
           txhash: txMsg.hash,
-          proposal_id: proposalId,
-          vote_option: this.getVoteMessageByConstant(content.option),
+          proposal_id: content.proposal_id,
+          vote_option: content.option,
           height: txMsg.height,
           tx_id: txMsg.tx_id,
         })
@@ -133,21 +120,6 @@ export default class HandleTxVoteService extends BullableService {
           .transacting(trx);
       }
     });
-  }
-
-  getVoteMessageByConstant(option: number) {
-    switch (option) {
-      case 1:
-        return 'VOTE_OPTION_YES';
-      case 2:
-        return 'VOTE_OPTION_ABSTAIN';
-      case 3:
-        return 'VOTE_OPTION_NO';
-      case 4:
-        return 'VOTE_OPTION_NO_WITH_VETO';
-      default:
-        return 'VOTE_OPTION_EMPTY';
-    }
   }
 
   public async _start(): Promise<void> {
