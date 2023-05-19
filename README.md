@@ -3,18 +3,20 @@
 Horoscope v2 is a next version of Horoscope, that is an indexing service for Cosmos-based blockchain. It crawls data from the blockchain and index it into Postgres. Based on the data, it can provide search functionality instead of querying data from LCD or RPC directly.
 
 Currently, it supports network built by Cosmos SDK v0.45.1 or later. Supporting network:
--   [Aura Network](https://github.com/aura-nw/aura)
+
+- [Aura Network](https://github.com/aura-nw/aura)
 
 > **Looking for Horoscope v1? The Horoscope v1 repository has been archived [`Horoscope v1`](https://github.com/aura-nw/Horoscope)**.
 
 Horoscope v2 includes 2 main components:
 
--   Crawler: crawl data from the blockchain and index it into Postgres
--   Backend API: provide search functionality through Hasura service (with GraphQL and RestAPI)
+- Crawler: crawl data from the blockchain and index it into Postgres
+- Backend API: provide search functionality through Hasura service (with GraphQL and RestAPI)
 
 ## Overview Architecture
+
 All services are small Node applications written in Typescript. The Node services are built using [Moleculerjs](https://moleculer.services/) framework with [template moleculer](https://github.com/aura-nw/moleculer-ts-base).
-With crawler, we use [Bull](https://github.com/OptimalBits/bull/tree/master) to manage the queue of crawling.  
+With crawler, we use [Bull](https://github.com/OptimalBits/bull/tree/master) to manage the queue of crawling.
 
 ![image](docs/images/overview-architect.png)
 
@@ -26,6 +28,7 @@ With crawler, we use [Bull](https://github.com/OptimalBits/bull/tree/master) to 
 - **crawl-validator**: get validator and their power event, signing info
 - **crawl-genesis**: get state from genesis chunk
 - **CW721**: handle registed asset type CW721
+
 ## How to run
 
 Horoscope currently use private packet [aurajs](https://github.com/aura-nw/aurajs) to decode tx from Aura Network. To install aurajs, you must create a Personal Access Token has read package permission, put it to (xxx_xxx) on .npmrc file in root source code
@@ -36,10 +39,13 @@ Horoscope currently use private packet [aurajs](https://github.com/aura-nw/auraj
 ```
 
 To install requirements (postgres, redis, hasura), use docker-compose:
+
 ```
 docker-compose up
 ```
+
 then start service
+
 ```
 # create file env
 cp .env.example .env
@@ -47,9 +53,11 @@ cp .env.example .env
 # run with moleculer cli
 npm run dev
 ```
+
 ## Configuration
+
 [Config Moleculer](.env.sample), refer [docs](https://moleculer.services/docs/0.14/configuration.html) to get detail configurations  
-[Config list network](network.json) to config list network with LCD, RPC, database
+[Config list network](network.json) to config list network with LCD, RPC, database  
 [Config chain](config.json) to setup job crawl and select chain id to crawl
 
 ## YARN scripts
