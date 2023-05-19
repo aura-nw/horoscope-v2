@@ -45,6 +45,8 @@ export const BULL_JOB_NAME = {
   HANDLE_AUTHZ_TX: 'handle:authz-tx',
   CRAWL_DELEGATORS: 'crawl:delegators',
   CRAWL_VALIDATOR_DELEGATORS: 'crawl:validator-delegators',
+  FILTER_TOKEN_MEDIA_UNPROCESS: 'filter:cw721-token-media-unprocess',
+  HANDLE_CW721_TOKEN_MEDIA: 'handle:cw721-token-media',
 };
 
 export const SERVICE = {
@@ -66,10 +68,15 @@ export const SERVICE = {
       },
     },
     Cw721: {
+      key: 'Cw721Service',
       name: 'v1.Cw721Service',
       HandleCw721: {
         key: 'handleCw721',
         path: 'v1.Cw721Service.handleCw721',
+      },
+      UpdateMedia: {
+        key: 'updateCw721Media',
+        path: 'v1.Cw721Service.updateCw721Media',
       },
     },
     CrawlProposalService: {
@@ -129,10 +136,6 @@ export const SERVICE = {
   },
 };
 
-export const SERVICE_NAME = {
-  CW721: 'Cw721Service',
-};
-
 export enum AccountType {
   CONTINUOUS_VESTING = '/cosmos.vesting.v1beta1.ContinuousVestingAccount',
   PERIODIC_VESTING = '/cosmos.vesting.v1beta1.PeriodicVestingAccount',
@@ -156,6 +159,7 @@ export const MSG_TYPE = {
   MSG_CREATE_VALIDATOR: '/cosmos.staking.v1beta1.MsgCreateValidator',
   MSG_SUBMIT_PROPOSAL: '/cosmos.gov.v1beta1.MsgSubmitProposal',
   MSG_AUTHZ_EXEC: '/cosmos.authz.v1beta1.MsgExec',
+  MSG_ACKNOWLEDGEMENT: '/ibc.core.channel.v1.MsgAcknowledgement',
 };
 
 export const ABCI_QUERY_PATH = {
