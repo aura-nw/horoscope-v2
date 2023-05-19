@@ -526,6 +526,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 100,
       },
       {
         contractAddress: this.mockInitContract.smart_contract.address,
@@ -1308,6 +1309,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 100,
       },
       {
         contractAddress: this.mockInitContract.smart_contract.address,
@@ -1349,6 +1351,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 100,
       },
       {
         contractAddress: this.mockInitContract.smart_contract.address,
@@ -1390,6 +1393,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 100,
       },
       {
         contractAddress: this.mockInitContract.smart_contract.address,
@@ -1437,6 +1441,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 100,
       },
     ];
     const contractEvents =
