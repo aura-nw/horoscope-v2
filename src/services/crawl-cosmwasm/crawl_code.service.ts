@@ -60,8 +60,8 @@ export default class CrawlCodeService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_CODE,
-    jobType: 'crawl',
-    prefix: `horoscope-v2-${config.chainId}`,
+    jobName: 'crawl',
+    // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: object): Promise<void> {
     const [startHeight, endHeight, updateBlockCheckpoint] =
@@ -192,8 +192,6 @@ export default class CrawlCodeService extends BullableService {
         repeat: {
           every: config.crawlCodeId.millisecondCrawl,
         },
-        attempts: config.jobRetryAttempt,
-        backoff: config.jobRetryBackoff,
       }
     );
 

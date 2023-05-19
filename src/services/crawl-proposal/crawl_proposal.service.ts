@@ -40,8 +40,8 @@ export default class CrawlProposalService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_PROPOSAL,
-    jobType: 'crawl',
-    prefix: `horoscope-v2-${config.chainId}`,
+    jobName: 'crawl',
+    // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleCrawlProposals(_payload: object): Promise<void> {
     this._lcdClient = await getLcdClient();
@@ -156,8 +156,8 @@ export default class CrawlProposalService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL,
-    jobType: 'crawl',
-    prefix: `horoscope-v2-${config.chainId}`,
+    jobName: 'crawl',
+    // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleNotEnoughDepositProposals(
     _payload: object
@@ -239,8 +239,6 @@ export default class CrawlProposalService extends BullableService {
         repeat: {
           every: config.crawlProposal.crawlProposal.millisecondCrawl,
         },
-        attempts: config.jobRetryAttempt,
-        backoff: config.jobRetryBackoff,
       }
     );
     this.createJob(
@@ -257,8 +255,6 @@ export default class CrawlProposalService extends BullableService {
             config.crawlProposal.handleNotEnoughDepositProposal
               .millisecondCrawl,
         },
-        attempts: config.jobRetryAttempt,
-        backoff: config.jobRetryBackoff,
       }
     );
 

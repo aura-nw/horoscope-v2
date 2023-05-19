@@ -8,9 +8,7 @@ export default class CW721Token extends BaseModel {
 
   token_id!: string;
 
-  token_uri?: string;
-
-  extension?: any;
+  media_info?: any;
 
   owner?: string;
 

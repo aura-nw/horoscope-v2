@@ -2,7 +2,6 @@ import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import CrawlTxService from '../../../../src/services/crawl-tx/crawl_tx.service';
 import CrawlBlockService from '../../../../src/services/crawl-block/crawl_block.service';
-import { BULL_JOB_NAME } from '../../../../src/common';
 import { Block, Event } from '../../../../src/models';
 import knex from '../../../../src/common/utils/db_connection';
 
@@ -871,21 +870,9 @@ export default class CrawlBlockTest {
     this.crawlTxService = this.broker.createService(
       CrawlTxService
     ) as CrawlTxService;
-    await Promise.all([
-      this.crawlBlockService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_BLOCK)
-        .empty(),
-      this.crawlTxService
-        ?.getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_TRANSACTION)
-        .empty(),
-      this.crawlTxService
-        ?.getQueueManager()
-        .getQueue(BULL_JOB_NAME.HANDLE_TRANSACTION)
-        .empty(),
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
-    ]);
+    this.crawlBlockService.getQueueManager().stopAll();
+    this.crawlTxService.getQueueManager().stopAll();
+    await knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE');
   }
 
   @Test('Parse block and insert to DB')
@@ -906,20 +893,8 @@ export default class CrawlBlockTest {
 
   @AfterAll()
   async tearDown() {
-    await Promise.all([
-      this.crawlBlockService
-        ?.getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_BLOCK)
-        .empty(),
-      this.crawlTxService
-        ?.getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_TRANSACTION)
-        .empty(),
-      this.crawlTxService
-        ?.getQueueManager()
-        .getQueue(BULL_JOB_NAME.HANDLE_TRANSACTION)
-        .empty(),
-    ]);
+    this.crawlBlockService?.getQueueManager().stopAll();
+    this.crawlTxService?.getQueueManager().stopAll();
     await Promise.all([
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       this.crawlBlockService?._stop(),
