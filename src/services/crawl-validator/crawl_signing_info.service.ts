@@ -28,8 +28,8 @@ export default class CrawlSigningInfoService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_SIGNING_INFO,
-    jobType: 'crawl',
-    prefix: `horoscope-v2-${config.chainId}`,
+    jobName: 'crawl',
+    // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: object): Promise<void> {
     this._lcdClient = await getLcdClient();
@@ -138,8 +138,6 @@ export default class CrawlSigningInfoService extends BullableService {
         repeat: {
           every: config.crawlSigningInfo.millisecondCrawl,
         },
-        attempts: config.jobRetryAttempt,
-        backoff: config.jobRetryBackoff,
       }
     );
 

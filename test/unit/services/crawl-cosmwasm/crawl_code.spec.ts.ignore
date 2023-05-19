@@ -93,10 +93,7 @@ export default class CrawlCodeTest {
     this.crawlCodeService = this.broker.createService(
       CrawlCodeService
     ) as CrawlCodeService;
-    await this.crawlCodeService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_CODE)
-      .empty();
+    this.crawlCodeService.getQueueManager().stopAll()
     await Promise.all([
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE code RESTART IDENTITY CASCADE'),
