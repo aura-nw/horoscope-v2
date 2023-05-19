@@ -82,3 +82,27 @@ export async function getContractActivities(
 export function getAttributeFrom(listAttributes: any, attributeType: string) {
   return listAttributes?.find((attr: any) => attr.key === attributeType)?.value;
 }
+
+export function removeDuplicate(contractEvents: IContractMsgInfo[]) {
+  return contractEvents
+    .reduceRight((acc: IContractMsgInfo[], curr) => {
+      const indexDuplicate = acc.findIndex(
+        (item) =>
+          item.contractAddress === curr.contractAddress &&
+          item.action === curr.action &&
+          getAttributeFrom(
+            item.wasm_attributes,
+            EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+          ) ===
+            getAttributeFrom(
+              curr.wasm_attributes,
+              EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+            )
+      );
+      if (indexDuplicate === -1) {
+        acc.push(curr);
+      }
+      return acc;
+    }, [])
+    .reverse();
+}

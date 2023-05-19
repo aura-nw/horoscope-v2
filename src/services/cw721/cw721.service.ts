@@ -25,6 +25,7 @@ import {
   IContractMsgInfo,
   getAttributeFrom,
   getContractActivities,
+  removeDuplicate,
 } from '../../common/utils/smart_contract';
 
 const { NODE_ENV } = Config;
@@ -61,7 +62,7 @@ export default class Cw721HandlerService extends BullableService {
   // update new owner and last_update_height
   async handlerCw721Transfer(transferMsgs: IContractMsgInfo[]): Promise<void> {
     // remove duplicate transfer event for same token
-    const distinctTransfers = this.removeDuplicate(transferMsgs);
+    const distinctTransfers = removeDuplicate(transferMsgs);
     // get Ids for contracts
     const cw721ContractDbRecords = await this.getCw721ContractsRecords(
       distinctTransfers.map((transferMsg) => transferMsg.contractAddress)
@@ -525,29 +526,5 @@ export default class Cw721HandlerService extends BullableService {
       });
     }
     return contractsInfo;
-  }
-
-  removeDuplicate(contractEvents: IContractMsgInfo[]) {
-    return contractEvents
-      .reduceRight((acc: IContractMsgInfo[], curr) => {
-        const indexDuplicate = acc.findIndex(
-          (item) =>
-            item.contractAddress === curr.contractAddress &&
-            item.action === curr.action &&
-            getAttributeFrom(
-              item.wasm_attributes,
-              EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
-            ) ===
-              getAttributeFrom(
-                curr.wasm_attributes,
-                EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
-              )
-        );
-        if (indexDuplicate === -1) {
-          acc.push(curr);
-        }
-        return acc;
-      }, [])
-      .reverse();
   }
 }

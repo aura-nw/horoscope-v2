@@ -8,7 +8,10 @@ import CW721Contract from '../../../../src/models/cw721_contract';
 import CW721Token from '../../../../src/models/cw721_token';
 import CW721Activity from '../../../../src/models/cw721_tx';
 import Cw721HandlerService from '../../../../src/services/cw721/cw721.service';
-import { getContractActivities } from '../../../../src/common/utils/smart_contract';
+import {
+  getContractActivities,
+  removeDuplicate,
+} from '../../../../src/common/utils/smart_contract';
 
 @Describe('Test cw721 service')
 export default class AssetIndexerTest {
@@ -1444,8 +1447,7 @@ export default class AssetIndexerTest {
         event_id: 100,
       },
     ];
-    const contractEvents =
-      this.cw721HandlerService.removeDuplicate(mockContractEvents);
+    const contractEvents = removeDuplicate(mockContractEvents);
     const objectsEqual: any = (o1: any, o2: any) =>
       typeof o1 === 'object' && Object.keys(o1).length > 0
         ? Object.keys(o1).length === Object.keys(o2).length &&
