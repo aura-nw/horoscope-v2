@@ -22,12 +22,13 @@ With crawler, we use [Bull](https://github.com/OptimalBits/bull/tree/master) to 
 
 ## List services (currently)
 
-- **crawl-block**: get block from network and insert to DB
-- **crawl-transaction**: get transaction in a block and decode to readable
+- [**crawl-block**](./docs/services/crawl-block/crawl-block.md): get block from network and insert to DB
+- [**crawl-transaction**](./docs/services/crawl-transaction/crawl-tx.md): get transaction in a block and decode to readable
+- [**handle-authz-msg**](./docs/services/crawl-transaction/handle-authz-tx-msg.md): handle authz message and decode to readable
 - **crawl-proposal**: get proposal and its status
 - **crawl-validator**: get validator and their power event, signing info
 - **crawl-genesis**: get state from genesis chunk
-- **CW721**: handle registed asset type CW721
+- [**CW721**](./docs/services/cw721/README.md): handle registed asset type CW721
 
 ## How to run
 
