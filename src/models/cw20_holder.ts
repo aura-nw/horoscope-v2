@@ -1,27 +1,16 @@
 import { Model } from 'objection';
 import BaseModel from './base';
-import { CW20Token } from './cw20_token';
+// eslint-disable-next-line import/no-cycle
+import { Cw20Contract } from './cw20_contract';
 
-export interface ICW20Holder {
+export class CW20Holder extends BaseModel {
   id?: number;
-  address: string;
-  balance: string;
-  contract_address: string;
-  created_at?: Date;
-  updated_at?: Date;
-}
-export class CW20Holder extends BaseModel implements ICW20Holder {
-  id?: number;
-
-  contract_address!: string;
 
   address!: string;
 
   balance!: string;
 
-  created_at?: Date;
-
-  updated_at?: Date;
+  cw20_contract_id!: number;
 
   static get tableName() {
     return 'cw20_holder';
@@ -43,10 +32,10 @@ export class CW20Holder extends BaseModel implements ICW20Holder {
     return {
       token: {
         relation: Model.BelongsToOneRelation,
-        modelClass: CW20Token,
+        modelClass: Cw20Contract,
         join: {
-          from: 'cw20_holder.contract_address',
-          to: 'cw20_token.contract_address',
+          from: 'cw20_holder.cw20_contract_id',
+          to: 'cw20_contract.id',
         },
       },
     };
