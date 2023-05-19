@@ -30,13 +30,15 @@ export default class HandleTxVoteServiceTest {
     this.handleAuthzTxServive = this.broker.createService(
       HandleAuthzTxService
     ) as HandleAuthzTxService;
-    this.handleVoteTxService?.getQueueManager().stopAll();
-    this.crawlTxService?.getQueueManager().stopAll();
     await Promise.all([
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE vote RESTART IDENTITY CASCADE'),
     ]);
+    await this.crawlTxService._start();
+    await this.handleVoteTxService._start();
+    this.handleVoteTxService?.getQueueManager().stopAll();
+    this.crawlTxService?.getQueueManager().stopAll();
   }
 
   @Test('Handle voting simple tx')
