@@ -76,7 +76,8 @@ export default class AuraRegistry {
       // parse JSON some field
       if (
         msg.typeUrl === MSG_TYPE.MSG_EXECUTE_CONTRACT ||
-        msg.typeUrl === MSG_TYPE.MSG_INSTANTIATE_CONTRACT
+        msg.typeUrl === MSG_TYPE.MSG_INSTANTIATE_CONTRACT ||
+        msg.typeUrl === MSG_TYPE.MSG_INSTANTIATE2_CONTRACT
       ) {
         if (result.msg) {
           try {
