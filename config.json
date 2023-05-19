@@ -80,5 +80,9 @@
     "blocksPerBatch": 100,
     "millisecondRepeatJob": 2000,
     "startBlock": 0
+  },
+  "crawlContractEvent": {
+    "blocksPerBatch": 100,
+    "millisecondRepeatJob": 5000
   }
 }
