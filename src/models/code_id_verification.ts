@@ -6,6 +6,8 @@ import { Code } from './code';
 export class CodeIdVerification extends BaseModel {
   code_id!: number;
 
+  data_hash!: string;
+
   instantiate_msg_schema: string | undefined;
 
   query_msg_schema: string | undefined;
@@ -43,9 +45,10 @@ export class CodeIdVerification extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['code_id', 'verify_step'],
+      required: ['code_id', 'data_hash', 'verify_step'],
       properties: {
         code_id: { type: 'number' },
+        data_hash: { type: 'string' },
         instantiate_msg_schema: { type: ['string', 'null'] },
         query_msg_schema: { type: ['string', 'null'] },
         execute_msg_schema: { type: ['string', 'null'] },
