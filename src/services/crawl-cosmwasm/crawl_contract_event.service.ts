@@ -13,16 +13,14 @@ import {
   SERVICE,
   getHttpBatchClient,
 } from '../../common';
-import { Block, BlockCheckpoint, SmartContract } from '../../models';
+import { BlockCheckpoint, SmartContract } from '../../models';
 
 const { NODE_ENV } = Config;
 @Service({
   name: SERVICE.V1.CrawlSmartContractService.CrawlContractEventService.key,
   version: 1,
 })
-export default class CrawlCodeService extends BullableService {
-  _blocksPerBatch!: number;
-
+export default class CrawlContractEventService extends BullableService {
   public constructor(public broker: ServiceBroker) {
     super(broker);
   }
@@ -33,7 +31,11 @@ export default class CrawlCodeService extends BullableService {
   })
   async jobHandler(): Promise<void> {
     // get range txs for proccessing
-    const [startBlock, endBlock] = await this.getRangeProcessing();
+    const [startBlock, endBlock] = await BlockCheckpoint.getCheckpoint(
+      BULL_JOB_NAME.CRAWL_CONTRACT_EVENT,
+      BULL_JOB_NAME.HANDLE_TRANSACTION,
+      config.crawlContractEvent.key
+    );
     this.logger.info(`startBlock: ${startBlock} to endBlock: ${endBlock}`);
     if (endBlock >= startBlock) {
       try {
@@ -65,7 +67,7 @@ export default class CrawlCodeService extends BullableService {
                   event_id: contractEvent.event_id,
                   index: contractEvent.index,
                 }),
-                attributes: contractEvent.wasm_attributes,
+                attributes: contractEvent.attributes,
               })
               .transacting(trx);
             queries.push(query);
@@ -95,45 +97,8 @@ export default class CrawlCodeService extends BullableService {
     return _.keyBy(smartContractRecords, (contract) => contract.address);
   }
 
-  // get range txs for proccessing
-  async getRangeProcessing() {
-    // DB -> Config -> MinDB
-    // Get handled blocks from db
-    let blockCheckpoint = await BlockCheckpoint.query().findOne({
-      job_name: BULL_JOB_NAME.CRAWL_CONTRACT_EVENT,
-    });
-    if (!blockCheckpoint) {
-      // min Tx from DB
-      const minBlock = await Block.query()
-        .limit(1)
-        .orderBy('height', 'ASC')
-        .first()
-        .throwIfNotFound();
-      blockCheckpoint = await BlockCheckpoint.query().insert({
-        job_name: BULL_JOB_NAME.CRAWL_CONTRACT_EVENT,
-        height: config.crawlContractEvent.startBlock
-          ? config.crawlContractEvent.startBlock
-          : minBlock.height,
-      });
-    }
-    const startBlock: number = blockCheckpoint.height;
-    const latestBlock = await Block.query()
-      .limit(1)
-      .orderBy('height', 'DESC')
-      .first()
-      .throwIfNotFound();
-    const endBlock: number = Math.min(
-      startBlock + this._blocksPerBatch,
-      latestBlock.height
-    );
-    return [startBlock, endBlock];
-  }
-
   async _start(): Promise<void> {
     this._httpBatchClient = getHttpBatchClient();
-    this._blocksPerBatch = config.crawlContractEvent.blocksPerBatch
-      ? config.crawlContractEvent.blocksPerBatch
-      : 100;
     if (NODE_ENV !== 'test') {
       await this.createJob(
         BULL_JOB_NAME.CRAWL_CONTRACT_EVENT,
