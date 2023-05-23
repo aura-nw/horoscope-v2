@@ -31,24 +31,6 @@ export class Code extends BaseModel {
     return 'code';
   }
 
-  static get TYPES() {
-    return {
-      CW20: 'CW20',
-      CW721: 'CW721',
-      CW4973: 'CW4973',
-      CW2981: 'CW2981',
-    };
-  }
-
-  static get TYPE_STATUS() {
-    return {
-      WAITING: 'WAITING',
-      COMPLETED: 'COMPLETED',
-      REJECTED: 'REJECTED',
-      TBD: 'TBD',
-    };
-  }
-
   static get jsonAttributes() {
     return ['instantiate_permission'];
   }
@@ -80,11 +62,8 @@ export class Code extends BaseModel {
             addresses: { type: 'array', items: { type: 'string' } },
           },
         },
-        type: { type: ['string', 'null'], enum: Object.values(this.TYPES) },
-        status: {
-          type: ['string', 'null'],
-          enum: Object.values(this.TYPE_STATUS),
-        },
+        type: { type: ['string', 'null'] },
+        status: { type: ['string', 'null'] },
         store_hash: { type: 'string' },
         store_height: { type: 'number' },
       },
@@ -102,7 +81,7 @@ export class Code extends BaseModel {
         },
       },
       verification: {
-        relation: Model.HasOneRelation,
+        relation: Model.HasManyRelation,
         modelClass: CodeIdVerification,
         join: {
           from: 'code.code_id',

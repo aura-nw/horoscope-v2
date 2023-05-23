@@ -14,11 +14,11 @@ export class CodeIdVerification extends BaseModel {
 
   s3_location: string | undefined;
 
-  contract_verification: string | undefined;
+  verification_status: string | undefined;
 
   compiler_version: string | undefined;
 
-  url: string | undefined;
+  github_url: string | undefined;
 
   verify_step!: any;
 
@@ -30,9 +30,9 @@ export class CodeIdVerification extends BaseModel {
 
   static get VERIFICATION_STATUS() {
     return {
-      UNVERIFIED: 'UNVERIFIED',
-      VERIFYFAIL: 'VERIFYFAIL',
+      FAIL: 'FAIL',
       VERIFYING: 'VERIFYING',
+      SUCCESS: 'SUCCESS',
     };
   }
 
@@ -50,12 +50,12 @@ export class CodeIdVerification extends BaseModel {
         query_msg_schema: { type: ['string', 'null'] },
         execute_msg_schema: { type: ['string', 'null'] },
         s3_location: { type: ['string', 'null'] },
-        contract_verification: {
+        verification_status: {
           type: ['string', 'null'],
           enum: Object.values(this.VERIFICATION_STATUS),
         },
         compiler_version: { type: ['string', 'null'] },
-        url: { type: ['string', 'null'] },
+        github_url: { type: ['string', 'null'] },
         verify_step: {
           type: 'object',
           properties: {
