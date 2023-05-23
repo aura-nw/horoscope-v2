@@ -1,3 +1,4 @@
+import { SmartContractEvent } from '../../models/smart_contract_event';
 import { Transaction, Event, EventAttribute } from '../../models';
 
 export interface IContractMsgInfo {
@@ -5,7 +6,7 @@ export interface IContractMsgInfo {
   contractAddress: string;
   action?: string;
   content: string;
-  wasm_attributes?: {
+  attributes?: {
     key: string;
     value: string;
   }[];
@@ -18,7 +19,7 @@ export interface IContractMsgInfo {
 // sender: sender of tx
 // action: INSTANTIATE / MINT / TRANSFER_NFT / BURN
 // content: input of contract
-// wasm_attributes: output of an activity in contract (it may have multiple output activities relate to one input)
+// attributes: output of an activity in contract (it may have multiple output activities relate to one input)
 // tx: tx data
 export async function getContractActivities(
   fromBlock: number,
@@ -69,7 +70,7 @@ export async function getContractActivities(
       sender: wasmEvent.message.sender,
       action,
       content: wasmEvent.message.content.msg,
-      wasm_attributes: wasmAttribute,
+      attributes: wasmAttribute,
       tx: wasmEvent.transaction,
       event_id: wasmEvent.id,
       index,
@@ -83,19 +84,19 @@ export function getAttributeFrom(listAttributes: any, attributeType: string) {
   return listAttributes?.find((attr: any) => attr.key === attributeType)?.value;
 }
 
-export function removeDuplicate(contractEvents: IContractMsgInfo[]) {
+export function removeDuplicate(contractEvents: SmartContractEvent[]) {
   return contractEvents
-    .reduceRight((acc: IContractMsgInfo[], curr) => {
+    .reduceRight((acc: SmartContractEvent[], curr) => {
       const indexDuplicate = acc.findIndex(
         (item) =>
           item.contractAddress === curr.contractAddress &&
           item.action === curr.action &&
           getAttributeFrom(
-            item.wasm_attributes,
+            item.attributes,
             EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
           ) ===
             getAttributeFrom(
-              curr.wasm_attributes,
+              curr.attributes,
               EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
             )
       );
