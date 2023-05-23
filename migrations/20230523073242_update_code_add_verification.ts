@@ -5,7 +5,8 @@ export async function up(knex: Knex): Promise<void> {
     table.increments();
     table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
     table.timestamp('updated_at').notNullable().defaultTo(knex.raw('now()'));
-    table.integer('code_id').index();
+    table.integer('code_id').index().notNullable();
+    table.string('data_hash').index().notNullable();
     table.text('instantiate_msg_schema');
     table.text('query_msg_schema');
     table.text('execute_msg_schema');
