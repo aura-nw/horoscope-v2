@@ -517,14 +517,7 @@ export default class CrawlGenesisService extends BullableService {
               contract.name = data.contract;
               contract.version = data.version;
 
-              let codeTypes = '';
-              if (data.contract.includes('cw20')) codeTypes = Code.TYPES.CW20;
-              else if (data.contract.includes('cw721'))
-                codeTypes = Code.TYPES.CW721;
-              else if (data.contract.includes('cw4973'))
-                codeTypes = Code.TYPES.CW4973;
-              else if (data.contract.includes('cw2981'))
-                codeTypes = Code.TYPES.CW2981;
+              const codeTypes = Code.detectCodeType(data.contract);
               if (codeTypes !== '')
                 updateContractTypes.push(
                   Code.query().patch({ type: codeTypes }).where({
