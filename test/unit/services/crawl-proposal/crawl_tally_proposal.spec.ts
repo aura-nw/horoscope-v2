@@ -8,8 +8,7 @@ import {
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { cosmos } from '@aura-nw/aurajs';
-import { BULL_JOB_NAME } from '../../../../src/common';
-import { Account, Proposal } from '../../../../src/models';
+import { Proposal } from '../../../../src/models';
 import CrawlTallyProposalService from '../../../../src/services/crawl-proposal/crawl_tally_proposal.service';
 import config from '../../../../config.json' assert { type: 'json' };
 import network from '../../../../network.json' assert { type: 'json' };
@@ -17,56 +16,45 @@ import {
   defaultSendFee,
   defaultSigningClientOptions,
 } from '../../../helper/constant';
-import knex from '../../../../src/common/utils/db_connection';
 
 @Describe('Test crawl_tally_proposal service')
 export default class CrawlTallyProposalTest {
-  account = {
-    ...Account.fromJson({
-      address: 'aura136v0nmlv0saryev8wqz89w80edzdu3quzm0ve9',
-      balances: [],
-      spendable_balances: [],
-      type: null,
-      pubkey: {},
-      account_number: 0,
-      sequence: 0,
-    }),
-    proposals: {
-      proposal_id: 1,
-      voting_start_time: '2023-04-10T07:28:12.328245471Z',
-      voting_end_time: new Date(new Date().getSeconds() - 10).toISOString(),
-      submit_time: '2023-04-10T07:28:12.328245471Z',
-      deposit_end_time: '2023-04-10T07:38:12.328245471Z',
-      type: '/cosmos.gov.v1beta1.TextProposal',
+  proposal = Proposal.fromJson({
+    proposal_id: 1,
+    proposer_address: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
+    voting_start_time: '2023-04-10T07:28:12.328245471Z',
+    voting_end_time: new Date(new Date().getSeconds() - 10).toISOString(),
+    submit_time: '2023-04-10T07:28:12.328245471Z',
+    deposit_end_time: '2023-04-10T07:38:12.328245471Z',
+    type: '/cosmos.gov.v1beta1.TextProposal',
+    title: 'Community Pool Spend test 1',
+    description: 'Test 1',
+    content: {
+      '@type': '/cosmos.gov.v1beta1.TextProposal',
       title: 'Community Pool Spend test 1',
       description: 'Test 1',
-      content: {
-        '@type': '/cosmos.gov.v1beta1.TextProposal',
-        title: 'Community Pool Spend test 1',
-        description: 'Test 1',
-      },
-      status: 'PROPOSAL_STATUS_VOTING_PERIOD',
-      tally: {
-        yes: '0',
-        no: '0',
-        abstain: '0',
-        no_with_veto: '0',
-      },
-      initial_deposit: [
-        {
-          denom: 'uaura',
-          amount: '100000',
-        },
-      ],
-      total_deposit: [
-        {
-          denom: 'uaura',
-          amount: '10000000',
-        },
-      ],
-      turnout: 0,
     },
-  };
+    status: 'PROPOSAL_STATUS_VOTING_PERIOD',
+    tally: {
+      yes: '0',
+      no: '0',
+      abstain: '0',
+      no_with_veto: '0',
+    },
+    initial_deposit: [
+      {
+        denom: 'uaura',
+        amount: '100000',
+      },
+    ],
+    total_deposit: [
+      {
+        denom: 'uaura',
+        amount: '10000000',
+      },
+    ],
+    turnout: 0,
+  });
 
   broker = new ServiceBroker({ logger: false });
 
@@ -78,17 +66,15 @@ export default class CrawlTallyProposalTest {
     this.crawlTallyProposalService = this.broker.createService(
       CrawlTallyProposalService
     ) as CrawlTallyProposalService;
-    await this.crawlTallyProposalService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_TALLY_PROPOSAL)
-      .empty();
-    await knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE');
-    await Account.query().insertGraph(this.account).returning('*');
+    this.crawlTallyProposalService.getQueueManager().stopAll();
+
+    await Proposal.query().delete(true);
+    await Proposal.query().insert(this.proposal);
   }
 
   @AfterAll()
   async tearDown() {
-    await knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE');
+    await Proposal.query().delete(true);
     await this.broker.stop();
   }
 

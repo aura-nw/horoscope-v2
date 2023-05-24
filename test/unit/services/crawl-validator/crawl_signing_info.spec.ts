@@ -1,6 +1,5 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
-import { BULL_JOB_NAME } from '../../../../src/common';
 import { Validator } from '../../../../src/models';
 import CrawlSigningInfoService from '../../../../src/services/crawl-validator/crawl_signing_info.service';
 
@@ -38,6 +37,8 @@ export default class CrawlSigningInfoTest {
     tombstoned: false,
     missed_blocks_counter: 0,
     self_delegation_balance: '102469134',
+    delegators_count: 0,
+    delegators_last_height: 0,
   });
 
   broker = new ServiceBroker({ logger: false });
@@ -50,10 +51,7 @@ export default class CrawlSigningInfoTest {
     this.crawlSigningInfoService = this.broker.createService(
       CrawlSigningInfoService
     ) as CrawlSigningInfoService;
-    await this.crawlSigningInfoService
-      .getQueueManager()
-      .getQueue(BULL_JOB_NAME.CRAWL_SIGNING_INFO)
-      .empty();
+    this.crawlSigningInfoService.getQueueManager().stopAll();
     await Validator.query().delete(true);
     await Validator.query().insert(this.validator);
   }

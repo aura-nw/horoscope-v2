@@ -11,6 +11,7 @@ import { cosmos } from '@aura-nw/aurajs';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
+import knex from '../../common/utils/db_connection';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
@@ -19,18 +20,9 @@ import {
   getHttpBatchClient,
   getLcdClient,
   IAuraJSClientFactory,
-  MSG_TYPE,
   SERVICE,
 } from '../../common';
-import {
-  Account,
-  Block,
-  BlockCheckpoint,
-  Proposal,
-  Transaction,
-  EventAttribute,
-} from '../../models';
-import knex from '../../common/utils/db_connection';
+import { BlockCheckpoint, Proposal, EventAttribute } from '../../models';
 
 @Service({
   name: SERVICE.V1.CrawlProposalService.key,
@@ -48,183 +40,124 @@ export default class CrawlProposalService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_PROPOSAL,
-    jobType: 'crawl',
-    prefix: `horoscope-v2-${config.chainId}`,
+    jobName: 'crawl',
+    // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleCrawlProposals(_payload: object): Promise<void> {
     this._lcdClient = await getLcdClient();
 
     const listProposals: Proposal[] = [];
 
-    const [crawlProposalBlockCheckpoint, latestBlock]: [
-      BlockCheckpoint | undefined,
-      Block | undefined
-    ] = await Promise.all([
-      BlockCheckpoint.query()
-        .select('*')
-        .findOne('job_name', BULL_JOB_NAME.CRAWL_PROPOSAL),
-      Block.query().select('height').findOne({}).orderBy('height', 'desc'),
-    ]);
+    const [startHeight, endHeight, updateBlockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.CRAWL_PROPOSAL,
+        BULL_JOB_NAME.HANDLE_TRANSACTION,
+        config.crawlProposal.key
+      );
+    this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
+    if (startHeight >= endHeight) return;
+
+    let proposalIds: number[] = [];
+    const resultTx = await EventAttribute.query()
+      .where('block_height', '>', startHeight)
+      .andWhere('block_height', '<=', endHeight)
+      .andWhere('key', EventAttribute.ATTRIBUTE_KEY.PROPOSAL_ID)
+      .select('value');
     this.logger.info(
-      `Block Checkpoint: ${JSON.stringify(crawlProposalBlockCheckpoint)}`
+      `Result get Tx from height ${startHeight} to ${endHeight}:`
     );
+    this.logger.info(JSON.stringify(resultTx));
 
-    let lastHeight = 0;
-    let updateBlockCheckpoint: BlockCheckpoint;
-    if (crawlProposalBlockCheckpoint) {
-      lastHeight = crawlProposalBlockCheckpoint.height;
-      updateBlockCheckpoint = crawlProposalBlockCheckpoint;
-    } else
-      updateBlockCheckpoint = BlockCheckpoint.fromJson({
-        job_name: BULL_JOB_NAME.CRAWL_PROPOSAL,
-        height: 0,
-      });
+    if (resultTx.length > 0)
+      proposalIds = Array.from(
+        new Set(resultTx.map((res: any) => parseInt(res.value, 10)))
+      );
 
-    if (latestBlock) {
-      if (latestBlock.height === lastHeight) return;
-
-      const eventValues: number[] = [];
-      let page = 0;
-      let done = false;
-      while (!done) {
-        // eslint-disable-next-line no-await-in-loop
-        const resultTx = await Transaction.query()
-          .joinRelated('events.[attributes]')
-          .where('transaction.height', '>', lastHeight)
-          .andWhere('transaction.height', '<=', latestBlock.height)
-          .andWhere('transaction.code', 0)
-          .andWhere(
-            'events:attributes.key',
-            EventAttribute.EVENT_KEY.PROPOSAL_ID
-          )
-          .select(
-            'transaction.id',
-            'transaction.height',
-            'events:attributes.key',
-            'events:attributes.value'
-          )
-          .page(page, 1000);
-        this.logger.info(
-          `Result get Tx from height ${lastHeight} to ${latestBlock.height}:`
-        );
-        this.logger.info(JSON.stringify(resultTx));
-
-        if (resultTx.results.length > 0) {
-          resultTx.results.map((res: any) =>
-            eventValues.push(Number.parseInt(res.value, 10))
+    await knex
+      .transaction(async (trx) => {
+        if (proposalIds.length > 0) {
+          const listProposalsInDb: Proposal[] = await Proposal.query().whereIn(
+            'proposal_id',
+            proposalIds
           );
 
-          page += 1;
-        } else done = true;
-      }
+          await Promise.all(
+            proposalIds.map(async (proposalId: number) => {
+              try {
+                const proposal =
+                  await this._lcdClient.auranw.cosmos.gov.v1beta1.proposal({
+                    proposalId,
+                  });
 
-      const proposalIds: number[] = Array.from(new Set(eventValues));
-      if (proposalIds.length > 0) {
-        const listProposalsInDb: Proposal[] = await Proposal.query().whereIn(
-          'proposal_id',
-          proposalIds
-        );
+                this.logger.info(
+                  `Proposal ${proposalId} content: ${JSON.stringify(
+                    proposal.proposal.content
+                  )}`
+                );
 
-        await Promise.all(
-          proposalIds.map(async (proposalId: number) => {
-            const proposal =
-              await this._lcdClient.auranw.cosmos.gov.v1beta1.proposal({
-                proposalId,
+                const foundProposal: Proposal | undefined =
+                  listProposalsInDb.find(
+                    (pro: Proposal) => pro.proposal_id === proposalId
+                  );
+
+                let proposalEntity: Proposal;
+                if (!foundProposal) {
+                  const [proposerAddress, initialDeposit] =
+                    await Proposal.getProposerBySearchTx(
+                      proposal.proposal.proposal_id
+                    );
+
+                  proposalEntity = Proposal.createNewProposal(
+                    proposal.proposal,
+                    proposerAddress,
+                    initialDeposit
+                  );
+                } else {
+                  proposalEntity = foundProposal;
+                  proposalEntity.status = proposal.proposal.status;
+                  proposalEntity.total_deposit =
+                    proposal.proposal.total_deposit;
+                }
+
+                listProposals.push(proposalEntity);
+              } catch (error) {
+                this.logger.error(`Error get proposal ${proposalId}`);
+                this.logger.debug(error);
+              }
+            })
+          );
+
+          if (listProposals.length > 0)
+            await Proposal.query()
+              .insert(listProposals)
+              .onConflict('proposal_id')
+              .merge()
+              .returning('proposal_id')
+              .transacting(trx)
+              .catch((error) => {
+                this.logger.error('Error insert or update proposals');
+                this.logger.error(error);
               });
+        }
 
-            this.logger.info(
-              `Proposal ${proposalId} content: ${JSON.stringify(
-                proposal.proposal.content
-              )}`
-            );
-
-            const foundProposal: Proposal | undefined = listProposalsInDb.find(
-              (pro: Proposal) => pro.proposal_id === proposalId
-            );
-
-            let proposalEntity: Proposal;
-            if (!foundProposal) {
-              const [proposerId, initialDeposit] =
-                await this.getProposerBySearchTx(proposalId);
-
-              proposalEntity = Proposal.fromJson({
-                proposal_id: proposalId,
-                proposer_id: proposerId,
-                voting_start_time: proposal.proposal.voting_start_time,
-                voting_end_time: proposal.proposal.voting_end_time,
-                submit_time: proposal.proposal.submit_time,
-                deposit_end_time: proposal.proposal.deposit_end_time,
-                type: proposal.proposal.content['@type'],
-                title: proposal.proposal.content.title ?? '',
-                description: proposal.proposal.content.description ?? '',
-                content: proposal.proposal.content,
-                status: proposal.proposal.status,
-                tally: {
-                  yes: '0',
-                  no: '0',
-                  abstain: '0',
-                  no_with_veto: '0',
-                },
-                initial_deposit: initialDeposit,
-                total_deposit: proposal.proposal.total_deposit,
-                turnout: 0,
-              });
-            } else {
-              proposalEntity = foundProposal;
-              proposalEntity.status = proposal.proposal.status;
-              proposalEntity.total_deposit = proposal.proposal.total_deposit;
-            }
-
-            listProposals.push(proposalEntity);
-          })
-        );
-
-        if (listProposals.length > 0)
-          await Proposal.query()
-            .insert(listProposals)
-            .onConflict('proposal_id')
-            .merge()
-            .returning('proposal_id')
-            .catch((error) => {
-              this.logger.error('Error insert or update proposals');
-              this.logger.error(error);
-            });
-      }
-
-      updateBlockCheckpoint.height = latestBlock.height;
-      await BlockCheckpoint.query()
-        .insert(updateBlockCheckpoint)
-        .onConflict('job_name')
-        .merge()
-        .returning('id');
-    }
-  }
-
-  private async getProposerBySearchTx(proposalId: number) {
-    const tx: any = await Transaction.query()
-      .joinRelated('[messages, events.[attributes]]')
-      .where('transaction.code', 0)
-      .andWhere('messages.type', MSG_TYPE.MSG_SUBMIT_PROPOSAL)
-      .andWhere('events.type', EventAttribute.EVENT_KEY.SUBMIT_PROPOSAL)
-      .andWhere('events:attributes.key', EventAttribute.EVENT_KEY.PROPOSAL_ID)
-      .andWhere('events:attributes.value', proposalId.toString())
-      .andWhere(knex.raw('messages.index = events.tx_msg_index'))
-      .select('messages.content')
-      .first();
-
-    const initialDeposit = tx?.content.initial_deposit;
-    const proposerAddress = tx?.content.proposer;
-    const proposerId = (
-      await Account.query().findOne('address', proposerAddress)
-    )?.id;
-
-    return [proposerId, initialDeposit];
+        updateBlockCheckpoint.height = endHeight;
+        await BlockCheckpoint.query()
+          .insert(updateBlockCheckpoint)
+          .onConflict('job_name')
+          .merge()
+          .returning('id')
+          .transacting(trx);
+      })
+      .catch((error) => {
+        this.logger.error(error);
+        throw error;
+      });
   }
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL,
-    jobType: 'crawl',
-    prefix: `horoscope-v2-${config.chainId}`,
+    jobName: 'crawl',
+    // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleNotEnoughDepositProposals(
     _payload: object

@@ -8,7 +8,6 @@ import {
 } from '@cosmjs/stargate';
 import { cosmos } from '@aura-nw/aurajs';
 import {
-  Account,
   Block,
   BlockCheckpoint,
   Proposal,
@@ -27,29 +26,37 @@ import knex from '../../../../src/common/utils/db_connection';
 
 @Describe('Test crawl_proposal service')
 export default class CrawlProposalTest {
-  account: Account = Account.fromJson(
-    Account.fromJson({
-      address: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
-      balances: [],
-      spendable_balances: [],
-      type: null,
-      pubkey: {},
-      account_number: 0,
-      sequence: 0,
-    })
-  );
+  blockCheckpoint = [
+    BlockCheckpoint.fromJson({
+      job_name: BULL_JOB_NAME.CRAWL_PROPOSAL,
+      height: 3967500,
+    }),
+    BlockCheckpoint.fromJson({
+      job_name: BULL_JOB_NAME.HANDLE_TRANSACTION,
+      height: 3967529,
+    }),
+  ];
 
-  block: Block = Block.fromJson({
-    height: 3967530,
-    hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9F',
-    time: '2023-01-12T01:53:57.216Z',
-    proposer_address: 'auraomd;cvpio3j4eg',
-    data: {},
-  });
+  blocks: Block[] = [
+    Block.fromJson({
+      height: 3967529,
+      hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9A',
+      time: '2023-01-12T01:53:57.216Z',
+      proposer_address: 'auraomd;cvpio3j4eg',
+      data: {},
+    }),
+    Block.fromJson({
+      height: 3967530,
+      hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9F',
+      time: '2023-01-12T01:53:57.216Z',
+      proposer_address: 'auraomd;cvpio3j4eg',
+      data: {},
+    }),
+  ];
 
   txInsert = {
     ...Transaction.fromJson({
-      height: 3967530,
+      height: 3967529,
       hash: '4A8B0DE950F563553A81360D4782F6EC451F6BEF7AC50E2459D1997FA168997D',
       codespace: '',
       code: 0,
@@ -58,13 +65,155 @@ export default class CrawlProposalTest {
       gas_limit: '141106',
       fee: 353,
       timestamp: '2023-01-12T01:53:57.000Z',
-      data: {},
-    }),
-    messages: {
-      sender: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
       index: 0,
+      data: {
+        tx: {
+          body: {
+            messages: [
+              {
+                type: '/cosmos.gov.v1beta1.MsgSubmitProposal',
+                initial_deposit: [
+                  {
+                    denom: 'uaura',
+                    amount: '100000',
+                  },
+                ],
+                proposer: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
+              },
+            ],
+          },
+        },
+        tx_response: {
+          logs: [
+            {
+              msg_index: 0,
+              events: [
+                {
+                  type: 'coin_received',
+                  attributes: [
+                    {
+                      key: 'receiver',
+                      value: 'aura10d07y265gmmuvt4z0w9aw880jnsr700jp5y852',
+                      block_height: 3967529,
+                    },
+                    {
+                      key: 'amount',
+                      value: '100000utaura',
+                      block_height: 3967529,
+                    },
+                  ],
+                },
+                {
+                  type: 'coin_spent',
+                  attributes: [
+                    {
+                      key: 'spender',
+                      value: 'aura1gypt2w7xg5t9yr76hx6zemwd4xv72jckk03r6t',
+                      block_height: 3967529,
+                    },
+                    {
+                      key: 'amount',
+                      value: '100000utaura',
+                      block_height: 3967529,
+                    },
+                  ],
+                },
+                {
+                  type: 'message',
+                  attributes: [
+                    {
+                      key: 'action',
+                      value: '/cosmos.gov.v1beta1.MsgSubmitProposal',
+                      block_height: 3967529,
+                    },
+                    {
+                      key: 'sender',
+                      value: 'aura1gypt2w7xg5t9yr76hx6zemwd4xv72jckk03r6t',
+                      block_height: 3967529,
+                    },
+                    {
+                      key: 'module',
+                      value: 'governance',
+                      block_height: 3967529,
+                    },
+                    {
+                      key: 'sender',
+                      value: 'aura1gypt2w7xg5t9yr76hx6zemwd4xv72jckk03r6t',
+                      block_height: 3967529,
+                    },
+                  ],
+                },
+                {
+                  type: 'proposal_deposit',
+                  attributes: [
+                    {
+                      key: 'amount',
+                      value: '100000utaura',
+                      block_height: 3967529,
+                    },
+                    {
+                      key: 'proposal_id',
+                      value: '1',
+                      block_height: 3967529,
+                    },
+                  ],
+                },
+                {
+                  type: 'submit_proposal',
+                  attributes: [
+                    {
+                      key: 'proposal_id',
+                      value: '1',
+                      block_height: 3967529,
+                    },
+                    {
+                      key: 'proposal_type',
+                      value: 'CommunityPoolSpend',
+                      block_height: 3967529,
+                    },
+                  ],
+                },
+                {
+                  type: 'transfer',
+                  attributes: [
+                    {
+                      key: 'recipient',
+                      value: 'aura10d07y265gmmuvt4z0w9aw880jnsr700jp5y852',
+                      block_height: 3967529,
+                    },
+                    {
+                      key: 'sender',
+                      value: 'aura1gypt2w7xg5t9yr76hx6zemwd4xv72jckk03r6t',
+                      block_height: 3967529,
+                    },
+                    {
+                      key: 'amount',
+                      value: '100000utaura',
+                      block_height: 3967529,
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    }),
+    events: {
+      tx_msg_index: 0,
+      type: 'submit_proposal',
+      attributes: {
+        key: 'proposal_id',
+        value: '1',
+        block_height: 3967529,
+      },
+    },
+    messages: {
+      index: 0,
+      sender: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
       type: '/cosmos.gov.v1beta1.MsgSubmitProposal',
       content: {
+        type: '/cosmos.gov.v1beta1.MsgSubmitProposal',
         initial_deposit: [
           {
             denom: 'uaura',
@@ -74,30 +223,6 @@ export default class CrawlProposalTest {
         proposer: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
       },
     },
-    events: [
-      {
-        tx_msg_index: 0,
-        type: 'submit_proposal',
-        attributes: {
-          key: 'proposal_id',
-          value: '1',
-        },
-      },
-      {
-        tx_msg_index: 0,
-        type: 'submit_proposal',
-        attributes: [
-          {
-            key: 'proposal_id',
-            value: '1',
-          },
-          {
-            key: 'proposal_type',
-            value: 'CommunityPoolSpend',
-          },
-        ],
-      },
-    ],
   };
 
   broker = new ServiceBroker({ logger: false });
@@ -115,28 +240,15 @@ export default class CrawlProposalTest {
     this.crawlTallyProposalService = this.broker.createService(
       CrawlTallyProposalService
     ) as CrawlTallyProposalService;
-    await Promise.all([
-      this.crawlProposalService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_PROPOSAL)
-        .empty(),
-      this.crawlProposalService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL)
-        .empty(),
-      this.crawlTallyProposalService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_TALLY_PROPOSAL)
-        .empty(),
-    ]);
+    this.crawlProposalService.getQueueManager().stopAll();
+    this.crawlTallyProposalService.getQueueManager().stopAll();
     await Promise.all([
       BlockCheckpoint.query().delete(true),
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
-      knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE'),
     ]);
-    await Block.query().insert(this.block);
+    await Block.query().insert(this.blocks);
     await Transaction.query().insertGraph(this.txInsert);
-    await Account.query().insert(this.account);
+    await BlockCheckpoint.query().insert(this.blockCheckpoint);
   }
 
   @AfterAll()
@@ -144,7 +256,6 @@ export default class CrawlProposalTest {
     await Promise.all([
       BlockCheckpoint.query().delete(true),
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
-      knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE'),
     ]);
     await this.broker.stop();
   }
@@ -194,16 +305,12 @@ export default class CrawlProposalTest {
 
     await this.crawlProposalService?.handleCrawlProposals({});
 
-    const [newProposal, proposer]: [Proposal | undefined, Account | undefined] =
-      await Promise.all([
-        Proposal.query().where('proposal_id', 1).first(),
-        Account.query()
-          .where('address', 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk')
-          .first(),
-      ]);
+    const newProposal = await Proposal.query().where('proposal_id', 1).first();
 
     expect(newProposal?.proposal_id).toEqual(1);
-    expect(newProposal?.proposer_id).toEqual(proposer?.id);
+    expect(newProposal?.proposer_address).toEqual(
+      'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'
+    );
     expect(newProposal?.type).toEqual('/cosmos.gov.v1beta1.TextProposal');
     expect(newProposal?.title).toEqual('Community Pool Spend test 1');
     expect(newProposal?.description).toEqual('Test 1');

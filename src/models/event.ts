@@ -3,8 +3,13 @@ import { Model } from 'objection';
 import BaseModel from './base';
 import { Transaction } from './transaction';
 import { EventAttribute } from './event_attribute';
+import { TransactionMessage } from './transaction_message';
 
 export class Event extends BaseModel {
+  [relation: string]: any;
+
+  id!: number;
+
   tx_id!: number;
 
   tx_msg_index: number | undefined;
@@ -51,6 +56,14 @@ export class Event extends BaseModel {
           to: 'event_attribute.event_id',
         },
       },
+      message: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: TransactionMessage,
+        join: {
+          from: ['event.tx_id', 'event.tx_msg_index'],
+          to: ['transaction_message.tx_id', 'transaction_message.index'],
+        },
+      },
     };
   }
 
@@ -61,4 +74,16 @@ export class Event extends BaseModel {
       TX_EVENT: 'TX_EVENT',
     };
   }
+
+  static EVENT_TYPE = {
+    STORE_CODE: 'store_code',
+    SUBMIT_PROPOSAL: 'submit_proposal',
+    INSTANTIATE: 'instantiate',
+    MESSAGE: 'message',
+    EXECUTE: 'execute',
+    DELEGATE: 'delegate',
+    REDELEGATE: 'redelegate',
+    UNBOND: 'unbond',
+    WASM: 'wasm',
+  };
 }

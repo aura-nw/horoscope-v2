@@ -30,25 +30,14 @@ export default class CrawlGenesisTest {
     this.crawlGenesisService = this.broker.createService(
       CrawlGenesisService
     ) as CrawlGenesisService;
-    await Promise.all([
-      this.crawlGenesisService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_GENESIS)
-        .empty(),
-      this.crawlGenesisService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT)
-        .empty(),
-      this.crawlGenesisService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR)
-        .empty(),
-    ]);
+    this.crawlGenesisService
+        .getQueueManager().stopAll();
+    
     await Promise.all([
       Validator.query().delete(true),
       knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE'),
     ]);
-    execSync('cp ./test/helper/genesis.txt .');
+    execSync('cp ./test/unit/services/crawl-genesis/genesis.txt .');
   }
 
   @AfterAll()

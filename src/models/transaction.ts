@@ -5,6 +5,8 @@ import { Event } from './event';
 import { TransactionMessage } from './transaction_message';
 
 export class Transaction extends BaseModel {
+  [relation: string]: any;
+
   id!: number;
 
   height!: number;
@@ -22,6 +24,10 @@ export class Transaction extends BaseModel {
   gas_limit!: string;
 
   fee!: string;
+
+  memo!: string;
+
+  index!: number;
 
   // fee_payer!: string;
 
@@ -55,6 +61,7 @@ export class Transaction extends BaseModel {
         'gas_wanted',
         'gas_limit',
         'fee',
+        'index',
         // 'fee_payer',
         // 'fee_granter',
         // 'signer_public_key_type',
@@ -70,12 +77,14 @@ export class Transaction extends BaseModel {
         gas_used: { type: 'string' },
         gas_wanted: { type: 'string' },
         gas_limit: { type: 'string' },
+        index: { type: 'number' },
         // fee: { type: 'number' },
         // fee_payer: { type: 'string' },
         // fee_granter: { type: 'string' },
         // signer_public_key_type: { type: 'string' },
         // signer_public_key_threshold: { type: 'number' },
         timestamp: { type: 'string', format: 'date-time' },
+        memo: { type: 'string' },
       },
     };
   }
