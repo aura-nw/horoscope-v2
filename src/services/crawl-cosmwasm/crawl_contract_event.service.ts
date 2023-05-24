@@ -48,7 +48,7 @@ export default class CrawlCodeService extends BullableService {
         await knex.transaction(async (trx) => {
           const queries: any[] = [];
           contractEvents.forEach((contractEvent) => {
-            this.logger.debug({
+            this.logger.info({
               contractAddress: contractEvent.contractAddress,
               action: contractEvent.action,
               event_id: contractEvent.event_id,
