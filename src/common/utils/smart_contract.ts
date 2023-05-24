@@ -89,7 +89,6 @@ export function removeDuplicate(contractEvents: IContractMsgInfo[]) {
       const indexDuplicate = acc.findIndex(
         (item) =>
           item.contractAddress === curr.contractAddress &&
-          item.action === curr.action &&
           getAttributeFrom(
             item.wasm_attributes,
             EventAttribute.ATTRIBUTE_KEY.TOKEN_ID

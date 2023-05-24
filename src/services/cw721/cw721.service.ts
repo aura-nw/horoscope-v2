@@ -42,6 +42,7 @@ const CW721_ACTION = {
   BURN: 'burn',
   TRANSFER: 'transfer_nft',
   INSTANTIATE: 'instantiate',
+  SEND_NFT: 'send_nft',
 };
 
 @Service({
@@ -389,7 +390,11 @@ export default class Cw721HandlerService extends BullableService {
     );
     // handle transfer
     await this.handlerCw721Transfer(
-      cw721MsgsExecute.filter((msg) => msg.action === CW721_ACTION.TRANSFER)
+      cw721MsgsExecute.filter(
+        (msg) =>
+          msg.action === CW721_ACTION.TRANSFER ||
+          msg.action === CW721_ACTION.SEND_NFT
+      )
     );
     // handle burn
     await this.handlerCw721Burn(
