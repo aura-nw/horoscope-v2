@@ -81,7 +81,7 @@ export default class Cw721HandlerService extends BullableService {
           await CW721Token.query()
             .where('cw721_contract_id', cw721ContractId)
             .andWhere('token_id', tokenId)
-            .andWhere('last_updated_height', '<', transferMsg.tx.height)
+            .andWhere('last_updated_height', '<=', transferMsg.tx.height)
             .patch({
               owner: recipient,
               last_updated_height: transferMsg.tx.height,
@@ -168,7 +168,7 @@ export default class Cw721HandlerService extends BullableService {
             const query = CW721Token.query()
               .where('cw721_contract_id', cw721ContractId)
               .andWhere('token_id', tokenId)
-              .andWhere('last_updated_height', '<', burnMsg.tx.height)
+              .andWhere('last_updated_height', '<=', burnMsg.tx.height)
               .patch({
                 last_updated_height: burnMsg.tx.height,
                 burned: true,
