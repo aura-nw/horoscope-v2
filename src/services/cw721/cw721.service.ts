@@ -22,10 +22,7 @@ import CW721Contract from '../../models/cw721_contract';
 import CW721Token from '../../models/cw721_token';
 import CW721Activity from '../../models/cw721_tx';
 import { SmartContract } from '../../models/smart_contract';
-import {
-  getAttributeFrom,
-  removeDuplicate,
-} from '../../common/utils/smart_contract';
+import { getAttributeFrom } from '../../common/utils/smart_contract';
 
 const { NODE_ENV } = Config;
 
@@ -41,6 +38,7 @@ const CW721_ACTION = {
   BURN: 'burn',
   TRANSFER: 'transfer_nft',
   INSTANTIATE: 'instantiate',
+  SEND_NFT: 'send_nft',
 };
 
 @Service({
@@ -59,54 +57,46 @@ export default class Cw721HandlerService extends BullableService {
   async handlerCw721Transfer(
     transferMsgs: SmartContractEvent[]
   ): Promise<void> {
-    // remove duplicate transfer event for same token
-    const distinctTransfers = removeDuplicate(transferMsgs);
     // get Ids for contracts
     const cw721ContractDbRecords = await this.getCw721ContractsRecords(
-      distinctTransfers.map((transferMsg) => transferMsg.contractAddress)
+      transferMsgs.map((transferMsg) => transferMsg.contractAddress)
     );
-    await knex.transaction(async (trx) => {
-      const queries: any[] = [];
-      distinctTransfers.forEach((transferMsg) => {
-        const recipient = getAttributeFrom(
-          transferMsg.attributes,
-          EventAttribute.ATTRIBUTE_KEY.RECIPIENT
-        );
-        const tokenId = getAttributeFrom(
-          transferMsg.attributes,
-          EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
-        );
-        // find the id for correspond smart contract
-        const cw721ContractId = cw721ContractDbRecords.find(
-          (item) => item.address === transferMsg.contractAddress
-        )?.id;
-        if (cw721ContractId) {
-          if (tokenId && recipient) {
-            queries.push(
-              CW721Token.query()
-                .where('cw721_contract_id', cw721ContractId)
-                .andWhere('token_id', tokenId)
-                .andWhere('last_updated_height', '<', transferMsg.tx.height)
-                .patch({
-                  owner: recipient,
-                  last_updated_height: transferMsg.tx.height,
-                })
-            );
-          } else {
-            throw new Error(
-              `Msg transfer in tx ${transferMsg.tx.hash} not found token id transfered or not found new owner`
-            );
-          }
+    // eslint-disable-next-line no-restricted-syntax
+    for (const transferMsg of transferMsgs) {
+      const recipient = getAttributeFrom(
+        transferMsg.attributes,
+        EventAttribute.ATTRIBUTE_KEY.RECIPIENT
+      );
+      const tokenId = getAttributeFrom(
+        transferMsg.attributes,
+        EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+      );
+      // find the id for correspond smart contract
+      const cw721ContractId = cw721ContractDbRecords.find(
+        (item) => item.address === transferMsg.contractAddress
+      )?.id;
+      if (cw721ContractId) {
+        if (tokenId && recipient) {
+          // eslint-disable-next-line no-await-in-loop
+          await CW721Token.query()
+            .where('cw721_contract_id', cw721ContractId)
+            .andWhere('token_id', tokenId)
+            .andWhere('last_updated_height', '<', transferMsg.tx.height)
+            .patch({
+              owner: recipient,
+              last_updated_height: transferMsg.tx.height,
+            });
         } else {
           throw new Error(
-            `Msg transfer in tx ${transferMsg.tx.hash} not found contract address in cw721 contract DB`
+            `Msg transfer in tx ${transferMsg.tx.hash} not found token id transfered or not found new owner`
           );
         }
-      });
-      await Promise.all(queries) // Once every query is written
-        .then(trx.commit) // Try to execute all of them
-        .catch(trx.rollback); // And rollback in case any of them goes wrong
-    });
+      } else {
+        throw new Error(
+          `Msg transfer in tx ${transferMsg.tx.hash} not found contract address in cw721 contract DB`
+        );
+      }
+    }
   }
 
   // Insert new token if it haven't been in cw721_token table, or update burned to false if it already have been there
@@ -367,7 +357,11 @@ export default class Cw721HandlerService extends BullableService {
     );
     // handle transfer
     await this.handlerCw721Transfer(
-      cw721MsgsExecute.filter((msg) => msg.action === CW721_ACTION.TRANSFER)
+      cw721MsgsExecute.filter(
+        (msg) =>
+          msg.action === CW721_ACTION.TRANSFER ||
+          msg.action === CW721_ACTION.SEND_NFT
+      )
     );
     // handle burn
     await this.handlerCw721Burn(

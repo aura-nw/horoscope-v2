@@ -1,4 +1,3 @@
-import { SmartContractEvent } from '../../models/smart_contract_event';
 import { Transaction, Event, EventAttribute } from '../../models';
 
 export interface IContractMsgInfo {
@@ -82,28 +81,4 @@ export async function getContractActivities(
 // get Attribute value by specified key from array of attributes
 export function getAttributeFrom(listAttributes: any, attributeType: string) {
   return listAttributes?.find((attr: any) => attr.key === attributeType)?.value;
-}
-
-export function removeDuplicate(contractEvents: SmartContractEvent[]) {
-  return contractEvents
-    .reduceRight((acc: SmartContractEvent[], curr) => {
-      const indexDuplicate = acc.findIndex(
-        (item) =>
-          item.contractAddress === curr.contractAddress &&
-          item.action === curr.action &&
-          getAttributeFrom(
-            item.attributes,
-            EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
-          ) ===
-            getAttributeFrom(
-              curr.attributes,
-              EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
-            )
-      );
-      if (indexDuplicate === -1) {
-        acc.push(curr);
-      }
-      return acc;
-    }, [])
-    .reverse();
 }

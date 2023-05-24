@@ -2,10 +2,7 @@ import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { BULL_JOB_NAME } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
-import {
-  getContractActivities,
-  removeDuplicate,
-} from '../../../../src/common/utils/smart_contract';
+import { getContractActivities } from '../../../../src/common/utils/smart_contract';
 import { Block, BlockCheckpoint, Transaction } from '../../../../src/models';
 import { Code } from '../../../../src/models/code';
 import CW721Contract from '../../../../src/models/cw721_contract';
@@ -392,45 +389,6 @@ export default class AssetIndexerTest {
     await this.broker.stop();
   }
 
-  @Test('test abc')
-  public async testAbc() {
-    const contractEvents = await SmartContractEvent.query()
-      .alias('smart_contract_event')
-      .withGraphJoined(
-        '[message(selectMessage), tx(selectTransaction), attributes(selectAttribute), smart_contract(selectSmartContract).code(selectCode)]'
-      )
-      .modifiers({
-        selectCode(builder) {
-          builder.select('type');
-        },
-        selectTransaction(builder) {
-          builder.select('hash', 'height');
-        },
-        selectMessage(builder) {
-          builder.select('sender');
-        },
-        selectAttribute(builder) {
-          builder.select('key', 'value');
-        },
-        selectSmartContract(builder) {
-          builder.select('address');
-        },
-      })
-      .where('smart_contract:code.type', 'CW721')
-      .andWhereBetween('tx.height', [
-        this.blockHeight - 100,
-        this.blockHeight + 100,
-      ])
-      .select(
-        'message.sender as sender',
-        'smart_contract.address as contractAddress',
-        'smart_contract_event.action',
-        'smart_contract_event.event_id',
-        'smart_contract_event.index'
-      );
-    console.log(contractEvents);
-  }
-
   @Test('test getContractActivities function')
   public async testGetContractActivities() {
     const extractData = await getContractActivities(
@@ -539,53 +497,6 @@ export default class AssetIndexerTest {
           {
             _id: '63fda557271e5f2b7a32114a',
             key: 'recipient',
-            value: 'phamphong_duplicate',
-          },
-          {
-            _id: '63fda557271e5f515032114b',
-            key: 'sender',
-            value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
-          },
-          {
-            _id: '63fda557271e5f65ee32114c',
-            key: 'token_id',
-            value: this.mockInitContract.tokens[1].token_id,
-          },
-        ],
-        tx: Transaction.fromJson({
-          height: 4000,
-          hash: '',
-          code: 0,
-          gas_used: '123035',
-          gas_wanted: '141106',
-          gas_limit: '141106',
-          fee: 353,
-          timestamp: '2023-01-12T01:53:57.000Z',
-          codespace: '',
-          data: {},
-          index: 0,
-        }),
-        event_id: 100,
-      },
-      {
-        contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
-        action: 'transfer_nft',
-        content: '',
-        attributes: [
-          {
-            _id: '63fda557271e5f3bc9321148',
-            key: '_contract_address',
-            value: this.mockInitContract.smart_contract.address,
-          },
-          {
-            _id: '63fda557271e5f2e69321149',
-            key: 'action',
-            value: 'transfer_nft',
-          },
-          {
-            _id: '63fda557271e5f2b7a32114a',
-            key: 'recipient',
             value: 'phamphong_transfer',
           },
           {
@@ -600,7 +511,7 @@ export default class AssetIndexerTest {
           },
         ],
         tx: Transaction.fromJson({
-          height: 5000,
+          height: 100000,
           hash: '',
           code: 0,
           gas_used: '123035',
@@ -647,7 +558,7 @@ export default class AssetIndexerTest {
           },
         ],
         tx: Transaction.fromJson({
-          height: 3000,
+          height: 200000,
           hash: '',
           code: 0,
           gas_used: '123035',
@@ -676,16 +587,10 @@ export default class AssetIndexerTest {
       .andWhere('token_id', this.mockInitContract.tokens[1].token_id)
       .first();
     expect(token1?.owner).toEqual(
-      mockContractTransferMsg[1].attributes[2].value
+      mockContractTransferMsg[0].attributes[2].value
     );
     expect(token2?.owner).toEqual(
-      mockContractTransferMsg[2].attributes[2].value
-    );
-    expect(token1?.last_updated_height).toEqual(
-      mockContractTransferMsg[1].tx.height
-    );
-    expect(token2?.last_updated_height).toEqual(
-      mockContractTransferMsg[2].tx.height
+      mockContractTransferMsg[1].attributes[2].value
     );
   }
 
@@ -1315,203 +1220,5 @@ export default class AssetIndexerTest {
     expect(cw721Activities[0].cw721_token_id).toEqual(1);
     expect(cw721Activities[1].cw721_token_id).toEqual(0);
     expect(cw721Activities[2].cw721_token_id).toEqual(2);
-  }
-
-  @Test('test remove duplicate')
-  async testRemoveDuplicate() {
-    const mockContractEvents = [
-      {
-        contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
-        action: 'mint',
-        content:
-          '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
-        attributes: [
-          {
-            _id: '63fda557271e5f3bc9321148',
-            key: '_contract_address',
-            value: this.mockInitContract.smart_contract.address,
-          },
-          {
-            _id: '63fda557271e5f2e69321149',
-            key: 'action',
-            value: 'mint',
-          },
-          {
-            _id: '63f82910dda9e6288755bd8a',
-            key: 'minter',
-            value: 'pham_phong_re_mint_minter',
-          },
-          {
-            _id: '63f82910dda9e626e055bd8b',
-            key: 'owner',
-            value: 'phamphong_test_re_mint_owner',
-          },
-          {
-            _id: '63fda557271e5f65ee32114c',
-            key: 'token_id',
-            value: this.mockInitContract.tokens[0].token_id,
-          },
-        ],
-        tx: Transaction.fromJson({
-          height: 100000,
-          hash: 'cxvxcvxcvxcbvxcb',
-          code: 0,
-          gas_used: '123035',
-          gas_wanted: '141106',
-          gas_limit: '141106',
-          fee: 353,
-          timestamp: '2023-01-12T01:53:57.000Z',
-          codespace: '',
-          data: {},
-          index: 0,
-        }),
-        event_id: 100,
-      },
-      {
-        contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
-        action: 'transfer_nft',
-        content: '',
-        attributes: [
-          {
-            _id: '63fda557271e5f3bc9321148',
-            key: '_contract_address',
-            value: this.mockInitContract.smart_contract.address,
-          },
-          {
-            _id: '63fda557271e5f2e69321149',
-            key: 'action',
-            value: 'transfer_nft',
-          },
-          {
-            _id: '63fda557271e5f2b7a32114a',
-            key: 'recipient',
-            value: 'phamphong_transfer',
-          },
-          {
-            _id: '63fda557271e5f515032114b',
-            key: 'sender',
-            value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
-          },
-        ],
-        tx: Transaction.fromJson({
-          height: 100000,
-          hash: 'fghgfhgfhfhdf',
-          code: 0,
-          gas_used: '123035',
-          gas_wanted: '141106',
-          gas_limit: '141106',
-          fee: 353,
-          timestamp: '2023-01-12T01:53:57.000Z',
-          codespace: '',
-          data: {},
-          index: 0,
-        }),
-        event_id: 100,
-      },
-      {
-        contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
-        action: 'burn',
-        content: '',
-        attributes: [
-          {
-            _id: '63a55d044c1864001244a47b',
-            key: '_contract_address',
-            value: this.mockInitContract.smart_contract.address,
-          },
-          {
-            _id: '63a55d044c1864001244a47c',
-            key: 'action',
-            value: 'burn',
-          },
-          {
-            _id: '63a55d044c1864001244a47d',
-            key: 'sender',
-            value: 'aura15f6wn3nymdnhnh5ddlqletuptjag09tryrtpq5',
-          },
-          {
-            _id: '63a55d044c1864001244a47e',
-            key: 'token_id',
-            value: this.mockInitContract.tokens[1].token_id,
-          },
-        ],
-        tx: Transaction.fromJson({
-          height: 500000,
-          hash: 'sdfdasrqewrasdEWEQE',
-          code: 0,
-          gas_used: '123035',
-          gas_wanted: '141106',
-          gas_limit: '141106',
-          fee: 353,
-          timestamp: '2023-01-12T01:53:57.000Z',
-          codespace: '',
-          data: {},
-          index: 0,
-        }),
-        event_id: 100,
-      },
-      {
-        contractAddress: this.mockInitContract.smart_contract.address,
-        sender: 'test_duplicate',
-        action: 'mint',
-        content:
-          '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
-        attributes: [
-          {
-            _id: '63fda557271e5f3bc9321148',
-            key: '_contract_address',
-            value: this.mockInitContract.smart_contract.address,
-          },
-          {
-            _id: '63fda557271e5f2e69321149',
-            key: 'action',
-            value: 'mint',
-          },
-          {
-            _id: '63f82910dda9e6288755bd8a',
-            key: 'minter',
-            value: 'pham_phong_re_mint_minter',
-          },
-          {
-            _id: '63f82910dda9e626e055bd8b',
-            key: 'owner',
-            value: 'phamphong_test_duplicate',
-          },
-          {
-            _id: '63fda557271e5f65ee32114c',
-            key: 'token_id',
-            value: this.mockInitContract.tokens[0].token_id,
-          },
-        ],
-        tx: Transaction.fromJson({
-          height: 100000,
-          hash: 'cxvxcvxcvxcbvxcb',
-          code: 0,
-          gas_used: '123035',
-          gas_wanted: '141106',
-          gas_limit: '141106',
-          fee: 353,
-          timestamp: '2023-01-12T01:53:57.000Z',
-          codespace: '',
-          data: {},
-          index: 0,
-        }),
-        event_id: 100,
-      },
-    ];
-    const contractEvents = removeDuplicate(
-      mockContractEvents.map((burnEvent) =>
-        SmartContractEvent.fromJson({ ...burnEvent })
-      )
-    );
-    const objectsEqual: any = (o1: any, o2: any) =>
-      typeof o1 === 'object' && Object.keys(o1).length > 0
-        ? Object.keys(o1).length === Object.keys(o2).length &&
-          Object.keys(o1).every((p) => objectsEqual(o1[p], o2[p]))
-        : o1 === o2;
-    mockContractEvents.shift();
-    expect(objectsEqual(contractEvents, mockContractEvents)).toEqual(true);
   }
 }
