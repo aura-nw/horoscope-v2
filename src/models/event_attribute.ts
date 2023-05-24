@@ -16,6 +16,8 @@ export class EventAttribute extends BaseModel {
 
   tx_id!: number;
 
+  index!: number;
+
   static get tableName() {
     return 'event_attribute';
   }
@@ -31,6 +33,7 @@ export class EventAttribute extends BaseModel {
         composite_key: { type: 'string' },
         block_height: { type: 'number' },
         tx_id: { type: 'number' },
+        index: { type: 'number' },
       },
     };
   }
@@ -48,12 +51,11 @@ export class EventAttribute extends BaseModel {
     };
   }
 
-  static EVENT_KEY = {
+  static ATTRIBUTE_KEY = {
     BALANCES: 'balances',
     DELEGATION_RESPONSES: 'delegation_responses',
     REDELEGATION_RESPONSES: 'redelegation_responses',
     UNBONDING_RESPONSES: 'unbonding_responses',
-    MESSAGE: 'message',
     ACTION: 'action',
     TRANSFER: 'transfer',
     SENDER: 'sender',
@@ -69,15 +71,15 @@ export class EventAttribute extends BaseModel {
     DESTINATION_VALIDATOR: 'destination_validator',
     RECV_PACKET: 'recv_packet',
     PACKET_DATA: 'packet_data',
-    INSTANTIATE: 'instantiate',
     _CONTRACT_ADDRESS: '_contract_address',
     CODE_ID: 'code_id',
     EXECUTE: 'execute',
+    TOKEN_ID: 'token_id',
     PROPOSAL_ID: 'proposal_id',
-    SUBMIT_PROPOSAL: 'submit_proposal',
     STAKING: 'staking',
     DELEGATE: 'delegate',
     REDELEGATE: 'redelegate',
     UNBOND: 'unbond',
+    OWNER: 'owner',
   };
 }

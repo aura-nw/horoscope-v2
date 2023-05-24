@@ -6,36 +6,25 @@ import {
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
-import { GeneratedType, Registry, decodeTxRaw } from '@cosmjs/proto-signing';
-import { defaultRegistryTypes as defaultStargateTypes } from '@cosmjs/stargate';
-
-import { wasmTypes } from '@cosmjs/cosmwasm-stargate/build/modules';
-import { Header } from 'cosmjs-types/ibc/lightclients/tendermint/v1/tendermint';
-import {
-  BasicAllowance,
-  PeriodicAllowance,
-} from 'cosmjs-types/cosmos/feegrant/v1beta1/feegrant';
-import { cosmos } from '@aura-nw/aurajs';
+import { decodeTxRaw } from '@cosmjs/proto-signing';
 import { toBase64, fromBase64, fromUtf8 } from '@cosmjs/encoding';
 import _ from 'lodash';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
-import {
-  BULL_JOB_NAME,
-  getHttpBatchClient,
-  MSG_TYPE,
-  SERVICE,
-  SERVICE_NAME,
-} from '../../common';
-import { Event, Transaction } from '../../models';
+import { BULL_JOB_NAME, getHttpBatchClient, SERVICE } from '../../common';
+import { BlockCheckpoint, Event, Transaction } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
+import knex from '../../common/utils/db_connection';
+import AuraRegistry from './aura.registry';
 
 @Service({
-  name: SERVICE_NAME.CRAWL_TRANSACTION,
+  name: SERVICE.V1.CrawlTransaction.key,
   version: 1,
 })
 export default class CrawlTxService extends BullableService {
   private _httpBatchClient: HttpBatchClient;
+
+  private _registry!: AuraRegistry;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -44,8 +33,8 @@ export default class CrawlTxService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_TRANSACTION,
-    jobType: BULL_JOB_NAME.CRAWL_TRANSACTION,
-    prefix: `horoscope-v2-${config.chainId}`,
+    jobName: BULL_JOB_NAME.CRAWL_TRANSACTION,
+    // // prefix: `horoscope-v2-${config.chainId}`,
   })
   private async jobHandlerCrawlTx(_payload: {
     listBlock: [{ height: number; timestamp: string }];
@@ -75,6 +64,11 @@ export default class CrawlTxService extends BullableService {
             listTx: result.result,
             height: result.result.txs[0].height,
             timestamp: mapBlockTime[result.result.txs[0].height],
+          },
+          {
+            removeOnComplete: true,
+            attempts: config.jobRetryAttempt,
+            backoff: config.jobRetryBackoff,
           }
         );
       }
@@ -83,8 +77,8 @@ export default class CrawlTxService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_TRANSACTION,
-    jobType: BULL_JOB_NAME.HANDLE_TRANSACTION,
-    prefix: `horoscope-v2-${config.chainId}`,
+    jobName: BULL_JOB_NAME.HANDLE_TRANSACTION,
+    // // prefix: `horoscope-v2-${config.chainId}`,
   })
   async jobHandlerTx(_payload: any): Promise<void> {
     const { listTx, timestamp, height } = _payload;
@@ -101,9 +95,9 @@ export default class CrawlTxService extends BullableService {
         mapExistedTx.set(tx.hash, true);
       });
 
-      const registry = await this._getRegistry();
+      // const registry = await this._getRegistry();
       // parse tx to format LCD return
-      listTx.txs.forEach((tx: any) => {
+      listTx.txs.forEach((tx: any, index: number) => {
         this.logger.info(`Handle txhash ${tx.hash}`);
         if (mapExistedTx.get(tx.hash)) {
           return;
@@ -118,8 +112,7 @@ export default class CrawlTxService extends BullableService {
         );
 
         const decodedMsgs = decodedTx.body.messages.map((msg) => {
-          let decodedMsg = this._decodedMsg(registry, msg);
-          decodedMsg = this._camelizeKeys(decodedMsg);
+          const decodedMsg = this._camelizeKeys(this._registry.decodeMsg(msg));
           decodedMsg['@type'] = msg.typeUrl;
           return decodedMsg;
         });
@@ -127,6 +120,11 @@ export default class CrawlTxService extends BullableService {
         parsedTx.tx = {
           body: {
             messages: decodedMsgs,
+            memo: decodedTx.body?.memo,
+            timeout_height: decodedTx.body?.timeoutHeight,
+            extension_options: decodedTx.body?.extensionOptions,
+            non_critical_extension_options:
+              decodedTx.body?.nonCriticalExtensionOptions,
           },
           auth_info: {
             fee: {
@@ -169,6 +167,7 @@ export default class CrawlTxService extends BullableService {
           gas_wanted: tx.tx_result.gas_wanted,
           gas_used: tx.tx_result.gas_used,
           tx: tx.tx,
+          index,
           events: tx.tx_result.events,
           timestamp,
         };
@@ -198,6 +197,11 @@ export default class CrawlTxService extends BullableService {
       BULL_JOB_NAME.CRAWL_TRANSACTION,
       {
         listBlock: ctx.params.listBlock,
+      },
+      {
+        removeOnComplete: true,
+        attempts: config.jobRetryAttempt,
+        backoff: config.jobRetryBackoff,
       }
     );
   }
@@ -248,7 +252,9 @@ export default class CrawlTxService extends BullableService {
       this.setMsgIndexToEvent(tx);
 
       const txInsert = {
+        '#id': 'transaction',
         ...Transaction.fromJson({
+          index: tx.tx_response.index,
           height: parseInt(tx.tx_response.height, 10),
           hash: tx.tx_response.txhash,
           codespace: tx.tx_response.codespace,
@@ -259,12 +265,15 @@ export default class CrawlTxService extends BullableService {
           fee: JSON.stringify(tx.tx.auth_info.fee.amount),
           timestamp,
           data: tx,
+          memo: tx.tx.body.memo,
         }),
         events: tx.tx_response.events.map((event: any) => ({
           tx_msg_index: event.msg_index ?? undefined,
           type: event.type,
-          attributes: event.attributes.map((attribute: any) => ({
+          attributes: event.attributes.map((attribute: any, index: number) => ({
+            tx_id: '#ref{transaction.id}',
             block_height: parseInt(tx.tx_response.height, 10),
+            index,
             composite_key: attribute?.key
               ? `${event.type}.${fromUtf8(fromBase64(attribute?.key))}`
               : null,
@@ -287,10 +296,42 @@ export default class CrawlTxService extends BullableService {
       listTxModel.push(txInsert);
     });
 
-    const resultInsertGraph = await Transaction.query().insertGraph(
-      listTxModel
-    );
-    this.logger.debug('result insert tx', resultInsertGraph);
+    await knex.transaction(async (trx) => {
+      const resultInsertGraph = await Transaction.query()
+        .insertGraph(listTxModel, { allowRefs: true })
+        .transacting(trx);
+      this.logger.debug('result insert tx', resultInsertGraph);
+
+      // get current checkpoint in db
+      const blockHeightCheckpoint = await BlockCheckpoint.query().findOne({
+        job_name: BULL_JOB_NAME.HANDLE_TRANSACTION,
+      });
+
+      if (blockHeightCheckpoint) {
+        if (blockHeightCheckpoint?.height < height) {
+          await BlockCheckpoint.query()
+            .update(
+              BlockCheckpoint.fromJson({
+                job_name: BULL_JOB_NAME.HANDLE_TRANSACTION,
+                height,
+              })
+            )
+            .where({
+              job_name: BULL_JOB_NAME.HANDLE_TRANSACTION,
+            })
+            .transacting(trx);
+        }
+      } else {
+        await BlockCheckpoint.query()
+          .insert(
+            BlockCheckpoint.fromJson({
+              job_name: BULL_JOB_NAME.HANDLE_TRANSACTION,
+              height,
+            })
+          )
+          .transacting(trx);
+      }
+    });
   }
 
   private setMsgIndexToEvent(tx: any) {
@@ -347,34 +388,6 @@ export default class CrawlTxService extends BullableService {
     });
   }
 
-  private async _getRegistry(): Promise<Registry> {
-    if (this.registry) {
-      return this.registry;
-    }
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const registry = new Registry([...defaultStargateTypes, ...wasmTypes]);
-    registry.register(
-      '/cosmos.feegrant.v1beta1.BasicAllowance',
-      BasicAllowance
-    );
-    registry.register(
-      '/cosmos.feegrant.v1beta1.PeriodicAllowance',
-      PeriodicAllowance
-    );
-    registry.register('/ibc.lightclients.tendermint.v1.Header', Header);
-    registry.register(
-      '/cosmos.feegrant.v1beta1.AllowedContractAllowance',
-      cosmos.feegrant.v1beta1.AllowedContractAllowance as GeneratedType
-    );
-    registry.register(
-      '/cosmos.vesting.v1beta1.MsgCreatePeriodicVestingAccount',
-      cosmos.vesting.v1beta1.MsgCreatePeriodicVestingAccount as GeneratedType
-    );
-    this.registry = registry;
-    return this.registry;
-  }
-
   // convert camelcase to underscore
   private _camelizeKeys(obj: any): any {
     if (Array.isArray(obj)) {
@@ -392,46 +405,6 @@ export default class CrawlTxService extends BullableService {
       );
     }
     return obj;
-  }
-
-  private _decodedMsg(registry: Registry, msg: any): any {
-    const result: any = {};
-    if (!msg) {
-      return;
-    }
-    if (msg.typeUrl) {
-      result['@type'] = msg.typeUrl;
-      const found = registry.lookupType(msg.typeUrl);
-      if (!found) {
-        const decodedBase64 = toBase64(msg.value);
-        this.logger.info(decodedBase64);
-        result.value = decodedBase64;
-        this.logger.error('This typeUrl is not supported');
-        this.logger.error(msg.typeUrl);
-      } else {
-        const decoded = registry.decode(msg);
-
-        Object.keys(decoded).forEach((key) => {
-          result[key] = decoded[key];
-        });
-      }
-
-      if (
-        msg.typeUrl === MSG_TYPE.MSG_EXECUTE_CONTRACT ||
-        msg.typeUrl === MSG_TYPE.MSG_INSTANTIATE_CONTRACT
-      ) {
-        if (result.msg && result.msg instanceof Uint8Array) {
-          result.msg = fromUtf8(result.msg);
-        }
-      } else if (msg.typeUrl === MSG_TYPE.MSG_UPDATE_CLIENT) {
-        if (result.header?.value && result.header?.typeUrl) {
-          result.header = registry.decode(result.header);
-        }
-      }
-    }
-
-    // eslint-disable-next-line consistent-return
-    return result;
   }
 
   private _findAttribute(
@@ -458,6 +431,7 @@ export default class CrawlTxService extends BullableService {
   }
 
   public async _start() {
+    this._registry = new AuraRegistry(this.logger);
     return super._start();
   }
 }

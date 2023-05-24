@@ -28,5 +28,11 @@
     "RPC": ["http://localhost:26657"],
     "LCD": ["http://localhost:1317"],
     "databaseName": "horoscope_dev_auratestnet1"
+  },
+  {
+    "chainId": "cosmoshub-4",
+    "RPC": ["https://cosmos-rpc.tienthuattoan.ventures"],
+    "LCD": ["https://cosmos-api.tienthuattoan.ventures"],
+    "databaseName": "local_cosmoshub"
   }
 ]

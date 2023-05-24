@@ -13,6 +13,7 @@ import {
   QueryDelegationResponse,
 } from '@aura-nw/aurajs/types/codegen/cosmos/staking/v1beta1/query';
 import { fromBase64, toHex } from '@cosmjs/encoding';
+import { Knex } from 'knex';
 import { Validator } from '../../models/validator';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import knex from '../../common/utils/db_connection';
@@ -26,7 +27,7 @@ import {
   IPagination,
   SERVICE,
 } from '../../common';
-import { Block, BlockCheckpoint, EventAttribute } from '../../models';
+import { BlockCheckpoint, EventAttribute } from '../../models';
 
 @Service({
   name: SERVICE.V1.CrawlValidatorService.key,
@@ -44,74 +45,52 @@ export default class CrawlValidatorService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_VALIDATOR,
-    jobType: 'crawl',
-    prefix: `horoscope-v2-${config.chainId}`,
+    jobName: 'crawl',
+    // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleCrawlAllValidator(_payload: object): Promise<void> {
     this._lcdClient = await getLcdClient();
 
-    const [crawlValidatorBlockCheckpoint, latestBlock]: [
-      BlockCheckpoint | undefined,
-      Block | undefined
-    ] = await Promise.all([
-      BlockCheckpoint.query()
-        .select('*')
-        .findOne('job_name', BULL_JOB_NAME.CRAWL_VALIDATOR),
-      Block.query().select('height').findOne({}).orderBy('height', 'desc'),
-    ]);
-    this.logger.info(
-      `Block Checkpoint: ${JSON.stringify(crawlValidatorBlockCheckpoint)}`
-    );
-
-    let lastHeight = 0;
-    let updateBlockCheckpoint: BlockCheckpoint;
-    if (crawlValidatorBlockCheckpoint) {
-      lastHeight = crawlValidatorBlockCheckpoint.height;
-      updateBlockCheckpoint = crawlValidatorBlockCheckpoint;
-    } else
-      updateBlockCheckpoint = BlockCheckpoint.fromJson({
-        job_name: BULL_JOB_NAME.CRAWL_VALIDATOR,
-        height: 0,
-      });
-
-    if (latestBlock) {
-      if (latestBlock.height === lastHeight) return;
-
-      const resultTx = await EventAttribute.query()
-        .joinRelated('event.[transaction]')
-        .whereIn('event_attribute.key', [
-          EventAttribute.EVENT_KEY.VALIDATOR,
-          EventAttribute.EVENT_KEY.SOURCE_VALIDATOR,
-          EventAttribute.EVENT_KEY.DESTINATION_VALIDATOR,
-        ])
-        .andWhere('event:transaction.height', '>', lastHeight)
-        .andWhere('event:transaction.height', '<=', latestBlock.height)
-        .select(
-          'event:transaction.id',
-          'event:transaction.height',
-          'event_attribute.key',
-          'event_attribute.value'
-        )
-        .limit(1)
-        .offset(0);
-      this.logger.info(
-        `Query Tx from height ${lastHeight} to ${latestBlock.height}`
+    const [startHeight, endHeight, updateBlockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.CRAWL_VALIDATOR,
+        BULL_JOB_NAME.HANDLE_TRANSACTION
       );
+    this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
+    if (startHeight >= endHeight) return;
 
+    const resultTx = await EventAttribute.query()
+      .whereIn('key', [
+        EventAttribute.ATTRIBUTE_KEY.VALIDATOR,
+        EventAttribute.ATTRIBUTE_KEY.SOURCE_VALIDATOR,
+        EventAttribute.ATTRIBUTE_KEY.DESTINATION_VALIDATOR,
+      ])
+      .andWhere('block_height', '>', startHeight)
+      .andWhere('block_height', '<=', endHeight)
+      .select('value')
+      .limit(1)
+      .offset(0);
+    this.logger.info(
+      `Result get Tx from height ${startHeight} to ${endHeight}:`
+    );
+    this.logger.info(JSON.stringify(resultTx));
+
+    await knex.transaction(async (trx) => {
       if (resultTx.length > 0) {
-        await this.updateValidators();
+        await this.updateValidators(trx);
       }
 
-      updateBlockCheckpoint.height = latestBlock.height;
+      updateBlockCheckpoint.height = endHeight;
       await BlockCheckpoint.query()
         .insert(updateBlockCheckpoint)
         .onConflict('job_name')
         .merge()
-        .returning('id');
-    }
+        .returning('id')
+        .transacting(trx);
+    });
   }
 
-  private async updateValidators() {
+  private async updateValidators(trx: Knex.Transaction) {
     let updateValidators: Validator[] = [];
     const validators: any[] = [];
 
@@ -142,8 +121,8 @@ export default class CrawlValidatorService extends BullableService {
         this.logger.info(`Update validator: ${validator.operator_address}`);
 
         const foundValidator = validatorInDB.find(
-          (validatorInDB: Validator) =>
-            validatorInDB.operator_address === validator.operator_address
+          (val: Validator) =>
+            val.operator_address === validator.operator_address
         );
 
         let validatorEntity: Validator;
@@ -177,6 +156,7 @@ export default class CrawlValidatorService extends BullableService {
       .onConflict('operator_address')
       .merge()
       .returning('id')
+      .transacting(trx)
       .catch((error) => {
         this.logger.error('Error insert or update validators');
         this.logger.error(error);
@@ -251,7 +231,6 @@ export default class CrawlValidatorService extends BullableService {
         },
       }
     );
-
     return super._start();
   }
 }

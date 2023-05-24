@@ -46,3 +46,19 @@ export interface IAllBalances {
   address: string;
   pagination?: IPagination;
 }
+
+export interface IValidatorDelegators {
+  id: number;
+  address: string;
+  height: number;
+}
+
+export interface IStoreCodes {
+  hash: string;
+  height: number;
+  codeId: Long;
+}
+
+export interface IContextStoreCodes {
+  codeIds: IStoreCodes[];
+}

@@ -7,7 +7,7 @@ import {
 export const defaultSigningClientOptions: SigningStargateClientOptions = {
   broadcastPollIntervalMs: 300,
   broadcastTimeoutMs: 8_000,
-  gasPrice: GasPrice.fromString('0.05uaura'),
+  gasPrice: GasPrice.fromString('0.1uaura'),
 };
-export const defaultGasPrice = GasPrice.fromString('0.05uaura');
-export const defaultSendFee = calculateFee(200_000, defaultGasPrice);
+export const defaultGasPrice = GasPrice.fromString('0.1uaura');
+export const defaultSendFee = calculateFee(5_000_000, defaultGasPrice);

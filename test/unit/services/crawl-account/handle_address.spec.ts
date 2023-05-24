@@ -14,13 +14,33 @@ import knex from '../../../../src/common/utils/db_connection';
 
 @Describe('Test handle_address service')
 export default class HandleAddressTest {
-  block: Block = Block.fromJson({
-    height: 3967530,
-    hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9F',
-    time: '2023-01-12T01:53:57.216Z',
-    proposer_address: 'auraomd;cvpio3j4eg',
-    data: {},
-  });
+  blockCheckpoint = [
+    BlockCheckpoint.fromJson({
+      job_name: BULL_JOB_NAME.HANDLE_ADDRESS,
+      height: 3967500,
+    }),
+    BlockCheckpoint.fromJson({
+      job_name: BULL_JOB_NAME.HANDLE_TRANSACTION,
+      height: 3967529,
+    }),
+  ];
+
+  blocks: Block[] = [
+    Block.fromJson({
+      height: 3967529,
+      hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9A',
+      time: '2023-01-12T01:53:57.216Z',
+      proposer_address: 'auraomd;cvpio3j4eg',
+      data: {},
+    }),
+    Block.fromJson({
+      height: 3967530,
+      hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9F',
+      time: '2023-01-12T01:53:57.216Z',
+      proposer_address: 'auraomd;cvpio3j4eg',
+      data: {},
+    }),
+  ];
 
   txInsert = {
     ...Transaction.fromJson({
@@ -34,6 +54,7 @@ export default class HandleAddressTest {
       fee: 353,
       timestamp: '2023-01-12T01:53:57.000Z',
       data: {},
+      index: 0,
     }),
     events: [
       {
@@ -43,6 +64,7 @@ export default class HandleAddressTest {
           {
             key: 'receiver',
             value: 'aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw',
+            block_height: 3967529,
           },
         ],
       },
@@ -53,6 +75,7 @@ export default class HandleAddressTest {
           {
             key: 'spender',
             value: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
+            block_height: 3967529,
           },
         ],
       },
@@ -63,24 +86,11 @@ export default class HandleAddressTest {
           {
             key: 'sender',
             value: 'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+            block_height: 3967529,
           },
         ],
       },
     ],
-    messages: {
-      index: 0,
-      type: '/cosmos.staking.v1beta1',
-      sender: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
-      content: {
-        '@type': '/cosmos.staking.v1beta1.MsgDelegate',
-        delegator_address: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
-        validator_address: 'auravaloper1d3n0v5f23sqzkhlcnewhksaj8l3x7jeyu938gx',
-        amount: {
-          denom: 'utaura',
-          amount: '1000000',
-        },
-      },
-    },
   };
 
   broker = new ServiceBroker({ logger: false });
@@ -103,39 +113,18 @@ export default class HandleAddressTest {
     this.handleStakeEventService = this.broker.createService(
       HandleStakeEventService
     ) as HandleStakeEventService;
-    await Promise.all([
-      this.crawlAccountService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH)
-        .empty(),
-      this.crawlAccountService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES)
-        .empty(),
-      this.crawlAccountService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES)
-        .empty(),
-      this.crawlAccountService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT)
-        .empty(),
-      this.handleAddressService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.HANDLE_ADDRESS)
-        .empty(),
-      this.handleStakeEventService
-        .getQueueManager()
-        .getQueue(BULL_JOB_NAME.HANDLE_STAKE_EVENT)
-        .empty(),
-    ]);
+    this.crawlAccountService.getQueueManager().stopAll();
+    this.handleAddressService.getQueueManager().stopAll();
+    this.handleStakeEventService.getQueueManager().stopAll();
+
     await Promise.all([
       Account.query().delete(true),
       BlockCheckpoint.query().delete(true),
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
     ]);
-    await Block.query().insert(this.block);
+    await Block.query().insert(this.blocks);
     await Transaction.query().insertGraph(this.txInsert);
+    await BlockCheckpoint.query().insert(this.blockCheckpoint);
   }
 
   @AfterAll()
