@@ -320,7 +320,8 @@ export default class CrawlProposalTest {
   public async testHandleNotEnoughDepositProposal() {
     await Proposal.query()
       .patch({
-        deposit_end_time: new Date(Date.now() - 10).toISOString(),
+        proposal_id: 2,
+        deposit_end_time: new Date(new Date().getSeconds() - 10).toISOString(),
         status: Proposal.STATUS.PROPOSAL_STATUS_DEPOSIT_PERIOD,
       })
       .where({ proposal_id: 1 });
@@ -329,7 +330,7 @@ export default class CrawlProposalTest {
 
     const updateProposal = await Proposal.query()
       .select('*')
-      .where('proposal_id', 1)
+      .where('proposal_id', 2)
       .first();
 
     expect(updateProposal?.status).toEqual(
