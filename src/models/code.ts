@@ -90,4 +90,13 @@ export class Code extends BaseModel {
       },
     };
   }
+
+  static detectCodeType(contract: string) {
+    let codeTypes = '';
+    if (contract.includes('cw20')) codeTypes = Code.TYPES.CW20;
+    else if (contract.includes('cw721')) codeTypes = Code.TYPES.CW721;
+    else if (contract.includes('cw4973')) codeTypes = Code.TYPES.CW4973;
+    else if (contract.includes('cw2981')) codeTypes = Code.TYPES.CW721;
+    return codeTypes;
+  }
 }
