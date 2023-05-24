@@ -62,3 +62,7 @@ export interface IStoreCodes {
 export interface IContextStoreCodes {
   codeIds: IStoreCodes[];
 }
+
+export interface IContextGetContractInfo {
+  addresses: string[];
+}
