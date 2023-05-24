@@ -41,6 +41,7 @@ const CW721_ACTION = {
   BURN: 'burn',
   TRANSFER: 'transfer_nft',
   INSTANTIATE: 'instantiate',
+  SEND_NFT: 'send_nft',
 };
 
 @Service({
@@ -84,6 +85,7 @@ export default class Cw721HandlerService extends BullableService {
           await CW721Token.query()
             .where('cw721_contract_id', cw721ContractId)
             .andWhere('token_id', tokenId)
+            .andWhere('last_updated_height', '<', transferMsg.tx.height)
             .patch({
               owner: recipient,
               last_updated_height: transferMsg.tx.height,
@@ -170,6 +172,7 @@ export default class Cw721HandlerService extends BullableService {
             const query = CW721Token.query()
               .where('cw721_contract_id', cw721ContractId)
               .andWhere('token_id', tokenId)
+              .andWhere('last_updated_height', '<', burnMsg.tx.height)
               .patch({
                 last_updated_height: burnMsg.tx.height,
                 burned: true,
@@ -259,6 +262,7 @@ export default class Cw721HandlerService extends BullableService {
           const cw721Msgs = listContractMsg.filter((msg) =>
             cw721ListAddr.includes(msg.contractAddress)
           );
+          this.logger.debug(cw721Msgs);
           // handle all cw721 execute messages
           await this.handleCw721MsgExec(
             cw721Msgs.filter((msg) => msg.action !== CW721_ACTION.INSTANTIATE)
@@ -377,7 +381,11 @@ export default class Cw721HandlerService extends BullableService {
     );
     // handle transfer
     await this.handlerCw721Transfer(
-      cw721MsgsExecute.filter((msg) => msg.action === CW721_ACTION.TRANSFER)
+      cw721MsgsExecute.filter(
+        (msg) =>
+          msg.action === CW721_ACTION.TRANSFER ||
+          msg.action === CW721_ACTION.SEND_NFT
+      )
     );
     // handle burn
     await this.handlerCw721Burn(
