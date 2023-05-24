@@ -38,7 +38,7 @@ export class BlockCheckpoint extends BaseModel {
       BlockCheckpoint.query()
         .select('*')
         .whereIn('job_name', lastHeightJobNames)
-        .orderBy('height')
+        .orderBy('height', 'ASC')
         .first()
         .throwIfNotFound(),
     ]);
