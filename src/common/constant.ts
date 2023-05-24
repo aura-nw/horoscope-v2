@@ -35,6 +35,7 @@ export const BULL_JOB_NAME = {
   CRAWL_PROPOSAL: 'crawl:proposal',
   CRAWL_TALLY_PROPOSAL: 'crawl:tally-proposal',
   HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL: 'handle:not-enough-deposit-proposal',
+  HANDLE_ENDED_PROPOSAL: 'handle:ended-proposal',
   CRAWL_GENESIS: 'crawl:genesis',
   CRAWL_CODE: 'crawl:code',
   CRAWL_SMART_CONTRACT: 'crawl:smart-contract',

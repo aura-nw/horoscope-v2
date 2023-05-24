@@ -46,8 +46,8 @@ export default class CrawlTallyProposalService extends BullableService {
 
     const batchQueries: any[] = [];
 
-    const now = new Date(new Date().getSeconds() - 10);
-    const prev = new Date(new Date().getSeconds() - 30);
+    const now = new Date(Date.now() - 10);
+    const prev = new Date(Date.now() - 30);
     const votingProposals = await Proposal.query()
       .where('status', Proposal.STATUS.PROPOSAL_STATUS_VOTING_PERIOD)
       .orWhere((builder) =>
