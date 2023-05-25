@@ -52,10 +52,9 @@ export default class CrawlValidatorService extends BullableService {
     this._lcdClient = await getLcdClient();
 
     const [startHeight, endHeight, updateBlockCheckpoint] =
-      await BlockCheckpoint.getCheckpoint(
-        BULL_JOB_NAME.CRAWL_VALIDATOR,
-        BULL_JOB_NAME.HANDLE_TRANSACTION
-      );
+      await BlockCheckpoint.getCheckpoint(BULL_JOB_NAME.CRAWL_VALIDATOR, [
+        BULL_JOB_NAME.HANDLE_TRANSACTION,
+      ]);
     this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
     if (startHeight >= endHeight) return;
 
