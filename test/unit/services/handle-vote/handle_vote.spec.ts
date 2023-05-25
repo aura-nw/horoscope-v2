@@ -98,7 +98,7 @@ export default class HandleTxVoteServiceTest {
 
     await Block.query().insert(
       Block.fromJson({
-        height: 4279400,
+        height: 4279350,
         hash: 'data hash authz',
         time: '2023-04-17T03:44:41.000Z',
         proposer_address: 'proposer address',
@@ -107,7 +107,7 @@ export default class HandleTxVoteServiceTest {
     );
     await this.crawlTxService?.jobHandlerTx({
       listTx: { ...tx_fixture_vote_authz },
-      height: 4279400,
+      height: 4279350,
       timestamp: '2023-04-17T03:44:41.000Z',
     });
 

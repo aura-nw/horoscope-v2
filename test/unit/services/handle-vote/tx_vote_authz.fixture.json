@@ -1,1 +1,135 @@
-{ "txs": [ { "hash": "A9E1E587ABB572DDA680EB9B31C01A1E7A13ADD34A97CE2E9125C246C92E6A57", "height": "4279400", "index": 0, "tx_result": { "code": 0, "data": "CiMKHS9jb3Ntb3MuYXV0aHoudjFiZXRhMS5Nc2dFeGVjEgIKAA==", "log": "[{\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/cosmos.authz.v1beta1.MsgExec\"},{\"key\":\"module\",\"value\":\"governance\"},{\"key\":\"sender\",\"value\":\"aura1dyw4kvnfzj9geh75jlw4z2tgmj5g9f354wteel\"},{\"key\":\"authz_msg_index\",\"value\":\"0\"}]},{\"type\":\"proposal_vote\",\"attributes\":[{\"key\":\"option\",\"value\":\"{\\\"option\\\":1,\\\"weight\\\":\\\"1.000000000000000000\\\"}\"},{\"key\":\"proposal_id\",\"value\":\"2\"},{\"key\":\"authz_msg_index\",\"value\":\"0\"}]}]}]", "info": "", "gas_wanted": "106176", "gas_used": "72438", "events": [ { "type": "coin_spent", "attributes": [ { "key": "c3BlbmRlcg==", "value": "YXVyYTE1Z2N4dnBlcTRqaGg3czY0N2ZtcG04MnY5cWY5dXltaG1jc24wdw==", "index": true }, { "key": "YW1vdW50", "value": "MjY1NXVhdXJh", "index": true } ] }, { "type": "coin_received", "attributes": [ { "key": "cmVjZWl2ZXI=", "value": "YXVyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHQwNXpmeQ==", "index": true }, { "key": "YW1vdW50", "value": "MjY1NXVhdXJh", "index": true } ] }, { "type": "transfer", "attributes": [ { "key": "cmVjaXBpZW50", "value": "YXVyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHQwNXpmeQ==", "index": true }, { "key": "c2VuZGVy", "value": "YXVyYTE1Z2N4dnBlcTRqaGg3czY0N2ZtcG04MnY5cWY5dXltaG1jc24wdw==", "index": true }, { "key": "YW1vdW50", "value": "MjY1NXVhdXJh", "index": true } ] }, { "type": "message", "attributes": [ { "key": "c2VuZGVy", "value": "YXVyYTE1Z2N4dnBlcTRqaGg3czY0N2ZtcG04MnY5cWY5dXltaG1jc24wdw==", "index": true } ] }, { "type": "tx", "attributes": [ { "key": "ZmVl", "value": "MjY1NXVhdXJh", "index": true }, { "key": "ZmVlX3BheWVy", "value": "YXVyYTE1Z2N4dnBlcTRqaGg3czY0N2ZtcG04MnY5cWY5dXltaG1jc24wdw==", "index": true } ] }, { "type": "tx", "attributes": [ { "key": "YWNjX3NlcQ==", "value": "YXVyYTE1Z2N4dnBlcTRqaGg3czY0N2ZtcG04MnY5cWY5dXltaG1jc24wdy8w", "index": true } ] }, { "type": "tx", "attributes": [ { "key": "c2lnbmF0dXJl", "value": "OVkxTFcrOFNWRWlUMmRFNUdkaVI1eW9IVUpILzE3eE42TG5VOHdRelJveG1Zb25CcERtL2hsMEVlTm01TEdGYWU4cm9ySVFIOEZmK2tkYStQWHlSbnc9PQ==", "index": true } ] }, { "type": "message", "attributes": [ { "key": "YWN0aW9u", "value": "L2Nvc21vcy5hdXRoei52MWJldGExLk1zZ0V4ZWM=", "index": true } ] }, { "type": "proposal_vote", "attributes": [ { "key": "b3B0aW9u", "value": "eyJvcHRpb24iOjEsIndlaWdodCI6IjEuMDAwMDAwMDAwMDAwMDAwMDAwIn0=", "index": true }, { "key": "cHJvcG9zYWxfaWQ=", "value": "Mg==", "index": true }, { "key": "YXV0aHpfbXNnX2luZGV4", "value": "MA==", "index": true } ] }, { "type": "message", "attributes": [ { "key": "bW9kdWxl", "value": "Z292ZXJuYW5jZQ==", "index": true }, { "key": "c2VuZGVy", "value": "YXVyYTFkeXc0a3ZuZnpqOWdlaDc1amx3NHoydGdtajVnOWYzNTR3dGVlbA==", "index": true }, { "key": "YXV0aHpfbXNnX2luZGV4", "value": "MA==", "index": true } ] } ], "codespace": "" }, "tx": "CqMBCqABCh0vY29zbW9zLmF1dGh6LnYxYmV0YTEuTXNnRXhlYxJ/CithdXJhMTVnY3h2cGVxNGpoaDdzNjQ3Zm1wbTgydjlxZjl1eW1obWNzbjB3ElAKGy9jb3Ntb3MuZ292LnYxYmV0YTEuTXNnVm90ZRIxCAISK2F1cmExZHl3NGt2bmZ6ajlnZWg3NWpsdzR6MnRnbWo1ZzlmMzU0d3RlZWwYARJlCk4KRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDnXHDFeTDT9uiqnEJdHr95TPUbVETEDGXzxtpsOc9zKwSBAoCCAESEwoNCgV1YXVyYRIEMjY1NRDAvQYaQPWNS1vvElRIk9nRORnYkecqB1CR/9e8Tei51PMEM0aMZmKJwaQ5v4ZdBHjZuSxhWnvK6KyEB/BX/pHWvj18kZ8=" } ], "total_count": "1" }
+{
+  "txs": [
+    {
+      "hash": "A9E1E587ABB572DDA680EB9B31C01A1E7A13ADD34A97CE2E9125C246C92E6A57",
+      "height": "4279350",
+      "index": 0,
+      "tx_result": {
+        "code": 0,
+        "data": "CiMKHS9jb3Ntb3MuYXV0aHoudjFiZXRhMS5Nc2dFeGVjEgIKAA==",
+        "log": "[{\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/cosmos.authz.v1beta1.MsgExec\"},{\"key\":\"module\",\"value\":\"governance\"},{\"key\":\"sender\",\"value\":\"aura1dyw4kvnfzj9geh75jlw4z2tgmj5g9f354wteel\"},{\"key\":\"authz_msg_index\",\"value\":\"0\"}]},{\"type\":\"proposal_vote\",\"attributes\":[{\"key\":\"option\",\"value\":\"{\\\"option\\\":1,\\\"weight\\\":\\\"1.000000000000000000\\\"}\"},{\"key\":\"proposal_id\",\"value\":\"2\"},{\"key\":\"authz_msg_index\",\"value\":\"0\"}]}]}]",
+        "info": "",
+        "gas_wanted": "106176",
+        "gas_used": "72438",
+        "events": [
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "c3BlbmRlcg==",
+                "value": "YXVyYTE1Z2N4dnBlcTRqaGg3czY0N2ZtcG04MnY5cWY5dXltaG1jc24wdw==",
+                "index": true
+              },
+              { "key": "YW1vdW50", "value": "MjY1NXVhdXJh", "index": true }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "cmVjZWl2ZXI=",
+                "value": "YXVyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHQwNXpmeQ==",
+                "index": true
+              },
+              { "key": "YW1vdW50", "value": "MjY1NXVhdXJh", "index": true }
+            ]
+          },
+          {
+            "type": "transfer",
+            "attributes": [
+              {
+                "key": "cmVjaXBpZW50",
+                "value": "YXVyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHQwNXpmeQ==",
+                "index": true
+              },
+              {
+                "key": "c2VuZGVy",
+                "value": "YXVyYTE1Z2N4dnBlcTRqaGg3czY0N2ZtcG04MnY5cWY5dXltaG1jc24wdw==",
+                "index": true
+              },
+              { "key": "YW1vdW50", "value": "MjY1NXVhdXJh", "index": true }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "c2VuZGVy",
+                "value": "YXVyYTE1Z2N4dnBlcTRqaGg3czY0N2ZtcG04MnY5cWY5dXltaG1jc24wdw==",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "tx",
+            "attributes": [
+              { "key": "ZmVl", "value": "MjY1NXVhdXJh", "index": true },
+              {
+                "key": "ZmVlX3BheWVy",
+                "value": "YXVyYTE1Z2N4dnBlcTRqaGg3czY0N2ZtcG04MnY5cWY5dXltaG1jc24wdw==",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "tx",
+            "attributes": [
+              {
+                "key": "YWNjX3NlcQ==",
+                "value": "YXVyYTE1Z2N4dnBlcTRqaGg3czY0N2ZtcG04MnY5cWY5dXltaG1jc24wdy8w",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "tx",
+            "attributes": [
+              {
+                "key": "c2lnbmF0dXJl",
+                "value": "OVkxTFcrOFNWRWlUMmRFNUdkaVI1eW9IVUpILzE3eE42TG5VOHdRelJveG1Zb25CcERtL2hsMEVlTm01TEdGYWU4cm9ySVFIOEZmK2tkYStQWHlSbnc9PQ==",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "YWN0aW9u",
+                "value": "L2Nvc21vcy5hdXRoei52MWJldGExLk1zZ0V4ZWM=",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "proposal_vote",
+            "attributes": [
+              {
+                "key": "b3B0aW9u",
+                "value": "eyJvcHRpb24iOjEsIndlaWdodCI6IjEuMDAwMDAwMDAwMDAwMDAwMDAwIn0=",
+                "index": true
+              },
+              { "key": "cHJvcG9zYWxfaWQ=", "value": "Mg==", "index": true },
+              { "key": "YXV0aHpfbXNnX2luZGV4", "value": "MA==", "index": true }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              { "key": "bW9kdWxl", "value": "Z292ZXJuYW5jZQ==", "index": true },
+              {
+                "key": "c2VuZGVy",
+                "value": "YXVyYTFkeXc0a3ZuZnpqOWdlaDc1amx3NHoydGdtajVnOWYzNTR3dGVlbA==",
+                "index": true
+              },
+              { "key": "YXV0aHpfbXNnX2luZGV4", "value": "MA==", "index": true }
+            ]
+          }
+        ],
+        "codespace": ""
+      },
+      "tx": "CqMBCqABCh0vY29zbW9zLmF1dGh6LnYxYmV0YTEuTXNnRXhlYxJ/CithdXJhMTVnY3h2cGVxNGpoaDdzNjQ3Zm1wbTgydjlxZjl1eW1obWNzbjB3ElAKGy9jb3Ntb3MuZ292LnYxYmV0YTEuTXNnVm90ZRIxCAISK2F1cmExZHl3NGt2bmZ6ajlnZWg3NWpsdzR6MnRnbWo1ZzlmMzU0d3RlZWwYARJlCk4KRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDnXHDFeTDT9uiqnEJdHr95TPUbVETEDGXzxtpsOc9zKwSBAoCCAESEwoNCgV1YXVyYRIEMjY1NRDAvQYaQPWNS1vvElRIk9nRORnYkecqB1CR/9e8Tei51PMEM0aMZmKJwaQ5v4ZdBHjZuSxhWnvK6KyEB/BX/pHWvj18kZ8="
+    }
+  ],
+  "total_count": "1"
+}

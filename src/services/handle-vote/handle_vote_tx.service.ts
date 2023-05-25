@@ -31,49 +31,22 @@ export default class HandleTxVoteService extends BullableService {
   }
 
   async initEnv() {
-    this._blockCheckpoint = await BlockCheckpoint.query().findOne({
-      job_name: BULL_JOB_NAME.HANDLE_VOTE_TX,
-    });
-    if (!this._blockCheckpoint) {
-      this._blockCheckpoint = BlockCheckpoint.fromJson({
-        job_name: BULL_JOB_NAME.HANDLE_VOTE_TX,
-        height: 0,
-      });
-      await BlockCheckpoint.query().insert(this._blockCheckpoint);
-    } else if (this._blockCheckpoint.height) {
-      this._startBlock = this._blockCheckpoint.height + 1;
-    } else {
-      this._blockCheckpoint.height = 0;
-      await BlockCheckpoint.query()
-        .update(this._blockCheckpoint)
-        .where('job_name', BULL_JOB_NAME.HANDLE_VOTE_TX);
-    }
-
-    const checkpointHandleAuthzTx = await BlockCheckpoint.query().findOne({
-      job_name: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
-    });
-
-    if (checkpointHandleAuthzTx) {
-      if (
-        checkpointHandleAuthzTx.height >
-        this._startBlock + config.handleVoteTx.blocksPerCall - 1
-      ) {
-        this._endBlock =
-          this._startBlock + config.handleVoteTx.blocksPerCall - 1;
-      } else {
-        this._endBlock = checkpointHandleAuthzTx.height;
-      }
-    }
-  }
-
-  async handleVote() {
+    [this._startBlock, this._endBlock, this._blockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.HANDLE_VOTE_TX,
+        [BULL_JOB_NAME.HANDLE_AUTHZ_TX],
+        config.handleVoteTx.key
+      );
     this.logger.info(
       `Handle Voting message from block ${this._startBlock} to block ${this._endBlock}`
     );
+  }
+
+  async handleVote() {
     const txMsgs = await TransactionMessage.query()
       .select('transaction.hash', 'transaction.height', 'transaction_message.*')
       .joinRelated('transaction')
-      .where('height', '>=', this._startBlock)
+      .where('height', '>', this._startBlock)
       .andWhere('height', '<=', this._endBlock)
       .andWhere('type', MSG_TYPE.MSG_VOTE)
       .andWhere('code', 0)
@@ -109,14 +82,6 @@ export default class HandleTxVoteService extends BullableService {
         await BlockCheckpoint.query()
           .update(this._blockCheckpoint)
           .where('job_name', BULL_JOB_NAME.HANDLE_VOTE_TX)
-          .transacting(trx);
-      } else {
-        this._blockCheckpoint = BlockCheckpoint.fromJson({
-          job_name: BULL_JOB_NAME.HANDLE_VOTE_TX,
-          height: 0,
-        });
-        await BlockCheckpoint.query()
-          .insert(this._blockCheckpoint)
           .transacting(trx);
       }
     });
