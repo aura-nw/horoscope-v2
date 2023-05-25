@@ -59,7 +59,7 @@ export class BlockCheckpoint extends BaseModel {
     if (lastHeightCheckpoint)
       endHeight = configName
         ? Math.min(
-            startHeight + config[configName].blocksPerCall,
+            startHeight + config[configName].blocksPerCall - 1,
             lastHeightCheckpoint.height
           )
         : lastHeightCheckpoint.height;
