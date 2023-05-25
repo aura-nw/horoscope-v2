@@ -3,16 +3,7 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
-import {
-  QueryContractInfoRequest,
-  QueryContractInfoResponse,
-  QueryRawContractStateRequest,
-  QueryRawContractStateResponse,
-} from '@aura-nw/aurajs/types/codegen/cosmwasm/wasm/v1/query';
-import { fromBase64, fromUtf8, toHex } from '@cosmjs/encoding';
-import { cosmwasm } from '@aura-nw/aurajs';
-import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
-import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
+import { fromUtf8 } from '@cosmjs/encoding';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import _ from 'lodash';
 import Long from 'long';
@@ -26,7 +17,6 @@ import {
   Code,
 } from '../../models';
 import {
-  ABCI_QUERY_PATH,
   BULL_JOB_NAME,
   getHttpBatchClient,
   IStoreCodes,
@@ -59,7 +49,7 @@ export default class CrawlSmartContractService extends BullableService {
     const [startHeight, endHeight, updateBlockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.CRAWL_SMART_CONTRACT,
-        BULL_JOB_NAME.CRAWL_CODE,
+        [BULL_JOB_NAME.CRAWL_CODE],
         config.crawlCodeId.key
       );
     this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
@@ -108,11 +98,14 @@ export default class CrawlSmartContractService extends BullableService {
             );
           });
 
-          const [contractCw2s, contractInfos] = await this.getContractInfo(
-            queryAddresses
-          );
+          const [contractCw2s, contractInfos] =
+            await SmartContract.getContractInfo(
+              queryAddresses,
+              this._httpBatchClient
+            );
 
           const codeIds: number[] = [];
+          const updateContractTypes: any[] = [];
           smartContracts.forEach((contract, index) => {
             if (contractCw2s[index]?.data) {
               const data = JSON.parse(
@@ -120,6 +113,15 @@ export default class CrawlSmartContractService extends BullableService {
               );
               contract.name = data.contract;
               contract.version = data.version;
+
+              const codeTypes = Code.detectCodeType(data.contract);
+              if (codeTypes !== '')
+                updateContractTypes.push(
+                  Code.query().patch({ type: codeTypes }).where({
+                    code_id:
+                      contractInfos[index]?.contractInfo?.codeId.toString(),
+                  })
+                );
             }
             if (contractInfos[index]?.contractInfo) {
               contract.code_id = parseInt(
@@ -155,6 +157,9 @@ export default class CrawlSmartContractService extends BullableService {
               { codeIds: missingCodeIds }
             );
 
+          if (updateContractTypes.length > 0)
+            await Promise.all(updateContractTypes);
+
           if (smartContracts.length > 0)
             await SmartContract.query()
               .insert(smartContracts)
@@ -180,76 +185,6 @@ export default class CrawlSmartContractService extends BullableService {
         this.logger.error(error);
         throw error;
       });
-  }
-
-  private async getContractInfo(
-    addresses: string[]
-  ): Promise<
-    [
-      (QueryRawContractStateResponse | null)[],
-      (QueryContractInfoResponse | null)[]
-    ]
-  > {
-    const batchQueries: any[] = [];
-
-    addresses.forEach((address) => {
-      const requestCw2: QueryRawContractStateRequest = {
-        address,
-        queryData: fromBase64('Y29udHJhY3RfaW5mbw=='), // contract_info
-      };
-      const dataCw2 = toHex(
-        cosmwasm.wasm.v1.QueryRawContractStateRequest.encode(
-          requestCw2
-        ).finish()
-      );
-
-      const requestContractInfo: QueryContractInfoRequest = {
-        address,
-      };
-      const dataContractInfo = toHex(
-        cosmwasm.wasm.v1.QueryContractInfoRequest.encode(
-          requestContractInfo
-        ).finish()
-      );
-
-      batchQueries.push(
-        this._httpBatchClient.execute(
-          createJsonRpcRequest('abci_query', {
-            path: ABCI_QUERY_PATH.RAW_CONTRACT_STATE,
-            data: dataCw2,
-          })
-        ),
-        this._httpBatchClient.execute(
-          createJsonRpcRequest('abci_query', {
-            path: ABCI_QUERY_PATH.CONTRACT_INFO,
-            data: dataContractInfo,
-          })
-        )
-      );
-    });
-
-    const results: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
-
-    const contractCw2s: any[] = [];
-    const contractInfos: any[] = [];
-    for (let i = 0; i < results.length; i += 2) {
-      contractCw2s.push(
-        results[i].result.response.value
-          ? cosmwasm.wasm.v1.QueryRawContractStateResponse.decode(
-              fromBase64(results[i].result.response.value)
-            )
-          : null
-      );
-      contractInfos.push(
-        results[i + 1].result.response.value
-          ? cosmwasm.wasm.v1.QueryContractInfoResponse.decode(
-              fromBase64(results[i + 1].result.response.value)
-            )
-          : null
-      );
-    }
-
-    return [contractCw2s, contractInfos];
   }
 
   public async _start() {
