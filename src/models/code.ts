@@ -38,6 +38,15 @@ export class Code extends BaseModel {
     return 'code_id';
   }
 
+  static get TYPES() {
+    return {
+      CW20: 'CW20',
+      CW721: 'CW721',
+      CW4973: 'CW4973',
+      CW2981: 'CW2981',
+    };
+  }
+
   static get jsonSchema() {
     return {
       type: 'object',
@@ -61,7 +70,7 @@ export class Code extends BaseModel {
             addresses: { type: 'array', items: { type: 'string' } },
           },
         },
-        type: { type: ['string', 'null'] },
+        type: { type: ['string', 'null'], enum: Object.values(this.TYPES) },
         status: { type: ['string', 'null'] },
         store_hash: { type: 'string' },
         store_height: { type: 'number' },
@@ -80,5 +89,14 @@ export class Code extends BaseModel {
         },
       },
     };
+  }
+
+  static detectCodeType(contract: string) {
+    let codeTypes = '';
+    if (contract.includes('cw20')) codeTypes = Code.TYPES.CW20;
+    else if (contract.includes('cw721')) codeTypes = Code.TYPES.CW721;
+    else if (contract.includes('cw4973')) codeTypes = Code.TYPES.CW4973;
+    else if (contract.includes('cw2981')) codeTypes = Code.TYPES.CW721;
+    return codeTypes;
   }
 }
