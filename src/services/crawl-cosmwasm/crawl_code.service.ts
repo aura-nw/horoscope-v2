@@ -60,7 +60,7 @@ export default class CrawlCodeService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_CODE,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_CODE,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: object): Promise<void> {

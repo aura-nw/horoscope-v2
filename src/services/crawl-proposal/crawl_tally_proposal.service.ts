@@ -38,7 +38,7 @@ export default class CrawlTallyProposalService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_TALLY_PROPOSAL,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_TALLY_PROPOSAL,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: object): Promise<void> {
