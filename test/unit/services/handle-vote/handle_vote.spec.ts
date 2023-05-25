@@ -6,6 +6,7 @@ import CrawlTxService from '../../../../src/services/crawl-tx/crawl_tx.service';
 import knex from '../../../../src/common/utils/db_connection';
 import { Block, BlockCheckpoint, Vote } from '../../../../src/models';
 import tx_fixture_vote from './tx_vote.fixture.json' assert { type: 'json' };
+import tx_fixture_multi_vote from './tx_multi_vote.fixture.json' assert { type: 'json' };
 import tx_fixture_vote_authz from './tx_vote_authz.fixture.json' assert { type: 'json' };
 import tx_fixture_vote_option_yes from './tx_vote_change_option_yes.fixture.json' assert { type: 'json' };
 import tx_fixture_vote_option_no from './tx_vote_change_option_no.fixture.json' assert { type: 'json' };
@@ -168,6 +169,43 @@ export default class HandleTxVoteServiceTest {
     const vote = await Vote.query()
       .where('proposal_id', 427)
       .andWhere('voter', 'aura145wvhwnjl8nlqpl990w4s6wa7yw88s6njzkjxv')
+      .andWhere('vote_option', 'VOTE_OPTION_NO');
+    expect(vote.length).toEqual(1);
+  }
+
+  @Test('Handle multivote to one proposal')
+  async handleMultiVote() {
+    await BlockCheckpoint.query().insert([
+      BlockCheckpoint.fromJson({
+        job_name: BULL_JOB_NAME.HANDLE_VOTE_TX,
+        height: 4279200,
+      }),
+      BlockCheckpoint.fromJson({
+        job_name: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
+        height: 4279260,
+      }),
+    ]);
+
+    await Block.query().insert(
+      Block.fromJson({
+        height: 4279260,
+        hash: 'data hash block',
+        time: '2023-04-17T03:44:41.000Z',
+        proposer_address: 'proposer address',
+        data: {},
+      })
+    );
+    await this.crawlTxService?.jobHandlerTx({
+      listTx: { ...tx_fixture_multi_vote },
+      height: 4279260,
+      timestamp: '2023-04-17T03:44:41.000Z',
+    });
+
+    await this.handleVoteTxService?.initEnv();
+    await this.handleVoteTxService?.handleVote();
+    const vote = await Vote.query()
+      .where('proposal_id', 428)
+      .andWhere('voter', 'aura17dv9s7hujzkruzmezeg4l39zfuks7mjfscddcm')
       .andWhere('vote_option', 'VOTE_OPTION_NO');
     expect(vote.length).toEqual(1);
   }
