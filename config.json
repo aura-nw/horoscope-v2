@@ -73,6 +73,7 @@
     "smartContractsPerBatch": 5000
   },
   "handleVoteTx": {
+    "key": "handleVoteTx",
     "blocksPerCall": 100,
     "millisecondCrawl": 5000
   },
