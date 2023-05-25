@@ -74,6 +74,7 @@ export default class Cw721MediaService extends BullableService {
   })
   async jobHandlerTokenMedia(_payload: { tokenMedia: ITokenMediaInfo }) {
     let { tokenMedia } = _payload;
+    this.logger.info(`Before \n ${tokenMedia}`);
     // update metadata
     if (tokenMedia.onchain.token_uri) {
       tokenMedia.onchain.metadata = await this.getMetadata(
@@ -84,7 +85,7 @@ export default class Cw721MediaService extends BullableService {
     }
     // upload & update link s3
     tokenMedia = await this.updateMediaS3(tokenMedia);
-    this.logger.debug(tokenMedia);
+    this.logger.info(tokenMedia);
     await CW721Token.query()
       .where('id', tokenMedia.cw721_token_id)
       .patch({
