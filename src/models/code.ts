@@ -70,7 +70,7 @@ export class Code extends BaseModel {
             addresses: { type: 'array', items: { type: 'string' } },
           },
         },
-        type: { type: ['string', 'null'], enum: Object.values(this.TYPES) },
+        type: { type: ['string', 'null'] },
         status: { type: ['string', 'null'] },
         store_hash: { type: 'string' },
         store_height: { type: 'number' },
