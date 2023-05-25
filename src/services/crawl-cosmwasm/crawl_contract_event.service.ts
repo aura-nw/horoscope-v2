@@ -38,25 +38,23 @@ export default class CrawlContractEventService extends BullableService {
         config.crawlContractEvent.key
       );
     this.logger.info(`startBlock: ${startBlock} to endBlock: ${endBlock}`);
-    if (endBlock >= startBlock) {
-      try {
-        // get all contract event in above range blocks
-        const contractEvents = await getContractActivities(
-          startBlock,
-          endBlock
-        );
-        const contractByAddress = await this.getContractByAddress(
-          contractEvents.map((contractEvent) => contractEvent.contractAddress)
-        );
-        await knex.transaction(async (trx) => {
-          const queries: any[] = [];
-          contractEvents.forEach((contractEvent) => {
-            this.logger.info({
-              contractAddress: contractEvent.contractAddress,
-              action: contractEvent.action,
-              event_id: contractEvent.event_id,
-              index: contractEvent.index,
-            });
+    if (startBlock >= endBlock) return;
+    try {
+      // get all contract event in above range blocks
+      const contractEvents = await getContractActivities(startBlock, endBlock);
+      const contractByAddress = await this.getContractByAddress(
+        contractEvents.map((contractEvent) => contractEvent.contractAddress)
+      );
+      await knex.transaction(async (trx) => {
+        const queries: any[] = [];
+        contractEvents.forEach((contractEvent) => {
+          this.logger.info({
+            contractAddress: contractEvent.contractAddress,
+            action: contractEvent.action,
+            event_id: contractEvent.event_id,
+            index: contractEvent.index,
+          });
+          try {
             const smartContractId =
               contractByAddress[contractEvent.contractAddress].id;
             const query = SmartContractEvent.query()
@@ -71,21 +69,25 @@ export default class CrawlContractEventService extends BullableService {
               })
               .transacting(trx);
             queries.push(query);
-          });
-          updateBlockCheckpoint.height = endBlock + 1;
-          queries.push(
-            BlockCheckpoint.query()
-              .insert(updateBlockCheckpoint)
-              .onConflict('job_name')
-              .merge()
-          );
-          await Promise.all(queries) // Once every query is written
-            .then(trx.commit) // Try to execute all of them
-            .catch(trx.rollback); // And rollback in case any of them goes wrong
+          } catch (error) {
+            this.logger.info(
+              `Smart contract ${contractEvent.contractAddress} not found in DB`
+            );
+          }
         });
-      } catch (error) {
-        this.logger.error(error);
-      }
+        updateBlockCheckpoint.height = endBlock;
+        queries.push(
+          BlockCheckpoint.query()
+            .insert(updateBlockCheckpoint)
+            .onConflict('job_name')
+            .merge()
+        );
+        await Promise.all(queries) // Once every query is written
+          .then(trx.commit) // Try to execute all of them
+          .catch(trx.rollback); // And rollback in case any of them goes wrong
+      });
+    } catch (error) {
+      this.logger.error(error);
     }
   }
 

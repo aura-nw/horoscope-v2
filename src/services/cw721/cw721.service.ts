@@ -224,38 +224,37 @@ export default class Cw721HandlerService extends BullableService {
         config.cw721.key
       );
     this.logger.info(`startBlock: ${startBlock} to endBlock: ${endBlock}`);
-    if (endBlock >= startBlock) {
-      try {
-        // get all contract Msg in above range blocks
-        const listContractMsg = await this.getCw721ContractEvents(
-          startBlock,
-          endBlock
+    if (startBlock >= endBlock) return;
+    try {
+      // get all contract Msg in above range blocks
+      const listContractMsg = await this.getCw721ContractEvents(
+        startBlock,
+        endBlock
+      );
+      this.logger.debug(listContractMsg);
+      if (listContractMsg.length > 0) {
+        // handle instantiate cw721 contracts
+        await this.handleInstantiateMsgs(
+          listContractMsg.filter(
+            (msg) => msg.action === CW721_ACTION.INSTANTIATE
+          )
         );
-        this.logger.debug(listContractMsg);
-        if (listContractMsg.length > 0) {
-          // handle instantiate cw721 contracts
-          await this.handleInstantiateMsgs(
-            listContractMsg.filter(
-              (msg) => msg.action === CW721_ACTION.INSTANTIATE
-            )
-          );
-          // handle all cw721 execute messages
-          await this.handleCw721MsgExec(
-            listContractMsg.filter(
-              (msg) => msg.action !== CW721_ACTION.INSTANTIATE
-            )
-          );
-          // handle Cw721 Activity
-          await this.handleCW721Activity(listContractMsg);
-        }
-        updateBlockCheckpoint.height = endBlock + 1;
-        await BlockCheckpoint.query()
-          .insert(updateBlockCheckpoint)
-          .onConflict('job_name')
-          .merge();
-      } catch (error) {
-        this.logger.error(error);
+        // handle all cw721 execute messages
+        await this.handleCw721MsgExec(
+          listContractMsg.filter(
+            (msg) => msg.action !== CW721_ACTION.INSTANTIATE
+          )
+        );
+        // handle Cw721 Activity
+        await this.handleCW721Activity(listContractMsg);
       }
+      updateBlockCheckpoint.height = endBlock;
+      await BlockCheckpoint.query()
+        .insert(updateBlockCheckpoint)
+        .onConflict('job_name')
+        .merge();
+    } catch (error) {
+      this.logger.error(error);
     }
   }
 
@@ -498,7 +497,8 @@ export default class Cw721HandlerService extends BullableService {
         },
       })
       .where('smart_contract:code.type', 'CW721')
-      .andWhereBetween('tx.height', [startBlock, endBlock])
+      .where('tx.height', '>', startBlock)
+      .andWhere('tx.height', '<=', endBlock)
       .select(
         'message.sender as sender',
         'smart_contract.address as contractAddress',

@@ -48,7 +48,8 @@ export async function getContractActivities(
       Event.EVENT_TYPE.WASM,
       Event.EVENT_TYPE.INSTANTIATE,
     ])
-    .andWhereBetween('event.block_height', [fromBlock, toBlock])
+    .where('event.block_height', '>', fromBlock)
+    .andWhere('event.block_height', '<=', toBlock)
     .orderBy('attributes.id', 'ASC');
 
   wasmEvents.forEach((wasmEvent, index) => {
