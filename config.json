@@ -42,6 +42,9 @@
     },
     "handleNotEnoughDepositProposal": {
       "millisecondCrawl": 30000
+    },
+    "handleEndedProposal": {
+      "millisecondCrawl": 30000
     }
   },
   "crawlTallyProposal": {

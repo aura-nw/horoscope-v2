@@ -39,7 +39,7 @@ export default class CrawlSmartContractService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_SMART_CONTRACT,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_SMART_CONTRACT,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: object): Promise<void> {
