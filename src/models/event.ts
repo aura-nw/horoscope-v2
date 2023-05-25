@@ -85,5 +85,6 @@ export class Event extends BaseModel {
     REDELEGATE: 'redelegate',
     UNBOND: 'unbond',
     WASM: 'wasm',
+    CREATE_VALIDATOR: 'create_validator',
   };
 }

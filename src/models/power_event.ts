@@ -29,6 +29,7 @@ export class PowerEvent extends BaseModel {
       DELEGATE: 'delegate',
       REDELEGATE: 'redelegate',
       UNBOND: 'unbond',
+      CREATE_VALIDATOR: 'create_validator',
     };
   }
 
