@@ -50,15 +50,14 @@ export default class CrawlContractEventService extends BullableService {
         await knex.transaction(async (trx) => {
           const queries: any[] = [];
           contractEvents.forEach((contractEvent) => {
-            const smartContractId =
-              contractByAddress[contractEvent.contractAddress].id;
-            this.logger.debug({
+            this.logger.info({
               contractAddress: contractEvent.contractAddress,
-              smart_contract_id: smartContractId,
               action: contractEvent.action,
               event_id: contractEvent.event_id,
               index: contractEvent.index,
             });
+            const smartContractId =
+              contractByAddress[contractEvent.contractAddress].id;
             const query = SmartContractEvent.query()
               .insertGraph({
                 ...SmartContractEvent.fromJson({
