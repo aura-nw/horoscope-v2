@@ -39,56 +39,54 @@ export default class CrawlContractEventService extends BullableService {
       );
     this.logger.info(`startBlock: ${startBlock} to endBlock: ${endBlock}`);
     if (startBlock >= endBlock) return;
-    try {
-      // get all contract event in above range blocks
-      const contractEvents = await getContractActivities(startBlock, endBlock);
-      const contractByAddress = await this.getContractByAddress(
-        contractEvents.map((contractEvent) => contractEvent.contractAddress)
-      );
-      await knex.transaction(async (trx) => {
-        const queries: any[] = [];
-        contractEvents.forEach((contractEvent) => {
-          this.logger.info({
-            contractAddress: contractEvent.contractAddress,
-            action: contractEvent.action,
-            event_id: contractEvent.event_id,
-            index: contractEvent.index,
-          });
-          try {
-            const smartContractId =
-              contractByAddress[contractEvent.contractAddress].id;
-            const query = SmartContractEvent.query()
-              .insertGraph({
-                ...SmartContractEvent.fromJson({
-                  smart_contract_id: smartContractId,
-                  action: contractEvent.action,
-                  event_id: contractEvent.event_id,
-                  index: contractEvent.index,
-                }),
-                attributes: contractEvent.attributes,
-              })
-              .transacting(trx);
-            queries.push(query);
-          } catch (error) {
+    // get all contract event in above range blocks
+    const contractEvents = await getContractActivities(startBlock, endBlock);
+    const contractByAddress = await this.getContractByAddress(
+      contractEvents.map((contractEvent) => contractEvent.contractAddress)
+    );
+    await knex.transaction(async (trx) => {
+      const queries: any[] = [];
+      contractEvents.forEach((contractEvent) => {
+        this.logger.info({
+          contractAddress: contractEvent.contractAddress,
+          action: contractEvent.action,
+          event_id: contractEvent.event_id,
+          index: contractEvent.index,
+        });
+        try {
+          const smartContractId =
+            contractByAddress[contractEvent.contractAddress].id;
+          const query = SmartContractEvent.query()
+            .insertGraph({
+              ...SmartContractEvent.fromJson({
+                smart_contract_id: smartContractId,
+                action: contractEvent.action,
+                event_id: contractEvent.event_id,
+                index: contractEvent.index,
+              }),
+              attributes: contractEvent.attributes,
+            })
+            .transacting(trx);
+          queries.push(query);
+        } catch (error) {
+          if (error instanceof TypeError) {
             this.logger.info(
               `Smart contract ${contractEvent.contractAddress} not found in DB`
             );
           }
-        });
-        updateBlockCheckpoint.height = endBlock;
-        queries.push(
-          BlockCheckpoint.query()
-            .insert(updateBlockCheckpoint)
-            .onConflict('job_name')
-            .merge()
-        );
-        await Promise.all(queries) // Once every query is written
-          .then(trx.commit) // Try to execute all of them
-          .catch(trx.rollback); // And rollback in case any of them goes wrong
+        }
       });
-    } catch (error) {
-      this.logger.error(error);
-    }
+      updateBlockCheckpoint.height = endBlock;
+      queries.push(
+        BlockCheckpoint.query()
+          .insert(updateBlockCheckpoint)
+          .onConflict('job_name')
+          .merge()
+      );
+      await Promise.all(queries) // Once every query is written
+        .then(trx.commit) // Try to execute all of them
+        .catch(trx.rollback); // And rollback in case any of them goes wrong
+    });
   }
 
   // from list contract addresses, get those appopriate records in DB, key by its contract_address
