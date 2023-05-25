@@ -41,7 +41,7 @@ export default class HandleAddressService extends BullableService {
     const [startHeight, endHeight, updateBlockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.HANDLE_ADDRESS,
-        BULL_JOB_NAME.HANDLE_TRANSACTION,
+        [BULL_JOB_NAME.HANDLE_TRANSACTION],
         config.handleAddress.key
       );
     this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
