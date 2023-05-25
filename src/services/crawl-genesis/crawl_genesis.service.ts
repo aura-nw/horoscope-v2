@@ -57,7 +57,7 @@ export default class CrawlGenesisService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_GENESIS,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_GENESIS,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleGenesis(_payload: object): Promise<void> {
@@ -150,7 +150,7 @@ export default class CrawlGenesisService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async crawlGenesisAccounts(_payload: object): Promise<void> {
@@ -251,7 +251,7 @@ export default class CrawlGenesisService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async crawlGenesisValidators(_payload: object): Promise<void> {
@@ -321,7 +321,7 @@ export default class CrawlGenesisService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_GENESIS_PROPOSAL,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_GENESIS_PROPOSAL,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async crawlGenesisProposals(_payload: object): Promise<void> {
@@ -381,7 +381,7 @@ export default class CrawlGenesisService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_GENESIS_CODE,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_GENESIS_CODE,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async crawlGenesisCodes(_payload: object): Promise<void> {
@@ -473,7 +473,7 @@ export default class CrawlGenesisService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async crawlGenesisContracts(_payload: object): Promise<void> {

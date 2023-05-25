@@ -29,7 +29,7 @@ export default class CrawlDelegatorsService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_DELEGATORS,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_DELEGATORS,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: object): Promise<void> {
@@ -59,7 +59,7 @@ export default class CrawlDelegatorsService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_VALIDATOR_DELEGATORS,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_VALIDATOR_DELEGATORS,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJobCrawlValidatorDelegators(
