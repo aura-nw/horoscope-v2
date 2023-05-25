@@ -7,6 +7,8 @@ import knex from '../../../../src/common/utils/db_connection';
 import { Block, BlockCheckpoint, Vote } from '../../../../src/models';
 import tx_fixture_vote from './tx_vote.fixture.json' assert { type: 'json' };
 import tx_fixture_vote_authz from './tx_vote_authz.fixture.json' assert { type: 'json' };
+import tx_fixture_vote_option_yes from './tx_vote_change_option_yes.fixture.json' assert { type: 'json' };
+import tx_fixture_vote_option_no from './tx_vote_change_option_no.fixture.json' assert { type: 'json' };
 import HandleAuthzTxService from '../../../../src/services/crawl-tx/handle_authz_tx.service';
 
 @Describe('Test handle voting tx service')
@@ -119,6 +121,54 @@ export default class HandleTxVoteServiceTest {
       .where('proposal_id', 2)
       .andWhere('voter', 'aura1dyw4kvnfzj9geh75jlw4z2tgmj5g9f354wteel')
       .andWhere('vote_option', 'VOTE_OPTION_YES');
+    expect(vote.length).toEqual(1);
+  }
+
+  @Test('Handle change voting option')
+  async changeVoteTx() {
+    await BlockCheckpoint.query().insert([
+      BlockCheckpoint.fromJson({
+        job_name: BULL_JOB_NAME.HANDLE_VOTE_TX,
+        height: 6794600,
+      }),
+      BlockCheckpoint.fromJson({
+        job_name: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
+        height: 6794619,
+      }),
+    ]);
+
+    await Block.query().insert([
+      Block.fromJson({
+        height: 6794608,
+        hash: 'data hash block 1',
+        time: '2023-04-17T03:44:41.000Z',
+        proposer_address: 'proposer address',
+        data: {},
+      }),
+      Block.fromJson({
+        height: 6794619,
+        hash: 'data hash block 2',
+        time: '2023-04-17T03:45:41.000Z',
+        proposer_address: 'proposer address',
+        data: {},
+      }),
+    ]);
+    await this.crawlTxService?.jobHandlerTx({
+      listTx: { ...tx_fixture_vote_option_yes },
+      height: 6794608,
+      timestamp: '2023-04-17T03:44:41.000Z',
+    });
+    await this.crawlTxService?.jobHandlerTx({
+      listTx: { ...tx_fixture_vote_option_no },
+      height: 6794619,
+      timestamp: '2023-04-17T03:45:41.000Z',
+    });
+    await this.handleVoteTxService?.initEnv();
+    await this.handleVoteTxService?.handleVote();
+    const vote = await Vote.query()
+      .where('proposal_id', 427)
+      .andWhere('voter', 'aura145wvhwnjl8nlqpl990w4s6wa7yw88s6njzkjxv')
+      .andWhere('vote_option', 'VOTE_OPTION_NO');
     expect(vote.length).toEqual(1);
   }
 
