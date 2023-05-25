@@ -46,7 +46,7 @@ export default class CrawlProposalService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_PROPOSAL,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_PROPOSAL,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleCrawlProposals(_payload: object): Promise<void> {
@@ -162,17 +162,17 @@ export default class CrawlProposalService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_ENDED_PROPOSAL,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.HANDLE_ENDED_PROPOSAL,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleEndedProposals(_payload: object): Promise<void> {
     const batchQueries: any[] = [];
 
-    const now = new Date(Date.now() - 10);
+    const current10SecsAgo = new Date(Date.now() - 10);
 
     const endedProposals = await Proposal.query()
       .where('status', Proposal.STATUS.PROPOSAL_STATUS_VOTING_PERIOD)
-      .andWhere('voting_end_time', '<=', now);
+      .andWhere('voting_end_time', '<=', current10SecsAgo);
     this.logger.info(`List ended proposals: ${JSON.stringify(endedProposals)}`);
 
     endedProposals.forEach((proposal: Proposal) => {
@@ -234,7 +234,7 @@ export default class CrawlProposalService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleNotEnoughDepositProposals(
@@ -242,11 +242,11 @@ export default class CrawlProposalService extends BullableService {
   ): Promise<void> {
     const batchQueries: any[] = [];
 
-    const now = new Date(Date.now() - 10);
+    const current10SecsAgo = new Date(Date.now() - 10);
 
     const depositProposals = await Proposal.query()
       .where('status', Proposal.STATUS.PROPOSAL_STATUS_DEPOSIT_PERIOD)
-      .andWhere('deposit_end_time', '<=', now);
+      .andWhere('deposit_end_time', '<=', current10SecsAgo);
     this.logger.info(
       `List not enough deposit proposals: ${JSON.stringify(depositProposals)}`
     );
