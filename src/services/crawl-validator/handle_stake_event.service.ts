@@ -24,6 +24,7 @@ export default class HandleStakeEventService extends BullableService {
     Event.EVENT_TYPE.DELEGATE,
     Event.EVENT_TYPE.REDELEGATE,
     Event.EVENT_TYPE.UNBOND,
+    Event.EVENT_TYPE.CREATE_VALIDATOR,
   ];
 
   public constructor(public broker: ServiceBroker) {
@@ -115,6 +116,16 @@ export default class HandleStakeEventService extends BullableService {
               break;
             case PowerEvent.TYPES.UNBOND:
               validatorSrcId = validatorKeys[stakeEvent.value].id;
+              break;
+            case PowerEvent.TYPES.CREATE_VALIDATOR:
+              validatorDstId = validatorKeys[stakeEvent.value].id;
+              amount = parseCoins(
+                stakeEvents.find(
+                  (event) =>
+                    event.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT &&
+                    event.index === stakeEvent.index + 1
+                ).value
+              )[0].amount;
               break;
             default:
               break;
