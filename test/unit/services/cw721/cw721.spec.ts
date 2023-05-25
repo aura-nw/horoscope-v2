@@ -392,7 +392,7 @@ export default class AssetIndexerTest {
   @Test('test getContractActivities function')
   public async testGetContractActivities() {
     const extractData = await getContractActivities(
-      this.block.height,
+      this.block.height - 1,
       this.block.height
     );
     expect(
