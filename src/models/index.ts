@@ -14,6 +14,7 @@ export * from './transaction_message_receiver';
 export * from './power_event';
 export * from './validator';
 export * from './checkpoint';
+export * from './vote';
 export * from './proposal';
 export * from './code';
 export * from './smart_contract';
