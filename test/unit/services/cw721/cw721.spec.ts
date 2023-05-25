@@ -8,6 +8,7 @@ import CW721Contract from '../../../../src/models/cw721_contract';
 import CW721Token from '../../../../src/models/cw721_token';
 import CW721Activity from '../../../../src/models/cw721_tx';
 import Cw721HandlerService from '../../../../src/services/cw721/cw721.service';
+import { getContractActivities } from '../../../../src/common/utils/smart_contract';
 
 @Describe('Test cw721 service')
 export default class AssetIndexerTest {
@@ -165,6 +166,13 @@ export default class AssetIndexerTest {
                 key: 'code_id',
                 value: '6',
               },
+            ],
+          },
+          {
+            block_height: 3967530,
+            source: 'TX_EVENT',
+            type: 'instantiate',
+            attributes: [
               {
                 index: 2,
                 block_height: 3967530,
@@ -202,6 +210,13 @@ export default class AssetIndexerTest {
                 key: 'action',
                 value: 'phamphong_action',
               },
+            ],
+          },
+          {
+            block_height: 3967530,
+            source: 'TX_EVENT',
+            type: 'wasm',
+            attributes: [
               {
                 index: 2,
                 block_height: 3967530,
@@ -283,6 +298,13 @@ export default class AssetIndexerTest {
                 key: 'token_id',
                 value: 'test2',
               },
+            ],
+          },
+          {
+            block_height: 3967530,
+            source: 'TX_EVENT',
+            type: 'wasm',
+            attributes: [
               {
                 index: 3,
                 block_height: 3967530,
@@ -372,7 +394,7 @@ export default class AssetIndexerTest {
 
   @Test('test getContractActivities function')
   public async testGetContractActivities() {
-    const extractData = await this.cw721HandlerService.getContractActivities(
+    const extractData = await getContractActivities(
       this.block.height,
       this.block.height
     );
@@ -400,17 +422,6 @@ export default class AssetIndexerTest {
         action: 'instantiate',
         sender: this.txInsert.messages[0].sender,
         contractAddress:
-          this.txInsert.messages[0].events[1].attributes[0].value,
-        content: this.txInsert.messages[0].content.msg,
-        wasm_attributes: [
-          this.txInsert.messages[0].events[1].attributes[2],
-          this.txInsert.messages[0].events[1].attributes[3],
-        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
-      },
-      {
-        action: this.txInsert.messages[0].events[2].attributes[1].value,
-        sender: this.txInsert.messages[0].sender,
-        contractAddress:
           this.txInsert.messages[0].events[2].attributes[0].value,
         content: this.txInsert.messages[0].content.msg,
         wasm_attributes: [
@@ -419,15 +430,26 @@ export default class AssetIndexerTest {
         ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
       },
       {
-        action: this.txInsert.messages[0].events[2].attributes[3].value,
+        action: this.txInsert.messages[0].events[3].attributes[1].value,
         sender: this.txInsert.messages[0].sender,
         contractAddress:
-          this.txInsert.messages[0].events[2].attributes[2].value,
+          this.txInsert.messages[0].events[3].attributes[0].value,
         content: this.txInsert.messages[0].content.msg,
         wasm_attributes: [
-          this.txInsert.messages[0].events[2].attributes[2],
-          this.txInsert.messages[0].events[2].attributes[3],
-          this.txInsert.messages[0].events[2].attributes[4],
+          this.txInsert.messages[0].events[3].attributes[0],
+          this.txInsert.messages[0].events[3].attributes[1],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+      },
+      {
+        action: this.txInsert.messages[0].events[4].attributes[1].value,
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.messages[0].events[4].attributes[0].value,
+        content: this.txInsert.messages[0].content.msg,
+        wasm_attributes: [
+          this.txInsert.messages[0].events[4].attributes[0],
+          this.txInsert.messages[0].events[4].attributes[1],
+          this.txInsert.messages[0].events[4].attributes[2],
         ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
       },
       {
@@ -446,11 +468,11 @@ export default class AssetIndexerTest {
         action: undefined,
         sender: this.txInsert.messages[1].sender,
         contractAddress:
-          this.txInsert.messages[1].events[1].attributes[0].value,
+          this.txInsert.messages[1].events[2].attributes[0].value,
         content: this.txInsert.messages[1].content.msg,
         wasm_attributes: [
-          this.txInsert.messages[1].events[1].attributes[3],
-          this.txInsert.messages[1].events[1].attributes[4],
+          this.txInsert.messages[1].events[2].attributes[0],
+          this.txInsert.messages[1].events[2].attributes[1],
         ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
       },
     ]);
@@ -504,6 +526,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 10,
       },
       {
         contractAddress: this.mockInitContract.smart_contract.address,
@@ -550,6 +573,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 100,
       },
     ];
     await this.cw721HandlerService.handlerCw721Transfer(
@@ -620,6 +644,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 10,
       },
       {
         contractAddress: this.mockInitContract.smart_contract.address,
@@ -667,6 +692,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 100,
       },
     ];
     await this.cw721HandlerService.handlerCw721Mint(mockContractMintMsg);
@@ -735,6 +761,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 10,
       },
       {
         contractAddress: this.mockInitContract.smart_contract.address,
@@ -776,6 +803,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 100,
       },
     ];
     await this.cw721HandlerService.handlerCw721Burn(mockBurnMsg);
@@ -846,6 +874,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 100,
       },
     ];
     const burnedToken = await CW721Token.query()
@@ -912,6 +941,7 @@ export default class AssetIndexerTest {
           index: 0,
         }),
         code_id: codeId,
+        event_id: 100,
       },
     ];
     await this.cw721HandlerService.handleInstantiateMsgs(mockInstantiateMsg);
@@ -1076,6 +1106,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 100,
       },
       {
         contractAddress: this.mockInitContract.smart_contract.address,
@@ -1117,6 +1148,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 10,
       },
       {
         contractAddress: this.mockInitContract.smart_contract.address,
@@ -1158,6 +1190,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
+        event_id: 100,
       },
     ];
     await this.cw721HandlerService.handleCW721Activity(mockActivityMsgs);
@@ -1172,5 +1205,216 @@ export default class AssetIndexerTest {
     expect(cw721Activities[0].cw721_token_id).toEqual(1);
     expect(cw721Activities[1].cw721_token_id).toEqual(0);
     expect(cw721Activities[2].cw721_token_id).toEqual(2);
+  }
+
+  @Test('test handle multi contract events')
+  async testHandleMultiContractEvents() {
+    const token = await CW721Token.query().insert(
+      CW721Token.fromJson({
+        token_id: 'token_multi',
+        media_info: null,
+        owner: 'owner1',
+        cw721_contract_id: 1,
+        last_updated_height: 1000,
+      })
+    );
+    const lastOwner = 'recipient_4';
+    const expectHeight = 2000000;
+    const mockTransferMsg = [
+      {
+        contractAddress: this.mockInitContract.smart_contract.address,
+        sender: '',
+        action: 'transfer_nft',
+        content: '',
+        wasm_attributes: [
+          {
+            _id: '63fda557271e5f3bc9321148',
+            key: '_contract_address',
+            value: this.mockInitContract.smart_contract.address,
+          },
+          {
+            _id: '63fda557271e5f2e69321149',
+            key: 'action',
+            value: 'transfer_nft',
+          },
+          {
+            _id: '63fda557271e5f2b7a32114a',
+            key: 'recipient',
+            value: 'recipient_11',
+          },
+          {
+            _id: '63fda557271e5f515032114b',
+            key: 'sender',
+            value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
+          },
+          {
+            _id: '63fda557271e5f65ee32114c',
+            key: 'token_id',
+            value: token.token_id,
+          },
+        ],
+        tx: Transaction.fromJson({
+          height: 100000,
+          hash: '',
+          code: 0,
+          gas_used: '123035',
+          gas_wanted: '141106',
+          gas_limit: '141106',
+          fee: 353,
+          timestamp: '2023-01-12T01:53:57.000Z',
+          codespace: '',
+          data: {},
+          index: 0,
+        }),
+        event_id: 10,
+      },
+      {
+        contractAddress: this.mockInitContract.smart_contract.address,
+        sender: '',
+        action: 'transfer_nft',
+        content: '',
+        wasm_attributes: [
+          {
+            _id: '63fda557271e5f3bc9321148',
+            key: '_contract_address',
+            value: this.mockInitContract.smart_contract.address,
+          },
+          {
+            _id: '63fda557271e5f2e69321149',
+            key: 'action',
+            value: 'transfer_nft',
+          },
+          {
+            _id: '63fda557271e5f2b7a32114a',
+            key: 'recipient',
+            value: 'recipient_2',
+          },
+          {
+            _id: '63fda557271e5f515032114b',
+            key: 'sender',
+            value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
+          },
+          {
+            _id: '63fda557271e5f65ee32114c',
+            key: 'token_id',
+            value: token.token_id,
+          },
+        ],
+        tx: Transaction.fromJson({
+          height: expectHeight,
+          hash: '',
+          code: 0,
+          gas_used: '123035',
+          gas_wanted: '141106',
+          gas_limit: '141106',
+          fee: 353,
+          timestamp: '2023-01-12T01:53:57.000Z',
+          codespace: '',
+          data: {},
+          index: 0,
+        }),
+        event_id: 100,
+      },
+      {
+        contractAddress: this.mockInitContract.smart_contract.address,
+        sender: '',
+        action: 'transfer_nft',
+        content: '',
+        wasm_attributes: [
+          {
+            _id: '63fda557271e5f3bc9321148',
+            key: '_contract_address',
+            value: this.mockInitContract.smart_contract.address,
+          },
+          {
+            _id: '63fda557271e5f2e69321149',
+            key: 'action',
+            value: 'transfer_nft',
+          },
+          {
+            _id: '63fda557271e5f2b7a32114a',
+            key: 'recipient',
+            value: 'recipient_3',
+          },
+          {
+            _id: '63fda557271e5f515032114b',
+            key: 'sender',
+            value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
+          },
+          {
+            _id: '63fda557271e5f65ee32114c',
+            key: 'token_id',
+            value: token.token_id,
+          },
+        ],
+        tx: Transaction.fromJson({
+          height: expectHeight,
+          hash: '',
+          code: 0,
+          gas_used: '123035',
+          gas_wanted: '141106',
+          gas_limit: '141106',
+          fee: 353,
+          timestamp: '2023-01-12T01:53:57.000Z',
+          codespace: '',
+          data: {},
+          index: 0,
+        }),
+        event_id: 100,
+      },
+      {
+        contractAddress: this.mockInitContract.smart_contract.address,
+        sender: '',
+        action: 'transfer_nft',
+        content: '',
+        wasm_attributes: [
+          {
+            _id: '63fda557271e5f3bc9321148',
+            key: '_contract_address',
+            value: this.mockInitContract.smart_contract.address,
+          },
+          {
+            _id: '63fda557271e5f2e69321149',
+            key: 'action',
+            value: 'transfer_nft',
+          },
+          {
+            _id: '63fda557271e5f2b7a32114a',
+            key: 'recipient',
+            value: lastOwner,
+          },
+          {
+            _id: '63fda557271e5f515032114b',
+            key: 'sender',
+            value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
+          },
+          {
+            _id: '63fda557271e5f65ee32114c',
+            key: 'token_id',
+            value: token.token_id,
+          },
+        ],
+        tx: Transaction.fromJson({
+          height: expectHeight,
+          hash: '',
+          code: 0,
+          gas_used: '123035',
+          gas_wanted: '141106',
+          gas_limit: '141106',
+          fee: 353,
+          timestamp: '2023-01-12T01:53:57.000Z',
+          codespace: '',
+          data: {},
+          index: 0,
+        }),
+        event_id: 100,
+      },
+    ];
+    await this.cw721HandlerService.handlerCw721Transfer(mockTransferMsg);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const resultToken = await CW721Token.query().where('id', token.id).first();
+    expect(resultToken?.owner).toEqual(lastOwner);
+    expect(resultToken?.last_updated_height).toEqual(expectHeight);
   }
 }
