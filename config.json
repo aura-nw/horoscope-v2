@@ -79,5 +79,10 @@
   "crawlDelegators": {
     "millisecondCrawl": 3600000,
     "queryPageLimit": 100
+  },
+  "crawlContractEvent": {
+    "blocksPerBatch": 100,
+    "millisecondRepeatJob": 5000,
+    "startBlock": 0
   }
 }
