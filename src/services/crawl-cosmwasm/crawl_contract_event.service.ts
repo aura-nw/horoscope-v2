@@ -31,11 +31,12 @@ export default class CrawlContractEventService extends BullableService {
   })
   async jobHandler(): Promise<void> {
     // get range txs for proccessing
-    const [startBlock, endBlock] = await BlockCheckpoint.getCheckpoint(
-      BULL_JOB_NAME.CRAWL_CONTRACT_EVENT,
-      BULL_JOB_NAME.HANDLE_TRANSACTION,
-      config.crawlContractEvent.key
-    );
+    const [startBlock, endBlock, updateBlockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.CRAWL_CONTRACT_EVENT,
+        [BULL_JOB_NAME.CRAWL_SMART_CONTRACT],
+        config.crawlContractEvent.key
+      );
     this.logger.info(`startBlock: ${startBlock} to endBlock: ${endBlock}`);
     if (endBlock >= startBlock) {
       try {
@@ -71,12 +72,12 @@ export default class CrawlContractEventService extends BullableService {
               .transacting(trx);
             queries.push(query);
           });
+          updateBlockCheckpoint.height = endBlock + 1;
           queries.push(
             BlockCheckpoint.query()
-              .patch({
-                height: endBlock + 1,
-              })
-              .where('job_name', BULL_JOB_NAME.CRAWL_CONTRACT_EVENT)
+              .insert(updateBlockCheckpoint)
+              .onConflict('job_name')
+              .merge()
           );
           await Promise.all(queries) // Once every query is written
             .then(trx.commit) // Try to execute all of them
