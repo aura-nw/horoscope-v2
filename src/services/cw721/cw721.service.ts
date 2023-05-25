@@ -141,49 +141,45 @@ export default class Cw721HandlerService extends BullableService {
 
   // update burned field in cw721_token to true, last updated height
   async handlerCw721Burn(burnMsgs: SmartContractEvent[]): Promise<void> {
-    try {
-      // get Ids for contracts
-      const cw721ContractDbRecords = await this.getCw721ContractsRecords(
-        burnMsgs.map((cw721Msg) => cw721Msg.contractAddress)
-      );
-      await knex.transaction(async (trx) => {
-        const queries: any[] = [];
-        burnMsgs.forEach((burnMsg) => {
-          // find the burnMsg's smart contract id
-          const cw721ContractId = cw721ContractDbRecords.find(
-            (item) => item.address === burnMsg.contractAddress
-          )?.id;
-          if (!cw721ContractId) {
-            // burn cw721 token but its contract haven't been in DB
-            // this case happened when
-            throw new Error(
-              `Msg transfer in tx ${burnMsg.tx.hash} not found contract address in cw721 contract DB`
-            );
-          }
-          const tokenId = getAttributeFrom(
-            burnMsg.attributes,
-            EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+    // get Ids for contracts
+    const cw721ContractDbRecords = await this.getCw721ContractsRecords(
+      burnMsgs.map((cw721Msg) => cw721Msg.contractAddress)
+    );
+    await knex.transaction(async (trx) => {
+      const queries: any[] = [];
+      burnMsgs.forEach((burnMsg) => {
+        // find the burnMsg's smart contract id
+        const cw721ContractId = cw721ContractDbRecords.find(
+          (item) => item.address === burnMsg.contractAddress
+        )?.id;
+        if (!cw721ContractId) {
+          // burn cw721 token but its contract haven't been in DB
+          // this case happened when
+          throw new Error(
+            `Msg transfer in tx ${burnMsg.tx.hash} not found contract address in cw721 contract DB`
           );
-          if (tokenId) {
-            const query = CW721Token.query()
-              .where('cw721_contract_id', cw721ContractId)
-              .andWhere('token_id', tokenId)
-              .andWhere('last_updated_height', '<=', burnMsg.tx.height)
-              .patch({
-                last_updated_height: burnMsg.tx.height,
-                burned: true,
-              })
-              .transacting(trx);
-            queries.push(query);
-          }
-        });
-        await Promise.all(queries) // Once every query is written
-          .then(trx.commit) // Try to execute all of them
-          .catch(trx.rollback); // And rollback in case any of them goes wrong
+        }
+        const tokenId = getAttributeFrom(
+          burnMsg.attributes,
+          EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+        );
+        if (tokenId) {
+          const query = CW721Token.query()
+            .where('cw721_contract_id', cw721ContractId)
+            .andWhere('token_id', tokenId)
+            .andWhere('last_updated_height', '<=', burnMsg.tx.height)
+            .patch({
+              last_updated_height: burnMsg.tx.height,
+              burned: true,
+            })
+            .transacting(trx);
+          queries.push(query);
+        }
       });
-    } catch (err) {
-      this.logger.error(err);
-    }
+      await Promise.all(queries) // Once every query is written
+        .then(trx.commit) // Try to execute all of them
+        .catch(trx.rollback); // And rollback in case any of them goes wrong
+    });
   }
 
   @QueueHandler({
@@ -225,37 +221,29 @@ export default class Cw721HandlerService extends BullableService {
       );
     this.logger.info(`startBlock: ${startBlock} to endBlock: ${endBlock}`);
     if (startBlock >= endBlock) return;
-    try {
-      // get all contract Msg in above range blocks
-      const listContractMsg = await this.getCw721ContractEvents(
-        startBlock,
-        endBlock
+    // get all contract Msg in above range blocks
+    const listContractMsg = await this.getCw721ContractEvents(
+      startBlock,
+      endBlock
+    );
+    this.logger.debug(listContractMsg);
+    if (listContractMsg.length > 0) {
+      // handle instantiate cw721 contracts
+      await this.handleInstantiateMsgs(
+        listContractMsg.filter((msg) => msg.action === CW721_ACTION.INSTANTIATE)
       );
-      this.logger.debug(listContractMsg);
-      if (listContractMsg.length > 0) {
-        // handle instantiate cw721 contracts
-        await this.handleInstantiateMsgs(
-          listContractMsg.filter(
-            (msg) => msg.action === CW721_ACTION.INSTANTIATE
-          )
-        );
-        // handle all cw721 execute messages
-        await this.handleCw721MsgExec(
-          listContractMsg.filter(
-            (msg) => msg.action !== CW721_ACTION.INSTANTIATE
-          )
-        );
-        // handle Cw721 Activity
-        await this.handleCW721Activity(listContractMsg);
-      }
-      updateBlockCheckpoint.height = endBlock;
-      await BlockCheckpoint.query()
-        .insert(updateBlockCheckpoint)
-        .onConflict('job_name')
-        .merge();
-    } catch (error) {
-      this.logger.error(error);
+      // handle all cw721 execute messages
+      await this.handleCw721MsgExec(
+        listContractMsg.filter((msg) => msg.action !== CW721_ACTION.INSTANTIATE)
+      );
+      // handle Cw721 Activity
+      await this.handleCW721Activity(listContractMsg);
     }
+    updateBlockCheckpoint.height = endBlock;
+    await BlockCheckpoint.query()
+      .insert(updateBlockCheckpoint)
+      .onConflict('job_name')
+      .merge();
   }
 
   // Insert new activities into cw721_activity table
