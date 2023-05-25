@@ -26,21 +26,13 @@ export class BlockCheckpoint extends BaseModel {
     lastHeightJobNames: string[],
     configName?: string
   ): Promise<[number, number, BlockCheckpoint]> {
-    const [jobCheckpoint, lastHeightCheckpoint]: [
-      BlockCheckpoint,
-      BlockCheckpoint
-    ] = await Promise.all([
-      BlockCheckpoint.query()
-        .select('*')
-        .where('job_name', jobName)
-        .first()
-        .throwIfNotFound(),
+    const [jobCheckpoint, lastHeightCheckpoint] = await Promise.all([
+      BlockCheckpoint.query().select('*').where('job_name', jobName).first(),
       BlockCheckpoint.query()
         .select('*')
         .whereIn('job_name', lastHeightJobNames)
         .orderBy('height', 'ASC')
-        .first()
-        .throwIfNotFound(),
+        .first(),
     ]);
     let startHeight = 0;
     let endHeight = 0;

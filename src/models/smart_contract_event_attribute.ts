@@ -19,6 +19,7 @@ export class SmartContractEventAttribute extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
+      required: ['key', 'value'],
       properties: {
         smart_contract_event_id: { type: 'number' },
         key: { type: 'string' },

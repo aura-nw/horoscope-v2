@@ -220,7 +220,7 @@ export default class Cw721HandlerService extends BullableService {
     const [startBlock, endBlock, updateBlockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.HANDLE_CW721_TRANSACTION,
-        BULL_JOB_NAME.CRAWL_CONTRACT_EVENT,
+        [BULL_JOB_NAME.CRAWL_CONTRACT_EVENT],
         config.cw721.key
       );
     this.logger.info(`startBlock: ${startBlock} to endBlock: ${endBlock}`);
