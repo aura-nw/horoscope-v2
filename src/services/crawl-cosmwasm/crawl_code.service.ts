@@ -18,6 +18,7 @@ import { Knex } from 'knex';
 import {
   BlockCheckpoint,
   Code,
+  CodeIdVerification,
   Event,
   EventAttribute,
   Transaction,
@@ -150,20 +151,59 @@ export default class CrawlCodeService extends BullableService {
           )
       );
 
-      const codeEntities = onchainCodeIds.map((code, index) =>
-        Code.fromJson({
+      // Need an array of data hashes to check for verification status of code ids
+      let dataHashes: string[] = [];
+
+      const codeEntities = onchainCodeIds.map((code, index) => {
+        const dataHash = toHex(
+          code.codeInfo?.dataHash || new Uint8Array()
+        ).toLowerCase();
+        dataHashes.push(dataHash);
+        return Code.fromJson({
           code_id: parseInt(codeIds[index].codeId.toString(), 10),
           creator: code.codeInfo?.creator,
-          data_hash: toHex(
-            code.codeInfo?.dataHash || new Uint8Array()
-          ).toLowerCase(),
+          data_hash: dataHash,
           instantiate_permission: code.codeInfo?.instantiatePermission,
           type: null,
           status: null,
           store_hash: codeIds[index].hash,
           store_height: codeIds[index].height,
-        })
-      );
+        });
+      });
+
+      dataHashes = Array.from(new Set(dataHashes));
+      const codeIdVerifications = await CodeIdVerification.query()
+        .whereIn('data_hash', dataHashes)
+        .andWhere(
+          'verification_status',
+          CodeIdVerification.VERIFICATION_STATUS.SUCCESS
+        );
+
+      const newVerifications: CodeIdVerification[] = [];
+      codeIdVerifications.forEach((verify) => {
+        const codes = codeEntities.filter(
+          (code) => code.data_hash === verify.data_hash
+        );
+        if (codes.length > 0) {
+          newVerifications.push(
+            ...codes.map((code) =>
+              CodeIdVerification.fromJson({
+                code_id: code.code_id,
+                data_hash: verify.data_hash,
+                instantiate_msg_schema: verify.instantiate_msg_schema,
+                query_msg_schema: verify.query_msg_schema,
+                execute_msg_schema: verify.execute_msg_schema,
+                s3_location: verify.s3_location,
+                verification_status: verify.verification_status,
+                compiler_version: verify.compiler_version,
+                github_url: verify.github_url,
+                verify_step: verify.verify_step,
+                verified_at: new Date().toISOString(),
+              })
+            )
+          );
+        }
+      });
 
       if (codeEntities.length > 0)
         await Code.query()
@@ -174,6 +214,18 @@ export default class CrawlCodeService extends BullableService {
           .transacting(trx)
           .catch((error) => {
             this.logger.error('Error insert or update code ids');
+            this.logger.error(error);
+          });
+
+      if (newVerifications.length > 0)
+        await CodeIdVerification.query()
+          .insert(newVerifications)
+          .onConflict('id')
+          .merge()
+          .returning('id')
+          .transacting(trx)
+          .catch((error) => {
+            this.logger.error('Error insert code id verifications');
             this.logger.error(error);
           });
     }
