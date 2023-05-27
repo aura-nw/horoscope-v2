@@ -14,7 +14,7 @@ import { ServiceBroker } from 'moleculer';
 import * as FileType from 'file-type';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import parse from 'parse-uri';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
@@ -74,17 +74,25 @@ export default class Cw721MediaService extends BullableService {
   })
   async jobHandlerTokenMedia(_payload: { tokenMedia: ITokenMediaInfo }) {
     let { tokenMedia } = _payload;
-    this.logger.info(`Before \n ${tokenMedia}`);
-    // update metadata
     if (tokenMedia.onchain.token_uri) {
-      tokenMedia.onchain.metadata = await this.getMetadata(
-        tokenMedia.onchain.token_uri
-      );
+      try {
+        // update metadata
+        tokenMedia.onchain.metadata = await this.getMetadata(
+          tokenMedia.onchain.token_uri
+        );
+        // upload & update link s3
+        tokenMedia = await this.updateMediaS3(tokenMedia);
+      } catch (error) {
+        if (error instanceof AxiosError) {
+          tokenMedia.onchain.metadata = tokenMedia.onchain.extension;
+        } else {
+          this.logger.error(error);
+          throw error;
+        }
+      }
     } else {
       tokenMedia.onchain.metadata = tokenMedia.onchain.extension;
     }
-    // upload & update link s3
-    tokenMedia = await this.updateMediaS3(tokenMedia);
     this.logger.info(tokenMedia);
     await CW721Token.query()
       .where('id', tokenMedia.cw721_token_id)
