@@ -45,7 +45,7 @@ export default class CrawlValidatorService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_VALIDATOR,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_VALIDATOR,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleCrawlAllValidator(_payload: object): Promise<void> {
