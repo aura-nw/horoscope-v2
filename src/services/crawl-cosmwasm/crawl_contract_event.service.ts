@@ -83,6 +83,7 @@ export default class CrawlContractEventService extends BullableService {
             .insert(updateBlockCheckpoint)
             .onConflict('job_name')
             .merge()
+            .transacting(trx)
         );
         await Promise.all(queries) // Once every query is written
           .then(trx.commit) // Try to execute all of them
