@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 /* eslint-disable import/no-extraneous-dependencies */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
@@ -22,7 +23,12 @@ import {
   IAuraJSClientFactory,
   SERVICE,
 } from '../../common';
-import { BlockCheckpoint, Proposal, EventAttribute } from '../../models';
+import {
+  BlockCheckpoint,
+  Proposal,
+  EventAttribute,
+  ITally,
+} from '../../models';
 
 @Service({
   name: SERVICE.V1.CrawlProposalService.key,
@@ -40,7 +46,7 @@ export default class CrawlProposalService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_PROPOSAL,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_PROPOSAL,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleCrawlProposals(_payload: object): Promise<void> {
@@ -155,8 +161,80 @@ export default class CrawlProposalService extends BullableService {
   }
 
   @QueueHandler({
+    queueName: BULL_JOB_NAME.HANDLE_ENDED_PROPOSAL,
+    jobName: BULL_JOB_NAME.HANDLE_ENDED_PROPOSAL,
+    // prefix: `horoscope-v2-${config.chainId}`,
+  })
+  public async handleEndedProposals(_payload: object): Promise<void> {
+    const batchQueries: any[] = [];
+
+    const current10SecsAgo = new Date(Date.now() - 10);
+
+    const endedProposals = await Proposal.query()
+      .where('status', Proposal.STATUS.PROPOSAL_STATUS_VOTING_PERIOD)
+      .andWhere('voting_end_time', '<=', current10SecsAgo);
+    this.logger.info(`List ended proposals: ${JSON.stringify(endedProposals)}`);
+
+    endedProposals.forEach((proposal: Proposal) => {
+      const request: QueryProposalRequest = {
+        proposalId: Long.fromInt(proposal.proposal_id),
+      };
+      const data = toHex(
+        cosmos.gov.v1beta1.QueryProposalRequest.encode(request).finish()
+      );
+
+      batchQueries.push(
+        this._httpBatchClient.execute(
+          createJsonRpcRequest('abci_query', {
+            path: ABCI_QUERY_PATH.PROPOSAL,
+            data,
+          })
+        )
+      );
+    });
+
+    const result: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
+    const resultProposals: (QueryProposalResponse | null)[] = result.map(
+      (res: JsonRpcSuccessResponse) =>
+        res.result.response.value
+          ? cosmos.gov.v1beta1.QueryProposalResponse.decode(
+              fromBase64(res.result.response.value)
+            )
+          : null
+    );
+
+    endedProposals.forEach((proposal: Proposal) => {
+      const onchainPro = resultProposals.find((pro) =>
+        pro?.proposal?.proposalId.equals(Long.fromInt(proposal.proposal_id))
+      );
+      if (onchainPro) {
+        proposal.status =
+          Object.keys(cosmos.gov.v1beta1.ProposalStatus).find(
+            (key) =>
+              cosmos.gov.v1beta1.ProposalStatus[key] ===
+              onchainPro?.proposal?.status
+          ) || '';
+        proposal.total_deposit = onchainPro?.proposal?.totalDeposit || [];
+        proposal.tally = onchainPro?.proposal
+          ?.finalTallyResult as unknown as ITally;
+      }
+    });
+
+    if (endedProposals.length > 0)
+      await Proposal.query()
+        .insert(endedProposals)
+        .onConflict('proposal_id')
+        .merge()
+        .returning('proposal_id')
+        .catch((error) => {
+          this.logger.error('Error update status for ended proposals');
+          this.logger.error(error);
+        });
+  }
+
+  @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleNotEnoughDepositProposals(
@@ -164,11 +242,11 @@ export default class CrawlProposalService extends BullableService {
   ): Promise<void> {
     const batchQueries: any[] = [];
 
-    const now = new Date(new Date().getSeconds() - 10);
+    const current10SecsAgo = new Date(Date.now() - 10);
 
     const depositProposals = await Proposal.query()
       .where('status', Proposal.STATUS.PROPOSAL_STATUS_DEPOSIT_PERIOD)
-      .andWhere('deposit_end_time', '<=', now);
+      .andWhere('deposit_end_time', '<=', current10SecsAgo);
     this.logger.info(
       `List not enough deposit proposals: ${JSON.stringify(depositProposals)}`
     );
@@ -202,9 +280,8 @@ export default class CrawlProposalService extends BullableService {
     );
 
     depositProposals.forEach((proposal: Proposal) => {
-      const onchainPro = resultProposals.find(
-        (pro) =>
-          pro?.proposal?.proposalId === Long.fromInt(proposal.proposal_id)
+      const onchainPro = resultProposals.find((pro) =>
+        pro?.proposal?.proposalId.equals(Long.fromInt(proposal.proposal_id))
       );
 
       if (!onchainPro)
@@ -238,6 +315,20 @@ export default class CrawlProposalService extends BullableService {
         },
         repeat: {
           every: config.crawlProposal.crawlProposal.millisecondCrawl,
+        },
+      }
+    );
+    this.createJob(
+      BULL_JOB_NAME.HANDLE_ENDED_PROPOSAL,
+      'crawl',
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        repeat: {
+          every: config.crawlProposal.handleEndedProposal.millisecondCrawl,
         },
       }
     );
