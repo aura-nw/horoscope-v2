@@ -3,6 +3,7 @@
   "networkPrefixAddress": "aura",
   "consensusPrefixAddress": "valcons",
   "validatorPrefixAddress": "valoper",
+  "networkDenom": "utaura",
   "jobRetryAttempt": 5,
   "jobRetryBackoff": 1000,
   "crawlValidator": {
@@ -32,7 +33,8 @@
   "crawlAccount": {
     "handleVestingAccount": {
       "millisecondCrawl": 30000
-    }
+    },
+    "millisecondDelayJob": 1000
   },
   "crawlProposal": {
     "key": "crawlProposal",

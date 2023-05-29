@@ -471,6 +471,7 @@ export default class CrawlAccountService extends BullableService {
           removeOnFail: {
             count: 3,
           },
+          delay: config.crawlAccount.millisecondDelayJob,
           attempts: config.jobRetryAttempt,
           backoff: config.jobRetryBackoff,
         }
@@ -486,6 +487,7 @@ export default class CrawlAccountService extends BullableService {
           removeOnFail: {
             count: 3,
           },
+          delay: config.crawlAccount.millisecondDelayJob,
           attempts: config.jobRetryAttempt,
           backoff: config.jobRetryBackoff,
         }
@@ -501,6 +503,7 @@ export default class CrawlAccountService extends BullableService {
           removeOnFail: {
             count: 3,
           },
+          delay: config.crawlAccount.millisecondDelayJob,
           attempts: config.jobRetryAttempt,
           backoff: config.jobRetryBackoff,
         }
