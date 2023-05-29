@@ -19,9 +19,9 @@ export class CW20Holder extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['balance', 'contract_address', 'address'],
+      required: ['balance', 'address'],
       properties: {
-        contract_address: { type: 'string' },
+        cw20_contract_id: { type: 'number' },
         address: { type: 'string' },
         balance: { type: 'string' },
       },

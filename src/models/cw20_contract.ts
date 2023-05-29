@@ -3,44 +3,25 @@ import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
 import { CW20Holder } from './cw20_holder';
 // eslint-disable-next-line import/no-cycle
-import { Cw20Event } from './cw20_event';
+import { Cw20Event } from './cw20_activity';
 import { SmartContract } from './smart_contract';
-
-export interface ICW20MarketingInfo {
-  data: {
-    project: string;
-    description: string;
-    logo: {
-      url: string;
-    };
-    marketing: string;
-  };
-}
-export interface ICW20BalanceInfo {
-  data: {
-    balance: string;
-  };
-}
-
-export interface ICW20AssetInfo {
-  data: {
-    name: string;
-    symbol: string;
-    decimals: number;
-    total_supply: string;
-  };
-}
 
 export class Cw20Contract extends BaseModel {
   id!: number;
 
   smart_contract_id!: number;
 
-  asset_info?: ICW20AssetInfo;
-
-  marketing_info?: ICW20MarketingInfo;
+  marketing_info?: any;
 
   total_supply!: string;
+
+  symbol?: string;
+
+  decimal?: number;
+
+  minter?: string;
+
+  name?: string;
 
   static get tableName() {
     return 'cw20_contract';
@@ -55,6 +36,7 @@ export class Cw20Contract extends BaseModel {
         asset_info: { type: 'object' },
         contract_id: { type: 'number' },
         marketing_info: { type: 'object' },
+        name: { type: 'string' },
       },
     };
   }

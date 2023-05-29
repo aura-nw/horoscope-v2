@@ -23,7 +23,7 @@ export class Cw20Event extends BaseModel {
   height!: number;
 
   static get tableName() {
-    return 'cw20_event';
+    return 'cw20_activity';
   }
 
   static get jsonSchema() {
