@@ -5,7 +5,7 @@ export * from './block_checkpoint';
 export * from './block_signature';
 export * from './cw20_holder';
 export * from './cw20_contract';
-export * from './cw20_event';
+export * from './cw20_activity';
 export * from './transaction';
 export * from './event';
 export * from './event_attribute';
