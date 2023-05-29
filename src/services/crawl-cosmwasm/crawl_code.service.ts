@@ -15,6 +15,7 @@ import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { Knex } from 'knex';
+import _ from 'lodash';
 import {
   BlockCheckpoint,
   Code,
@@ -180,24 +181,21 @@ export default class CrawlCodeService extends BullableService {
         );
 
       const newVerifications: CodeIdVerification[] = [];
-      codeIdVerifications.forEach((verify) => {
+      codeIdVerifications.forEach((verification) => {
         const codes = codeEntities.filter(
-          (code) => code.data_hash === verify.data_hash
+          (code) => code.data_hash === verification.data_hash
         );
+        const omitVerification = _.omit(verification, [
+          'id',
+          'created_at',
+          'updated_at',
+        ]);
         if (codes.length > 0) {
           newVerifications.push(
             ...codes.map((code) =>
               CodeIdVerification.fromJson({
+                ...omitVerification,
                 code_id: code.code_id,
-                data_hash: verify.data_hash,
-                instantiate_msg_schema: verify.instantiate_msg_schema,
-                query_msg_schema: verify.query_msg_schema,
-                execute_msg_schema: verify.execute_msg_schema,
-                s3_location: verify.s3_location,
-                verification_status: verify.verification_status,
-                compiler_version: verify.compiler_version,
-                github_url: verify.github_url,
-                verify_step: verify.verify_step,
                 verified_at: new Date().toISOString(),
               })
             )
@@ -220,9 +218,6 @@ export default class CrawlCodeService extends BullableService {
       if (newVerifications.length > 0)
         await CodeIdVerification.query()
           .insert(newVerifications)
-          .onConflict('id')
-          .merge()
-          .returning('id')
           .transacting(trx)
           .catch((error) => {
             this.logger.error('Error insert code id verifications');
