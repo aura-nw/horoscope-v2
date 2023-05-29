@@ -35,6 +35,7 @@ export const BULL_JOB_NAME = {
   CRAWL_PROPOSAL: 'crawl:proposal',
   CRAWL_TALLY_PROPOSAL: 'crawl:tally-proposal',
   HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL: 'handle:not-enough-deposit-proposal',
+  HANDLE_ENDED_PROPOSAL: 'handle:ended-proposal',
   CRAWL_GENESIS: 'crawl:genesis',
   CRAWL_CODE: 'crawl:code',
   CRAWL_SMART_CONTRACT: 'crawl:smart-contract',
@@ -42,6 +43,7 @@ export const BULL_JOB_NAME = {
   CRAWL_GENESIS_CODE: 'crawl:genesis-code',
   CRAWL_GENESIS_CONTRACT: 'crawl:genesis-contract',
   HANDLE_AUTHZ_TX: 'handle:authz-tx',
+  HANDLE_VOTE_TX: 'handle:vote-tx',
   CRAWL_DELEGATORS: 'crawl:delegators',
   CRAWL_VALIDATOR_DELEGATORS: 'crawl:validator-delegators',
   CRAWL_CONTRACT_EVENT: 'crawl:contract-event',
@@ -133,6 +135,10 @@ export const SERVICE = {
       key: 'HandleAuthzTxService',
       name: 'v1.HandleAuthzTxService',
     },
+    HandleVoteTx: {
+      key: 'HandleVoteTxService',
+      name: 'v1.HandleVoteTxService',
+    },
     CrawlDelegatorsService: {
       key: 'CrawlDelegatorsService',
       name: 'v1.CrawlDelegatorsService',
@@ -164,6 +170,7 @@ export const MSG_TYPE = {
   MSG_CREATE_VALIDATOR: '/cosmos.staking.v1beta1.MsgCreateValidator',
   MSG_SUBMIT_PROPOSAL: '/cosmos.gov.v1beta1.MsgSubmitProposal',
   MSG_AUTHZ_EXEC: '/cosmos.authz.v1beta1.MsgExec',
+  MSG_VOTE: '/cosmos.gov.v1beta1.MsgVote',
   MSG_ACKNOWLEDGEMENT: '/ibc.core.channel.v1.MsgAcknowledgement',
 };
 

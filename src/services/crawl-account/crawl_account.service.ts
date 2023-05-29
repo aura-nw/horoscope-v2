@@ -59,7 +59,7 @@ export default class CrawlAccountService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJobAccountAuth(_payload: IAddressesParam): Promise<void> {
@@ -190,7 +190,7 @@ export default class CrawlAccountService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJobAccountBalances(
@@ -298,7 +298,7 @@ export default class CrawlAccountService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJobAccountSpendableBalances(
@@ -510,7 +510,7 @@ export default class CrawlAccountService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleVestingAccounts(_payload: object): Promise<void> {

@@ -32,14 +32,14 @@ export default class HandleStakeEventService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_STAKE_EVENT,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.HANDLE_STAKE_EVENT,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: object): Promise<void> {
     const [startHeight, endHeight, updateBlockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.HANDLE_STAKE_EVENT,
-        BULL_JOB_NAME.HANDLE_TRANSACTION,
+        [BULL_JOB_NAME.HANDLE_TRANSACTION],
         config.handleStakeEvent.key
       );
     this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);

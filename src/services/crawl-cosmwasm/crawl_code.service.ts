@@ -60,14 +60,14 @@ export default class CrawlCodeService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_CODE,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_CODE,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: object): Promise<void> {
     const [startHeight, endHeight, updateBlockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.CRAWL_CODE,
-        BULL_JOB_NAME.HANDLE_TRANSACTION,
+        [BULL_JOB_NAME.HANDLE_TRANSACTION],
         config.crawlCodeId.key
       );
     this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);

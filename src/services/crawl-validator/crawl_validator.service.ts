@@ -45,17 +45,16 @@ export default class CrawlValidatorService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_VALIDATOR,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_VALIDATOR,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleCrawlAllValidator(_payload: object): Promise<void> {
     this._lcdClient = await getLcdClient();
 
     const [startHeight, endHeight, updateBlockCheckpoint] =
-      await BlockCheckpoint.getCheckpoint(
-        BULL_JOB_NAME.CRAWL_VALIDATOR,
-        BULL_JOB_NAME.HANDLE_TRANSACTION
-      );
+      await BlockCheckpoint.getCheckpoint(BULL_JOB_NAME.CRAWL_VALIDATOR, [
+        BULL_JOB_NAME.HANDLE_TRANSACTION,
+      ]);
     this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
     if (startHeight >= endHeight) return;
 

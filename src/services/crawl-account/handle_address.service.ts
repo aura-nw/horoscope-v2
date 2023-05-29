@@ -34,14 +34,14 @@ export default class HandleAddressService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_ADDRESS,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.HANDLE_ADDRESS,
     // prefix: `horoscope-v2-${Config.CHAIN_ID}`,
   })
   public async handleJob(_payload: object): Promise<void> {
     const [startHeight, endHeight, updateBlockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.HANDLE_ADDRESS,
-        BULL_JOB_NAME.HANDLE_TRANSACTION,
+        [BULL_JOB_NAME.HANDLE_TRANSACTION],
         config.handleAddress.key
       );
     this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
