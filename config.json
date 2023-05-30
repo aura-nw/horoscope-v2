@@ -85,9 +85,9 @@
     "queryPageLimit": 100
   },
   "cw20": {
-    "blocksPerBatch": 100,
+    "blocksPerCall": 100,
     "millisecondRepeatJob": 2000,
-    "startBlock": 0
+    "key": "cw20"
   },
   "crawlContractEvent": {
     "blocksPerBatch": 100,
