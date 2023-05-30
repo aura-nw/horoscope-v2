@@ -85,6 +85,8 @@ export default class Cw721MediaService extends BullableService {
       } catch (error) {
         if (error instanceof AxiosError) {
           tokenMedia.onchain.metadata = tokenMedia.onchain.extension;
+        } else if (error instanceof SyntaxError) {
+          tokenMedia.onchain.metadata = tokenMedia.onchain.extension;
         } else {
           this.logger.error(error);
           throw error;
