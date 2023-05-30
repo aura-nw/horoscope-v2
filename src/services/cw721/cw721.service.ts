@@ -187,12 +187,7 @@ export default class Cw721HandlerService extends BullableService {
     jobName: BULL_JOB_NAME.HANDLE_CW721_TRANSACTION,
   })
   async jobHandler(): Promise<void> {
-    try {
-      await this.handleJob();
-    } catch (error) {
-      this.logger.error(error);
-      throw error;
-    }
+    await this.handleJob();
   }
 
   async _start(): Promise<void> {
