@@ -72,10 +72,6 @@ export default class CrawlSmartContractService extends BullableService {
         'events:attributes.key',
         'events:attributes.value'
       );
-    this.logger.info(
-      `Result get Tx from height ${startHeight} to ${endHeight}:`
-    );
-    this.logger.info(JSON.stringify(resultTx));
 
     if (resultTx.length > 0)
       resultTx.map((res: any) => instantiateTxs.push(res));
@@ -168,7 +164,11 @@ export default class CrawlSmartContractService extends BullableService {
               .returning('address')
               .transacting(trx)
               .catch((error) => {
-                this.logger.error('Error insert new smart contracts');
+                this.logger.error(
+                  `Error insert new smart contracts: ${JSON.stringify(
+                    smartContracts
+                  )}`
+                );
                 this.logger.error(error);
               });
         }
