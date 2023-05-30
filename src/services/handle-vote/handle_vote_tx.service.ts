@@ -71,7 +71,7 @@ export default class HandleTxVoteService extends BullableService {
         const resultInsert = await Vote.query(trx)
           .insert(vote)
           .onConflict(['proposal_id', 'voter'])
-          .merge(['vote_option', 'height', 'tx_id'])
+          .merge(['vote_option', 'height', 'tx_id', 'txhash'])
           .where('vote.height', '<=', vote.height)
           .transacting(trx);
         this.logger.debug('result insert vote: ', resultInsert);
@@ -80,8 +80,10 @@ export default class HandleTxVoteService extends BullableService {
         this._blockCheckpoint.height = this._endBlock;
 
         await BlockCheckpoint.query()
-          .update(this._blockCheckpoint)
-          .where('job_name', BULL_JOB_NAME.HANDLE_VOTE_TX)
+          .insert(this._blockCheckpoint)
+          .onConflict('job_name')
+          .merge()
+          .returning('id')
           .transacting(trx);
       }
     });
