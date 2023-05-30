@@ -1,5 +1,6 @@
 export const REDIS_KEY = {
   IBC_DENOM: 'ibc_denom',
+  DASHBOARD_STATISTICS: 'dashboard_statistics',
 };
 
 export const URL_TYPE_CONSTANTS = {
@@ -49,6 +50,7 @@ export const BULL_JOB_NAME = {
   CRAWL_CONTRACT_EVENT: 'crawl:contract-event',
   FILTER_TOKEN_MEDIA_UNPROCESS: 'filter:cw721-token-media-unprocess',
   HANDLE_CW721_TOKEN_MEDIA: 'handle:cw721-token-media',
+  HANDLE_DASHBOARD_STATISTICS: 'handle:dashboard-statistics',
 };
 
 export const SERVICE = {
@@ -142,6 +144,10 @@ export const SERVICE = {
     CrawlDelegatorsService: {
       key: 'CrawlDelegatorsService',
       name: 'v1.CrawlDelegatorsService',
+    },
+    DashboardStatisticsService: {
+      key: 'DashboardStatisticsService',
+      name: 'v1.DashboardStatisticsService',
     },
   },
 };
