@@ -69,10 +69,6 @@ export default class CrawlValidatorService extends BullableService {
       .select('value')
       .limit(1)
       .offset(0);
-    this.logger.info(
-      `Result get Tx from height ${startHeight} to ${endHeight}:`
-    );
-    this.logger.info(JSON.stringify(resultTx));
 
     await knex.transaction(async (trx) => {
       if (resultTx.length > 0) {
@@ -117,8 +113,6 @@ export default class CrawlValidatorService extends BullableService {
 
     await Promise.all(
       validators.map(async (validator) => {
-        this.logger.info(`Update validator: ${validator.operator_address}`);
-
         const foundValidator = validatorInDB.find(
           (val: Validator) =>
             val.operator_address === validator.operator_address
@@ -157,7 +151,11 @@ export default class CrawlValidatorService extends BullableService {
       .returning('id')
       .transacting(trx)
       .catch((error) => {
-        this.logger.error('Error insert or update validators');
+        this.logger.error(
+          `Error insert or update validators: ${JSON.stringify(
+            updateValidators
+          )}`
+        );
         this.logger.error(error);
       });
   }

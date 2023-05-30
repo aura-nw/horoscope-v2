@@ -88,10 +88,6 @@ export default class CrawlCodeService extends BullableService {
         'events:attributes.key',
         'events:attributes.value'
       );
-    this.logger.info(
-      `Result get Tx from height ${startHeight} to ${endHeight}:`
-    );
-    this.logger.info(JSON.stringify(resultTx));
 
     if (resultTx.length > 0)
       resultTx.map((res: any) =>
@@ -173,7 +169,9 @@ export default class CrawlCodeService extends BullableService {
           .returning('code_id')
           .transacting(trx)
           .catch((error) => {
-            this.logger.error('Error insert or update code ids');
+            this.logger.error(
+              `Error insert or update code ids: ${JSON.stringify(codeEntities)}`
+            );
             this.logger.error(error);
           });
     }

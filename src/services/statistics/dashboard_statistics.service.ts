@@ -34,7 +34,7 @@ export default class DashboardStatisticsService extends BullableService {
   })
   public async handleJob(_payload: object): Promise<void> {
     try {
-      this.logger.info('Update dashboard statistics');
+      this.logger.info('Update AuraScan dashboard statistics');
       this._lcdClient = await getLcdClient();
 
       const [totalBlocks, totalTxs, totalValidators] = await Promise.all([
@@ -57,7 +57,6 @@ export default class DashboardStatisticsService extends BullableService {
       const totalAura = supply.supply.find(
         (sup: CoinSDKType) => sup.denom === config.networkDenom
       ).amount;
-      // const bondedRatio = Number(bondedTokens) / Number(totalAura);
 
       const dashboardStatistics = {
         total_blocks: totalBlocks?.height,
@@ -83,9 +82,6 @@ export default class DashboardStatisticsService extends BullableService {
               bondedTokens
           ) / 100,
       };
-      this.logger.info(
-        `Dashboard Statistics: ${JSON.stringify(dashboardStatistics)}`
-      );
 
       await this.broker.cacher?.set(
         REDIS_KEY.DASHBOARD_STATISTICS,

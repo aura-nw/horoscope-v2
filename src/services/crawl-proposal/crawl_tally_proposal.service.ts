@@ -42,6 +42,7 @@ export default class CrawlTallyProposalService extends BullableService {
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: object): Promise<void> {
+    this.logger.info('Update proposal tally');
     this._lcdClient = await getLcdClient();
 
     const batchQueries: any[] = [];
@@ -120,7 +121,9 @@ export default class CrawlTallyProposalService extends BullableService {
         .merge()
         .returning('proposal_id')
         .catch((error) => {
-          this.logger.error('Error update proposals tally');
+          this.logger.error(
+            `Error update proposals tally: ${JSON.stringify(votingProposals)}`
+          );
           this.logger.error(error);
         });
   }
