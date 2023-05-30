@@ -42,6 +42,9 @@
     },
     "handleNotEnoughDepositProposal": {
       "millisecondCrawl": 30000
+    },
+    "handleEndedProposal": {
+      "millisecondCrawl": 30000
     }
   },
   "crawlTallyProposal": {
@@ -72,6 +75,11 @@
     "proposalsPerBatch": 3000,
     "codesPerBatch": 5000,
     "smartContractsPerBatch": 5000
+  },
+  "handleVoteTx": {
+    "key": "handleVoteTx",
+    "blocksPerCall": 100,
+    "millisecondCrawl": 5000
   },
   "crawlDelegators": {
     "millisecondCrawl": 3600000,

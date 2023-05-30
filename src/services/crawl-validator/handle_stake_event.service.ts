@@ -24,6 +24,7 @@ export default class HandleStakeEventService extends BullableService {
     Event.EVENT_TYPE.DELEGATE,
     Event.EVENT_TYPE.REDELEGATE,
     Event.EVENT_TYPE.UNBOND,
+    Event.EVENT_TYPE.CREATE_VALIDATOR,
   ];
 
   public constructor(public broker: ServiceBroker) {
@@ -32,14 +33,14 @@ export default class HandleStakeEventService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_STAKE_EVENT,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.HANDLE_STAKE_EVENT,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: object): Promise<void> {
     const [startHeight, endHeight, updateBlockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.HANDLE_STAKE_EVENT,
-        [BULL_JOB_NAME.HANDLE_TRANSACTION],
+        [BULL_JOB_NAME.HANDLE_TRANSACTION, BULL_JOB_NAME.CRAWL_VALIDATOR],
         config.handleStakeEvent.key
       );
     this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
@@ -115,6 +116,16 @@ export default class HandleStakeEventService extends BullableService {
               break;
             case PowerEvent.TYPES.UNBOND:
               validatorSrcId = validatorKeys[stakeEvent.value].id;
+              break;
+            case PowerEvent.TYPES.CREATE_VALIDATOR:
+              validatorDstId = validatorKeys[stakeEvent.value].id;
+              amount = parseCoins(
+                stakeEvents.find(
+                  (event) =>
+                    event.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT &&
+                    event.index === stakeEvent.index + 1
+                ).value
+              )[0].amount;
               break;
             default:
               break;
