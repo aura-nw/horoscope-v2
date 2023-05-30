@@ -176,6 +176,7 @@ export const MSG_TYPE = {
   MSG_AUTHZ_EXEC: '/cosmos.authz.v1beta1.MsgExec',
   MSG_VOTE: '/cosmos.gov.v1beta1.MsgVote',
   MSG_ACKNOWLEDGEMENT: '/ibc.core.channel.v1.MsgAcknowledgement',
+  MSG_GRANT_ALLOWANCE: '/cosmos.feegrant.v1beta1.MsgGrantAllowance',
 };
 
 export const ABCI_QUERY_PATH = {
