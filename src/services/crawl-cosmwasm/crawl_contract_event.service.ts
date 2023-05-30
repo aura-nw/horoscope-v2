@@ -115,11 +115,11 @@ export default class CrawlContractEventService extends BullableService {
   }
 
   async _start(): Promise<void> {
-    await this.broker.waitForServices(
-      SERVICE.V1.CrawlSmartContractService.name
-    );
     this._httpBatchClient = getHttpBatchClient();
     if (NODE_ENV !== 'test') {
+      await this.broker.waitForServices(
+        SERVICE.V1.CrawlSmartContractService.name
+      );
       await this.createJob(
         BULL_JOB_NAME.CRAWL_CONTRACT_EVENT,
         BULL_JOB_NAME.CRAWL_CONTRACT_EVENT,
