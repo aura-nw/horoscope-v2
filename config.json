@@ -88,7 +88,6 @@
   "crawlContractEvent": {
     "key": "crawlContractEvent",
     "blocksPerCall": 100,
-    "millisecondRepeatJob": 2000,
-    "startBlock": 0
+    "millisecondRepeatJob": 2000
   }
 }
