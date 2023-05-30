@@ -130,6 +130,10 @@ export const SERVICE = {
         key: 'CrawlContractEventService',
         name: 'v1.CrawlContractEventService',
       },
+      CrawlMissingContract: {
+        key: 'CrawlMissingContract',
+        path: 'v1.CrawlSmartContractService.CrawlMissingContract',
+      },
     },
     HandleAuthzTx: {
       key: 'HandleAuthzTxService',

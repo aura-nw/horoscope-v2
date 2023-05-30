@@ -66,3 +66,13 @@ export interface IContextStoreCodes {
 export interface IContextGetContractInfo {
   addresses: string[];
 }
+
+export interface IInstantiateContracts {
+  address: string;
+  hash: string;
+  height: number;
+}
+
+export interface IContextInstantiateContracts {
+  contracts: IInstantiateContracts[];
+}
