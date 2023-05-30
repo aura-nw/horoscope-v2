@@ -10,6 +10,7 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
   BULL_JOB_NAME,
   Config,
+  IInstantiateContracts,
   SERVICE,
   getHttpBatchClient,
 } from '../../common';
@@ -46,7 +47,8 @@ export default class CrawlContractEventService extends BullableService {
     );
     await knex.transaction(async (trx) => {
       const queries: any[] = [];
-      contractEvents.forEach((contractEvent) => {
+      // eslint-disable-next-line no-restricted-syntax
+      for (const contractEvent of contractEvents) {
         this.logger.info({
           contractAddress: contractEvent.contractAddress,
           action: contractEvent.action,
@@ -71,11 +73,25 @@ export default class CrawlContractEventService extends BullableService {
         } catch (error) {
           if (error instanceof TypeError) {
             this.logger.info(
-              `Smart contract ${contractEvent.contractAddress} not found in DB`
+              `Missing contract ${contractEvent.contractAddress}, start crawl again...`
             );
+            // eslint-disable-next-line no-await-in-loop
+            await this.broker.call(
+              SERVICE.V1.CrawlSmartContractService.CrawlMissingContract.path,
+              {
+                contracts: [
+                  {
+                    address: contractEvent.contractAddress,
+                    height: 0,
+                    hash: '',
+                  },
+                ] as IInstantiateContracts[],
+              }
+            );
+            this.logger.info(`Done ${contractEvent.contractAddress}`);
           }
         }
-      });
+      }
       updateBlockCheckpoint.height = endBlock;
       queries.push(
         BlockCheckpoint.query()
@@ -99,6 +115,9 @@ export default class CrawlContractEventService extends BullableService {
   }
 
   async _start(): Promise<void> {
+    await this.broker.waitForServices(
+      SERVICE.V1.CrawlSmartContractService.name
+    );
     this._httpBatchClient = getHttpBatchClient();
     if (NODE_ENV !== 'test') {
       await this.createJob(
