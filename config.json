@@ -1,5 +1,5 @@
 {
-  "chainId": "aura-testnet-2",
+  "chainId": "aura-testnet",
   "networkPrefixAddress": "aura",
   "consensusPrefixAddress": "valcons",
   "validatorPrefixAddress": "valoper",
@@ -21,7 +21,7 @@
   "crawlBlock": {
     "millisecondCrawl": 5000,
     "numberOfBlockPerCall": 100,
-    "startBlock": 6902255
+    "startBlock": 4860000
   },
   "crawlSigningInfo": {
     "millisecondCrawl": 5000
