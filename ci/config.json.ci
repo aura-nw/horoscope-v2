@@ -88,5 +88,10 @@
     "blocksPerBatch": 100,
     "millisecondRepeatJob": 2000,
     "startBlock": 0
+  },
+  "cw20": {
+    "blocksPerCall": 100,
+    "millisecondRepeatJob": 2000,
+    "key": "cw20"
   }
 }
