@@ -34,6 +34,7 @@ export const BULL_JOB_NAME = {
   HANDLE_CW721_TRANSACTION: 'handle:cw721-tx',
   CRAWL_PROPOSAL: 'crawl:proposal',
   CRAWL_TALLY_PROPOSAL: 'crawl:tally-proposal',
+  COUNT_VOTE_PROPOSAL: 'handle:count-vote-proposal',
   HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL: 'handle:not-enough-deposit-proposal',
   HANDLE_ENDED_PROPOSAL: 'handle:ended-proposal',
   CRAWL_GENESIS: 'crawl:genesis',
@@ -88,6 +89,10 @@ export const SERVICE = {
     CrawlTallyProposalService: {
       name: 'v1.CrawlTallyProposalService',
       key: 'CrawlTallyProposalService',
+    },
+    CountVoteProposalService: {
+      name: 'v1.CountVoteProposalService',
+      key: 'CountVoteProposalService',
     },
     HandleStakeEventService: {
       key: 'HandleStakeEventService',
