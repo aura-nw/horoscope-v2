@@ -7,18 +7,19 @@ export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('cw20_contract', (table) => {
     table.increments('id').primary();
     table.integer('smart_contract_id').unique().index().notNullable();
-    table.jsonb('marketing_info');
+    table.jsonb('marketing_info').index();
     table.decimal('total_supply', 80, 0);
-    table.string('symbol');
-    table.string('minter');
-    table.string('name');
+    table.string('symbol').index();
+    table.string('minter').index();
+    table.string('name').index();
     table.foreign('smart_contract_id').references('smart_contract.id');
   });
   await knex.schema.createTable('cw20_holder', (table) => {
     table.increments('id').primary();
     table.integer('cw20_contract_id').index().notNullable();
-    table.string('address').notNullable();
+    table.string('address').notNullable().index();
     table.decimal('amount', 80, 0);
+    table.integer('last_updated_height').index();
     table.foreign('cw20_contract_id').references('cw20_contract.id');
   });
   await knex.schema.createTable('cw20_activity', (table) => {
