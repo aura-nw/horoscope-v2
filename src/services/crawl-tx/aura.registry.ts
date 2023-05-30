@@ -121,6 +121,31 @@ export default class AuraRegistry {
         } catch (error) {
           this._logger.error('This msg ibc acknowledgement is not valid JSON');
         }
+      } else if (msg.typeUrl === MSG_TYPE.MSG_GRANT_ALLOWANCE) {
+        if (result.allowance?.value && result.allowance?.typeUrl) {
+          // find type header in registry
+          const allowanceType = this.registry.lookupType(
+            result.allowance?.typeUrl
+          ) as TsProtoGeneratedType;
+
+          // decode header if found type
+          if (allowanceType) {
+            const decoded = allowanceType.decode(
+              fromBase64(result.allowance?.value)
+            );
+            const jsonObjDecoded: any = allowanceType.toJSON(decoded);
+            result.allowance = {
+              '@type': result.allowance.typeUrl,
+              ...jsonObjDecoded,
+            };
+          } else {
+            const decodedBase64 = toBase64(result.allowance?.value);
+            this._logger.info(decodedBase64);
+            result.value = decodedBase64;
+            this._logger.error('This feegrant allowance is not supported');
+            this._logger.error(result.allowance?.typeUrl);
+          }
+        }
       }
     }
 
