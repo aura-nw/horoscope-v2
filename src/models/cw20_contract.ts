@@ -7,6 +7,8 @@ import { Cw20Event } from './cw20_activity';
 import { SmartContract } from './smart_contract';
 
 export class Cw20Contract extends BaseModel {
+  [relation: string]: any;
+
   id!: number;
 
   smart_contract_id!: number;
@@ -30,11 +32,11 @@ export class Cw20Contract extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['contract_address', 'total_supply'],
+      required: ['smart_contract_id', 'total_supply'],
       properties: {
         total_supply: { type: 'string' },
         asset_info: { type: 'object' },
-        contract_id: { type: 'number' },
+        smart_contract_id: { type: 'number' },
         marketing_info: { type: 'object' },
         name: { type: 'string' },
       },
