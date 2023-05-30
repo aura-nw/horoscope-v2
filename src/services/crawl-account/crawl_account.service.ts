@@ -158,16 +158,23 @@ export default class CrawlAccountService extends BullableService {
 
       await knex
         .transaction(async (trx) => {
-          await Account.query()
-            .insert(accounts)
-            .onConflict('address')
-            .merge()
-            .returning('id')
-            .transacting(trx)
-            .catch((error) => {
-              this.logger.error('Error insert account auth');
-              this.logger.error(error);
-            });
+          const patchQueries = accounts.map((account) =>
+            Account.query()
+              .patch({
+                type: account.type,
+                pubkey: account.pubkey,
+                account_number: account.account_number,
+                sequence: account.sequence,
+              })
+              .where({ id: account.id })
+              .transacting(trx)
+          );
+          try {
+            await Promise.all(patchQueries);
+          } catch (error) {
+            this.logger.error('Error update account auth');
+            this.logger.error(error);
+          }
 
           if (accountVestings.length > 0)
             await AccountVesting.query()
@@ -284,15 +291,19 @@ export default class CrawlAccountService extends BullableService {
         })
       );
 
-      await Account.query()
-        .insert(accounts)
-        .onConflict('address')
-        .merge()
-        .returning('id')
-        .catch((error) => {
-          this.logger.error('Error insert account balance');
-          this.logger.error(error);
-        });
+      const patchQueries = accounts.map((account) =>
+        Account.query()
+          .patch({
+            balances: account.balances,
+          })
+          .where({ id: account.id })
+      );
+      try {
+        await Promise.all(patchQueries);
+      } catch (error) {
+        this.logger.error('Error update account balance');
+        this.logger.error(error);
+      }
     }
   }
 
@@ -401,15 +412,19 @@ export default class CrawlAccountService extends BullableService {
         })
       );
 
-      await Account.query()
-        .insert(accounts)
-        .onConflict('address')
-        .merge()
-        .returning('id')
-        .catch((error) => {
-          this.logger.error('Error insert account stake spendable balance');
-          this.logger.error(error);
-        });
+      const patchQueries = accounts.map((account) =>
+        Account.query()
+          .patch({
+            spendable_balances: account.spendable_balances,
+          })
+          .where({ id: account.id })
+      );
+      try {
+        await Promise.all(patchQueries);
+      } catch (error) {
+        this.logger.error('Error update account spendable balance');
+        this.logger.error(error);
+      }
     }
   }
 
