@@ -58,6 +58,7 @@ export default class CrawlSmartContractTest {
       gas_limit: '141106',
       fee: 353,
       timestamp: '2023-01-12T01:53:57.000Z',
+      index: 0,
       data: {},
     }),
     events: [
@@ -102,8 +103,7 @@ export default class CrawlSmartContractTest {
     this.crawlSmartContractService = this.broker.createService(
       CrawlSmartContractService
     ) as CrawlSmartContractService;
-    this.crawlSmartContractService
-      .getQueueManager().stopAll();
+    this.crawlSmartContractService.getQueueManager().stopAll();
     await Promise.all([
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE code RESTART IDENTITY CASCADE'),
@@ -188,7 +188,7 @@ export default class CrawlSmartContractTest {
     );
     assertIsDeliverTxSuccess(resultInstantiate);
     // eslint-disable-next-line no-promise-executor-return
-    await new Promise((resolve) => setTimeout(resolve, 30000));
+    await new Promise((resolve) => setTimeout(resolve, 10000));
 
     await this.crawlSmartContractService?.handleJob({});
 
