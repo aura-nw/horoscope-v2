@@ -14,6 +14,15 @@ export interface ITally {
   no_with_veto: string;
 }
 
+export interface ICountVote {
+  yes: number;
+  no: number;
+  abstain: number;
+  no_with_veto: number;
+  unrecognized: number;
+  unspecified: number;
+}
+
 export class Proposal extends BaseModel {
   proposal_id!: number;
 
@@ -45,12 +54,20 @@ export class Proposal extends BaseModel {
 
   turnout!: number;
 
+  count_vote!: ICountVote;
+
   static get tableName() {
     return 'proposal';
   }
 
   static get jsonAttributes() {
-    return ['content', 'tally', 'initial_deposit', 'total_deposit'];
+    return [
+      'content',
+      'tally',
+      'initial_deposit',
+      'total_deposit',
+      'count_vote',
+    ];
   }
 
   static get idColumn(): string | string[] {
