@@ -45,53 +45,55 @@ export default class CrawlContractEventService extends BullableService {
     const contractByAddress = await this.getContractByAddress(
       contractEvents.map((contractEvent) => contractEvent.contractAddress)
     );
+    const missingContractsAddress = _.uniq(
+      contractEvents
+        .map((contractEvent) => contractEvent.contractAddress)
+        .filter(
+          (contractAdrress) =>
+            Object.keys(contractByAddress).indexOf(contractAdrress) === -1
+        )
+    );
+    if (missingContractsAddress.length > 0) {
+      this.logger.info(
+        `Missing contract ${missingContractsAddress}, start crawl again...`
+      );
+      await this.broker.call(
+        SERVICE.V1.CrawlSmartContractService.CrawlMissingContract.path,
+        {
+          contracts: missingContractsAddress.map((address) => ({
+            address,
+            height: 0,
+            hash: '',
+          })) as IInstantiateContracts[],
+        }
+      );
+      this.logger.info(`Done ${missingContractsAddress}`);
+    }
     await knex.transaction(async (trx) => {
       const queries: any[] = [];
       // eslint-disable-next-line no-restricted-syntax
-      for (const contractEvent of contractEvents) {
+      contractEvents.forEach((contractEvent) => {
         this.logger.info({
           contractAddress: contractEvent.contractAddress,
           action: contractEvent.action,
           event_id: contractEvent.event_id,
           index: contractEvent.index,
         });
-        try {
-          const smartContractId =
-            contractByAddress[contractEvent.contractAddress].id;
-          const query = SmartContractEvent.query()
-            .insertGraph({
-              ...SmartContractEvent.fromJson({
-                smart_contract_id: smartContractId,
-                action: contractEvent.action,
-                event_id: contractEvent.event_id,
-                index: contractEvent.index,
-              }),
-              attributes: contractEvent.attributes,
-            })
-            .transacting(trx);
-          queries.push(query);
-        } catch (error) {
-          if (error instanceof TypeError) {
-            this.logger.info(
-              `Missing contract ${contractEvent.contractAddress}, start crawl again...`
-            );
-            // eslint-disable-next-line no-await-in-loop
-            await this.broker.call(
-              SERVICE.V1.CrawlSmartContractService.CrawlMissingContract.path,
-              {
-                contracts: [
-                  {
-                    address: contractEvent.contractAddress,
-                    height: 0,
-                    hash: '',
-                  },
-                ] as IInstantiateContracts[],
-              }
-            );
-            this.logger.info(`Done ${contractEvent.contractAddress}`);
-          }
-        }
-      }
+        const smartContractId =
+          contractByAddress[contractEvent.contractAddress].id;
+        const query = SmartContractEvent.query()
+          .insertGraph({
+            ...SmartContractEvent.fromJson({
+              smart_contract_id: smartContractId,
+              action: contractEvent.action,
+              event_id: contractEvent.event_id,
+              index: contractEvent.index,
+            }),
+            attributes: contractEvent.attributes,
+          })
+          .transacting(trx);
+        queries.push(query);
+      });
       updateBlockCheckpoint.height = endBlock;
       queries.push(
         BlockCheckpoint.query()
