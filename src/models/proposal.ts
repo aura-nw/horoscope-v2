@@ -19,7 +19,6 @@ export interface ICountVote {
   no: number;
   abstain: number;
   no_with_veto: number;
-  unrecognized: number;
   unspecified: number;
 }
 
