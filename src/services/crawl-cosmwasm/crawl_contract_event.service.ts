@@ -10,19 +10,18 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
   BULL_JOB_NAME,
   Config,
+  IInstantiateContracts,
   SERVICE,
   getHttpBatchClient,
 } from '../../common';
-import { Block, BlockCheckpoint, SmartContract } from '../../models';
+import { BlockCheckpoint, SmartContract } from '../../models';
 
 const { NODE_ENV } = Config;
 @Service({
   name: SERVICE.V1.CrawlSmartContractService.CrawlContractEventService.key,
   version: 1,
 })
-export default class CrawlCodeService extends BullableService {
-  _blocksPerBatch!: number;
-
+export default class CrawlContractEventService extends BullableService {
   public constructor(public broker: ServiceBroker) {
     super(broker);
   }
@@ -33,57 +32,80 @@ export default class CrawlCodeService extends BullableService {
   })
   async jobHandler(): Promise<void> {
     // get range txs for proccessing
-    const [startBlock, endBlock] = await this.getRangeProcessing();
+    const [startBlock, endBlock, updateBlockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.CRAWL_CONTRACT_EVENT,
+        [BULL_JOB_NAME.CRAWL_SMART_CONTRACT],
+        config.crawlContractEvent.key
+      );
     this.logger.info(`startBlock: ${startBlock} to endBlock: ${endBlock}`);
-    if (endBlock >= startBlock) {
-      try {
-        // get all contract event in above range blocks
-        const contractEvents = await getContractActivities(
-          startBlock,
-          endBlock
-        );
-        const contractByAddress = await this.getContractByAddress(
-          contractEvents.map((contractEvent) => contractEvent.contractAddress)
-        );
-        await knex.transaction(async (trx) => {
-          const queries: any[] = [];
-          contractEvents.forEach((contractEvent) => {
-            this.logger.info({
-              contractAddress: contractEvent.contractAddress,
+    if (startBlock >= endBlock) return;
+    // get all contract event in above range blocks
+    const contractEvents = await getContractActivities(startBlock, endBlock);
+    const contractByAddress = await this.getContractByAddress(
+      contractEvents.map((contractEvent) => contractEvent.contractAddress)
+    );
+    const missingContractsAddress = _.uniq(
+      contractEvents
+        .map((contractEvent) => contractEvent.contractAddress)
+        .filter(
+          (contractAdrress) =>
+            Object.keys(contractByAddress).indexOf(contractAdrress) === -1
+        )
+    );
+    if (missingContractsAddress.length > 0) {
+      this.logger.info(
+        `Missing contract ${missingContractsAddress}, start crawl again...`
+      );
+      await this.broker.call(
+        SERVICE.V1.CrawlSmartContractService.CrawlMissingContract.path,
+        {
+          contracts: missingContractsAddress.map((address) => ({
+            address,
+            height: 0,
+            hash: '',
+          })) as IInstantiateContracts[],
+        }
+      );
+      this.logger.info(`Done ${missingContractsAddress}`);
+    }
+    await knex.transaction(async (trx) => {
+      const queries: any[] = [];
+      // eslint-disable-next-line no-restricted-syntax
+      contractEvents.forEach((contractEvent) => {
+        this.logger.info({
+          contractAddress: contractEvent.contractAddress,
+          action: contractEvent.action,
+          event_id: contractEvent.event_id,
+          index: contractEvent.index,
+        });
+        const smartContractId =
+          contractByAddress[contractEvent.contractAddress].id;
+        const query = SmartContractEvent.query()
+          .insertGraph({
+            ...SmartContractEvent.fromJson({
+              smart_contract_id: smartContractId,
               action: contractEvent.action,
               event_id: contractEvent.event_id,
               index: contractEvent.index,
-            });
-            const smartContractId =
-              contractByAddress[contractEvent.contractAddress].id;
-            const query = SmartContractEvent.query()
-              .insertGraph({
-                ...SmartContractEvent.fromJson({
-                  smart_contract_id: smartContractId,
-                  action: contractEvent.action,
-                  event_id: contractEvent.event_id,
-                  index: contractEvent.index,
-                }),
-                attributes: contractEvent.wasm_attributes,
-              })
-              .transacting(trx);
-            queries.push(query);
-          });
-          queries.push(
-            BlockCheckpoint.query()
-              .patch({
-                height: endBlock + 1,
-              })
-              .where('job_name', BULL_JOB_NAME.CRAWL_CONTRACT_EVENT)
-          );
-          await Promise.all(queries) // Once every query is written
-            .then(trx.commit) // Try to execute all of them
-            .catch(trx.rollback); // And rollback in case any of them goes wrong
-        });
-      } catch (error) {
-        this.logger.error(error);
-      }
-    }
+            }),
+            attributes: contractEvent.attributes,
+          })
+          .transacting(trx);
+        queries.push(query);
+      });
+      updateBlockCheckpoint.height = endBlock;
+      queries.push(
+        BlockCheckpoint.query()
+          .insert(updateBlockCheckpoint)
+          .onConflict('job_name')
+          .merge()
+          .transacting(trx)
+      );
+      await Promise.all(queries) // Once every query is written
+        .then(trx.commit) // Try to execute all of them
+        .catch(trx.rollback); // And rollback in case any of them goes wrong
+    });
   }
 
   // from list contract addresses, get those appopriate records in DB, key by its contract_address
@@ -94,46 +116,12 @@ export default class CrawlCodeService extends BullableService {
     return _.keyBy(smartContractRecords, (contract) => contract.address);
   }
 
-  // get range txs for proccessing
-  async getRangeProcessing() {
-    // DB -> Config -> MinDB
-    // Get handled blocks from db
-    let blockCheckpoint = await BlockCheckpoint.query().findOne({
-      job_name: BULL_JOB_NAME.CRAWL_CONTRACT_EVENT,
-    });
-    if (!blockCheckpoint) {
-      // min Tx from DB
-      const minBlock = await Block.query()
-        .limit(1)
-        .orderBy('height', 'ASC')
-        .first()
-        .throwIfNotFound();
-      blockCheckpoint = await BlockCheckpoint.query().insert({
-        job_name: BULL_JOB_NAME.CRAWL_CONTRACT_EVENT,
-        height: config.crawlContractEvent.startBlock
-          ? config.crawlContractEvent.startBlock
-          : minBlock.height,
-      });
-    }
-    const startBlock: number = blockCheckpoint.height;
-    const latestBlock = await Block.query()
-      .limit(1)
-      .orderBy('height', 'DESC')
-      .first()
-      .throwIfNotFound();
-    const endBlock: number = Math.min(
-      startBlock + this._blocksPerBatch,
-      latestBlock.height
-    );
-    return [startBlock, endBlock];
-  }
-
   async _start(): Promise<void> {
     this._httpBatchClient = getHttpBatchClient();
-    this._blocksPerBatch = config.crawlContractEvent.blocksPerBatch
-      ? config.crawlContractEvent.blocksPerBatch
-      : 100;
     if (NODE_ENV !== 'test') {
+      await this.broker.waitForServices(
+        SERVICE.V1.CrawlSmartContractService.name
+      );
       await this.createJob(
         BULL_JOB_NAME.CRAWL_CONTRACT_EVENT,
         BULL_JOB_NAME.CRAWL_CONTRACT_EVENT,
