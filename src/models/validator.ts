@@ -67,6 +67,13 @@ export class Validator extends BaseModel {
     return 'validator';
   }
 
+  static get STATUS() {
+    return {
+      BONDED: 'BOND_STATUS_BONDED',
+      UNBONDED: 'BOND_STATUS_UNBONDED',
+    };
+  }
+
   static get jsonAttributes() {
     return ['consensus_pubkey', 'description', 'commission'];
   }
