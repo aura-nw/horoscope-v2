@@ -48,7 +48,6 @@ export class Vote extends BaseModel {
       VOTE_OPTION_ABSTAIN: 'VOTE_OPTION_ABSTAIN',
       VOTE_OPTION_NO: 'VOTE_OPTION_NO',
       VOTE_OPTION_NO_WITH_VETO: 'VOTE_OPTION_NO_WITH_VETO',
-      UNRECOGNIZED: 'UNRECOGNIZED',
     };
   }
 }
