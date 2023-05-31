@@ -71,7 +71,7 @@ export default class HandleTxVoteService extends BullableService {
         const resultInsert = await Vote.query(trx)
           .insert(vote)
           .onConflict(['proposal_id', 'voter'])
-          .merge(['vote_option', 'height', 'tx_id'])
+          .merge(['vote_option', 'height', 'tx_id', 'txhash'])
           .where('vote.height', '<=', vote.height)
           .transacting(trx);
         this.logger.debug('result insert vote: ', resultInsert);

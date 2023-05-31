@@ -45,6 +45,7 @@ export class BullQueueProvider implements QueueProvider {
         await fn(job.data);
       } catch (e) {
         console.error(`job ${job.name} failed`);
+        console.error(e);
         throw e;
       }
     };
