@@ -107,9 +107,6 @@ export default class CrawlDelegatorsService extends BullableService {
       await BlockCheckpoint.query()
         .where('job_name', BULL_JOB_NAME.CRAWL_BLOCK)
         .first();
-    this.logger.info(
-      `Update delegators of validator ${_payload.address} with previous height ${_payload.height} and current height ${latestBlock?.height}`
-    );
 
     await knex.transaction(async (trx) => {
       await Promise.all([
@@ -119,7 +116,9 @@ export default class CrawlDelegatorsService extends BullableService {
           .merge()
           .transacting(trx)
           .catch((error) => {
-            this.logger.error('Insert or update validator delegators error');
+            this.logger.error(
+              `Insert or update validator delegators error: ${_payload.address}`
+            );
             this.logger.error(error);
           }),
         Delegator.query()
