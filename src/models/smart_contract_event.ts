@@ -4,6 +4,8 @@ import BaseModel from './base';
 import { SmartContract } from './smart_contract';
 import { Event } from './event';
 import { SmartContractEventAttribute } from './smart_contract_event_attribute';
+import { Transaction } from './transaction';
+import { TransactionMessage } from './transaction_message';
 
 export class SmartContractEvent extends BaseModel {
   [relation: string]: any;
@@ -25,7 +27,6 @@ export class SmartContractEvent extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['smart_contract_id', 'event_id', 'index'],
       properties: {
         smart_contract_id: { type: 'number' },
         event_id: { type: 'number' },
@@ -58,6 +59,30 @@ export class SmartContractEvent extends BaseModel {
         join: {
           from: 'smart_contract_event.id',
           to: 'smart_contract_event_attribute.smart_contract_event_id',
+        },
+      },
+      tx: {
+        relation: Model.HasOneThroughRelation,
+        modelClass: Transaction,
+        join: {
+          from: 'smart_contract_event.event_id',
+          to: 'transaction.id',
+          through: {
+            from: 'event.id',
+            to: 'event.tx_id',
+          },
+        },
+      },
+      message: {
+        relation: Model.HasOneThroughRelation,
+        modelClass: TransactionMessage,
+        join: {
+          from: 'smart_contract_event.event_id',
+          to: ['transaction_message.tx_id', 'transaction_message.index'],
+          through: {
+            from: 'event.id',
+            to: ['event.tx_id', 'event.tx_msg_index'],
+          },
         },
       },
     };
