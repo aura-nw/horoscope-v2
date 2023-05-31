@@ -47,7 +47,6 @@ export default class CountVoteProposalService extends BullableService {
           countVoteNo,
           countVoteNoWithVeto,
           countVoteAbstain,
-          countVoteUnrecognized,
           countVoteUnspecified,
         ] = await Promise.all([
           Vote.query()
@@ -72,11 +71,6 @@ export default class CountVoteProposalService extends BullableService {
             .transacting(trx),
           Vote.query()
             .where('proposal_id', proposalId)
-            .andWhere('vote_option', Vote.VOTE_OPTION.UNRECOGNIZED)
-            .count()
-            .transacting(trx),
-          Vote.query()
-            .where('proposal_id', proposalId)
             .andWhere('vote_option', Vote.VOTE_OPTION.VOTE_OPTION_UNSPECIFIED)
             .count()
             .transacting(trx),
@@ -90,7 +84,6 @@ export default class CountVoteProposalService extends BullableService {
               no: countVoteNo[0].count,
               abstain: countVoteAbstain[0].count,
               no_with_veto: countVoteNoWithVeto[0].count,
-              unrecognized: countVoteUnrecognized[0].count,
               unspecified: countVoteUnspecified[0].count,
             },
           })
