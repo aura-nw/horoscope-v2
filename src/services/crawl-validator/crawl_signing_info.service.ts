@@ -32,6 +32,7 @@ export default class CrawlSigningInfoService extends BullableService {
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: object): Promise<void> {
+    this.logger.info('Update validator signing info');
     this._lcdClient = await getLcdClient();
 
     const updateValidators: Validator[] = [];
@@ -65,10 +66,6 @@ export default class CrawlSigningInfoService extends BullableService {
 
       await Promise.all(
         foundValidators.map(async (foundValidator: Validator) => {
-          this.logger.info(
-            `Update signing info of validator: ${foundValidator.operator_address}`
-          );
-
           try {
             const signingInfo = signingInfos.find(
               (sign: any) => sign.address === foundValidator.consensus_address
@@ -119,7 +116,11 @@ export default class CrawlSigningInfoService extends BullableService {
         .merge()
         .returning('id')
         .catch((error) => {
-          this.logger.error('Update validator signing info error');
+          this.logger.error(
+            `Update validator signing info error: ${JSON.stringify(
+              updateValidators
+            )}`
+          );
           this.logger.error(error);
         });
     }

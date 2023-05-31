@@ -93,10 +93,6 @@ export default class CrawlSmartContractService extends BullableService {
         'transaction.height',
         'events:attributes.value'
       );
-    this.logger.info(
-      `Result get Tx from height ${startHeight} to ${endHeight}:`
-    );
-    this.logger.info(JSON.stringify(resultTx));
 
     if (resultTx.length > 0)
       resultTx.map((res: any) =>
