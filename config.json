@@ -11,8 +11,9 @@
     "queryPageLimit": 100
   },
   "cw721": {
-    "blocksPerBatch": 100,
-    "millisecondRepeatJob": 5000,
+    "key": "cw721",
+    "blocksPerCall": 100,
+    "millisecondRepeatJob": 2000,
     "startBlock": 0,
     "millisecondRepeatJobMedia": 10000,
     "mediaPerBatch": 10
@@ -86,9 +87,9 @@
     "queryPageLimit": 100
   },
   "crawlContractEvent": {
-    "blocksPerBatch": 100,
-    "millisecondRepeatJob": 5000,
-    "startBlock": 0
+    "key": "crawlContractEvent",
+    "blocksPerCall": 100,
+    "millisecondRepeatJob": 2000
   },
   "dashboardStatistics": {
     "millisecondCrawl": 10000

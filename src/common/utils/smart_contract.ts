@@ -5,7 +5,7 @@ export interface IContractMsgInfo {
   contractAddress: string;
   action?: string;
   content: string;
-  wasm_attributes?: {
+  attributes?: {
     key: string;
     value: string;
   }[];
@@ -18,7 +18,7 @@ export interface IContractMsgInfo {
 // sender: sender of tx
 // action: INSTANTIATE / MINT / TRANSFER_NFT / BURN
 // content: input of contract
-// wasm_attributes: output of an activity in contract (it may have multiple output activities relate to one input)
+// attributes: output of an activity in contract (it may have multiple output activities relate to one input)
 // tx: tx data
 export async function getContractActivities(
   fromBlock: number,
@@ -48,7 +48,8 @@ export async function getContractActivities(
       Event.EVENT_TYPE.WASM,
       Event.EVENT_TYPE.INSTANTIATE,
     ])
-    .andWhereBetween('event.block_height', [fromBlock, toBlock])
+    .where('event.block_height', '>', fromBlock)
+    .andWhere('event.block_height', '<=', toBlock)
     .orderBy('attributes.id', 'ASC');
 
   wasmEvents.forEach((wasmEvent, index) => {
@@ -69,7 +70,7 @@ export async function getContractActivities(
       sender: wasmEvent.message.sender,
       action,
       content: wasmEvent.message.content.msg,
-      wasm_attributes: wasmAttribute,
+      attributes: wasmAttribute,
       tx: wasmEvent.transaction,
       event_id: wasmEvent.id,
       index,
