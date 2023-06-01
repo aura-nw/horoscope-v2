@@ -6,7 +6,7 @@ import {
 } from '@cosmjs/proto-signing';
 import { defaultRegistryTypes as defaultStargateTypes } from '@cosmjs/stargate';
 import { wasmTypes } from '@cosmjs/cosmwasm-stargate/build/modules';
-import { ibc, cosmos, cosmwasm } from '@aura-nw/aurajs';
+import { ibc, cosmos } from '@aura-nw/aurajs';
 import { toBase64, fromUtf8, fromBase64 } from '@cosmjs/encoding';
 import { LoggerInstance } from 'moleculer';
 import _ from 'lodash';
@@ -24,7 +24,6 @@ export default class AuraRegistry {
 
   // set default registry to decode msg
   public setDefaultRegistry() {
-    cosmwasm.wasm.v1.PinCodesProposal.toString();
     // type for content in proposal
     const contentProposalTypes: Array<[string, GeneratedType]> = [
       [
