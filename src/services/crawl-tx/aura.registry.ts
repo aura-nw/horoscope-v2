@@ -1,8 +1,12 @@
 /* eslint-disable no-param-reassign */
-import { Registry, TsProtoGeneratedType } from '@cosmjs/proto-signing';
+import {
+  GeneratedType,
+  Registry,
+  TsProtoGeneratedType,
+} from '@cosmjs/proto-signing';
 import { defaultRegistryTypes as defaultStargateTypes } from '@cosmjs/stargate';
 import { wasmTypes } from '@cosmjs/cosmwasm-stargate/build/modules';
-import { ibc, cosmos } from '@aura-nw/aurajs';
+import { ibc, cosmos, cosmwasm } from '@aura-nw/aurajs';
 import { toBase64, fromUtf8, fromBase64 } from '@cosmjs/encoding';
 import { LoggerInstance } from 'moleculer';
 import _ from 'lodash';
@@ -20,9 +24,49 @@ export default class AuraRegistry {
 
   // set default registry to decode msg
   public setDefaultRegistry() {
+    cosmwasm.wasm.v1.PinCodesProposal.toString();
+    // type for content in proposal
+    const contentProposalTypes: Array<[string, GeneratedType]> = [
+      [
+        '/cosmos.upgrade.v1beta1.SoftwareUpgradeProposal',
+        cosmos.upgrade.v1beta1.SoftwareUpgradeProposal,
+      ],
+      [
+        '/cosmos.upgrade.v1beta1.CancelSoftwareUpgradeProposal',
+        cosmos.upgrade.v1beta1.CancelSoftwareUpgradeProposal,
+      ],
+
+      [
+        '/cosmos.distribution.v1beta1.CommunityPoolSpendProposal',
+        cosmos.distribution.v1beta1.CommunityPoolSpendProposal,
+      ],
+      [
+        '/cosmos.distribution.v1beta1.CommunityPoolSpendProposalWithDeposit',
+        cosmos.distribution.v1beta1.CommunityPoolSpendProposalWithDeposit,
+      ],
+      [
+        '/ibc.core.client.v1.UpgradeProposal',
+        ibc.core.client.v1.UpgradeProposal,
+      ],
+      [
+        '/ibc.core.client.v1.ClientUpdateProposal',
+        ibc.core.client.v1.ClientUpdateProposal,
+      ],
+
+      [
+        '/cosmos.params.v1beta1.ParameterChangeProposal',
+        cosmos.params.v1beta1.ParameterChangeProposal,
+      ],
+    ];
+
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const registry = new Registry([...defaultStargateTypes, ...wasmTypes]);
+    const registry = new Registry([
+      ...defaultStargateTypes,
+      ...wasmTypes,
+      ...contentProposalTypes,
+    ]);
+
     registry.register(
       '/cosmos.feegrant.v1beta1.BasicAllowance',
       cosmos.feegrant.v1beta1.BasicAllowance
@@ -145,6 +189,22 @@ export default class AuraRegistry {
             this._logger.error('This feegrant allowance is not supported');
             this._logger.error(result.allowance?.typeUrl);
           }
+        }
+      } else if (msg.typeUrl === MSG_TYPE.MSG_SUBMIT_PROPOSAL) {
+        const proposalType = this.registry.lookupType(
+          result.content?.typeUrl
+        ) as TsProtoGeneratedType;
+        if (proposalType) {
+          const decoded = proposalType.decode(
+            fromBase64(result.content?.value)
+          );
+          const jsonObjDecoded: any = proposalType.toJSON(decoded);
+          result.content = {
+            '@type': result.content.typeUrl,
+            ...jsonObjDecoded,
+          };
+        } else {
+          this._logger.error('This proposal content type is not supported');
         }
       }
     }
