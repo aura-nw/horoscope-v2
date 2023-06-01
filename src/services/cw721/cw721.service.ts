@@ -96,44 +96,55 @@ export default class Cw721HandlerService extends BullableService {
   }
 
   // Insert new token if it haven't been in cw721_token table, or update burned to false if it already have been there
-  async handlerCw721Mint(mintMsgs: SmartContractEvent[]): Promise<void> {
-    if (mintMsgs.length > 0) {
+  async handlerCw721Mint(mintEvents: SmartContractEvent[]): Promise<void> {
+    if (mintEvents.length > 0) {
       // from list contract address, get those ids
       const cw721ContractDbRecords = await this.getCw721TrackedContracts(
-        mintMsgs.map((cw721Msg) => cw721Msg.contractAddress)
+        mintEvents.map((mintEvent) => mintEvent.contractAddress)
       );
-      const newTokens = mintMsgs.reduce((acc: CW721Token[], curr) => {
-        const tokenId = getAttributeFrom(
-          curr.attributes,
-          EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
-        );
-        const mediaInfo = null;
-        const cw721ContractId = cw721ContractDbRecords.find(
-          (item) => item.address === curr.contractAddress
-        )?.id;
-        if (cw721ContractId) {
-          acc.push(
-            CW721Token.fromJson({
-              token_id: tokenId,
-              media_info: mediaInfo,
-              owner: getAttributeFrom(
-                curr.attributes,
-                EventAttribute.ATTRIBUTE_KEY.OWNER
-              ),
-              cw721_contract_id: cw721ContractId,
-              last_updated_height: curr.tx.height,
-              burned: false,
-            })
-          );
+      await knex.transaction(async (trx) => {
+        const queries: any[] = [];
+        mintEvents.forEach((mintEvent) => {
+          // find the mintEvent's smart contract id
+          const cw721ContractId = cw721ContractDbRecords.find(
+            (item) => item.address === mintEvent.contractAddress
+          )?.id;
+          if (cw721ContractId) {
+            const tokenId = getAttributeFrom(
+              mintEvent.attributes,
+              EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+            );
+            const mediaInfo = null;
+            queries.push(
+              CW721Token.query()
+                .insert(
+                  CW721Token.fromJson({
+                    token_id: tokenId,
+                    media_info: mediaInfo,
+                    owner: getAttributeFrom(
+                      mintEvent.attributes,
+                      EventAttribute.ATTRIBUTE_KEY.OWNER
+                    ),
+                    cw721_contract_id: cw721ContractId,
+                    last_updated_height: mintEvent.tx.height,
+                    burned: false,
+                  })
+                )
+                .onConflict(['token_id', 'cw721_contract_id'])
+                .merge()
+                .transacting(trx)
+            );
+          }
+        });
+        if (queries.length > 0) {
+          await Promise.all(queries) // Once every query is written
+            .then(trx.commit) // Try to execute all of them
+            .catch((e) => {
+              this.logger.error(e);
+              trx.rollback();
+            }); // And rollback in case any of them goes wrong
         }
-        return acc;
-      }, []);
-      if (newTokens.length > 0) {
-        await CW721Token.query()
-          .insert(newTokens)
-          .onConflict(['token_id', 'cw721_contract_id'])
-          .merge();
-      }
+      });
     }
   }
 
@@ -169,9 +180,14 @@ export default class Cw721HandlerService extends BullableService {
           }
         }
       });
-      await Promise.all(queries) // Once every query is written
-        .then(trx.commit) // Try to execute all of them
-        .catch(trx.rollback); // And rollback in case any of them goes wrong
+      if (queries.length > 0) {
+        await Promise.all(queries) // Once every query is written
+          .then(trx.commit) // Try to execute all of them
+          .catch((e) => {
+            this.logger.error(e);
+            trx.rollback();
+          }); // And rollback in case any of them goes wrong
+      }
     });
   }
 
@@ -240,65 +256,73 @@ export default class Cw721HandlerService extends BullableService {
   }
 
   // Insert new activities into cw721_activity table
-  async handleCW721Activity(listCw721Msgs: SmartContractEvent[]) {
+  async handleCW721Activity(cw721Events: SmartContractEvent[]) {
     // from list onchain token-ids, get cw721-token records
     const cw721TokenRecords = await this.getCw721TokensRecords(
-      listCw721Msgs.map((cw721Msg) => ({
-        contractAddress: cw721Msg.contractAddress,
+      cw721Events.map((cw721Event) => ({
+        contractAddress: cw721Event.contractAddress,
         onchainTokenId: getAttributeFrom(
-          cw721Msg.attributes,
+          cw721Event.attributes,
           EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
         ),
       }))
     );
     // from list contract address, get cw721-contract-id
-    const Cw721ContractDbRecords = await this.getCw721TrackedContracts(
-      listCw721Msgs.map((cw721Msg) => cw721Msg.contractAddress)
+    const cw721ContractDbRecords = await this.getCw721TrackedContracts(
+      cw721Events.map((cw721Event) => cw721Event.contractAddress)
     );
-    // insert new cw721 activity
-    const CW721Activities = listCw721Msgs.reduce(
-      (acc: CW721Activity[], cw721Msg) => {
-        const cw721ContractId = Cw721ContractDbRecords.find(
-          (item) => item.address === cw721Msg.contractAddress
+    await knex.transaction(async (trx) => {
+      const queries: any[] = [];
+      cw721Events.forEach((cw721Event) => {
+        // find the cw721 Event's smart contract id
+        const cw721ContractId = cw721ContractDbRecords.find(
+          (item) => item.address === cw721Event.contractAddress
         )?.id;
         if (cw721ContractId) {
           const onchainTokenId = getAttributeFrom(
-            cw721Msg.attributes,
+            cw721Event.attributes,
             EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
           );
           let cw721TokenId = null;
           if (onchainTokenId) {
             const foundRecord = cw721TokenRecords.find(
               (item) =>
-                item.contract_address === cw721Msg.contractAddress &&
+                item.contract_address === cw721Event.contractAddress &&
                 item.token_id === onchainTokenId
             );
             if (foundRecord) {
               cw721TokenId = foundRecord.cw721_token_id;
             } else {
               this.logger.error(
-                `From tx ${cw721Msg.tx.hash}: Token ${onchainTokenId} in smart contract ${cw721Msg.contractAddress} not found in DB`
+                `From tx ${cw721Event.tx.hash}: Token ${onchainTokenId} in smart contract ${cw721Event.contractAddress} not found in DB`
               );
             }
           }
-          acc.push(
-            CW721Activity.fromJson({
-              action: cw721Msg.action,
-              sender: cw721Msg.sender,
-              tx_hash: cw721Msg.tx.hash,
-              cw721_contract_id: cw721ContractId,
-              cw721_token_id: cw721TokenId,
-              height: cw721Msg.tx.height,
-            })
+          queries.push(
+            CW721Activity.query()
+              .insert(
+                CW721Activity.fromJson({
+                  action: cw721Event.action,
+                  sender: cw721Event.sender,
+                  tx_hash: cw721Event.tx.hash,
+                  cw721_contract_id: cw721ContractId,
+                  cw721_token_id: cw721TokenId,
+                  height: cw721Event.tx.height,
+                })
+              )
+              .transacting(trx)
           );
         }
-        return acc;
-      },
-      []
-    );
-    if (CW721Activities.length > 0) {
-      await CW721Activity.query().insert(CW721Activities);
-    }
+      });
+      if (queries.length > 0) {
+        await Promise.all(queries) // Once every query is written
+          .then(trx.commit) // Try to execute all of them
+          .catch((e) => {
+            this.logger.error(e);
+            trx.rollback();
+          }); // And rollback in case any of them goes wrong
+      }
+    });
   }
 
   // handle Instantiate Msgs
