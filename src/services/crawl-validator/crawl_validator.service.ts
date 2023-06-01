@@ -127,6 +127,7 @@ export default class CrawlValidatorService extends BullableService {
           validatorEntity.status = validator.status;
           validatorEntity.tokens = validator.tokens;
           validatorEntity.delegator_shares = validator.delegator_shares;
+          validatorEntity.description = validator.description;
           validatorEntity.unbonding_height = Number.parseInt(
             validator.unbonding_height,
             10
