@@ -6,6 +6,7 @@
   "networkDenom": "utaura",
   "jobRetryAttempt": 5,
   "jobRetryBackoff": 1000,
+  "hasuraGraphQL": "https://indexer-v2.dev.aurascan.io/v1/graphql",
   "crawlValidator": {
     "millisecondCrawl": 5000,
     "queryPageLimit": 100
