@@ -11,6 +11,7 @@ import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
+import _ from 'lodash';
 import { SmartContractEvent } from '../../models/smart_contract_event';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -58,8 +59,11 @@ export default class Cw721HandlerService extends BullableService {
     transferMsgs: SmartContractEvent[]
   ): Promise<void> {
     // get Ids for contracts
-    const cw721ContractDbRecords = await this.getCw721TrackedContracts(
-      transferMsgs.map((transferMsg) => transferMsg.contractAddress)
+    const contractTrackedByAddress = _.keyBy(
+      await this.getCw721TrackedContracts(
+        transferMsgs.map((transferMsg) => transferMsg.contractAddress)
+      ),
+      'address'
     );
     // eslint-disable-next-line no-restricted-syntax
     for (const transferMsg of transferMsgs) {
@@ -72,14 +76,13 @@ export default class Cw721HandlerService extends BullableService {
         EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
       );
       // find the id for correspond smart contract
-      const cw721ContractId = cw721ContractDbRecords.find(
-        (item) => item.address === transferMsg.contractAddress
-      )?.id;
-      if (cw721ContractId) {
+      const cw721Contract =
+        contractTrackedByAddress[transferMsg.contractAddress];
+      if (cw721Contract) {
         if (tokenId && recipient) {
           // eslint-disable-next-line no-await-in-loop
           await CW721Token.query()
-            .where('cw721_contract_id', cw721ContractId)
+            .where('cw721_contract_id', cw721Contract.id)
             .andWhere('token_id', tokenId)
             .andWhere('last_updated_height', '<=', transferMsg.tx.height)
             .patch({
@@ -99,17 +102,19 @@ export default class Cw721HandlerService extends BullableService {
   async handlerCw721Mint(mintEvents: SmartContractEvent[]): Promise<void> {
     if (mintEvents.length > 0) {
       // from list contract address, get those ids
-      const cw721ContractDbRecords = await this.getCw721TrackedContracts(
-        mintEvents.map((mintEvent) => mintEvent.contractAddress)
+      const contractTrackedByAddress = _.keyBy(
+        await this.getCw721TrackedContracts(
+          mintEvents.map((mintEvent) => mintEvent.contractAddress)
+        ),
+        'address'
       );
       await knex.transaction(async (trx) => {
         const queries: any[] = [];
         mintEvents.forEach((mintEvent) => {
           // find the mintEvent's smart contract id
-          const cw721ContractId = cw721ContractDbRecords.find(
-            (item) => item.address === mintEvent.contractAddress
-          )?.id;
-          if (cw721ContractId) {
+          const cw721Contract =
+            contractTrackedByAddress[mintEvent.contractAddress];
+          if (cw721Contract) {
             const tokenId = getAttributeFrom(
               mintEvent.attributes,
               EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
@@ -125,7 +130,7 @@ export default class Cw721HandlerService extends BullableService {
                       mintEvent.attributes,
                       EventAttribute.ATTRIBUTE_KEY.OWNER
                     ),
-                    cw721_contract_id: cw721ContractId,
+                    cw721_contract_id: cw721Contract.id,
                     last_updated_height: mintEvent.tx.height,
                     burned: false,
                   })
@@ -151,24 +156,25 @@ export default class Cw721HandlerService extends BullableService {
   // update burned field in cw721_token to true, last updated height
   async handlerCw721Burn(burnMsgs: SmartContractEvent[]): Promise<void> {
     // get Ids for contracts
-    const cw721ContractDbRecords = await this.getCw721TrackedContracts(
-      burnMsgs.map((cw721Msg) => cw721Msg.contractAddress)
+    const cw721ContractDbRecords = _.keyBy(
+      await this.getCw721TrackedContracts(
+        burnMsgs.map((burnMsg) => burnMsg.contractAddress)
+      ),
+      'address'
     );
     await knex.transaction(async (trx) => {
       const queries: any[] = [];
       burnMsgs.forEach((burnMsg) => {
         // find the burnMsg's smart contract id
-        const cw721ContractId = cw721ContractDbRecords.find(
-          (item) => item.address === burnMsg.contractAddress
-        )?.id;
-        if (cw721ContractId) {
+        const cw721Contract = cw721ContractDbRecords[burnMsg.contractAddress];
+        if (cw721Contract) {
           const tokenId = getAttributeFrom(
             burnMsg.attributes,
             EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
           );
           if (tokenId) {
             const query = CW721Token.query()
-              .where('cw721_contract_id', cw721ContractId)
+              .where('cw721_contract_id', cw721Contract.id)
               .andWhere('token_id', tokenId)
               .andWhere('last_updated_height', '<=', burnMsg.tx.height)
               .patch({
@@ -258,38 +264,42 @@ export default class Cw721HandlerService extends BullableService {
   // Insert new activities into cw721_activity table
   async handleCW721Activity(cw721Events: SmartContractEvent[]) {
     // from list onchain token-ids, get cw721-token records
-    const cw721TokenRecords = await this.getCw721TokensRecords(
-      cw721Events.map((cw721Event) => ({
-        contractAddress: cw721Event.contractAddress,
-        onchainTokenId: getAttributeFrom(
-          cw721Event.attributes,
-          EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
-        ),
-      }))
+    const cw721TokenRecords = _.keyBy(
+      await this.getCw721TokensRecords(
+        cw721Events.map((cw721Event) => ({
+          contractAddress: cw721Event.contractAddress,
+          onchainTokenId: getAttributeFrom(
+            cw721Event.attributes,
+            EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+          ),
+        }))
+      ),
+      (e) => `${e.contract_address}_${e.token_id}`
     );
     // from list contract address, get cw721-contract-id
-    const cw721ContractDbRecords = await this.getCw721TrackedContracts(
-      cw721Events.map((cw721Event) => cw721Event.contractAddress)
+    const cw721ContractDbRecords = _.keyBy(
+      await this.getCw721TrackedContracts(
+        cw721Events.map((cw721Event) => cw721Event.contractAddress)
+      ),
+      'address'
     );
     await knex.transaction(async (trx) => {
       const queries: any[] = [];
       cw721Events.forEach((cw721Event) => {
         // find the cw721 Event's smart contract id
-        const cw721ContractId = cw721ContractDbRecords.find(
-          (item) => item.address === cw721Event.contractAddress
-        )?.id;
-        if (cw721ContractId) {
+        const cw721Contract =
+          cw721ContractDbRecords[cw721Event.contractAddress];
+        if (cw721Contract) {
           const onchainTokenId = getAttributeFrom(
             cw721Event.attributes,
             EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
           );
           let cw721TokenId = null;
           if (onchainTokenId) {
-            const foundRecord = cw721TokenRecords.find(
-              (item) =>
-                item.contract_address === cw721Event.contractAddress &&
-                item.token_id === onchainTokenId
-            );
+            const foundRecord =
+              cw721TokenRecords[
+                `${cw721Event.contractAddress}_${onchainTokenId}`
+              ];
             if (foundRecord) {
               cw721TokenId = foundRecord.cw721_token_id;
             } else {
@@ -305,7 +315,7 @@ export default class Cw721HandlerService extends BullableService {
                   action: cw721Event.action,
                   sender: cw721Event.sender,
                   tx_hash: cw721Event.tx.hash,
-                  cw721_contract_id: cw721ContractId,
+                  cw721_contract_id: cw721Contract.id,
                   cw721_token_id: cw721TokenId,
                   height: cw721Event.tx.height,
                 })
@@ -341,13 +351,14 @@ export default class Cw721HandlerService extends BullableService {
         'contract.id as id'
       );
     if (cw721Contracts.length > 0) {
-      const contractsInfo = await this.getContractsInfo(
-        cw721Contracts.map((cw721Contract) => cw721Contract.contract_address)
+      const contractsInfo = _.keyBy(
+        await this.getContractsInfo(
+          cw721Contracts.map((cw721Contract) => cw721Contract.contract_address)
+        ),
+        'address'
       );
       const instantiateContracts = cw721Contracts.map((cw721Contract) => {
-        const contractInfo = contractsInfo.find(
-          (result) => result.address === cw721Contract.contract_address
-        );
+        const contractInfo = contractsInfo[cw721Contract.contract_address];
         return CW721Contract.fromJson({
           contract_id: cw721Contract.id,
           symbol: contractInfo?.symbol,
