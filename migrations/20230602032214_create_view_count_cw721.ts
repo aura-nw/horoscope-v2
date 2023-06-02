@@ -14,7 +14,10 @@ export async function up(knex: Knex): Promise<void> {
           'cw721_contract.contract_id',
           'smart_contract.id'
         )
-        .select(['cw721_token.owner', 'smart_contract.address'])
+        .select([
+          'cw721_token.owner',
+          'smart_contract.address as contract_address',
+        ])
         .count()
         .groupBy(['cw721_token.owner', 'smart_contract.address'])
     );
