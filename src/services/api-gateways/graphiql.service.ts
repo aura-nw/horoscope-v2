@@ -9,6 +9,18 @@ import config from '../../../config.json' assert { type: 'json' };
 @Service({
   name: 'graphiql',
   version: 1,
+  settings: {
+    rateLimit: {
+      window: 60 * 1000,
+      limit: 30,
+      headers: true,
+      key: (req: any) =>
+        req.headers['x-forwarded-for'] ||
+        req.connection.remoteAddress ||
+        req.socket.remoteAddress ||
+        req.connection.socket.remoteAddress,
+    },
+  },
 })
 export default class GraphiQLService extends BaseService {
   public constructor(public broker: ServiceBroker) {
@@ -28,15 +40,14 @@ export default class GraphiQLService extends BaseService {
     },
   })
   async handleGraphQLQuery(ctx: Context<IContextGraphQLQuery>) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { operationName, query, variables } = ctx.params;
+    const { query } = ctx.params;
 
     let result: ResponseDto = {
       code: '',
       message: '',
       data: null,
     };
-    if ((query.match(/{/g) || []).length > 4) {
+    if ((query.match(/{/g) || []).length > config.graphiqlApi.depthLimit + 1) {
       result = {
         code: 'ERROR',
         message: 'The query depth must not be greater than 3',
@@ -46,7 +57,7 @@ export default class GraphiQLService extends BaseService {
 
     try {
       const data = await axios({
-        url: config.hasuraGraphQL,
+        url: config.graphiqlApi.hasuraGraphQL,
         method: 'POST',
         headers: {
           Accept: 'application/json',
