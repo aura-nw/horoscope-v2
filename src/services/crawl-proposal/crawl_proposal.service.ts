@@ -23,12 +23,7 @@ import {
   IAuraJSClientFactory,
   SERVICE,
 } from '../../common';
-import {
-  BlockCheckpoint,
-  Proposal,
-  EventAttribute,
-  ITally,
-} from '../../models';
+import { BlockCheckpoint, Proposal, EventAttribute } from '../../models';
 
 @Service({
   name: SERVICE.V1.CrawlProposalService.key,
@@ -208,8 +203,13 @@ export default class CrawlProposalService extends BullableService {
               onchainPro?.proposal?.status
           ) || '';
         proposal.total_deposit = onchainPro?.proposal?.totalDeposit || [];
-        proposal.tally = onchainPro?.proposal
-          ?.finalTallyResult as unknown as ITally;
+        proposal.tally = {
+          yes: onchainPro.proposal?.finalTallyResult?.yes || '0',
+          no: onchainPro.proposal?.finalTallyResult?.no || '0',
+          abstain: onchainPro.proposal?.finalTallyResult?.abstain || '0',
+          no_with_veto:
+            onchainPro.proposal?.finalTallyResult?.noWithVeto || '0',
+        };
       }
     });
 
