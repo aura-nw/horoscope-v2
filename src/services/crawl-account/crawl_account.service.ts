@@ -16,7 +16,6 @@ import {
   QuerySpendableBalancesRequest,
   QuerySpendableBalancesResponse,
 } from '@aura-nw/aurajs/types/codegen/cosmos/bank/v1beta1/query';
-import _ from 'lodash';
 import knex from '../../common/utils/db_connection';
 import {
   AccountType,
@@ -169,13 +168,7 @@ export default class CrawlAccountService extends BullableService {
               .transacting(trx)
           );
           try {
-            await Promise.all(
-              _.chunk(patchQueries, config.crawlGenesis.accountsPerBatch).map(
-                async (chunkQueries) => {
-                  await Promise.all(chunkQueries);
-                }
-              )
-            );
+            await Promise.all(patchQueries);
           } catch (error) {
             this.logger.error(
               `Error update account auth: ${_payload.addresses}`
@@ -306,13 +299,7 @@ export default class CrawlAccountService extends BullableService {
           .where({ id: account.id })
       );
       try {
-        await Promise.all(
-          _.chunk(patchQueries, config.crawlGenesis.accountsPerBatch).map(
-            async (chunkQueries) => {
-              await Promise.all(chunkQueries);
-            }
-          )
-        );
+        await Promise.all(patchQueries);
       } catch (error) {
         this.logger.error(
           `Error update account balance: ${_payload.addresses}`
@@ -431,13 +418,7 @@ export default class CrawlAccountService extends BullableService {
           .where({ id: account.id })
       );
       try {
-        await Promise.all(
-          _.chunk(patchQueries, config.crawlGenesis.accountsPerBatch).map(
-            async (chunkQueries) => {
-              await Promise.all(chunkQueries);
-            }
-          )
-        );
+        await Promise.all(patchQueries);
       } catch (error) {
         this.logger.error(
           `Error update account spendable balance: ${_payload.addresses}`

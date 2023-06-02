@@ -4,6 +4,7 @@ import {
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
 import { Knex } from 'knex';
+import _ from 'lodash';
 import knex from '../../common/utils/db_connection';
 import { Account, BlockCheckpoint, EventAttribute } from '../../models';
 import Utils from '../../common/utils/utils';
@@ -114,15 +115,18 @@ export default class HandleAddressService extends BullableService {
     });
 
     if (accounts.length > 0)
-      await Account.query()
-        .insert(accounts)
-        .transacting(trx)
-        .catch((error) => {
-          this.logger.error(
-            `Error insert new account: ${JSON.stringify(accounts)}`
-          );
-          this.logger.error(error);
-        });
+      await Promise.all(
+        _.chunk(accounts, config.crawlGenesis.accountsPerBatch).map(
+          async (chunkAccounts) => {
+            await Account.query().insert(chunkAccounts).transacting(trx);
+          }
+        )
+      ).catch((error) => {
+        this.logger.error(
+          `Error insert new account: ${JSON.stringify(accounts)}`
+        );
+        this.logger.error(error);
+      });
 
     await this.broker.call(SERVICE.V1.CrawlAccountService.UpdateAccount.path, {
       addresses,
