@@ -364,6 +364,7 @@ export default class Cw721HandlerService extends BullableService {
           symbol: contractInfo?.symbol,
           minter: contractInfo?.minter,
           name: contractInfo?.name,
+          track: true,
         });
       });
       await CW721Contract.query()
