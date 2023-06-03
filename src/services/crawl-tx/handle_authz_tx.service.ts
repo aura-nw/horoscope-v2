@@ -14,63 +14,28 @@ import knex from '../../common/utils/db_connection';
   version: 1,
 })
 export default class HandleAuthzTxService extends BullableService {
-  private _blockCheckpoint!: BlockCheckpoint | undefined;
-
   private _registry!: AuraRegistry;
-
-  private _startBlock = 0;
-
-  private _endBlock = 0;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
   }
 
-  async initEnv() {
-    this._blockCheckpoint = await BlockCheckpoint.query().findOne({
-      job_name: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
-    });
-    if (!this._blockCheckpoint) {
-      this._blockCheckpoint = BlockCheckpoint.fromJson({
-        job_name: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
-        height: 0,
-      });
-      await BlockCheckpoint.query().insert(this._blockCheckpoint);
-    } else if (this._blockCheckpoint.height) {
-      this._startBlock = this._blockCheckpoint.height + 1;
-    } else {
-      this._blockCheckpoint.height = 0;
-      await BlockCheckpoint.query()
-        .update(this._blockCheckpoint)
-        .where('job_name', BULL_JOB_NAME.HANDLE_AUTHZ_TX);
-    }
-
-    const latestTxHeightCrawled = await BlockCheckpoint.query().findOne({
-      job_name: BULL_JOB_NAME.HANDLE_TRANSACTION,
-    });
-
-    if (latestTxHeightCrawled) {
-      if (
-        latestTxHeightCrawled.height >
-        this._startBlock + config.handleAuthzTx.blocksPerCall - 1
-      ) {
-        this._endBlock =
-          this._startBlock + config.handleAuthzTx.blocksPerCall - 1;
-      } else {
-        this._endBlock = latestTxHeightCrawled.height;
-      }
-    }
-  }
-
   async handleJob() {
+    const [startBlock, endBlock, blockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.HANDLE_AUTHZ_TX,
+        [BULL_JOB_NAME.HANDLE_TRANSACTION],
+        config.handleAuthzTx.key
+      );
     this.logger.info(
-      `Handle Authz Message from block ${this._startBlock} to block ${this._endBlock}`
+      `Handle Authz Message from block ${startBlock} to block ${endBlock}`
     );
+
     // query numberOfRow tx message has type authz and has no parent_id
     const listTxMsgs = await TransactionMessage.query()
       .joinRelated('transaction')
-      .where('height', '>=', this._startBlock)
-      .andWhere('height', '<=', this._endBlock)
+      .where('height', '>', startBlock)
+      .andWhere('height', '<=', endBlock)
       .andWhere('type', MSG_TYPE.MSG_AUTHZ_EXEC)
       .andWhere('parent_id', null);
     const listSubTxAuthz: TransactionMessage[] = [];
@@ -103,20 +68,14 @@ export default class HandleAuthzTxService extends BullableService {
           .transacting(trx);
       }
 
-      if (this._blockCheckpoint) {
-        this._blockCheckpoint.height = this._endBlock;
+      if (blockCheckpoint) {
+        blockCheckpoint.height = endBlock;
 
         await BlockCheckpoint.query()
-          .update(this._blockCheckpoint)
-          .where('job_name', BULL_JOB_NAME.HANDLE_AUTHZ_TX)
-          .transacting(trx);
-      } else {
-        this._blockCheckpoint = BlockCheckpoint.fromJson({
-          job_name: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
-          height: 0,
-        });
-        await BlockCheckpoint.query()
-          .insert(this._blockCheckpoint)
+          .insert(blockCheckpoint)
+          .onConflict('job_name')
+          .merge()
+          .returning('id')
           .transacting(trx);
       }
     });
@@ -147,7 +106,6 @@ export default class HandleAuthzTxService extends BullableService {
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   async jobHandler() {
-    await this.initEnv();
     await this.handleJob();
   }
 
