@@ -66,6 +66,7 @@
     "blocksPerCall": 100
   },
   "handleAuthzTx": {
+    "key": "handleAuthzTx",
     "blocksPerCall": 100,
     "millisecondCrawl": 5000
   },
