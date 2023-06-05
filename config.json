@@ -98,5 +98,11 @@
   },
   "dashboardStatistics": {
     "millisecondCrawl": 10000
+  },
+  "graphiqlApi": {
+    "hasuraGraphQL": "https://indexer-v2.dev.aurascan.io/v1/graphql",
+    "depthLimit": 3,
+    "rateLimitWindow": 60000,
+    "rateLimitQuery": 30
   }
 }
