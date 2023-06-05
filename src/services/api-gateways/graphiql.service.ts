@@ -28,7 +28,7 @@ export default class GraphiQLService extends BaseService {
   }
 
   /**
-   * call it with curl  --request POST 'http://0.0.0.0:3000/graphiql'
+   * call it with curl  --request POST 'http://0.0.0.0:3000/api/v1/graphiql'
    * Schema for validattion
    */
   @Post('/', {
