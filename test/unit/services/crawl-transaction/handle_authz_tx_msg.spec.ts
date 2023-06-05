@@ -62,7 +62,6 @@ export default class HandleAuthzTxMsgTest {
       height: 452049,
       timestamp: '2023-04-17T03:44:41.000Z',
     });
-    await this.handleAuthzTxServive?.initEnv();
     await this.handleAuthzTxServive?.handleJob();
     const tx = await Transaction.query().findOne(
       'hash',
