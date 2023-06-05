@@ -207,13 +207,6 @@ export default class CrawlProposalService extends BullableService {
         proposal.tally = Utils.camelizeKeys(
           onchainPro.proposal?.finalTallyResult
         );
-        // {
-        //   yes: onchainPro.proposal?.finalTallyResult?.yes || '0',
-        //   no: onchainPro.proposal?.finalTallyResult?.no || '0',
-        //   abstain: onchainPro.proposal?.finalTallyResult?.abstain || '0',
-        //   no_with_veto:
-        //     onchainPro.proposal?.finalTallyResult?.noWithVeto || '0',
-        // };
       }
     });
 
