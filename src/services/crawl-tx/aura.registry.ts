@@ -1,9 +1,5 @@
 /* eslint-disable no-param-reassign */
-import {
-  GeneratedType,
-  Registry,
-  TsProtoGeneratedType,
-} from '@cosmjs/proto-signing';
+import { Registry, TsProtoGeneratedType } from '@cosmjs/proto-signing';
 import { defaultRegistryTypes as defaultStargateTypes } from '@cosmjs/stargate';
 import { wasmTypes } from '@cosmjs/cosmwasm-stargate/build/modules';
 import { ibc, cosmos } from '@aura-nw/aurajs';
@@ -17,45 +13,39 @@ export default class AuraRegistry {
 
   private _logger: LoggerInstance;
 
+  public cosmos: any;
+
+  public ibc: any;
+
   constructor(logger: LoggerInstance) {
     this._logger = logger;
+    this.cosmos = cosmos;
+    this.ibc = ibc;
     this.setDefaultRegistry();
   }
 
   // set default registry to decode msg
   public setDefaultRegistry() {
-    // type for content in proposal
-    const contentProposalTypes: Array<[string, GeneratedType]> = [
-      [
-        '/cosmos.upgrade.v1beta1.SoftwareUpgradeProposal',
-        cosmos.upgrade.v1beta1.SoftwareUpgradeProposal,
-      ],
-      [
-        '/cosmos.upgrade.v1beta1.CancelSoftwareUpgradeProposal',
-        cosmos.upgrade.v1beta1.CancelSoftwareUpgradeProposal,
-      ],
+    const missingTypes = [
+      // content proposal
+      '/cosmos.gov.v1beta1.MsgSubmitProposal',
+      '/cosmos.upgrade.v1beta1.SoftwareUpgradeProposal',
+      '/cosmos.upgrade.v1beta1.CancelSoftwareUpgradeProposal',
+      '/cosmos.distribution.v1beta1.CommunityPoolSpendProposal',
+      '/cosmos.distribution.v1beta1.CommunityPoolSpendProposalWithDeposit',
+      '/cosmos.params.v1beta1.ParameterChangeProposal',
+      '/ibc.core.client.v1.UpgradeProposal',
+      '/ibc.core.client.v1.ClientUpdateProposal',
+      '/cosmos.params.v1beta1.ParameterChangeProposal',
 
-      [
-        '/cosmos.distribution.v1beta1.CommunityPoolSpendProposal',
-        cosmos.distribution.v1beta1.CommunityPoolSpendProposal,
-      ],
-      [
-        '/cosmos.distribution.v1beta1.CommunityPoolSpendProposalWithDeposit',
-        cosmos.distribution.v1beta1.CommunityPoolSpendProposalWithDeposit,
-      ],
-      [
-        '/ibc.core.client.v1.UpgradeProposal',
-        ibc.core.client.v1.UpgradeProposal,
-      ],
-      [
-        '/ibc.core.client.v1.ClientUpdateProposal',
-        ibc.core.client.v1.ClientUpdateProposal,
-      ],
+      // feegrant
+      '/cosmos.feegrant.v1beta1.BasicAllowance',
+      '/cosmos.feegrant.v1beta1.PeriodicAllowance',
+      '/cosmos.feegrant.v1beta1.AllowedContractAllowance',
+      '/cosmos.vesting.v1beta1.MsgCreatePeriodicVestingAccount',
 
-      [
-        '/cosmos.params.v1beta1.ParameterChangeProposal',
-        cosmos.params.v1beta1.ParameterChangeProposal,
-      ],
+      // ibc header
+      '/ibc.lightclients.tendermint.v1.Header',
     ];
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -63,33 +53,9 @@ export default class AuraRegistry {
     const registry = new Registry([
       ...defaultStargateTypes,
       ...wasmTypes,
-      ...contentProposalTypes,
+      ...missingTypes.map((type) => [type, _.get(this, type.slice(1))]),
     ]);
 
-    registry.register(
-      '/cosmos.feegrant.v1beta1.BasicAllowance',
-      cosmos.feegrant.v1beta1.BasicAllowance
-    );
-    registry.register(
-      '/cosmos.feegrant.v1beta1.PeriodicAllowance',
-      cosmos.feegrant.v1beta1.PeriodicAllowance
-    );
-    registry.register(
-      '/ibc.lightclients.tendermint.v1.Header',
-      ibc.lightclients.tendermint.v1.Header
-    );
-    registry.register(
-      '/cosmos.feegrant.v1beta1.AllowedContractAllowance',
-      cosmos.feegrant.v1beta1.AllowedContractAllowance
-    );
-    registry.register(
-      '/cosmos.vesting.v1beta1.MsgCreatePeriodicVestingAccount',
-      cosmos.vesting.v1beta1.MsgCreatePeriodicVestingAccount
-    );
-    registry.register(
-      '/cosmos.gov.v1beta1.MsgSubmitProposal',
-      cosmos.gov.v1beta1.MsgSubmitProposal
-    );
     this.registry = registry;
   }
 
