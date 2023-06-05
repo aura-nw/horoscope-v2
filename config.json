@@ -96,5 +96,13 @@
   },
   "dashboardStatistics": {
     "millisecondCrawl": 10000
+  },
+  "feegrant": {
+    "updateFeegrant": {
+      "millisecondRepeatJob": 2000,
+      "limitPerBatch": 2000
+    },
+    "millisecondRepeatJob": 2000,
+    "key": "feegrant"
   }
 }
