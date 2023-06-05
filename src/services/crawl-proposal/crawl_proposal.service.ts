@@ -23,12 +23,8 @@ import {
   IAuraJSClientFactory,
   SERVICE,
 } from '../../common';
-import {
-  BlockCheckpoint,
-  Proposal,
-  EventAttribute,
-  ITally,
-} from '../../models';
+import { BlockCheckpoint, Proposal, EventAttribute } from '../../models';
+import Utils from '../../common/utils/utils';
 
 @Service({
   name: SERVICE.V1.CrawlProposalService.key,
@@ -69,10 +65,6 @@ export default class CrawlProposalService extends BullableService {
       .andWhere('block_height', '<=', endHeight)
       .andWhere('key', EventAttribute.ATTRIBUTE_KEY.PROPOSAL_ID)
       .select('value');
-    this.logger.info(
-      `Result get Tx from height ${startHeight} to ${endHeight}:`
-    );
-    this.logger.info(JSON.stringify(resultTx));
 
     if (resultTx.length > 0)
       proposalIds = Array.from(
@@ -94,12 +86,6 @@ export default class CrawlProposalService extends BullableService {
                   await this._lcdClient.auranw.cosmos.gov.v1beta1.proposal({
                     proposalId,
                   });
-
-                this.logger.info(
-                  `Proposal ${proposalId} content: ${JSON.stringify(
-                    proposal.proposal.content
-                  )}`
-                );
 
                 const foundProposal: Proposal | undefined =
                   listProposalsInDb.find(
@@ -141,7 +127,11 @@ export default class CrawlProposalService extends BullableService {
               .returning('proposal_id')
               .transacting(trx)
               .catch((error) => {
-                this.logger.error('Error insert or update proposals');
+                this.logger.error(
+                  `Error insert or update proposals: ${JSON.stringify(
+                    listProposals
+                  )}`
+                );
                 this.logger.error(error);
               });
         }
@@ -173,7 +163,6 @@ export default class CrawlProposalService extends BullableService {
     const endedProposals = await Proposal.query()
       .where('status', Proposal.STATUS.PROPOSAL_STATUS_VOTING_PERIOD)
       .andWhere('voting_end_time', '<=', current10SecsAgo);
-    this.logger.info(`List ended proposals: ${JSON.stringify(endedProposals)}`);
 
     endedProposals.forEach((proposal: Proposal) => {
       const request: QueryProposalRequest = {
@@ -215,8 +204,9 @@ export default class CrawlProposalService extends BullableService {
               onchainPro?.proposal?.status
           ) || '';
         proposal.total_deposit = onchainPro?.proposal?.totalDeposit || [];
-        proposal.tally = onchainPro?.proposal
-          ?.finalTallyResult as unknown as ITally;
+        proposal.tally = Utils.camelizeKeys(
+          onchainPro.proposal?.finalTallyResult
+        );
       }
     });
 
@@ -227,7 +217,11 @@ export default class CrawlProposalService extends BullableService {
         .merge()
         .returning('proposal_id')
         .catch((error) => {
-          this.logger.error('Error update status for ended proposals');
+          this.logger.error(
+            `Error update status for ended proposals: ${JSON.stringify(
+              endedProposals
+            )}`
+          );
           this.logger.error(error);
         });
   }
@@ -247,9 +241,6 @@ export default class CrawlProposalService extends BullableService {
     const depositProposals = await Proposal.query()
       .where('status', Proposal.STATUS.PROPOSAL_STATUS_DEPOSIT_PERIOD)
       .andWhere('deposit_end_time', '<=', current10SecsAgo);
-    this.logger.info(
-      `List not enough deposit proposals: ${JSON.stringify(depositProposals)}`
-    );
 
     depositProposals.forEach((proposal: Proposal) => {
       const request: QueryProposalRequest = {
@@ -297,7 +288,9 @@ export default class CrawlProposalService extends BullableService {
         .returning('proposal_id')
         .catch((error) => {
           this.logger.error(
-            'Error update status for not enough deposit proposals'
+            `Error update status for not enough deposit proposals: ${JSON.stringify(
+              depositProposals
+            )}`
           );
           this.logger.error(error);
         });

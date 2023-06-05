@@ -13,40 +13,49 @@ export default class AuraRegistry {
 
   private _logger: LoggerInstance;
 
+  public cosmos: any;
+
+  public ibc: any;
+
   constructor(logger: LoggerInstance) {
     this._logger = logger;
+    this.cosmos = cosmos;
+    this.ibc = ibc;
     this.setDefaultRegistry();
   }
 
   // set default registry to decode msg
   public setDefaultRegistry() {
+    const missingTypes = [
+      // content proposal
+      '/cosmos.gov.v1beta1.MsgSubmitProposal',
+      '/cosmos.upgrade.v1beta1.SoftwareUpgradeProposal',
+      '/cosmos.upgrade.v1beta1.CancelSoftwareUpgradeProposal',
+      '/cosmos.distribution.v1beta1.CommunityPoolSpendProposal',
+      '/cosmos.distribution.v1beta1.CommunityPoolSpendProposalWithDeposit',
+      '/cosmos.params.v1beta1.ParameterChangeProposal',
+      '/ibc.core.client.v1.UpgradeProposal',
+      '/ibc.core.client.v1.ClientUpdateProposal',
+      '/cosmos.params.v1beta1.ParameterChangeProposal',
+
+      // feegrant
+      '/cosmos.feegrant.v1beta1.BasicAllowance',
+      '/cosmos.feegrant.v1beta1.PeriodicAllowance',
+      '/cosmos.feegrant.v1beta1.AllowedContractAllowance',
+      '/cosmos.vesting.v1beta1.MsgCreatePeriodicVestingAccount',
+
+      // ibc header
+      '/ibc.lightclients.tendermint.v1.Header',
+    ];
+
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const registry = new Registry([...defaultStargateTypes, ...wasmTypes]);
-    registry.register(
-      '/cosmos.feegrant.v1beta1.BasicAllowance',
-      cosmos.feegrant.v1beta1.BasicAllowance
-    );
-    registry.register(
-      '/cosmos.feegrant.v1beta1.PeriodicAllowance',
-      cosmos.feegrant.v1beta1.PeriodicAllowance
-    );
-    registry.register(
-      '/ibc.lightclients.tendermint.v1.Header',
-      ibc.lightclients.tendermint.v1.Header
-    );
-    registry.register(
-      '/cosmos.feegrant.v1beta1.AllowedContractAllowance',
-      cosmos.feegrant.v1beta1.AllowedContractAllowance
-    );
-    registry.register(
-      '/cosmos.vesting.v1beta1.MsgCreatePeriodicVestingAccount',
-      cosmos.vesting.v1beta1.MsgCreatePeriodicVestingAccount
-    );
-    registry.register(
-      '/cosmos.gov.v1beta1.MsgSubmitProposal',
-      cosmos.gov.v1beta1.MsgSubmitProposal
-    );
+    const registry = new Registry([
+      ...defaultStargateTypes,
+      ...wasmTypes,
+      ...missingTypes.map((type) => [type, _.get(this, type.slice(1))]),
+    ]);
+
     this.registry = registry;
   }
 
@@ -120,6 +129,47 @@ export default class AuraRegistry {
           );
         } catch (error) {
           this._logger.error('This msg ibc acknowledgement is not valid JSON');
+        }
+      } else if (msg.typeUrl === MSG_TYPE.MSG_GRANT_ALLOWANCE) {
+        if (result.allowance?.value && result.allowance?.typeUrl) {
+          // find type header in registry
+          const allowanceType = this.registry.lookupType(
+            result.allowance?.typeUrl
+          ) as TsProtoGeneratedType;
+
+          // decode header if found type
+          if (allowanceType) {
+            const decoded = allowanceType.decode(
+              fromBase64(result.allowance?.value)
+            );
+            const jsonObjDecoded: any = allowanceType.toJSON(decoded);
+            result.allowance = {
+              '@type': result.allowance.typeUrl,
+              ...jsonObjDecoded,
+            };
+          } else {
+            const decodedBase64 = toBase64(result.allowance?.value);
+            this._logger.info(decodedBase64);
+            result.value = decodedBase64;
+            this._logger.error('This feegrant allowance is not supported');
+            this._logger.error(result.allowance?.typeUrl);
+          }
+        }
+      } else if (msg.typeUrl === MSG_TYPE.MSG_SUBMIT_PROPOSAL) {
+        const proposalType = this.registry.lookupType(
+          result.content?.typeUrl
+        ) as TsProtoGeneratedType;
+        if (proposalType) {
+          const decoded = proposalType.decode(
+            fromBase64(result.content?.value)
+          );
+          const jsonObjDecoded: any = proposalType.toJSON(decoded);
+          result.content = {
+            '@type': result.content.typeUrl,
+            ...jsonObjDecoded,
+          };
+        } else {
+          this._logger.error('This proposal content type is not supported');
         }
       }
     }

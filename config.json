@@ -3,6 +3,7 @@
   "networkPrefixAddress": "aura",
   "consensusPrefixAddress": "valcons",
   "validatorPrefixAddress": "valoper",
+  "networkDenom": "utaura",
   "jobRetryAttempt": 5,
   "jobRetryBackoff": 1000,
   "crawlValidator": {
@@ -10,8 +11,9 @@
     "queryPageLimit": 100
   },
   "cw721": {
-    "blocksPerBatch": 100,
-    "millisecondRepeatJob": 5000,
+    "key": "cw721",
+    "blocksPerCall": 100,
+    "millisecondRepeatJob": 2000,
     "startBlock": 0,
     "millisecondRepeatJobMedia": 10000,
     "mediaPerBatch": 10
@@ -50,6 +52,9 @@
   "crawlTallyProposal": {
     "millisecondCrawl": 10000
   },
+  "countVoteProposal": {
+    "millisecondCrawl": 5000
+  },
   "handleStakeEvent": {
     "key": "handleStakeEvent",
     "millisecondCrawl": 5000,
@@ -61,6 +66,7 @@
     "blocksPerCall": 100
   },
   "handleAuthzTx": {
+    "key": "handleAuthzTx",
     "blocksPerCall": 100,
     "millisecondCrawl": 5000
   },
@@ -90,7 +96,11 @@
     "key": "cw20"
   },
   "crawlContractEvent": {
-    "blocksPerBatch": 100,
-    "millisecondRepeatJob": 5000
+    "key": "crawlContractEvent",
+    "blocksPerCall": 100,
+    "millisecondRepeatJob": 2000
+  },
+  "dashboardStatistics": {
+    "millisecondCrawl": 10000
   }
 }

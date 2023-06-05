@@ -1,5 +1,6 @@
 export const REDIS_KEY = {
   IBC_DENOM: 'ibc_denom',
+  DASHBOARD_STATISTICS: 'dashboard_statistics',
 };
 
 export const URL_TYPE_CONSTANTS = {
@@ -34,6 +35,7 @@ export const BULL_JOB_NAME = {
   HANDLE_CW721_TRANSACTION: 'handle:cw721-tx',
   CRAWL_PROPOSAL: 'crawl:proposal',
   CRAWL_TALLY_PROPOSAL: 'crawl:tally-proposal',
+  COUNT_VOTE_PROPOSAL: 'handle:count-vote-proposal',
   HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL: 'handle:not-enough-deposit-proposal',
   HANDLE_ENDED_PROPOSAL: 'handle:ended-proposal',
   CRAWL_GENESIS: 'crawl:genesis',
@@ -50,6 +52,7 @@ export const BULL_JOB_NAME = {
   FILTER_TOKEN_MEDIA_UNPROCESS: 'filter:cw721-token-media-unprocess',
   HANDLE_CW721_TOKEN_MEDIA: 'handle:cw721-token-media',
   HANDLE_CW20: 'handle:cw20',
+  HANDLE_DASHBOARD_STATISTICS: 'handle:dashboard-statistics',
 };
 
 export const SERVICE = {
@@ -89,6 +92,10 @@ export const SERVICE = {
     CrawlTallyProposalService: {
       name: 'v1.CrawlTallyProposalService',
       key: 'CrawlTallyProposalService',
+    },
+    CountVoteProposalService: {
+      name: 'v1.CountVoteProposalService',
+      key: 'CountVoteProposalService',
     },
     HandleStakeEventService: {
       key: 'HandleStakeEventService',
@@ -131,6 +138,10 @@ export const SERVICE = {
         key: 'CrawlContractEventService',
         name: 'v1.CrawlContractEventService',
       },
+      CrawlMissingContract: {
+        key: 'CrawlMissingContract',
+        path: 'v1.CrawlSmartContractService.CrawlMissingContract',
+      },
     },
     HandleAuthzTx: {
       key: 'HandleAuthzTxService',
@@ -147,6 +158,10 @@ export const SERVICE = {
     Cw20: {
       key: 'Cw20Service',
       name: 'v1.Cw20Service',
+    },
+    DashboardStatisticsService: {
+      key: 'DashboardStatisticsService',
+      name: 'v1.DashboardStatisticsService',
     },
   },
 };
@@ -177,6 +192,7 @@ export const MSG_TYPE = {
   MSG_AUTHZ_EXEC: '/cosmos.authz.v1beta1.MsgExec',
   MSG_VOTE: '/cosmos.gov.v1beta1.MsgVote',
   MSG_ACKNOWLEDGEMENT: '/ibc.core.channel.v1.MsgAcknowledgement',
+  MSG_GRANT_ALLOWANCE: '/cosmos.feegrant.v1beta1.MsgGrantAllowance',
 };
 
 export const ABCI_QUERY_PATH = {
