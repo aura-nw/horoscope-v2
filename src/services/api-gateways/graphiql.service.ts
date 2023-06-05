@@ -47,12 +47,23 @@ export default class GraphiQLService extends BaseService {
       message: '',
       data: null,
     };
-    if ((query.match(/{/g) || []).length > config.graphiqlApi.depthLimit + 1) {
-      result = {
-        code: 'ERROR',
-        message: 'The query depth must not be greater than 3',
-        data: query,
-      };
+    let openBrackets = 0;
+    let isWhere = false;
+    for (let i = 0; i < query.length; i += 1) {
+      if (query.charAt(i) === '(') isWhere = true;
+      else if (query.charAt(i) === ')') isWhere = false;
+
+      if (query.charAt(i) === '{' && !isWhere) openBrackets += 1;
+      else if (query.charAt(i) === '}' && !isWhere) openBrackets -= 1;
+
+      if (openBrackets > config.graphiqlApi.depthLimit + 2) {
+        result = {
+          code: 'ERROR',
+          message: 'The query depth must not be greater than 3',
+          data: query,
+        };
+        return result;
+      }
     }
 
     try {
