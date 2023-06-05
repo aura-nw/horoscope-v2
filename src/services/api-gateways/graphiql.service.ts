@@ -11,8 +11,8 @@ import config from '../../../config.json' assert { type: 'json' };
   version: 1,
   settings: {
     rateLimit: {
-      window: 60 * 1000,
-      limit: 30,
+      window: config.graphiqlApi.rateLimitWindow,
+      limit: config.graphiqlApi.rateLimitQuery,
       headers: true,
       key: (req: any) =>
         req.headers['x-forwarded-for'] ||
