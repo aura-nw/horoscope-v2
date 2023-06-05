@@ -1,0 +1,10 @@
+{
+  "CW20": ["crates.io:cw20-base"],
+  "CW721": [
+    "crates.io:cw721-base",
+    "crates.io:cw721-metadata-onchain",
+    "crates.io:cw721-fixed-price",
+    "crates.io:cw2981-royalties"
+  ],
+  "CW4973": ["crates.io:cw4973"]
+}
