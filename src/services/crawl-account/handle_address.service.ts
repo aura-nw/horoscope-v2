@@ -115,18 +115,14 @@ export default class HandleAddressService extends BullableService {
     });
 
     if (accounts.length > 0)
-      await Promise.all(
-        _.chunk(accounts, config.crawlGenesis.accountsPerBatch).map(
-          async (chunkAccounts) => {
-            await Account.query().insert(chunkAccounts).transacting(trx);
-          }
-        )
-      ).catch((error) => {
-        this.logger.error(
-          `Error insert new account: ${JSON.stringify(accounts)}`
-        );
-        this.logger.error(error);
-      });
+      await trx
+        .batchInsert('account', accounts, config.crawlGenesis.accountsPerBatch)
+        .catch((error) => {
+          this.logger.error(
+            `Error insert new account: ${JSON.stringify(accounts)}`
+          );
+          this.logger.error(error);
+        });
 
     await this.broker.call(SERVICE.V1.CrawlAccountService.UpdateAccount.path, {
       addresses,
