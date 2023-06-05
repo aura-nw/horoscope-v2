@@ -52,6 +52,8 @@ export const BULL_JOB_NAME = {
   FILTER_TOKEN_MEDIA_UNPROCESS: 'filter:cw721-token-media-unprocess',
   HANDLE_CW721_TOKEN_MEDIA: 'handle:cw721-token-media',
   HANDLE_DASHBOARD_STATISTICS: 'handle:dashboard-statistics',
+  UPDATE_FEEGRANT: 'update:feegrant',
+  HANDLE_FEEGRANT: 'handle:feegrant',
 };
 
 export const SERVICE = {
@@ -158,6 +160,16 @@ export const SERVICE = {
       key: 'DashboardStatisticsService',
       name: 'v1.DashboardStatisticsService',
     },
+    Feegrant: {
+      HandleFeegrantHistoryService: {
+        key: 'HandleFeegrantHistoryService',
+        path: 'v1.Feegrant.HandleFeegrantHistoryService',
+      },
+      UpdateFeegrantService: {
+        key: 'UpdateFeegrantService',
+        path: 'v1.Feegrant.UpdateFeegrantService',
+      },
+    },
   },
 };
 
@@ -188,6 +200,8 @@ export const MSG_TYPE = {
   MSG_VOTE: '/cosmos.gov.v1beta1.MsgVote',
   MSG_ACKNOWLEDGEMENT: '/ibc.core.channel.v1.MsgAcknowledgement',
   MSG_GRANT_ALLOWANCE: '/cosmos.feegrant.v1beta1.MsgGrantAllowance',
+  MSG_FEEGRANT_GRANT: '/cosmos.feegrant.v1beta1.MsgGrantAllowance',
+  MSG_FEEGRANT_REVOKE: '/cosmos.feegrant.v1beta1.MsgRevokeAllowance',
 };
 
 export const ABCI_QUERY_PATH = {
