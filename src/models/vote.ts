@@ -13,6 +13,8 @@ export class Vote extends BaseModel {
 
   tx_id!: number;
 
+  [key: string]: any;
+
   static get tableName() {
     return 'vote';
   }
@@ -36,6 +38,16 @@ export class Vote extends BaseModel {
         height: { type: 'number' },
         tx_id: { type: 'number' },
       },
+    };
+  }
+
+  static get VOTE_OPTION() {
+    return {
+      VOTE_OPTION_UNSPECIFIED: 'VOTE_OPTION_UNSPECIFIED',
+      VOTE_OPTION_YES: 'VOTE_OPTION_YES',
+      VOTE_OPTION_ABSTAIN: 'VOTE_OPTION_ABSTAIN',
+      VOTE_OPTION_NO: 'VOTE_OPTION_NO',
+      VOTE_OPTION_NO_WITH_VETO: 'VOTE_OPTION_NO_WITH_VETO',
     };
   }
 }

@@ -63,10 +63,6 @@ export default class HandleStakeEventService extends BullableService {
       .andWhere('transaction.height', '>', startHeight)
       .andWhere('transaction.height', '<=', endHeight)
       .andWhere('transaction.code', 0);
-    this.logger.info(
-      `Result get Tx from height ${startHeight} to ${endHeight}:`
-    );
-    this.logger.info(JSON.stringify(resultTx));
 
     if (resultTx.length > 0) stakeTxs.push(...resultTx);
 
@@ -82,7 +78,6 @@ export default class HandleStakeEventService extends BullableService {
             event.key === EventAttribute.ATTRIBUTE_KEY.SOURCE_VALIDATOR)
       )
       .forEach((stakeEvent) => {
-        this.logger.info(`Handle event stake ${JSON.stringify(stakeEvent)}`);
         try {
           const stakeEvents = stakeTxs.filter(
             (tx) => tx.event_id === stakeEvent.event_id
@@ -151,7 +146,9 @@ export default class HandleStakeEventService extends BullableService {
 
           powerEvents.push(powerEvent);
         } catch (error) {
-          this.logger.error('Error create power event');
+          this.logger.error(
+            `Error create power event: ${JSON.stringify(stakeEvent)}`
+          );
           this.logger.error(error);
         }
       });
@@ -162,7 +159,11 @@ export default class HandleStakeEventService extends BullableService {
           .insert(powerEvents)
           .transacting(trx)
           .catch((error) => {
-            this.logger.error("Error insert validator's power events");
+            this.logger.error(
+              `Error insert validator's power events: ${JSON.stringify(
+                powerEvents
+              )}`
+            );
             this.logger.error(error);
           });
 
