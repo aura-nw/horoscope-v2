@@ -30,7 +30,7 @@ export default class FeegrantHistory extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['granter', 'grantee', 'tx_id', 'timestamp'],
+      required: ['granter', 'grantee', 'tx_id', 'action'],
       properties: {
         granter: { type: 'string' },
         grantee: { type: 'string' },
