@@ -21,7 +21,7 @@
     "chainId": "aura-testnet-2",
     "RPC": ["https://rpc.dev.aura.network"],
     "LCD": ["https://lcd.dev.aura.network"],
-    "databaseName": "horoscope_dev_auratestnet"
+    "databaseName": "horoscope_dev_auratestnet1"
   },
   {
     "chainId": "aura-testnet",

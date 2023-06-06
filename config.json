@@ -101,7 +101,7 @@
   "feegrant": {
     "updateFeegrant": {
       "millisecondRepeatJob": 2000,
-      "limitPerBatch": 2000
+      "limitPerCall": 2000
     },
     "millisecondRepeatJob": 2000,
     "key": "feegrant"
