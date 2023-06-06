@@ -97,5 +97,14 @@
   },
   "dashboardStatistics": {
     "millisecondCrawl": 10000
+  },
+  "crawlIbcConnection": {
+    "key": "crawlIbcConnection",
+    "millisecondCrawl": 5000,
+    "queryPageLimit": 10
+  },
+  "crawlIbcChannel": {
+    "key": "crawlIbcChannel",
+    "queryPageLimit": 10
   }
 }

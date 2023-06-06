@@ -94,5 +94,14 @@
     "key": "crawlContractEvent",
     "blocksPerCall": 100,
     "millisecondRepeatJob": 2000
+  },
+  "crawlIbcConnection": {
+    "key": "crawlIbcConnection",
+    "millisecondCrawl": 5000,
+    "queryPageLimit": 10
+  },
+  "crawlIbcChannel": {
+    "key": "crawlIbcChannel",
+    "queryPageLimit": 10
   }
 }

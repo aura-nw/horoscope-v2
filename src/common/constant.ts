@@ -52,6 +52,8 @@ export const BULL_JOB_NAME = {
   FILTER_TOKEN_MEDIA_UNPROCESS: 'filter:cw721-token-media-unprocess',
   HANDLE_CW721_TOKEN_MEDIA: 'handle:cw721-token-media',
   HANDLE_DASHBOARD_STATISTICS: 'handle:dashboard-statistics',
+  CRAWL_IBC_CONNECTION: 'crawl:ibc-connection',
+  CRAWL_IBC_CHANNEL: 'crawl:ibc-channel',
 };
 
 export const SERVICE = {
@@ -157,6 +159,10 @@ export const SERVICE = {
     DashboardStatisticsService: {
       key: 'DashboardStatisticsService',
       name: 'v1.DashboardStatisticsService',
+    },
+    CrawlIBCService: {
+      key: 'CrawlIBCService',
+      name: 'v1.CrawlIBCService',
     },
   },
 };
