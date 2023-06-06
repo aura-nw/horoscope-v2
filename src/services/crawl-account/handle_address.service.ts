@@ -50,11 +50,7 @@ export default class HandleAddressService extends BullableService {
 
     const eventAddresses: string[] = [];
     const resultTx = await EventAttribute.query()
-      .whereIn('key', [
-        EventAttribute.ATTRIBUTE_KEY.RECEIVER,
-        EventAttribute.ATTRIBUTE_KEY.SPENDER,
-        EventAttribute.ATTRIBUTE_KEY.SENDER,
-      ])
+      .where('value', 'like', 'aura%')
       .andWhere('block_height', '>', startHeight)
       .andWhere('block_height', '<=', endHeight)
       .select('value');
@@ -64,8 +60,14 @@ export default class HandleAddressService extends BullableService {
 
     const addresses = Array.from(
       new Set(
-        eventAddresses.filter((addr: string) =>
-          Utils.isValidAccountAddress(addr, config.networkPrefixAddress, 20)
+        eventAddresses.filter(
+          (addr: string) =>
+            Utils.isValidAccountAddress(
+              addr,
+              config.networkPrefixAddress,
+              20
+            ) ||
+            Utils.isValidAccountAddress(addr, config.networkPrefixAddress, 32)
         )
       )
     );
