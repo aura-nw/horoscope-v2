@@ -66,6 +66,7 @@
     "blocksPerCall": 100
   },
   "handleAuthzTx": {
+    "key": "handleAuthzTx",
     "blocksPerCall": 100,
     "millisecondCrawl": 5000
   },
@@ -104,5 +105,11 @@
     },
     "millisecondRepeatJob": 2000,
     "key": "feegrant"
+  },
+  "graphiqlApi": {
+    "hasuraGraphQL": "https://indexer-v2.dev.aurascan.io/v1/graphql",
+    "depthLimit": 3,
+    "rateLimitWindow": 60000,
+    "rateLimitQuery": 30
   }
 }

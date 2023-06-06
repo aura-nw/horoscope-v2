@@ -111,8 +111,6 @@ export default class HandleTxVoteServiceTest {
       height: 4279350,
       timestamp: '2023-04-17T03:44:41.000Z',
     });
-
-    await this.handleAuthzTxServive?.initEnv();
     await this.handleAuthzTxServive?.handleJob();
 
     await this.handleVoteTxService?.initEnv();
