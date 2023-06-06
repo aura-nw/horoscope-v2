@@ -7,6 +7,7 @@ import { toBase64, fromUtf8, fromBase64 } from '@cosmjs/encoding';
 import { LoggerInstance } from 'moleculer';
 import _ from 'lodash';
 import { MSG_TYPE } from '../../common';
+import Utils from '../../common/utils/utils';
 
 export default class AuraRegistry {
   public registry!: Registry;
@@ -60,7 +61,7 @@ export default class AuraRegistry {
   }
 
   public decodeMsg(msg: any): any {
-    const result: any = {};
+    let result: any = {};
     if (!msg) {
       return;
     }
@@ -76,9 +77,22 @@ export default class AuraRegistry {
         this._logger.error('This typeUrl is not supported');
         this._logger.error(msg.typeUrl);
       } else {
-        const decoded: any = msgType.toJSON(this.registry.decode(msg));
+        // Utils.isBase64();
+        const decoded: any = msgType.toJSON(
+          this.registry.decode({
+            typeUrl: msg.typeUrl,
+            value: Utils.isBase64(msg.value)
+              ? fromBase64(msg.value)
+              : msg.value,
+          })
+        );
         Object.keys(decoded).forEach((key) => {
-          result[key] = decoded[key];
+          if (decoded[key].typeUrl && decoded[key].value) {
+            const resultRecursive = this.decodeMsg(decoded[key]);
+            result[key] = resultRecursive;
+          } else {
+            result[key] = decoded[key];
+          }
         });
       }
 
@@ -172,6 +186,8 @@ export default class AuraRegistry {
           this._logger.error('This proposal content type is not supported');
         }
       }
+    } else {
+      result = msg;
     }
 
     // eslint-disable-next-line consistent-return
