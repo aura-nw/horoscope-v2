@@ -23,12 +23,8 @@ import {
   IAuraJSClientFactory,
   SERVICE,
 } from '../../common';
-import {
-  BlockCheckpoint,
-  Proposal,
-  EventAttribute,
-  ITally,
-} from '../../models';
+import { BlockCheckpoint, Proposal, EventAttribute } from '../../models';
+import Utils from '../../common/utils/utils';
 
 @Service({
   name: SERVICE.V1.CrawlProposalService.key,
@@ -208,8 +204,9 @@ export default class CrawlProposalService extends BullableService {
               onchainPro?.proposal?.status
           ) || '';
         proposal.total_deposit = onchainPro?.proposal?.totalDeposit || [];
-        proposal.tally = onchainPro?.proposal
-          ?.finalTallyResult as unknown as ITally;
+        proposal.tally = Utils.camelizeKeys(
+          onchainPro.proposal?.finalTallyResult
+        );
       }
     });
 

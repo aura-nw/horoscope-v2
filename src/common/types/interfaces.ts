@@ -76,3 +76,9 @@ export interface IInstantiateContracts {
 export interface IContextInstantiateContracts {
   contracts: IInstantiateContracts[];
 }
+
+export interface IContextGraphQLQuery {
+  operationName: string;
+  query: string;
+  variables: any;
+}
