@@ -2,6 +2,7 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import Long from 'long';
+// import { ibc, cosmos } from '@aura-nw/aurajs';
 import { fromBase64 } from '@cosmjs/encoding';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };

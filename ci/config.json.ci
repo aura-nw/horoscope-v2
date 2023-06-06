@@ -113,5 +113,14 @@
     "depthLimit": 3,
     "rateLimitWindow": 60000,
     "rateLimitQuery": 30
+  },
+  "crawlIbcConnection": {
+    "key": "crawlIbcConnection",
+    "millisecondCrawl": 5000,
+    "queryPageLimit": 10
+  },
+  "crawlIbcChannel": {
+    "key": "crawlIbcChannel",
+    "queryPageLimit": 10
   }
 }
