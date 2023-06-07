@@ -63,9 +63,11 @@ export default class HandleAuthzTxService extends BullableService {
     });
     await knex.transaction(async (trx) => {
       if (listSubTxAuthz.length > 0) {
-        await TransactionMessage.query()
-          .insert(listSubTxAuthz)
-          .transacting(trx);
+        await trx.batchInsert(
+          'transaction_message',
+          listSubTxAuthz,
+          config.handleAuthzTx.messagesPerBatch
+        );
       }
 
       if (blockCheckpoint) {

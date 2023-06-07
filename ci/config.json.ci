@@ -67,6 +67,7 @@
   },
   "handleAuthzTx": {
     "key": "handleAuthzTx",
+    "messagesPerBatch": 3000,
     "blocksPerCall": 100,
     "millisecondCrawl": 5000
   },
