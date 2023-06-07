@@ -109,6 +109,10 @@ export default class CrawlProposalService extends BullableService {
                   proposalEntity.status = proposal.proposal.status;
                   proposalEntity.total_deposit =
                     proposal.proposal.total_deposit;
+                  proposalEntity.voting_start_time =
+                    proposal.proposal.voting_start_time;
+                  proposalEntity.voting_end_time =
+                    proposal.proposal.voting_end_time;
                 }
 
                 listProposals.push(proposalEntity);
