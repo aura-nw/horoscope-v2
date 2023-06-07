@@ -23,6 +23,8 @@ export default class FeegrantHistory extends BaseModel {
 
   denom?: string;
 
+  processed?: boolean;
+
   static get tableName() {
     return 'feegrant_history';
   }

@@ -70,7 +70,7 @@ export default class HandleFeegrantHistoryService extends BullableService {
     const [startBlock, endBlock, updateBlockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.HANDLE_FEEGRANT,
-        [BULL_JOB_NAME.CRAWL_TRANSACTION],
+        [BULL_JOB_NAME.HANDLE_TRANSACTION],
         config.feegrant.key
       );
     this.logger.info(`startBlock: ${startBlock} to endBlock: ${endBlock}`);
@@ -95,6 +95,9 @@ export default class HandleFeegrantHistoryService extends BullableService {
           denom: createEvent.denom,
         })
       );
+      if (newFeegrants.length > 0) {
+        await Feegrant.query().insert(newFeegrants).transacting(trx);
+      }
       const newHistories = feegrantEvents.map((feegrantEvent) =>
         FeegrantHistory.fromJson({
           tx_id: feegrantEvent.tx_id,
@@ -105,16 +108,25 @@ export default class HandleFeegrantHistoryService extends BullableService {
           denom: feegrantEvent.denom,
         })
       );
+      if (newHistories.length > 0) {
+        this.logger.info(
+          feegrantEvents.map((feegrantEvent) => ({
+            tx_id: feegrantEvent.tx_id,
+            action: feegrantEvent.action,
+            amount: feegrantEvent.amount,
+            granter: feegrantEvent.granter,
+            grantee: feegrantEvent.grantee,
+            denom: feegrantEvent.denom,
+          }))
+        );
+        await FeegrantHistory.query().insert(newHistories).transacting(trx);
+      }
       updateBlockCheckpoint.height = endBlock;
-      await Promise.all([
-        Feegrant.query().insert(newFeegrants).transacting(trx),
-        FeegrantHistory.query().insert(newHistories).transacting(trx),
-        BlockCheckpoint.query()
-          .insert(updateBlockCheckpoint)
-          .onConflict('job_name')
-          .merge()
-          .transacting(trx),
-      ]);
+      await BlockCheckpoint.query()
+        .insert(updateBlockCheckpoint)
+        .onConflict('job_name')
+        .merge()
+        .transacting(trx);
     });
   }
 
@@ -246,25 +258,25 @@ export default class HandleFeegrantHistoryService extends BullableService {
     let spendLimit;
     let denom;
     let basicAllowance = message.allowance;
-    let type = null;
-    if (basicAllowance['@type']) {
-      while (
-        basicAllowance['@type'] !== ALLOWANCE_TYPE.BASIC_ALLOWANCE &&
-        basicAllowance['@type'] !== ALLOWANCE_TYPE.PERIODIC_ALLOWANCE
-      ) {
-        basicAllowance = basicAllowance.allowance;
-      }
-      type = basicAllowance['@type'];
-      if (basicAllowance['@type'] === ALLOWANCE_TYPE.PERIODIC_ALLOWANCE) {
-        basicAllowance = basicAllowance.basic;
-      }
-      if (basicAllowance.spend_limit.length > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        spendLimit = basicAllowance.spend_limit[0].amount; // need upgrade
-        denom = basicAllowance.spend_limit[0].denom;
-      }
-    } else {
-      type = basicAllowance.type_url;
+    let type = basicAllowance['@type']
+      ? basicAllowance['@type']
+      : basicAllowance.type_url;
+    while (
+      type !== ALLOWANCE_TYPE.BASIC_ALLOWANCE &&
+      type !== ALLOWANCE_TYPE.PERIODIC_ALLOWANCE
+    ) {
+      basicAllowance = basicAllowance.allowance;
+      type = basicAllowance['@type']
+        ? basicAllowance['@type']
+        : basicAllowance.type_url;
+    }
+    if (type === ALLOWANCE_TYPE.PERIODIC_ALLOWANCE) {
+      basicAllowance = basicAllowance.basic;
+    }
+    if (basicAllowance.spend_limit && basicAllowance.spend_limit.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      spendLimit = basicAllowance.spend_limit[0].amount; // need upgrade
+      denom = basicAllowance.spend_limit[0].denom;
     }
     if (!type) throw new Error('Cannot detect feegrant type');
     return {
