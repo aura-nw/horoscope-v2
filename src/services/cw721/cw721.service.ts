@@ -28,9 +28,9 @@ const { NODE_ENV } = Config;
 
 interface IContractInfoAndMinter {
   address: string;
-  name: string;
-  symbol: string;
-  minter: string;
+  name?: string;
+  symbol?: string;
+  minter?: string;
 }
 
 const CW721_ACTION = {
@@ -437,24 +437,36 @@ export default class Cw721HandlerService extends BullableService {
       promisesMinter
     );
     for (let index = 0; index < resultsContractsInfo.length; index += 1) {
-      const contractInfo = JSON.parse(
-        fromUtf8(
-          cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
-            fromBase64(resultsContractsInfo[index].result.response.value)
-          ).data
-        )
-      );
-      const { minter }: { minter: string } = JSON.parse(
-        fromUtf8(
-          cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
-            fromBase64(resultsMinters[index].result.response.value)
-          ).data
-        )
-      );
+      let contractInfo;
+      let minter;
+      try {
+        contractInfo = JSON.parse(
+          fromUtf8(
+            cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
+              fromBase64(resultsContractsInfo[index].result.response.value)
+            ).data
+          )
+        );
+      } catch {
+        this.logger.error(
+          `${contractAddresses[index]} not find contract info `
+        );
+      }
+      try {
+        minter = JSON.parse(
+          fromUtf8(
+            cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
+              fromBase64(resultsMinters[index].result.response.value)
+            ).data
+          )
+        ).minter;
+      } catch {
+        this.logger.error(`${contractAddresses[index]} not find minter `);
+      }
       contractsInfo.push({
         address: contractAddresses[index],
-        name: contractInfo.name as string,
-        symbol: contractInfo.symbol as string,
+        name: contractInfo?.name,
+        symbol: contractInfo?.symbol,
         minter,
       });
     }
