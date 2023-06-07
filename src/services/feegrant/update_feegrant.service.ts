@@ -40,7 +40,7 @@ export default class UpdateFeegrantService extends BullableService {
   async jobHandler(): Promise<void> {
     const unprocessFeegrantHistories = await FeegrantHistory.query()
       .where({
-        feegrant_id: null,
+        processed: false,
       })
       .limit(config.feegrant.updateFeegrant.limitPerCall);
     if (unprocessFeegrantHistories.length > 0) {
@@ -83,12 +83,18 @@ export default class UpdateFeegrantService extends BullableService {
                 .where({ id: e.id })
                 .patch({
                   feegrant_id: originalFeegrant.id,
+                  processed: true,
                 })
                 .transacting(trx)
             );
           } else {
-            throw new Error(
-              `feegrant event ${e.id} couldn't find out its original feegrant`
+            queriesUpdateOriginal.push(
+              FeegrantHistory.query()
+                .where({ id: e.id })
+                .patch({
+                  processed: true,
+                })
+                .transacting(trx)
             );
           }
         });
