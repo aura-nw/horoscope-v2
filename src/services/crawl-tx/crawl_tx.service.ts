@@ -209,7 +209,7 @@ export default class CrawlTxService extends BullableService {
   async _handleListTx(listTx: any, timestamp: string, height: number) {
     this.logger.debug(listTx);
     const listTxModel: any[] = [];
-    listTx.forEach((tx: any) => {
+    listTx.forEach((tx: any, indexTx: number) => {
       this.logger.debug(tx, timestamp);
       let sender = '';
       try {
@@ -252,7 +252,7 @@ export default class CrawlTxService extends BullableService {
       this.setMsgIndexToEvent(tx);
 
       const txInsert = {
-        '#id': 'transaction',
+        '#id': `transaction-${indexTx}`,
         ...Transaction.fromJson({
           index: tx.tx_response.index,
           height: parseInt(tx.tx_response.height, 10),
@@ -271,7 +271,7 @@ export default class CrawlTxService extends BullableService {
           tx_msg_index: event.msg_index ?? undefined,
           type: event.type,
           attributes: event.attributes.map((attribute: any, index: number) => ({
-            tx_id: '#ref{transaction.id}',
+            tx_id: `#ref{transaction-${indexTx}.id}`,
             block_height: parseInt(tx.tx_response.height, 10),
             index,
             composite_key: attribute?.key
