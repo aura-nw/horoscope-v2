@@ -43,6 +43,7 @@ export default class AuraRegistry {
       '/cosmos.feegrant.v1beta1.BasicAllowance',
       '/cosmos.feegrant.v1beta1.PeriodicAllowance',
       '/cosmos.feegrant.v1beta1.AllowedContractAllowance',
+      '/cosmos.feegrant.v1beta1.AllowedMsgAllowance',
       '/cosmos.vesting.v1beta1.MsgCreatePeriodicVestingAccount',
 
       // ibc header
