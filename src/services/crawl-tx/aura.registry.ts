@@ -7,6 +7,7 @@ import { toBase64, fromUtf8, fromBase64 } from '@cosmjs/encoding';
 import { LoggerInstance } from 'moleculer';
 import _ from 'lodash';
 import { MSG_TYPE } from '../../common';
+import Utils from '../../common/utils/utils';
 
 export default class AuraRegistry {
   public registry!: Registry;
@@ -60,7 +61,7 @@ export default class AuraRegistry {
   }
 
   public decodeMsg(msg: any): any {
-    const result: any = {};
+    let result: any = {};
     if (!msg) {
       return;
     }
@@ -76,9 +77,22 @@ export default class AuraRegistry {
         this._logger.error('This typeUrl is not supported');
         this._logger.error(msg.typeUrl);
       } else {
-        const decoded: any = msgType.toJSON(this.registry.decode(msg));
+        // Utils.isBase64();
+        const decoded: any = msgType.toJSON(
+          this.registry.decode({
+            typeUrl: msg.typeUrl,
+            value: Utils.isBase64(msg.value)
+              ? fromBase64(msg.value)
+              : msg.value,
+          })
+        );
         Object.keys(decoded).forEach((key) => {
-          result[key] = decoded[key];
+          if (decoded[key].typeUrl && decoded[key].value) {
+            const resultRecursive = this.decodeMsg(decoded[key]);
+            result[key] = resultRecursive;
+          } else {
+            result[key] = decoded[key];
+          }
         });
       }
 
@@ -95,31 +109,7 @@ export default class AuraRegistry {
             this._logger.error('This msg instantite/execute is not valid JSON');
           }
         }
-      } else if (msg.typeUrl === MSG_TYPE.MSG_UPDATE_CLIENT) {
-        if (result.header?.value && result.header?.typeUrl) {
-          // find type header in registry
-          const headerType = this.registry.lookupType(
-            result.header?.typeUrl
-          ) as TsProtoGeneratedType;
-
-          // decode header if found type
-          if (headerType) {
-            const decoded = headerType.decode(fromBase64(result.header?.value));
-            const jsonObjDecoded: any = headerType.toJSON(decoded);
-            result.header = {
-              '@type': result.header.typeUrl,
-              ...jsonObjDecoded,
-            };
-          } else {
-            const decodedBase64 = toBase64(result.header?.value);
-            this._logger.info(decodedBase64);
-            result.value = decodedBase64;
-            this._logger.error('This header is not supported');
-            this._logger.error(result.header?.typeUrl);
-          }
-        }
       } else if (msg.typeUrl === MSG_TYPE.MSG_ACKNOWLEDGEMENT) {
-        // Object.assign(result, this.decodeIbcAck(result));
         try {
           result.packet.data = JSON.parse(
             fromUtf8(fromBase64(result.packet.data))
@@ -130,48 +120,9 @@ export default class AuraRegistry {
         } catch (error) {
           this._logger.error('This msg ibc acknowledgement is not valid JSON');
         }
-      } else if (msg.typeUrl === MSG_TYPE.MSG_GRANT_ALLOWANCE) {
-        if (result.allowance?.value && result.allowance?.typeUrl) {
-          // find type header in registry
-          const allowanceType = this.registry.lookupType(
-            result.allowance?.typeUrl
-          ) as TsProtoGeneratedType;
-
-          // decode header if found type
-          if (allowanceType) {
-            const decoded = allowanceType.decode(
-              fromBase64(result.allowance?.value)
-            );
-            const jsonObjDecoded: any = allowanceType.toJSON(decoded);
-            result.allowance = {
-              '@type': result.allowance.typeUrl,
-              ...jsonObjDecoded,
-            };
-          } else {
-            const decodedBase64 = toBase64(result.allowance?.value);
-            this._logger.info(decodedBase64);
-            result.value = decodedBase64;
-            this._logger.error('This feegrant allowance is not supported');
-            this._logger.error(result.allowance?.typeUrl);
-          }
-        }
-      } else if (msg.typeUrl === MSG_TYPE.MSG_SUBMIT_PROPOSAL) {
-        const proposalType = this.registry.lookupType(
-          result.content?.typeUrl
-        ) as TsProtoGeneratedType;
-        if (proposalType) {
-          const decoded = proposalType.decode(
-            fromBase64(result.content?.value)
-          );
-          const jsonObjDecoded: any = proposalType.toJSON(decoded);
-          result.content = {
-            '@type': result.content.typeUrl,
-            ...jsonObjDecoded,
-          };
-        } else {
-          this._logger.error('This proposal content type is not supported');
-        }
       }
+    } else {
+      result = msg;
     }
 
     // eslint-disable-next-line consistent-return
