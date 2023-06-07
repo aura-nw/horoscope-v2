@@ -209,8 +209,6 @@ export default class Cw20Service extends BullableService {
           })
         )
       );
-    });
-    contractAddresses.forEach((address: string) => {
       promisesMinter.push(
         this._httpBatchClient.execute(
           createJsonRpcRequest('abci_query', {
@@ -226,8 +224,6 @@ export default class Cw20Service extends BullableService {
           })
         )
       );
-    });
-    contractAddresses.forEach((address: string) => {
       promisesMarketingInfo.push(
         this._httpBatchClient.execute(
           createJsonRpcRequest('abci_query', {
@@ -329,7 +325,7 @@ export default class Cw20Service extends BullableService {
         accounts.forEach((account: string) => {
           holders.push({
             address: account,
-            amount: 'Nan',
+            amount: '',
             contract_address: contractAddress,
           });
         });
@@ -366,7 +362,7 @@ export default class Cw20Service extends BullableService {
       promiseHeight,
     ]);
     holders.forEach((holder, index) => {
-      const { balance } = JSON.parse(
+      const { balance }: { balance: string } = JSON.parse(
         fromUtf8(
           cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
             fromBase64(result[index].result.response.value)
