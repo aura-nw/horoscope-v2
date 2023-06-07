@@ -109,31 +109,7 @@ export default class AuraRegistry {
             this._logger.error('This msg instantite/execute is not valid JSON');
           }
         }
-      } else if (msg.typeUrl === MSG_TYPE.MSG_UPDATE_CLIENT) {
-        if (result.header?.value && result.header?.typeUrl) {
-          // find type header in registry
-          const headerType = this.registry.lookupType(
-            result.header?.typeUrl
-          ) as TsProtoGeneratedType;
-
-          // decode header if found type
-          if (headerType) {
-            const decoded = headerType.decode(fromBase64(result.header?.value));
-            const jsonObjDecoded: any = headerType.toJSON(decoded);
-            result.header = {
-              '@type': result.header.typeUrl,
-              ...jsonObjDecoded,
-            };
-          } else {
-            const decodedBase64 = toBase64(result.header?.value);
-            this._logger.info(decodedBase64);
-            result.value = decodedBase64;
-            this._logger.error('This header is not supported');
-            this._logger.error(result.header?.typeUrl);
-          }
-        }
       } else if (msg.typeUrl === MSG_TYPE.MSG_ACKNOWLEDGEMENT) {
-        // Object.assign(result, this.decodeIbcAck(result));
         try {
           result.packet.data = JSON.parse(
             fromUtf8(fromBase64(result.packet.data))
@@ -143,47 +119,6 @@ export default class AuraRegistry {
           );
         } catch (error) {
           this._logger.error('This msg ibc acknowledgement is not valid JSON');
-        }
-      } else if (msg.typeUrl === MSG_TYPE.MSG_GRANT_ALLOWANCE) {
-        if (result.allowance?.value && result.allowance?.typeUrl) {
-          // find type header in registry
-          const allowanceType = this.registry.lookupType(
-            result.allowance?.typeUrl
-          ) as TsProtoGeneratedType;
-
-          // decode header if found type
-          if (allowanceType) {
-            const decoded = allowanceType.decode(
-              fromBase64(result.allowance?.value)
-            );
-            const jsonObjDecoded: any = allowanceType.toJSON(decoded);
-            result.allowance = {
-              '@type': result.allowance.typeUrl,
-              ...jsonObjDecoded,
-            };
-          } else {
-            const decodedBase64 = toBase64(result.allowance?.value);
-            this._logger.info(decodedBase64);
-            result.value = decodedBase64;
-            this._logger.error('This feegrant allowance is not supported');
-            this._logger.error(result.allowance?.typeUrl);
-          }
-        }
-      } else if (msg.typeUrl === MSG_TYPE.MSG_SUBMIT_PROPOSAL) {
-        const proposalType = this.registry.lookupType(
-          result.content?.typeUrl
-        ) as TsProtoGeneratedType;
-        if (proposalType) {
-          const decoded = proposalType.decode(
-            fromBase64(result.content?.value)
-          );
-          const jsonObjDecoded: any = proposalType.toJSON(decoded);
-          result.content = {
-            '@type': result.content.typeUrl,
-            ...jsonObjDecoded,
-          };
-        } else {
-          this._logger.error('This proposal content type is not supported');
         }
       }
     } else {
