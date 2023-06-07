@@ -106,5 +106,9 @@
   "crawlIbcChannel": {
     "key": "crawlIbcChannel",
     "queryPageLimit": 10
+  },
+  "crawlIbcClient": {
+    "key": "crawlIbcClient",
+    "queryPageLimit": 10
   }
 }

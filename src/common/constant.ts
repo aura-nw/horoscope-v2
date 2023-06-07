@@ -54,6 +54,7 @@ export const BULL_JOB_NAME = {
   HANDLE_DASHBOARD_STATISTICS: 'handle:dashboard-statistics',
   CRAWL_IBC_CONNECTION: 'crawl:ibc-connection',
   CRAWL_IBC_CHANNEL: 'crawl:ibc-channel',
+  CRAWL_IBC_CLIENT: 'crawl:ibc-client',
 };
 
 export const SERVICE = {

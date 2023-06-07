@@ -17,6 +17,8 @@ export class IbcChannel extends BaseModel {
 
   height!: any;
 
+  connection_id!: string;
+
   static get tableName() {
     return 'ibc_channel';
   }
