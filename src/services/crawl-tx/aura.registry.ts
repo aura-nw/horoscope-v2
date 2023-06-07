@@ -88,7 +88,7 @@ export default class AuraRegistry {
           })
         );
         Object.keys(decoded).forEach((key) => {
-          if (decoded[key].typeUrl && decoded[key].value) {
+          if (decoded[key].typeUrl) {
             const resultRecursive = this.decodeMsg(decoded[key]);
             result[key] = resultRecursive;
           } else {
