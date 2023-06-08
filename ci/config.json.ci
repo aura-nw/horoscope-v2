@@ -95,15 +95,6 @@
     "blocksPerCall": 100,
     "millisecondRepeatJob": 2000
   },
-  "crawlIbcConnection": {
-    "key": "crawlIbcConnection",
-    "millisecondCrawl": 60000,
-    "queryPageLimit": 10
-  },
-  "crawlIbcChannel": {
-    "key": "crawlIbcChannel",
-    "queryPageLimit": 10
-  },
   "dashboardStatistics": {
     "millisecondCrawl": 10000
   },

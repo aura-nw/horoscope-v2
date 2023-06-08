@@ -98,15 +98,6 @@
   "dashboardStatistics": {
     "millisecondCrawl": 10000
   },
-  "crawlIbcConnection": {
-    "key": "crawlIbcConnection",
-    "millisecondCrawl": 60000,
-    "queryPageLimit": 10
-  },
-  "crawlIbcChannel": {
-    "key": "crawlIbcChannel",
-    "queryPageLimit": 10
-  },
   "graphiqlApi": {
     "hasuraRole": "internal_service",
     "hasuraGraphQL": "https://indexer-v2.dev.aurascan.io/v1/graphql",
