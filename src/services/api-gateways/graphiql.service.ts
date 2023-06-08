@@ -74,9 +74,8 @@ export default class GraphiQLService extends BaseService {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
-          'x-hasura-admin-secret': Config.HASURA_SECRET,
-          // Authorization: `Bearer ${Config.HASURA_JWT}`,
-          // 'X-Hasura-Role': config.graphiqlApi.hasuraRole,
+          Authorization: `Bearer ${Config.HASURA_JWT}`,
+          'X-Hasura-Role': config.graphiqlApi.hasuraRole,
         },
         data: ctx.params,
       });
