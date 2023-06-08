@@ -12,7 +12,7 @@ export async function up(knex: Knex): Promise<void> {
     table.increments();
     table.string('connection_id').unique().index();
     table.string('client_id').index();
-    table.jsonb('version');
+    table.jsonb('versions');
     table.string('state');
     table.jsonb('counterparty');
     table.string('delay_period');
@@ -24,7 +24,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('state');
     table.string('ordering');
     table.jsonb('counterparty');
-    table.jsonb('connection_hops');
+    table.specificType('connection_hops', 'text[]');
     table.string('version');
     table.string('port_id');
     table.string('channel_id').unique().index();

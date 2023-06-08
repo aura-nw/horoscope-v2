@@ -100,15 +100,11 @@
   },
   "crawlIbcConnection": {
     "key": "crawlIbcConnection",
-    "millisecondCrawl": 5000,
+    "millisecondCrawl": 60000,
     "queryPageLimit": 10
   },
   "crawlIbcChannel": {
     "key": "crawlIbcChannel",
-    "queryPageLimit": 10
-  },
-  "crawlIbcClient": {
-    "key": "crawlIbcClient",
     "queryPageLimit": 10
   }
 }

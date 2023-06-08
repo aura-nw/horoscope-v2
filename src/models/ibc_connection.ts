@@ -5,7 +5,7 @@ export class IbcConnection extends BaseModel {
 
   client_id!: string;
 
-  version!: any;
+  versions!: any;
 
   state!: string;
 
@@ -25,7 +25,6 @@ export class IbcConnection extends BaseModel {
       required: [
         'connection_id',
         'client_id',
-        'version',
         'state',
         'counterparty',
         'delay_period',

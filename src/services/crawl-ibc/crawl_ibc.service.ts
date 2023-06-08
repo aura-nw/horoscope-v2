@@ -2,7 +2,6 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import Long from 'long';
-// import { ibc, cosmos } from '@aura-nw/aurajs';
 import { fromBase64 } from '@cosmjs/encoding';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
@@ -13,7 +12,7 @@ import {
   SERVICE,
   getLcdClient,
 } from '../../common';
-import { IbcChannel, IbcClient } from '../../models';
+import { IbcChannel, IbcClient, IbcConnection } from '../../models';
 
 @Service({
   name: SERVICE.V1.CrawlIBCService.key,
@@ -32,6 +31,7 @@ export default class CrawlIBCService extends BullableService {
     jobName: BULL_JOB_NAME.CRAWL_IBC_CONNECTION,
   })
   public async crawlIbcConnection() {
+    this.logger.info('Crawling IBC connection');
     const connections: any[] = [];
     let done = false;
     const pagination: IPagination = {
@@ -56,39 +56,51 @@ export default class CrawlIBCService extends BullableService {
       }
     }
 
-    this.logger.info('list connection: ');
-    this.logger.info(connections);
+    this.logger.debug('list connection: ');
+    this.logger.debug(connections);
 
-    connections.forEach((connection: any) => {
-      this.createJob(
-        BULL_JOB_NAME.CRAWL_IBC_CLIENT,
-        BULL_JOB_NAME.CRAWL_IBC_CLIENT,
-        { clientId: connection.client_id },
-        {
-          removeOnComplete: true,
-          removeOnFail: { count: 3 },
-          jobId: connection.clientId,
-        }
-      );
+    // crawl ibc client by client_id
+    await Promise.all(
+      connections.map((connection: any) =>
+        this.crawlIbcClient({ clientId: connection.client_id })
+      )
+    );
+    const connectionPushDB: any[] = connections.map((connection: any) =>
+      IbcConnection.fromJson({
+        connection_id: connection.id,
+        client_id: connection.client_id,
+        versions: JSON.stringify(connection.versions),
+        state: connection.state,
+        counterparty: connection.counterparty,
+        delay_period: connection.delay_period,
+        height: connection.height,
+      })
+    );
 
-      this.createJob(
-        BULL_JOB_NAME.CRAWL_IBC_CHANNEL,
-        BULL_JOB_NAME.CRAWL_IBC_CHANNEL,
-        { connectionId: connection.id },
-        {
-          removeOnComplete: true,
-          removeOnFail: { count: 3 },
-          jobId: connection.id,
-        }
+    if (connectionPushDB.length > 0) {
+      // insert connection ibc
+      await IbcConnection.query()
+        .insert(connectionPushDB)
+        .onConflict('connection_id')
+        .merge()
+        .catch((err) => {
+          this.logger.error(err);
+        });
+
+      // crawl ibc channel by connection_id
+      await Promise.all(
+        connections.map((connection) =>
+          this.crawlIbcChannel({ connectionId: connection.id })
+        )
       );
-    });
+    }
   }
 
-  @QueueHandler({
-    queueName: BULL_JOB_NAME.CRAWL_IBC_CHANNEL,
-    jobName: BULL_JOB_NAME.CRAWL_IBC_CHANNEL,
-  })
   public async crawlIbcChannel(_payload: { connectionId: string }) {
+    this.logger.info(
+      'Crawl IBC channel by connection_id',
+      _payload.connectionId
+    );
     let done = false;
     const pagination: IPagination = {
       limit: Long.fromInt(config.crawlIbcChannel.queryPageLimit),
@@ -111,11 +123,11 @@ export default class CrawlIBCService extends BullableService {
         pagination.key = fromBase64(resultCallApi.pagination.next_key);
       }
     }
-    this.logger.info(
+    this.logger.debug(
       'list channel associate with connection : ',
       _payload.connectionId
     );
-    this.logger.info(channels);
+    this.logger.debug(channels);
     const ibcChannels = channels.map((channel: any) =>
       IbcChannel.fromJson({
         connection_id: _payload.connectionId,
@@ -129,39 +141,49 @@ export default class CrawlIBCService extends BullableService {
         height: channel.height,
       })
     );
-    await IbcChannel.query()
-      .insert(ibcChannels)
-      .onConflict('channel_id')
-      .merge();
+    if (ibcChannels.length > 0) {
+      await IbcChannel.query()
+        .insert(ibcChannels)
+        .onConflict('channel_id')
+        .merge()
+        .catch((err) => {
+          this.logger.error(err);
+        });
+    }
   }
 
-  @QueueHandler({
-    queueName: BULL_JOB_NAME.CRAWL_IBC_CLIENT,
-    jobName: BULL_JOB_NAME.CRAWL_IBC_CLIENT,
-  })
   public async crawlIbcClient(_payload: { clientId: string }) {
-    const clientState =
-      await this._lcdClient.ibc.ibc.core.client.v1.clientState({
+    this.logger.info('Crawling IBC client', _payload.clientId);
+    const [clientState, clientStatus] = await Promise.all([
+      this._lcdClient.ibc.ibc.core.client.v1.clientState({
         clientId: _payload.clientId,
-      });
-    const clientStatus =
-      await this._lcdClient.ibc.ibc.core.client.v1.clientStatus({
+      }),
+      this._lcdClient.ibc.ibc.core.client.v1.clientStatus({
         clientId: _payload.clientId,
-      });
+      }),
+    ]);
 
-    this.logger.info('client state: ');
-    this.logger.info(clientState);
-    this.logger.info('client status: ');
-    this.logger.info(clientStatus);
+    this.logger.debug('client state: ');
+    this.logger.debug(clientState);
+    this.logger.debug('client status: ');
+    this.logger.debug(clientStatus);
 
     const ibcClient = IbcClient.fromJson({
       client_id: _payload.clientId,
-      counterparty_chain_id: clientState.chain_id,
+      counterparty_chain_id: clientState.client_state.chain_id,
       client_state: clientState,
-      client_status: clientStatus.status,
+      status: clientStatus.status,
     });
 
-    await IbcClient.query().insert(ibcClient).onConflict('client_id').merge();
+    if (ibcClient) {
+      await IbcClient.query()
+        .insert(ibcClient)
+        .onConflict('client_id')
+        .merge()
+        .catch((err) => {
+          this.logger.error(err);
+        });
+    }
   }
 
   public async _start() {
