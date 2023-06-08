@@ -5,6 +5,7 @@ import BaseService from '../../base/base.service';
 import { IContextGraphQLQuery, Config } from '../../common';
 import { ResponseDto } from '../../common/types/response-api';
 import config from '../../../config.json' assert { type: 'json' };
+import { ErrorCode, ErrorMessage } from '../../common/types/errors';
 
 @Service({
   name: 'graphiql',
@@ -58,30 +59,33 @@ export default class GraphiQLService extends BaseService {
 
       if (openBrackets > config.graphiqlApi.depthLimit + 2) {
         result = {
-          code: 'ERROR',
-          message: 'The query depth must not be greater than 3',
-          data: query,
+          code: ErrorCode.WRONG,
+          message: ErrorMessage.VALIDATION_ERROR,
+          data: 'The query depth must not be greater than 3',
         };
         return result;
       }
     }
 
     try {
-      const data = await axios({
+      const response = await axios({
         url: config.graphiqlApi.hasuraGraphQL,
         method: 'POST',
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${Config.HASURA_JWT}`,
-          'X-Hasura-Role': config.graphiqlApi.hasuraRole,
+          'x-hasura-admin-secret': Config.HASURA_SECRET,
+          // Authorization: `Bearer ${Config.HASURA_JWT}`,
+          // 'X-Hasura-Role': config.graphiqlApi.hasuraRole,
         },
         data: ctx.params,
       });
       result = {
-        code: 'SUCCESSFUL',
-        message: 'Successful',
-        data: data.data,
+        code: response.data.data ? ErrorCode.SUCCESSFUL : ErrorCode.BAD_REQUEST,
+        message: response.data.data
+          ? ErrorMessage.SUCCESSFUL
+          : ErrorMessage.BAD_REQUEST,
+        data: response.data.data ?? response.data,
       };
     } catch (error) {
       this.logger.error('Error execute GraphQL query');
