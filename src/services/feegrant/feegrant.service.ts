@@ -86,38 +86,44 @@ export default class HandleFeegrantHistoryService extends BullableService {
       const newFeegrants = createEvents.map((createEvent) =>
         Feegrant.fromJson({
           init_tx_id: createEvent.tx_id,
-          granter: createEvent.granter,
-          grantee: createEvent.grantee,
-          type: createEvent.type,
-          expiration: createEvent.expiration,
-          status: createEvent.status,
-          spend_limit: createEvent.spend_limit,
-          denom: createEvent.denom,
+          ..._.pick(createEvent, [
+            'granter',
+            'grantee',
+            'type',
+            'expiration',
+            'status',
+            'spend_limit',
+            'denom',
+          ]),
         })
       );
       if (newFeegrants.length > 0) {
         await Feegrant.query().insert(newFeegrants).transacting(trx);
       }
       const newHistories = feegrantEvents.map((feegrantEvent) =>
-        FeegrantHistory.fromJson({
-          tx_id: feegrantEvent.tx_id,
-          action: feegrantEvent.action,
-          amount: feegrantEvent.amount,
-          granter: feegrantEvent.granter,
-          grantee: feegrantEvent.grantee,
-          denom: feegrantEvent.denom,
-        })
+        FeegrantHistory.fromJson(
+          _.pick(feegrantEvent, [
+            'tx_id',
+            'action',
+            'amount',
+            'granter',
+            'grantee',
+            'denom',
+          ])
+        )
       );
       if (newHistories.length > 0) {
         this.logger.info(
-          feegrantEvents.map((feegrantEvent) => ({
-            tx_id: feegrantEvent.tx_id,
-            action: feegrantEvent.action,
-            amount: feegrantEvent.amount,
-            granter: feegrantEvent.granter,
-            grantee: feegrantEvent.grantee,
-            denom: feegrantEvent.denom,
-          }))
+          feegrantEvents.map((feegrantEvent) => (
+            _.pick(feegrantEvent, [
+              'tx_id',
+              'action',
+              'amount',
+              'granter',
+              'grantee',
+              'denom',
+            ])
+          ))
         );
         await FeegrantHistory.query().insert(newHistories).transacting(trx);
       }
@@ -189,10 +195,6 @@ export default class HandleFeegrantHistoryService extends BullableService {
           // eslint-disable-next-line @typescript-eslint/naming-convention
           const { type, spend_limit, denom, expiration } =
             this.getCreateFeegrantInfo(message);
-          if (feegrantEvent.transaction.code !== 0)
-            throw new Error(
-              `create feegrant fail at tx id: ${feegrantEvent.transaction.id}`
-            );
           formatedFeegrantEvents.push({
             tx_id: feegrantEvent.transaction.id,
             action: FEEGRANT_ACTION.CREATE,
@@ -258,17 +260,13 @@ export default class HandleFeegrantHistoryService extends BullableService {
     let spendLimit;
     let denom;
     let basicAllowance = message.allowance;
-    let type = basicAllowance['@type']
-      ? basicAllowance['@type']
-      : basicAllowance.type_url;
+    let type = basicAllowance['@type'];
     while (
       type !== ALLOWANCE_TYPE.BASIC_ALLOWANCE &&
       type !== ALLOWANCE_TYPE.PERIODIC_ALLOWANCE
     ) {
       basicAllowance = basicAllowance.allowance;
-      type = basicAllowance['@type']
-        ? basicAllowance['@type']
-        : basicAllowance.type_url;
+      type = basicAllowance['@type'];
     }
     if (type === ALLOWANCE_TYPE.PERIODIC_ALLOWANCE) {
       basicAllowance = basicAllowance.basic;
