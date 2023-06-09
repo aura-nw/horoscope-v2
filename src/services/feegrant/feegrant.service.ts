@@ -34,24 +34,6 @@ export const FEEGRANT_STATUS = {
   FAIL: 'Fail',
 };
 
-interface IFeegrantEvent {
-  tx_id: number;
-  feegrant_id?: number;
-  action: string;
-  granter: string;
-  grantee: string;
-  amount?: string;
-  denom?: string;
-}
-
-interface IFeegrantCreateEvent extends IFeegrantEvent {
-  type: string;
-  spend_limit?: string;
-  denom?: string;
-  expiration?: Date;
-  status: string;
-}
-
 @Service({
   name: SERVICE.V1.Feegrant.HandleFeegrantHistoryService.key,
   version: 1,
@@ -75,56 +57,15 @@ export default class HandleFeegrantHistoryService extends BullableService {
       );
     this.logger.info(`startBlock: ${startBlock} to endBlock: ${endBlock}`);
     if (startBlock >= endBlock) return;
-    const feegrantEvents: IFeegrantEvent[] = await this.getFeegrantEvents(
+    const { newFeegrants, newHistories } = await this.getFeegrantEvents(
       startBlock,
       endBlock
     );
     await knex.transaction(async (trx) => {
-      const createEvents: IFeegrantCreateEvent[] = feegrantEvents.filter(
-        (event) => event.action === FEEGRANT_ACTION.CREATE
-      ) as IFeegrantCreateEvent[];
-      const newFeegrants = createEvents.map((createEvent) =>
-        Feegrant.fromJson({
-          init_tx_id: createEvent.tx_id,
-          ..._.pick(createEvent, [
-            'granter',
-            'grantee',
-            'type',
-            'expiration',
-            'status',
-            'spend_limit',
-            'denom',
-          ]),
-        })
-      );
       if (newFeegrants.length > 0) {
         await Feegrant.query().insert(newFeegrants).transacting(trx);
       }
-      const newHistories = feegrantEvents.map((feegrantEvent) =>
-        FeegrantHistory.fromJson(
-          _.pick(feegrantEvent, [
-            'tx_id',
-            'action',
-            'amount',
-            'granter',
-            'grantee',
-            'denom',
-          ])
-        )
-      );
       if (newHistories.length > 0) {
-        this.logger.info(
-          feegrantEvents.map((feegrantEvent) => (
-            _.pick(feegrantEvent, [
-              'tx_id',
-              'action',
-              'amount',
-              'granter',
-              'grantee',
-              'denom',
-            ])
-          ))
-        );
         await FeegrantHistory.query().insert(newHistories).transacting(trx);
       }
       updateBlockCheckpoint.height = endBlock;
@@ -137,7 +78,8 @@ export default class HandleFeegrantHistoryService extends BullableService {
   }
 
   async getFeegrantEvents(startBlock: number, endBlock: number) {
-    const formatedFeegrantEvents: any[] = [];
+    const newHistories: FeegrantHistory[] = [];
+    const newFeegrants: Feegrant[] = [];
     const feegrantEvents = await Event.query()
       .alias('event')
       .withGraphJoined(
@@ -167,20 +109,22 @@ export default class HandleFeegrantHistoryService extends BullableService {
         if (feegrantEvent.transaction.fee) {
           const fee: { amount: string; denom: string } =
             feegrantEvent.transaction.fee[0];
-          formatedFeegrantEvents.push({
-            tx_id: feegrantEvent.transaction.id,
-            action: FEEGRANT_ACTION.USE,
-            amount: fee.amount,
-            granter: getAttributeFrom(
-              feegrantEvent.attributes,
-              EventAttribute.ATTRIBUTE_KEY.GRANTER
-            ),
-            grantee: getAttributeFrom(
-              feegrantEvent.attributes,
-              EventAttribute.ATTRIBUTE_KEY.GRANTEE
-            ),
-            denom: fee.denom,
-          });
+          newHistories.push(
+            FeegrantHistory.fromJson({
+              tx_id: feegrantEvent.transaction.id,
+              action: FEEGRANT_ACTION.USE,
+              amount: fee.amount,
+              granter: getAttributeFrom(
+                feegrantEvent.attributes,
+                EventAttribute.ATTRIBUTE_KEY.GRANTER
+              ),
+              grantee: getAttributeFrom(
+                feegrantEvent.attributes,
+                EventAttribute.ATTRIBUTE_KEY.GRANTEE
+              ),
+              denom: fee.denom,
+            })
+          );
         } else {
           throw new Error(
             `Transaction ${feegrantEvent.transaction.id} not found fee`
@@ -195,42 +139,60 @@ export default class HandleFeegrantHistoryService extends BullableService {
           // eslint-disable-next-line @typescript-eslint/naming-convention
           const { type, spend_limit, denom, expiration } =
             this.getCreateFeegrantInfo(message);
-          formatedFeegrantEvents.push({
-            tx_id: feegrantEvent.transaction.id,
-            action: FEEGRANT_ACTION.CREATE,
-            granter: getAttributeFrom(
-              feegrantEvent.attributes,
-              EventAttribute.ATTRIBUTE_KEY.GRANTER
-            ),
-            grantee: getAttributeFrom(
-              feegrantEvent.attributes,
-              EventAttribute.ATTRIBUTE_KEY.GRANTEE
-            ),
-            type,
-            amount: spend_limit,
-            spend_limit,
-            denom,
-            expiration,
-            status: FEEGRANT_STATUS.AVAILABLE,
-          } satisfies IFeegrantCreateEvent);
+          newFeegrants.push(
+            Feegrant.fromJson({
+              init_tx_id: feegrantEvent.transaction.id,
+              granter: getAttributeFrom(
+                feegrantEvent.attributes,
+                EventAttribute.ATTRIBUTE_KEY.GRANTER
+              ),
+              grantee: getAttributeFrom(
+                feegrantEvent.attributes,
+                EventAttribute.ATTRIBUTE_KEY.GRANTEE
+              ),
+              type,
+              expiration,
+              status: FEEGRANT_STATUS.AVAILABLE,
+              spend_limit,
+              denom,
+            })
+          );
+          newHistories.push(
+            FeegrantHistory.fromJson({
+              tx_id: feegrantEvent.transaction.id,
+              action: FEEGRANT_ACTION.CREATE,
+              granter: getAttributeFrom(
+                feegrantEvent.attributes,
+                EventAttribute.ATTRIBUTE_KEY.GRANTER
+              ),
+              grantee: getAttributeFrom(
+                feegrantEvent.attributes,
+                EventAttribute.ATTRIBUTE_KEY.GRANTEE
+              ),
+              amount: spend_limit,
+              denom,
+            })
+          );
         }
       } else if (feegrantEvent.type === Event.EVENT_TYPE.REVOKE_FEEGRANT) {
         if (feegrantEvent.tx_msg_index !== null) {
-          formatedFeegrantEvents.push({
-            tx_id: feegrantEvent.transaction.id,
-            action: FEEGRANT_ACTION.REVOKE,
-            granter: getAttributeFrom(
-              feegrantEvent.attributes,
-              EventAttribute.ATTRIBUTE_KEY.GRANTER
-            ),
-            grantee: getAttributeFrom(
-              feegrantEvent.attributes,
-              EventAttribute.ATTRIBUTE_KEY.GRANTEE
-            ),
-          });
+          newHistories.push(
+            FeegrantHistory.fromJson({
+              tx_id: feegrantEvent.transaction.id,
+              action: FEEGRANT_ACTION.REVOKE,
+              granter: getAttributeFrom(
+                feegrantEvent.attributes,
+                EventAttribute.ATTRIBUTE_KEY.GRANTER
+              ),
+              grantee: getAttributeFrom(
+                feegrantEvent.attributes,
+                EventAttribute.ATTRIBUTE_KEY.GRANTEE
+              ),
+            })
+          );
         } else {
-          const index = formatedFeegrantEvents.findIndex(
-            (e: IFeegrantEvent) =>
+          const index = newHistories.findIndex(
+            (e: FeegrantHistory) =>
               e.action === FEEGRANT_ACTION.USE &&
               e.tx_id === feegrantEvent.transaction.id &&
               e.granter ===
@@ -244,11 +206,14 @@ export default class HandleFeegrantHistoryService extends BullableService {
                   EventAttribute.ATTRIBUTE_KEY.GRANTEE
                 )
           );
-          formatedFeegrantEvents[index].action = FEEGRANT_ACTION.USE_UP;
+          newHistories[index].action = FEEGRANT_ACTION.USE_UP;
         }
       }
     });
-    return _.sortBy(formatedFeegrantEvents, ['tx_id']);
+    return {
+      newFeegrants,
+      newHistories: _.sortBy(newHistories, ['tx_id']),
+    };
   }
 
   getCreateFeegrantInfo(message: any): {
@@ -272,7 +237,6 @@ export default class HandleFeegrantHistoryService extends BullableService {
       basicAllowance = basicAllowance.basic;
     }
     if (basicAllowance.spend_limit && basicAllowance.spend_limit.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       spendLimit = basicAllowance.spend_limit[0].amount; // need upgrade
       denom = basicAllowance.spend_limit[0].denom;
     }
