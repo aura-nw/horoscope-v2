@@ -3,8 +3,10 @@ import { BrokerOptions, Errors, MetricRegistry } from 'moleculer';
 import { inspect } from 'util';
 // import pick from 'lodash/pick';
 // import HotReloadMiddleware from './middlewares/HotReloadCHokidar';
+import InterNamespaceMiddleware from './middlewares/internamespace';
 import { Config } from './common';
 import MoleculerRetryableError = Errors.MoleculerRetryableError;
+import networks from '../network.json' assert { type: 'json' };
 
 // TODO: Set default value for common config (TRACING_TYPE ...)
 
@@ -39,7 +41,7 @@ import MoleculerRetryableError = Errors.MoleculerRetryableError;
 
 const brokerConfig: BrokerOptions = {
   // Namespace of nodes to segment your nodes on the same network.
-  namespace: Config.NAMESPACE,
+  namespace: 'abc',
   // Unique node identifier. Must be unique in a namespace.
   nodeID: Config.NODEID,
   // Custom metadata store. Store here what you want. Accessing: `this.broker.metadata`
@@ -248,8 +250,15 @@ const brokerConfig: BrokerOptions = {
   },
 
   // Register custom middlewares
-  // middlewares: [HotReloadMiddleware, ServiceGuard],
-
+  middlewares: [
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    Config.ADD_INTER_NAMESPACE_MIDDLEWARE === 'true'
+      ? InterNamespaceMiddleware(
+          networks.map((network) => network.moleculerNamespace)
+        )
+      : null,
+  ],
   // Register custom REPL commands.
   // replCommands: undefined,
   /*
@@ -260,5 +269,4 @@ const brokerConfig: BrokerOptions = {
           stopped: async (broker: ServiceBroker): Promise<void> => {},
            */
 };
-
 export default brokerConfig;
