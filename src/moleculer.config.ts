@@ -41,7 +41,7 @@ import networks from '../network.json' assert { type: 'json' };
 
 const brokerConfig: BrokerOptions = {
   // Namespace of nodes to segment your nodes on the same network.
-  namespace: 'abc',
+  namespace: Config.NAMESPACE,
   // Unique node identifier. Must be unique in a namespace.
   nodeID: Config.NODEID,
   // Custom metadata store. Store here what you want. Accessing: `this.broker.metadata`
@@ -269,4 +269,5 @@ const brokerConfig: BrokerOptions = {
           stopped: async (broker: ServiceBroker): Promise<void> => {},
            */
 };
+
 export default brokerConfig;
