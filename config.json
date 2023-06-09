@@ -99,6 +99,14 @@
   "dashboardStatistics": {
     "millisecondCrawl": 10000
   },
+  "feegrant": {
+    "updateFeegrant": {
+      "millisecondRepeatJob": 2000,
+      "limitPerCall": 2000
+    },
+    "millisecondRepeatJob": 2000,
+    "key": "feegrant"
+  },
   "graphiqlApi": {
     "hasuraRole": "internal_service",
     "hasuraGraphQL": "https://indexer-v2.dev.aurascan.io/v1/graphql",
