@@ -10,7 +10,6 @@
 import ApiGateway from 'moleculer-web';
 import { ServiceBroker } from 'moleculer';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import _ from 'lodash';
 import BaseService from '../../base/base.service';
 import { bullBoardMixin } from '../../mixins/bullBoard/bullBoard.mixin';
 
