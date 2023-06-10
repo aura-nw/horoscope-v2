@@ -253,7 +253,7 @@ const brokerConfig: BrokerOptions = {
   middlewares: [
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    Config.ADD_INTER_NAMESPACE_MIDDLEWARE === 'true'
+    Config.ADD_INTER_NAMESPACE_MIDDLEWARE
       ? InterNamespaceMiddleware(
           networks.map((network) => network.moleculerNamespace)
         )
