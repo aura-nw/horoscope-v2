@@ -1,3 +1,4 @@
+//FIXME: increase performance for this query.
 import { Knex } from 'knex';
 
 export async function up(knex: Knex): Promise<void> {
