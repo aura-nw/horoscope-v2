@@ -118,6 +118,7 @@
   "crawlIbcChannel": {
     "key": "crawlIbcChannel",
     "queryPageLimit": 10
+  },
   "feegrant": {
     "updateFeegrant": {
       "millisecondRepeatJob": 2000,
