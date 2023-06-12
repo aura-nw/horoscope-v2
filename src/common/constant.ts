@@ -51,6 +51,7 @@ export const BULL_JOB_NAME = {
   CRAWL_CONTRACT_EVENT: 'crawl:contract-event',
   FILTER_TOKEN_MEDIA_UNPROCESS: 'filter:cw721-token-media-unprocess',
   HANDLE_CW721_TOKEN_MEDIA: 'handle:cw721-token-media',
+  HANDLE_CW20: 'handle:cw20',
   HANDLE_DASHBOARD_STATISTICS: 'handle:dashboard-statistics',
   UPDATE_FEEGRANT: 'update:feegrant',
   HANDLE_FEEGRANT: 'handle:feegrant',
@@ -155,6 +156,10 @@ export const SERVICE = {
     CrawlDelegatorsService: {
       key: 'CrawlDelegatorsService',
       name: 'v1.CrawlDelegatorsService',
+    },
+    Cw20: {
+      key: 'Cw20Service',
+      name: 'v1.Cw20Service',
     },
     DashboardStatisticsService: {
       key: 'DashboardStatisticsService',
