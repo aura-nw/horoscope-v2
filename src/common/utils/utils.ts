@@ -71,17 +71,6 @@ export default class Utils {
     return obj;
   }
 
-  public static getDepth(obj: any): number {
-    let depth = 0;
-    if (obj.children) {
-      obj.children.forEach((d: any) => {
-        const tmpDepth = this.getDepth(d);
-        if (tmpDepth > depth) depth = tmpDepth;
-      });
-    }
-    return 1 + depth;
-  }
-
   public static isBase64(text: string): boolean {
     const base64Regex =
       /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/;
