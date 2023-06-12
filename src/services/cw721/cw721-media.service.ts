@@ -294,19 +294,41 @@ export default class Cw721MediaService extends BullableService {
 
   // update s3 media link
   async updateMediaS3(tokenMediaInfo: ITokenMediaInfo) {
-    const mediaImageUrl = await this.uploadMediaToS3(
-      tokenMediaInfo.onchain.metadata.image
-    );
-    tokenMediaInfo.offchain.image.url = mediaImageUrl?.linkS3;
-    tokenMediaInfo.offchain.image.content_type = mediaImageUrl?.contentType;
-    tokenMediaInfo.offchain.image.file_path = mediaImageUrl?.key;
-    const mediaAnimationUrl = await this.uploadMediaToS3(
-      tokenMediaInfo.onchain.metadata.animation_url
-    );
-    tokenMediaInfo.offchain.animation.url = mediaAnimationUrl?.linkS3;
-    tokenMediaInfo.offchain.animation.content_type =
-      mediaAnimationUrl?.contentType;
-    tokenMediaInfo.offchain.animation.file_path = mediaAnimationUrl?.key;
+    try {
+      const mediaImageUrl = await this.uploadMediaToS3(
+        tokenMediaInfo.onchain.metadata.image
+      );
+      tokenMediaInfo.offchain.image.url = mediaImageUrl?.linkS3;
+      tokenMediaInfo.offchain.image.content_type = mediaImageUrl?.contentType;
+      tokenMediaInfo.offchain.image.file_path = mediaImageUrl?.key;
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        tokenMediaInfo.offchain.image.url = undefined;
+        tokenMediaInfo.offchain.image.content_type = undefined;
+        tokenMediaInfo.offchain.image.file_path = undefined;
+      } else {
+        this.logger.error(error);
+        throw error;
+      }
+    }
+    try {
+      const mediaAnimationUrl = await this.uploadMediaToS3(
+        tokenMediaInfo.onchain.metadata.animation_url
+      );
+      tokenMediaInfo.offchain.animation.url = mediaAnimationUrl?.linkS3;
+      tokenMediaInfo.offchain.animation.content_type =
+        mediaAnimationUrl?.contentType;
+      tokenMediaInfo.offchain.animation.file_path = mediaAnimationUrl?.key;
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        tokenMediaInfo.offchain.animation.url = undefined;
+        tokenMediaInfo.offchain.animation.content_type = undefined;
+        tokenMediaInfo.offchain.animation.file_path = undefined;
+      } else {
+        this.logger.error(error);
+        throw error;
+      }
+    }
     return tokenMediaInfo;
   }
 
