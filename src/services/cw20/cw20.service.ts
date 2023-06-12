@@ -123,16 +123,16 @@ export default class Cw20Service extends BullableService {
               minter: contractInfo?.minter,
               marketing_info: contractInfo?.marketing_info,
               name: contractInfo?.name,
-              total_supply: initBalances.holders.reduce(
+              total_supply: initBalances.reduce(
                 (acc: string, curr: { address: string; amount: string }) =>
                   (BigInt(acc) + BigInt(curr.amount)).toString(),
                 '0'
               ),
             }),
-            holders: initBalances.holders.map((e) => ({
+            holders: initBalances.map((e) => ({
               address: e.address,
               amount: e.amount,
-              last_updated_height: initBalances.last_update_height,
+              last_updated_height: e.event_height,
             })),
           };
         })
@@ -275,12 +275,8 @@ export default class Cw20Service extends BullableService {
   // get instantiate balances
   async getInstantiateBalances(
     contractAddress: string
-  ): Promise<{ holders: IHolderEvent[]; last_update_height: number }> {
-    const holders: {
-      address: string;
-      amount: string;
-      contract_address: string;
-    }[] = [];
+  ): Promise<IHolderEvent[]> {
+    const holders: IHolderEvent[] = [];
     // get all owners of cw20 contract
     let startAfter = null;
     do {
@@ -355,14 +351,10 @@ export default class Cw20Service extends BullableService {
       );
       // eslint-disable-next-line no-param-reassign
       holder.amount = balance;
+      // eslint-disable-next-line no-param-reassign
+      holder.event_height = parseInt(result[index].result.response.height, 10);
     });
-    return {
-      holders,
-      last_update_height: parseInt(
-        result[result.length - 1].result.response.last_block_height,
-        10
-      ),
-    };
+    return holders;
   }
 
   async _start(): Promise<void> {
