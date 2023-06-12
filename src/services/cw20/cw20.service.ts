@@ -1,11 +1,5 @@
 import { cosmwasm } from '@aura-nw/aurajs';
-import {
-  fromBase64,
-  fromUtf8,
-  toBase64,
-  toHex,
-  toUtf8,
-} from '@cosmjs/encoding';
+import { fromBase64, fromUtf8, toHex, toUtf8 } from '@cosmjs/encoding';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
@@ -201,9 +195,7 @@ export default class Cw20Service extends BullableService {
             data: toHex(
               cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
                 address,
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                queryData: toBase64(toUtf8('{"token_info":{}}')),
+                queryData: toUtf8('{"token_info":{}}'),
               }).finish()
             ),
           })
@@ -216,9 +208,7 @@ export default class Cw20Service extends BullableService {
             data: toHex(
               cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
                 address,
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                queryData: toBase64(toUtf8('{"minter":{}}')),
+                queryData: toUtf8('{"minter":{}}'),
               }).finish()
             ),
           })
@@ -231,9 +221,7 @@ export default class Cw20Service extends BullableService {
             data: toHex(
               cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
                 address,
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                queryData: toBase64(toUtf8('{"marketing_info":{}}')),
+                queryData: toUtf8('{"marketing_info":{}}'),
               }).finish()
             ),
           })
@@ -276,7 +264,7 @@ export default class Cw20Service extends BullableService {
         address: contractAddresses[index],
         symbol: contractInfo.symbol as string,
         minter,
-        decimal: contractInfo.decimal as number,
+        decimal: contractInfo.decimals as number,
         marketing_info: marketingInfo,
         name: contractInfo.name,
       });
@@ -307,9 +295,7 @@ export default class Cw20Service extends BullableService {
           data: toHex(
             cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
               address: contractAddress,
-              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-              // @ts-ignore
-              queryData: toBase64(toUtf8(query)),
+              queryData: toUtf8(query),
             }).finish()
           ),
         })
@@ -343,10 +329,8 @@ export default class Cw20Service extends BullableService {
             data: toHex(
               cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
                 address: contractAddress,
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                queryData: toBase64(
-                  toUtf8(`{"balance":{"address":"${holder.address}"}}`)
+                queryData: toUtf8(
+                  `{"balance":{"address":"${holder.address}"}}`
                 ),
               }).finish()
             ),
