@@ -108,6 +108,9 @@ export default class ConfigClass {
 
   public ENABLE_LOADBALANCER = process.env.ENABLE_LOADBALANCER || 'true';
 
+  public ADD_INTER_NAMESPACE_MIDDLEWARE =
+    process.env.ADD_INTER_NAMESPACE_MIDDLEWARE || 'false';
+
   // Dynamic property key
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [index: string]: any;
@@ -116,7 +119,7 @@ export default class ConfigClass {
     Object.keys(configObj).forEach((key: string) => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      this[key] = configObj[key];
+      this[key] = getValue(configObj[key]);
     });
     this.NODE_ENV = process.env.NODE_ENV;
     this.NODEID = `${

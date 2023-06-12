@@ -1,4 +1,5 @@
 import { fromBech32 } from '@cosmjs/encoding';
+import _ from 'lodash';
 
 export default class Utils {
   public static isValidAddress(address: string, length = -1) {
@@ -50,5 +51,29 @@ export default class Utils {
       else acc[k] = obj[k];
       return acc;
     }, {});
+  }
+
+  public static camelizeKeys(obj: any): any {
+    if (Array.isArray(obj)) {
+      return obj.map((v: any) => this.camelizeKeys(v));
+    }
+    if (obj != null && obj.constructor === Object) {
+      return Object.keys(obj).reduce(
+        (result, key) => ({
+          ...result,
+          [key === '@type' ? '@type' : _.snakeCase(key)]: this.camelizeKeys(
+            obj[key]
+          ),
+        }),
+        {}
+      );
+    }
+    return obj;
+  }
+
+  public static isBase64(text: string): boolean {
+    const base64Regex =
+      /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/;
+    return base64Regex.test(text);
   }
 }

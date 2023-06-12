@@ -23,12 +23,8 @@ import {
   IAuraJSClientFactory,
   SERVICE,
 } from '../../common';
-import {
-  BlockCheckpoint,
-  Proposal,
-  EventAttribute,
-  ITally,
-} from '../../models';
+import { BlockCheckpoint, Proposal, EventAttribute } from '../../models';
+import Utils from '../../common/utils/utils';
 
 @Service({
   name: SERVICE.V1.CrawlProposalService.key,
@@ -113,6 +109,10 @@ export default class CrawlProposalService extends BullableService {
                   proposalEntity.status = proposal.proposal.status;
                   proposalEntity.total_deposit =
                     proposal.proposal.total_deposit;
+                  proposalEntity.voting_start_time =
+                    proposal.proposal.voting_start_time;
+                  proposalEntity.voting_end_time =
+                    proposal.proposal.voting_end_time;
                 }
 
                 listProposals.push(proposalEntity);
@@ -161,6 +161,7 @@ export default class CrawlProposalService extends BullableService {
   })
   public async handleEndedProposals(_payload: object): Promise<void> {
     const batchQueries: any[] = [];
+    const patchQueries: any[] = [];
 
     const current10SecsAgo = new Date(Date.now() - 10);
 
@@ -201,32 +202,32 @@ export default class CrawlProposalService extends BullableService {
         pro?.proposal?.proposalId.equals(Long.fromInt(proposal.proposal_id))
       );
       if (onchainPro) {
-        proposal.status =
-          Object.keys(cosmos.gov.v1beta1.ProposalStatus).find(
-            (key) =>
-              cosmos.gov.v1beta1.ProposalStatus[key] ===
-              onchainPro?.proposal?.status
-          ) || '';
-        proposal.total_deposit = onchainPro?.proposal?.totalDeposit || [];
-        proposal.tally = onchainPro?.proposal
-          ?.finalTallyResult as unknown as ITally;
+        patchQueries.push(
+          Proposal.query()
+            .where('proposal_id', proposal.proposal_id)
+            .patch({
+              status:
+                Object.keys(cosmos.gov.v1beta1.ProposalStatus).find(
+                  (key) =>
+                    cosmos.gov.v1beta1.ProposalStatus[key] ===
+                    onchainPro?.proposal?.status
+                ) || '',
+              total_deposit: onchainPro?.proposal?.totalDeposit || [],
+              tally: Utils.camelizeKeys(onchainPro.proposal?.finalTallyResult),
+            })
+        );
       }
     });
 
-    if (endedProposals.length > 0)
-      await Proposal.query()
-        .insert(endedProposals)
-        .onConflict('proposal_id')
-        .merge()
-        .returning('proposal_id')
-        .catch((error) => {
-          this.logger.error(
-            `Error update status for ended proposals: ${JSON.stringify(
-              endedProposals
-            )}`
-          );
-          this.logger.error(error);
-        });
+    if (patchQueries.length > 0)
+      await Promise.all(patchQueries).catch((error) => {
+        this.logger.error(
+          `Error update status for ended proposals: ${JSON.stringify(
+            endedProposals
+          )}`
+        );
+        this.logger.error(error);
+      });
   }
 
   @QueueHandler({
@@ -238,6 +239,7 @@ export default class CrawlProposalService extends BullableService {
     _payload: object
   ): Promise<void> {
     const batchQueries: any[] = [];
+    const patchQueries: any[] = [];
 
     const current10SecsAgo = new Date(Date.now() - 10);
 
@@ -279,24 +281,22 @@ export default class CrawlProposalService extends BullableService {
       );
 
       if (!onchainPro)
-        // eslint-disable-next-line no-param-reassign
-        proposal.status = Proposal.STATUS.PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT;
+        patchQueries.push(
+          Proposal.query().where('proposal_id', proposal.proposal_id).patch({
+            status: Proposal.STATUS.PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT,
+          })
+        );
     });
 
-    if (depositProposals.length > 0)
-      await Proposal.query()
-        .insert(depositProposals)
-        .onConflict('proposal_id')
-        .merge()
-        .returning('proposal_id')
-        .catch((error) => {
-          this.logger.error(
-            `Error update status for not enough deposit proposals: ${JSON.stringify(
-              depositProposals
-            )}`
-          );
-          this.logger.error(error);
-        });
+    if (patchQueries.length > 0)
+      await Promise.all(patchQueries).catch((error) => {
+        this.logger.error(
+          `Error update status for not enough deposit proposals: ${JSON.stringify(
+            depositProposals
+          )}`
+        );
+        this.logger.error(error);
+      });
   }
 
   public async _start() {

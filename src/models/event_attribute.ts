@@ -81,5 +81,7 @@ export class EventAttribute extends BaseModel {
     REDELEGATE: 'redelegate',
     UNBOND: 'unbond',
     OWNER: 'owner',
+    GRANTER: 'granter',
+    GRANTEE: 'grantee',
   };
 }
