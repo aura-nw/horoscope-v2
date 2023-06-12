@@ -102,7 +102,8 @@
     "key": "cw20"
   },
   "dashboardStatistics": {
-    "millisecondCrawl": 10000
+    "millisecondCrawl": 10000,
+    "queryPageLimit": 100
   },
   "graphiqlApi": {
     "hasuraRole": "internal_service",
