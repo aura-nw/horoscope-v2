@@ -16,7 +16,8 @@
     "millisecondRepeatJob": 2000,
     "startBlock": 0,
     "millisecondRepeatJobMedia": 10000,
-    "mediaPerBatch": 10
+    "mediaPerBatch": 10,
+    "millisecondRefreshMView": 3600000
   },
   "crawlBlock": {
     "millisecondCrawl": 5000,
