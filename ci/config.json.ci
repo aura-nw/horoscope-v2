@@ -104,9 +104,18 @@
     "millisecondCrawl": 10000
   },
   "graphiqlApi": {
+    "hasuraRole": "internal_service",
     "hasuraGraphQL": "https://indexer-v2.dev.aurascan.io/v1/graphql",
     "depthLimit": 3,
     "rateLimitWindow": 60000,
     "rateLimitQuery": 30
+  },
+  "feegrant": {
+    "updateFeegrant": {
+      "millisecondRepeatJob": 2000,
+      "limitPerCall": 2000
+    },
+    "millisecondRepeatJob": 2000,
+    "key": "feegrant"
   }
 }

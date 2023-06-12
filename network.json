@@ -3,36 +3,48 @@
     "chainId": "xstaxy-1",
     "RPC": ["https://rpc.aura.network"],
     "LCD": ["https://lcd.aura.network"],
-    "databaseName": "local_xstaxy1"
+    "databaseName": "local_xstaxy1",
+    "redisDBNumber": 1,
+    "moleculerNamespace": "namespace-xstaxy"
   },
   {
     "chainId": "euphoria-2",
     "RPC": ["https://rpc.euphoria.aura.network"],
     "LCD": ["https://lcd.euphoria.aura.network"],
-    "databaseName": "local_euphoria1"
+    "databaseName": "local_euphoria1",
+    "redisDBNumber": 2,
+    "moleculerNamespace": "namespace-euphoria"
   },
   {
     "chainId": "serenity-testnet-001",
     "RPC": ["https://rpc.serenity.aura.network"],
     "LCD": ["https://lcd.serenity.aura.network"],
-    "databaseName": "horoscope_dev_serenitytestnet001"
+    "databaseName": "horoscope_dev_serenitytestnet001",
+    "redisDBNumber": 3,
+    "moleculerNamespace": "namespace-serenity"
   },
   {
     "chainId": "aura-testnet-2",
     "RPC": ["https://rpc.dev.aura.network"],
     "LCD": ["https://lcd.dev.aura.network"],
-    "databaseName": "horoscope_dev_auratestnet1"
+    "databaseName": "horoscope_dev_auratestnet1",
+    "redisDBNumber": 4,
+    "moleculerNamespace": "namespace-auratestnet"
   },
   {
     "chainId": "aura-testnet",
     "RPC": ["http://localhost:26657"],
     "LCD": ["http://localhost:1317"],
-    "databaseName": "horoscope_dev_auratestnet1"
+    "databaseName": "horoscope_dev_auratestnet1",
+    "redisDBNumber": 5,
+    "moleculerNamespace": "namespace-auratestnet"
   },
   {
     "chainId": "cosmoshub-4",
     "RPC": ["https://cosmos-rpc.tienthuattoan.ventures"],
     "LCD": ["https://cosmos-api.tienthuattoan.ventures"],
-    "databaseName": "local_cosmoshub"
+    "databaseName": "local_cosmoshub",
+    "redisDBNumber": 6,
+    "moleculerNamespace": "namespace-cosmoshub"
   }
 ]
