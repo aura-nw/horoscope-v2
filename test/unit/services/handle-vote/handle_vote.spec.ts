@@ -75,7 +75,6 @@ export default class HandleTxVoteServiceTest {
       height: 4279260,
       timestamp: '2023-04-17T03:44:41.000Z',
     });
-    await this.handleVoteTxService?.initEnv();
     await this.handleVoteTxService?.handleVote();
     const vote = await Vote.query()
       .where('proposal_id', 18)
@@ -112,8 +111,6 @@ export default class HandleTxVoteServiceTest {
       timestamp: '2023-04-17T03:44:41.000Z',
     });
     await this.handleAuthzTxServive?.handleJob();
-
-    await this.handleVoteTxService?.initEnv();
     await this.handleVoteTxService?.handleVote();
 
     const vote = await Vote.query()
@@ -162,7 +159,6 @@ export default class HandleTxVoteServiceTest {
       height: 6794619,
       timestamp: '2023-04-17T03:45:41.000Z',
     });
-    await this.handleVoteTxService?.initEnv();
     await this.handleVoteTxService?.handleVote();
     const vote = await Vote.query()
       .where('proposal_id', 427)
@@ -198,8 +194,6 @@ export default class HandleTxVoteServiceTest {
       height: 4279260,
       timestamp: '2023-04-17T03:44:41.000Z',
     });
-
-    await this.handleVoteTxService?.initEnv();
     await this.handleVoteTxService?.handleVote();
     const vote = await Vote.query()
       .where('proposal_id', 428)
