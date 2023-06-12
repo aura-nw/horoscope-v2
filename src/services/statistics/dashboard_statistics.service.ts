@@ -2,18 +2,12 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
-import {
-  CoinSDKType,
-  DecCoinSDKType,
-} from '@aura-nw/aurajs/types/codegen/cosmos/base/v1beta1/coin';
-import Long from 'long';
-import { fromBase64 } from '@cosmjs/encoding';
+import { DecCoinSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/base/v1beta1/coin';
 import BigNumber from 'bignumber.js';
 import { BlockCheckpoint, Transaction, Validator } from '../../models';
 import {
   BULL_JOB_NAME,
   IAuraJSClientFactory,
-  IPagination,
   REDIS_KEY,
   SERVICE,
   getLcdClient,
@@ -48,35 +42,20 @@ export default class DashboardStatisticsService extends BullableService {
         Validator.query(),
       ]);
 
-      const [communityPool, inflation, distribution] = await Promise.all([
-        this._lcdClient.auranw.cosmos.distribution.v1beta1.communityPool(),
-        this._lcdClient.auranw.cosmos.mint.v1beta1.inflation(),
-        this._lcdClient.auranw.cosmos.distribution.v1beta1.params(),
-      ]);
+      const [communityPool, inflation, distribution, supply] =
+        await Promise.all([
+          this._lcdClient.auranw.cosmos.distribution.v1beta1.communityPool(),
+          this._lcdClient.auranw.cosmos.mint.v1beta1.inflation(),
+          this._lcdClient.auranw.cosmos.distribution.v1beta1.params(),
+          this._lcdClient.auranw.cosmos.bank.v1beta1.supplyOf({
+            denom: config.networkDenom,
+          }),
+        ]);
       let bondedTokens = BigInt(0);
       totalValidators.forEach((val) => {
         bondedTokens += BigInt(val.tokens);
       });
-      let totalAura = '';
-      const pagination: IPagination = {
-        limit: Long.fromInt(config.dashboardStatistics.queryPageLimit),
-      };
-      do {
-        const supply =
-          await this._lcdClient.auranw.cosmos.bank.v1beta1.totalSupply({
-            pagination,
-          });
-        totalAura = supply.supply.find(
-          (sup: CoinSDKType) => sup.denom === config.networkDenom
-        )?.amount;
-
-        if (supply.pagination.next_key !== null)
-          pagination.key = fromBase64(supply.pagination.next_key);
-      } while (
-        totalAura === '' ||
-        totalAura === undefined ||
-        totalAura === null
-      );
+      const totalAura = supply.amount.amount;
 
       const dashboardStatistics = {
         total_blocks: totalBlocks?.height,
