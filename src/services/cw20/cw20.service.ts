@@ -334,13 +334,9 @@ export default class Cw20Service extends BullableService {
         )
       );
     });
-    const promiseHeight = this._httpBatchClient.execute(
-      createJsonRpcRequest('abci_info', {})
+    const result: JsonRpcSuccessResponse[] = await Promise.all(
+      promiseBalanceHolders
     );
-    const result: JsonRpcSuccessResponse[] = await Promise.all([
-      ...promiseBalanceHolders,
-      promiseHeight,
-    ]);
     holders.forEach((holder, index) => {
       const { balance }: { balance: string } = JSON.parse(
         fromUtf8(
