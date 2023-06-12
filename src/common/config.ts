@@ -106,10 +106,14 @@ export default class ConfigClass {
 
   // public static JWT_SECRET = process.env.JWT_SECRET || 'dummy-secret';
 
-  public ENABLE_LOADBALANCER = process.env.ENABLE_LOADBALANCER || true;
+  public ENABLE_LOADBALANCER = process.env.ENABLE_LOADBALANCER
+    ? getValue(process.env.ENABLE_LOADBALANCER)
+    : false;
 
-  public ADD_INTER_NAMESPACE_MIDDLEWARE =
-    process.env.ADD_INTER_NAMESPACE_MIDDLEWARE || false;
+  public ADD_INTER_NAMESPACE_MIDDLEWARE = process.env
+    .ADD_INTER_NAMESPACE_MIDDLEWARE
+    ? getValue(process.env.ADD_INTER_NAMESPACE_MIDDLEWARE)
+    : false;
 
   // Dynamic property key
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
