@@ -91,6 +91,11 @@
     "millisecondCrawl": 3600000,
     "queryPageLimit": 100
   },
+  "cw20": {
+    "blocksPerCall": 100,
+    "millisecondRepeatJob": 2000,
+    "key": "cw20"
+  },
   "crawlContractEvent": {
     "key": "crawlContractEvent",
     "blocksPerCall": 100,
