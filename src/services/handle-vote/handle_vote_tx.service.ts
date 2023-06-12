@@ -73,7 +73,7 @@ export default class HandleTxVoteService extends BullableService {
         blockCheckpoint.height = endBlock;
 
         await BlockCheckpoint.query()
-          .insert(this._blockCheckpoint)
+          .insert(blockCheckpoint)
           .onConflict('job_name')
           .merge()
           .returning('id')
