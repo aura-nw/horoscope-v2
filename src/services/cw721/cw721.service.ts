@@ -221,6 +221,20 @@ export default class Cw721HandlerService extends BullableService {
           },
         }
       );
+      await this.createJob(
+        BULL_JOB_NAME.REFRESH_CW721_M_VIEW,
+        BULL_JOB_NAME.REFRESH_CW721_M_VIEW,
+        {},
+        {
+          removeOnComplete: true,
+          removeOnFail: {
+            count: 3,
+          },
+          repeat: {
+            every: config.cw721.millisecondRefreshMView,
+          },
+        }
+      );
     }
     return super._start();
   }
@@ -533,5 +547,17 @@ export default class Cw721HandlerService extends BullableService {
         'smart_contract_event.event_id',
         'smart_contract_event.index'
       );
+  }
+
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.REFRESH_CW721_M_VIEW,
+    jobName: BULL_JOB_NAME.REFRESH_CW721_M_VIEW,
+  })
+  async jobHandlerRefresh(): Promise<void> {
+    await this.refreshMaterialView();
+  }
+
+  async refreshMaterialView() {
+    await knex.schema.refreshMaterializedView('m_view_count_cw721_txs');
   }
 }
