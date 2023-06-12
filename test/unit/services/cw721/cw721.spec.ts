@@ -23,6 +23,8 @@ export default class AssetIndexerTest {
       contract_id: 1,
       symbol: 'symbol',
       minter: 'minter',
+      name: '',
+      track: true,
     }),
     tokens: [
       {
@@ -86,6 +88,23 @@ export default class AssetIndexerTest {
     smart_contract: {
       name: 'Base Contract 2',
       address: 'mock_contract_address',
+      creator: 'phamphong_creator',
+      code_id: 100,
+      instantiate_hash: 'abc',
+      instantiate_height: 300000,
+    },
+  };
+
+  untrackContract = {
+    ...CW721Contract.fromJson({
+      contract_id: 3,
+      symbol: 'symbol',
+      minter: 'minter',
+      name: '',
+    }),
+    smart_contract: {
+      name: 'UntrackContract',
+      address: 'untrack_contract',
       creator: 'phamphong_creator',
       code_id: 100,
       instantiate_hash: 'abc',
@@ -381,6 +400,7 @@ export default class AssetIndexerTest {
     await Code.query().insertGraph(this.codeId);
     await CW721Contract.query().insertGraph(this.mockInitContract);
     await CW721Contract.query().insertGraph(this.mockInitContract_2);
+    await CW721Contract.query().insertGraph(this.untrackContract);
     await this.crawlContractEventService.jobHandler();
   }
 
@@ -1057,10 +1077,11 @@ export default class AssetIndexerTest {
     });
   }
 
-  @Test('test getCw721ContractsRecords')
-  public async testGetCw721ContractsRecords() {
-    const results = await this.cw721HandlerService.getCw721ContractsRecords([
+  @Test('test getCw721TrackedContracts')
+  public async testgetCw721TrackedContracts() {
+    const results = await this.cw721HandlerService.getCw721TrackedContracts([
       this.mockInitContract.smart_contract.address,
+      this.untrackContract.smart_contract.address,
     ]);
     expect(results[0].address).toEqual(
       this.mockInitContract.smart_contract.address
@@ -1435,5 +1456,164 @@ export default class AssetIndexerTest {
     const resultToken = await CW721Token.query().where('id', token.id).first();
     expect(resultToken?.owner).toEqual(lastOwner);
     expect(resultToken?.last_updated_height).toEqual(expectHeight);
+  }
+
+  @Test('test untrack contract')
+  async testUntrackContract() {
+    const tokenId = 'untrack_token';
+    const untrackContract = await CW721Contract.query()
+      .where({
+        contract_id: this.untrackContract.contract_id,
+      })
+      .first()
+      .throwIfNotFound();
+    const mockContractExec = [
+      {
+        contractAddress: this.untrackContract.smart_contract.address,
+        sender: '',
+        action: 'mint',
+        content:
+          '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
+        attributes: [
+          {
+            smart_contract_event_id: 100,
+            key: '_contract_address',
+            value: this.untrackContract.smart_contract.address,
+          },
+          {
+            smart_contract_event_id: 100,
+            key: 'action',
+            value: 'mint',
+          },
+          {
+            smart_contract_event_id: 100,
+            key: 'minter',
+            value: 'aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx',
+          },
+          {
+            smart_contract_event_id: 100,
+            key: 'owner',
+            value: 'phamphong_',
+          },
+          {
+            smart_contract_event_id: 100,
+            key: 'token_id',
+            value: tokenId,
+          },
+        ],
+        tx: Transaction.fromJson({
+          height: 200000,
+          hash: '',
+          code: 0,
+          gas_used: '123035',
+          gas_wanted: '141106',
+          gas_limit: '141106',
+          fee: 353,
+          timestamp: '2023-01-12T01:53:57.000Z',
+          codespace: '',
+          data: {},
+          index: 0,
+        }),
+        event_id: 100,
+      },
+      {
+        contractAddress: this.untrackContract.smart_contract.address,
+        sender: '',
+        action: 'transfer_nft',
+        content: '',
+        attributes: [
+          {
+            smart_contract_event_id: 100,
+            key: '_contract_address',
+            value: this.untrackContract.smart_contract.address,
+          },
+          {
+            smart_contract_event_id: 100,
+            key: 'action',
+            value: 'transfer_nft',
+          },
+          {
+            smart_contract_event_id: 100,
+            key: 'recipient',
+            value: 'phamphong_transfer',
+          },
+          {
+            smart_contract_event_id: 100,
+            key: 'sender',
+            value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
+          },
+          {
+            smart_contract_event_id: 100,
+            key: 'token_id',
+            value: tokenId,
+          },
+        ],
+        tx: Transaction.fromJson({
+          height: 100000,
+          hash: '',
+          code: 0,
+          gas_used: '123035',
+          gas_wanted: '141106',
+          gas_limit: '141106',
+          fee: 353,
+          timestamp: '2023-01-12T01:53:57.000Z',
+          codespace: '',
+          data: {},
+          index: 0,
+        }),
+        event_id: 10,
+      },
+      {
+        contractAddress: this.untrackContract.smart_contract.address,
+        sender: '',
+        action: 'burn',
+        content: '',
+        attributes: [
+          {
+            smart_contract_event_id: 100,
+            key: '_contract_address',
+            value: this.untrackContract.smart_contract.address,
+          },
+          {
+            smart_contract_event_id: 100,
+            key: 'action',
+            value: 'burn',
+          },
+          {
+            smart_contract_event_id: 100,
+            key: 'sender',
+            value: 'aura15f6wn3nymdnhnh5ddlqletuptjag09tryrtpq5',
+          },
+          {
+            smart_contract_event_id: 100,
+            key: 'token_id',
+            value: tokenId,
+          },
+        ],
+        tx: Transaction.fromJson({
+          height: 500000,
+          hash: '',
+          code: 0,
+          gas_used: '123035',
+          gas_wanted: '141106',
+          gas_limit: '141106',
+          fee: 353,
+          timestamp: '2023-01-12T01:53:57.000Z',
+          codespace: '',
+          data: {},
+          index: 0,
+        }),
+        event_id: 10,
+      },
+    ];
+    await this.cw721HandlerService.handleCw721MsgExec(
+      mockContractExec.map((execEvent) =>
+        SmartContractEvent.fromJson({ ...execEvent })
+      )
+    );
+    const tokens = await CW721Token.query().where({
+      cw721_contract_id: untrackContract.id,
+    });
+    expect(tokens.length).toEqual(0);
   }
 }

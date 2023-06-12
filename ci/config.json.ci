@@ -95,6 +95,11 @@
     "blocksPerCall": 100,
     "millisecondRepeatJob": 2000
   },
+  "cw20": {
+    "blocksPerCall": 100,
+    "millisecondRepeatJob": 2000,
+    "key": "cw20"
+  },
   "dashboardStatistics": {
     "millisecondCrawl": 10000
   },
@@ -113,5 +118,12 @@
   "crawlIbcChannel": {
     "key": "crawlIbcChannel",
     "queryPageLimit": 10
+  "feegrant": {
+    "updateFeegrant": {
+      "millisecondRepeatJob": 2000,
+      "limitPerCall": 2000
+    },
+    "millisecondRepeatJob": 2000,
+    "key": "feegrant"
   }
 }

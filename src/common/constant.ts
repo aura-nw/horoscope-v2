@@ -51,10 +51,13 @@ export const BULL_JOB_NAME = {
   CRAWL_CONTRACT_EVENT: 'crawl:contract-event',
   FILTER_TOKEN_MEDIA_UNPROCESS: 'filter:cw721-token-media-unprocess',
   HANDLE_CW721_TOKEN_MEDIA: 'handle:cw721-token-media',
+  HANDLE_CW20: 'handle:cw20',
   HANDLE_DASHBOARD_STATISTICS: 'handle:dashboard-statistics',
   CRAWL_IBC_CONNECTION: 'crawl:ibc-connection',
   CRAWL_IBC_CHANNEL: 'crawl:ibc-channel',
   CRAWL_IBC_CLIENT: 'crawl:ibc-client',
+  UPDATE_FEEGRANT: 'update:feegrant',
+  HANDLE_FEEGRANT: 'handle:feegrant',
 };
 
 export const SERVICE = {
@@ -157,6 +160,10 @@ export const SERVICE = {
       key: 'CrawlDelegatorsService',
       name: 'v1.CrawlDelegatorsService',
     },
+    Cw20: {
+      key: 'Cw20Service',
+      name: 'v1.Cw20Service',
+    },
     DashboardStatisticsService: {
       key: 'DashboardStatisticsService',
       name: 'v1.DashboardStatisticsService',
@@ -164,6 +171,16 @@ export const SERVICE = {
     CrawlIBCService: {
       key: 'CrawlIBCService',
       name: 'v1.CrawlIBCService',
+    },
+    Feegrant: {
+      HandleFeegrantHistoryService: {
+        key: 'HandleFeegrantHistoryService',
+        path: 'v1.Feegrant.HandleFeegrantHistoryService',
+      },
+      UpdateFeegrantService: {
+        key: 'UpdateFeegrantService',
+        path: 'v1.Feegrant.UpdateFeegrantService',
+      },
     },
   },
 };
@@ -195,6 +212,8 @@ export const MSG_TYPE = {
   MSG_VOTE: '/cosmos.gov.v1beta1.MsgVote',
   MSG_ACKNOWLEDGEMENT: '/ibc.core.channel.v1.MsgAcknowledgement',
   MSG_GRANT_ALLOWANCE: '/cosmos.feegrant.v1beta1.MsgGrantAllowance',
+  MSG_FEEGRANT_GRANT: '/cosmos.feegrant.v1beta1.MsgGrantAllowance',
+  MSG_FEEGRANT_REVOKE: '/cosmos.feegrant.v1beta1.MsgRevokeAllowance',
 };
 
 export const ABCI_QUERY_PATH = {
