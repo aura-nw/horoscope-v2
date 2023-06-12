@@ -82,5 +82,7 @@ export class EventAttribute extends BaseModel {
     UNBOND: 'unbond',
     OWNER: 'owner',
     TO: 'to',
+    GRANTER: 'granter',
+    GRANTEE: 'grantee',
   };
 }

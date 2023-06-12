@@ -86,5 +86,8 @@ export class Event extends BaseModel {
     UNBOND: 'unbond',
     WASM: 'wasm',
     CREATE_VALIDATOR: 'create_validator',
+    REVOKE_FEEGRANT: 'revoke_feegrant',
+    USE_FEEGRANT: 'use_feegrant',
+    SET_FEEGRANT: 'set_feegrant',
   };
 }

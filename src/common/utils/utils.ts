@@ -70,4 +70,10 @@ export default class Utils {
     }
     return obj;
   }
+
+  public static isBase64(text: string): boolean {
+    const base64Regex =
+      /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/;
+    return base64Regex.test(text);
+  }
 }
