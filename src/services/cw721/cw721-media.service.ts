@@ -80,8 +80,6 @@ export default class Cw721MediaService extends BullableService {
         tokenMedia.onchain.metadata = await this.getMetadata(
           tokenMedia.onchain.token_uri
         );
-        // upload & update link s3
-        tokenMedia = await this.updateMediaS3(tokenMedia);
       } catch (error) {
         if (error instanceof AxiosError) {
           tokenMedia.onchain.metadata = tokenMedia.onchain.extension;
@@ -95,6 +93,8 @@ export default class Cw721MediaService extends BullableService {
     } else {
       tokenMedia.onchain.metadata = tokenMedia.onchain.extension;
     }
+    // upload & update link s3
+    tokenMedia = await this.updateMediaS3(tokenMedia);
     this.logger.info(tokenMedia);
     await CW721Token.query()
       .where('id', tokenMedia.cw721_token_id)

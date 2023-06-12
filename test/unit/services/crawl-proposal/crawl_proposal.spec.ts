@@ -245,6 +245,7 @@ export default class CrawlProposalTest {
     await Promise.all([
       BlockCheckpoint.query().delete(true),
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE proposal RESTART IDENTITY CASCADE'),
     ]);
     await Block.query().insert(this.blocks);
     await Transaction.query().insertGraph(this.txInsert);
@@ -256,6 +257,7 @@ export default class CrawlProposalTest {
     await Promise.all([
       BlockCheckpoint.query().delete(true),
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE proposal RESTART IDENTITY CASCADE'),
     ]);
     await this.broker.stop();
   }
@@ -316,25 +318,49 @@ export default class CrawlProposalTest {
     expect(newProposal?.description).toEqual('Test 1');
   }
 
-  // @Test('Handle not enough deposit proposal success')
-  // public async testHandleNotEnoughDepositProposal() {
-  //   await Proposal.query()
-  //     .patch({
-  //       proposal_id: 2,
-  //       deposit_end_time: new Date(new Date().getSeconds() - 10).toISOString(),
-  //       status: Proposal.STATUS.PROPOSAL_STATUS_DEPOSIT_PERIOD,
-  //     })
-  //     .where({ proposal_id: 1 });
+  @Test('Handle not enough deposit proposal success')
+  public async testHandleNotEnoughDepositProposal() {
+    await Proposal.query()
+      .patch({
+        proposal_id: 2,
+        deposit_end_time: new Date(new Date().getSeconds() - 10).toISOString(),
+        status: Proposal.STATUS.PROPOSAL_STATUS_DEPOSIT_PERIOD,
+      })
+      .where({ proposal_id: 1 });
 
-  //   await this.crawlProposalService?.handleNotEnoughDepositProposals({});
+    await this.crawlProposalService?.handleNotEnoughDepositProposals({});
 
-  //   const updateProposal = await Proposal.query()
-  //     .select('*')
-  //     .where('proposal_id', 2)
-  //     .first();
+    const updateProposal = await Proposal.query()
+      .select('*')
+      .where('proposal_id', 2)
+      .first();
 
-  //   expect(updateProposal?.status).toEqual(
-  //     Proposal.STATUS.PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT
-  //   );
-  // }
+    expect(updateProposal?.status).toEqual(
+      Proposal.STATUS.PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT
+    );
+  }
+
+  @Test('Handle ended proposal success')
+  public async testHandleEndedProposal() {
+    await Proposal.query()
+      .patch({
+        voting_end_time: new Date(new Date().getSeconds() - 10).toISOString(),
+        status: Proposal.STATUS.PROPOSAL_STATUS_VOTING_PERIOD,
+      })
+      .where({ proposal_id: 2 });
+
+    await this.crawlProposalService?.handleEndedProposals({});
+
+    const updateProposal = await Proposal.query()
+      .select('*')
+      .where('proposal_id', 2)
+      .first();
+
+    expect(updateProposal?.tally).toEqual({
+      yes: '0',
+      no: '0',
+      abstain: '0',
+      no_with_veto: '0',
+    });
+  }
 }

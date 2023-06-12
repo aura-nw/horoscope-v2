@@ -4,6 +4,7 @@ import {
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
 import { Knex } from 'knex';
+import _ from 'lodash';
 import knex from '../../common/utils/db_connection';
 import { Account, BlockCheckpoint, EventAttribute } from '../../models';
 import Utils from '../../common/utils/utils';
@@ -49,11 +50,7 @@ export default class HandleAddressService extends BullableService {
 
     const eventAddresses: string[] = [];
     const resultTx = await EventAttribute.query()
-      .whereIn('key', [
-        EventAttribute.ATTRIBUTE_KEY.RECEIVER,
-        EventAttribute.ATTRIBUTE_KEY.SPENDER,
-        EventAttribute.ATTRIBUTE_KEY.SENDER,
-      ])
+      .where('value', 'like', 'aura%')
       .andWhere('block_height', '>', startHeight)
       .andWhere('block_height', '<=', endHeight)
       .select('value');
@@ -63,8 +60,14 @@ export default class HandleAddressService extends BullableService {
 
     const addresses = Array.from(
       new Set(
-        eventAddresses.filter((addr: string) =>
-          Utils.isValidAccountAddress(addr, config.networkPrefixAddress, 20)
+        eventAddresses.filter(
+          (addr: string) =>
+            Utils.isValidAccountAddress(
+              addr,
+              config.networkPrefixAddress,
+              20
+            ) ||
+            Utils.isValidAccountAddress(addr, config.networkPrefixAddress, 32)
         )
       )
     );
@@ -114,9 +117,8 @@ export default class HandleAddressService extends BullableService {
     });
 
     if (accounts.length > 0)
-      await Account.query()
-        .insert(accounts)
-        .transacting(trx)
+      await trx
+        .batchInsert('account', accounts, config.crawlGenesis.accountsPerBatch)
         .catch((error) => {
           this.logger.error(
             `Error insert new account: ${JSON.stringify(accounts)}`
