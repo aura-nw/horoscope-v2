@@ -1,15 +1,12 @@
 /* eslint-disable no-await-in-loop */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
-import Long from 'long';
-// import { ibc, cosmos } from '@aura-nw/aurajs';
-import { fromBase64 } from '@cosmjs/encoding';
+import Utils from '../../common/utils/utils';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import {
   BULL_JOB_NAME,
   IAuraJSClientFactory,
-  IPagination,
   SERVICE,
   getLcdClient,
 } from '../../common';
@@ -33,29 +30,13 @@ export default class CrawlIBCService extends BullableService {
   })
   public async crawlIbcConnection() {
     this.logger.info('Crawling IBC connection');
-    const connections: any[] = [];
-    let done = false;
-    const pagination: IPagination = {
-      limit: Long.fromInt(config.crawlIbcConnection.queryPageLimit),
-    };
-    while (!done) {
-      const resultCallApi =
-        await this._lcdClient.ibc.ibc.core.connection.v1.connections(
-          pagination
-        );
-      if (resultCallApi.height) {
-        resultCallApi.connections.forEach((connection: any) => {
-          // eslint-disable-next-line no-param-reassign
-          connection.height = resultCallApi.height;
-        });
-      }
-      connections.push(...resultCallApi.connections);
-      if (resultCallApi.pagination.next_key === null) {
-        done = true;
-      } else {
-        pagination.key = fromBase64(resultCallApi.pagination.next_key);
-      }
-    }
+
+    const connections: any[] = await Utils.getListResultWithNextKey(
+      config.crawlIbcConnection.queryPageLimit,
+      this._lcdClient.ibc.ibc.core.connection.v1.connections,
+      {},
+      'connections'
+    );
 
     this.logger.debug('list connection: ');
     this.logger.debug(connections);
@@ -102,28 +83,16 @@ export default class CrawlIBCService extends BullableService {
       'Crawl IBC channel by connection_id',
       _payload.connectionId
     );
-    let done = false;
-    const pagination: IPagination = {
-      limit: Long.fromInt(config.crawlIbcChannel.queryPageLimit),
-    };
-    const channels: any[] = [];
-    while (!done) {
-      const resultCallApi =
-        await this._lcdClient.ibc.ibc.core.channel.v1.connectionChannels({
-          connection: _payload.connectionId,
-          pagination,
-        });
-      resultCallApi.channels.forEach((channel: any) => {
-        // eslint-disable-next-line no-param-reassign
-        channel.height = resultCallApi.height;
-      });
-      channels.push(...resultCallApi.channels);
-      if (resultCallApi.pagination.next_key === null) {
-        done = true;
-      } else {
-        pagination.key = fromBase64(resultCallApi.pagination.next_key);
-      }
-    }
+
+    const channels: any[] = await Utils.getListResultWithNextKey(
+      config.crawlIbcChannel.queryPageLimit,
+      this._lcdClient.ibc.ibc.core.channel.v1.connectionChannels,
+      {
+        connection: _payload.connectionId,
+      },
+      'channels'
+    );
+
     this.logger.debug(
       'list channel associate with connection : ',
       _payload.connectionId
