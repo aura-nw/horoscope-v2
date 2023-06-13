@@ -23,12 +23,12 @@
       C-->>A: Return list account events
       deactivate C
       A->>A: Read list account addresses from events
-      A->>C: Get list accounts based on addresses
-      activate C
-      C-->>A: Return list accounts
-      deactivate C
+      A->>D: Get list accounts based on addresses
+      activate D
+      D-->>A: Return list accounts
+      deactivate D
       A->>A: Filter not exist account addresses in DB
-      A->>C: Insert list new  dummy accounts to DB
+      A->>C: Insert list new dummy accounts to DB
       A->>C: Update checkpoint = endBlock
       A->>B: Call action UpdateAccount
 
