@@ -6,6 +6,7 @@ import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { Knex } from 'knex';
 import { ServiceBroker } from 'moleculer';
+import _ from 'lodash';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
@@ -15,8 +16,14 @@ import {
   getHttpBatchClient,
 } from '../../common';
 import knex from '../../common/utils/db_connection';
-import { BlockCheckpoint, Cw20Contract } from '../../models';
+import {
+  BlockCheckpoint,
+  CW20Holder,
+  Cw20Contract,
+  EventAttribute,
+} from '../../models';
 import { SmartContractEvent } from '../../models/smart_contract_event';
+import { getAttributeFrom } from '../../common/utils/smart_contract';
 
 const { NODE_ENV } = Config;
 const CW20_ACTION = {
@@ -140,6 +147,132 @@ export default class Cw20Service extends BullableService {
       await Cw20Contract.query()
         .insertGraph(instantiateContracts)
         .transacting(trx);
+    }
+  }
+
+  // filter type of exec => handle
+  async handleCw20Exec(
+    cw20ExecEvents: SmartContractEvent[],
+    trx: Knex.Transaction
+  ) {
+    // handle mint
+    await this.handleCw20Mint(
+      cw20ExecEvents.filter((event) => event.action === CW20_ACTION.MINT),
+      trx
+    );
+    // handle transfer
+    await this.handleCw20Transfer(
+      cw20ExecEvents.filter((event) => event.action === CW20_ACTION.TRANSFER)
+    );
+    // handle burn
+    await this.handleCw721Burn(
+      cw20ExecEvents.filter((event) => event.action === CW20_ACTION.BURN)
+    );
+  }
+
+  // Add balance to cw20_holder and total_supply to cw20_contract
+  async handleCw20Mint(
+    mintEvents: SmartContractEvent[],
+    trx: Knex.Transaction
+  ): Promise<void> {
+    if (mintEvents.length > 0) {
+      // get all holders events, and order by event_height: amount token to address
+      const holdersEvents: IHolderEvent[] = _.orderBy(
+        mintEvents.map((event) => ({
+          address: getAttributeFrom(
+            event.attributes,
+            EventAttribute.ATTRIBUTE_KEY.TO
+          ),
+          amount: getAttributeFrom(
+            event.attributes,
+            EventAttribute.ATTRIBUTE_KEY.AMOUNT
+          ),
+          contract_address: event.contract_address,
+          event_height: event.height,
+        })),
+        ['event_height'],
+        ['asc']
+      );
+      // update holder balance queries
+      const queries: any[] = [];
+      // get all related holders in DB
+      const holders = await CW20Holder.query()
+        .transacting(trx)
+        .withGraphJoined('smart_contract')
+        .whereIn(
+          ['address', 'smart_contract.address'],
+          holdersEvents.map((holder) => [
+            holder.address,
+            holder.contract_address,
+          ])
+        )
+        .select('address', 'smart_contract.address as contract_address');
+      // get all related cw20_contract in DB for updating total_supply
+      const cw20Contracts = await Cw20Contract.query()
+        .transacting(trx)
+        .withGraphJoined('smart_contract')
+        .whereIn(
+          'smart_contract.address',
+          holdersEvents.map((holder) => holder.contract_address)
+        );
+      // for each cw20 contracts
+      cw20Contracts.forEach((cw20Contract) => {
+        let totalSupply = cw20Contract.total_supply;
+        // filter holders those cw20 tokens for processing
+        holders
+          .filter(
+            (holder) =>
+              holder.contract_address === cw20Contract.contract_address
+          )
+          .forEach((holder) => {
+            let balance = holder.amount;
+            let lastUpdatedHeight = holder.last_updated_height;
+            // get all holder event belong to this holder, check whether event height > last_updated_height then add amount balance
+            holdersEvents
+              .filter(
+                (holderEvent) =>
+                  holderEvent.address === holder.address &&
+                  holderEvent.contract_address === holder.contract_address
+              )
+              .forEach((holderEvent) => {
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                if (lastUpdatedHeight < holder.event_height) {
+                  balance = (
+                    BigInt(balance) + BigInt(holderEvent.amount)
+                  ).toString();
+                  lastUpdatedHeight = holderEvent.event_height;
+                  totalSupply = (
+                    BigInt(totalSupply) + BigInt(holderEvent.amount)
+                  ).toString();
+                }
+              });
+            queries.push(
+              CW20Holder.query()
+                .patch({
+                  amount: balance,
+                  last_updated_height: lastUpdatedHeight,
+                })
+                .where({
+                  id: holder.id,
+                })
+                .transacting(trx)
+            );
+          });
+        queries.push(
+          Cw20Contract.query()
+            .patch({
+              total_supply: totalSupply,
+            })
+            .where({
+              id: cw20Contract.id,
+            })
+            .transacting(trx)
+        );
+      });
+      if (queries.length > 0) {
+        await Promise.all(queries);
+      }
     }
   }
 
