@@ -62,3 +62,23 @@ export interface IStoreCodes {
 export interface IContextStoreCodes {
   codeIds: IStoreCodes[];
 }
+
+export interface IContextGetContractInfo {
+  addresses: string[];
+}
+
+export interface IInstantiateContracts {
+  address: string;
+  hash: string;
+  height: number;
+}
+
+export interface IContextInstantiateContracts {
+  contracts: IInstantiateContracts[];
+}
+
+export interface IContextGraphQLQuery {
+  operationName: string;
+  query: string;
+  variables: any;
+}

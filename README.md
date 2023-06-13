@@ -29,6 +29,7 @@ With crawler, we use [Bull](https://github.com/OptimalBits/bull/tree/master) to 
 - **crawl-validator**: get validator and their power event, signing info
 - **crawl-genesis**: get state from genesis chunk
 - [**CW721**](./docs/services/cw721/README.md): handle registed asset type CW721
+- [**handle-vote**](./docs/services/handle-vote/handle-vote.md): parse vote message
 
 ## How to run
 

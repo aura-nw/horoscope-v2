@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 /* eslint-disable import/no-extraneous-dependencies */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
@@ -23,6 +24,7 @@ import {
   SERVICE,
 } from '../../common';
 import { BlockCheckpoint, Proposal, EventAttribute } from '../../models';
+import Utils from '../../common/utils/utils';
 
 @Service({
   name: SERVICE.V1.CrawlProposalService.key,
@@ -40,7 +42,7 @@ export default class CrawlProposalService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_PROPOSAL,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_PROPOSAL,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleCrawlProposals(_payload: object): Promise<void> {
@@ -51,7 +53,7 @@ export default class CrawlProposalService extends BullableService {
     const [startHeight, endHeight, updateBlockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.CRAWL_PROPOSAL,
-        BULL_JOB_NAME.HANDLE_TRANSACTION,
+        [BULL_JOB_NAME.HANDLE_TRANSACTION],
         config.crawlProposal.key
       );
     this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
@@ -63,10 +65,6 @@ export default class CrawlProposalService extends BullableService {
       .andWhere('block_height', '<=', endHeight)
       .andWhere('key', EventAttribute.ATTRIBUTE_KEY.PROPOSAL_ID)
       .select('value');
-    this.logger.info(
-      `Result get Tx from height ${startHeight} to ${endHeight}:`
-    );
-    this.logger.info(JSON.stringify(resultTx));
 
     if (resultTx.length > 0)
       proposalIds = Array.from(
@@ -88,12 +86,6 @@ export default class CrawlProposalService extends BullableService {
                   await this._lcdClient.auranw.cosmos.gov.v1beta1.proposal({
                     proposalId,
                   });
-
-                this.logger.info(
-                  `Proposal ${proposalId} content: ${JSON.stringify(
-                    proposal.proposal.content
-                  )}`
-                );
 
                 const foundProposal: Proposal | undefined =
                   listProposalsInDb.find(
@@ -117,6 +109,10 @@ export default class CrawlProposalService extends BullableService {
                   proposalEntity.status = proposal.proposal.status;
                   proposalEntity.total_deposit =
                     proposal.proposal.total_deposit;
+                  proposalEntity.voting_start_time =
+                    proposal.proposal.voting_start_time;
+                  proposalEntity.voting_end_time =
+                    proposal.proposal.voting_end_time;
                 }
 
                 listProposals.push(proposalEntity);
@@ -135,7 +131,11 @@ export default class CrawlProposalService extends BullableService {
               .returning('proposal_id')
               .transacting(trx)
               .catch((error) => {
-                this.logger.error('Error insert or update proposals');
+                this.logger.error(
+                  `Error insert or update proposals: ${JSON.stringify(
+                    listProposals
+                  )}`
+                );
                 this.logger.error(error);
               });
         }
@@ -155,23 +155,97 @@ export default class CrawlProposalService extends BullableService {
   }
 
   @QueueHandler({
+    queueName: BULL_JOB_NAME.HANDLE_ENDED_PROPOSAL,
+    jobName: BULL_JOB_NAME.HANDLE_ENDED_PROPOSAL,
+    // prefix: `horoscope-v2-${config.chainId}`,
+  })
+  public async handleEndedProposals(_payload: object): Promise<void> {
+    const batchQueries: any[] = [];
+    const patchQueries: any[] = [];
+
+    const current10SecsAgo = new Date(Date.now() - 10);
+
+    const endedProposals = await Proposal.query()
+      .where('status', Proposal.STATUS.PROPOSAL_STATUS_VOTING_PERIOD)
+      .andWhere('voting_end_time', '<=', current10SecsAgo);
+
+    endedProposals.forEach((proposal: Proposal) => {
+      const request: QueryProposalRequest = {
+        proposalId: Long.fromInt(proposal.proposal_id),
+      };
+      const data = toHex(
+        cosmos.gov.v1beta1.QueryProposalRequest.encode(request).finish()
+      );
+
+      batchQueries.push(
+        this._httpBatchClient.execute(
+          createJsonRpcRequest('abci_query', {
+            path: ABCI_QUERY_PATH.PROPOSAL,
+            data,
+          })
+        )
+      );
+    });
+
+    const result: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
+    const resultProposals: (QueryProposalResponse | null)[] = result.map(
+      (res: JsonRpcSuccessResponse) =>
+        res.result.response.value
+          ? cosmos.gov.v1beta1.QueryProposalResponse.decode(
+              fromBase64(res.result.response.value)
+            )
+          : null
+    );
+
+    endedProposals.forEach((proposal: Proposal) => {
+      const onchainPro = resultProposals.find((pro) =>
+        pro?.proposal?.proposalId.equals(Long.fromInt(proposal.proposal_id))
+      );
+      if (onchainPro) {
+        patchQueries.push(
+          Proposal.query()
+            .where('proposal_id', proposal.proposal_id)
+            .patch({
+              status:
+                Object.keys(cosmos.gov.v1beta1.ProposalStatus).find(
+                  (key) =>
+                    cosmos.gov.v1beta1.ProposalStatus[key] ===
+                    onchainPro?.proposal?.status
+                ) || '',
+              total_deposit: onchainPro?.proposal?.totalDeposit || [],
+              tally: Utils.camelizeKeys(onchainPro.proposal?.finalTallyResult),
+            })
+        );
+      }
+    });
+
+    if (patchQueries.length > 0)
+      await Promise.all(patchQueries).catch((error) => {
+        this.logger.error(
+          `Error update status for ended proposals: ${JSON.stringify(
+            endedProposals
+          )}`
+        );
+        this.logger.error(error);
+      });
+  }
+
+  @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleNotEnoughDepositProposals(
     _payload: object
   ): Promise<void> {
     const batchQueries: any[] = [];
+    const patchQueries: any[] = [];
 
-    const now = new Date(new Date().getSeconds() - 10);
+    const current10SecsAgo = new Date(Date.now() - 10);
 
     const depositProposals = await Proposal.query()
       .where('status', Proposal.STATUS.PROPOSAL_STATUS_DEPOSIT_PERIOD)
-      .andWhere('deposit_end_time', '<=', now);
-    this.logger.info(
-      `List not enough deposit proposals: ${JSON.stringify(depositProposals)}`
-    );
+      .andWhere('deposit_end_time', '<=', current10SecsAgo);
 
     depositProposals.forEach((proposal: Proposal) => {
       const request: QueryProposalRequest = {
@@ -202,28 +276,27 @@ export default class CrawlProposalService extends BullableService {
     );
 
     depositProposals.forEach((proposal: Proposal) => {
-      const onchainPro = resultProposals.find(
-        (pro) =>
-          pro?.proposal?.proposalId === Long.fromInt(proposal.proposal_id)
+      const onchainPro = resultProposals.find((pro) =>
+        pro?.proposal?.proposalId.equals(Long.fromInt(proposal.proposal_id))
       );
 
       if (!onchainPro)
-        // eslint-disable-next-line no-param-reassign
-        proposal.status = Proposal.STATUS.PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT;
+        patchQueries.push(
+          Proposal.query().where('proposal_id', proposal.proposal_id).patch({
+            status: Proposal.STATUS.PROPOSAL_STATUS_NOT_ENOUGH_DEPOSIT,
+          })
+        );
     });
 
-    if (depositProposals.length > 0)
-      await Proposal.query()
-        .insert(depositProposals)
-        .onConflict('proposal_id')
-        .merge()
-        .returning('proposal_id')
-        .catch((error) => {
-          this.logger.error(
-            'Error update status for not enough deposit proposals'
-          );
-          this.logger.error(error);
-        });
+    if (patchQueries.length > 0)
+      await Promise.all(patchQueries).catch((error) => {
+        this.logger.error(
+          `Error update status for not enough deposit proposals: ${JSON.stringify(
+            depositProposals
+          )}`
+        );
+        this.logger.error(error);
+      });
   }
 
   public async _start() {
@@ -238,6 +311,20 @@ export default class CrawlProposalService extends BullableService {
         },
         repeat: {
           every: config.crawlProposal.crawlProposal.millisecondCrawl,
+        },
+      }
+    );
+    this.createJob(
+      BULL_JOB_NAME.HANDLE_ENDED_PROPOSAL,
+      'crawl',
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        repeat: {
+          every: config.crawlProposal.handleEndedProposal.millisecondCrawl,
         },
       }
     );

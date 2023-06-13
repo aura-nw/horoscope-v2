@@ -14,7 +14,7 @@ import { ServiceBroker } from 'moleculer';
 import * as FileType from 'file-type';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import parse from 'parse-uri';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
@@ -74,17 +74,28 @@ export default class Cw721MediaService extends BullableService {
   })
   async jobHandlerTokenMedia(_payload: { tokenMedia: ITokenMediaInfo }) {
     let { tokenMedia } = _payload;
-    // update metadata
     if (tokenMedia.onchain.token_uri) {
-      tokenMedia.onchain.metadata = await this.getMetadata(
-        tokenMedia.onchain.token_uri
-      );
+      try {
+        // update metadata
+        tokenMedia.onchain.metadata = await this.getMetadata(
+          tokenMedia.onchain.token_uri
+        );
+      } catch (error) {
+        if (error instanceof AxiosError) {
+          tokenMedia.onchain.metadata = tokenMedia.onchain.extension;
+        } else if (error instanceof SyntaxError) {
+          tokenMedia.onchain.metadata = tokenMedia.onchain.extension;
+        } else {
+          this.logger.error(error);
+          throw error;
+        }
+      }
     } else {
       tokenMedia.onchain.metadata = tokenMedia.onchain.extension;
     }
     // upload & update link s3
     tokenMedia = await this.updateMediaS3(tokenMedia);
-    this.logger.debug(tokenMedia);
+    this.logger.info(tokenMedia);
     await CW721Token.query()
       .where('id', tokenMedia.cw721_token_id)
       .patch({
@@ -283,19 +294,41 @@ export default class Cw721MediaService extends BullableService {
 
   // update s3 media link
   async updateMediaS3(tokenMediaInfo: ITokenMediaInfo) {
-    const mediaImageUrl = await this.uploadMediaToS3(
-      tokenMediaInfo.onchain.metadata.image
-    );
-    tokenMediaInfo.offchain.image.url = mediaImageUrl?.linkS3;
-    tokenMediaInfo.offchain.image.content_type = mediaImageUrl?.contentType;
-    tokenMediaInfo.offchain.image.file_path = mediaImageUrl?.key;
-    const mediaAnimationUrl = await this.uploadMediaToS3(
-      tokenMediaInfo.onchain.metadata.animation_url
-    );
-    tokenMediaInfo.offchain.animation.url = mediaAnimationUrl?.linkS3;
-    tokenMediaInfo.offchain.animation.content_type =
-      mediaAnimationUrl?.contentType;
-    tokenMediaInfo.offchain.animation.file_path = mediaAnimationUrl?.key;
+    try {
+      const mediaImageUrl = await this.uploadMediaToS3(
+        tokenMediaInfo.onchain.metadata.image
+      );
+      tokenMediaInfo.offchain.image.url = mediaImageUrl?.linkS3;
+      tokenMediaInfo.offchain.image.content_type = mediaImageUrl?.contentType;
+      tokenMediaInfo.offchain.image.file_path = mediaImageUrl?.key;
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        tokenMediaInfo.offchain.image.url = undefined;
+        tokenMediaInfo.offchain.image.content_type = undefined;
+        tokenMediaInfo.offchain.image.file_path = undefined;
+      } else {
+        this.logger.error(error);
+        throw error;
+      }
+    }
+    try {
+      const mediaAnimationUrl = await this.uploadMediaToS3(
+        tokenMediaInfo.onchain.metadata.animation_url
+      );
+      tokenMediaInfo.offchain.animation.url = mediaAnimationUrl?.linkS3;
+      tokenMediaInfo.offchain.animation.content_type =
+        mediaAnimationUrl?.contentType;
+      tokenMediaInfo.offchain.animation.file_path = mediaAnimationUrl?.key;
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        tokenMediaInfo.offchain.animation.url = undefined;
+        tokenMediaInfo.offchain.animation.content_type = undefined;
+        tokenMediaInfo.offchain.animation.file_path = undefined;
+      } else {
+        this.logger.error(error);
+        throw error;
+      }
+    }
     return tokenMediaInfo;
   }
 

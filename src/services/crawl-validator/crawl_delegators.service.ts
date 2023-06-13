@@ -29,7 +29,7 @@ export default class CrawlDelegatorsService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_DELEGATORS,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_DELEGATORS,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: object): Promise<void> {
@@ -59,7 +59,7 @@ export default class CrawlDelegatorsService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_VALIDATOR_DELEGATORS,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_VALIDATOR_DELEGATORS,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJobCrawlValidatorDelegators(
@@ -107,9 +107,6 @@ export default class CrawlDelegatorsService extends BullableService {
       await BlockCheckpoint.query()
         .where('job_name', BULL_JOB_NAME.CRAWL_BLOCK)
         .first();
-    this.logger.info(
-      `Update delegators of validator ${_payload.address} with previous height ${_payload.height} and current height ${latestBlock?.height}`
-    );
 
     await knex.transaction(async (trx) => {
       await Promise.all([
@@ -119,7 +116,9 @@ export default class CrawlDelegatorsService extends BullableService {
           .merge()
           .transacting(trx)
           .catch((error) => {
-            this.logger.error('Insert or update validator delegators error');
+            this.logger.error(
+              `Insert or update validator delegators error: ${_payload.address}`
+            );
             this.logger.error(error);
           }),
         Delegator.query()

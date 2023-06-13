@@ -8,6 +8,8 @@ import { TransactionMessage } from './transaction_message';
 export class Event extends BaseModel {
   [relation: string]: any;
 
+  id!: number;
+
   tx_id!: number;
 
   tx_msg_index: number | undefined;
@@ -83,5 +85,9 @@ export class Event extends BaseModel {
     REDELEGATE: 'redelegate',
     UNBOND: 'unbond',
     WASM: 'wasm',
+    CREATE_VALIDATOR: 'create_validator',
+    REVOKE_FEEGRANT: 'revoke_feegrant',
+    USE_FEEGRANT: 'use_feegrant',
+    SET_FEEGRANT: 'set_feegrant',
   };
 }

@@ -106,8 +106,6 @@ export default class ConfigClass {
 
   // public static JWT_SECRET = process.env.JWT_SECRET || 'dummy-secret';
 
-  public ENABLE_LOADBALANCER = process.env.ENABLE_LOADBALANCER || 'true';
-
   // Dynamic property key
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [index: string]: any;
@@ -116,7 +114,7 @@ export default class ConfigClass {
     Object.keys(configObj).forEach((key: string) => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      this[key] = configObj[key];
+      this[key] = getValue(configObj[key]);
     });
     this.NODE_ENV = process.env.NODE_ENV;
     this.NODEID = `${

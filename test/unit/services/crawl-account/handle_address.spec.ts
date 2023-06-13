@@ -90,6 +90,22 @@ export default class HandleAddressTest {
           },
         ],
       },
+      {
+        tx_msg_index: 0,
+        type: 'set_grant',
+        attributes: [
+          {
+            key: 'granter',
+            value: 'aura1uh24g2lc8hvvkaaf7awz25lrh5fptthu2dhq0n',
+            block_height: 3967529,
+          },
+          {
+            key: 'grantee',
+            value: 'aura1v6xeve40f43mc063srml2qe2fsw7ffugtcaaz2',
+            block_height: 3967529,
+          },
+        ],
+      },
     ],
   };
 
@@ -156,6 +172,16 @@ export default class HandleAddressTest {
     expect(
       accounts.find(
         (acc) => acc.address === 'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx'
+      )
+    ).not.toBeUndefined();
+    expect(
+      accounts.find(
+        (acc) => acc.address === 'aura1uh24g2lc8hvvkaaf7awz25lrh5fptthu2dhq0n'
+      )
+    ).not.toBeUndefined();
+    expect(
+      accounts.find(
+        (acc) => acc.address === 'aura1v6xeve40f43mc063srml2qe2fsw7ffugtcaaz2'
       )
     ).not.toBeUndefined();
   }
