@@ -70,9 +70,9 @@ export default class CrawlIBCService extends BullableService {
         });
 
       // crawl ibc channel by connection_id
-      connections.forEach((connection) => {
+      connections.forEach(async (connection) => {
         if (connection.state === IbcConnection.STATE.STATE_OPEN)
-          this.createJob(
+          await this.createJob(
             BULL_JOB_NAME.CRAWL_IBC_CHANNEL,
             BULL_JOB_NAME.CRAWL_IBC_CHANNEL,
             {
