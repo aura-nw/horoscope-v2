@@ -15,7 +15,7 @@ export default class CW721Contract extends BaseModel {
 
   minter?: string;
 
-  id?: number;
+  id!: number;
 
   created_at?: Date;
 

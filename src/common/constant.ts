@@ -33,6 +33,7 @@ export const BULL_JOB_NAME = {
   CRAWL_TRANSACTION: 'crawl:transaction',
   HANDLE_TRANSACTION: 'handle:transaction',
   HANDLE_CW721_TRANSACTION: 'handle:cw721-tx',
+  REFRESH_CW721_M_VIEW: 'refresh:cw721-m-view',
   CRAWL_PROPOSAL: 'crawl:proposal',
   CRAWL_TALLY_PROPOSAL: 'crawl:tally-proposal',
   COUNT_VOTE_PROPOSAL: 'handle:count-vote-proposal',
@@ -51,7 +52,10 @@ export const BULL_JOB_NAME = {
   CRAWL_CONTRACT_EVENT: 'crawl:contract-event',
   FILTER_TOKEN_MEDIA_UNPROCESS: 'filter:cw721-token-media-unprocess',
   HANDLE_CW721_TOKEN_MEDIA: 'handle:cw721-token-media',
+  HANDLE_CW20: 'handle:cw20',
   HANDLE_DASHBOARD_STATISTICS: 'handle:dashboard-statistics',
+  UPDATE_FEEGRANT: 'update:feegrant',
+  HANDLE_FEEGRANT: 'handle:feegrant',
 };
 
 export const SERVICE = {
@@ -154,9 +158,23 @@ export const SERVICE = {
       key: 'CrawlDelegatorsService',
       name: 'v1.CrawlDelegatorsService',
     },
+    Cw20: {
+      key: 'Cw20Service',
+      name: 'v1.Cw20Service',
+    },
     DashboardStatisticsService: {
       key: 'DashboardStatisticsService',
       name: 'v1.DashboardStatisticsService',
+    },
+    Feegrant: {
+      HandleFeegrantHistoryService: {
+        key: 'HandleFeegrantHistoryService',
+        path: 'v1.Feegrant.HandleFeegrantHistoryService',
+      },
+      UpdateFeegrantService: {
+        key: 'UpdateFeegrantService',
+        path: 'v1.Feegrant.UpdateFeegrantService',
+      },
     },
   },
 };
@@ -188,6 +206,8 @@ export const MSG_TYPE = {
   MSG_VOTE: '/cosmos.gov.v1beta1.MsgVote',
   MSG_ACKNOWLEDGEMENT: '/ibc.core.channel.v1.MsgAcknowledgement',
   MSG_GRANT_ALLOWANCE: '/cosmos.feegrant.v1beta1.MsgGrantAllowance',
+  MSG_FEEGRANT_GRANT: '/cosmos.feegrant.v1beta1.MsgGrantAllowance',
+  MSG_FEEGRANT_REVOKE: '/cosmos.feegrant.v1beta1.MsgRevokeAllowance',
 };
 
 export const ABCI_QUERY_PATH = {
