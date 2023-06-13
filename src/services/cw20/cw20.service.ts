@@ -177,7 +177,7 @@ export default class Cw20Service extends BullableService {
   ): Promise<void> {
     if (mintEvents.length > 0) {
       // get all holders events, and order by event_height: amount token to address
-      const holdersEvents: IHolderEvent[] = _.orderBy(
+      const holderEvents: IHolderEvent[] = _.orderBy(
         mintEvents.map((event) => ({
           address: getAttributeFrom(
             event.attributes,
@@ -201,10 +201,7 @@ export default class Cw20Service extends BullableService {
         .withGraphJoined('smart_contract')
         .whereIn(
           ['address', 'smart_contract.address'],
-          holdersEvents.map((holder) => [
-            holder.address,
-            holder.contract_address,
-          ])
+          holderEvents.map((event) => [event.address, event.contract_address])
         )
         .select('address', 'smart_contract.address as contract_address');
       // get all related cw20_contract in DB for updating total_supply
@@ -213,7 +210,7 @@ export default class Cw20Service extends BullableService {
         .withGraphJoined('smart_contract')
         .whereIn(
           'smart_contract.address',
-          holdersEvents.map((holder) => holder.contract_address)
+          holderEvents.map((event) => event.contract_address)
         );
       // for each cw20 contracts
       cw20Contracts.forEach((cw20Contract) => {
@@ -226,32 +223,27 @@ export default class Cw20Service extends BullableService {
           )
           .forEach((holder) => {
             let balance = holder.amount;
-            let lastUpdatedHeight = holder.last_updated_height;
+            const lastUpdatedHeight = holder.last_updated_height;
             // get all holder event belong to this holder, check whether event height > last_updated_height then add amount balance
-            holdersEvents
+            holderEvents
               .filter(
-                (holderEvent) =>
-                  holderEvent.address === holder.address &&
-                  holderEvent.contract_address === holder.contract_address
+                (event) =>
+                  event.address === holder.address &&
+                  event.contract_address === holder.contract_address &&
+                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                  // @ts-ignore
+                  lastUpdatedHeight < holderEvent.event_height
               )
-              .forEach((holderEvent) => {
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                if (lastUpdatedHeight < holder.event_height) {
-                  balance = (
-                    BigInt(balance) + BigInt(holderEvent.amount)
-                  ).toString();
-                  lastUpdatedHeight = holderEvent.event_height;
-                  totalSupply = (
-                    BigInt(totalSupply) + BigInt(holderEvent.amount)
-                  ).toString();
-                }
+              .forEach((event) => {
+                balance = (BigInt(balance) + BigInt(event.amount)).toString();
+                totalSupply = (
+                  BigInt(totalSupply) + BigInt(event.amount)
+                ).toString();
               });
             queries.push(
               CW20Holder.query()
                 .patch({
                   amount: balance,
-                  last_updated_height: lastUpdatedHeight,
                 })
                 .where({
                   id: holder.id,
