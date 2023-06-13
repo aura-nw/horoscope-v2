@@ -117,6 +117,9 @@
     "hasuraRole": "internal_service",
     "hasuraGraphQL": "https://indexer-v2.dev.aurascan.io/v1/graphql",
     "depthLimit": 3,
+    "rootWhereDepthBase": 9,
+    "rootWhereDepthLimit": 2,
+    "subWhereDepthLimit": 1,
     "rateLimitWindow": 60000,
     "rateLimitQuery": 30
   }

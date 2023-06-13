@@ -1,11 +1,14 @@
 import { Context, ServiceBroker } from 'moleculer';
 import { Post, Service } from '@ourparentcenter/moleculer-decorators-extended';
 import axios from 'axios';
+import gql from 'graphql-tag';
+import { FieldNode, OperationDefinitionNode } from 'graphql';
 import BaseService from '../../base/base.service';
 import { IContextGraphQLQuery, Config } from '../../common';
 import { ResponseDto } from '../../common/types/response-api';
 import config from '../../../config.json' assert { type: 'json' };
 import { ErrorCode, ErrorMessage } from '../../common/types/errors';
+import Utils from '../../common/utils/utils';
 
 @Service({
   name: 'graphiql',
@@ -66,6 +69,51 @@ export default class GraphiQLService extends BaseService {
         return result;
       }
     }
+
+    const graphqlObj = gql`
+      ${query}
+    `;
+    const selections = (graphqlObj.definitions[0] as OperationDefinitionNode)
+      .selectionSet.selections as FieldNode[];
+    selections.forEach((selection: FieldNode) => {
+      (selection.selectionSet?.selections as FieldNode[]).forEach(
+        (sel: FieldNode) => {
+          const where = sel.arguments?.find(
+            (arg) => arg.name.value === 'where'
+          );
+
+          if (where) {
+            if (
+              Utils.getDepth(where) >
+              config.graphiqlApi.rootWhereDepthBase +
+                config.graphiqlApi.rootWhereDepthLimit * 3
+            ) {
+              result = {
+                code: ErrorCode.WRONG,
+                message: ErrorMessage.VALIDATION_ERROR,
+                data: 'The root where query depth must not be greater than 2',
+              };
+            }
+          }
+
+          const subWhere = Utils.filterWhereQuery(sel.selectionSet);
+          subWhere.forEach((sub: any) => {
+            if (
+              Utils.getDepth(sub) >
+              config.graphiqlApi.rootWhereDepthBase +
+                config.graphiqlApi.subWhereDepthLimit * 3
+            ) {
+              result = {
+                code: ErrorCode.WRONG,
+                message: ErrorMessage.VALIDATION_ERROR,
+                data: 'The sub where query depth must not be greater than 1',
+              };
+            }
+          });
+        }
+      );
+    });
+    if (result.code !== '') return result;
 
     try {
       const response = await axios({
