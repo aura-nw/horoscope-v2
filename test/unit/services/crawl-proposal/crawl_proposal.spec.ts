@@ -323,7 +323,7 @@ export default class CrawlProposalTest {
     await Proposal.query()
       .patch({
         proposal_id: 2,
-        deposit_end_time: new Date(new Date().getSeconds() - 10).toISOString(),
+        deposit_end_time: new Date(new Date().getSeconds() - 20).toISOString(),
         status: Proposal.STATUS.PROPOSAL_STATUS_DEPOSIT_PERIOD,
       })
       .where({ proposal_id: 1 });
