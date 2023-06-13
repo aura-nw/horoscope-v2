@@ -70,14 +70,30 @@ export default class CrawlIBCService extends BullableService {
         });
 
       // crawl ibc channel by connection_id
-      await Promise.all(
-        connections.map((connection) =>
-          this.crawlIbcChannel({ connectionId: connection.id })
-        )
-      );
+      connections.forEach((connection) => {
+        if (connection.state === IbcConnection.STATE.STATE_OPEN)
+          this.createJob(
+            BULL_JOB_NAME.CRAWL_IBC_CHANNEL,
+            BULL_JOB_NAME.CRAWL_IBC_CHANNEL,
+            {
+              connectionId: connection.id,
+            },
+            {
+              jobId: connection.id,
+              removeOnComplete: true,
+              removeOnFail: {
+                count: 3,
+              },
+            }
+          );
+      });
     }
   }
 
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.CRAWL_IBC_CHANNEL,
+    jobName: BULL_JOB_NAME.CRAWL_IBC_CHANNEL,
+  })
   public async crawlIbcChannel(_payload: { connectionId: string }) {
     this.logger.info(
       'Crawl IBC channel by connection_id',

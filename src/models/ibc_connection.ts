@@ -38,4 +38,14 @@ export class IbcConnection extends BaseModel {
       },
     };
   }
+
+  static get STATE() {
+    return {
+      STATE_UNINITIALIZED_UNSPECIFIED: 'STATE_UNINITIALIZED_UNSPECIFIED',
+      STATE_INIT: 'STATE_INIT',
+      STATE_TRYOPEN: 'STATE_TRYOPEN',
+      STATE_OPEN: 'STATE_OPEN',
+      UNRECOGNIZED: 'UNRECOGNIZED',
+    };
+  }
 }
