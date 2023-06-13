@@ -15,9 +15,11 @@ import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { Knex } from 'knex';
+import _ from 'lodash';
 import {
   BlockCheckpoint,
   Code,
+  CodeIdVerification,
   Event,
   EventAttribute,
   Transaction,
@@ -60,14 +62,14 @@ export default class CrawlCodeService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_CODE,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_CODE,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: object): Promise<void> {
     const [startHeight, endHeight, updateBlockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.CRAWL_CODE,
-        BULL_JOB_NAME.HANDLE_TRANSACTION,
+        [BULL_JOB_NAME.HANDLE_TRANSACTION],
         config.crawlCodeId.key
       );
     this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
@@ -88,10 +90,6 @@ export default class CrawlCodeService extends BullableService {
         'events:attributes.key',
         'events:attributes.value'
       );
-    this.logger.info(
-      `Result get Tx from height ${startHeight} to ${endHeight}:`
-    );
-    this.logger.info(JSON.stringify(resultTx));
 
     if (resultTx.length > 0)
       resultTx.map((res: any) =>
@@ -150,20 +148,56 @@ export default class CrawlCodeService extends BullableService {
           )
       );
 
-      const codeEntities = onchainCodeIds.map((code, index) =>
-        Code.fromJson({
+      // Need an array of data hashes to check for verification status of code ids
+      let dataHashes: string[] = [];
+
+      const codeEntities = onchainCodeIds.map((code, index) => {
+        const dataHash = toHex(
+          code.codeInfo?.dataHash || new Uint8Array()
+        ).toLowerCase();
+        dataHashes.push(dataHash);
+        return Code.fromJson({
           code_id: parseInt(codeIds[index].codeId.toString(), 10),
           creator: code.codeInfo?.creator,
-          data_hash: toHex(
-            code.codeInfo?.dataHash || new Uint8Array()
-          ).toLowerCase(),
+          data_hash: dataHash,
           instantiate_permission: code.codeInfo?.instantiatePermission,
           type: null,
           status: null,
           store_hash: codeIds[index].hash,
           store_height: codeIds[index].height,
-        })
-      );
+        });
+      });
+
+      dataHashes = Array.from(new Set(dataHashes));
+      const codeIdVerifications = await CodeIdVerification.query()
+        .whereIn('data_hash', dataHashes)
+        .andWhere(
+          'verification_status',
+          CodeIdVerification.VERIFICATION_STATUS.SUCCESS
+        );
+
+      const newVerifications: CodeIdVerification[] = [];
+      codeIdVerifications.forEach((verification) => {
+        const codes = codeEntities.filter(
+          (code) => code.data_hash === verification.data_hash
+        );
+        const omitVerification = _.omit(verification, [
+          'id',
+          'created_at',
+          'updated_at',
+        ]);
+        if (codes.length > 0) {
+          newVerifications.push(
+            ...codes.map((code) =>
+              CodeIdVerification.fromJson({
+                ...omitVerification,
+                code_id: code.code_id,
+                verified_at: new Date().toISOString(),
+              })
+            )
+          );
+        }
+      });
 
       if (codeEntities.length > 0)
         await Code.query()
@@ -173,7 +207,18 @@ export default class CrawlCodeService extends BullableService {
           .returning('code_id')
           .transacting(trx)
           .catch((error) => {
-            this.logger.error('Error insert or update code ids');
+            this.logger.error(
+              `Error insert or update code ids: ${JSON.stringify(codeEntities)}`
+            );
+            this.logger.error(error);
+          });
+
+      if (newVerifications.length > 0)
+        await CodeIdVerification.query()
+          .insert(newVerifications)
+          .transacting(trx)
+          .catch((error) => {
+            this.logger.error('Error insert code id verifications');
             this.logger.error(error);
           });
     }

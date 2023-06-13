@@ -1,27 +1,21 @@
 import { Model } from 'objection';
 import BaseModel from './base';
-import { CW20Token } from './cw20_token';
+// eslint-disable-next-line import/no-cycle
+import { Cw20Contract } from './cw20_contract';
+import { SmartContract } from './smart_contract';
 
-export interface ICW20Holder {
-  id?: number;
-  address: string;
-  balance: string;
-  contract_address: string;
-  created_at?: Date;
-  updated_at?: Date;
-}
-export class CW20Holder extends BaseModel implements ICW20Holder {
-  id?: number;
+export class CW20Holder extends BaseModel {
+  [relation: string]: any;
 
-  contract_address!: string;
+  id?: number;
 
   address!: string;
 
-  balance!: string;
+  amount!: string;
 
-  created_at?: Date;
+  last_updated_height?: number;
 
-  updated_at?: Date;
+  cw20_contract_id!: number;
 
   static get tableName() {
     return 'cw20_holder';
@@ -30,11 +24,11 @@ export class CW20Holder extends BaseModel implements ICW20Holder {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['balance', 'contract_address', 'address'],
+      required: ['amount', 'address'],
       properties: {
-        contract_address: { type: 'string' },
+        cw20_contract_id: { type: 'number' },
         address: { type: 'string' },
-        balance: { type: 'string' },
+        amount: { type: 'string' },
       },
     };
   }
@@ -43,10 +37,22 @@ export class CW20Holder extends BaseModel implements ICW20Holder {
     return {
       token: {
         relation: Model.BelongsToOneRelation,
-        modelClass: CW20Token,
+        modelClass: Cw20Contract,
         join: {
-          from: 'cw20_holder.contract_address',
-          to: 'cw20_token.contract_address',
+          from: 'cw20_holder.cw20_contract_id',
+          to: 'cw20_contract.id',
+        },
+      },
+      smart_contract: {
+        relation: Model.HasOneThroughRelation,
+        modelClass: SmartContract,
+        join: {
+          from: 'cw20_holder.cw20_contract_id',
+          to: 'smart_contract.id',
+          through: {
+            from: 'cw20_contract.id',
+            to: 'cw20_contract.smart_contract_id',
+          },
         },
       },
     };

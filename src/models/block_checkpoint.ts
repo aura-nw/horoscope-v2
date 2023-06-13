@@ -23,22 +23,20 @@ export class BlockCheckpoint extends BaseModel {
 
   static async getCheckpoint(
     jobName: string,
-    lastHeightJobName: string,
+    lastHeightJobNames: string[],
     configName?: string
   ): Promise<[number, number, BlockCheckpoint]> {
-    const checkpoint: BlockCheckpoint[] = await BlockCheckpoint.query()
-      .select('*')
-      .whereIn('job_name', [jobName, lastHeightJobName]);
-
+    const [jobCheckpoint, lastHeightCheckpoint] = await Promise.all([
+      BlockCheckpoint.query().select('*').where('job_name', jobName).first(),
+      BlockCheckpoint.query()
+        .select('*')
+        .whereIn('job_name', lastHeightJobNames)
+        .orderBy('height', 'ASC')
+        .first(),
+    ]);
     let startHeight = 0;
     let endHeight = 0;
     let updateBlockCheckpoint: BlockCheckpoint;
-    const jobCheckpoint = checkpoint.find(
-      (check) => check.job_name === jobName
-    );
-    const lastHeightCheckpoint = checkpoint.find(
-      (check) => check.job_name === lastHeightJobName
-    );
     if (jobCheckpoint) {
       startHeight = jobCheckpoint.height;
       updateBlockCheckpoint = jobCheckpoint;

@@ -69,6 +69,8 @@ jobs:
         run: cp ci/config.json.ci config.json
       - name: Setup network.json
         run: cp ci/network.json.ci network.json
+      - name: Setup code-type.json
+        run: cp ci/code-type.json.ci code-type.json
       - name: Test
         env:
           NODE_ENV: test

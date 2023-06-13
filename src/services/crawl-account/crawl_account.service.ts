@@ -59,7 +59,7 @@ export default class CrawlAccountService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJobAccountAuth(_payload: IAddressesParam): Promise<void> {
@@ -69,8 +69,6 @@ export default class CrawlAccountService extends BullableService {
     const accountVestings: AccountVesting[] = [];
 
     if (_payload.addresses.length > 0) {
-      this.logger.info(`Crawl account auth addresses: ${_payload.addresses}`);
-
       const accountsInDb: Account[] = await Account.query()
         .select('*')
         .whereIn('address', _payload.addresses);
@@ -83,91 +81,100 @@ export default class CrawlAccountService extends BullableService {
               await this._lcdClient.auranw.cosmos.auth.v1beta1.account({
                 address: acc.address,
               });
+
+            const account = acc;
+            account.type = resultCallApi.account['@type'];
+            switch (resultCallApi.account['@type']) {
+              case AccountType.CONTINUOUS_VESTING:
+              case AccountType.DELAYED_VESTING:
+              case AccountType.PERIODIC_VESTING:
+                account.pubkey =
+                  resultCallApi.account.base_vesting_account.base_account.pub_key;
+                account.account_number = Number.parseInt(
+                  resultCallApi.account.base_vesting_account.base_account
+                    .account_number,
+                  10
+                );
+                account.sequence = Number.parseInt(
+                  resultCallApi.account.base_vesting_account.base_account
+                    .sequence,
+                  10
+                );
+                break;
+              case AccountType.MODULE:
+                account.pubkey = resultCallApi.account.base_account.pub_key;
+                account.account_number = Number.parseInt(
+                  resultCallApi.account.base_account.account_number,
+                  10
+                );
+                account.sequence = Number.parseInt(
+                  resultCallApi.account.base_account.sequence,
+                  10
+                );
+                break;
+              default:
+                account.pubkey = resultCallApi.account.pub_key;
+                account.account_number = Number.parseInt(
+                  resultCallApi.account.account_number,
+                  10
+                );
+                account.sequence = Number.parseInt(
+                  resultCallApi.account.sequence,
+                  10
+                );
+                break;
+            }
+
+            accounts.push(account);
+
+            if (
+              resultCallApi.account['@type'] ===
+                AccountType.CONTINUOUS_VESTING ||
+              resultCallApi.account['@type'] === AccountType.DELAYED_VESTING ||
+              resultCallApi.account['@type'] === AccountType.PERIODIC_VESTING
+            ) {
+              const accountVesting: AccountVesting = AccountVesting.fromJson({
+                account_id: account.id,
+                original_vesting:
+                  resultCallApi.account.base_vesting_account.original_vesting,
+                delegated_free:
+                  resultCallApi.account.base_vesting_account.delegated_free,
+                delegated_vesting:
+                  resultCallApi.account.base_vesting_account.delegated_vesting,
+                start_time: resultCallApi.account.start_time
+                  ? Number.parseInt(resultCallApi.account.start_time, 10)
+                  : null,
+                end_time: resultCallApi.account.base_vesting_account.end_time,
+              });
+              accountVestings.push(accountVesting);
+            }
           } catch (error) {
             this.logger.error(error);
-            throw error;
-          }
-
-          const account = acc;
-          account.type = resultCallApi.account['@type'];
-          switch (resultCallApi.account['@type']) {
-            case AccountType.CONTINUOUS_VESTING:
-            case AccountType.DELAYED_VESTING:
-            case AccountType.PERIODIC_VESTING:
-              account.pubkey =
-                resultCallApi.account.base_vesting_account.base_account.pub_key;
-              account.account_number = Number.parseInt(
-                resultCallApi.account.base_vesting_account.base_account
-                  .account_number,
-                10
-              );
-              account.sequence = Number.parseInt(
-                resultCallApi.account.base_vesting_account.base_account
-                  .sequence,
-                10
-              );
-              break;
-            case AccountType.MODULE:
-              account.pubkey = resultCallApi.account.base_account.pub_key;
-              account.account_number = Number.parseInt(
-                resultCallApi.account.base_account.account_number,
-                10
-              );
-              account.sequence = Number.parseInt(
-                resultCallApi.account.base_account.sequence,
-                10
-              );
-              break;
-            default:
-              account.pubkey = resultCallApi.account.pub_key;
-              account.account_number = Number.parseInt(
-                resultCallApi.account.account_number,
-                10
-              );
-              account.sequence = Number.parseInt(
-                resultCallApi.account.sequence,
-                10
-              );
-              break;
-          }
-
-          accounts.push(account);
-
-          if (
-            resultCallApi.account['@type'] === AccountType.CONTINUOUS_VESTING ||
-            resultCallApi.account['@type'] === AccountType.DELAYED_VESTING ||
-            resultCallApi.account['@type'] === AccountType.PERIODIC_VESTING
-          ) {
-            const accountVesting: AccountVesting = AccountVesting.fromJson({
-              account_id: account.id,
-              original_vesting:
-                resultCallApi.account.base_vesting_account.original_vesting,
-              delegated_free:
-                resultCallApi.account.base_vesting_account.delegated_free,
-              delegated_vesting:
-                resultCallApi.account.base_vesting_account.delegated_vesting,
-              start_time: resultCallApi.account.start_time
-                ? Number.parseInt(resultCallApi.account.start_time, 10)
-                : null,
-              end_time: resultCallApi.account.base_vesting_account.end_time,
-            });
-            accountVestings.push(accountVesting);
           }
         })
       );
 
       await knex
         .transaction(async (trx) => {
-          await Account.query()
-            .insert(accounts)
-            .onConflict('address')
-            .merge()
-            .returning('id')
-            .transacting(trx)
-            .catch((error) => {
-              this.logger.error('Error insert account auth');
-              this.logger.error(error);
-            });
+          const patchQueries = accounts.map((account) =>
+            Account.query()
+              .patch({
+                type: account.type,
+                pubkey: account.pubkey,
+                account_number: account.account_number,
+                sequence: account.sequence,
+              })
+              .where({ id: account.id })
+              .transacting(trx)
+          );
+          try {
+            await Promise.all(patchQueries);
+          } catch (error) {
+            this.logger.error(
+              `Error update account auth: ${_payload.addresses}`
+            );
+            this.logger.error(error);
+          }
 
           if (accountVestings.length > 0)
             await AccountVesting.query()
@@ -177,7 +184,9 @@ export default class CrawlAccountService extends BullableService {
               .returning('id')
               .transacting(trx)
               .catch((error) => {
-                this.logger.error('Error insert account vesting');
+                this.logger.error(
+                  `Error insert account vesting: ${_payload.addresses}`
+                );
                 this.logger.error(error);
               });
         })
@@ -190,7 +199,7 @@ export default class CrawlAccountService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJobAccountBalances(
@@ -199,8 +208,6 @@ export default class CrawlAccountService extends BullableService {
     this._lcdClient = await getLcdClient();
 
     if (_payload.addresses.length > 0) {
-      this.logger.info(`Crawl account balances: ${_payload.addresses}`);
-
       const accounts: Account[] = await Account.query()
         .select('id', 'address', 'balances')
         .whereIn('address', _payload.addresses);
@@ -284,21 +291,27 @@ export default class CrawlAccountService extends BullableService {
         })
       );
 
-      await Account.query()
-        .insert(accounts)
-        .onConflict('address')
-        .merge()
-        .returning('id')
-        .catch((error) => {
-          this.logger.error('Error insert account balance');
-          this.logger.error(error);
-        });
+      const patchQueries = accounts.map((account) =>
+        Account.query()
+          .patch({
+            balances: account.balances,
+          })
+          .where({ id: account.id })
+      );
+      try {
+        await Promise.all(patchQueries);
+      } catch (error) {
+        this.logger.error(
+          `Error update account balance: ${_payload.addresses}`
+        );
+        this.logger.error(error);
+      }
     }
   }
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJobAccountSpendableBalances(
@@ -307,10 +320,6 @@ export default class CrawlAccountService extends BullableService {
     this._lcdClient = await getLcdClient();
 
     if (_payload.addresses.length > 0) {
-      this.logger.info(
-        `Crawl account spendable balances: ${_payload.addresses}`
-      );
-
       const accounts: Account[] = await Account.query()
         .select('id', 'address', 'spendable_balances')
         .whereIn('address', _payload.addresses);
@@ -401,15 +410,21 @@ export default class CrawlAccountService extends BullableService {
         })
       );
 
-      await Account.query()
-        .insert(accounts)
-        .onConflict('address')
-        .merge()
-        .returning('id')
-        .catch((error) => {
-          this.logger.error('Error insert account stake spendable balance');
-          this.logger.error(error);
-        });
+      const patchQueries = accounts.map((account) =>
+        Account.query()
+          .patch({
+            spendable_balances: account.spendable_balances,
+          })
+          .where({ id: account.id })
+      );
+      try {
+        await Promise.all(patchQueries);
+      } catch (error) {
+        this.logger.error(
+          `Error update account spendable balance: ${_payload.addresses}`
+        );
+        this.logger.error(error);
+      }
     }
   }
 
@@ -510,7 +525,7 @@ export default class CrawlAccountService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleVestingAccounts(_payload: object): Promise<void> {
@@ -553,18 +568,39 @@ export default class CrawlAccountService extends BullableService {
   }
 
   public async _start() {
+    // this.createJob(
+    //   BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT,
+    //   'crawl',
+    //   {},
+    //   {
+    //     removeOnComplete: true,
+    //     removeOnFail: {
+    //       count: 3,
+    //     },
+    //     repeat: {
+    //       every: config.crawlAccount.handleVestingAccount.millisecondCrawl,
+    //     },
+    //   }
+    // );
     this.createJob(
-      BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT,
+      BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
       'crawl',
-      {},
+      {
+        addresses: [
+          'aura1m3h30wlvsf8llruxtpukdvsy0km2kum8n8s69e',
+          'aura17xpfvakm2amg962yls6f84z3kell8c5lt05zfy',
+          'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+          'aura1gypt2w7xg5t9yr76hx6zemwd4xv72jckk03r6t',
+          'aura1tygms3xhhs3yv487phx3dw4a95jn7t7l6dzud6',
+        ],
+      },
       {
         removeOnComplete: true,
         removeOnFail: {
           count: 3,
         },
-        repeat: {
-          every: config.crawlAccount.handleVestingAccount.millisecondCrawl,
-        },
+        attempts: config.jobRetryAttempt,
+        backoff: config.jobRetryBackoff,
       }
     );
 

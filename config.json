@@ -3,6 +3,7 @@
   "networkPrefixAddress": "aura",
   "consensusPrefixAddress": "valcons",
   "validatorPrefixAddress": "valoper",
+  "networkDenom": "utaura",
   "jobRetryAttempt": 5,
   "jobRetryBackoff": 1000,
   "crawlValidator": {
@@ -10,11 +11,13 @@
     "queryPageLimit": 100
   },
   "cw721": {
-    "blocksPerBatch": 100,
-    "millisecondRepeatJob": 5000,
+    "key": "cw721",
+    "blocksPerCall": 100,
+    "millisecondRepeatJob": 2000,
     "startBlock": 0,
     "millisecondRepeatJobMedia": 10000,
-    "mediaPerBatch": 10
+    "mediaPerBatch": 10,
+    "millisecondRefreshMView": 3600000
   },
   "crawlBlock": {
     "millisecondCrawl": 5000,
@@ -42,10 +45,16 @@
     },
     "handleNotEnoughDepositProposal": {
       "millisecondCrawl": 30000
+    },
+    "handleEndedProposal": {
+      "millisecondCrawl": 30000
     }
   },
   "crawlTallyProposal": {
     "millisecondCrawl": 10000
+  },
+  "countVoteProposal": {
+    "millisecondCrawl": 5000
   },
   "handleStakeEvent": {
     "key": "handleStakeEvent",
@@ -58,6 +67,7 @@
     "blocksPerCall": 100
   },
   "handleAuthzTx": {
+    "key": "handleAuthzTx",
     "blocksPerCall": 100,
     "millisecondCrawl": 5000
   },
@@ -72,8 +82,42 @@
     "codesPerBatch": 5000,
     "smartContractsPerBatch": 5000
   },
+  "handleVoteTx": {
+    "key": "handleVoteTx",
+    "blocksPerCall": 100,
+    "millisecondCrawl": 5000
+  },
   "crawlDelegators": {
     "millisecondCrawl": 3600000,
     "queryPageLimit": 100
+  },
+  "cw20": {
+    "blocksPerCall": 100,
+    "millisecondRepeatJob": 2000,
+    "key": "cw20"
+  },
+  "crawlContractEvent": {
+    "key": "crawlContractEvent",
+    "blocksPerCall": 100,
+    "millisecondRepeatJob": 2000
+  },
+  "dashboardStatistics": {
+    "millisecondCrawl": 10000,
+    "queryPageLimit": 100
+  },
+  "feegrant": {
+    "updateFeegrant": {
+      "millisecondRepeatJob": 2000,
+      "limitPerCall": 2000
+    },
+    "millisecondRepeatJob": 2000,
+    "key": "feegrant"
+  },
+  "graphiqlApi": {
+    "hasuraRole": "internal_service",
+    "hasuraGraphQL": "https://indexer-v2.dev.aurascan.io/v1/graphql",
+    "depthLimit": 3,
+    "rateLimitWindow": 60000,
+    "rateLimitQuery": 30
   }
 }

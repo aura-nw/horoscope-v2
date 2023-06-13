@@ -1,5 +1,6 @@
 export const REDIS_KEY = {
   IBC_DENOM: 'ibc_denom',
+  DASHBOARD_STATISTICS: 'dashboard_statistics',
 };
 
 export const URL_TYPE_CONSTANTS = {
@@ -31,11 +32,13 @@ export const BULL_JOB_NAME = {
   CRAWL_BLOCK: 'crawl:block',
   CRAWL_TRANSACTION: 'crawl:transaction',
   HANDLE_TRANSACTION: 'handle:transaction',
-  FILTER_CW721_TRANSACTION: 'filter:cw721-tx',
-  HANDLE_CW721_EXECUTE: 'handle:cw721-execute',
+  HANDLE_CW721_TRANSACTION: 'handle:cw721-tx',
+  REFRESH_CW721_M_VIEW: 'refresh:cw721-m-view',
   CRAWL_PROPOSAL: 'crawl:proposal',
   CRAWL_TALLY_PROPOSAL: 'crawl:tally-proposal',
+  COUNT_VOTE_PROPOSAL: 'handle:count-vote-proposal',
   HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL: 'handle:not-enough-deposit-proposal',
+  HANDLE_ENDED_PROPOSAL: 'handle:ended-proposal',
   CRAWL_GENESIS: 'crawl:genesis',
   CRAWL_CODE: 'crawl:code',
   CRAWL_SMART_CONTRACT: 'crawl:smart-contract',
@@ -43,10 +46,16 @@ export const BULL_JOB_NAME = {
   CRAWL_GENESIS_CODE: 'crawl:genesis-code',
   CRAWL_GENESIS_CONTRACT: 'crawl:genesis-contract',
   HANDLE_AUTHZ_TX: 'handle:authz-tx',
+  HANDLE_VOTE_TX: 'handle:vote-tx',
   CRAWL_DELEGATORS: 'crawl:delegators',
   CRAWL_VALIDATOR_DELEGATORS: 'crawl:validator-delegators',
+  CRAWL_CONTRACT_EVENT: 'crawl:contract-event',
   FILTER_TOKEN_MEDIA_UNPROCESS: 'filter:cw721-token-media-unprocess',
   HANDLE_CW721_TOKEN_MEDIA: 'handle:cw721-token-media',
+  HANDLE_CW20: 'handle:cw20',
+  HANDLE_DASHBOARD_STATISTICS: 'handle:dashboard-statistics',
+  UPDATE_FEEGRANT: 'update:feegrant',
+  HANDLE_FEEGRANT: 'handle:feegrant',
 };
 
 export const SERVICE = {
@@ -87,6 +96,10 @@ export const SERVICE = {
       name: 'v1.CrawlTallyProposalService',
       key: 'CrawlTallyProposalService',
     },
+    CountVoteProposalService: {
+      name: 'v1.CountVoteProposalService',
+      key: 'CountVoteProposalService',
+    },
     HandleStakeEventService: {
       key: 'HandleStakeEventService',
       name: 'v1.HandleStakeEventService',
@@ -124,14 +137,44 @@ export const SERVICE = {
     CrawlSmartContractService: {
       key: 'CrawlSmartContractService',
       name: 'v1.CrawlSmartContractService',
+      CrawlContractEventService: {
+        key: 'CrawlContractEventService',
+        name: 'v1.CrawlContractEventService',
+      },
+      CrawlMissingContract: {
+        key: 'CrawlMissingContract',
+        path: 'v1.CrawlSmartContractService.CrawlMissingContract',
+      },
     },
     HandleAuthzTx: {
       key: 'HandleAuthzTxService',
       name: 'v1.HandleAuthzTxService',
     },
+    HandleVoteTx: {
+      key: 'HandleVoteTxService',
+      name: 'v1.HandleVoteTxService',
+    },
     CrawlDelegatorsService: {
       key: 'CrawlDelegatorsService',
       name: 'v1.CrawlDelegatorsService',
+    },
+    Cw20: {
+      key: 'Cw20Service',
+      name: 'v1.Cw20Service',
+    },
+    DashboardStatisticsService: {
+      key: 'DashboardStatisticsService',
+      name: 'v1.DashboardStatisticsService',
+    },
+    Feegrant: {
+      HandleFeegrantHistoryService: {
+        key: 'HandleFeegrantHistoryService',
+        path: 'v1.Feegrant.HandleFeegrantHistoryService',
+      },
+      UpdateFeegrantService: {
+        key: 'UpdateFeegrantService',
+        path: 'v1.Feegrant.UpdateFeegrantService',
+      },
     },
   },
 };
@@ -151,6 +194,7 @@ export const BLOCK_CHECKPOINT_JOB_NAME = {
 export const MSG_TYPE = {
   MSG_STORE_CODE: '/cosmwasm.wasm.v1.MsgStoreCode',
   MSG_INSTANTIATE_CONTRACT: '/cosmwasm.wasm.v1.MsgInstantiateContract',
+  MSG_INSTANTIATE2_CONTRACT: '/cosmwasm.wasm.v1.MsgInstantiateContract2',
   MSG_EXECUTE_CONTRACT: '/cosmwasm.wasm.v1.MsgExecuteContract',
   MSG_UPDATE_CLIENT: '/ibc.core.client.v1.MsgUpdateClient',
   MSG_DELEGATE: '/cosmos.staking.v1beta1.MsgDelegate',
@@ -159,7 +203,11 @@ export const MSG_TYPE = {
   MSG_CREATE_VALIDATOR: '/cosmos.staking.v1beta1.MsgCreateValidator',
   MSG_SUBMIT_PROPOSAL: '/cosmos.gov.v1beta1.MsgSubmitProposal',
   MSG_AUTHZ_EXEC: '/cosmos.authz.v1beta1.MsgExec',
+  MSG_VOTE: '/cosmos.gov.v1beta1.MsgVote',
   MSG_ACKNOWLEDGEMENT: '/ibc.core.channel.v1.MsgAcknowledgement',
+  MSG_GRANT_ALLOWANCE: '/cosmos.feegrant.v1beta1.MsgGrantAllowance',
+  MSG_FEEGRANT_GRANT: '/cosmos.feegrant.v1beta1.MsgGrantAllowance',
+  MSG_FEEGRANT_REVOKE: '/cosmos.feegrant.v1beta1.MsgRevokeAllowance',
 };
 
 export const ABCI_QUERY_PATH = {

@@ -21,6 +21,7 @@ import {
   IAuraJSClientFactory,
   SERVICE,
 } from '../../common';
+import Utils from '../../common/utils/utils';
 
 @Service({
   name: SERVICE.V1.CrawlTallyProposalService.key,
@@ -38,16 +39,18 @@ export default class CrawlTallyProposalService extends BullableService {
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_TALLY_PROPOSAL,
-    jobName: 'crawl',
+    jobName: BULL_JOB_NAME.CRAWL_TALLY_PROPOSAL,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: object): Promise<void> {
+    this.logger.info('Update proposal tally');
     this._lcdClient = await getLcdClient();
 
     const batchQueries: any[] = [];
+    const patchQueries: any[] = [];
 
-    const now = new Date(new Date().getSeconds() - 10);
-    const prev = new Date(new Date().getSeconds() - 30);
+    const now = new Date(Date.now() - 10);
+    const prev = new Date(Date.now() - 30);
     const votingProposals = await Proposal.query()
       .where('status', Proposal.STATUS.PROPOSAL_STATUS_VOTING_PERIOD)
       .orWhere((builder) =>
@@ -104,25 +107,23 @@ export default class CrawlTallyProposalService extends BullableService {
           ) / 1000000;
       }
 
-      votingProposals[index].tally = {
-        yes: tally?.yes || '0',
-        no: tally?.no || '0',
-        abstain: tally?.abstain || '0',
-        no_with_veto: tally?.noWithVeto || '0',
-      };
-      votingProposals[index].turnout = turnout;
+      patchQueries.push(
+        Proposal.query()
+          .where('proposal_id', votingProposals[index].proposal_id)
+          .patch({
+            tally: Utils.camelizeKeys(tally),
+            turnout,
+          })
+      );
     });
 
-    if (votingProposals.length > 0)
-      await Proposal.query()
-        .insert(votingProposals)
-        .onConflict('proposal_id')
-        .merge()
-        .returning('proposal_id')
-        .catch((error) => {
-          this.logger.error('Error update proposals tally');
-          this.logger.error(error);
-        });
+    if (patchQueries.length > 0)
+      await Promise.all(patchQueries).catch((error) => {
+        this.logger.error(
+          `Error update proposals tally: ${JSON.stringify(votingProposals)}`
+        );
+        this.logger.error(error);
+      });
   }
 
   public async _start() {
