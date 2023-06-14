@@ -90,12 +90,12 @@ export default class Cw20Service extends BullableService {
           trx
         );
         // handle all cw20 execute
-        await this.handleCw20Exec(
-          cw20Events.filter((msg) => msg.action !== CW20_ACTION.INSTANTIATE),
-          trx
-        );
+        // await this.handleCw20Exec(
+        //   cw20Events.filter((msg) => msg.action !== CW20_ACTION.INSTANTIATE),
+        //   trx
+        // );
         // handle Cw721 Activity
-        await this.handleCW20Activity(cw20Events);
+        // await this.handleCW20Activity(cw20Events);
       }
       updateBlockCheckpoint.height = endBlock;
       await BlockCheckpoint.query()
