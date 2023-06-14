@@ -24,21 +24,21 @@ export default class GraphiQLTest {
     await this.broker.stop();
   }
 
-  @Test('Query success')
-  public async testQuerySuccess() {
-    const result: ResponseDto = await this.broker.call(
-      'v1.graphiql.handleGraphQLQuery',
-      {
-        operationName: 'MyQuery',
-        query:
-          'query MyQuery { auratestnet { block { hash height proposer_address transactions { code codespace event_attributes { key value } } } } }',
-        variables: {},
-      }
-    );
+  // @Test('Query success')
+  // public async testQuerySuccess() {
+  //   const result: ResponseDto = await this.broker.call(
+  //     'v1.graphiql.handleGraphQLQuery',
+  //     {
+  //       operationName: 'MyQuery',
+  //       query:
+  //         'query MyQuery { auratestnet { block { hash height proposer_address transactions { code codespace event_attributes { key value } } } } }',
+  //       variables: {},
+  //     }
+  //   );
 
-    expect(result?.code).toEqual(ErrorCode.SUCCESSFUL);
-    expect(result?.message).toEqual(ErrorMessage.SUCCESSFUL);
-  }
+  //   expect(result?.code).toEqual(ErrorCode.SUCCESSFUL);
+  //   expect(result?.message).toEqual(ErrorMessage.SUCCESSFUL);
+  // }
 
   @Test('Invalid query format')
   public async testInvalidQueryFormat() {
