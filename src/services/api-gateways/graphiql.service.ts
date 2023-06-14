@@ -43,7 +43,9 @@ export default class GraphiQLService extends BaseService {
       variables: 'any',
     },
   })
-  async handleGraphQLQuery(ctx: Context<IContextGraphQLQuery>) {
+  async handleGraphQLQuery(
+    ctx: Context<IContextGraphQLQuery>
+  ): Promise<ResponseDto> {
     const { query } = ctx.params;
 
     let result: ResponseDto = {
@@ -64,79 +66,111 @@ export default class GraphiQLService extends BaseService {
         result = {
           code: ErrorCode.WRONG,
           message: ErrorMessage.VALIDATION_ERROR,
-          data: 'The query depth must not be greater than 3',
+          data: `The query depth must not be greater than ${config.graphiqlApi.depthLimit}`,
         };
         return result;
       }
     }
 
-    const graphqlObj = gql`
-      ${query}
-    `;
-    const selections = (graphqlObj.definitions[0] as OperationDefinitionNode)
-      .selectionSet.selections as FieldNode[];
-    selections.forEach((selection: FieldNode) => {
-      (selection.selectionSet?.selections as FieldNode[]).forEach(
-        (sel: FieldNode) => {
-          const where = sel.arguments?.find(
-            (arg) => arg.name.value === 'where'
-          );
+    let graphqlObj;
+    try {
+      graphqlObj = gql`
+        ${query}
+      `;
+    } catch (error) {
+      this.logger.error('Error parse GraphQL query');
+      this.logger.error(error);
+      result = {
+        code: ErrorCode.WRONG,
+        message: ErrorMessage.VALIDATION_ERROR,
+        data: 'Invalid query',
+      };
+    }
 
-          if (where) {
-            if (
-              Utils.getDepth(where) >
-              config.graphiqlApi.rootWhereDepthBase +
-                config.graphiqlApi.rootWhereDepthLimit * 3
-            ) {
-              result = {
-                code: ErrorCode.WRONG,
-                message: ErrorMessage.VALIDATION_ERROR,
-                data: 'The root where query depth must not be greater than 2',
-              };
-            }
-          }
-
-          const subWhere = Utils.filterWhereQuery(sel.selectionSet);
-          subWhere.forEach((sub: any) => {
-            if (
-              Utils.getDepth(sub) >
-              config.graphiqlApi.rootWhereDepthBase +
-                config.graphiqlApi.subWhereDepthLimit * 3
-            ) {
-              result = {
-                code: ErrorCode.WRONG,
-                message: ErrorMessage.VALIDATION_ERROR,
-                data: 'The sub where query depth must not be greater than 1',
-              };
-            }
-          });
+    if (graphqlObj) {
+      (graphqlObj.definitions as OperationDefinitionNode[]).forEach(
+        (definition: OperationDefinitionNode) => {
+          if (definition.operation !== 'query')
+            result = {
+              code: ErrorCode.WRONG,
+              message: ErrorMessage.VALIDATION_ERROR,
+              data: 'This Horoscope GraphiQL service only allows query operations',
+            };
         }
       );
-    });
-    if (result.code !== '') return result;
 
-    try {
-      const response = await axios({
-        url: config.graphiqlApi.hasuraGraphQL,
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${Config.HASURA_JWT}`,
-          'X-Hasura-Role': config.graphiqlApi.hasuraRole,
-        },
-        data: ctx.params,
+      const selections = (graphqlObj.definitions[0] as OperationDefinitionNode)
+        .selectionSet.selections as FieldNode[];
+      selections.forEach((selection: FieldNode) => {
+        (selection.selectionSet?.selections as FieldNode[]).forEach(
+          (sel: FieldNode) => {
+            const where = sel.arguments?.find(
+              (arg) => arg.name.value === 'where'
+            );
+
+            if (where) {
+              if (
+                Utils.getDepth(where) >
+                config.graphiqlApi.rootWhereDepthBase +
+                  config.graphiqlApi.rootWhereDepthLimit * 3
+              ) {
+                result = {
+                  code: ErrorCode.WRONG,
+                  message: ErrorMessage.VALIDATION_ERROR,
+                  data: `The root where query depth must not be greater than ${config.graphiqlApi.rootWhereDepthLimit}`,
+                };
+              }
+            }
+
+            const subWhere = Utils.filterWhereQuery(sel.selectionSet);
+            subWhere.forEach((sub: any) => {
+              if (
+                Utils.getDepth(sub) >
+                config.graphiqlApi.rootWhereDepthBase +
+                  config.graphiqlApi.subWhereDepthLimit * 3
+              ) {
+                result = {
+                  code: ErrorCode.WRONG,
+                  message: ErrorMessage.VALIDATION_ERROR,
+                  data: `The sub where query depth must not be greater than ${config.graphiqlApi.subWhereDepthLimit}`,
+                };
+              }
+            });
+          }
+        );
       });
-      result = {
-        code: response.data.data ? ErrorCode.SUCCESSFUL : ErrorCode.BAD_REQUEST,
-        message: response.data.data
-          ? ErrorMessage.SUCCESSFUL
-          : ErrorMessage.BAD_REQUEST,
-        data: response.data.data ?? response.data,
-      };
-    } catch (error) {
-      this.logger.error('Error execute GraphQL query');
-      this.logger.error(error);
+      if (result.code !== '') return result;
+
+      try {
+        const response = await axios({
+          url: config.graphiqlApi.hasuraGraphQL,
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${Config.HASURA_JWT}`,
+            'X-Hasura-Role': config.graphiqlApi.hasuraRole,
+          },
+          data: ctx.params,
+        });
+        result = {
+          code: response.data.data
+            ? ErrorCode.SUCCESSFUL
+            : ErrorCode.BAD_REQUEST,
+          message: response.data.data
+            ? ErrorMessage.SUCCESSFUL
+            : ErrorMessage.BAD_REQUEST,
+          data: response.data.data ?? response.data,
+        };
+      } catch (error: any) {
+        this.logger.error('Error execute GraphQL query');
+        this.logger.error(error);
+        result = {
+          code: error.code,
+          message: error.message,
+          data: error,
+        };
+      }
     }
 
     return result;
