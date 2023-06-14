@@ -30,6 +30,9 @@ export default class HandleAuthzTxService extends BullableService {
     this.logger.info(
       `Handle Authz Message from block ${startBlock} to block ${endBlock}`
     );
+    if (startBlock > endBlock) {
+      return;
+    }
 
     // query numberOfRow tx message has type authz and has no parent_id
     const listTxMsgs = await TransactionMessage.query()
