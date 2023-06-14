@@ -2,6 +2,7 @@
 import { fromBase64, fromBech32, toBech32, toHex } from '@cosmjs/encoding';
 import { pubkeyToRawAddress } from '@cosmjs/tendermint-rpc';
 import { Model } from 'objection';
+import { getImgFromKeybase } from '../common/utils/validator';
 import config from '../../config.json' assert { type: 'json' };
 import BaseModel from './base';
 import { PowerEvent } from './power_event';
@@ -62,6 +63,8 @@ export class Validator extends BaseModel {
   delegators_count!: number;
 
   delegators_last_height!: number;
+
+  image_url!: string;
 
   static get tableName() {
     return 'validator';
@@ -224,5 +227,17 @@ export class Validator extends BaseModel {
     });
 
     return validatorEntity;
+  }
+
+  async $beforeInsert(): Promise<void> {
+    let validatorImg = '';
+
+    try {
+      validatorImg = await getImgFromKeybase(this.description?.identity);
+    } catch (error) {
+      validatorImg = 'validator-default.svg';
+    }
+
+    this.image_url = validatorImg;
   }
 }

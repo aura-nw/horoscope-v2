@@ -56,6 +56,7 @@ export const BULL_JOB_NAME = {
   HANDLE_DASHBOARD_STATISTICS: 'handle:dashboard-statistics',
   UPDATE_FEEGRANT: 'update:feegrant',
   HANDLE_FEEGRANT: 'handle:feegrant',
+  CRAWL_VALIDATOR_IMG: 'crawl:validator-img',
 };
 
 export const SERVICE = {
@@ -106,6 +107,9 @@ export const SERVICE = {
     },
     CrawlValidatorService: {
       key: 'CrawlValidatorService',
+      CrawlValidatorImgService: {
+        key: 'CrawlValidatorImageService',
+      },
     },
     CrawlSigningInfoService: {
       key: 'CrawlSigningInfoService',

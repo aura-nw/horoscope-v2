@@ -69,6 +69,7 @@ export class EventAttribute extends BaseModel {
     VALIDATOR: 'validator',
     SOURCE_VALIDATOR: 'source_validator',
     DESTINATION_VALIDATOR: 'destination_validator',
+    EDIT_VALIDATOR: 'edit_validator',
     RECV_PACKET: 'recv_packet',
     PACKET_DATA: 'packet_data',
     _CONTRACT_ADDRESS: '_contract_address',
