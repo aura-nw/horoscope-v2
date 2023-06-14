@@ -34,7 +34,7 @@ export class Cw20Event extends BaseModel {
       type: 'object',
       required: ['tx_hash', 'cw20_contract_id', 'height'],
       properties: {
-        tx_hasmart_contract_event_idsh: { type: 'number' },
+        smart_contract_event_id: { type: 'number' },
         cw20_contract_id: { type: 'number' },
         height: { type: 'number' },
         to: { type: 'string' },
