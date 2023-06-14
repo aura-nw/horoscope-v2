@@ -107,9 +107,6 @@ export const SERVICE = {
     },
     CrawlValidatorService: {
       key: 'CrawlValidatorService',
-      CrawlValidatorImgService: {
-        key: 'CrawlValidatorImageService',
-      },
     },
     CrawlSigningInfoService: {
       key: 'CrawlSigningInfoService',
@@ -179,6 +176,9 @@ export const SERVICE = {
         key: 'UpdateFeegrantService',
         path: 'v1.Feegrant.UpdateFeegrantService',
       },
+    },
+    CrawlValidatorImgService: {
+      key: 'CrawlValidatorImageService',
     },
   },
 };

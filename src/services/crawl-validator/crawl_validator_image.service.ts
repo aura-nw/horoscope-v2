@@ -7,7 +7,7 @@ import config from '../../../config.json' assert { type: 'json' };
 import { getImgFromKeybase } from '../../common/utils/validator';
 
 @Service({
-  name: SERVICE.V1.CrawlValidatorService.CrawlValidatorImgService.key,
+  name: SERVICE.V1.CrawlValidatorImgService.key,
   version: 1,
 })
 export default class CrawlValidatorImageService extends BullableService {
@@ -47,7 +47,7 @@ export default class CrawlValidatorImageService extends BullableService {
           count: 3,
         },
         repeat: {
-          pattern: config.crawlValidator.crawlValidatorImage.timeCrawlImage,
+          pattern: config.crawlValidatorImage.timeCrawlImage,
         },
       }
     );
