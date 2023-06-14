@@ -28,31 +28,29 @@ export const bullBoardMixin = () => ({
     } else {
       throw Error('BULL REDIS URI is invalid');
     }
-    network
-      .filter((e) => e.redisDBNumber)
-      .forEach((e) => {
-        const serverAdapter = new ExpressAdapter();
-        serverAdapter.setBasePath(`/admin/queues/${e.chainId}`);
-        const { setQueues } = createBullBoard({
-          queues: [],
-          serverAdapter,
-        });
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        this.addRoute({
-          path: `/admin/queues/${e.chainId}`,
-          use: [serverAdapter.getRouter()],
-        });
-
-        const listQueues = Object.values(BULL_JOB_NAME).map(
-          (queueName) =>
-            new BullAdapter(
-              Queue(queueName, `${rootRedisURI}/${e.redisDBNumber}`, {
-                prefix: DEFAULT_PREFIX,
-              })
-            )
-        );
-        setQueues(listQueues);
+    network.forEach((e) => {
+      const serverAdapter = new ExpressAdapter();
+      serverAdapter.setBasePath(`/admin/queues/${e.chainId}`);
+      const { setQueues } = createBullBoard({
+        queues: [],
+        serverAdapter,
       });
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      this.addRoute({
+        path: `/admin/queues/${e.chainId}`,
+        use: [serverAdapter.getRouter()],
+      });
+
+      const listQueues = Object.values(BULL_JOB_NAME).map(
+        (queueName) =>
+          new BullAdapter(
+            Queue(queueName, `${rootRedisURI}/${e.redisDBNumber}`, {
+              prefix: DEFAULT_PREFIX,
+            })
+          )
+      );
+      setQueues(listQueues);
+    });
   },
 });
