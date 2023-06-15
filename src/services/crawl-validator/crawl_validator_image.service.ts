@@ -1,12 +1,16 @@
 /* eslint-disable no-plusplus */
 /* eslint-disable no-await-in-loop */
-/* eslint-disable no-param-reassign */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import axios from 'axios';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { BULL_JOB_NAME, IUpdateImageValidator, SERVICE } from '../../common';
+import { BULL_JOB_NAME, SERVICE } from '../../common';
 import { Validator } from '../../models';
 import config from '../../../config.json' assert { type: 'json' };
+
+type IUpdateImageValidator = {
+  id: number;
+  description: any;
+};
 
 @Service({
   name: SERVICE.V1.CrawlValidatorImgService.key,
@@ -24,10 +28,9 @@ export default class CrawlValidatorImageService extends BullableService {
 
     // Detect what validators need to be updated.
     let validators: IUpdateImageValidator[] = [];
-    const validatorsRetry = _payload?.validators;
 
-    if (validatorsRetry?.length > 0) {
-      validators = validatorsRetry;
+    if (_payload?.validators?.length > 0) {
+      validators = _payload.validators;
     } else {
       validators = await Validator.query()
         .where('jailed', false)
