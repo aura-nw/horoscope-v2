@@ -42,7 +42,9 @@ export default class CrawlValidatorImageService extends BullableService {
 
       // Get validator image then update.
       try {
-        const imageUrl = await this.getImgFromKeybase('A49B8FB23379B50C');
+        const imageUrl = await this.getImgFromKeybase(
+          validator.description?.identity
+        );
 
         await Validator.query()
           .where('id', validator.id)
