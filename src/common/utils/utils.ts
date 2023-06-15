@@ -79,7 +79,11 @@ export default class Utils {
 
   public static getDepth(object: any): number {
     return Object(object) === object
-      ? 1 + Math.max(-1, ...Object.values(object).map(Utils.getDepth))
+      ? (object.kind &&
+        object.kind === 'ObjectField' &&
+        !object.name.value.match('^_.')
+          ? 1
+          : 0) + Math.max(-1, ...Object.values(object).map(Utils.getDepth))
       : 0;
   }
 
@@ -94,7 +98,7 @@ export default class Utils {
         const value = obj[key];
         if (typeof value === 'object' && value !== null) {
           iterate(value);
-          if (value.kind === 'Argument') {
+          if (value.kind === 'Argument' && value.name.value === 'where') {
             result.push(value);
           }
         }
