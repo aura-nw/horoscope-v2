@@ -8,7 +8,7 @@
   "jobRetryBackoff": 1000,
   "crawlValidator": {
     "millisecondCrawl": 5000,
-    "queryPageLimit": 100,
+    "queryPageLimit": 100
   },
   "cw721": {
     "key": "cw721",
