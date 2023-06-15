@@ -55,10 +55,13 @@ export const BULL_JOB_NAME = {
   HANDLE_CW20: 'handle:cw20',
   HANDLE_DASHBOARD_STATISTICS: 'handle:dashboard-statistics',
   CRAWL_IBC_CONNECTION: 'crawl:ibc-connection',
-  CRAWL_IBC_CHANNEL: 'crawl:ibc-channel',
-  CRAWL_IBC_CLIENT: 'crawl:ibc-client',
+  CRAWL_IBC_CHANNEL_BY_ID: 'crawl:ibc-channel-by-id',
+  CRAWL_IBC_CLIENT_BY_ID: 'crawl:ibc-client-by-id',
   UPDATE_FEEGRANT: 'update:feegrant',
   HANDLE_FEEGRANT: 'handle:feegrant',
+  HANDLE_IBC_TRANSACTION: 'handle:ibc-tx',
+  HANDLE_IBC_EVENT: 'handle:ibc-event',
+  CRAWL_IBC_CONNECTION_BY_ID: 'crawl:ibc-connection-by-id',
 };
 
 export const SERVICE = {
@@ -172,7 +175,16 @@ export const SERVICE = {
     CrawlIBCService: {
       key: 'CrawlIBCService',
       name: 'v1.CrawlIBCService',
+      CrawlIbcConnectionById: {
+        key: 'crawlIbcConnectionById',
+        path: 'v1.CrawlIBCService.crawlIbcConnectionById',
+      },
+      HandleIBCTxService: {
+        key: 'HandleIBCTxService',
+        name: 'v1.CrawlIBCTxService',
+      },
     },
+
     Feegrant: {
       HandleFeegrantHistoryService: {
         key: 'HandleFeegrantHistoryService',

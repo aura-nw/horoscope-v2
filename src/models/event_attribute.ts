@@ -84,5 +84,9 @@ export class EventAttribute extends BaseModel {
     TO: 'to',
     GRANTER: 'granter',
     GRANTEE: 'grantee',
+    CLIENT_ID: 'client_id',
+    PACKET_SRC_CHANNEL: 'packet_src_channel',
+    PACKET_CONNECTION: 'packet_connection',
+    PACKET_SRC_PORT: 'packet_src_port',
   };
 }
