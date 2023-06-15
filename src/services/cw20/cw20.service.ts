@@ -26,11 +26,12 @@ import { SmartContractEvent } from '../../models/smart_contract_event';
 import { getAttributeFrom } from '../../common/utils/smart_contract';
 
 const { NODE_ENV } = Config;
-const CW20_ACTION = {
+export const CW20_ACTION = {
   MINT: 'mint',
   BURN: 'burn',
   TRANSFER: 'transfer',
   INSTANTIATE: 'instantiate',
+  SEND: 'send',
 };
 
 interface IContractInfo {

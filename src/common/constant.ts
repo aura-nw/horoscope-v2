@@ -56,6 +56,7 @@ export const BULL_JOB_NAME = {
   HANDLE_DASHBOARD_STATISTICS: 'handle:dashboard-statistics',
   UPDATE_FEEGRANT: 'update:feegrant',
   HANDLE_FEEGRANT: 'handle:feegrant',
+  CW20_UPDATE_BY_CONTRACT: 'update:cw20-by-contract',
 };
 
 export const SERVICE = {
@@ -161,6 +162,9 @@ export const SERVICE = {
     Cw20: {
       key: 'Cw20Service',
       name: 'v1.Cw20Service',
+      UpdateByContract: {
+        key: 'Cw20UpdateByContract',
+      },
     },
     DashboardStatisticsService: {
       key: 'DashboardStatisticsService',
