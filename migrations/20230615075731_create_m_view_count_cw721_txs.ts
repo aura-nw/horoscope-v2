@@ -12,6 +12,7 @@ export async function up(knex: Knex): Promise<void> {
         )
         .count('cw721_activity.id AS total_tx')
         .count('transaction.id as transfer_24h')
+        .where('cw721_contract.track', '=', true)
         .join(
           'cw721_activity',
           'cw721_contract.id',
