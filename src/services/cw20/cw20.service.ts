@@ -163,27 +163,30 @@ export default class Cw20Service extends BullableService {
     // insert new histories
     await Cw20Event.query()
       .insert(
-        cw20Events.map((event) =>
-          Cw20Event.fromJson({
-            smart_contract_event_id: event.id,
-            sender: event.sender,
-            action: event.action,
-            cw20_contract_id: cw20ContractsByAddress[event.contract_address].id,
-            amount: getAttributeFrom(
-              event.attributes,
-              EventAttribute.ATTRIBUTE_KEY.AMOUNT
-            ),
-            from: getAttributeFrom(
-              event.attributes,
-              EventAttribute.ATTRIBUTE_KEY.FROM
-            ),
-            to: getAttributeFrom(
-              event.attributes,
-              EventAttribute.ATTRIBUTE_KEY.TO
-            ),
-            height: event.height,
-          })
-        )
+        cw20Events
+          .filter((event) => cw20ContractsByAddress[event.contract_address].id)
+          .map((event) =>
+            Cw20Event.fromJson({
+              smart_contract_event_id: event.id,
+              sender: event.sender,
+              action: event.action,
+              cw20_contract_id:
+                cw20ContractsByAddress[event.contract_address].id,
+              amount: getAttributeFrom(
+                event.attributes,
+                EventAttribute.ATTRIBUTE_KEY.AMOUNT
+              ),
+              from: getAttributeFrom(
+                event.attributes,
+                EventAttribute.ATTRIBUTE_KEY.FROM
+              ),
+              to: getAttributeFrom(
+                event.attributes,
+                EventAttribute.ATTRIBUTE_KEY.TO
+              ),
+              height: event.height,
+            })
+          )
       )
       .transacting(trx);
   }
