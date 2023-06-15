@@ -82,3 +82,9 @@ export interface IContextGraphQLQuery {
   query: string;
   variables: any;
 }
+
+export interface IUpdateImageValidator {
+  id: number;
+  image_url: string;
+  description: any;
+}

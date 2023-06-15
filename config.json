@@ -121,6 +121,7 @@
     "rateLimitQuery": 30
   },
   "crawlValidatorImage": {
-    "timeCrawlImage": "0 0 * * *"
+    "timeCrawlImage": "0 0 * * *",
+    "milliSecondDelayRetry": 300000
   }
 }

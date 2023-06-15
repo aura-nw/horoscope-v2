@@ -121,6 +121,7 @@
     "key": "feegrant"
   },
   "crawlValidatorImage": {
-    "timeCrawImage": "0 0 * * *"
+    "timeCrawImage": "0 0 * * *",
+    "milliSecondDelayRetry": 300000
   }
 }
