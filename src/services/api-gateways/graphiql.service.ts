@@ -111,8 +111,7 @@ export default class GraphiQLService extends BaseService {
             if (where) {
               if (
                 Utils.getDepth(where) >
-                config.graphiqlApi.rootWhereDepthBase +
-                  config.graphiqlApi.rootWhereDepthLimit * 3
+                config.graphiqlApi.rootWhereDepthLimit + 1
               ) {
                 result = {
                   code: ErrorCode.WRONG,
@@ -126,8 +125,7 @@ export default class GraphiQLService extends BaseService {
             subWhere.forEach((sub: any) => {
               if (
                 Utils.getDepth(sub) >
-                config.graphiqlApi.rootWhereDepthBase +
-                  config.graphiqlApi.subWhereDepthLimit * 3
+                config.graphiqlApi.subWhereDepthLimit + 1
               ) {
                 result = {
                   code: ErrorCode.WRONG,
