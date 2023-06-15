@@ -131,6 +131,7 @@ export default class Cw20Service extends BullableService {
                   (BigInt(acc) + BigInt(curr.amount)).toString(),
                 '0'
               ),
+              track: true,
             }),
             holders: initBalances.map((e) => ({
               address: e.address,
@@ -158,7 +159,8 @@ export default class Cw20Service extends BullableService {
         .whereIn(
           'smart_contract.address',
           cw20Events.map((event) => event.contract_address)
-        ),
+        )
+        .andWhere('track', true),
       (e) => `${e.smart_contract.address}`
     );
     // insert new histories
