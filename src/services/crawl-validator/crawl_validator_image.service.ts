@@ -31,7 +31,7 @@ export default class CrawlValidatorImageService extends BullableService {
     } else {
       validators = await Validator.query()
         .where('jailed', false)
-        .select('id', 'image_url', 'description')
+        .select('id', 'description')
         .orderBy('id', 'asc');
     }
 

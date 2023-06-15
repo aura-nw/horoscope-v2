@@ -85,6 +85,5 @@ export interface IContextGraphQLQuery {
 
 export interface IUpdateImageValidator {
   id: number;
-  image_url: string;
   description: any;
 }
