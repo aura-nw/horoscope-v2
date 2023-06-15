@@ -2,7 +2,7 @@ import { Context, ServiceBroker } from 'moleculer';
 import { Post, Service } from '@ourparentcenter/moleculer-decorators-extended';
 import axios from 'axios';
 import gql from 'graphql-tag';
-import { FieldNode, OperationDefinitionNode } from 'graphql';
+import { DefinitionNode, FieldNode, OperationDefinitionNode } from 'graphql';
 import BaseService from '../../base/base.service';
 import { IContextGraphQLQuery, Config } from '../../common';
 import { ResponseDto } from '../../common/types/response-api';
@@ -86,11 +86,15 @@ export default class GraphiQLService extends BaseService {
         data: 'Invalid query',
       };
     }
+    this.logger.info(JSON.stringify(graphqlObj));
 
     if (graphqlObj) {
-      (graphqlObj.definitions as OperationDefinitionNode[]).forEach(
-        (definition: OperationDefinitionNode) => {
-          if (definition.operation !== 'query')
+      (graphqlObj.definitions as DefinitionNode[]).forEach(
+        (definition: DefinitionNode) => {
+          if (
+            (definition as OperationDefinitionNode).operation !== 'query' &&
+            definition.kind !== 'FragmentDefinition'
+          )
             result = {
               code: ErrorCode.WRONG,
               message: ErrorMessage.VALIDATION_ERROR,
