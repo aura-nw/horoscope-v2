@@ -95,6 +95,7 @@ export default class Cw20Service extends BullableService {
       }
       updateBlockCheckpoint.height = endBlock;
       await BlockCheckpoint.query()
+        .transacting(trx)
         .insert(updateBlockCheckpoint)
         .onConflict('job_name')
         .merge();
@@ -164,34 +165,32 @@ export default class Cw20Service extends BullableService {
       (e) => `${e.smart_contract.address}`
     );
     // insert new histories
-    await Cw20Event.query()
-      .insert(
-        cw20Events
-          .filter((event) => cw20ContractsByAddress[event.contract_address].id)
-          .map((event) =>
-            Cw20Event.fromJson({
-              smart_contract_event_id: event.id,
-              sender: event.sender,
-              action: event.action,
-              cw20_contract_id:
-                cw20ContractsByAddress[event.contract_address].id,
-              amount: getAttributeFrom(
-                event.attributes,
-                EventAttribute.ATTRIBUTE_KEY.AMOUNT
-              ),
-              from: getAttributeFrom(
-                event.attributes,
-                EventAttribute.ATTRIBUTE_KEY.FROM
-              ),
-              to: getAttributeFrom(
-                event.attributes,
-                EventAttribute.ATTRIBUTE_KEY.TO
-              ),
-              height: event.height,
-            })
-          )
-      )
-      .transacting(trx);
+    const newHistories = cw20Events
+      .filter((event) => cw20ContractsByAddress[event.contract_address]?.id)
+      .map((event) =>
+        Cw20Event.fromJson({
+          smart_contract_event_id: event.smart_contract_event_id,
+          sender: event.sender,
+          action: event.action,
+          cw20_contract_id: cw20ContractsByAddress[event.contract_address].id,
+          amount: getAttributeFrom(
+            event.attributes,
+            EventAttribute.ATTRIBUTE_KEY.AMOUNT
+          ),
+          from: getAttributeFrom(
+            event.attributes,
+            EventAttribute.ATTRIBUTE_KEY.FROM
+          ),
+          to: getAttributeFrom(
+            event.attributes,
+            EventAttribute.ATTRIBUTE_KEY.TO
+          ),
+          height: event.height,
+        })
+      );
+    if (newHistories.length > 0) {
+      await Cw20Event.query().insert(newHistories).transacting(trx);
+    }
   }
 
   async getCw20ContractEvents(startBlock: number, endBlock: number) {
@@ -224,10 +223,11 @@ export default class Cw20Service extends BullableService {
         'message.sender as sender',
         'smart_contract.address as contract_address',
         'smart_contract_event.action',
-        'smart_contract_event.event_id',
+        'smart_contract_event.event_id as event_id',
         'smart_contract_event.index',
         'smart_contract.id as smart_contract_id',
-        'tx.height as height'
+        'tx.height as height',
+        'smart_contract_event.id as smart_contract_event_id'
       );
   }
 
