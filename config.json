@@ -121,5 +121,9 @@
     "subWhereDepthLimit": 1,
     "rateLimitWindow": 60000,
     "rateLimitQuery": 30
+  },
+  "crawlValidatorImage": {
+    "timeCrawlImage": "0 0 * * *",
+    "milliSecondDelayRetry": 300000
   }
 }

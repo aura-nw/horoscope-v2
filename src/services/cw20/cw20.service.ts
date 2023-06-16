@@ -35,11 +35,11 @@ const CW20_ACTION = {
 
 interface IContractInfo {
   address: string;
-  symbol: string;
-  minter: string;
-  decimal: number;
+  symbol?: string;
+  minter?: string;
+  decimal?: number;
   marketing_info: any;
-  name: string;
+  name?: string;
 }
 
 interface IHolderEvent {
@@ -94,6 +94,7 @@ export default class Cw20Service extends BullableService {
       }
       updateBlockCheckpoint.height = endBlock;
       await BlockCheckpoint.query()
+        .transacting(trx)
         .insert(updateBlockCheckpoint)
         .onConflict('job_name')
         .merge();
@@ -163,34 +164,32 @@ export default class Cw20Service extends BullableService {
       (e) => `${e.smart_contract.address}`
     );
     // insert new histories
-    await Cw20Event.query()
-      .insert(
-        cw20Events
-          .filter((event) => cw20ContractsByAddress[event.contract_address].id)
-          .map((event) =>
-            Cw20Event.fromJson({
-              smart_contract_event_id: event.id,
-              sender: event.sender,
-              action: event.action,
-              cw20_contract_id:
-                cw20ContractsByAddress[event.contract_address].id,
-              amount: getAttributeFrom(
-                event.attributes,
-                EventAttribute.ATTRIBUTE_KEY.AMOUNT
-              ),
-              from: getAttributeFrom(
-                event.attributes,
-                EventAttribute.ATTRIBUTE_KEY.FROM
-              ),
-              to: getAttributeFrom(
-                event.attributes,
-                EventAttribute.ATTRIBUTE_KEY.TO
-              ),
-              height: event.height,
-            })
-          )
-      )
-      .transacting(trx);
+    const newHistories = cw20Events
+      .filter((event) => cw20ContractsByAddress[event.contract_address]?.id)
+      .map((event) =>
+        Cw20Event.fromJson({
+          smart_contract_event_id: event.smart_contract_event_id,
+          sender: event.sender,
+          action: event.action,
+          cw20_contract_id: cw20ContractsByAddress[event.contract_address].id,
+          amount: getAttributeFrom(
+            event.attributes,
+            EventAttribute.ATTRIBUTE_KEY.AMOUNT
+          ),
+          from: getAttributeFrom(
+            event.attributes,
+            EventAttribute.ATTRIBUTE_KEY.FROM
+          ),
+          to: getAttributeFrom(
+            event.attributes,
+            EventAttribute.ATTRIBUTE_KEY.TO
+          ),
+          height: event.height,
+        })
+      );
+    if (newHistories.length > 0) {
+      await Cw20Event.query().insert(newHistories).transacting(trx);
+    }
   }
 
   async getCw20ContractEvents(startBlock: number, endBlock: number) {
@@ -223,10 +222,11 @@ export default class Cw20Service extends BullableService {
         'message.sender as sender',
         'smart_contract.address as contract_address',
         'smart_contract_event.action',
-        'smart_contract_event.event_id',
+        'smart_contract_event.event_id as event_id',
         'smart_contract_event.index',
         'smart_contract.id as smart_contract_id',
-        'tx.height as height'
+        'tx.height as height',
+        'smart_contract_event.id as smart_contract_event_id'
       );
   }
 
@@ -289,34 +289,70 @@ export default class Cw20Service extends BullableService {
       promisesMarketingInfo
     );
     for (let index = 0; index < resultsContractsInfo.length; index += 1) {
-      const contractInfo = JSON.parse(
-        fromUtf8(
-          cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
-            fromBase64(resultsContractsInfo[index].result.response.value)
-          ).data
-        )
-      );
-      const { minter }: { minter: string } = JSON.parse(
-        fromUtf8(
-          cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
-            fromBase64(resultsMinters[index].result.response.value)
-          ).data
-        )
-      );
-      const marketingInfo = JSON.parse(
-        fromUtf8(
-          cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
-            fromBase64(resultsMarketingInfo[index].result.response.value)
-          ).data
-        )
-      );
+      let minter;
+      let contractInfo;
+      let marketingInfo;
+      try {
+        contractInfo = JSON.parse(
+          fromUtf8(
+            cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
+              fromBase64(resultsContractsInfo[index].result.response.value)
+            ).data
+          )
+        );
+      } catch (error) {
+        if (error instanceof SyntaxError || error instanceof TypeError) {
+          this.logger.error(
+            `Response contract info from CW20 contract ${contractAddresses[index]} not support`
+          );
+        } else {
+          this.logger.error(error);
+          throw error;
+        }
+      }
+      try {
+        minter = JSON.parse(
+          fromUtf8(
+            cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
+              fromBase64(resultsMinters[index].result.response.value)
+            ).data
+          )
+        ).minter;
+      } catch (error) {
+        if (error instanceof SyntaxError || error instanceof TypeError) {
+          this.logger.error(
+            `Response minter from CW20 contract ${contractAddresses[index]} not support`
+          );
+        } else {
+          this.logger.error(error);
+          throw error;
+        }
+      }
+      try {
+        marketingInfo = JSON.parse(
+          fromUtf8(
+            cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
+              fromBase64(resultsMarketingInfo[index].result.response.value)
+            ).data
+          )
+        );
+      } catch (error) {
+        if (error instanceof SyntaxError || error instanceof TypeError) {
+          this.logger.error(
+            `Response marketing info from CW20 contract ${contractAddresses[index]} not support`
+          );
+        } else {
+          this.logger.error(error);
+          throw error;
+        }
+      }
       contractsInfo.push({
         address: contractAddresses[index],
-        symbol: contractInfo.symbol as string,
+        symbol: contractInfo?.symbol,
         minter,
-        decimal: contractInfo.decimals as number,
+        decimal: contractInfo?.decimals,
         marketing_info: marketingInfo,
-        name: contractInfo.name,
+        name: contractInfo?.name,
       });
     }
     return contractsInfo;
