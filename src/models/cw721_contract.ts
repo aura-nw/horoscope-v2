@@ -17,6 +17,10 @@ export default class CW721Contract extends BaseModel {
 
   id!: number;
 
+  name?: string;
+
+  track?: boolean;
+
   created_at?: Date;
 
   updated_at?: Date;
