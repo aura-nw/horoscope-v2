@@ -63,6 +63,7 @@ export default class CrawlValidatorTest {
           key: 'validator',
           value: 'auravaloper1phaxpevm5wecex2jyaqty2a4v02qj7qmhyhvcg',
           block_height: 3967529,
+          index: 0,
         },
       ],
     },
