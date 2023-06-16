@@ -13,6 +13,7 @@ export async function up(knex: Knex): Promise<void> {
         .count('cw721_activity.id AS total_tx')
         .count('transaction.id as transfer_24h')
         .where('cw721_contract.track', '=', true)
+        .andWhere('smart_contract.name', '!=', 'crates.io:cw4973') // Add filter: name is not crates.io:cw4973(ABT)
         .join(
           'cw721_activity',
           'cw721_contract.id',
@@ -29,9 +30,9 @@ export async function up(knex: Knex): Promise<void> {
               'transaction.timestamp',
               '>',
               knex.raw("now() - '24 hours'::interval")
-            ) // Add filter: action is not instantiate and name is not crates.io:cw4973
+            ) // Add filter: action is not instantiate and not defined.
             .andOn(knex.raw("cw721_activity.action != 'instantiate'"))
-            .andOn(knex.raw("smart_contract.name != 'crates.io:cw4973'"));
+            .andOn(knex.raw("cw721_activity.action != ''"));
         })
         .groupBy(
           'smart_contract.address',
