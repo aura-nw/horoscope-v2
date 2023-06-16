@@ -63,6 +63,7 @@ export default class CrawlValidatorService extends BullableService {
         EventAttribute.ATTRIBUTE_KEY.VALIDATOR,
         EventAttribute.ATTRIBUTE_KEY.SOURCE_VALIDATOR,
         EventAttribute.ATTRIBUTE_KEY.DESTINATION_VALIDATOR,
+        EventAttribute.ATTRIBUTE_KEY.EDIT_VALIDATOR,
       ])
       .andWhere('block_height', '>', startHeight)
       .andWhere('block_height', '<=', endHeight)

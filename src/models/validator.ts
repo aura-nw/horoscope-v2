@@ -63,6 +63,8 @@ export class Validator extends BaseModel {
 
   delegators_last_height!: number;
 
+  image_url!: string;
+
   static get tableName() {
     return 'validator';
   }
