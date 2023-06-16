@@ -25,6 +25,8 @@ export class Cw20Contract extends BaseModel {
 
   name?: string;
 
+  track!: boolean;
+
   static get tableName() {
     return 'cw20_contract';
   }

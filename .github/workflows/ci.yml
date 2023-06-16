@@ -12,7 +12,7 @@ jobs:
     uses: ./.github/workflows/test.yml
     secrets: inherit
   build:
-    runs-on: [self-hosted]
+    runs-on: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v3
       - name: Set environment variable
@@ -28,7 +28,7 @@ jobs:
           ./ci/build.sh
 
   updateManifest:
-    runs-on: [self-hosted]
+    runs-on: [ubuntu-latest]
     needs: [lint, test, build]
     steps:
       - uses: actions/checkout@v3
@@ -41,8 +41,8 @@ jobs:
           echo REPO_MANIFEST_URL=github.com/aura-nw/gitops.git >> $GITHUB_ENV
           echo REPO_MANIFEST_BRANCH=master >> $GITHUB_ENV
           echo REPO_MANIFEST_ENV_DEV=./clusters/k8s-dev/horoscope-v2/horoscope-crawl-auratestnet >> $GITHUB_ENV
-          echo REPO_MANIFEST_ENV_STAGING=./clusters/k8s-testnet-euphoria/horoscope-v2/horoscope-crawl-serenity >> $GITHUB_ENV
-          echo REPO_MANIFEST_ENV_MAIN=./clusters/k8s-prod/horoscope-v2/horoscope-crawl-euphoria >> $GITHUB_ENV
+          echo REPO_MANIFEST_ENV_STAGING=./clusters/k8s-testnet-euphoria/horoscope-v2/horoscope-crawl-euphoria >> $GITHUB_ENV
+          echo REPO_MANIFEST_ENV_MAIN=./clusters/k8s-prod/horoscope-v2/horoscope-crawl-xstaxy >> $GITHUB_ENV
           echo REPO_MANIFEST_TAG_IMAGE=image_erascope >> $GITHUB_ENV
       - name: Update manifest
         env:

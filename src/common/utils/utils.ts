@@ -76,4 +76,36 @@ export default class Utils {
       /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/;
     return base64Regex.test(text);
   }
+
+  public static getDepth(object: any): number {
+    return Object(object) === object
+      ? (object.kind &&
+        object.kind === 'ObjectField' &&
+        !object.name.value.match('^_.')
+          ? 1
+          : 0) + Math.max(-1, ...Object.values(object).map(Utils.getDepth))
+      : 0;
+  }
+
+  public static filterWhereQuery(object: any): any[] {
+    const result: any[] = [];
+
+    const iterate = (obj: any) => {
+      if (!obj) {
+        return;
+      }
+      Object.keys(obj).forEach((key) => {
+        const value = obj[key];
+        if (typeof value === 'object' && value !== null) {
+          iterate(value);
+          if (value.kind === 'Argument' && value.name.value === 'where') {
+            result.push(value);
+          }
+        }
+      });
+    };
+
+    iterate(object);
+    return result;
+  }
 }

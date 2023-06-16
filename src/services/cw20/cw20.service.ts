@@ -6,6 +6,7 @@ import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { Knex } from 'knex';
 import { ServiceBroker } from 'moleculer';
+import _ from 'lodash';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
@@ -15,8 +16,14 @@ import {
   getHttpBatchClient,
 } from '../../common';
 import knex from '../../common/utils/db_connection';
-import { BlockCheckpoint, Cw20Contract } from '../../models';
+import {
+  BlockCheckpoint,
+  Cw20Contract,
+  Cw20Event,
+  EventAttribute,
+} from '../../models';
 import { SmartContractEvent } from '../../models/smart_contract_event';
+import { getAttributeFrom } from '../../common/utils/smart_contract';
 
 const { NODE_ENV } = Config;
 const CW20_ACTION = {
@@ -82,13 +89,8 @@ export default class Cw20Service extends BullableService {
           ),
           trx
         );
-        // handle all cw20 execute
-        // await this.handleCw20Exec(
-        //   cw20Events.filter((msg) => msg.action !== CW20_ACTION.INSTANTIATE),
-        //   trx
-        // );
-        // handle Cw721 Activity
-        // await this.handleCW20Activity(cw20Events);
+        // handle Cw20 Histories
+        await this.handleCw20Histories(cw20Events, trx);
       }
       updateBlockCheckpoint.height = endBlock;
       await BlockCheckpoint.query()
@@ -128,6 +130,7 @@ export default class Cw20Service extends BullableService {
                   (BigInt(acc) + BigInt(curr.amount)).toString(),
                 '0'
               ),
+              track: true,
             }),
             holders: initBalances.map((e) => ({
               address: e.address,
@@ -141,6 +144,53 @@ export default class Cw20Service extends BullableService {
         .insertGraph(instantiateContracts)
         .transacting(trx);
     }
+  }
+
+  async handleCw20Histories(
+    cw20Events: SmartContractEvent[],
+    trx: Knex.Transaction
+  ) {
+    // get all related cw20_contract in DB for updating total_supply
+    const cw20ContractsByAddress = _.keyBy(
+      await Cw20Contract.query()
+        .transacting(trx)
+        .withGraphJoined('smart_contract')
+        .whereIn(
+          'smart_contract.address',
+          cw20Events.map((event) => event.contract_address)
+        )
+        .andWhere('track', true),
+      (e) => `${e.smart_contract.address}`
+    );
+    // insert new histories
+    await Cw20Event.query()
+      .insert(
+        cw20Events
+          .filter((event) => cw20ContractsByAddress[event.contract_address].id)
+          .map((event) =>
+            Cw20Event.fromJson({
+              smart_contract_event_id: event.id,
+              sender: event.sender,
+              action: event.action,
+              cw20_contract_id:
+                cw20ContractsByAddress[event.contract_address].id,
+              amount: getAttributeFrom(
+                event.attributes,
+                EventAttribute.ATTRIBUTE_KEY.AMOUNT
+              ),
+              from: getAttributeFrom(
+                event.attributes,
+                EventAttribute.ATTRIBUTE_KEY.FROM
+              ),
+              to: getAttributeFrom(
+                event.attributes,
+                EventAttribute.ATTRIBUTE_KEY.TO
+              ),
+              height: event.height,
+            })
+          )
+      )
+      .transacting(trx);
   }
 
   async getCw20ContractEvents(startBlock: number, endBlock: number) {
