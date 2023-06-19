@@ -92,11 +92,13 @@ export default class CrawlProposalTest {
                   type: 'coin_received',
                   attributes: [
                     {
+                      index: 0,
                       key: 'receiver',
                       value: 'aura10d07y265gmmuvt4z0w9aw880jnsr700jp5y852',
                       block_height: 3967529,
                     },
                     {
+                      index: 1,
                       key: 'amount',
                       value: '100000utaura',
                       block_height: 3967529,
@@ -107,11 +109,13 @@ export default class CrawlProposalTest {
                   type: 'coin_spent',
                   attributes: [
                     {
+                      index: 0,
                       key: 'spender',
                       value: 'aura1gypt2w7xg5t9yr76hx6zemwd4xv72jckk03r6t',
                       block_height: 3967529,
                     },
                     {
+                      index: 1,
                       key: 'amount',
                       value: '100000utaura',
                       block_height: 3967529,
@@ -122,21 +126,25 @@ export default class CrawlProposalTest {
                   type: 'message',
                   attributes: [
                     {
+                      index: 0,
                       key: 'action',
                       value: '/cosmos.gov.v1beta1.MsgSubmitProposal',
                       block_height: 3967529,
                     },
                     {
+                      index: 1,
                       key: 'sender',
                       value: 'aura1gypt2w7xg5t9yr76hx6zemwd4xv72jckk03r6t',
                       block_height: 3967529,
                     },
                     {
+                      index: 2,
                       key: 'module',
                       value: 'governance',
                       block_height: 3967529,
                     },
                     {
+                      index: 3,
                       key: 'sender',
                       value: 'aura1gypt2w7xg5t9yr76hx6zemwd4xv72jckk03r6t',
                       block_height: 3967529,
@@ -147,11 +155,13 @@ export default class CrawlProposalTest {
                   type: 'proposal_deposit',
                   attributes: [
                     {
+                      index: 0,
                       key: 'amount',
                       value: '100000utaura',
                       block_height: 3967529,
                     },
                     {
+                      index: 1,
                       key: 'proposal_id',
                       value: '1',
                       block_height: 3967529,
@@ -162,11 +172,13 @@ export default class CrawlProposalTest {
                   type: 'submit_proposal',
                   attributes: [
                     {
+                      index: 0,
                       key: 'proposal_id',
                       value: '1',
                       block_height: 3967529,
                     },
                     {
+                      index: 1,
                       key: 'proposal_type',
                       value: 'CommunityPoolSpend',
                       block_height: 3967529,
@@ -177,16 +189,19 @@ export default class CrawlProposalTest {
                   type: 'transfer',
                   attributes: [
                     {
+                      index: 0,
                       key: 'recipient',
                       value: 'aura10d07y265gmmuvt4z0w9aw880jnsr700jp5y852',
                       block_height: 3967529,
                     },
                     {
+                      index: 1,
                       key: 'sender',
                       value: 'aura1gypt2w7xg5t9yr76hx6zemwd4xv72jckk03r6t',
                       block_height: 3967529,
                     },
                     {
+                      index: 2,
                       key: 'amount',
                       value: '100000utaura',
                       block_height: 3967529,
@@ -203,6 +218,7 @@ export default class CrawlProposalTest {
       tx_msg_index: 0,
       type: 'submit_proposal',
       attributes: {
+        index: 0,
         key: 'proposal_id',
         value: '1',
         block_height: 3967529,

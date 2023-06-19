@@ -121,5 +121,9 @@
     },
     "millisecondRepeatJob": 2000,
     "key": "feegrant"
+  },
+  "crawlValidatorImage": {
+    "timeCrawImage": "0 0 * * *",
+    "milliSecondDelayRetry": 300000
   }
 }
