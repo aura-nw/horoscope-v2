@@ -6,6 +6,7 @@ import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { Knex } from 'knex';
 import { ServiceBroker } from 'moleculer';
+import _ from 'lodash';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
@@ -15,8 +16,14 @@ import {
   getHttpBatchClient,
 } from '../../common';
 import knex from '../../common/utils/db_connection';
-import { BlockCheckpoint, Cw20Contract } from '../../models';
+import {
+  BlockCheckpoint,
+  Cw20Contract,
+  Cw20Event,
+  EventAttribute,
+} from '../../models';
 import { SmartContractEvent } from '../../models/smart_contract_event';
+import { getAttributeFrom } from '../../common/utils/smart_contract';
 
 const { NODE_ENV } = Config;
 const CW20_ACTION = {
@@ -28,11 +35,11 @@ const CW20_ACTION = {
 
 interface IContractInfo {
   address: string;
-  symbol: string;
-  minter: string;
-  decimal: number;
+  symbol?: string;
+  minter?: string;
+  decimal?: number;
   marketing_info: any;
-  name: string;
+  name?: string;
 }
 
 interface IHolderEvent {
@@ -82,16 +89,12 @@ export default class Cw20Service extends BullableService {
           ),
           trx
         );
-        // handle all cw20 execute
-        // await this.handleCw20Exec(
-        //   cw20Events.filter((msg) => msg.action !== CW20_ACTION.INSTANTIATE),
-        //   trx
-        // );
-        // handle Cw721 Activity
-        // await this.handleCW20Activity(cw20Events);
+        // handle Cw20 Histories
+        await this.handleCw20Histories(cw20Events, trx);
       }
       updateBlockCheckpoint.height = endBlock;
       await BlockCheckpoint.query()
+        .transacting(trx)
         .insert(updateBlockCheckpoint)
         .onConflict('job_name')
         .merge();
@@ -128,6 +131,7 @@ export default class Cw20Service extends BullableService {
                   (BigInt(acc) + BigInt(curr.amount)).toString(),
                 '0'
               ),
+              track: true,
             }),
             holders: initBalances.map((e) => ({
               address: e.address,
@@ -140,6 +144,51 @@ export default class Cw20Service extends BullableService {
       await Cw20Contract.query()
         .insertGraph(instantiateContracts)
         .transacting(trx);
+    }
+  }
+
+  async handleCw20Histories(
+    cw20Events: SmartContractEvent[],
+    trx: Knex.Transaction
+  ) {
+    // get all related cw20_contract in DB for updating total_supply
+    const cw20ContractsByAddress = _.keyBy(
+      await Cw20Contract.query()
+        .transacting(trx)
+        .withGraphJoined('smart_contract')
+        .whereIn(
+          'smart_contract.address',
+          cw20Events.map((event) => event.contract_address)
+        )
+        .andWhere('track', true),
+      (e) => `${e.smart_contract.address}`
+    );
+    // insert new histories
+    const newHistories = cw20Events
+      .filter((event) => cw20ContractsByAddress[event.contract_address]?.id)
+      .map((event) =>
+        Cw20Event.fromJson({
+          smart_contract_event_id: event.smart_contract_event_id,
+          sender: event.sender,
+          action: event.action,
+          cw20_contract_id: cw20ContractsByAddress[event.contract_address].id,
+          amount: getAttributeFrom(
+            event.attributes,
+            EventAttribute.ATTRIBUTE_KEY.AMOUNT
+          ),
+          from: getAttributeFrom(
+            event.attributes,
+            EventAttribute.ATTRIBUTE_KEY.FROM
+          ),
+          to: getAttributeFrom(
+            event.attributes,
+            EventAttribute.ATTRIBUTE_KEY.TO
+          ),
+          height: event.height,
+        })
+      );
+    if (newHistories.length > 0) {
+      await Cw20Event.query().insert(newHistories).transacting(trx);
     }
   }
 
@@ -173,10 +222,11 @@ export default class Cw20Service extends BullableService {
         'message.sender as sender',
         'smart_contract.address as contract_address',
         'smart_contract_event.action',
-        'smart_contract_event.event_id',
+        'smart_contract_event.event_id as event_id',
         'smart_contract_event.index',
         'smart_contract.id as smart_contract_id',
-        'tx.height as height'
+        'tx.height as height',
+        'smart_contract_event.id as smart_contract_event_id'
       );
   }
 
@@ -239,34 +289,70 @@ export default class Cw20Service extends BullableService {
       promisesMarketingInfo
     );
     for (let index = 0; index < resultsContractsInfo.length; index += 1) {
-      const contractInfo = JSON.parse(
-        fromUtf8(
-          cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
-            fromBase64(resultsContractsInfo[index].result.response.value)
-          ).data
-        )
-      );
-      const { minter }: { minter: string } = JSON.parse(
-        fromUtf8(
-          cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
-            fromBase64(resultsMinters[index].result.response.value)
-          ).data
-        )
-      );
-      const marketingInfo = JSON.parse(
-        fromUtf8(
-          cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
-            fromBase64(resultsMarketingInfo[index].result.response.value)
-          ).data
-        )
-      );
+      let minter;
+      let contractInfo;
+      let marketingInfo;
+      try {
+        contractInfo = JSON.parse(
+          fromUtf8(
+            cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
+              fromBase64(resultsContractsInfo[index].result.response.value)
+            ).data
+          )
+        );
+      } catch (error) {
+        if (error instanceof SyntaxError || error instanceof TypeError) {
+          this.logger.error(
+            `Response contract info from CW20 contract ${contractAddresses[index]} not support`
+          );
+        } else {
+          this.logger.error(error);
+          throw error;
+        }
+      }
+      try {
+        minter = JSON.parse(
+          fromUtf8(
+            cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
+              fromBase64(resultsMinters[index].result.response.value)
+            ).data
+          )
+        ).minter;
+      } catch (error) {
+        if (error instanceof SyntaxError || error instanceof TypeError) {
+          this.logger.error(
+            `Response minter from CW20 contract ${contractAddresses[index]} not support`
+          );
+        } else {
+          this.logger.error(error);
+          throw error;
+        }
+      }
+      try {
+        marketingInfo = JSON.parse(
+          fromUtf8(
+            cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
+              fromBase64(resultsMarketingInfo[index].result.response.value)
+            ).data
+          )
+        );
+      } catch (error) {
+        if (error instanceof SyntaxError || error instanceof TypeError) {
+          this.logger.error(
+            `Response marketing info from CW20 contract ${contractAddresses[index]} not support`
+          );
+        } else {
+          this.logger.error(error);
+          throw error;
+        }
+      }
       contractsInfo.push({
         address: contractAddresses[index],
-        symbol: contractInfo.symbol as string,
+        symbol: contractInfo?.symbol,
         minter,
-        decimal: contractInfo.decimals as number,
+        decimal: contractInfo?.decimals,
         marketing_info: marketingInfo,
-        name: contractInfo.name,
+        name: contractInfo?.name,
       });
     }
     return contractsInfo;

@@ -9,7 +9,7 @@ export class Cw20Event extends BaseModel {
 
   id!: number;
 
-  tx_hash!: string;
+  smart_contract_event_id!: number;
 
   sender?: string;
 
@@ -32,9 +32,9 @@ export class Cw20Event extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['tx_hash', 'cw20_contract_id', 'height'],
+      required: ['smart_contract_event_id', 'cw20_contract_id', 'height'],
       properties: {
-        tx_hash: { type: 'string' },
+        smart_contract_event_id: { type: 'number' },
         cw20_contract_id: { type: 'number' },
         height: { type: 'number' },
         to: { type: 'string' },

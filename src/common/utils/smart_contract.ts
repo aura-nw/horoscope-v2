@@ -32,7 +32,7 @@ export async function getContractActivities(
     )
     .modifiers({
       selectAttribute(builder) {
-        builder.select('id', 'key', 'value');
+        builder.select('event_id', 'index', 'key', 'value');
       },
       selectMessage(builder) {
         builder.select('sender', 'content');
@@ -50,7 +50,10 @@ export async function getContractActivities(
     ])
     .where('event.block_height', '>', fromBlock)
     .andWhere('event.block_height', '<=', toBlock)
-    .orderBy('attributes.id', 'ASC');
+    .orderBy([
+      { column: 'attributes.event_id', order: 'ASC' },
+      { column: 'attributes.index', order: 'ASC' },
+    ]);
 
   wasmEvents.forEach((wasmEvent, index) => {
     const wasmAttribute: { key: string; value: string }[] =
