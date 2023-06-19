@@ -1,14 +1,18 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import _ from 'lodash';
-import FeegrantHistory from '../../models/feegrant_history';
 import { getAttributeFrom } from '../../common/utils/smart_contract';
-import { BlockCheckpoint, Event, EventAttribute } from '../../models';
+import {
+  BlockCheckpoint,
+  Event,
+  EventAttribute,
+  Feegrant,
+  FeegrantHistory,
+} from '../../models';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, Config, SERVICE } from '../../common';
 import knex from '../../common/utils/db_connection';
-import Feegrant from '../../models/feegrant';
 
 const { NODE_ENV } = Config;
 
