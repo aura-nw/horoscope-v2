@@ -41,7 +41,7 @@ export default class Cw20UpdateByContractService extends BullableService {
   async jobHandle(_payload: ICw20UpdateByContractParam): Promise<void> {
     const { cw20ContractId, startBlock, endBlock } = _payload;
     const cw20Contract = await Cw20Contract.query()
-      .where('cw20_contract_id', cw20ContractId)
+      .where('id', cw20ContractId)
       .first()
       .throwIfNotFound();
     // get all cw20_events from startBlock to endBlock and they occur after cw20 last_updated_height (max holders's last_updated_height)
@@ -59,7 +59,7 @@ export default class Cw20UpdateByContractService extends BullableService {
   }
 
   @Action({
-    name: SERVICE.V1.Cw20UpdateByContract.key,
+    name: SERVICE.V1.Cw20UpdateByContract.UpdateByContract.key,
     params: {
       cw20ContractIds: 'any[]',
       startBlock: 'any',
@@ -222,5 +222,9 @@ export default class Cw20UpdateByContractService extends BullableService {
         .onConflict(['cw20_contract_id', 'address'])
         .merge();
     }
+  }
+
+  async _start(): Promise<void> {
+    return super._start();
   }
 }
