@@ -101,7 +101,7 @@ export default class GraphiQLTest {
       {
         operationName: 'MyQuery',
         query:
-          'query MyQuery { auratestnet { block(where: {transactions: {events: {event_attributes: {id: {_eq: 1}}}}}) { transactions { id } } } }',
+          'query MyQuery { auratestnet { block(where: {height: {_eq: 1}, transactions: {events: {event_attributes: {id: {_eq: 1}}}}}) { hash height } } }',
         variables: {},
       }
     );
@@ -120,7 +120,7 @@ export default class GraphiQLTest {
       {
         operationName: 'MyQuery',
         query:
-          'query MyQuery { auratestnet { block { transactions(where: {events: {event_attributes: {id: {_eq: 1}}}}) { id } } } }',
+          'query MyQuery { auratestnet { block(where: {height: {_eq: 1}}) { transactions(where: {height: {_eq: 1}, events: {event_attributes: {id: {_eq: 1}}}}) { id } } } }',
         variables: {},
       }
     );
@@ -129,6 +129,56 @@ export default class GraphiQLTest {
     expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
     expect(result?.data).toEqual(
       `The sub where query depth must not be greater than ${config.graphiqlApi.subWhereDepthLimit}`
+    );
+  }
+
+  @Test('Query tables required where height failed - _eq case')
+  public async testQueryRequireWhereHeight_EqCase() {
+    const result: ResponseDto = await this.broker.call(
+      'v1.graphiql.handleGraphQLQuery',
+      {
+        operationName: 'MyQuery',
+        query: 'query MyQuery { auratestnet { block { hash } } }',
+        variables: {},
+      }
+    );
+
+    expect(result?.code).toEqual(ErrorCode.WRONG);
+    expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
+    expect(result?.data).toEqual(
+      `The query to one of the following tables needs to include exact height (_eq) or a height range (_gt/_gte & _lt/_lte) in where argument: ${config.graphiqlApi.queryNeedWhereModel}`
+    );
+  }
+
+  @Test('Query tables required where height failed - _gt _lt case')
+  public async testQueryRequireWhereHeight_Gt_LtCase() {
+    let result: ResponseDto = await this.broker.call(
+      'v1.graphiql.handleGraphQLQuery',
+      {
+        operationName: 'MyQuery',
+        query:
+          'query MyQuery { auratestnet { block(where: { height: { _gt: 1 } }) { hash } } }',
+        variables: {},
+      }
+    );
+
+    expect(result?.code).toEqual(ErrorCode.WRONG);
+    expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
+    expect(result?.data).toEqual(
+      `The query to one of the following tables needs to include exact height (_eq) or a height range (_gt/_gte & _lt/_lte) in where argument: ${config.graphiqlApi.queryNeedWhereModel}`
+    );
+
+    result = await this.broker.call('v1.graphiql.handleGraphQLQuery', {
+      operationName: 'MyQuery',
+      query:
+        'query MyQuery { auratestnet { block(where: { height: { _lte: 1 } }) { hash } } }',
+      variables: {},
+    });
+
+    expect(result?.code).toEqual(ErrorCode.WRONG);
+    expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
+    expect(result?.data).toEqual(
+      `The query to one of the following tables needs to include exact height (_eq) or a height range (_gt/_gte & _lt/_lte) in where argument: ${config.graphiqlApi.queryNeedWhereModel}`
     );
   }
 }

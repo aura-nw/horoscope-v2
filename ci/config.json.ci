@@ -112,7 +112,19 @@
     "rootWhereDepthLimit": 2,
     "subWhereDepthLimit": 1,
     "rateLimitWindow": 60000,
-    "rateLimitQuery": 30
+    "rateLimitQuery": 30,
+    "queryNeedWhereModel": [
+      "block",
+      "transaction",
+      "event",
+      "event_attribute",
+      "transactions",
+      "events",
+      "event_attributes",
+      "event_attribute_index",
+      "view_event_attribute_value_index"
+    ],
+    "queryNeedWhereCondition": ["height", "block_height"]
   },
   "feegrant": {
     "updateFeegrant": {

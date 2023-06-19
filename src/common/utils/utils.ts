@@ -108,4 +108,59 @@ export default class Utils {
     iterate(object);
     return result;
   }
+
+  public static isQueryNeedCondition(
+    object: any,
+    models: string[],
+    condition: string[]
+  ): boolean {
+    const result: any[] = [];
+    let response = true;
+
+    const iterate = (obj: any) => {
+      if (!obj) {
+        return;
+      }
+      Object.keys(obj).forEach((key) => {
+        const value = obj[key];
+        if (typeof value === 'object' && value !== null) {
+          iterate(value);
+          if (value.kind === 'Field' && models.includes(value.name.value)) {
+            result.push(value);
+          }
+        }
+      });
+    };
+
+    iterate(object);
+    result.forEach((res: any) => {
+      const where = res.arguments.find(
+        (arg: any) => arg.name.value === 'where'
+      );
+      if (!where) response = false;
+      else {
+        const whereHeight = where.value.fields.find((field: any) =>
+          condition.includes(field.name.value)
+        );
+        if (!whereHeight) response = false;
+        else {
+          const isRange =
+            whereHeight.value.fields.find(
+              (field: any) => field.name.value === '_eq'
+            ) ||
+            (whereHeight.value.fields.find(
+              (field: any) =>
+                field.name.value === '_lt' || field.name.value === '_lte'
+            ) &&
+              whereHeight.value.fields.find(
+                (field: any) =>
+                  field.name.value === '_gt' || field.name.value === '_gte'
+              ));
+          if (!isRange) response = false;
+        }
+      }
+    });
+
+    return response;
+  }
 }

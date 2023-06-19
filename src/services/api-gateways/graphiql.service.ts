@@ -86,7 +86,7 @@ export default class GraphiQLService extends BaseService {
         data: 'Invalid query',
       };
     }
-    this.logger.info(JSON.stringify(graphqlObj));
+    this.logger.debug(JSON.stringify(graphqlObj));
 
     if (graphqlObj) {
       (graphqlObj.definitions as DefinitionNode[]).forEach(
@@ -140,6 +140,19 @@ export default class GraphiQLService extends BaseService {
             });
           }
         );
+
+        if (
+          !Utils.isQueryNeedCondition(
+            selection,
+            config.graphiqlApi.queryNeedWhereModel,
+            config.graphiqlApi.queryNeedWhereCondition
+          )
+        )
+          result = {
+            code: ErrorCode.WRONG,
+            message: ErrorMessage.VALIDATION_ERROR,
+            data: `The query to one of the following tables needs to include exact height (_eq) or a height range (_gt/_gte & _lt/_lte) in where argument: ${config.graphiqlApi.queryNeedWhereModel}`,
+          };
       });
       if (result.code !== '') return result;
 
