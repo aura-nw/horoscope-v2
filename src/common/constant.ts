@@ -164,8 +164,13 @@ export const SERVICE = {
     Cw20: {
       key: 'Cw20Service',
       name: 'v1.Cw20Service',
+    },
+    Cw20UpdateByContract: {
+      key: 'Cw20UpdateByContract',
+      name: 'v1.Cw20UpdateByContractService',
       UpdateByContract: {
-        key: 'Cw20UpdateByContract',
+        key: 'UpdateByContract',
+        path: 'v1.Cw20UpdateByContract.UpdateByContract',
       },
     },
     DashboardStatisticsService: {

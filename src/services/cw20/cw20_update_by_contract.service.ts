@@ -3,10 +3,10 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
-import { CW20Holder, Cw20Contract, Cw20Event } from 'src/models';
-import knex from 'src/common/utils/db_connection';
 import { Knex } from 'knex';
 import _, { Dictionary } from 'lodash';
+import knex from '../../common/utils/db_connection';
+import { CW20Holder, Cw20Contract, Cw20Event } from '../../models';
 import { BULL_JOB_NAME, IContextUpdateCw20, SERVICE } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
@@ -24,7 +24,7 @@ interface IAddBalanceHolder {
 }
 
 @Service({
-  name: SERVICE.V1.Cw20.key,
+  name: SERVICE.V1.Cw20UpdateByContract.key,
   version: 1,
 })
 export default class Cw20UpdateByContractService extends BullableService {
@@ -40,33 +40,33 @@ export default class Cw20UpdateByContractService extends BullableService {
   })
   async jobHandle(_payload: ICw20UpdateByContractParam): Promise<void> {
     const { cw20ContractId, startBlock, endBlock } = _payload;
+    const cw20Contract = await Cw20Contract.query()
+      .where('cw20_contract_id', cw20ContractId)
+      .first()
+      .throwIfNotFound();
     // get all cw20_events from startBlock to endBlock and they occur after cw20 last_updated_height (max holders's last_updated_height)
     const newEvents = await Cw20Event.query()
       .where('cw20_contract_id', cw20ContractId)
       .andWhere('height', '>', startBlock)
       .andWhere('height', '<=', endBlock)
-      .andWhere(
-        'height',
-        '>',
-        CW20Holder.query()
-          .where('cw20_contract_id', cw20ContractId)
-          .max('last_updated_height')
-      ); // need check again
-    await knex.transaction(async (trx) => {
-      await this.updateTotalSupply(newEvents, cw20ContractId, trx);
-      await this.updateBalanceHolders(newEvents, cw20ContractId, trx);
-    });
+      .andWhere('height', '>', cw20Contract.last_updated_height); // need check again
+    if (newEvents.length > 0) {
+      await knex.transaction(async (trx) => {
+        await this.updateTotalSupply(newEvents, cw20ContractId, endBlock, trx);
+        await this.updateBalanceHolders(newEvents, cw20ContractId, trx);
+      });
+    }
   }
 
   @Action({
-    name: SERVICE.V1.Cw20.UpdateByContract.key,
+    name: SERVICE.V1.Cw20UpdateByContract.key,
     params: {
       cw20ContractIds: 'any[]',
       startBlock: 'any',
       endBlock: 'any',
     },
   })
-  private async actionUpdateByContract(ctx: Context<IContextUpdateCw20>) {
+  async UpdateByContract(ctx: Context<IContextUpdateCw20>) {
     // eslint-disable-next-line no-restricted-syntax
     for (const cw20ContractId of ctx.params.cw20ContractIds) {
       // eslint-disable-next-line no-await-in-loop
@@ -90,6 +90,7 @@ export default class Cw20UpdateByContractService extends BullableService {
   async updateTotalSupply(
     cw20Events: Cw20Event[],
     cw20ContractId: number,
+    endBlock: number,
     trx: Knex.Transaction
   ) {
     let addAmount = '0';
@@ -111,7 +112,7 @@ export default class Cw20UpdateByContractService extends BullableService {
     cw20BurnEvents.forEach((burnEvent) => {
       if (burnEvent.amount) {
         addAmount = (
-          BigInt(addAmount) + BigInt(`-${burnEvent.amount}`)
+          BigInt(addAmount) - BigInt(`${burnEvent.amount}`)
         ).toString();
       } else {
         throw new Error(`Burn event id ${burnEvent.id} not found amount`);
@@ -131,6 +132,7 @@ export default class Cw20UpdateByContractService extends BullableService {
       .where('id', cw20ContractId)
       .patch({
         total_supply: updateTotalSupply,
+        last_updated_height: endBlock,
       });
   }
 
@@ -161,8 +163,8 @@ export default class Cw20UpdateByContractService extends BullableService {
           if (addBalanceHolders[event.from]) {
             // sub balance for sender
             addBalanceHolders[event.from].amount = (
-              BigInt(addBalanceHolders[event.from].amount) +
-              BigInt(`-${event.amount}`)
+              BigInt(addBalanceHolders[event.from].amount) -
+              BigInt(`${event.amount}`)
             ).toString();
             addBalanceHolders[event.from].last_updated_height = event.height;
           } else {
@@ -194,7 +196,6 @@ export default class Cw20UpdateByContractService extends BullableService {
       }
     });
     if (Object.keys(addBalanceHolders).length > 0) {
-      const queries: any[] = [];
       const holders = _.keyBy(
         await CW20Holder.query()
           .transacting(trx)
@@ -202,38 +203,24 @@ export default class Cw20UpdateByContractService extends BullableService {
           .andWhere('cw20_contract_id', cw20ContractId),
         'address'
       );
-      Object.keys(addBalanceHolders).forEach((address) => {
-        if (holders[address]) {
-          queries.push(
-            CW20Holder.query()
-              .transacting(trx)
-              .patch({
-                amount: (
-                  BigInt(holders[address].amount) +
-                  BigInt(addBalanceHolders[address].amount)
-                ).toString(),
-                last_updated_height:
-                  addBalanceHolders[address].last_updated_height,
-              })
-              .where('address', address)
-          );
-        } else {
-          queries.push(
-            CW20Holder.query()
-              .transacting(trx)
-              .insert(
-                CW20Holder.fromJson({
-                  address,
-                  amount: addBalanceHolders[address].amount,
-                  last_updated_height:
-                    addBalanceHolders[address].last_updated_height,
-                  cw20_contract_id: cw20ContractId,
-                })
-              )
-          );
-        }
-      });
-      await Promise.all(queries);
+      await CW20Holder.query()
+        .transacting(trx)
+        .insert(
+          Object.keys(addBalanceHolders).map((address) =>
+            CW20Holder.fromJson({
+              address,
+              amount: (
+                BigInt(holders[address] ? holders[address].amount : '0') +
+                BigInt(addBalanceHolders[address].amount)
+              ).toString(),
+              last_updated_height:
+                addBalanceHolders[address].last_updated_height,
+              cw20_contract_id: cw20ContractId,
+            })
+          )
+        )
+        .onConflict(['cw20_contract_id', 'address'])
+        .merge();
     }
   }
 }
