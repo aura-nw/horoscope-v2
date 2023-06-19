@@ -150,7 +150,7 @@ export default class CrawlSmartContractService extends BullableService {
         this._httpBatchClient
       );
 
-      const codeIds: number[] = [];
+      let codeIds: number[] = [];
       const updateContractTypes: any[] = [];
       smartContracts.forEach((contract, index) => {
         if (contractCw2s[index]?.data) {
@@ -184,6 +184,7 @@ export default class CrawlSmartContractService extends BullableService {
         }
       });
 
+      codeIds = Array.from(new Set(codeIds));
       const codes: Code[] = await Code.query().whereIn('code_id', codeIds);
       const codeKeys = _.keyBy(codes, 'code_id');
       const missingCodeIds: IStoreCodes[] = [];
