@@ -43,7 +43,10 @@ export default class HandleTxVoteService extends BullableService {
       .andWhere('height', '<=', endBlock)
       .andWhere('type', MSG_TYPE.MSG_VOTE)
       .andWhere('code', 0)
-      .orderBy(['height', 'transaction_message.index']);
+      .orderBy([
+        { column: 'height', order: 'ASC' },
+        { column: 'transaction_message.index', order: 'ASC' },
+      ]);
     const votesInsert: Vote[] = [];
     txMsgs.forEach((txMsg) => {
       const { content } = txMsg;

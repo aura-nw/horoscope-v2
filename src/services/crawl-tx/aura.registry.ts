@@ -48,6 +48,9 @@ export default class AuraRegistry {
 
       // ibc header
       '/ibc.lightclients.tendermint.v1.Header',
+
+      // slashing
+      '/cosmos.slashing.v1beta1.MsgUnjail',
     ];
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment

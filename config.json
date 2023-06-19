@@ -133,5 +133,9 @@
       "view_event_attribute_value_index"
     ],
     "queryNeedWhereCondition": ["height", "block_height"]
+  },
+  "crawlValidatorImage": {
+    "timeCrawlImage": "0 0 * * *",
+    "milliSecondDelayRetry": 300000
   }
 }
