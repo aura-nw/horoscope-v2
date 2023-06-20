@@ -126,13 +126,16 @@
       "transaction",
       "event",
       "event_attribute",
+      "view_event_attribute_value_index"
+    ],
+    "queryNeedWhereRelation": [
       "transactions",
       "events",
       "event_attributes",
-      "event_attribute_index",
-      "view_event_attribute_value_index"
+      "event_attribute_index"
     ],
-    "queryNeedWhereCondition": ["height", "block_height"]
+    "queryNeedWhereCondition": ["height", "block_height"],
+    "queryExactWhere": ["hash"]
   },
   "crawlValidatorImage": {
     "timeCrawlImage": "0 0 * * *",
