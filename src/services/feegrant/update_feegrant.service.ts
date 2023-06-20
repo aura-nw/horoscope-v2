@@ -68,16 +68,14 @@ export default class UpdateFeegrantService extends BullableService {
             (x) =>
               x.grantee === e.grantee &&
               x.granter === e.granter &&
-              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-              // @ts-ignore
-              x.init_tx_id <= e.tx_id
+              (x?.init_tx_id || 0) <= e.tx_id
           );
           if (suspiciousFeegrants.length > 0) {
             const originalFeegrant = suspiciousFeegrants.reduce(
               (prev, current) =>
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                prev.init_tx_id > current.init_tx_id ? prev : current
+                (prev?.init_tx_id || 0) > (current?.init_tx_id || 0)
+                  ? prev
+                  : current
             );
             e.feegrant_id = originalFeegrant.id;
             feegrantHistories.push(e);
