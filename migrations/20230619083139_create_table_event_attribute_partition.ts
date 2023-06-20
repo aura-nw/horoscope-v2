@@ -73,4 +73,13 @@ export async function up(knex: Knex): Promise<void> {
   });
 }
 
-export async function down(knex: Knex): Promise<void> {}
+export async function down(knex: Knex): Promise<void> {
+  await knex.transaction(async (trx) => {
+    await knex
+      .raw('alter table event_attribute rename to event_attribute_revert;')
+      .transacting(trx);
+    await knex
+      .raw('alter table event_attribute_backup rename to event_attribute;')
+      .transacting(trx);
+  });
+}
