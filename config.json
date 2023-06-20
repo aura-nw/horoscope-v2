@@ -127,9 +127,9 @@
     "milliSecondDelayRetry": 300000
   },
   "migrationEventAttributeToPartition": {
-    "startBlock": 13000000,
-    "endBlock": 13080000,
-    "step": 10000,
+    "startBlock": 0,
+    "endBlock": 13000000,
+    "step": 13000000,
     "limitRecordGet": 10000,
     "chunkSizeInsert": 1000
   },
