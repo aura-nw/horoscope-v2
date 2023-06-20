@@ -29,9 +29,9 @@ const { NODE_ENV } = Config;
 
 interface IContractInfoAndMinter {
   address: string;
-  name: string;
-  symbol: string;
-  minter: string;
+  name?: string;
+  symbol?: string;
+  minter?: string;
 }
 
 const CW721_ACTION = {
@@ -482,7 +482,7 @@ export default class Cw721HandlerService extends BullableService {
         )
       );
     });
-    const contractsInfo = [];
+    const contractsInfo: IContractInfoAndMinter[] = [];
     const resultsContractsInfo: JsonRpcSuccessResponse[] = await Promise.all(
       promisesInfo
     );
@@ -490,24 +490,48 @@ export default class Cw721HandlerService extends BullableService {
       promisesMinter
     );
     for (let index = 0; index < resultsContractsInfo.length; index += 1) {
-      const contractInfo = JSON.parse(
-        fromUtf8(
-          cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
-            fromBase64(resultsContractsInfo[index].result.response.value)
-          ).data
-        )
-      );
-      const { minter }: { minter: string } = JSON.parse(
-        fromUtf8(
-          cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
-            fromBase64(resultsMinters[index].result.response.value)
-          ).data
-        )
-      );
+      let contractInfo;
+      let minter;
+      try {
+        contractInfo = JSON.parse(
+          fromUtf8(
+            cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
+              fromBase64(resultsContractsInfo[index].result.response.value)
+            ).data
+          )
+        );
+      } catch (error) {
+        if (error instanceof SyntaxError || error instanceof TypeError) {
+          this.logger.error(
+            `Response contract info from CW721 contract ${contractAddresses[index]} not support`
+          );
+        } else {
+          this.logger.error(error);
+          throw error;
+        }
+      }
+      try {
+        minter = JSON.parse(
+          fromUtf8(
+            cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
+              fromBase64(resultsMinters[index].result.response.value)
+            ).data
+          )
+        ).minter;
+      } catch (error) {
+        if (error instanceof SyntaxError || error instanceof TypeError) {
+          this.logger.error(
+            `Response minter from CW721 contract ${contractAddresses[index]} not support`
+          );
+        } else {
+          this.logger.error(error);
+          throw error;
+        }
+      }
       contractsInfo.push({
         address: contractAddresses[index],
-        name: contractInfo.name as string,
-        symbol: contractInfo.symbol as string,
+        name: contractInfo?.name,
+        symbol: contractInfo?.symbol,
         minter,
       });
     }
