@@ -40,16 +40,11 @@ export default class Cw20UpdateByContractService extends BullableService {
   })
   async jobHandle(_payload: ICw20UpdateByContractParam): Promise<void> {
     const { cw20ContractId, startBlock, endBlock } = _payload;
-    const cw20Contract = await Cw20Contract.query()
-      .where('id', cw20ContractId)
-      .first()
-      .throwIfNotFound();
     // get all cw20_events from startBlock to endBlock and they occur after cw20 last_updated_height (max holders's last_updated_height)
     const newEvents = await Cw20Event.query()
       .where('cw20_contract_id', cw20ContractId)
       .andWhere('height', '>', startBlock)
-      .andWhere('height', '<=', endBlock)
-      .andWhere('height', '>', cw20Contract.last_updated_height); // need check again
+      .andWhere('height', '<=', endBlock);
     if (newEvents.length > 0) {
       await knex.transaction(async (trx) => {
         await this.updateTotalSupply(newEvents, cw20ContractId, endBlock, trx);
@@ -61,29 +56,36 @@ export default class Cw20UpdateByContractService extends BullableService {
   @Action({
     name: SERVICE.V1.Cw20UpdateByContract.UpdateByContract.key,
     params: {
-      cw20ContractIds: 'any[]',
+      cw20Contracts: 'any[]',
       startBlock: 'any',
       endBlock: 'any',
     },
   })
   async UpdateByContract(ctx: Context<IContextUpdateCw20>) {
+    let { startBlock } = ctx.params;
+    const { endBlock } = ctx.params;
     // eslint-disable-next-line no-restricted-syntax
-    for (const cw20ContractId of ctx.params.cw20ContractIds) {
-      // eslint-disable-next-line no-await-in-loop
-      await this.createJob(
-        BULL_JOB_NAME.CW20_UPDATE_BY_CONTRACT,
-        BULL_JOB_NAME.CW20_UPDATE_BY_CONTRACT,
-        {
-          cw20ContractId,
-          startBlock: ctx.params.startBlock,
-          endBlock: ctx.params.endBlock,
-        },
-        {
-          removeOnComplete: true,
-          attempts: config.jobRetryAttempt,
-          backoff: config.jobRetryBackoff,
-        }
-      );
+    for (const cw20Contract of ctx.params.cw20Contracts) {
+      if (startBlock < cw20Contract.last_updated_height) {
+        startBlock = cw20Contract.last_updated_height;
+      }
+      if (startBlock < endBlock) {
+        // eslint-disable-next-line no-await-in-loop
+        await this.createJob(
+          BULL_JOB_NAME.CW20_UPDATE_BY_CONTRACT,
+          BULL_JOB_NAME.CW20_UPDATE_BY_CONTRACT,
+          {
+            cw20ContractId: cw20Contract.id,
+            startBlock,
+            endBlock,
+          },
+          {
+            removeOnComplete: true,
+            attempts: config.jobRetryAttempt,
+            backoff: config.jobRetryBackoff,
+          }
+        );
+      }
     }
   }
 

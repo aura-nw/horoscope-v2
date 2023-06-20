@@ -12,6 +12,7 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
   BULL_JOB_NAME,
   Config,
+  IContextUpdateCw20,
   SERVICE,
   getHttpBatchClient,
 } from '../../common';
@@ -200,10 +201,13 @@ export default class Cw20Service extends BullableService {
       await this.broker.call(
         SERVICE.V1.Cw20UpdateByContract.UpdateByContract.path,
         {
-          cw20ContractIds: cw20Contracts.map((cw20Contract) => cw20Contract.id),
+          cw20Contracts: cw20Contracts.map((cw20Contract) => ({
+            id: cw20Contract.id,
+            last_updated_height: cw20Contract.last_updated_height,
+          })),
           startBlock,
           endBlock,
-        }
+        } satisfies IContextUpdateCw20
       );
     }
   }
