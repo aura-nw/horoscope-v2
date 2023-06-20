@@ -112,10 +112,15 @@ export default class Utils {
   public static isQueryNeedCondition(
     object: any,
     models: string[],
-    condition: string[]
+    relations: string[],
+    condition: string[],
+    exactCondition: string[]
   ): boolean {
     const result: any[] = [];
     let response = true;
+
+    if (object.kind === 'Field' && models.includes(object.name.value))
+      result.push(object);
 
     const iterate = (obj: any) => {
       if (!obj) {
@@ -125,9 +130,8 @@ export default class Utils {
         const value = obj[key];
         if (typeof value === 'object' && value !== null) {
           iterate(value);
-          if (value.kind === 'Field' && models.includes(value.name.value)) {
+          if (value.kind === 'Field' && relations.includes(value.name.value))
             result.push(value);
-          }
         }
       });
     };
@@ -142,8 +146,11 @@ export default class Utils {
         const whereHeight = where.value.fields.find((field: any) =>
           condition.includes(field.name.value)
         );
-        if (!whereHeight) response = false;
-        else {
+        const whereHash = where.value.fields.find((field: any) =>
+          exactCondition.includes(field.name.value)
+        );
+        if (!whereHeight && !whereHash) response = false;
+        else if (whereHeight) {
           const isRange =
             whereHeight.value.fields.find(
               (field: any) => field.name.value === '_eq'
@@ -157,6 +164,11 @@ export default class Utils {
                   field.name.value === '_gt' || field.name.value === '_gte'
               ));
           if (!isRange) response = false;
+        } else if (whereHash) {
+          const exactHash = whereHash.value.fields.find(
+            (field: any) => field.name.value === '_eq'
+          );
+          if (!exactHash) response = false;
         }
       }
     });
