@@ -121,7 +121,7 @@ export default class Cw20Service extends BullableService {
           const initBalances = await this.getInstantiateBalances(
             event.contract_address
           );
-          const lastUpdatedHeight = Math.max(
+          const lastUpdatedHeight = Math.min(
             ...initBalances.map((e) => e.event_height)
           );
           return {

@@ -130,28 +130,28 @@ export default class Cw20UpdateByContract {
       {
         action: 'mint',
         amount: '23414154564',
-        height: 1000,
+        height: 21000,
         smart_contract_event_id: 1000,
         cw20_contract_id: 1,
       },
       {
         action: 'burn',
         amount: '14423444',
-        height: 1000,
+        height: 21000,
         smart_contract_event_id: 1000,
         cw20_contract_id: 1,
       },
       {
         action: 'mint',
         amount: '132434564654',
-        height: 1000,
+        height: 21000,
         smart_contract_event_id: 1000,
         cw20_contract_id: 1,
       },
       {
         action: 'mint',
         amount: '11111111111111',
-        height: 1000,
+        height: 21000,
         smart_contract_event_id: 1000,
         cw20_contract_id: 1,
       },
@@ -189,7 +189,7 @@ export default class Cw20UpdateByContract {
       {
         action: CW20_ACTION.MINT,
         amount: '87465765466',
-        height: 999,
+        height: 22999,
         smart_contract_event_id: 1000,
         cw20_contract_id: 1,
         to: this.cw20Contract[contractIndex - 1].holders[0].address,
@@ -197,7 +197,7 @@ export default class Cw20UpdateByContract {
       {
         action: CW20_ACTION.BURN,
         amount: '4521443546',
-        height: 992,
+        height: 22992,
         smart_contract_event_id: 1000,
         cw20_contract_id: 1,
         from: this.cw20Contract[contractIndex - 1].holders[1].address,
@@ -205,7 +205,7 @@ export default class Cw20UpdateByContract {
       {
         action: CW20_ACTION.TRANSFER,
         amount: '4642443',
-        height: 1102,
+        height: 21102,
         smart_contract_event_id: 1000,
         cw20_contract_id: 1,
         to: this.cw20Contract[contractIndex - 1].holders[1].address,
@@ -214,7 +214,7 @@ export default class Cw20UpdateByContract {
       {
         action: CW20_ACTION.TRANSFER,
         amount: '1122334456566',
-        height: 1003,
+        height: 21003,
         smart_contract_event_id: 1000,
         cw20_contract_id: 1,
         to: this.cw20Contract[contractIndex - 1].holders[0].address,
@@ -223,7 +223,7 @@ export default class Cw20UpdateByContract {
       {
         action: CW20_ACTION.SEND,
         amount: '852123655',
-        height: 1005,
+        height: 21005,
         smart_contract_event_id: 1000,
         cw20_contract_id: 1,
         to: this.cw20Contract[contractIndex - 1].holders[0].address,
@@ -232,7 +232,7 @@ export default class Cw20UpdateByContract {
       {
         action: CW20_ACTION.MINT,
         amount: '465462124654',
-        height: 1000,
+        height: 21000,
         smart_contract_event_id: 1000,
         cw20_contract_id: 1,
         to: this.cw20Contract[contractIndex - 1].holders[2].address,
@@ -298,21 +298,21 @@ export default class Cw20UpdateByContract {
             e.address ===
             this.cw20Contract[contractIndex - 1].holders[0].address
         )?.last_updated_height
-      ).toEqual(1005);
+      ).toEqual(22999);
       expect(
         holders.find(
           (e) =>
             e.address ===
             this.cw20Contract[contractIndex - 1].holders[1].address
         )?.last_updated_height
-      ).toEqual(1102);
+      ).toEqual(22992);
       expect(
         holders.find(
           (e) =>
             e.address ===
             this.cw20Contract[contractIndex - 1].holders[2].address
         )?.last_updated_height
-      ).toEqual(1102);
+      ).toEqual(21102);
       await trx.rollback();
     });
   }
@@ -394,6 +394,159 @@ export default class Cw20UpdateByContract {
           BigInt(cw20Events[5].amount)
         ).toString()
       );
+      await trx.rollback();
+    });
+  }
+
+  @Test('test UpdateBalanceHolders for event height')
+  public async testUpdateBalanceNewHoldersFroEventHeights() {
+    const contractIndex = 2;
+    const cw20Events = [
+      {
+        action: CW20_ACTION.MINT,
+        amount: '87465765466',
+        height: 22999,
+        smart_contract_event_id: 1000,
+        cw20_contract_id: 1,
+        to: this.cw20Contract[contractIndex - 1].holders[0].address,
+      },
+      {
+        action: CW20_ACTION.BURN,
+        amount: '4521443546',
+        height: 22992,
+        smart_contract_event_id: 1000,
+        cw20_contract_id: 1,
+        from: this.cw20Contract[contractIndex - 1].holders[1].address,
+      },
+      {
+        action: CW20_ACTION.TRANSFER,
+        amount: '4642443',
+        height: 21102,
+        smart_contract_event_id: 1000,
+        cw20_contract_id: 1,
+        to: this.cw20Contract[contractIndex - 1].holders[1].address,
+        from: this.cw20Contract[contractIndex - 1].holders[2].address,
+      },
+      {
+        action: CW20_ACTION.TRANSFER,
+        amount: '1122334456566',
+        height: 21003,
+        smart_contract_event_id: 1000,
+        cw20_contract_id: 1,
+        to: this.cw20Contract[contractIndex - 1].holders[0].address,
+        from: this.cw20Contract[contractIndex - 1].holders[1].address,
+      },
+      {
+        action: CW20_ACTION.SEND,
+        amount: '852123655',
+        height: 21005,
+        smart_contract_event_id: 1000,
+        cw20_contract_id: 1,
+        to: this.cw20Contract[contractIndex - 1].holders[0].address,
+        from: this.cw20Contract[contractIndex - 1].holders[1].address,
+      },
+      {
+        action: CW20_ACTION.MINT,
+        amount: '465462124654',
+        height: 21000,
+        smart_contract_event_id: 1000,
+        cw20_contract_id: 1,
+        to: this.cw20Contract[contractIndex - 1].holders[2].address,
+        from: this.cw20Contract[contractIndex - 1].holders[0].address,
+      },
+      {
+        action: CW20_ACTION.MINT,
+        amount: '465462124654',
+        height: 1000,
+        smart_contract_event_id: 1000,
+        cw20_contract_id: 1,
+        to: this.cw20Contract[contractIndex - 1].holders[1].address,
+        from: this.cw20Contract[contractIndex - 1].holders[0].address,
+      },
+      {
+        action: CW20_ACTION.MINT,
+        amount: '465462124654',
+        height: 500,
+        smart_contract_event_id: 1000,
+        cw20_contract_id: 1,
+        to: this.cw20Contract[contractIndex - 1].holders[2].address,
+        from: this.cw20Contract[contractIndex - 1].holders[0].address,
+      },
+    ];
+    await knex.transaction(async (trx) => {
+      await this.cw20UpdateByContractService.updateBalanceHolders(
+        cw20Events.map((event) => Cw20Event.fromJson(event)),
+        contractIndex,
+        trx
+      );
+      const holders = await CW20Holder.query()
+        .transacting(trx)
+        .where('cw20_contract_id', contractIndex)
+        .throwIfNotFound();
+      expect(
+        holders.find(
+          (e) =>
+            e.address ===
+            this.cw20Contract[contractIndex - 1].holders[0].address
+        )?.amount
+      ).toEqual(
+        (
+          BigInt(this.cw20Contract[contractIndex - 1].holders[0].amount) +
+          BigInt(cw20Events[0].amount) +
+          BigInt(cw20Events[3].amount) +
+          BigInt(cw20Events[4].amount) -
+          BigInt(cw20Events[5].amount)
+        ).toString()
+      );
+      expect(
+        holders.find(
+          (e) =>
+            e.address ===
+            this.cw20Contract[contractIndex - 1].holders[1].address
+        )?.amount
+      ).toEqual(
+        (
+          BigInt(this.cw20Contract[contractIndex - 1].holders[1].amount) -
+          BigInt(cw20Events[1].amount) +
+          BigInt(cw20Events[2].amount) -
+          BigInt(cw20Events[3].amount) -
+          BigInt(cw20Events[4].amount)
+        ).toString()
+      );
+      expect(
+        holders.find(
+          (e) =>
+            e.address ===
+            this.cw20Contract[contractIndex - 1].holders[2].address
+        )?.amount
+      ).toEqual(
+        (
+          BigInt(this.cw20Contract[contractIndex - 1].holders[2].amount) -
+          BigInt(cw20Events[2].amount) +
+          BigInt(cw20Events[5].amount)
+        ).toString()
+      );
+      expect(
+        holders.find(
+          (e) =>
+            e.address ===
+            this.cw20Contract[contractIndex - 1].holders[0].address
+        )?.last_updated_height
+      ).toEqual(22999);
+      expect(
+        holders.find(
+          (e) =>
+            e.address ===
+            this.cw20Contract[contractIndex - 1].holders[1].address
+        )?.last_updated_height
+      ).toEqual(22992);
+      expect(
+        holders.find(
+          (e) =>
+            e.address ===
+            this.cw20Contract[contractIndex - 1].holders[2].address
+        )?.last_updated_height
+      ).toEqual(21102);
       await trx.rollback();
     });
   }

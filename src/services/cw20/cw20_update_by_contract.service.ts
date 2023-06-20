@@ -4,7 +4,7 @@ import {
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
 import { Knex } from 'knex';
-import _, { Dictionary } from 'lodash';
+import _ from 'lodash';
 import knex from '../../common/utils/db_connection';
 import { CW20Holder, Cw20Contract, Cw20Event } from '../../models';
 import { BULL_JOB_NAME, IContextUpdateCw20, SERVICE } from '../../common';
@@ -16,10 +16,6 @@ export interface ICw20UpdateByContractParam {
   cw20ContractId: number;
   startBlock: number;
   endBlock: number;
-}
-interface IAddBalanceHolder {
-  amount: bigint;
-  last_updated_height: number;
 }
 
 @Service({
@@ -139,7 +135,6 @@ export default class Cw20UpdateByContractService extends BullableService {
     cw20ContractId: number,
     trx: Knex.Transaction
   ) {
-    const addBalanceHolders: Dictionary<IAddBalanceHolder> = {};
     // just get base action which change balance: MINT, BURN, TRANSFER, SEND
     const orderEvents = _.orderBy(
       cw20Events.filter(
@@ -152,52 +147,70 @@ export default class Cw20UpdateByContractService extends BullableService {
       ['height'],
       ['asc']
     );
-    // update fluctuate balance holders to addBalanceHolders
+    // get all holders send/receive in DB
+    const holders = _.keyBy(
+      await CW20Holder.query()
+        .transacting(trx)
+        .whereIn(
+          'address',
+          orderEvents.reduce((acc: string[], curr) => {
+            if (curr.from) {
+              acc.push(curr.from);
+            }
+            if (curr.to) {
+              acc.push(curr.to);
+            }
+            return acc;
+          }, [])
+        )
+        .andWhere('cw20_contract_id', cw20ContractId),
+      'address'
+    );
+    // update balance holders to holders
     orderEvents.forEach((event) => {
       // if event not have amount, throw error
       if (event.amount) {
-        // sender
-        if (event.from) {
-          addBalanceHolders[event.from] = {
-            amount:
-              (addBalanceHolders[event.from]?.amount || BigInt(0)) -
-              BigInt(event.amount),
+        // sender event
+        if (
+          event.from &&
+          event.height > holders[event.from].last_updated_height
+        ) {
+          holders[event.from] = CW20Holder.fromJson({
+            amount: (
+              BigInt(holders[event.from].amount) - BigInt(event.amount)
+            ).toString(),
             last_updated_height: event.height,
-          };
+            cw20_contract_id: cw20ContractId,
+            address: event.from,
+          });
         }
-        // recipient
-        if (event.to) {
-          addBalanceHolders[event.to] = {
-            amount:
-              (addBalanceHolders[event.to]?.amount || BigInt(0)) +
-              BigInt(event.amount),
+        // recipient event
+        if (
+          event.to &&
+          event.height > (holders[event.to]?.last_updated_height || 0)
+        ) {
+          holders[event.to] = CW20Holder.fromJson({
+            amount: (
+              BigInt(holders[event.to]?.amount || 0) + BigInt(event.amount)
+            ).toString(),
             last_updated_height: event.height,
-          };
+            cw20_contract_id: cw20ContractId,
+            address: event.to,
+          });
         }
       } else {
         throw new Error(`handle event ${event.id} not found amount`);
       }
     });
-    if (Object.keys(addBalanceHolders).length > 0) {
-      const holders = _.keyBy(
-        await CW20Holder.query()
-          .transacting(trx)
-          .whereIn('address', Object.keys(addBalanceHolders))
-          .andWhere('cw20_contract_id', cw20ContractId),
-        'address'
-      );
+    if (Object.keys(holders).length > 0) {
       await CW20Holder.query()
         .transacting(trx)
         .insert(
-          Object.keys(addBalanceHolders).map((address) =>
+          Object.keys(holders).map((address) =>
             CW20Holder.fromJson({
               address,
-              amount: (
-                BigInt(holders[address] ? holders[address].amount : '0') +
-                BigInt(addBalanceHolders[address].amount)
-              ).toString(),
-              last_updated_height:
-                addBalanceHolders[address].last_updated_height,
+              amount: holders[address].amount,
+              last_updated_height: holders[address].last_updated_height,
               cw20_contract_id: cw20ContractId,
             })
           )
