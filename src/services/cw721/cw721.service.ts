@@ -24,7 +24,7 @@ import CW721Token from '../../models/cw721_token';
 import CW721Activity from '../../models/cw721_tx';
 import { SmartContract } from '../../models/smart_contract';
 import { getAttributeFrom } from '../../common/utils/smart_contract';
-import CW721ContractStat from '../../models/cw721_stat';
+import CW721ContractStats from '../../models/cw721_stats';
 
 const { NODE_ENV } = Config;
 
@@ -585,18 +585,9 @@ export default class Cw721HandlerService extends BullableService {
   async refreshCw721Stats(): Promise<void> {
     const cw721Stats = await this.calCw721Stats();
 
-    // Mapping cw721 stats.
-    const listCw721Stats = cw721Stats.map((cw721Stat) =>
-      CW721ContractStat.fromJson({
-        cw721_contract_id: cw721Stat.cw721_contract_id,
-        total_activity: cw721Stat.total_activity,
-        transfer_24h: cw721Stat.transfer_24h,
-      })
-    );
-
     // Upsert cw721 stats
-    await CW721ContractStat.query()
-      .insert(listCw721Stats)
+    await CW721ContractStats.query()
+      .insert(cw721Stats)
       .onConflict('cw721_contract_id')
       .merge()
       .returning('id');
@@ -615,7 +606,7 @@ export default class Cw721HandlerService extends BullableService {
       .count('cw721_activity.id AS total_activity')
       .select(
         knex.raw(
-          "SUM( CASE WHEN cw721_activity.height > ? AND cw721_activity.action != '' THEN 1 ELSE 0 END ) AS transfer_24h",
+          "SUM( CASE WHEN cw721_activity.height >= ? AND cw721_activity.action != '' THEN 1 ELSE 0 END ) AS transfer_24h",
           blockSince24hAgo[0]?.height
         )
       )

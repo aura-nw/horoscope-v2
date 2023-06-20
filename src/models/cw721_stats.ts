@@ -2,11 +2,11 @@ import { Model } from 'objection';
 import BaseModel from './base';
 import CW721Contract from './cw721_contract';
 
-export default class CW721ContractStat extends BaseModel {
+export default class CW721ContractStats extends BaseModel {
   updated_at?: Date;
 
   static get tableName() {
-    return 'cw721_contract_stat';
+    return 'cw721_contract_stats';
   }
 
   static get jsonSchema() {
@@ -27,7 +27,7 @@ export default class CW721ContractStat extends BaseModel {
         relation: Model.BelongsToOneRelation,
         modelClass: CW721Contract,
         join: {
-          from: 'cw721_contract_stat.cw721_contract_id',
+          from: 'cw721_contract_stats.cw721_contract_id',
           to: 'cw721_contract.id',
         },
       },
