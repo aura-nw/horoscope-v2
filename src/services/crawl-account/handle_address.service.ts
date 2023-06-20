@@ -50,7 +50,7 @@ export default class HandleAddressService extends BullableService {
 
     const eventAddresses: string[] = [];
     const resultTx = await EventAttribute.query()
-      .where('value', 'like', 'aura%')
+      .where('value', 'like', `${config.networkPrefixAddress}%`)
       .andWhere('block_height', '>', startHeight)
       .andWhere('block_height', '<=', endHeight)
       .select('value');
