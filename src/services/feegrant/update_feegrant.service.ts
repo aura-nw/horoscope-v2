@@ -2,12 +2,11 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import _ from 'lodash';
 import { ServiceBroker } from 'moleculer';
 import { Knex } from 'knex';
-import Feegrant from '../../models/feegrant';
+import { Feegrant, FeegrantHistory } from '../../models';
 import knex from '../../common/utils/db_connection';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, Config, SERVICE } from '../../common';
-import FeegrantHistory from '../../models/feegrant_history';
 import { FEEGRANT_ACTION } from './feegrant.service';
 
 const { NODE_ENV } = Config;
@@ -69,12 +68,14 @@ export default class UpdateFeegrantService extends BullableService {
             (x) =>
               x.grantee === e.grantee &&
               x.granter === e.granter &&
-              x.init_tx_id <= e.tx_id
+              (x?.init_tx_id || 0) <= e.tx_id
           );
           if (suspiciousFeegrants.length > 0) {
             const originalFeegrant = suspiciousFeegrants.reduce(
               (prev, current) =>
-                prev.init_tx_id > current.init_tx_id ? prev : current
+                (prev?.init_tx_id || 0) > (current?.init_tx_id || 0)
+                  ? prev
+                  : current
             );
             e.feegrant_id = originalFeegrant.id;
             feegrantHistories.push(e);
