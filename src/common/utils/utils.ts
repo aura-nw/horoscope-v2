@@ -113,10 +113,10 @@ export default class Utils {
     object: any,
     models: string[],
     relations: string[],
-    condition: string[],
-    exactCondition: string[]
+    condition: string[]
   ): boolean {
     const result: any[] = [];
+    const resultRelations: any[] = [];
     let response = true;
 
     if (object.kind === 'Field' && models.includes(object.name.value))
@@ -132,6 +132,11 @@ export default class Utils {
           iterate(value);
           if (value.kind === 'Field' && relations.includes(value.name.value))
             result.push(value);
+          else if (
+            value.kind === 'ObjectField' &&
+            relations.includes(value.name.value)
+          )
+            resultRelations.push(value);
         }
       });
     };
@@ -146,11 +151,8 @@ export default class Utils {
         const whereHeight = where.value.fields.find((field: any) =>
           condition.includes(field.name.value)
         );
-        const whereHash = where.value.fields.find((field: any) =>
-          exactCondition.includes(field.name.value)
-        );
-        if (!whereHeight && !whereHash) response = false;
-        else if (whereHeight) {
+        if (!whereHeight) response = false;
+        else {
           const isRange =
             whereHeight.value.fields.find(
               (field: any) => field.name.value === '_eq'
@@ -164,12 +166,28 @@ export default class Utils {
                   field.name.value === '_gt' || field.name.value === '_gte'
               ));
           if (!isRange) response = false;
-        } else if (whereHash) {
-          const exactHash = whereHash.value.fields.find(
-            (field: any) => field.name.value === '_eq'
-          );
-          if (!exactHash) response = false;
         }
+      }
+    });
+    resultRelations.forEach((res: any) => {
+      const whereHeight = res.value.fields.find((field: any) =>
+        condition.includes(field.name.value)
+      );
+      if (!whereHeight) response = false;
+      else {
+        const isRange =
+          whereHeight.value.fields.find(
+            (field: any) => field.name.value === '_eq'
+          ) ||
+          (whereHeight.value.fields.find(
+            (field: any) =>
+              field.name.value === '_lt' || field.name.value === '_lte'
+          ) &&
+            whereHeight.value.fields.find(
+              (field: any) =>
+                field.name.value === '_gt' || field.name.value === '_gte'
+            ));
+        if (!isRange) response = false;
       }
     });
 

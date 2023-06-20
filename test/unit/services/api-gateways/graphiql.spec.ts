@@ -101,7 +101,7 @@ export default class GraphiQLTest {
       {
         operationName: 'MyQuery',
         query:
-          'query MyQuery { auratestnet { block(where: {height: {_eq: 1}, transactions: {events: {event_attributes: {id: {_eq: 1}}}}}) { hash height } } }',
+          'query MyQuery { auratestnet { block(where: {height: {_eq: 1}, transactions: {events: {event_attributes: {id: {_eq: 1}, block_height: {_eq: 1}}}}}) { hash height } } }',
         variables: {},
       }
     );
@@ -120,7 +120,7 @@ export default class GraphiQLTest {
       {
         operationName: 'MyQuery',
         query:
-          'query MyQuery { auratestnet { block(where: {height: {_eq: 1}}) { transactions(where: {height: {_eq: 1}, events: {event_attributes: {id: {_eq: 1}}}}) { id } } } }',
+          'query MyQuery { auratestnet { block(where: {height: {_eq: 1}}) { transactions(where: {height: {_eq: 1}, events: {event_attributes: {id: {_eq: 1}, block_height: {_eq: 1}}}}) { id } } } }',
         variables: {},
       }
     );
@@ -138,7 +138,8 @@ export default class GraphiQLTest {
       'v1.graphiql.handleGraphQLQuery',
       {
         operationName: 'MyQuery',
-        query: 'query MyQuery { auratestnet { block { hash } } }',
+        query:
+          'query MyQuery { auratestnet { event_attribute { block_height } } }',
         variables: {},
       }
     );
@@ -157,7 +158,7 @@ export default class GraphiQLTest {
       {
         operationName: 'MyQuery',
         query:
-          'query MyQuery { auratestnet { block(where: { height: { _gt: 1 } }) { hash } } }',
+          'query MyQuery { auratestnet { event_attribute(where: { block_height: { _gt: 1 } }) { hash } } }',
         variables: {},
       }
     );
@@ -171,9 +172,28 @@ export default class GraphiQLTest {
     result = await this.broker.call('v1.graphiql.handleGraphQLQuery', {
       operationName: 'MyQuery',
       query:
-        'query MyQuery { auratestnet { block(where: { height: { _lte: 1 } }) { hash } } }',
+        'query MyQuery { auratestnet { event_attribute(where: { block_height: { _lte: 1 } }) { hash } } }',
       variables: {},
     });
+
+    expect(result?.code).toEqual(ErrorCode.WRONG);
+    expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
+    expect(result?.data).toEqual(
+      `The query to one of the following tables needs to include exact height (_eq) or a height range (_gt/_gte & _lt/_lte) in where argument: ${config.graphiqlApi.queryNeedWhereModel}`
+    );
+  }
+
+  @Test('Query tables required where height failed - in where case')
+  public async testQueryRequireWhereHeightInWhereCase() {
+    const result: ResponseDto = await this.broker.call(
+      'v1.graphiql.handleGraphQLQuery',
+      {
+        operationName: 'MyQuery',
+        query:
+          'query MyQuery { auratestnet { block(where: { event_attributes: { id: { _eq: 1 } } }) { hash } } }',
+        variables: {},
+      }
+    );
 
     expect(result?.code).toEqual(ErrorCode.WRONG);
     expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);

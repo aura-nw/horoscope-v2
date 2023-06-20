@@ -144,8 +144,7 @@ export default class GraphiQLService extends BaseService {
                 sel,
                 config.graphiqlApi.queryNeedWhereModel,
                 config.graphiqlApi.queryNeedWhereRelation,
-                config.graphiqlApi.queryNeedWhereCondition,
-                config.graphiqlApi.queryExactWhere
+                config.graphiqlApi.queryNeedWhereCondition
               )
             )
               result = {
