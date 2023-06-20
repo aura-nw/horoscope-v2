@@ -58,6 +58,7 @@ export const BULL_JOB_NAME = {
   HANDLE_FEEGRANT: 'handle:feegrant',
   CRAWL_VALIDATOR_IMG: 'crawl:validator-img',
   RETRY_CRAWL_VALIDATOR_IMG: 'retry:crawl-validator-img',
+  CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
 };
 
 export const SERVICE = {
