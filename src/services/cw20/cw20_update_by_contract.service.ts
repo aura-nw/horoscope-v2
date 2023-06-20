@@ -18,8 +18,7 @@ export interface ICw20UpdateByContractParam {
   endBlock: number;
 }
 interface IAddBalanceHolder {
-  address: string;
-  amount: string;
+  amount: bigint;
   last_updated_height: number;
 }
 
@@ -62,21 +61,21 @@ export default class Cw20UpdateByContractService extends BullableService {
     },
   })
   async UpdateByContract(ctx: Context<IContextUpdateCw20>) {
-    let { startBlock } = ctx.params;
-    const { endBlock } = ctx.params;
+    const { startBlock, endBlock } = ctx.params;
     // eslint-disable-next-line no-restricted-syntax
     for (const cw20Contract of ctx.params.cw20Contracts) {
-      if (startBlock < cw20Contract.last_updated_height) {
-        startBlock = cw20Contract.last_updated_height;
-      }
-      if (startBlock < endBlock) {
+      const startUpdateBlock = Math.min(
+        startBlock,
+        cw20Contract.last_updated_height
+      );
+      if (startUpdateBlock < endBlock) {
         // eslint-disable-next-line no-await-in-loop
         await this.createJob(
           BULL_JOB_NAME.CW20_UPDATE_BY_CONTRACT,
           BULL_JOB_NAME.CW20_UPDATE_BY_CONTRACT,
           {
             cw20ContractId: cw20Contract.id,
-            startBlock,
+            startBlock: startUpdateBlock,
             endBlock,
           },
           {
@@ -95,14 +94,14 @@ export default class Cw20UpdateByContractService extends BullableService {
     endBlock: number,
     trx: Knex.Transaction
   ) {
-    let addAmount = '0';
+    let addAmount = BigInt(0);
     // add mint amount
     const cw20MintEvents = cw20Events.filter(
       (event) => event.action === CW20_ACTION.MINT
     );
     cw20MintEvents.forEach((mintEvent) => {
       if (mintEvent.amount) {
-        addAmount = (BigInt(addAmount) + BigInt(mintEvent.amount)).toString();
+        addAmount = BigInt(addAmount) + BigInt(mintEvent.amount);
       } else {
         throw new Error(`Mint event id ${mintEvent.id} not found amount`);
       }
@@ -113,9 +112,7 @@ export default class Cw20UpdateByContractService extends BullableService {
     );
     cw20BurnEvents.forEach((burnEvent) => {
       if (burnEvent.amount) {
-        addAmount = (
-          BigInt(addAmount) - BigInt(`${burnEvent.amount}`)
-        ).toString();
+        addAmount = BigInt(addAmount) - BigInt(`${burnEvent.amount}`);
       } else {
         throw new Error(`Burn event id ${burnEvent.id} not found amount`);
       }
@@ -126,14 +123,13 @@ export default class Cw20UpdateByContractService extends BullableService {
       .where('id', cw20ContractId)
       .first()
       .throwIfNotFound();
-    const updateTotalSupply = (
-      BigInt(addAmount) + BigInt(cw20Contract.total_supply)
-    ).toString();
+    const updateTotalSupply =
+      BigInt(addAmount) + BigInt(cw20Contract.total_supply);
     await Cw20Contract.query()
       .transacting(trx)
       .where('id', cw20ContractId)
       .patch({
-        total_supply: updateTotalSupply,
+        total_supply: updateTotalSupply.toString(),
         last_updated_height: endBlock,
       });
   }
@@ -162,36 +158,21 @@ export default class Cw20UpdateByContractService extends BullableService {
       if (event.amount) {
         // sender
         if (event.from) {
-          if (addBalanceHolders[event.from]) {
-            // sub balance for sender
-            addBalanceHolders[event.from].amount = (
-              BigInt(addBalanceHolders[event.from].amount) -
-              BigInt(`${event.amount}`)
-            ).toString();
-            addBalanceHolders[event.from].last_updated_height = event.height;
-          } else {
-            addBalanceHolders[event.from] = {
-              address: event.from,
-              amount: `-${event.amount}`,
-              last_updated_height: event.height,
-            };
-          }
+          addBalanceHolders[event.from] = {
+            amount:
+              (addBalanceHolders[event.from]?.amount || BigInt(0)) -
+              BigInt(event.amount),
+            last_updated_height: event.height,
+          };
         }
         // recipient
         if (event.to) {
-          if (addBalanceHolders[event.to]) {
-            // add balance for recipient
-            addBalanceHolders[event.to].amount = (
-              BigInt(addBalanceHolders[event.to].amount) + BigInt(event.amount)
-            ).toString();
-            addBalanceHolders[event.to].last_updated_height = event.height;
-          } else {
-            addBalanceHolders[event.to] = {
-              address: event.to,
-              amount: event.amount,
-              last_updated_height: event.height,
-            };
-          }
+          addBalanceHolders[event.to] = {
+            amount:
+              (addBalanceHolders[event.to]?.amount || BigInt(0)) +
+              BigInt(event.amount),
+            last_updated_height: event.height,
+          };
         }
       } else {
         throw new Error(`handle event ${event.id} not found amount`);
@@ -224,9 +205,5 @@ export default class Cw20UpdateByContractService extends BullableService {
         .onConflict(['cw20_contract_id', 'address'])
         .merge();
     }
-  }
-
-  async _start(): Promise<void> {
-    return super._start();
   }
 }
