@@ -4,18 +4,44 @@ import { BULL_JOB_NAME } from '../src/common';
 export async function up(knex: Knex): Promise<void> {
   console.log('Migrating event_attribute to use partition');
   await knex.transaction(async (trx) => {
-    //create new event_attribute_partition table
+    //create new event_attribute_partition table like event_attribute, but add block_height to primary key
     await knex.raw(
-      `create table event_attribute_partition 
-        (like event_attribute including all) partition by range(block_height)`
+      `CREATE TABLE IF NOT EXISTS event_attribute_partition
+      (
+          event_id integer NOT NULL,
+          key character varying(255) NOT NULL,
+          value text NOT NULL,
+          tx_id integer,
+          block_height integer NOT NULL,
+          composite_key character varying(255),
+          index integer NOT NULL,
+          CONSTRAINT event_attribute_partition_pkey PRIMARY KEY (event_id, index, block_height),
+          CONSTRAINT event_attribute_partition_block_height_foreign FOREIGN KEY (block_height)
+              REFERENCES block (height) MATCH SIMPLE,
+          CONSTRAINT event_attribute_partition_tx_id_foreign FOREIGN KEY (tx_id)
+              REFERENCES transaction (id) MATCH SIMPLE,
+          CONSTRAINT event_attribute_partition_event_id_foreign FOREIGN KEY (event_id)
+              REFERENCES event (id) MATCH SIMPLE
+      ) partition by range(block_height);
+      
+      CREATE INDEX IF NOT EXISTS event_attribute_partition_composite_key_index
+          ON event_attribute_partition USING btree
+          (composite_key ASC NULLS LAST);
+      
+      CREATE INDEX IF NOT EXISTS event_attribute_partition_tx_id_index
+          ON event_attribute_partition USING btree
+          (tx_id ASC NULLS LAST);
+      
+      CREATE INDEX IF NOT EXISTS event_attribute_partition_value_index
+          ON event_attribute_partition USING btree
+          (value ASC NULLS LAST)
+          WHERE length(value) <= 100;
+      
+      CREATE INDEX IF NOT EXISTS transaction_event_attribute_partition_key_index
+          ON event_attribute_partition USING btree
+          (key ASC NULLS LAST);`
     );
-    // add block_height to primary key to partition by block_height
-    await knex.schema
-      .alterTable('event_attribute_partition', (table) => {
-        table.dropPrimary();
-        table.primary(['event_id', 'index', 'block_height']);
-      })
-      .transacting(trx);
+
     // rename 2 table event_attribute and event_attribute_backup
     await knex
       .raw('alter table event_attribute rename to event_attribute_backup;')
@@ -34,9 +60,7 @@ export async function up(knex: Knex): Promise<void> {
       const tableName = `event_attribute_partition_${i}_${i + step}`;
       // create new partition table
       await knex
-        .raw(
-          `create table ${tableName} (like event_attribute_backup including all)`
-        )
+        .raw(`create table ${tableName} (like event_attribute including all)`)
         .transacting(trx);
       // attach partition to table event_attribute
       await knex
