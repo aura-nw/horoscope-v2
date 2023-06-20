@@ -1,18 +1,22 @@
 import { Knex } from 'knex';
 import config from '../config.json' assert { type: 'json' };
+import { BULL_JOB_NAME } from '../src/common';
 export async function up(knex: Knex): Promise<void> {
   console.log('Migrating event_attribute to use partition');
   await knex.transaction(async (trx) => {
+    //create new event_attribute_partition table
     await knex.raw(
       `create table event_attribute_partition 
         (like event_attribute including all) partition by range(block_height)`
     );
+    // add block_height to primary key to partition by block_height
     await knex.schema
       .alterTable('event_attribute_partition', (table) => {
         table.dropPrimary();
         table.primary(['event_id', 'index', 'block_height']);
       })
       .transacting(trx);
+    // rename 2 table event_attribute and event_attribute_backup
     await knex
       .raw('alter table event_attribute rename to event_attribute_backup;')
       .transacting(trx);
@@ -23,16 +27,18 @@ export async function up(knex: Knex): Promise<void> {
       event_id: 0,
       index: 0,
     };
-    const startBlock = config.jobMigrationEventAttributeToPartition.startBlock;
-    const endBlock = config.jobMigrationEventAttributeToPartition.endBlock;
-    const step = config.jobMigrationEventAttributeToPartition.step;
-    for (let i = startBlock; i <= endBlock; i += step) {
+    const startBlock = config.migrationEventAttributeToPartition.startBlock;
+    const endBlock = config.migrationEventAttributeToPartition.endBlock;
+    const step = config.migrationEventAttributeToPartition.step;
+    for (let i = startBlock; i < endBlock; i += step) {
       const tableName = `event_attribute_partition_${i}_${i + step}`;
+      // create new partition table
       await knex
         .raw(
           `create table ${tableName} (like event_attribute_backup including all)`
         )
         .transacting(trx);
+      // attach partition to table event_attribute
       await knex
         .raw(
           `alter table event_attribute attach partition ${tableName} for values from (${i}) to (${
@@ -41,13 +47,20 @@ export async function up(knex: Knex): Promise<void> {
         )
         .transacting(trx);
     }
+    // insert block_checkpoint for job create event attribute partition
+    await knex.raw(
+      `insert into block_checkpoint(job_name, height) values ('${BULL_JOB_NAME.JOB_CREATE_EVENT_ATTR_PARTITION}', ${endBlock})`
+    );
+
+    // insert data from event_attribute_backup to event_attribute
     const limitRecordGet =
-      config.jobMigrationEventAttributeToPartition.limitRecordGet;
+      config.migrationEventAttributeToPartition.limitRecordGet;
     const chunkSizeInsert =
-      config.jobMigrationEventAttributeToPartition.chunkSizeInsert;
+      config.migrationEventAttributeToPartition.chunkSizeInsert;
     let done = false;
     while (!done) {
       console.log(JSON.stringify(currentId));
+
       const eventAttributes = await knex('event_attribute_backup')
         .select('*')
         .whereRaw(

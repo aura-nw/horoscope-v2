@@ -58,6 +58,9 @@ export const BULL_JOB_NAME = {
   HANDLE_FEEGRANT: 'handle:feegrant',
   CRAWL_VALIDATOR_IMG: 'crawl:validator-img',
   RETRY_CRAWL_VALIDATOR_IMG: 'retry:crawl-validator-img',
+  JOB_CHECK_NEED_CREATE_EVENT_ATTR_PARTITION:
+    'job:check-need-create-event-attr-partition',
+  JOB_CREATE_EVENT_ATTR_PARTITION: 'job:create-event-attr-partition',
 };
 
 export const SERVICE = {
@@ -180,6 +183,12 @@ export const SERVICE = {
     },
     CrawlValidatorImgService: {
       key: 'CrawlValidatorImageService',
+    },
+    JobService: {
+      CreateEventAttrPartition: {
+        key: 'CreateEventAttrPartition',
+        path: 'v1.CreateEventAttrPartition',
+      },
     },
   },
 };

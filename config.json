@@ -126,11 +126,16 @@
     "timeCrawlImage": "0 0 * * *",
     "milliSecondDelayRetry": 300000
   },
-  "jobMigrationEventAttributeToPartition": {
+  "migrationEventAttributeToPartition": {
     "startBlock": 13000000,
     "endBlock": 13080000,
     "step": 10000,
     "limitRecordGet": 10000,
     "chunkSizeInsert": 1000
+  },
+  "jobCheckNeedCreateEventAttributePartition": {
+    "range": 100000,
+    "step": 10000,
+    "millisecondCrawl": 10000
   }
 }
