@@ -27,6 +27,8 @@ export class Cw20Contract extends BaseModel {
 
   track!: boolean;
 
+  last_updated_height!: number;
+
   static get tableName() {
     return 'cw20_contract';
   }

@@ -21,12 +21,13 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { Config, getHttpBatchClient } from '../../common';
 import { BULL_JOB_NAME, SERVICE } from '../../common/constant';
 import knex from '../../common/utils/db_connection';
-import { BlockCheckpoint, EventAttribute } from '../../models';
+import { Block, BlockCheckpoint, EventAttribute } from '../../models';
 import CW721Contract from '../../models/cw721_contract';
 import CW721Token from '../../models/cw721_token';
 import CW721Activity from '../../models/cw721_tx';
 import { SmartContract } from '../../models/smart_contract';
 import { getAttributeFrom } from '../../common/utils/smart_contract';
+import CW721ContractStats from '../../models/cw721_stats';
 
 const { NODE_ENV } = Config;
 
@@ -241,16 +242,16 @@ export default class Cw721HandlerService extends BullableService {
         }
       );
       await this.createJob(
-        BULL_JOB_NAME.REFRESH_CW721_M_VIEW,
-        BULL_JOB_NAME.REFRESH_CW721_M_VIEW,
+        BULL_JOB_NAME.REFRESH_CW721_STATS,
+        BULL_JOB_NAME.REFRESH_CW721_STATS,
         {},
         {
-          removeOnComplete: true,
+          removeOnComplete: { count: 1 },
           removeOnFail: {
             count: 3,
           },
           repeat: {
-            every: config.cw721.millisecondRefreshMView,
+            pattern: config.cw721.timeRefreshCw721Stats,
           },
         }
       );
@@ -667,14 +668,50 @@ export default class Cw721HandlerService extends BullableService {
   }
 
   @QueueHandler({
-    queueName: BULL_JOB_NAME.REFRESH_CW721_M_VIEW,
-    jobName: BULL_JOB_NAME.REFRESH_CW721_M_VIEW,
+    queueName: BULL_JOB_NAME.REFRESH_CW721_STATS,
+    jobName: BULL_JOB_NAME.REFRESH_CW721_STATS,
   })
   async jobHandlerRefresh(): Promise<void> {
-    await this.refreshMaterialView();
+    await this.refreshCw721Stats();
   }
 
-  async refreshMaterialView() {
-    await knex.schema.refreshMaterializedView('m_view_count_cw721_txs');
+  async refreshCw721Stats(): Promise<void> {
+    const cw721Stats = await this.calCw721Stats();
+
+    // Upsert cw721 stats
+    await CW721ContractStats.query()
+      .insert(cw721Stats)
+      .onConflict('cw721_contract_id')
+      .merge()
+      .returning('id');
+  }
+
+  async calCw721Stats(): Promise<CW721Contract[]> {
+    // Get once block height 24h ago.
+    const blockSince24hAgo = await Block.query()
+      .select('height')
+      .where('time', '<=', knex.raw("now() - '24 hours'::interval"))
+      .orderBy('height', 'desc')
+      .limit(1);
+
+    // Calculate total activity and transfer_24h of cw721
+    return CW721Contract.query()
+      .count('cw721_activity.id AS total_activity')
+      .select(
+        knex.raw(
+          "SUM( CASE WHEN cw721_activity.height >= ? AND cw721_activity.action != '' THEN 1 ELSE 0 END ) AS transfer_24h",
+          blockSince24hAgo[0]?.height
+        )
+      )
+      .select('cw721_contract.id as cw721_contract_id')
+      .where('cw721_contract.track', '=', true)
+      .andWhere('smart_contract.name', '!=', 'crates.io:cw4973')
+      .join(
+        'cw721_activity',
+        'cw721_contract.id',
+        'cw721_activity.cw721_contract_id'
+      )
+      .join('smart_contract', 'cw721_contract.contract_id', 'smart_contract.id')
+      .groupBy('cw721_contract.id');
   }
 }
