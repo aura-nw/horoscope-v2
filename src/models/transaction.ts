@@ -29,14 +29,6 @@ export class Transaction extends BaseModel {
 
   index!: number;
 
-  // fee_payer!: string;
-
-  // fee_granter!: string;
-
-  // signer_public_key_type!: string;
-
-  // signer_public_key_threshold: number | undefined;
-
   timstamp!: Date;
 
   data!: any;
@@ -62,10 +54,6 @@ export class Transaction extends BaseModel {
         'gas_limit',
         'fee',
         'index',
-        // 'fee_payer',
-        // 'fee_granter',
-        // 'signer_public_key_type',
-        // 'signer_public_key_threshold',
         'timestamp',
         'data',
       ],
@@ -78,12 +66,6 @@ export class Transaction extends BaseModel {
         gas_wanted: { type: 'string' },
         gas_limit: { type: 'string' },
         index: { type: 'number' },
-        // fee: { type: 'number' },
-        // fee_payer: { type: 'string' },
-        // fee_granter: { type: 'string' },
-        // signer_public_key_type: { type: 'string' },
-        // signer_public_key_threshold: { type: 'number' },
-        timestamp: { type: 'string', format: 'date-time' },
         memo: { type: 'string' },
       },
     };

@@ -34,4 +34,8 @@ export class BullJsProvider implements QueueProvider {
   registerQueueHandler(opt: QueueOptions, fn: QueueHandlerFunc): void {
     throw new Error('Method not implemented.');
   }
+
+  getQueue(queueName: string) {
+    throw new Error('Method not implemented.');
+  }
 }
