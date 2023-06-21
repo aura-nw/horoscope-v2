@@ -1,15 +1,15 @@
 import { Model } from 'objection';
 import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
-import FeegrantHistory from './feegrant_history';
+import { FeegrantHistory } from './feegrant_history';
 import { Transaction } from './transaction';
 
-export default class Feegrant extends BaseModel {
+export class Feegrant extends BaseModel {
   [relation: string]: any;
 
   id!: number;
 
-  init_tx_id!: number;
+  init_tx_id?: number;
 
   revoke_tx_id?: number;
 
@@ -34,11 +34,10 @@ export default class Feegrant extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['granter', 'grantee', 'init_tx_id'],
+      required: ['granter', 'grantee'],
       properties: {
         granter: { type: 'string' },
         grantee: { type: 'string' },
-        init_tx_id: { type: 'number' },
       },
     };
   }
