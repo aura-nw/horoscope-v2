@@ -122,66 +122,6 @@ export default class Cw20UpdateByContract {
     await this.broker.stop();
   }
 
-  @Test('test UpdateTotalSupply')
-  public async testUpdateTotalSupply() {
-    const contractIndex = 1;
-    const endBlock = 8551411;
-    const cw20Events = [
-      {
-        action: 'mint',
-        amount: '23414154564',
-        height: 21000,
-        smart_contract_event_id: 1000,
-        cw20_contract_id: 1,
-      },
-      {
-        action: 'burn',
-        amount: '14423444',
-        height: 21000,
-        smart_contract_event_id: 1000,
-        cw20_contract_id: 1,
-      },
-      {
-        action: 'mint',
-        amount: '132434564654',
-        height: 21000,
-        smart_contract_event_id: 1000,
-        cw20_contract_id: 1,
-      },
-      {
-        action: 'mint',
-        amount: '11111111111111',
-        height: 21000,
-        smart_contract_event_id: 1000,
-        cw20_contract_id: 1,
-      },
-    ];
-    await knex.transaction(async (trx) => {
-      await this.cw20UpdateByContractService.updateTotalSupply(
-        cw20Events.map((event) => Cw20Event.fromJson(event)),
-        contractIndex,
-        endBlock,
-        trx
-      );
-      const contract = await Cw20Contract.query()
-        .transacting(trx)
-        .where('id', contractIndex)
-        .first()
-        .throwIfNotFound();
-      expect(contract.total_supply).toEqual(
-        (
-          BigInt(this.cw20Contract[contractIndex - 1].total_supply) +
-          BigInt(cw20Events[0].amount) -
-          BigInt(cw20Events[1].amount) +
-          BigInt(cw20Events[2].amount) +
-          BigInt(cw20Events[3].amount)
-        ).toString()
-      );
-      expect(contract.last_updated_height).toEqual(endBlock);
-      await trx.rollback();
-    });
-  }
-
   @Test('test UpdateBalanceHolders')
   public async testUpdateBalanceHolders() {
     const contractIndex = 2;

@@ -42,8 +42,26 @@ export default class Cw20UpdateByContractService extends BullableService {
       .andWhere('height', '<=', endBlock);
     if (newEvents.length > 0) {
       await knex.transaction(async (trx) => {
-        await this.updateTotalSupply(newEvents, cw20ContractId, endBlock, trx);
-        await this.updateBalanceHolders(newEvents, cw20ContractId, trx);
+        const addAmount = await this.updateBalanceHolders(
+          newEvents,
+          cw20ContractId,
+          trx
+        );
+        // get and update total amount in cw20 contract
+        const cw20Contract = await Cw20Contract.query()
+          .transacting(trx)
+          .where('id', cw20ContractId)
+          .first()
+          .throwIfNotFound();
+        await Cw20Contract.query()
+          .transacting(trx)
+          .where('id', cw20ContractId)
+          .patch({
+            total_supply: (
+              BigInt(cw20Contract.total_supply) + addAmount
+            ).toString(),
+            last_updated_height: endBlock,
+          });
       });
     }
   }
@@ -84,57 +102,12 @@ export default class Cw20UpdateByContractService extends BullableService {
     }
   }
 
-  async updateTotalSupply(
-    cw20Events: Cw20Event[],
-    cw20ContractId: number,
-    endBlock: number,
-    trx: Knex.Transaction
-  ) {
-    let addAmount = BigInt(0);
-    // add mint amount
-    const cw20MintEvents = cw20Events.filter(
-      (event) => event.action === CW20_ACTION.MINT
-    );
-    cw20MintEvents.forEach((mintEvent) => {
-      if (mintEvent.amount) {
-        addAmount = BigInt(addAmount) + BigInt(mintEvent.amount);
-      } else {
-        throw new Error(`Mint event id ${mintEvent.id} not found amount`);
-      }
-    });
-    // sub burn amount
-    const cw20BurnEvents = cw20Events.filter(
-      (event) => event.action === CW20_ACTION.BURN
-    );
-    cw20BurnEvents.forEach((burnEvent) => {
-      if (burnEvent.amount) {
-        addAmount = BigInt(addAmount) - BigInt(`${burnEvent.amount}`);
-      } else {
-        throw new Error(`Burn event id ${burnEvent.id} not found amount`);
-      }
-    });
-    // get and update total amount in cw20 contract
-    const cw20Contract = await Cw20Contract.query()
-      .transacting(trx)
-      .where('id', cw20ContractId)
-      .first()
-      .throwIfNotFound();
-    const updateTotalSupply =
-      BigInt(addAmount) + BigInt(cw20Contract.total_supply);
-    await Cw20Contract.query()
-      .transacting(trx)
-      .where('id', cw20ContractId)
-      .patch({
-        total_supply: updateTotalSupply.toString(),
-        last_updated_height: endBlock,
-      });
-  }
-
   async updateBalanceHolders(
     cw20Events: Cw20Event[],
     cw20ContractId: number,
     trx: Knex.Transaction
   ) {
+    let addAmount = BigInt(0);
     // just get base action which change balance: MINT, BURN, TRANSFER, SEND
     const orderEvents = _.orderBy(
       cw20Events.filter(
@@ -183,6 +156,7 @@ export default class Cw20UpdateByContractService extends BullableService {
             cw20_contract_id: cw20ContractId,
             address: event.from,
           });
+          addAmount -= BigInt(event.amount);
         }
         // recipient event
         if (
@@ -197,6 +171,7 @@ export default class Cw20UpdateByContractService extends BullableService {
             cw20_contract_id: cw20ContractId,
             address: event.to,
           });
+          addAmount += BigInt(event.amount);
         }
       } else {
         throw new Error(`handle event ${event.id} not found amount`);
@@ -218,5 +193,6 @@ export default class Cw20UpdateByContractService extends BullableService {
         .onConflict(['cw20_contract_id', 'address'])
         .merge();
     }
+    return addAmount;
   }
 }
