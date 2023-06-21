@@ -221,17 +221,8 @@ export default class CrawlBlockService extends BullableService {
             .transacting(trx);
           this.logger.debug('result insert list block: ', result);
 
-          // insert tx by block height
-          const listBlockWithTime: any = [];
-          listBlockModel.forEach((block) => {
-            listBlockWithTime.push({
-              height: block.height,
-              timestamp: block.time,
-            });
-          });
-          this.broker.call(SERVICE.V1.CrawlTransaction.CrawlTxByHeight.path, {
-            listBlock: listBlockWithTime,
-          });
+          // trigger crawl transaction job
+          this.broker.call(SERVICE.V1.CrawlTransaction.TriggerHandleTxJob.path);
         });
       }
     } catch (error) {

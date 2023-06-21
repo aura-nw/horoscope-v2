@@ -70,11 +70,21 @@ export default class HandleTxVoteServiceTest {
         data: {},
       })
     );
-    await this.crawlTxService?.jobHandlerTx({
-      listTx: { ...tx_fixture_vote },
-      height: 4279260,
-      timestamp: '2023-04-17T03:44:41.000Z',
-    });
+
+    const listdecodedTx = await this.crawlTxService?.decodeListRawTx([
+      {
+        listTx: { ...tx_fixture_vote },
+        height: 4279260,
+        timestamp: '2023-04-17T03:44:41.000Z',
+      },
+    ]);
+    if (listdecodedTx)
+      await knex.transaction(async (trx) => {
+        await this.crawlTxService?.insertDecodedTxAndRelated(
+          listdecodedTx,
+          trx
+        );
+      });
     await this.handleVoteTxService?.handleVote();
     const vote = await Vote.query()
       .where('proposal_id', 18)
@@ -92,7 +102,11 @@ export default class HandleTxVoteServiceTest {
       }),
       BlockCheckpoint.fromJson({
         job_name: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
-        height: 4279300,
+        height: 4279349,
+      }),
+      BlockCheckpoint.fromJson({
+        job_name: BULL_JOB_NAME.HANDLE_TRANSACTION,
+        height: 4279350,
       }),
     ]);
 
@@ -105,11 +119,20 @@ export default class HandleTxVoteServiceTest {
         data: {},
       })
     );
-    await this.crawlTxService?.jobHandlerTx({
-      listTx: { ...tx_fixture_vote_authz },
-      height: 4279350,
-      timestamp: '2023-04-17T03:44:41.000Z',
-    });
+    const listdecodedTx = await this.crawlTxService?.decodeListRawTx([
+      {
+        listTx: { ...tx_fixture_vote_authz },
+        height: 4279350,
+        timestamp: '2023-04-17T03:44:41.000Z',
+      },
+    ]);
+    if (listdecodedTx)
+      await knex.transaction(async (trx) => {
+        await this.crawlTxService?.insertDecodedTxAndRelated(
+          listdecodedTx,
+          trx
+        );
+      });
     await this.handleAuthzTxServive?.handleJob();
     await this.handleVoteTxService?.handleVote();
 
@@ -149,16 +172,25 @@ export default class HandleTxVoteServiceTest {
         data: {},
       }),
     ]);
-    await this.crawlTxService?.jobHandlerTx({
-      listTx: { ...tx_fixture_vote_option_yes },
-      height: 6794608,
-      timestamp: '2023-04-17T03:44:41.000Z',
-    });
-    await this.crawlTxService?.jobHandlerTx({
-      listTx: { ...tx_fixture_vote_option_no },
-      height: 6794619,
-      timestamp: '2023-04-17T03:45:41.000Z',
-    });
+    const listdecodedTx = await this.crawlTxService?.decodeListRawTx([
+      {
+        listTx: { ...tx_fixture_vote_option_yes },
+        height: 6794608,
+        timestamp: '2023-04-17T03:44:41.000Z',
+      },
+      {
+        listTx: { ...tx_fixture_vote_option_no },
+        height: 6794619,
+        timestamp: '2023-04-17T03:44:41.000Z',
+      },
+    ]);
+    if (listdecodedTx)
+      await knex.transaction(async (trx) => {
+        await this.crawlTxService?.insertDecodedTxAndRelated(
+          listdecodedTx,
+          trx
+        );
+      });
     await this.handleVoteTxService?.handleVote();
     const vote = await Vote.query()
       .where('proposal_id', 427)
@@ -189,11 +221,20 @@ export default class HandleTxVoteServiceTest {
         data: {},
       })
     );
-    await this.crawlTxService?.jobHandlerTx({
-      listTx: { ...tx_fixture_multi_vote },
-      height: 4279260,
-      timestamp: '2023-04-17T03:44:41.000Z',
-    });
+    const listdecodedTx = await this.crawlTxService?.decodeListRawTx([
+      {
+        listTx: { ...tx_fixture_multi_vote },
+        height: 4279260,
+        timestamp: '2023-04-17T03:44:41.000Z',
+      },
+    ]);
+    if (listdecodedTx)
+      await knex.transaction(async (trx) => {
+        await this.crawlTxService?.insertDecodedTxAndRelated(
+          listdecodedTx,
+          trx
+        );
+      });
     await this.handleVoteTxService?.handleVote();
     const vote = await Vote.query()
       .where('proposal_id', 428)
