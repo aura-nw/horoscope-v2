@@ -119,62 +119,35 @@ export default class Utils {
     const resultRelations: any[] = [];
     let response = true;
 
-    if (object.kind === 'Field' && models.includes(object.name.value))
+    if (object.kind === 'Field' && models.includes(object.name.value)) {
       result.push(object);
+    }
 
-    const iterate = (obj: any) => {
+    const extractFieldNeedHeightArgument = (obj: any) => {
       if (!obj) {
         return;
       }
       Object.keys(obj).forEach((key) => {
         const value = obj[key];
         if (typeof value === 'object' && value !== null) {
-          iterate(value);
-          if (value.kind === 'Field' && relations.includes(value.name.value))
+          extractFieldNeedHeightArgument(value);
+          if (value.kind === 'Field' && relations.includes(value.name.value)) {
             result.push(value);
-          else if (
+          } else if (
             value.kind === 'ObjectField' &&
             relations.includes(value.name.value)
-          )
+          ) {
             resultRelations.push(value);
+          }
         }
       });
     };
 
-    iterate(object);
-    result.forEach((res: any) => {
-      const where = res.arguments.find(
-        (arg: any) => arg.name.value === 'where'
-      );
-      if (!where) response = false;
-      else {
-        const whereHeight = where.value.fields.find((field: any) =>
-          condition.includes(field.name.value)
-        );
-        if (!whereHeight) response = false;
-        else {
-          const isRange =
-            whereHeight.value.fields.find(
-              (field: any) => field.name.value === '_eq'
-            ) ||
-            (whereHeight.value.fields.find(
-              (field: any) =>
-                field.name.value === '_lt' || field.name.value === '_lte'
-            ) &&
-              whereHeight.value.fields.find(
-                (field: any) =>
-                  field.name.value === '_gt' || field.name.value === '_gte'
-              ));
-          if (!isRange) response = false;
-        }
-      }
-    });
-    resultRelations.forEach((res: any) => {
+    const checkCondition = (res: any) => {
       const whereHeight = res.value.fields.find((field: any) =>
         condition.includes(field.name.value)
       );
-      if (!whereHeight) response = false;
-      else {
+      if (whereHeight) {
         const isRange =
           whereHeight.value.fields.find(
             (field: any) => field.name.value === '_eq'
@@ -187,9 +160,24 @@ export default class Utils {
               (field: any) =>
                 field.name.value === '_gt' || field.name.value === '_gte'
             ));
-        if (!isRange) response = false;
+        if (isRange) return true;
       }
-    });
+      return false;
+    };
+
+    extractFieldNeedHeightArgument(object);
+    if (result.length > 0) {
+      response = result.some((res: any) => {
+        const where = res.arguments.find(
+          (arg: any) => arg.name.value === 'where'
+        );
+        if (where) return checkCondition(where);
+        return false;
+      });
+    }
+    if (resultRelations.length > 0) {
+      response = resultRelations.some(checkCondition);
+    }
 
     return response;
   }
