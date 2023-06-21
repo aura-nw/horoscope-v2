@@ -37,9 +37,7 @@ export default class CrawlTxService extends BullableService {
     queueName: BULL_JOB_NAME.HANDLE_TRANSACTION,
     jobName: BULL_JOB_NAME.HANDLE_TRANSACTION,
   })
-  private async jobHandlerCrawlTx(_payload: {
-    listBlock: [{ height: number; timestamp: string }];
-  }): Promise<void> {
+  public async jobHandlerCrawlTx(): Promise<void> {
     const [startBlock, endBlock, blockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.HANDLE_TRANSACTION,
@@ -54,10 +52,10 @@ export default class CrawlTxService extends BullableService {
     if (startBlock > endBlock) {
       return;
     }
-    const listTxRaw = await this._getListRawTx(startBlock, endBlock);
-    const listdecodedTx = await this._decodeListRawTx(listTxRaw);
+    const listTxRaw = await this.getListRawTx(startBlock, endBlock);
+    const listdecodedTx = await this.decodeListRawTx(listTxRaw);
     await knex.transaction(async (trx) => {
-      await this._insertDecodedTxAndRelated(listdecodedTx, trx);
+      await this.insertDecodedTxAndRelated(listdecodedTx, trx);
       if (blockCheckpoint) {
         blockCheckpoint.height = endBlock;
         await BlockCheckpoint.query()
@@ -71,7 +69,7 @@ export default class CrawlTxService extends BullableService {
   }
 
   // get list raw tx from block to block
-  private async _getListRawTx(
+  async getListRawTx(
     startBlock: number,
     endBlock: number
   ): Promise<{ listTx: any; height: number; timestamp: string }[]> {
@@ -111,7 +109,7 @@ export default class CrawlTxService extends BullableService {
   }
 
   // decode list raw tx
-  private async _decodeListRawTx(
+  async decodeListRawTx(
     listRawTx: { listTx: any; height: number; timestamp: string }[]
   ): Promise<{ listTx: any; height: number; timestamp: string }[]> {
     const listDecodedTx = await Promise.all(
@@ -227,7 +225,7 @@ export default class CrawlTxService extends BullableService {
   }
 
   // insert list decoded tx and related table (event, event_attribute, message, message_received)
-  private async _insertDecodedTxAndRelated(
+  async insertDecodedTxAndRelated(
     listDecodedTx: { listTx: any; height: number; timestamp: string }[],
     transactionDB: Knex.Transaction
   ) {
