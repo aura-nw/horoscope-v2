@@ -137,6 +137,7 @@ export default class Cw20Service extends BullableService {
                 '0'
               ),
               track: true,
+              decimal: contractInfo?.decimal,
               last_updated_height: lastUpdatedHeight,
             }),
             holders: initBalances.map((e) => ({
