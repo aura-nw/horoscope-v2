@@ -30,7 +30,6 @@ export const BULL_JOB_NAME = {
   HANDLE_VESTING_ACCOUNT: 'handle:vesting-account',
   HANDLE_STAKE_EVENT: 'handle:stake-event',
   CRAWL_BLOCK: 'crawl:block',
-  CRAWL_TRANSACTION: 'crawl:transaction',
   HANDLE_TRANSACTION: 'handle:transaction',
   HANDLE_CW721_TRANSACTION: 'handle:cw721-tx',
   REFRESH_CW721_STATS: 'refresh:cw721-stats',
@@ -124,6 +123,10 @@ export const SERVICE = {
       CrawlTxByHeight: {
         key: 'CrawlTxByHeight',
         path: 'v1.CrawlTransactionService.CrawlTxByHeight',
+      },
+      TriggerHandleTxJob: {
+        key: 'TriggerHandleTxJob',
+        path: 'v1.CrawlTransactionService.TriggerHandleTxJob',
       },
     },
     CrawlGenesisService: {
