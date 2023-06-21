@@ -12,6 +12,7 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
   BULL_JOB_NAME,
   Config,
+  IContextUpdateCw20,
   SERVICE,
   getHttpBatchClient,
 } from '../../common';
@@ -26,11 +27,12 @@ import { SmartContractEvent } from '../../models/smart_contract_event';
 import { getAttributeFrom } from '../../common/utils/smart_contract';
 
 const { NODE_ENV } = Config;
-const CW20_ACTION = {
+export const CW20_ACTION = {
   MINT: 'mint',
   BURN: 'burn',
   TRANSFER: 'transfer',
   INSTANTIATE: 'instantiate',
+  SEND: 'send',
 };
 
 interface IContractInfo {
@@ -46,7 +48,7 @@ interface IHolderEvent {
   address: string;
   amount: string;
   contract_address: string;
-  event_height?: number;
+  event_height: number;
 }
 
 @Service({
@@ -90,7 +92,7 @@ export default class Cw20Service extends BullableService {
           trx
         );
         // handle Cw20 Histories
-        await this.handleCw20Histories(cw20Events, trx);
+        await this.handleCw20Histories(cw20Events, startBlock, endBlock, trx);
       }
       updateBlockCheckpoint.height = endBlock;
       await BlockCheckpoint.query()
@@ -119,6 +121,9 @@ export default class Cw20Service extends BullableService {
           const initBalances = await this.getInstantiateBalances(
             event.contract_address
           );
+          const lastUpdatedHeight = Math.min(
+            ...initBalances.map((e) => e.event_height)
+          );
           return {
             ...Cw20Contract.fromJson({
               smart_contract_id: event.smart_contract_id,
@@ -132,6 +137,7 @@ export default class Cw20Service extends BullableService {
                 '0'
               ),
               track: true,
+              last_updated_height: lastUpdatedHeight,
             }),
             holders: initBalances.map((e) => ({
               address: e.address,
@@ -149,18 +155,21 @@ export default class Cw20Service extends BullableService {
 
   async handleCw20Histories(
     cw20Events: SmartContractEvent[],
+    startBlock: number,
+    endBlock: number,
     trx: Knex.Transaction
   ) {
     // get all related cw20_contract in DB for updating total_supply
+    const cw20Contracts = await Cw20Contract.query()
+      .transacting(trx)
+      .withGraphJoined('smart_contract')
+      .whereIn(
+        'smart_contract.address',
+        cw20Events.map((event) => event.contract_address)
+      )
+      .andWhere('track', true);
     const cw20ContractsByAddress = _.keyBy(
-      await Cw20Contract.query()
-        .transacting(trx)
-        .withGraphJoined('smart_contract')
-        .whereIn(
-          'smart_contract.address',
-          cw20Events.map((event) => event.contract_address)
-        )
-        .andWhere('track', true),
+      cw20Contracts,
       (e) => `${e.smart_contract.address}`
     );
     // insert new histories
@@ -189,6 +198,17 @@ export default class Cw20Service extends BullableService {
       );
     if (newHistories.length > 0) {
       await Cw20Event.query().insert(newHistories).transacting(trx);
+      await this.broker.call(
+        SERVICE.V1.Cw20UpdateByContract.UpdateByContract.path,
+        {
+          cw20Contracts: cw20Contracts.map((cw20Contract) => ({
+            id: cw20Contract.id,
+            last_updated_height: cw20Contract.last_updated_height,
+          })),
+          startBlock,
+          endBlock,
+        } satisfies IContextUpdateCw20
+      );
     }
   }
 
@@ -395,6 +415,7 @@ export default class Cw20Service extends BullableService {
             address: account,
             amount: '',
             contract_address: contractAddress,
+            event_height: -1,
           });
         });
         startAfter = accounts[accounts.length - 1];
@@ -441,6 +462,7 @@ export default class Cw20Service extends BullableService {
 
   async _start(): Promise<void> {
     if (NODE_ENV !== 'test') {
+      await this.broker.waitForServices(SERVICE.V1.Cw20UpdateByContract.name);
       await this.createJob(
         BULL_JOB_NAME.HANDLE_CW20,
         BULL_JOB_NAME.HANDLE_CW20,

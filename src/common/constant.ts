@@ -56,6 +56,7 @@ export const BULL_JOB_NAME = {
   HANDLE_DASHBOARD_STATISTICS: 'handle:dashboard-statistics',
   UPDATE_FEEGRANT: 'update:feegrant',
   HANDLE_FEEGRANT: 'handle:feegrant',
+  CW20_UPDATE_BY_CONTRACT: 'update:cw20-by-contract',
   CRAWL_VALIDATOR_IMG: 'crawl:validator-img',
   RETRY_CRAWL_VALIDATOR_IMG: 'retry:crawl-validator-img',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
@@ -164,6 +165,14 @@ export const SERVICE = {
     Cw20: {
       key: 'Cw20Service',
       name: 'v1.Cw20Service',
+    },
+    Cw20UpdateByContract: {
+      key: 'Cw20UpdateByContract',
+      name: 'v1.Cw20UpdateByContract',
+      UpdateByContract: {
+        key: 'UpdateByContract',
+        path: 'v1.Cw20UpdateByContract.UpdateByContract',
+      },
     },
     DashboardStatisticsService: {
       key: 'DashboardStatisticsService',
