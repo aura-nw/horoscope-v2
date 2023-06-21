@@ -17,7 +17,7 @@
     "startBlock": 0,
     "millisecondRepeatJobMedia": 10000,
     "mediaPerBatch": 10,
-    "millisecondRefreshMView": 3600000
+    "timeRefreshCw721Stats": "1 * * * *"
   },
   "crawlBlock": {
     "millisecondCrawl": 5000,
@@ -80,7 +80,8 @@
     "accountsPerBatch": 3000,
     "proposalsPerBatch": 3000,
     "codesPerBatch": 5000,
-    "smartContractsPerBatch": 5000
+    "smartContractsPerBatch": 5000,
+    "feeGrantsPerBatch": 5000
   },
   "handleVoteTx": {
     "key": "handleVoteTx",

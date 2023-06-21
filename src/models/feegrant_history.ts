@@ -1,10 +1,10 @@
 import { Model } from 'objection';
 import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
-import Feegrant from './feegrant';
+import { Feegrant } from './feegrant';
 import { Transaction } from './transaction';
 
-export default class FeegrantHistory extends BaseModel {
+export class FeegrantHistory extends BaseModel {
   [relation: string]: any;
 
   id!: number;

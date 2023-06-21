@@ -568,39 +568,18 @@ export default class CrawlAccountService extends BullableService {
   }
 
   public async _start() {
-    // this.createJob(
-    //   BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT,
-    //   'crawl',
-    //   {},
-    //   {
-    //     removeOnComplete: true,
-    //     removeOnFail: {
-    //       count: 3,
-    //     },
-    //     repeat: {
-    //       every: config.crawlAccount.handleVestingAccount.millisecondCrawl,
-    //     },
-    //   }
-    // );
     this.createJob(
-      BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
+      BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT,
       'crawl',
-      {
-        addresses: [
-          'aura1m3h30wlvsf8llruxtpukdvsy0km2kum8n8s69e',
-          'aura17xpfvakm2amg962yls6f84z3kell8c5lt05zfy',
-          'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
-          'aura1gypt2w7xg5t9yr76hx6zemwd4xv72jckk03r6t',
-          'aura1tygms3xhhs3yv487phx3dw4a95jn7t7l6dzud6',
-        ],
-      },
+      {},
       {
         removeOnComplete: true,
         removeOnFail: {
           count: 3,
         },
-        attempts: config.jobRetryAttempt,
-        backoff: config.jobRetryBackoff,
+        repeat: {
+          every: config.crawlAccount.handleVestingAccount.millisecondCrawl,
+        },
       }
     );
 
