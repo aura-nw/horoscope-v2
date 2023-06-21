@@ -27,6 +27,10 @@ export async function up(knex: Knex): Promise<void> {
       CREATE INDEX IF NOT EXISTS event_attribute_partition_composite_key_index
           ON event_attribute_partition USING btree
           (composite_key ASC NULLS LAST);
+        
+      CREATE INDEX IF NOT EXISTS event_attribute_partition_block_height_index
+          ON event_attribute_partition USING btree
+          (block_height ASC NULLS LAST);
       
       CREATE INDEX IF NOT EXISTS event_attribute_partition_tx_id_index
           ON event_attribute_partition USING btree
