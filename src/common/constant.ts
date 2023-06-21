@@ -33,7 +33,7 @@ export const BULL_JOB_NAME = {
   CRAWL_TRANSACTION: 'crawl:transaction',
   HANDLE_TRANSACTION: 'handle:transaction',
   HANDLE_CW721_TRANSACTION: 'handle:cw721-tx',
-  REFRESH_CW721_M_VIEW: 'refresh:cw721-m-view',
+  REFRESH_CW721_STATS: 'refresh:cw721-stats',
   CRAWL_PROPOSAL: 'crawl:proposal',
   CRAWL_TALLY_PROPOSAL: 'crawl:tally-proposal',
   COUNT_VOTE_PROPOSAL: 'handle:count-vote-proposal',
