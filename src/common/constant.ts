@@ -90,6 +90,10 @@ export const SERVICE = {
         key: 'updateCw721Media',
         path: 'v1.Cw721Service.updateCw721Media',
       },
+      CrawlMissingContract: {
+        key: 'CrawlMissingContract',
+        path: 'v1.Cw721Service.CrawlMissingContract',
+      },
     },
     CrawlProposalService: {
       name: 'v1.CrawlProposalService',

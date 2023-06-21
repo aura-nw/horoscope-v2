@@ -9,8 +9,11 @@ import {
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
-import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { ServiceBroker } from 'moleculer';
+import {
+  Action,
+  Service,
+} from '@ourparentcenter/moleculer-decorators-extended';
+import { Context, ServiceBroker } from 'moleculer';
 import _ from 'lodash';
 import { SmartContractEvent } from '../../models/smart_contract_event';
 import config from '../../../config.json' assert { type: 'json' };
@@ -42,6 +45,10 @@ const CW721_ACTION = {
   SEND_NFT: 'send_nft',
 };
 
+export interface IAddressesParam {
+  address: string;
+}
+
 @Service({
   name: SERVICE.V1.Cw721.key,
   version: 1,
@@ -52,6 +59,18 @@ export default class Cw721HandlerService extends BullableService {
   public constructor(public broker: ServiceBroker) {
     super(broker);
     this._httpBatchClient = getHttpBatchClient();
+  }
+
+  @Action({
+    name: SERVICE.V1.Cw721.CrawlMissingContract.key,
+    params: {
+      cw20Contracts: 'any[]',
+      startBlock: 'any',
+      endBlock: 'any',
+    },
+  })
+  private async CrawlMissingContract(ctx: Context<IAddressesParam>) {
+    this.logger.info(ctx);
   }
 
   // update new owner and last_update_height
@@ -536,6 +555,80 @@ export default class Cw721HandlerService extends BullableService {
       });
     }
     return contractsInfo;
+  }
+
+  // get holder status for momment
+  async getHoldersInfo(contractAddress: string) {
+    const holders: {
+      address: string;
+      token_id: string;
+      last_updated_height: number;
+    }[] = [];
+    const tokenIds: string[] = [];
+    let startAfter = null;
+    do {
+      let query = '{"all_tokens":{}}';
+      if (startAfter) {
+        query = `{"all_tokens":{"start_after":"${startAfter}"}}`;
+      }
+      // eslint-disable-next-line no-await-in-loop
+      const result = await this._httpBatchClient.execute(
+        createJsonRpcRequest('abci_query', {
+          path: '/cosmwasm.wasm.v1.Query/SmartContractState',
+          data: toHex(
+            cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
+              address: contractAddress,
+              queryData: toUtf8(query),
+            }).finish()
+          ),
+        })
+      );
+      const { tokens } = JSON.parse(
+        fromUtf8(
+          cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
+            fromBase64(result.result.response.value)
+          ).data
+        )
+      );
+      tokenIds.push(...tokens);
+      if (tokens.length > 0) {
+        startAfter = tokens[tokens.length - 1];
+      } else {
+        startAfter = null;
+      }
+    } while (startAfter);
+    const promiseOwners: any[] = [];
+    tokenIds.forEach((token) => {
+      promiseOwners.push(
+        this._httpBatchClient.execute(
+          createJsonRpcRequest('abci_query', {
+            path: '/cosmwasm.wasm.v1.Query/SmartContractState',
+            data: toHex(
+              cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
+                address: contractAddress,
+                queryData: toUtf8(`{"owner_of":{"token_id":"${token}"}}`),
+              }).finish()
+            ),
+          })
+        )
+      );
+    });
+    const result: JsonRpcSuccessResponse[] = await Promise.all(promiseOwners);
+    tokenIds.forEach((tokenId, index) => {
+      const { owner }: { owner: string } = JSON.parse(
+        fromUtf8(
+          cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
+            fromBase64(result[index].result.response.value)
+          ).data
+        )
+      );
+      holders.push({
+        address: owner,
+        token_id: tokenId,
+        last_updated_height: parseInt(result[index].result.response.height, 10),
+      });
+    });
+    return holders;
   }
 
   async getCw721ContractEvents(startBlock: number, endBlock: number) {
