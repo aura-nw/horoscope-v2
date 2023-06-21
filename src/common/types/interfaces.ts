@@ -82,3 +82,12 @@ export interface IContextGraphQLQuery {
   query: string;
   variables: any;
 }
+
+export interface IContextUpdateCw20 {
+  cw20Contracts: {
+    id: number;
+    last_updated_height: number;
+  }[];
+  startBlock: number;
+  endBlock: number;
+}

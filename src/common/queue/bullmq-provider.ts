@@ -69,7 +69,7 @@ export class BullQueueProvider implements QueueProvider {
    * @param name - Name of the queue
    * @returns
    */
-  private getQueue(name: string): Queue {
+  public getQueue(name: string): Queue {
     if (!this._queues[name]) {
       // queue not exist create and cache it
       this._queues[name] = new Queue(name, {
