@@ -114,10 +114,12 @@ export default class Utils {
     models: string[],
     relations: string[],
     condition: string[]
-  ): boolean {
+  ): [boolean, number] {
     const result: any[] = [];
     const resultRelations: any[] = [];
+    let whereHeight: any = null;
     let response = true;
+    let heightRange = 0;
 
     if (object.kind === 'Field' && models.includes(object.name.value)) {
       result.push(object);
@@ -143,24 +145,50 @@ export default class Utils {
       });
     };
 
+    const findConditionInObj = (res: any): any => {
+      if (!res) {
+        return;
+      }
+      Object.keys(res).forEach((key) => {
+        const value = res[key];
+        if (typeof value === 'object' && value !== null) {
+          findConditionInObj(value);
+          if (
+            value.kind === 'ObjectField' &&
+            condition.includes(value.name.value)
+          ) {
+            whereHeight = value;
+          }
+        }
+      });
+    };
+
     const checkCondition = (res: any) => {
-      const whereHeight = res.value.fields.find((field: any) =>
-        condition.includes(field.name.value)
-      );
+      // const whereHeight = res.value.fields.find((field: any) =>
+      //   condition.includes(field.name.value)
+      // );
+      // const whereHeight = findConditionInObj(res);
+      findConditionInObj(res);
       if (whereHeight) {
+        const upperLimit = whereHeight.value.fields.find(
+          (field: any) =>
+            field.name.value === '_lt' || field.name.value === '_lte'
+        );
+        const lowerLimit = whereHeight.value.fields.find(
+          (field: any) =>
+            field.name.value === '_gt' || field.name.value === '_gte'
+        );
         const isRange =
           whereHeight.value.fields.find(
             (field: any) => field.name.value === '_eq'
           ) ||
-          (whereHeight.value.fields.find(
-            (field: any) =>
-              field.name.value === '_lt' || field.name.value === '_lte'
-          ) &&
-            whereHeight.value.fields.find(
-              (field: any) =>
-                field.name.value === '_gt' || field.name.value === '_gte'
-            ));
-        if (isRange) return true;
+          (lowerLimit && upperLimit);
+        if (isRange) {
+          heightRange = Math.abs(
+            Number(upperLimit.value.value) - Number(lowerLimit.value.value)
+          );
+          return true;
+        }
       }
       return false;
     };
@@ -179,6 +207,6 @@ export default class Utils {
       response = resultRelations.some(checkCondition);
     }
 
-    return response;
+    return [response, heightRange];
   }
 }

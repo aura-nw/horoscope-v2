@@ -143,18 +143,24 @@ export default class GraphiQLService extends BaseService {
             }
 
             if (result.code === '') {
-              if (
-                !Utils.isQueryNeedCondition(
-                  sel,
-                  config.graphiqlApi.queryNeedWhereModel,
-                  config.graphiqlApi.queryNeedWhereRelation,
-                  config.graphiqlApi.queryNeedWhereCondition
-                )
-              ) {
+              const [heightCondition, heightRange] = Utils.isQueryNeedCondition(
+                sel,
+                config.graphiqlApi.queryNeedWhereModel,
+                config.graphiqlApi.queryNeedWhereRelation,
+                config.graphiqlApi.queryNeedWhereCondition
+              );
+              if (!heightCondition) {
                 result = {
                   code: ErrorCode.WRONG,
                   message: ErrorMessage.VALIDATION_ERROR,
                   data: `The query to one of the following tables needs to include exact height (_eq) or a height range (_gt/_gte & _lt/_lte) in where argument: ${config.graphiqlApi.queryNeedWhereModel}`,
+                };
+              }
+              if (heightRange > config.graphiqlApi.queryHeightRangeLimit) {
+                result = {
+                  code: ErrorCode.WRONG,
+                  message: ErrorMessage.VALIDATION_ERROR,
+                  data: `The query height range in one of the following tables needs to be less than ${config.graphiqlApi.queryHeightRangeLimit}: ${config.graphiqlApi.queryNeedWhereModel}`,
                 };
               }
             }

@@ -132,7 +132,8 @@
       "view_event_attribute_value_index"
     ],
     "queryNeedWhereRelation": ["event_attributes", "event_attribute_index"],
-    "queryNeedWhereCondition": ["block_height"]
+    "queryNeedWhereCondition": ["block_height"],
+    "queryHeightRangeLimit": 10000
   },
   "crawlValidatorImage": {
     "timeCrawlImage": "0 0 * * *",

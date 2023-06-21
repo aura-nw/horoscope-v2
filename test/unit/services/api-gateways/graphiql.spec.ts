@@ -201,4 +201,23 @@ export default class GraphiQLTest {
       `The query to one of the following tables needs to include exact height (_eq) or a height range (_gt/_gte & _lt/_lte) in where argument: ${config.graphiqlApi.queryNeedWhereModel}`
     );
   }
+
+  @Test('Query tables required where height range exceed limit')
+  public async testQueryRequireWhereHeightRangeExceedLimit() {
+    const result: ResponseDto = await this.broker.call(
+      'v1.graphiql.handleGraphQLQuery',
+      {
+        operationName: 'MyQuery',
+        query:
+          'query MyQuery { auratestnet { event_attribute(where: { _and: { block_height: { _gt: 1, _lte: 20000 } } }) { key value } } }',
+        variables: {},
+      }
+    );
+
+    expect(result?.code).toEqual(ErrorCode.WRONG);
+    expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
+    expect(result?.data).toEqual(
+      `The query height range in one of the following tables needs to be less than ${config.graphiqlApi.queryHeightRangeLimit}: ${config.graphiqlApi.queryNeedWhereModel}`
+    );
+  }
 }
