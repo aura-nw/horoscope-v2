@@ -296,7 +296,7 @@ export default class Cw721MediaService extends BullableService {
   async updateMediaS3(tokenMediaInfo: ITokenMediaInfo) {
     try {
       const mediaImageUrl = await this.uploadMediaToS3(
-        tokenMediaInfo.onchain.metadata.image
+        tokenMediaInfo.onchain.metadata?.image
       );
       tokenMediaInfo.offchain.image.url = mediaImageUrl?.linkS3;
       tokenMediaInfo.offchain.image.content_type = mediaImageUrl?.contentType;
@@ -313,7 +313,7 @@ export default class Cw721MediaService extends BullableService {
     }
     try {
       const mediaAnimationUrl = await this.uploadMediaToS3(
-        tokenMediaInfo.onchain.metadata.animation_url
+        tokenMediaInfo.onchain.metadata?.animation_url
       );
       tokenMediaInfo.offchain.animation.url = mediaAnimationUrl?.linkS3;
       tokenMediaInfo.offchain.animation.content_type =
