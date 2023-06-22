@@ -7,6 +7,7 @@ import BaseService from '../../base/base.service';
 import { IContextGraphQLQuery, Config } from '../../common';
 import { ResponseDto } from '../../common/types/response-api';
 import config from '../../../config.json' assert { type: 'json' };
+import queryWhitelist from '../../../graphql-query-whitelist.json' assert { type: 'json' };
 import { ErrorCode, ErrorMessage } from '../../common/types/errors';
 import Utils from '../../common/utils/utils';
 
@@ -104,70 +105,74 @@ export default class GraphiQLService extends BaseService {
       );
       if (result.code !== '') return result;
 
-      const selections = (graphqlObj.definitions[0] as OperationDefinitionNode)
-        .selectionSet.selections as FieldNode[];
-      selections.forEach((selection: FieldNode) => {
-        (selection.selectionSet?.selections as FieldNode[]).forEach(
-          (sel: FieldNode) => {
-            const where = sel.arguments?.find(
-              (arg) => arg.name.value === 'where'
-            );
+      if (!queryWhitelist.includes(query)) {
+        const selections = (
+          graphqlObj.definitions[0] as OperationDefinitionNode
+        ).selectionSet.selections as FieldNode[];
+        selections.forEach((selection: FieldNode) => {
+          (selection.selectionSet?.selections as FieldNode[]).forEach(
+            (sel: FieldNode) => {
+              const where = sel.arguments?.find(
+                (arg) => arg.name.value === 'where'
+              );
 
-            if (where) {
-              if (
-                Utils.getDepth(where) >
-                config.graphiqlApi.rootWhereDepthLimit + 1
-              ) {
-                result = {
-                  code: ErrorCode.WRONG,
-                  message: ErrorMessage.VALIDATION_ERROR,
-                  data: `The root where query depth must not be greater than ${config.graphiqlApi.rootWhereDepthLimit}`,
-                };
-              }
-            }
-
-            if (result.code === '') {
-              const subWhere = Utils.filterWhereQuery(sel.selectionSet);
-              subWhere.forEach((sub: any) => {
+              if (where) {
                 if (
-                  Utils.getDepth(sub) >
-                  config.graphiqlApi.subWhereDepthLimit + 1
+                  Utils.getDepth(where) >
+                  config.graphiqlApi.rootWhereDepthLimit + 1
                 ) {
                   result = {
                     code: ErrorCode.WRONG,
                     message: ErrorMessage.VALIDATION_ERROR,
-                    data: `The sub where query depth must not be greater than ${config.graphiqlApi.subWhereDepthLimit}`,
+                    data: `The root where query depth must not be greater than ${config.graphiqlApi.rootWhereDepthLimit}`,
                   };
                 }
-              });
-            }
+              }
 
-            if (result.code === '') {
-              const [heightCondition, heightRange] = Utils.isQueryNeedCondition(
-                sel,
-                config.graphiqlApi.queryNeedWhereModel,
-                config.graphiqlApi.queryNeedWhereRelation,
-                config.graphiqlApi.queryNeedWhereCondition
-              );
-              if (!heightCondition) {
-                result = {
-                  code: ErrorCode.WRONG,
-                  message: ErrorMessage.VALIDATION_ERROR,
-                  data: `The query to one of the following tables needs to include exact height (_eq) or a height range (_gt/_gte & _lt/_lte) in where argument: ${config.graphiqlApi.queryNeedWhereModel}`,
-                };
+              if (result.code === '') {
+                const subWhere = Utils.filterWhereQuery(sel.selectionSet);
+                subWhere.forEach((sub: any) => {
+                  if (
+                    Utils.getDepth(sub) >
+                    config.graphiqlApi.subWhereDepthLimit + 1
+                  ) {
+                    result = {
+                      code: ErrorCode.WRONG,
+                      message: ErrorMessage.VALIDATION_ERROR,
+                      data: `The sub where query depth must not be greater than ${config.graphiqlApi.subWhereDepthLimit}`,
+                    };
+                  }
+                });
               }
-              if (heightRange > config.graphiqlApi.queryHeightRangeLimit) {
-                result = {
-                  code: ErrorCode.WRONG,
-                  message: ErrorMessage.VALIDATION_ERROR,
-                  data: `The query height range in one of the following tables needs to be less than ${config.graphiqlApi.queryHeightRangeLimit}: ${config.graphiqlApi.queryNeedWhereModel}`,
-                };
+
+              if (result.code === '') {
+                const [heightCondition, heightRange] =
+                  Utils.isQueryNeedCondition(
+                    sel,
+                    config.graphiqlApi.queryNeedWhereModel,
+                    config.graphiqlApi.queryNeedWhereRelation,
+                    config.graphiqlApi.queryNeedWhereCondition
+                  );
+                if (!heightCondition) {
+                  result = {
+                    code: ErrorCode.WRONG,
+                    message: ErrorMessage.VALIDATION_ERROR,
+                    data: `The query to one of the following tables needs to include exact height (_eq) or a height range (_gt/_gte & _lt/_lte) in where argument: ${config.graphiqlApi.queryNeedWhereModel}`,
+                  };
+                }
+                if (heightRange > config.graphiqlApi.queryHeightRangeLimit) {
+                  result = {
+                    code: ErrorCode.WRONG,
+                    message: ErrorMessage.VALIDATION_ERROR,
+                    data: `The query height range in one of the following tables needs to be less than ${config.graphiqlApi.queryHeightRangeLimit}: ${config.graphiqlApi.queryNeedWhereModel}`,
+                  };
+                }
               }
             }
-          }
-        );
-      });
-      if (result.code !== '') return result;
+          );
+        });
+        if (result.code !== '') return result;
+      }
 
       try {
         const response = await axios({
