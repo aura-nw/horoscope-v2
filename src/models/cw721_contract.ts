@@ -1,10 +1,9 @@
-import { Model } from 'objection';
 import { cosmwasm } from '@aura-nw/aurajs';
-import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
-import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { fromBase64, fromUtf8, toHex, toUtf8 } from '@cosmjs/encoding';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
-import Moleculer from 'moleculer';
+import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
+import { Model } from 'objection';
+import { getHttpBatchClient } from '../common';
 import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
 import CW721Token from './cw721_token';
@@ -82,15 +81,14 @@ export default class CW721Contract extends BaseModel {
   }
 
   static async getContractsInfo(
-    contractAddresses: string[],
-    _httpBatchClient: HttpBatchClient,
-    logger: Moleculer.LoggerInstance
+    contractAddresses: string[]
   ): Promise<IContractInfoAndMinter[]> {
+    const httpBatchClient = getHttpBatchClient();
     const promisesInfo: any[] = [];
     const promisesMinter: any[] = [];
     contractAddresses.forEach((address: string) => {
       promisesInfo.push(
-        _httpBatchClient.execute(
+        httpBatchClient.execute(
           createJsonRpcRequest('abci_query', {
             path: '/cosmwasm.wasm.v1.Query/SmartContractState',
             data: toHex(
@@ -105,7 +103,7 @@ export default class CW721Contract extends BaseModel {
     });
     contractAddresses.forEach((address: string) => {
       promisesMinter.push(
-        _httpBatchClient.execute(
+        httpBatchClient.execute(
           createJsonRpcRequest('abci_query', {
             path: '/cosmwasm.wasm.v1.Query/SmartContractState',
             data: toHex(
@@ -137,12 +135,7 @@ export default class CW721Contract extends BaseModel {
           )
         );
       } catch (error) {
-        if (error instanceof SyntaxError || error instanceof TypeError) {
-          logger.error(
-            `Response contract info from CW721 contract ${contractAddresses[index]} not support`
-          );
-        } else {
-          logger.error(error);
+        if (!(error instanceof SyntaxError) && !(error instanceof TypeError)) {
           throw error;
         }
       }
@@ -155,12 +148,7 @@ export default class CW721Contract extends BaseModel {
           )
         ).minter;
       } catch (error) {
-        if (error instanceof SyntaxError || error instanceof TypeError) {
-          logger.error(
-            `Response minter from CW721 contract ${contractAddresses[index]} not support`
-          );
-        } else {
-          logger.error(error);
+        if (!(error instanceof SyntaxError) && !(error instanceof TypeError)) {
           throw error;
         }
       }

@@ -351,9 +351,7 @@ export default class Cw721HandlerService extends BullableService {
     if (cw721Contracts.length > 0) {
       const contractsInfo = _.keyBy(
         await CW721Contract.getContractsInfo(
-          cw721Contracts.map((cw721Contract) => cw721Contract.contract_address),
-          this._httpBatchClient,
-          this.logger
+          cw721Contracts.map((cw721Contract) => cw721Contract.contract_address)
         ),
         'address'
       );
