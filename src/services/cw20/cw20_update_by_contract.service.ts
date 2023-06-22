@@ -115,7 +115,10 @@ export default class Cw20UpdateByContractService extends BullableService {
           event.action === CW20_ACTION.MINT ||
           event.action === CW20_ACTION.BURN ||
           event.action === CW20_ACTION.TRANSFER ||
-          event.action === CW20_ACTION.SEND
+          event.action === CW20_ACTION.SEND ||
+          event.action === CW20_ACTION.TRANSFER_FROM ||
+          event.action === CW20_ACTION.BURN_FROM ||
+          event.action === CW20_ACTION.SEND_FROM
       ),
       ['height'],
       ['asc']
