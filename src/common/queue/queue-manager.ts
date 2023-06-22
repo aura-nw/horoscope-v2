@@ -100,4 +100,8 @@ export default class QueueManager {
   public stopAll(): void {
     this._queueProvider.stopAll();
   }
+
+  public getQueue(queueName: string): any {
+    return this._queueProvider.getQueue(queueName);
+  }
 }

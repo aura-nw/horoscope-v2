@@ -21,6 +21,7 @@ export interface QueueProvider {
     payload?: object
   ): void;
   registerQueueHandler(opt: QueueOptions, fn: QueueHandlerFunc): void;
+  getQueue(queueName: string): any;
 }
 
 export type QueueHandlerFunc = (payload: object) => Promise<void>;

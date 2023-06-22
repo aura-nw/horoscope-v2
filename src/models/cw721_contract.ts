@@ -1,4 +1,9 @@
+import { cosmwasm } from '@aura-nw/aurajs';
+import { fromBase64, fromUtf8, toHex, toUtf8 } from '@cosmjs/encoding';
+import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
+import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { Model } from 'objection';
+import { getHttpBatchClient } from '../common';
 import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
 import CW721Token from './cw721_token';
@@ -6,6 +11,12 @@ import CW721Token from './cw721_token';
 import CW721Activity from './cw721_tx';
 import { SmartContract } from './smart_contract';
 
+export interface IContractInfoAndMinter {
+  address: string;
+  name?: string;
+  symbol?: string;
+  minter?: string;
+}
 export default class CW721Contract extends BaseModel {
   [relation: string]: any;
 
@@ -67,5 +78,87 @@ export default class CW721Contract extends BaseModel {
         },
       },
     };
+  }
+
+  static async getContractsInfo(
+    contractAddresses: string[]
+  ): Promise<IContractInfoAndMinter[]> {
+    const httpBatchClient = getHttpBatchClient();
+    const promisesInfo: any[] = [];
+    const promisesMinter: any[] = [];
+    contractAddresses.forEach((address: string) => {
+      promisesInfo.push(
+        httpBatchClient.execute(
+          createJsonRpcRequest('abci_query', {
+            path: '/cosmwasm.wasm.v1.Query/SmartContractState',
+            data: toHex(
+              cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
+                address,
+                queryData: toUtf8('{"contract_info":{}}'),
+              }).finish()
+            ),
+          })
+        )
+      );
+    });
+    contractAddresses.forEach((address: string) => {
+      promisesMinter.push(
+        httpBatchClient.execute(
+          createJsonRpcRequest('abci_query', {
+            path: '/cosmwasm.wasm.v1.Query/SmartContractState',
+            data: toHex(
+              cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
+                address,
+                queryData: toUtf8('{"minter":{}}'),
+              }).finish()
+            ),
+          })
+        )
+      );
+    });
+    const contractsInfo: IContractInfoAndMinter[] = [];
+    const resultsContractsInfo: JsonRpcSuccessResponse[] = await Promise.all(
+      promisesInfo
+    );
+    const resultsMinters: JsonRpcSuccessResponse[] = await Promise.all(
+      promisesMinter
+    );
+    for (let index = 0; index < resultsContractsInfo.length; index += 1) {
+      let contractInfo;
+      let minter;
+      try {
+        contractInfo = JSON.parse(
+          fromUtf8(
+            cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
+              fromBase64(resultsContractsInfo[index].result.response.value)
+            ).data
+          )
+        );
+      } catch (error) {
+        if (!(error instanceof SyntaxError) && !(error instanceof TypeError)) {
+          throw error;
+        }
+      }
+      try {
+        minter = JSON.parse(
+          fromUtf8(
+            cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
+              fromBase64(resultsMinters[index].result.response.value)
+            ).data
+          )
+        ).minter;
+      } catch (error) {
+        if (!(error instanceof SyntaxError) && !(error instanceof TypeError)) {
+          throw error;
+        }
+      }
+      contractsInfo.push({
+        address: contractAddresses[index],
+        name: contractInfo?.name,
+        symbol: contractInfo?.symbol,
+        minter,
+      });
+    }
+    return contractsInfo;
   }
 }
