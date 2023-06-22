@@ -118,15 +118,10 @@ export default class Cw721MissingContractService extends BullableService {
         if (!cw721Contract) {
           // query
           const contractInfo = (
-            await CW721Contract.getContractsInfo(
-              [ctx.params.address],
-              this._httpBatchClient,
-              this.logger
-            )
+            await CW721Contract.getContractsInfo([ctx.params.address])
           )[0];
           const momentTokensOwner = await CW721Contract.getTokensOwner(
-            ctx.params.address,
-            this._httpBatchClient
+            ctx.params.address
           );
           const minUpdatedHeightOwner = Math.min(
             ...momentTokensOwner.map(
