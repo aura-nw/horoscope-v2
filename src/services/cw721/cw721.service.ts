@@ -362,9 +362,7 @@ export default class Cw721HandlerService extends BullableService {
     if (cw721Contracts.length > 0) {
       const contractsInfo = _.keyBy(
         await CW721Contract.getContractsInfo(
-          cw721Contracts.map((cw721Contract) => cw721Contract.contract_address),
-          this._httpBatchClient,
-          this.logger
+          cw721Contracts.map((cw721Contract) => cw721Contract.contract_address)
         ),
         'address'
       );
@@ -506,13 +504,14 @@ export default class Cw721HandlerService extends BullableService {
       .count('cw721_activity.id AS total_activity')
       .select(
         knex.raw(
-          "SUM( CASE WHEN cw721_activity.height >= ? AND cw721_activity.action != '' THEN 1 ELSE 0 END ) AS transfer_24h",
+          "SUM( CASE WHEN cw721_activity.height >= ? AND cw721_activity.action != 'instantiate' THEN 1 ELSE 0 END ) AS transfer_24h",
           blockSince24hAgo[0]?.height
         )
       )
       .select('cw721_contract.id as cw721_contract_id')
       .where('cw721_contract.track', '=', true)
       .andWhere('smart_contract.name', '!=', 'crates.io:cw4973')
+      .andWhere('cw721_activity.action', '!=', '')
       .join(
         'cw721_activity',
         'cw721_contract.id',
