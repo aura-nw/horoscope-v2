@@ -17,7 +17,11 @@
     "startBlock": 0,
     "millisecondRepeatJobMedia": 10000,
     "mediaPerBatch": 10,
-    "timeRefreshCw721Stats": "1 * * * *"
+    "timeRefreshCw721Stats": "1 * * * *",
+    "crawlMissingContract": {
+      "blocksPerCall": 100,
+      "millisecondRepeatJob": 2000
+    }
   },
   "crawlBlock": {
     "millisecondCrawl": 5000,
