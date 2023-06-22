@@ -33,6 +33,9 @@ export const CW20_ACTION = {
   TRANSFER: 'transfer',
   INSTANTIATE: 'instantiate',
   SEND: 'send',
+  TRANSFER_FROM: 'transfer_from',
+  BURN_FROM: 'burn_from',
+  SEND_FROM: 'send_from',
 };
 
 interface IContractInfo {

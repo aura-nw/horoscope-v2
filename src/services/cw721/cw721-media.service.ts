@@ -26,10 +26,15 @@ import {
 import { S3Service } from '../../common/utils/s3';
 import CW721Token from '../../models/cw721_token';
 
-const { NODE_ENV, BUCKET, IPFS_GATEWAY, REQUEST_IPFS_TIMEOUT } = Config;
+const {
+  NODE_ENV,
+  BUCKET,
+  IPFS_GATEWAY,
+  REQUEST_IPFS_TIMEOUT,
+  MAX_BODY_LENGTH_BYTE,
+  MAX_CONTENT_LENGTH_BYTE,
+} = Config;
 const IPFS_PREFIX = 'ipfs';
-const MAX_CONTENT_LENGTH_BYTE = 100000000;
-const MAX_BODY_LENGTH_BYTE = 100000000;
 interface ITokenMediaInfo {
   cw721_token_id: number;
   address: string;
@@ -385,8 +390,8 @@ export default class Cw721MediaService extends BullableService {
     const axiosClient = axios.create({
       responseType: 'arraybuffer',
       timeout: parseInt(REQUEST_IPFS_TIMEOUT, 10),
-      maxContentLength: MAX_CONTENT_LENGTH_BYTE,
-      maxBodyLength: MAX_BODY_LENGTH_BYTE,
+      maxContentLength: parseInt(MAX_CONTENT_LENGTH_BYTE, 10),
+      maxBodyLength: parseInt(MAX_BODY_LENGTH_BYTE, 10),
     });
 
     return axiosClient.get(url).then((response: any) => {
