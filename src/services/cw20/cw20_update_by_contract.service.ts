@@ -41,6 +41,7 @@ export default class Cw20UpdateByContractService extends BullableService {
       .andWhere('height', '>', startBlock)
       .andWhere('height', '<=', endBlock);
     if (newEvents.length > 0) {
+      this.logger.info(newEvents);
       await knex.transaction(async (trx) => {
         const addAmount = await this.updateBalanceHolders(
           newEvents,
