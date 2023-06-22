@@ -59,6 +59,8 @@ export const BULL_JOB_NAME = {
   CRAWL_VALIDATOR_IMG: 'crawl:validator-img',
   RETRY_CRAWL_VALIDATOR_IMG: 'retry:crawl-validator-img',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
+  FILL_HISTORY_BY_MISSING_CONTRACT: 'fill:history-by-missing-contract',
+  HANDLE_HISTORY_MISSING_CONTRACT: 'handle:history-missing-contract',
 };
 
 export const SERVICE = {
@@ -89,6 +91,10 @@ export const SERVICE = {
       UpdateMedia: {
         key: 'updateCw721Media',
         path: 'v1.Cw721Service.updateCw721Media',
+      },
+      CrawlMissingContractHistory: {
+        key: 'CrawlMissingContractHistory',
+        path: 'v1.Cw721Service.CrawlMissingContractHistory',
       },
     },
     CrawlProposalService: {

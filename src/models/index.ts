@@ -22,3 +22,4 @@ export * from './delegator';
 export * from './code_id_verification';
 export * from './feegrant';
 export * from './feegrant_history';
+export * from './missing_contract_checkpoint';

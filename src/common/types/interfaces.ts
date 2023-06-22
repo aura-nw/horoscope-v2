@@ -91,3 +91,9 @@ export interface IContextUpdateCw20 {
   startBlock: number;
   endBlock: number;
 }
+
+export interface IContextCrawlMissingContractHistory {
+  smartContractId: number;
+  startBlock: number;
+  endBlock: number;
+}

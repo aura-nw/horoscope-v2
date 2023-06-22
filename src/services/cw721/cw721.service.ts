@@ -1,14 +1,26 @@
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
-import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+import {
+  Action,
+  Service,
+} from '@ourparentcenter/moleculer-decorators-extended';
 import _ from 'lodash';
-import { ServiceBroker } from 'moleculer';
+import { Context, ServiceBroker } from 'moleculer';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { Config, getHttpBatchClient } from '../../common';
+import {
+  Config,
+  IContextCrawlMissingContractHistory,
+  getHttpBatchClient,
+} from '../../common';
 import { BULL_JOB_NAME, SERVICE } from '../../common/constant';
 import knex from '../../common/utils/db_connection';
 import { getAttributeFrom } from '../../common/utils/smart_contract';
-import { Block, BlockCheckpoint, EventAttribute } from '../../models';
+import {
+  Block,
+  BlockCheckpoint,
+  EventAttribute,
+  MissingContractCheckpoint,
+} from '../../models';
 import CW721Contract from '../../models/cw721_contract';
 import CW721ContractStats from '../../models/cw721_stats';
 import CW721Token from '../../models/cw721_token';
@@ -508,5 +520,68 @@ export default class Cw721HandlerService extends BullableService {
       )
       .join('smart_contract', 'cw721_contract.contract_id', 'smart_contract.id')
       .groupBy('cw721_contract.id');
+  }
+
+  @Action({
+    name: SERVICE.V1.Cw721.CrawlMissingContractHistory.key,
+    params: {
+      contractAddress: 'string',
+    },
+  })
+  private async CrawlMissingContractHistory(
+    ctx: Context<IContextCrawlMissingContractHistory>
+  ) {
+    const { smartContractId, startBlock, endBlock } = ctx.params;
+    const missingHistories = await this.getCw721ContractEventsBySmartContract(
+      smartContractId,
+      startBlock,
+      endBlock
+    );
+    await this.handleCW721Activity(missingHistories);
+    await MissingContractCheckpoint.query()
+      .patch({
+        startBlock: endBlock,
+      })
+      .where('smart_contract_id', smartContractId);
+  }
+
+  async getCw721ContractEventsBySmartContract(
+    smartContractId: number,
+    startBlock: number,
+    endBlock: number
+  ) {
+    return SmartContractEvent.query()
+      .alias('smart_contract_event')
+      .withGraphJoined(
+        '[message(selectMessage), tx(selectTransaction), attributes(selectAttribute), smart_contract(selectSmartContract).code(selectCode)]'
+      )
+      .modifiers({
+        selectCode(builder) {
+          builder.select('type');
+        },
+        selectTransaction(builder) {
+          builder.select('hash', 'height');
+        },
+        selectMessage(builder) {
+          builder.select('sender');
+        },
+        selectAttribute(builder) {
+          builder.select('key', 'value');
+        },
+        selectSmartContract(builder) {
+          builder.select('address', 'id');
+        },
+      })
+      .where('smart_contract:code.type', 'CW721')
+      .where('tx.height', '>', startBlock)
+      .andWhere('tx.height', '<=', endBlock)
+      .andWhere('smart_contract.id', smartContractId)
+      .select(
+        'message.sender as sender',
+        'smart_contract.address as contractAddress',
+        'smart_contract_event.action',
+        'smart_contract_event.event_id',
+        'smart_contract_event.index'
+      );
   }
 }
