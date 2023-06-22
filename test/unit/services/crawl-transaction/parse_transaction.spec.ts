@@ -13,8 +13,6 @@ import CrawlTxService from '../../../../src/services/crawl-tx/crawl_tx.service';
 import knex from '../../../../src/common/utils/db_connection';
 import tx_fixture from './tx.fixture.json' assert { type: 'json' };
 import tx_fixture_authz from './tx_authz.fixture.json' assert { type: 'json' };
-// import { sleep } from 'src/common';
-// import { sleep } from '../../../../src/common';
 
 @Describe('Test crawl transaction service')
 export default class CrawlTransactionTest {
@@ -46,12 +44,22 @@ export default class CrawlTransactionTest {
         data: {},
       })
     );
-    await this.crawlTxService?.jobHandlerTx({
-      listTx: { ...tx_fixture },
-      height: 423136,
-      timestamp: '2023-04-17T03:44:41.000Z',
-    });
-    // await sleep(2000);
+
+    const listdecodedTx = await this.crawlTxService?.decodeListRawTx([
+      {
+        listTx: { ...tx_fixture },
+        height: 423136,
+        timestamp: '2023-04-17T03:44:41.000Z',
+      },
+    ]);
+    if (listdecodedTx)
+      await knex.transaction(async (trx) => {
+        await this.crawlTxService?.insertDecodedTxAndRelated(
+          listdecodedTx,
+          trx
+        );
+      });
+
     const tx = await Transaction.query().findOne(
       'hash',
       '5F38B0C3E9FAB4423C37FB6306AC06D983AF50013BC7BCFBD9F684D6BFB0AF23'
@@ -97,11 +105,20 @@ export default class CrawlTransactionTest {
         data: {},
       })
     );
-    await this.crawlTxService?.jobHandlerTx({
-      listTx: { ...tx_fixture_authz },
-      height: 452049,
-      timestamp: '2023-04-17T03:44:41.000Z',
-    });
+    const listdecodedTx = await this.crawlTxService?.decodeListRawTx([
+      {
+        listTx: { ...tx_fixture_authz },
+        height: 452049,
+        timestamp: '2023-04-17T03:44:41.000Z',
+      },
+    ]);
+    if (listdecodedTx)
+      await knex.transaction(async (trx) => {
+        await this.crawlTxService?.insertDecodedTxAndRelated(
+          listdecodedTx,
+          trx
+        );
+      });
     const tx = await Transaction.query().findOne(
       'hash',
       '14B177CFD3AC22F6AF1B46EF24C376B757B2379023E9EE075CB81A5E2FF18FAC'
