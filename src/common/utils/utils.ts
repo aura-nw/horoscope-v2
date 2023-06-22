@@ -164,10 +164,6 @@ export default class Utils {
     };
 
     const checkCondition = (res: any) => {
-      // const whereHeight = res.value.fields.find((field: any) =>
-      //   condition.includes(field.name.value)
-      // );
-      // const whereHeight = findConditionInObj(res);
       findConditionInObj(res);
       if (whereHeight) {
         const upperLimit = whereHeight.value.fields.find(
