@@ -42,8 +42,8 @@ interface IContractInfo {
   address: string;
   symbol?: string;
   minter?: string;
-  decimal?: number;
-  marketing_info: any;
+  decimal?: string;
+  marketing_info?: any;
   name?: string;
 }
 
@@ -124,9 +124,10 @@ export default class Cw20Service extends BullableService {
           const initBalances = await this.getInstantiateBalances(
             event.contract_address
           );
-          const lastUpdatedHeight = Math.min(
-            ...initBalances.map((e) => e.event_height)
-          );
+          const lastUpdatedHeight =
+            Math.min(...initBalances.map((e) => e.event_height)) !== Infinity
+              ? Math.min(...initBalances.map((e) => e.event_height))
+              : 0;
           return {
             ...Cw20Contract.fromJson({
               smart_contract_id: event.smart_contract_id,

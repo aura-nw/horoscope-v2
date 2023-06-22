@@ -19,7 +19,7 @@ export class Cw20Contract extends BaseModel {
 
   symbol?: string;
 
-  decimal?: number;
+  decimal?: string;
 
   minter?: string;
 
