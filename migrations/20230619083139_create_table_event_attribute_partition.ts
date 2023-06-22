@@ -47,12 +47,12 @@ export async function up(knex: Knex): Promise<void> {
     );
 
     // rename 2 table event_attribute and event_attribute_backup
-    // await knex
-    //   .raw('alter table event_attribute rename to event_attribute_backup;')
-    //   .transacting(trx);
-    // await knex
-    //   .raw('alter table event_attribute_partition rename to event_attribute;')
-    //   .transacting(trx);
+    await knex
+      .raw('alter table event_attribute rename to event_attribute_backup;')
+      .transacting(trx);
+    await knex
+      .raw('alter table event_attribute_partition rename to event_attribute;')
+      .transacting(trx);
     const currentId = {
       event_id: 0,
       index: 0,
@@ -64,14 +64,12 @@ export async function up(knex: Knex): Promise<void> {
       const tableName = `event_attribute_partition_${i}_${i + step}`;
       // create new partition table
       await knex
-        .raw(
-          `create table ${tableName} (like event_attribute_partition including all)`
-        )
+        .raw(`create table ${tableName} (like event_attribute including all)`)
         .transacting(trx);
       // attach partition to table event_attribute
       await knex
         .raw(
-          `alter table event_attribute_partition attach partition ${tableName} for values from (${i}) to (${
+          `alter table event_attribute attach partition ${tableName} for values from (${i}) to (${
             i + step
           })`
         )
@@ -91,7 +89,7 @@ export async function up(knex: Knex): Promise<void> {
     while (!done) {
       console.log(JSON.stringify(currentId));
 
-      const eventAttributes = await knex('event_attribute')
+      const eventAttributes = await knex('event_attribute_backup')
         .select('*')
         .whereRaw(
           `(event_id, index) > (${currentId.event_id}, ${currentId.index})`
@@ -107,16 +105,22 @@ export async function up(knex: Knex): Promise<void> {
         break;
       }
       await knex
-        .batchInsert(
-          'event_attribute_partition',
-          eventAttributes,
-          chunkSizeInsert
-        )
+        .batchInsert('event_attribute', eventAttributes, chunkSizeInsert)
         .transacting(trx);
 
       currentId.event_id = eventAttributes[eventAttributes.length - 1].event_id;
       currentId.index = eventAttributes[eventAttributes.length - 1].index;
     }
+
+    // create view for new table event_attribute
+    await knex.schema.createViewOrReplace(
+      'view_event_attribute_value_index',
+      (viewBuilder) => {
+        viewBuilder.as(
+          knex('event_attribute').select('*').whereRaw('length(value) <= 100')
+        );
+      }
+    );
   });
 }
 
@@ -128,5 +132,14 @@ export async function down(knex: Knex): Promise<void> {
     await knex
       .raw('alter table event_attribute_backup rename to event_attribute;')
       .transacting(trx);
+    // create view for table event_attribute
+    await knex.schema.createViewOrReplace(
+      'view_event_attribute_value_index',
+      (viewBuilder) => {
+        viewBuilder.as(
+          knex('event_attribute').select('*').whereRaw('length(value) <= 100')
+        );
+      }
+    );
   });
 }
