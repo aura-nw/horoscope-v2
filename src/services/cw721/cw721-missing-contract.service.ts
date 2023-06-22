@@ -112,8 +112,11 @@ export default class Cw721MissingContractService extends BullableService {
         .withGraphJoined('smart_contract')
         .where('smart_contract.address', ctx.params.address)
         .first();
+      // check whether contract is CW721 type -> throw error to user
       if (smartContract.code.type === 'CW721') {
+        // if contract have been in cw721_contract DB -> skip
         if (!cw721Contract) {
+          // query
           const contractInfo = (
             await CW721Contract.getContractsInfo(
               [ctx.params.address],
@@ -168,7 +171,14 @@ export default class Cw721MissingContractService extends BullableService {
               })
             );
           // handle from minUpdatedHeightOwner to blockHeight
-          this.logger.info(blockHeight);
+          await this.broker.call(
+            SERVICE.V1.Cw721.HandleRangeBlockMissingContract.path,
+            {
+              smartContractId: smartContract.id,
+              startBlock: minUpdatedHeightOwner,
+              endBlock: blockHeight,
+            } satisfies IContextCrawlMissingContractHistory
+          );
         }
       } else {
         throw new Error(

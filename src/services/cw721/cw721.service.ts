@@ -525,7 +525,9 @@ export default class Cw721HandlerService extends BullableService {
   @Action({
     name: SERVICE.V1.Cw721.CrawlMissingContractHistory.key,
     params: {
-      contractAddress: 'string',
+      smartContractId: 'any',
+      startBlock: 'any',
+      endBlock: ' any',
     },
   })
   private async CrawlMissingContractHistory(
@@ -583,5 +585,33 @@ export default class Cw721HandlerService extends BullableService {
         'smart_contract_event.event_id',
         'smart_contract_event.index'
       );
+  }
+
+  @Action({
+    name: SERVICE.V1.Cw721.HandleRangeBlockMissingContract.key,
+    params: {
+      smartContractId: 'any',
+      startBlock: 'any',
+      endBlock: ' any',
+    },
+  })
+  private async HandleRangeBlockMissingContract(
+    ctx: Context<IContextCrawlMissingContractHistory>
+  ) {
+    const { smartContractId, startBlock, endBlock } = ctx.params;
+    const missingHistories = await this.getCw721ContractEventsBySmartContract(
+      smartContractId,
+      startBlock,
+      endBlock
+    );
+    // handle all cw721 execute messages
+    await this.handleCw721MsgExec(missingHistories);
+    // handle Cw721 Activity
+    await this.handleCW721Activity(missingHistories);
+    await MissingContractCheckpoint.query()
+      .patch({
+        startBlock: endBlock,
+      })
+      .where('smart_contract_id', smartContractId);
   }
 }

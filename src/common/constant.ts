@@ -96,6 +96,10 @@ export const SERVICE = {
         key: 'CrawlMissingContractHistory',
         path: 'v1.Cw721Service.CrawlMissingContractHistory',
       },
+      HandleRangeBlockMissingContract: {
+        key: 'HandleRangeBlockMissingContract',
+        path: 'v1.Cw721Service.HandleRangeBlockMissingContract',
+      },
     },
     CrawlProposalService: {
       name: 'v1.CrawlProposalService',
