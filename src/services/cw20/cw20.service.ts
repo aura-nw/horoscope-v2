@@ -120,10 +120,16 @@ export default class Cw20Service extends BullableService {
           const contractInfo = contractsInfo.find(
             (result) => result.address === event.contract_address
           );
+          let track = true;
+          let initBalances: IHolderEvent[] = [];
           // get init address holder, init amount
-          const initBalances = await this.getInstantiateBalances(
-            event.contract_address
-          );
+          try {
+            initBalances = await this.getInstantiateBalances(
+              event.contract_address
+            );
+          } catch (error) {
+            track = false;
+          }
           const lastUpdatedHeight =
             Math.min(...initBalances.map((e) => e.event_height)) !== Infinity
               ? Math.min(...initBalances.map((e) => e.event_height))
@@ -140,7 +146,7 @@ export default class Cw20Service extends BullableService {
                   (BigInt(acc) + BigInt(curr.amount)).toString(),
                 '0'
               ),
-              track: true,
+              track,
               decimal: contractInfo?.decimal,
               last_updated_height: lastUpdatedHeight,
             }),
