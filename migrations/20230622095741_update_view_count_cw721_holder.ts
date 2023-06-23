@@ -4,9 +4,9 @@ export async function up(knex: Knex): Promise<void> {
   await knex.schema.dropViewIfExists('view_count_holder_cw721');
   await knex.schema.createView('view_count_holder_cw721', (viewBuilder) => {
     viewBuilder.as(
-      knex('cw721_token')
+      knex('cw721_contract')
         .innerJoin(
-          'cw721_contract',
+          'cw721_token',
           'cw721_token.cw721_contract_id',
           'cw721_contract.id'
         )
