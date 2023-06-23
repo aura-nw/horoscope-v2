@@ -131,7 +131,7 @@ export default class Cw20Service extends BullableService {
             track = false;
           }
           const lastUpdatedHeight =
-            Math.min(...initBalances.map((e) => e.event_height)) !== Infinity
+            initBalances.length > 0
               ? Math.min(...initBalances.map((e) => e.event_height))
               : 0;
           return {
