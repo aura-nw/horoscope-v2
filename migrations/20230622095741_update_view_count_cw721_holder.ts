@@ -10,6 +10,7 @@ export async function up(knex: Knex): Promise<void> {
           'cw721_token.cw721_contract_id',
           'cw721_contract.id'
         )
+        .where('cw721_token.burned', '=', false)
         .innerJoin(
           'smart_contract',
           'cw721_contract.contract_id',
@@ -18,15 +19,9 @@ export async function up(knex: Knex): Promise<void> {
         .select([
           'cw721_token.owner',
           'smart_contract.address as contract_address',
-          'cw721_token.burned',
         ])
         .count()
-        .groupBy([
-          'cw721_token.owner',
-          'smart_contract.address',
-          'cw721_token.burned',
-        ])
-        .having('cw721_token.burned', '=', false)
+        .groupBy(['cw721_token.owner', 'smart_contract.address'])
     );
   });
 }
