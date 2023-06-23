@@ -24,7 +24,7 @@ export default class Cw20 {
   ) as Cw20UpdateByContractService;
 
   block: Block = Block.fromJson({
-    height: 132464134,
+    height: 1300000,
     hash: '4801997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43FE9F',
     time: '2023-01-12T01:53:57.216Z',
     proposer_address: 'auraomd;cvpio3j4eg',
@@ -62,12 +62,14 @@ export default class Cw20 {
             source: 'TX_EVENT',
             attributes: [
               {
+                block_height: this.block.height,
                 index: 0,
                 composite_key: 'execute._contract_address',
                 key: '_contract_address',
                 value: 'this.mockInitContract_2.smart_contract.address',
               },
               {
+                block_height: this.block.height,
                 index: 1,
                 // tx_id: 1,
                 composite_key: 'execute._contract_address',

@@ -131,5 +131,17 @@
   "crawlValidatorImage": {
     "timeCrawImage": "0 0 * * *",
     "milliSecondDelayRetry": 300000
+  },
+  "migrationEventAttributeToPartition": {
+    "startBlock": 0,
+    "endBlock": 13000000,
+    "step": 13000000,
+    "limitRecordGet": 10000,
+    "chunkSizeInsert": 1000
+  },
+  "jobCheckNeedCreateEventAttributePartition": {
+    "range": 100000,
+    "step": 10000,
+    "millisecondCrawl": 10000
   }
 }
