@@ -134,8 +134,8 @@
   },
   "migrationEventAttributeToPartition": {
     "startBlock": 0,
-    "endBlock": 13000000,
-    "step": 13000000,
+    "endBlock": 130000000,
+    "step": 130000000,
     "limitRecordGet": 10000,
     "chunkSizeInsert": 1000
   },
