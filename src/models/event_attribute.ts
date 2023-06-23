@@ -23,7 +23,7 @@ export class EventAttribute extends BaseModel {
   }
 
   static get idColumn(): string[] {
-    return ['event_id', 'index'];
+    return ['event_id', 'index', 'block_height'];
   }
 
   static get jsonSchema() {
