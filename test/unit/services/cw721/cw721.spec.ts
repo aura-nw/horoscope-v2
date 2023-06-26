@@ -941,7 +941,7 @@ export default class AssetIndexerTest {
         minter: 'minter_1',
       },
     ];
-    this.cw721HandlerService.getContractsInfo = jest.fn(() =>
+    CW721Contract.getContractsInfo = jest.fn(() =>
       Promise.resolve(mockContractsInfo)
     );
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment

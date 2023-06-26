@@ -6,7 +6,7 @@ import Cw20UpdateByContractService from '../../../../src/services/cw20/cw20_upda
 import { Code } from '../../../../src/models/code';
 import { CW20Holder, Cw20Contract, Cw20Event } from '../../../../src/models';
 
-@Describe('Test cw721 service')
+@Describe('Test cw20_update_by_contract service')
 export default class Cw20UpdateByContract {
   broker = new ServiceBroker({ logger: false });
 
@@ -180,11 +180,12 @@ export default class Cw20UpdateByContract {
       },
     ];
     await knex.transaction(async (trx) => {
-      await this.cw20UpdateByContractService.updateBalanceHolders(
-        cw20Events.map((event) => Cw20Event.fromJson(event)),
-        contractIndex,
-        trx
-      );
+      const addSppuly =
+        await this.cw20UpdateByContractService.updateBalanceHolders(
+          cw20Events.map((event) => Cw20Event.fromJson(event)),
+          contractIndex,
+          trx
+        );
       const holders = await CW20Holder.query()
         .transacting(trx)
         .where('cw20_contract_id', contractIndex)
@@ -253,6 +254,9 @@ export default class Cw20UpdateByContract {
             this.cw20Contract[contractIndex - 1].holders[2].address
         )?.last_updated_height
       ).toEqual(21102);
+      expect(addSppuly).toEqual(
+        BigInt(cw20Events[0].amount) - BigInt(cw20Events[1].amount)
+      );
       await trx.rollback();
     });
   }

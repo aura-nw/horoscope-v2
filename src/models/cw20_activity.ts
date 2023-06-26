@@ -52,7 +52,7 @@ export class Cw20Event extends BaseModel {
         relation: Model.BelongsToOneRelation,
         modelClass: Cw20Contract,
         join: {
-          from: 'cw20_event.cw20_contract_id',
+          from: 'cw20_activity.cw20_contract_id',
           to: 'cw20_contract.id',
         },
       },
@@ -60,7 +60,7 @@ export class Cw20Event extends BaseModel {
         relation: Model.HasOneThroughRelation,
         modelClass: SmartContract,
         join: {
-          from: 'cw20_holder.cw20_contract_id',
+          from: 'cw20_activity.cw20_contract_id',
           to: 'smart_contract.id',
           through: {
             from: 'cw20_contract.id',
