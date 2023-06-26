@@ -30,5 +30,5 @@ export async function up(knex: Knex): Promise<void> {
 
 export async function down(knex: Knex): Promise<void> {
   await knex.schema.dropTable('smart_contract');
-  await knex.schema.dropTable('code_id');
+  await knex.schema.dropTable('code');
 }
