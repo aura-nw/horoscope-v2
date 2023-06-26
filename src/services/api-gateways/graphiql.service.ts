@@ -186,15 +186,19 @@ export default class GraphiQLService extends BaseService {
           },
           data: ctx.params,
         });
-        result = {
-          code: response.data.data
-            ? ErrorCode.SUCCESSFUL
-            : ErrorCode.BAD_REQUEST,
-          message: response.data.data
-            ? ErrorMessage.SUCCESSFUL
-            : ErrorMessage.BAD_REQUEST,
-          data: response.data.data ?? response.data,
-        };
+        if (response.data.data) {
+          result = {
+            code: ErrorCode.SUCCESSFUL,
+            message: ErrorMessage.SUCCESSFUL,
+            data: response.data.data,
+          };
+        } else {
+          result = {
+            code: ErrorCode.BAD_REQUEST,
+            message: ErrorMessage.BAD_REQUEST,
+            errors: response.data.errors,
+          };
+        }
       } catch (error: any) {
         this.logger.error('Error execute GraphQL query');
         this.logger.error(error);
