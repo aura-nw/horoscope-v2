@@ -58,6 +58,9 @@ export const BULL_JOB_NAME = {
   CW20_UPDATE_BY_CONTRACT: 'update:cw20-by-contract',
   CRAWL_VALIDATOR_IMG: 'crawl:validator-img',
   RETRY_CRAWL_VALIDATOR_IMG: 'retry:crawl-validator-img',
+  JOB_CHECK_NEED_CREATE_EVENT_ATTR_PARTITION:
+    'job:check-need-create-event-attr-partition',
+  JOB_CREATE_EVENT_ATTR_PARTITION: 'job:create-event-attr-partition',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
   FILL_HISTORY_BY_MISSING_CONTRACT: 'fill:history-by-missing-contract',
   HANDLE_HISTORY_MISSING_CONTRACT: 'handle:history-missing-contract',
@@ -210,6 +213,12 @@ export const SERVICE = {
       CrawlMissingContract: {
         key: 'CrawlMissingContract',
         path: 'v1.CW721CrawlMissingContract.CrawlMissingContract',
+      },
+    },
+    JobService: {
+      CreateEventAttrPartition: {
+        key: 'CreateEventAttrPartition',
+        path: 'v1.CreateEventAttrPartition',
       },
     },
   },
