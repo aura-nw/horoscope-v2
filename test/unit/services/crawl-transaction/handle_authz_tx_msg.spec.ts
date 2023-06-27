@@ -28,8 +28,7 @@ export default class HandleAuthzTxMsgTest {
     this.crawlTxService = this.broker.createService(
       CrawlTxService
     ) as CrawlTxService;
-    this.crawlTxService?.getQueueManager().stopAll();
-    this.handleAuthzTxServive?.getQueueManager().stopAll();
+
     await Promise.all([
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
@@ -37,6 +36,9 @@ export default class HandleAuthzTxMsgTest {
 
     await this.crawlTxService._start();
     await this.handleAuthzTxServive._start();
+
+    this.crawlTxService?.getQueueManager().stopAll();
+    this.handleAuthzTxServive?.getQueueManager().stopAll();
   }
 
   @Test('Parse transaction authz and insert to DB')
