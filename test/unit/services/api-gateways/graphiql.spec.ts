@@ -53,7 +53,7 @@ export default class GraphiQLTest {
 
     expect(result?.code).toEqual(ErrorCode.WRONG);
     expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
-    expect(result?.data).toEqual('Invalid query');
+    expect(result?.errors).toEqual('Invalid query');
   }
 
   @Test('Invalid mutation operation')
@@ -70,7 +70,7 @@ export default class GraphiQLTest {
 
     expect(result?.code).toEqual(ErrorCode.WRONG);
     expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
-    expect(result?.data).toEqual(
+    expect(result?.errors).toEqual(
       'This Horoscope GraphiQL service only allows query operations'
     );
   }
@@ -89,7 +89,7 @@ export default class GraphiQLTest {
 
     expect(result?.code).toEqual(ErrorCode.WRONG);
     expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
-    expect(result?.data).toEqual(
+    expect(result?.errors).toEqual(
       `The query depth must not be greater than ${config.graphiqlApi.depthLimit}`
     );
   }
@@ -108,7 +108,7 @@ export default class GraphiQLTest {
 
     expect(result?.code).toEqual(ErrorCode.WRONG);
     expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
-    expect(result?.data).toEqual(
+    expect(result?.errors).toEqual(
       `The root where query depth must not be greater than ${config.graphiqlApi.rootWhereDepthLimit}`
     );
   }
@@ -127,7 +127,7 @@ export default class GraphiQLTest {
 
     expect(result?.code).toEqual(ErrorCode.WRONG);
     expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
-    expect(result?.data).toEqual(
+    expect(result?.errors).toEqual(
       `The sub where query depth must not be greater than ${config.graphiqlApi.subWhereDepthLimit}`
     );
   }
@@ -146,7 +146,7 @@ export default class GraphiQLTest {
 
     expect(result?.code).toEqual(ErrorCode.WRONG);
     expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
-    expect(result?.data).toEqual(
+    expect(result?.errors).toEqual(
       `The query to one of the following tables needs to include exact height (_eq) or a height range (_gt/_gte & _lt/_lte) in where argument: ${config.graphiqlApi.queryNeedWhereModel}`
     );
   }
@@ -165,7 +165,7 @@ export default class GraphiQLTest {
 
     expect(result?.code).toEqual(ErrorCode.WRONG);
     expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
-    expect(result?.data).toEqual(
+    expect(result?.errors).toEqual(
       `The query to one of the following tables needs to include exact height (_eq) or a height range (_gt/_gte & _lt/_lte) in where argument: ${config.graphiqlApi.queryNeedWhereModel}`
     );
 
@@ -178,7 +178,7 @@ export default class GraphiQLTest {
 
     expect(result?.code).toEqual(ErrorCode.WRONG);
     expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
-    expect(result?.data).toEqual(
+    expect(result?.errors).toEqual(
       `The query to one of the following tables needs to include exact height (_eq) or a height range (_gt/_gte & _lt/_lte) in where argument: ${config.graphiqlApi.queryNeedWhereModel}`
     );
   }
@@ -197,7 +197,7 @@ export default class GraphiQLTest {
 
     expect(result?.code).toEqual(ErrorCode.WRONG);
     expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
-    expect(result?.data).toEqual(
+    expect(result?.errors).toEqual(
       `The query to one of the following tables needs to include exact height (_eq) or a height range (_gt/_gte & _lt/_lte) in where argument: ${config.graphiqlApi.queryNeedWhereModel}`
     );
   }
@@ -216,7 +216,7 @@ export default class GraphiQLTest {
 
     expect(result?.code).toEqual(ErrorCode.WRONG);
     expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
-    expect(result?.data).toEqual(
+    expect(result?.errors).toEqual(
       `The query height range in one of the following tables needs to be less than ${config.graphiqlApi.queryHeightRangeLimit}: ${config.graphiqlApi.queryNeedWhereModel}`
     );
   }
