@@ -67,7 +67,7 @@ export default class GraphiQLService extends BaseService {
         result = {
           code: ErrorCode.WRONG,
           message: ErrorMessage.VALIDATION_ERROR,
-          data: `The query depth must not be greater than ${config.graphiqlApi.depthLimit}`,
+          errors: `The query depth must not be greater than ${config.graphiqlApi.depthLimit}`,
         };
         return result;
       }
@@ -84,7 +84,7 @@ export default class GraphiQLService extends BaseService {
       result = {
         code: ErrorCode.WRONG,
         message: ErrorMessage.VALIDATION_ERROR,
-        data: 'Invalid query',
+        errors: 'Invalid query',
       };
     }
     this.logger.debug(JSON.stringify(graphqlObj));
@@ -99,7 +99,8 @@ export default class GraphiQLService extends BaseService {
             result = {
               code: ErrorCode.WRONG,
               message: ErrorMessage.VALIDATION_ERROR,
-              data: 'This Horoscope GraphiQL service only allows query operations',
+              errors:
+                'This Horoscope GraphiQL service only allows query operations',
             };
         }
       );
@@ -124,7 +125,7 @@ export default class GraphiQLService extends BaseService {
                   result = {
                     code: ErrorCode.WRONG,
                     message: ErrorMessage.VALIDATION_ERROR,
-                    data: `The root where query depth must not be greater than ${config.graphiqlApi.rootWhereDepthLimit}`,
+                    errors: `The root where query depth must not be greater than ${config.graphiqlApi.rootWhereDepthLimit}`,
                   };
                 }
               }
@@ -139,7 +140,7 @@ export default class GraphiQLService extends BaseService {
                     result = {
                       code: ErrorCode.WRONG,
                       message: ErrorMessage.VALIDATION_ERROR,
-                      data: `The sub where query depth must not be greater than ${config.graphiqlApi.subWhereDepthLimit}`,
+                      errors: `The sub where query depth must not be greater than ${config.graphiqlApi.subWhereDepthLimit}`,
                     };
                   }
                 });
@@ -157,14 +158,14 @@ export default class GraphiQLService extends BaseService {
                   result = {
                     code: ErrorCode.WRONG,
                     message: ErrorMessage.VALIDATION_ERROR,
-                    data: `The query to one of the following tables needs to include exact height (_eq) or a height range (_gt/_gte & _lt/_lte) in where argument: ${config.graphiqlApi.queryNeedWhereModel}`,
+                    errors: `The query to one of the following tables needs to include exact height (_eq) or a height range (_gt/_gte & _lt/_lte) in where argument: ${config.graphiqlApi.queryNeedWhereModel}`,
                   };
                 }
                 if (heightRange > config.graphiqlApi.queryHeightRangeLimit) {
                   result = {
                     code: ErrorCode.WRONG,
                     message: ErrorMessage.VALIDATION_ERROR,
-                    data: `The query height range in one of the following tables needs to be less than ${config.graphiqlApi.queryHeightRangeLimit}: ${config.graphiqlApi.queryNeedWhereModel}`,
+                    errors: `The query height range in one of the following tables needs to be less than ${config.graphiqlApi.queryHeightRangeLimit}: ${config.graphiqlApi.queryNeedWhereModel}`,
                   };
                 }
               }
@@ -205,7 +206,7 @@ export default class GraphiQLService extends BaseService {
         result = {
           code: error.code,
           message: error.message,
-          data: error,
+          errors: error,
         };
       }
     }
