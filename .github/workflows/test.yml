@@ -71,6 +71,8 @@ jobs:
         run: cp ci/network.json.ci network.json
       - name: Setup code-type.json
         run: cp ci/code-type.json.ci code-type.json
+      - name: Setup graphql-query-whitelist.json
+        run: cp ci/graphql-query-whitelist.json.ci graphql-query-whitelist.json
       - name: Test
         env:
           NODE_ENV: test
