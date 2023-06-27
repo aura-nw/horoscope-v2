@@ -1,3 +1,4 @@
+import { Knex } from 'knex';
 import Long from 'long';
 
 export interface IAuraJSClientFactory {
@@ -96,4 +97,5 @@ export interface IContextCrawlMissingContractHistory {
   smartContractId: number;
   startBlock: number;
   endBlock: number;
+  trx: Knex.Transaction;
 }

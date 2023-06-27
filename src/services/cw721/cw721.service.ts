@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop */
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import {
   Action,
@@ -15,12 +16,7 @@ import {
 import { BULL_JOB_NAME, SERVICE } from '../../common/constant';
 import knex from '../../common/utils/db_connection';
 import { getAttributeFrom } from '../../common/utils/smart_contract';
-import {
-  Block,
-  BlockCheckpoint,
-  EventAttribute,
-  MissingContractCheckpoint,
-} from '../../models';
+import { Block, BlockCheckpoint, EventAttribute } from '../../models';
 import CW721Contract from '../../models/cw721_contract';
 import CW721ContractStats from '../../models/cw721_stats';
 import CW721Token from '../../models/cw721_token';
@@ -532,26 +528,110 @@ export default class Cw721HandlerService extends BullableService {
   private async CrawlMissingContractHistory(
     ctx: Context<IContextCrawlMissingContractHistory>
   ) {
-    const { smartContractId, startBlock, endBlock } = ctx.params;
-    const missingHistories = await this.getCw721ContractEventsBySmartContract(
-      smartContractId,
-      startBlock,
-      endBlock
-    );
-    await this.handleCW721Activity(missingHistories);
-    await MissingContractCheckpoint.query()
-      .patch({
-        startBlock: endBlock,
-      })
-      .where('smart_contract_id', smartContractId);
+    const { smartContractId, startBlock, endBlock, trx } = ctx.params;
+    const cw721Contract = await CW721Contract.query()
+      .transacting(trx)
+      .withGraphJoined('smart_contract')
+      .where('smart_contract.id', smartContractId)
+      .first()
+      .throwIfNotFound();
+    // insert data from event_attribute_backup to event_attribute
+    const { limitRecordGet, chunkSizeInsert } =
+      config.cw721.crawlMissingContract;
+    let done = false;
+    const currentId = 0;
+    while (!done) {
+      console.log(JSON.stringify(currentId));
+
+      // eslint-disable-next-line no-await-in-loop
+      const histories = await SmartContractEvent.query()
+        .transacting(trx)
+        .alias('smart_contract_event')
+        .withGraphJoined(
+          '[message(selectMessage), tx(selectTransaction), attributes(selectAttribute), smart_contract(selectSmartContract).code(selectCode)]'
+        )
+        .modifiers({
+          selectCode(builder) {
+            builder.select('type');
+          },
+          selectTransaction(builder) {
+            builder.select('hash', 'height');
+          },
+          selectMessage(builder) {
+            builder.select('sender');
+          },
+          selectAttribute(builder) {
+            builder.select('key', 'value');
+          },
+          selectSmartContract(builder) {
+            builder.select('address', 'id');
+          },
+        })
+        .where('smart_contract:code.type', 'CW721')
+        .where('tx.height', '>', startBlock)
+        .andWhere('tx.height', '<=', endBlock)
+        .andWhere('smart_contract.id', smartContractId)
+        .andWhere('smart_contract_event.id', '>', currentId)
+        .orderBy('smart_contract_event.id', 'asc')
+        .limit(limitRecordGet);
+      if (histories.length === 0) {
+        done = true;
+        break;
+      }
+      const newHistories: CW721Activity[] = [];
+      // eslint-disable-next-line no-restricted-syntax
+      for (const history of histories) {
+        const onchainTokenId = getAttributeFrom(
+          history.attributes,
+          EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+        );
+        if (onchainTokenId) {
+          const token = (
+            await this.getCw721TokensRecords([
+              {
+                contractAddress: history.contractAddress,
+                onchainTokenId: getAttributeFrom(
+                  history.attributes,
+                  EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+                ),
+              },
+            ])
+          )[0];
+          if (token) {
+            const cw721TokenId = token.cw721_token_id;
+            newHistories.push(
+              CW721Activity.fromJson({
+                action: history.action,
+                sender: history.sender,
+                tx_hash: history.tx.hash,
+                cw721_contract_id: cw721Contract.id,
+                cw721_token_id: cw721TokenId,
+                height: history.tx.height,
+              })
+            );
+          }
+        }
+      }
+      if (newHistories.length > 0) {
+        // eslint-disable-next-line no-await-in-loop
+        await trx.batchInsert('cw721_activity', newHistories, chunkSizeInsert);
+      }
+    }
   }
 
-  async getCw721ContractEventsBySmartContract(
-    smartContractId: number,
-    startBlock: number,
-    endBlock: number
+  @Action({
+    name: SERVICE.V1.Cw721.HandleRangeBlockMissingContract.key,
+    params: {
+      smartContractId: 'any',
+      startBlock: 'any',
+      endBlock: ' any',
+    },
+  })
+  private async HandleRangeBlockMissingContract(
+    ctx: Context<IContextCrawlMissingContractHistory>
   ) {
-    return SmartContractEvent.query()
+    const { smartContractId, startBlock, endBlock } = ctx.params;
+    const missingHistories = await SmartContractEvent.query()
       .alias('smart_contract_event')
       .withGraphJoined(
         '[message(selectMessage), tx(selectTransaction), attributes(selectAttribute), smart_contract(selectSmartContract).code(selectCode)]'
@@ -584,33 +664,7 @@ export default class Cw721HandlerService extends BullableService {
         'smart_contract_event.event_id',
         'smart_contract_event.index'
       );
-  }
-
-  @Action({
-    name: SERVICE.V1.Cw721.HandleRangeBlockMissingContract.key,
-    params: {
-      smartContractId: 'any',
-      startBlock: 'any',
-      endBlock: ' any',
-    },
-  })
-  private async HandleRangeBlockMissingContract(
-    ctx: Context<IContextCrawlMissingContractHistory>
-  ) {
-    const { smartContractId, startBlock, endBlock } = ctx.params;
-    const missingHistories = await this.getCw721ContractEventsBySmartContract(
-      smartContractId,
-      startBlock,
-      endBlock
-    );
     // handle all cw721 execute messages
     await this.handleCw721MsgExec(missingHistories);
-    // handle Cw721 Activity
-    await this.handleCW721Activity(missingHistories);
-    await MissingContractCheckpoint.query()
-      .patch({
-        startBlock: endBlock,
-      })
-      .where('smart_contract_id', smartContractId);
   }
 }

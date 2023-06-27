@@ -29,7 +29,7 @@ export default class CW721Token extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['token_id', 'cw721_contract_id', 'last_updated_height'],
+      required: ['token_id', 'last_updated_height'],
       properties: {
         token_id: { type: 'string' },
         cw721_contract_id: { type: 'number' },

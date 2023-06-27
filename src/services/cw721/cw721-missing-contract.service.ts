@@ -4,28 +4,21 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
-import knex from 'src/common/utils/db_connection';
 import config from '../../../config.json' assert { type: 'json' };
-import BullableService, { QueueHandler } from '../../base/bullable.service';
+import BullableService from '../../base/bullable.service';
 import {
   BULL_JOB_NAME,
-  Config,
   IContextCrawlMissingContractHistory,
   SERVICE,
   getHttpBatchClient,
 } from '../../common';
-import {
-  BlockCheckpoint,
-  MissingContractCheckpoint,
-  SmartContract,
-} from '../../models';
+import knex from '../../common/utils/db_connection';
+import { BlockCheckpoint, SmartContract } from '../../models';
 import CW721Contract from '../../models/cw721_contract';
 import CW721Token from '../../models/cw721_token';
 
-const { NODE_ENV } = Config;
-
 export interface IAddressParam {
-  address: string;
+  contractAddress: string;
 }
 
 @Service({
@@ -40,59 +33,6 @@ export default class Cw721MissingContractService extends BullableService {
     this._httpBatchClient = getHttpBatchClient();
   }
 
-  @QueueHandler({
-    queueName: BULL_JOB_NAME.HANDLE_HISTORY_MISSING_CONTRACT,
-    jobName: BULL_JOB_NAME.HANDLE_HISTORY_MISSING_CONTRACT,
-  })
-  async jobHandler(): Promise<void> {
-    const missingContractsCheckpoint =
-      await MissingContractCheckpoint.query().where(
-        'checkpoint',
-        '<',
-        'end_block'
-      );
-    // eslint-disable-next-line no-restricted-syntax
-    for (const missingContractCheckpoint of missingContractsCheckpoint) {
-      // eslint-disable-next-line no-await-in-loop
-      await this.createJob(
-        BULL_JOB_NAME.FILL_HISTORY_BY_MISSING_CONTRACT,
-        BULL_JOB_NAME.FILL_HISTORY_BY_MISSING_CONTRACT,
-        {
-          smartContractId: missingContractCheckpoint.smart_contract_id,
-        },
-        {
-          removeOnComplete: true,
-          removeOnFail: {
-            count: 1,
-          },
-        }
-      );
-    }
-  }
-
-  @QueueHandler({
-    queueName: BULL_JOB_NAME.FILL_HISTORY_BY_MISSING_CONTRACT,
-    jobName: BULL_JOB_NAME.FILL_HISTORY_BY_MISSING_CONTRACT,
-  })
-  async jobHandlerFillHistory(_payload: {
-    smartContractId: number;
-  }): Promise<void> {
-    const { smartContractId } = _payload;
-    const missingContractCheckpoint = await MissingContractCheckpoint.query()
-      .where('smart_contract_id', smartContractId)
-      .first()
-      .throwIfNotFound();
-    const startBlock = missingContractCheckpoint.checkpoint;
-    const endBlock = Math.min(
-      startBlock + config.cw721.crawlMissingContract.blocksPerCall
-    );
-    await this.broker.call(SERVICE.V1.Cw721.CrawlMissingContractHistory.path, {
-      smartContractId,
-      startBlock,
-      endBlock,
-    } satisfies IContextCrawlMissingContractHistory);
-  }
-
   @Action({
     name: SERVICE.V1.CW721CrawlMissingContract.CrawlMissingContract.key,
     params: {
@@ -104,32 +44,49 @@ export default class Cw721MissingContractService extends BullableService {
       const smartContract = await SmartContract.query()
         .transacting(trx)
         .withGraphJoined('code')
-        .where('address', ctx.params.address)
+        .where('address', ctx.params.contractAddress)
         .first()
         .throwIfNotFound();
       const cw721Contract = await CW721Contract.query()
         .transacting(trx)
         .withGraphJoined('smart_contract')
-        .where('smart_contract.address', ctx.params.address)
+        .where('smart_contract.address', ctx.params.contractAddress)
         .first();
+      const cw721BlockCheckpoint = (
+        await BlockCheckpoint.query()
+          .select('*')
+          .findOne('job_name', BULL_JOB_NAME.HANDLE_CW721_TRANSACTION)
+          .throwIfNotFound()
+      ).height;
       // check whether contract is CW721 type -> throw error to user
       if (smartContract.code.type === 'CW721') {
         // if contract have been in cw721_contract DB -> skip
         if (!cw721Contract) {
           // query
           const contractInfo = (
-            await CW721Contract.getContractsInfo([ctx.params.address])
+            await CW721Contract.getContractsInfo([ctx.params.contractAddress])
           )[0];
           const momentTokensOwner = await CW721Contract.getTokensOwner(
-            ctx.params.address
+            ctx.params.contractAddress
           );
-          const minUpdatedHeightOwner = Math.min(
-            ...momentTokensOwner.map(
-              (tokenOwner) => tokenOwner.last_updated_height
-            )
-          );
-          const result = await Promise.all([
-            CW721Contract.query()
+          const minUpdatedHeightOwner =
+            momentTokensOwner.length > 0
+              ? Math.min(
+                  ...momentTokensOwner.map(
+                    (tokenOwner) => tokenOwner.last_updated_height
+                  )
+                )
+              : 0;
+          const maxUpdatedHeightOwner =
+            momentTokensOwner.length > 0
+              ? Math.max(
+                  ...momentTokensOwner.map(
+                    (tokenOwner) => tokenOwner.last_updated_height
+                  )
+                )
+              : 0;
+          if (maxUpdatedHeightOwner - cw721BlockCheckpoint < 200) {
+            await CW721Contract.query()
               .transacting(trx)
               .insertGraph({
                 ...CW721Contract.fromJson({
@@ -149,57 +106,40 @@ export default class Cw721MissingContractService extends BullableService {
                   })
                 ),
               })
-              .transacting(trx),
-            BlockCheckpoint.query()
-              .where('job_name', BULL_JOB_NAME.HANDLE_CW721_TRANSACTION)
-              .first()
-              .throwIfNotFound(),
-          ]);
-          const blockHeight = result[1].height;
-          await MissingContractCheckpoint.query()
-            .transacting(trx)
-            .insert(
-              MissingContractCheckpoint.fromJson({
-                smart_contract_id: smartContract.id,
-                checkpoint: config.crawlBlock.startBlock,
-                end_block: minUpdatedHeightOwner,
-              })
+              .transacting(trx);
+            await this.broker.call(
+              SERVICE.V1.Cw721.CrawlMissingContractHistory.path,
+              {
+                smartContractId: smartContract.id,
+                startBlock: config.crawlBlock.startBlock,
+                endBlock: maxUpdatedHeightOwner,
+                trx,
+              } satisfies IContextCrawlMissingContractHistory
             );
-          // handle from minUpdatedHeightOwner to blockHeight
-          await this.broker.call(
-            SERVICE.V1.Cw721.HandleRangeBlockMissingContract.path,
-            {
-              smartContractId: smartContract.id,
-              startBlock: minUpdatedHeightOwner,
-              endBlock: blockHeight,
-            } satisfies IContextCrawlMissingContractHistory
-          );
+            // handle from minUpdatedHeightOwner to blockHeight
+            await this.broker.call(
+              SERVICE.V1.Cw721.HandleRangeBlockMissingContract.path,
+              {
+                smartContractId: smartContract.id,
+                startBlock: minUpdatedHeightOwner,
+                endBlock: maxUpdatedHeightOwner,
+                trx,
+              } satisfies IContextCrawlMissingContractHistory
+            );
+          } else {
+            throw new Error('CW721 service sync slowly');
+          }
         }
       } else {
         throw new Error(
-          `Smart contract ${ctx.params.address} is not CW721 type`
+          `Smart contract ${ctx.params.contractAddress} is not CW721 type`
         );
       }
     });
   }
 
   async _start(): Promise<void> {
-    if (NODE_ENV !== 'test') {
-      await this.createJob(
-        BULL_JOB_NAME.HANDLE_HISTORY_MISSING_CONTRACT,
-        BULL_JOB_NAME.HANDLE_HISTORY_MISSING_CONTRACT,
-        {},
-        {
-          removeOnComplete: true,
-          removeOnFail: {
-            count: 3,
-          },
-          repeat: {
-            every: config.cw721.crawlMissingContract.millisecondRepeatJob,
-          },
-        }
-      );
-    }
+    await this.broker.waitForServices(SERVICE.V1.Cw721.name);
     return super._start();
   }
 }
