@@ -2,13 +2,17 @@ import { Knex } from 'knex';
 
 export async function up(knex: Knex): Promise<void> {
   await knex.transaction(async (trx) => {
-    await knex.schema
-      .alterTable('event', (table) => {
-        table.bigint('id').alter({ alterType: true, alterNullable: false });
-      })
-      .transacting(trx);
     await knex
       .raw('alter sequence if exists transaction_event_id_seq as bigint')
+      .transacting(trx);
+
+    await knex.schema
+      .alterTable('event', (table) => {
+        table
+          .bigint('id')
+          .defaultTo(knex.raw("nextval('transaction_event_id_seq'::regclass)"))
+          .alter({ alterType: true, alterNullable: false });
+      })
       .transacting(trx);
 
     await knex.schema
@@ -18,11 +22,17 @@ export async function up(knex: Knex): Promise<void> {
     await knex.schema
       .alterTable('event_attribute', (table) => {
         table
-          .bigint('event_id')
+          .bigInteger('event_id')
           .alter({ alterType: true, alterNullable: false });
       })
       .transacting(trx);
-
+    await knex.schema
+      .alterTable('smart_contract_event', (table) => {
+        table
+          .bigInteger('event_id')
+          .alter({ alterType: true, alterNullable: false });
+      })
+      .transacting(trx);
     await knex.schema
       .createViewOrReplace(
         'view_event_attribute_value_index',
@@ -55,6 +65,21 @@ export async function down(knex: Knex): Promise<void> {
       .transacting(trx);
     await knex
       .raw('alter sequence if exists transaction_event_id_seq as integer')
+      .transacting(trx);
+
+    await knex.schema
+      .alterTable('event_attribute', (table) => {
+        table
+          .integer('event_id')
+          .alter({ alterType: true, alterNullable: false });
+      })
+      .transacting(trx);
+    await knex.schema
+      .alterTable('smart_contract_event', (table) => {
+        table
+          .integer('event_id')
+          .alter({ alterType: true, alterNullable: false });
+      })
       .transacting(trx);
     await knex.schema
       .createViewOrReplace(
