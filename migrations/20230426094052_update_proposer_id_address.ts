@@ -10,6 +10,6 @@ export async function up(knex: Knex): Promise<void> {
 export async function down(knex: Knex): Promise<void> {
   await knex.schema.alterTable('proposal', (table) => {
     table.dropColumn('proposer_address');
-    table.integer('proposer_id').notNullable().alter();
+    table.integer('proposer_id').notNullable();
   });
 }

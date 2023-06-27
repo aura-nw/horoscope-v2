@@ -20,9 +20,9 @@ export async function up(knex: Knex): Promise<void> {
 
 export async function down(knex: Knex): Promise<void> {
   await knex.schema.dropView('view_event_attribute_value_index');
-  await knex.schema.table('event_attribute', (table) => {
+  await knex.schema.alterTable('event_attribute', (table) => {
     table.dropPrimary('event_attribute_pk');
-    table.increments('id').primary();
+    table.integer('id').primary({ constraintName: 'event_attribute_pk' });
   });
   await knex.schema.createView(
     'view_event_attribute_value_index',

@@ -116,7 +116,7 @@ export default class Cw20 {
   smartContractEvent = SmartContractEvent.fromJson({
     smart_contract_id: 1,
     action: 'huh',
-    event_id: 1,
+    event_id: '1',
     index: 1,
   });
 
@@ -286,13 +286,13 @@ export default class Cw20 {
         cw20_contract_id: 1,
         contract_address: this.codeId.contracts[0].address,
         smart_contract_id: 1,
-        smart_contract_event_id: 1,
+        smart_contract_event_id: '1',
         height: 1530,
       },
       {
         contract_address: this.codeId.contracts[1].address,
         smart_contract_id: 2,
-        smart_contract_event_id: 1,
+        smart_contract_event_id: '1',
         height: 1520,
       },
     ];
