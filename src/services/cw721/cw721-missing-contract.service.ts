@@ -85,7 +85,7 @@ export default class Cw721MissingContractService extends BullableService {
                   )
                 )
               : 0;
-          if (maxUpdatedHeightOwner - cw721BlockCheckpoint < 200) {
+          if (maxUpdatedHeightOwner - cw721BlockCheckpoint < 2000000) {
             await CW721Contract.query()
               .transacting(trx)
               .insertGraph({
@@ -127,7 +127,7 @@ export default class Cw721MissingContractService extends BullableService {
               } satisfies IContextCrawlMissingContractHistory
             );
           } else {
-            throw new Error('CW721 service sync slowly');
+            throw new Error('CW721 service sync too slowly');
           }
         }
       } else {

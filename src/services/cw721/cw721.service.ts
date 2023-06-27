@@ -6,6 +6,7 @@ import {
 } from '@ourparentcenter/moleculer-decorators-extended';
 import _ from 'lodash';
 import { Context, ServiceBroker } from 'moleculer';
+import { Knex } from 'knex';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
@@ -523,6 +524,7 @@ export default class Cw721HandlerService extends BullableService {
       smartContractId: 'any',
       startBlock: 'any',
       endBlock: ' any',
+      trx: 'any',
     },
   })
   private async CrawlMissingContractHistory(
@@ -536,13 +538,10 @@ export default class Cw721HandlerService extends BullableService {
       .first()
       .throwIfNotFound();
     // insert data from event_attribute_backup to event_attribute
-    const { limitRecordGet, chunkSizeInsert } =
-      config.cw721.crawlMissingContract;
+    const { limitRecordGet } = config.cw721.crawlMissingContract;
     let done = false;
-    const currentId = 0;
+    let currentId = 0;
     while (!done) {
-      console.log(JSON.stringify(currentId));
-
       // eslint-disable-next-line no-await-in-loop
       const histories = await SmartContractEvent.query()
         .transacting(trx)
@@ -587,15 +586,18 @@ export default class Cw721HandlerService extends BullableService {
         );
         if (onchainTokenId) {
           const token = (
-            await this.getCw721TokensRecords([
-              {
-                contractAddress: history.contractAddress,
-                onchainTokenId: getAttributeFrom(
-                  history.attributes,
-                  EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
-                ),
-              },
-            ])
+            await this.getCw721TokensRecordsWithTrx(
+              [
+                {
+                  contractAddress: history.smart_contract.address,
+                  onchainTokenId: getAttributeFrom(
+                    history.attributes,
+                    EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+                  ),
+                },
+              ],
+              trx
+            )
           )[0];
           if (token) {
             const cw721TokenId = token.cw721_token_id;
@@ -614,8 +616,9 @@ export default class Cw721HandlerService extends BullableService {
       }
       if (newHistories.length > 0) {
         // eslint-disable-next-line no-await-in-loop
-        await trx.batchInsert('cw721_activity', newHistories, chunkSizeInsert);
+        await CW721Activity.query().insert(newHistories).transacting(trx);
       }
+      currentId = histories[histories.length - 1].id;
     }
   }
 
@@ -666,5 +669,30 @@ export default class Cw721HandlerService extends BullableService {
       );
     // handle all cw721 execute messages
     await this.handleCw721MsgExec(missingHistories);
+  }
+
+  async getCw721TokensRecordsWithTrx(
+    tokens: { contractAddress: string; onchainTokenId: string }[],
+    trx: Knex.Transaction
+  ) {
+    return CW721Token.query()
+      .alias('cw721_token')
+      .withGraphJoined('contract.smart_contract')
+      .whereIn(
+        ['contract:smart_contract.address', 'cw721_token.token_id'],
+        tokens
+          .map((token) => ({
+            contract_address: token.contractAddress,
+            token_id: token.onchainTokenId,
+          }))
+          .filter((token) => token.token_id)
+          .map(({ contract_address, token_id }) => [contract_address, token_id])
+      )
+      .select(
+        'contract:smart_contract.address as contract_address',
+        'cw721_token.token_id as token_id',
+        'cw721_token.id as cw721_token_id'
+      )
+      .transacting(trx);
   }
 }
