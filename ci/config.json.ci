@@ -19,8 +19,8 @@
     "mediaPerBatch": 10,
     "timeRefreshCw721Stats": "1 * * * *",
     "crawlMissingContract": {
-      "blocksPerCall": 100,
-      "millisecondRepeatJob": 2000
+      "limitRecordGet": 10000,
+      "chunkSizeInsert": 1000
     }
   },
   "crawlBlock": {
