@@ -10,7 +10,7 @@ export interface IContractMsgInfo {
     value: string;
   }[];
   tx: Transaction;
-  event_id: number;
+  event_id: string;
   index?: number;
 }
 // from startBlock to endBlock, get all msgs (activities) relating to execute/instantiate contract, each item correspond to an activity

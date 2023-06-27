@@ -16,7 +16,7 @@ export class SmartContractEvent extends BaseModel {
 
   action?: string;
 
-  event_id!: number;
+  event_id!: string;
 
   index!: number;
 
