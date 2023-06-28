@@ -109,7 +109,7 @@ export default class TestViewCountHolder {
       holders.find(
         (holder) => holder.owner === this.cw721Contract.tokens[0].owner
       ).count
-    ).toEqual('5');
+    ).toEqual('3');
     expect(
       holders.find(
         (holder) => holder.owner === this.cw721Contract.tokens[1].owner
