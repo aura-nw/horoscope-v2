@@ -222,7 +222,9 @@ export default class CrawlBlockService extends BullableService {
           this.logger.debug('result insert list block: ', result);
 
           // trigger crawl transaction job
-          this.broker.call(SERVICE.V1.CrawlTransaction.TriggerHandleTxJob.path);
+          await this.broker.call(
+            SERVICE.V1.CrawlTransaction.TriggerHandleTxJob.path
+          );
         });
       }
     } catch (error) {
