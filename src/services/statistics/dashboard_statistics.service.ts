@@ -39,10 +39,7 @@ export default class DashboardStatisticsService extends BullableService {
       const [totalBlocks, totalTxs, totalValidators] = await Promise.all([
         BlockCheckpoint.query().findOne('job_name', BULL_JOB_NAME.CRAWL_BLOCK),
         Transaction.query().count('id'),
-        Validator.query().where({
-          status: 'BOND_STATUS_BONDED',
-          jailed: false,
-        }),
+        Validator.query(),
       ]);
 
       const [communityPool, inflation, distribution, supply] =
