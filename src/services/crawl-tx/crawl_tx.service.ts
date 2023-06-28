@@ -431,12 +431,17 @@ export default class CrawlTxService extends BullableService {
     name: SERVICE.V1.CrawlTransaction.TriggerHandleTxJob.key,
   })
   async triggerHandleTxJob() {
-    const queue: Queue = this.getQueueManager().getQueue(
-      BULL_JOB_NAME.HANDLE_TRANSACTION
-    );
-    const jobInDelayed = await queue.getDelayed();
-    if (jobInDelayed?.length > 0) {
-      jobInDelayed[0].promote();
+    try {
+      const queue: Queue = this.getQueueManager().getQueue(
+        BULL_JOB_NAME.HANDLE_TRANSACTION
+      );
+      const jobInDelayed = await queue.getDelayed();
+      if (jobInDelayed?.length > 0) {
+        jobInDelayed[0].promote();
+      }
+    } catch (error) {
+      this.logger.error('No job can be promoted');
+      this.logger.error(error);
     }
   }
 
