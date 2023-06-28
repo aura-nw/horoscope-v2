@@ -105,19 +105,18 @@ export default class Cw20Service extends BullableService {
         .merge();
     });
     const cw20Contracts = await Cw20Contract.query()
+      .alias('cw20_contract')
       .withGraphJoined('smart_contract')
       .whereIn(
         'smart_contract.address',
         cw20Events.map((event) => event.contract_address)
       )
-      .andWhere('track', true);
+      .andWhere('track', true)
+      .select(['cw20_contract.id', 'last_updated_height']);
     await this.broker.call(
       SERVICE.V1.Cw20UpdateByContract.UpdateByContract.path,
       {
-        cw20Contracts: cw20Contracts.map((cw20Contract) => ({
-          id: cw20Contract.id,
-          last_updated_height: cw20Contract.last_updated_height,
-        })),
+        cw20Contracts,
         startBlock,
         endBlock,
       } satisfies IContextUpdateCw20
