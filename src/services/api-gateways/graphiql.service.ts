@@ -7,6 +7,7 @@ import BaseService from '../../base/base.service';
 import { IContextGraphQLQuery, Config } from '../../common';
 import { ResponseDto } from '../../common/types/response-api';
 import config from '../../../config.json' assert { type: 'json' };
+import queryWhitelist from '../../../graphql-query-whitelist.json' assert { type: 'json' };
 import { ErrorCode, ErrorMessage } from '../../common/types/errors';
 import Utils from '../../common/utils/utils';
 
@@ -66,7 +67,7 @@ export default class GraphiQLService extends BaseService {
         result = {
           code: ErrorCode.WRONG,
           message: ErrorMessage.VALIDATION_ERROR,
-          data: `The query depth must not be greater than ${config.graphiqlApi.depthLimit}`,
+          errors: `The query depth must not be greater than ${config.graphiqlApi.depthLimit}`,
         };
         return result;
       }
@@ -83,10 +84,10 @@ export default class GraphiQLService extends BaseService {
       result = {
         code: ErrorCode.WRONG,
         message: ErrorMessage.VALIDATION_ERROR,
-        data: 'Invalid query',
+        errors: 'Invalid query',
       };
     }
-    this.logger.info(JSON.stringify(graphqlObj));
+    this.logger.debug(JSON.stringify(graphqlObj));
 
     if (graphqlObj) {
       (graphqlObj.definitions as DefinitionNode[]).forEach(
@@ -98,50 +99,81 @@ export default class GraphiQLService extends BaseService {
             result = {
               code: ErrorCode.WRONG,
               message: ErrorMessage.VALIDATION_ERROR,
-              data: 'This Horoscope GraphiQL service only allows query operations',
+              errors:
+                'This Horoscope GraphiQL service only allows query operations',
             };
         }
       );
+      if (result.code !== '') return result;
 
-      const selections = (graphqlObj.definitions[0] as OperationDefinitionNode)
-        .selectionSet.selections as FieldNode[];
-      selections.forEach((selection: FieldNode) => {
-        (selection.selectionSet?.selections as FieldNode[]).forEach(
-          (sel: FieldNode) => {
-            const where = sel.arguments?.find(
-              (arg) => arg.name.value === 'where'
-            );
+      if (!queryWhitelist.includes(query)) {
+        const selections = (
+          graphqlObj.definitions[0] as OperationDefinitionNode
+        ).selectionSet.selections as FieldNode[];
+        selections.forEach((selection: FieldNode) => {
+          (selection.selectionSet?.selections as FieldNode[]).forEach(
+            (sel: FieldNode) => {
+              const where = sel.arguments?.find(
+                (arg) => arg.name.value === 'where'
+              );
 
-            if (where) {
-              if (
-                Utils.getDepth(where) >
-                config.graphiqlApi.rootWhereDepthLimit + 1
-              ) {
-                result = {
-                  code: ErrorCode.WRONG,
-                  message: ErrorMessage.VALIDATION_ERROR,
-                  data: `The root where query depth must not be greater than ${config.graphiqlApi.rootWhereDepthLimit}`,
-                };
+              if (where) {
+                if (
+                  Utils.getDepth(where) >
+                  config.graphiqlApi.rootWhereDepthLimit + 1
+                ) {
+                  result = {
+                    code: ErrorCode.WRONG,
+                    message: ErrorMessage.VALIDATION_ERROR,
+                    errors: `The root where query depth must not be greater than ${config.graphiqlApi.rootWhereDepthLimit}`,
+                  };
+                }
+              }
+
+              if (result.code === '') {
+                const subWhere = Utils.filterWhereQuery(sel.selectionSet);
+                subWhere.forEach((sub: any) => {
+                  if (
+                    Utils.getDepth(sub) >
+                    config.graphiqlApi.subWhereDepthLimit + 1
+                  ) {
+                    result = {
+                      code: ErrorCode.WRONG,
+                      message: ErrorMessage.VALIDATION_ERROR,
+                      errors: `The sub where query depth must not be greater than ${config.graphiqlApi.subWhereDepthLimit}`,
+                    };
+                  }
+                });
+              }
+
+              if (result.code === '') {
+                const [heightCondition, heightRange] =
+                  Utils.isQueryNeedCondition(
+                    sel,
+                    config.graphiqlApi.queryNeedWhereModel,
+                    config.graphiqlApi.queryNeedWhereRelation,
+                    config.graphiqlApi.queryNeedWhereCondition
+                  );
+                if (!heightCondition) {
+                  result = {
+                    code: ErrorCode.WRONG,
+                    message: ErrorMessage.VALIDATION_ERROR,
+                    errors: `The query to one of the following tables needs to include exact height (_eq) or a height range (_gt/_gte & _lt/_lte) in where argument: ${config.graphiqlApi.queryNeedWhereModel}`,
+                  };
+                }
+                if (heightRange > config.graphiqlApi.queryHeightRangeLimit) {
+                  result = {
+                    code: ErrorCode.WRONG,
+                    message: ErrorMessage.VALIDATION_ERROR,
+                    errors: `The query height range in one of the following tables needs to be less than ${config.graphiqlApi.queryHeightRangeLimit}: ${config.graphiqlApi.queryNeedWhereModel}`,
+                  };
+                }
               }
             }
-
-            const subWhere = Utils.filterWhereQuery(sel.selectionSet);
-            subWhere.forEach((sub: any) => {
-              if (
-                Utils.getDepth(sub) >
-                config.graphiqlApi.subWhereDepthLimit + 1
-              ) {
-                result = {
-                  code: ErrorCode.WRONG,
-                  message: ErrorMessage.VALIDATION_ERROR,
-                  data: `The sub where query depth must not be greater than ${config.graphiqlApi.subWhereDepthLimit}`,
-                };
-              }
-            });
-          }
-        );
-      });
-      if (result.code !== '') return result;
+          );
+        });
+        if (result.code !== '') return result;
+      }
 
       try {
         const response = await axios({
@@ -155,22 +187,26 @@ export default class GraphiQLService extends BaseService {
           },
           data: ctx.params,
         });
-        result = {
-          code: response.data.data
-            ? ErrorCode.SUCCESSFUL
-            : ErrorCode.BAD_REQUEST,
-          message: response.data.data
-            ? ErrorMessage.SUCCESSFUL
-            : ErrorMessage.BAD_REQUEST,
-          data: response.data.data ?? response.data,
-        };
+        if (response.data.data) {
+          result = {
+            code: ErrorCode.SUCCESSFUL,
+            message: ErrorMessage.SUCCESSFUL,
+            data: response.data.data,
+          };
+        } else {
+          result = {
+            code: ErrorCode.BAD_REQUEST,
+            message: ErrorMessage.BAD_REQUEST,
+            errors: response.data.errors,
+          };
+        }
       } catch (error: any) {
         this.logger.error('Error execute GraphQL query');
         this.logger.error(error);
         result = {
           code: error.code,
           message: error.message,
-          data: error,
+          errors: error,
         };
       }
     }
