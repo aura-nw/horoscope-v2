@@ -326,8 +326,6 @@ export default class Cw20 {
       );
       await this.cw20Service.handleCw20Histories(
         cw20Events.map((event) => SmartContractEvent.fromJson(event)),
-        1000,
-        2000,
         trx
       );
       const cw20ContractEvent1 = await Cw20Event.query()

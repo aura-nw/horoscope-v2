@@ -77,7 +77,7 @@ export default class Cw20Service extends BullableService {
     const [startBlock, endBlock, updateBlockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.HANDLE_CW20,
-        [BULL_JOB_NAME.CRAWL_SMART_CONTRACT],
+        [BULL_JOB_NAME.CRAWL_CONTRACT_EVENT],
         config.cw20.key
       );
     this.logger.info(`startBlock: ${startBlock} to endBlock: ${endBlock}`);
@@ -95,7 +95,7 @@ export default class Cw20Service extends BullableService {
           trx
         );
         // handle Cw20 Histories
-        await this.handleCw20Histories(cw20Events, startBlock, endBlock, trx);
+        await this.handleCw20Histories(cw20Events, trx);
       }
       updateBlockCheckpoint.height = endBlock;
       await BlockCheckpoint.query()
@@ -104,6 +104,24 @@ export default class Cw20Service extends BullableService {
         .onConflict('job_name')
         .merge();
     });
+    const cw20Contracts = await Cw20Contract.query()
+      .withGraphJoined('smart_contract')
+      .whereIn(
+        'smart_contract.address',
+        cw20Events.map((event) => event.contract_address)
+      )
+      .andWhere('track', true);
+    await this.broker.call(
+      SERVICE.V1.Cw20UpdateByContract.UpdateByContract.path,
+      {
+        cw20Contracts: cw20Contracts.map((cw20Contract) => ({
+          id: cw20Contract.id,
+          last_updated_height: cw20Contract.last_updated_height,
+        })),
+        startBlock,
+        endBlock,
+      } satisfies IContextUpdateCw20
+    );
   }
 
   // insert new cw20 contract + instantiate holders
@@ -166,8 +184,6 @@ export default class Cw20Service extends BullableService {
 
   async handleCw20Histories(
     cw20Events: SmartContractEvent[],
-    startBlock: number,
-    endBlock: number,
     trx: Knex.Transaction
   ) {
     // get all related cw20_contract in DB for updating total_supply
@@ -209,17 +225,6 @@ export default class Cw20Service extends BullableService {
       );
     if (newHistories.length > 0) {
       await Cw20Event.query().insert(newHistories).transacting(trx);
-      await this.broker.call(
-        SERVICE.V1.Cw20UpdateByContract.UpdateByContract.path,
-        {
-          cw20Contracts: cw20Contracts.map((cw20Contract) => ({
-            id: cw20Contract.id,
-            last_updated_height: cw20Contract.last_updated_height,
-          })),
-          startBlock,
-          endBlock,
-        } satisfies IContextUpdateCw20
-      );
     }
   }
 
