@@ -106,7 +106,9 @@ export default class GraphiQLService extends BaseService {
       );
       if (result.code !== '') return result;
 
-      if (!queryWhitelist.includes(query)) {
+      if (
+        !queryWhitelist.includes(query.replaceAll(' ', '').replaceAll('\n', ''))
+      ) {
         const selections = (
           graphqlObj.definitions[0] as OperationDefinitionNode
         ).selectionSet.selections as FieldNode[];
