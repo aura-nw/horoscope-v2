@@ -1,5 +1,6 @@
 export interface ResponseDto {
   code: number | string;
   message: string;
-  data: any;
+  data?: any;
+  errors?: any;
 }

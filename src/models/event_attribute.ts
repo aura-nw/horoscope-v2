@@ -4,7 +4,7 @@ import BaseModel from './base';
 import { Event } from './event';
 
 export class EventAttribute extends BaseModel {
-  event_id!: number;
+  event_id!: string;
 
   key!: string;
 
@@ -31,7 +31,7 @@ export class EventAttribute extends BaseModel {
       type: 'object',
       required: ['event_id', 'key', 'value'],
       properties: {
-        event_id: { type: 'number' },
+        event_id: { type: 'string' },
         key: { type: 'string' },
         value: { type: 'string' },
         composite_key: { type: 'string' },

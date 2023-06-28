@@ -12,6 +12,12 @@ export const DEFAULT_PREFIX = process.env.DEFAULT_PREFIX || 'bull';
 export default class BullableService extends BaseService {
   private qm?: QueueManager;
 
+  // listHandler to save all from decorator
+  private listHandler?: {
+    opts: QueueOptions;
+    fn: (payload: any) => Promise<void>;
+  }[];
+
   public constructor(public broker: ServiceBroker) {
     super(broker);
     this.getQueueManager().bindQueueOwner(this);
@@ -30,7 +36,9 @@ export default class BullableService extends BaseService {
     opts: QueueOptions,
     fn: (payload: any) => Promise<void>
   ): Promise<void> {
-    this.getQueueManager().registerQueueHandler(opts, fn);
+    // just put it in a list, and start it in _start life cycle
+    if (!this.listHandler) this.listHandler = [];
+    this.listHandler?.push({ opts, fn });
   }
 
   getQueueManager(): QueueManager {
@@ -39,6 +47,18 @@ export default class BullableService extends BaseService {
   }
 
   // //////////////////////////////////////// life cycle handler
+
+  async _start(): Promise<void> {
+    // register queue here
+    if (this.listHandler && this.listHandler.length > 0) {
+      await Promise.all(
+        this.listHandler.map((handler) =>
+          this.getQueueManager().registerQueueHandler(handler.opts, handler.fn)
+        )
+      );
+    }
+    return super._start();
+  }
 
   async stopped() {
     super.stopped();

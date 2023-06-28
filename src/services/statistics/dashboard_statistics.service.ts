@@ -55,9 +55,14 @@ export default class DashboardStatisticsService extends BullableService {
           }),
         ]);
       let bondedTokens = BigInt(0);
-      totalValidators.forEach((val) => {
-        bondedTokens += BigInt(val.tokens);
-      });
+      totalValidators
+        .filter(
+          (val) =>
+            val.status === Validator.STATUS.BONDED && val.jailed === false
+        )
+        .forEach((val) => {
+          bondedTokens += BigInt(val.tokens);
+        });
       const totalAura = supply.amount.amount;
 
       const dashboardStatistics = {

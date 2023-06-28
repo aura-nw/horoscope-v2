@@ -227,6 +227,7 @@ export default class CrawlBlockService extends BullableService {
       }
     } catch (error) {
       this.logger.error(error);
+      throw error;
     }
   }
 

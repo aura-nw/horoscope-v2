@@ -53,7 +53,7 @@ export default class GraphiQLTest {
 
     expect(result?.code).toEqual(ErrorCode.WRONG);
     expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
-    expect(result?.data).toEqual('Invalid query');
+    expect(result?.errors).toEqual('Invalid query');
   }
 
   @Test('Invalid mutation operation')
@@ -70,7 +70,7 @@ export default class GraphiQLTest {
 
     expect(result?.code).toEqual(ErrorCode.WRONG);
     expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
-    expect(result?.data).toEqual(
+    expect(result?.errors).toEqual(
       'This Horoscope GraphiQL service only allows query operations'
     );
   }
@@ -89,7 +89,7 @@ export default class GraphiQLTest {
 
     expect(result?.code).toEqual(ErrorCode.WRONG);
     expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
-    expect(result?.data).toEqual(
+    expect(result?.errors).toEqual(
       `The query depth must not be greater than ${config.graphiqlApi.depthLimit}`
     );
   }
@@ -101,14 +101,14 @@ export default class GraphiQLTest {
       {
         operationName: 'MyQuery',
         query:
-          'query MyQuery { auratestnet { block(where: {transactions: {events: {event_attributes: {id: {_eq: 1}}}}}) { transactions { id } } } }',
+          'query MyQuery { auratestnet { block(where: {height: {_eq: 1}, transactions: {events: {event_attributes: {id: {_eq: 1}, block_height: {_eq: 1}}}}}) { hash height } } }',
         variables: {},
       }
     );
 
     expect(result?.code).toEqual(ErrorCode.WRONG);
     expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
-    expect(result?.data).toEqual(
+    expect(result?.errors).toEqual(
       `The root where query depth must not be greater than ${config.graphiqlApi.rootWhereDepthLimit}`
     );
   }
@@ -120,15 +120,104 @@ export default class GraphiQLTest {
       {
         operationName: 'MyQuery',
         query:
-          'query MyQuery { auratestnet { block { transactions(where: {events: {event_attributes: {id: {_eq: 1}}}}) { id } } } }',
+          'query MyQuery { auratestnet { block(where: {height: {_eq: 1}}) { transactions(where: {height: {_eq: 1}, events: {event_attributes: {id: {_eq: 1}, block_height: {_eq: 1}}}}) { id } } } }',
         variables: {},
       }
     );
 
     expect(result?.code).toEqual(ErrorCode.WRONG);
     expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
-    expect(result?.data).toEqual(
+    expect(result?.errors).toEqual(
       `The sub where query depth must not be greater than ${config.graphiqlApi.subWhereDepthLimit}`
+    );
+  }
+
+  @Test('Query tables required where height failed - _eq case')
+  public async testQueryRequireWhereHeight_EqCase() {
+    const result: ResponseDto = await this.broker.call(
+      'v1.graphiql.handleGraphQLQuery',
+      {
+        operationName: 'MyQuery',
+        query:
+          'query MyQuery { auratestnet { event_attribute { block_height } } }',
+        variables: {},
+      }
+    );
+
+    expect(result?.code).toEqual(ErrorCode.WRONG);
+    expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
+    expect(result?.errors).toEqual(
+      `The query to one of the following tables needs to include exact height (_eq) or a height range (_gt/_gte & _lt/_lte) in where argument: ${config.graphiqlApi.queryNeedWhereModel}`
+    );
+  }
+
+  @Test('Query tables required where height failed - _gt _lt case')
+  public async testQueryRequireWhereHeight_Gt_LtCase() {
+    let result: ResponseDto = await this.broker.call(
+      'v1.graphiql.handleGraphQLQuery',
+      {
+        operationName: 'MyQuery',
+        query:
+          'query MyQuery { auratestnet { event_attribute(where: { block_height: { _gt: 1 } }) { hash } } }',
+        variables: {},
+      }
+    );
+
+    expect(result?.code).toEqual(ErrorCode.WRONG);
+    expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
+    expect(result?.errors).toEqual(
+      `The query to one of the following tables needs to include exact height (_eq) or a height range (_gt/_gte & _lt/_lte) in where argument: ${config.graphiqlApi.queryNeedWhereModel}`
+    );
+
+    result = await this.broker.call('v1.graphiql.handleGraphQLQuery', {
+      operationName: 'MyQuery',
+      query:
+        'query MyQuery { auratestnet { event_attribute(where: { block_height: { _lte: 1 } }) { hash } } }',
+      variables: {},
+    });
+
+    expect(result?.code).toEqual(ErrorCode.WRONG);
+    expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
+    expect(result?.errors).toEqual(
+      `The query to one of the following tables needs to include exact height (_eq) or a height range (_gt/_gte & _lt/_lte) in where argument: ${config.graphiqlApi.queryNeedWhereModel}`
+    );
+  }
+
+  @Test('Query tables required where height failed - in where case')
+  public async testQueryRequireWhereHeightInWhereCase() {
+    const result: ResponseDto = await this.broker.call(
+      'v1.graphiql.handleGraphQLQuery',
+      {
+        operationName: 'MyQuery',
+        query:
+          'query MyQuery { auratestnet { block(where: { event_attributes: { id: { _eq: 1 } } }) { hash } } }',
+        variables: {},
+      }
+    );
+
+    expect(result?.code).toEqual(ErrorCode.WRONG);
+    expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
+    expect(result?.errors).toEqual(
+      `The query to one of the following tables needs to include exact height (_eq) or a height range (_gt/_gte & _lt/_lte) in where argument: ${config.graphiqlApi.queryNeedWhereModel}`
+    );
+  }
+
+  @Test('Query tables required where height range exceed limit')
+  public async testQueryRequireWhereHeightRangeExceedLimit() {
+    const result: ResponseDto = await this.broker.call(
+      'v1.graphiql.handleGraphQLQuery',
+      {
+        operationName: 'MyQuery',
+        query:
+          'query MyQuery { auratestnet { event_attribute(where: { _and: { block_height: { _gt: 1, _lte: 20000 } } }) { key value } } }',
+        variables: {},
+      }
+    );
+
+    expect(result?.code).toEqual(ErrorCode.WRONG);
+    expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
+    expect(result?.errors).toEqual(
+      `The query height range in one of the following tables needs to be less than ${config.graphiqlApi.queryHeightRangeLimit}: ${config.graphiqlApi.queryNeedWhereModel}`
     );
   }
 }

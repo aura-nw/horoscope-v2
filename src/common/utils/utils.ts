@@ -108,4 +108,101 @@ export default class Utils {
     iterate(object);
     return result;
   }
+
+  public static isQueryNeedCondition(
+    object: any,
+    models: string[],
+    relations: string[],
+    condition: string[]
+  ): [boolean, number] {
+    const result: any[] = [];
+    const resultRelations: any[] = [];
+    let whereHeight: any = null;
+    let response = true;
+    let heightRange = 0;
+
+    if (object.kind === 'Field' && models.includes(object.name.value)) {
+      result.push(object);
+    }
+
+    const extractFieldNeedHeightArgument = (obj: any) => {
+      if (!obj) {
+        return;
+      }
+      Object.keys(obj).forEach((key) => {
+        const value = obj[key];
+        if (typeof value === 'object' && value !== null) {
+          extractFieldNeedHeightArgument(value);
+          if (value.kind === 'Field' && relations.includes(value.name.value)) {
+            result.push(value);
+          } else if (
+            value.kind === 'ObjectField' &&
+            relations.includes(value.name.value)
+          ) {
+            resultRelations.push(value);
+          }
+        }
+      });
+    };
+
+    const findConditionInObj = (res: any): any => {
+      if (!res) {
+        return;
+      }
+      Object.keys(res).forEach((key) => {
+        const value = res[key];
+        if (typeof value === 'object' && value !== null) {
+          findConditionInObj(value);
+          if (
+            value.kind === 'ObjectField' &&
+            condition.includes(value.name.value)
+          ) {
+            whereHeight = value;
+          }
+        }
+      });
+    };
+
+    const checkCondition = (res: any) => {
+      findConditionInObj(res);
+      if (whereHeight) {
+        const upperLimit = whereHeight.value.fields.find(
+          (field: any) =>
+            field.name.value === '_lt' || field.name.value === '_lte'
+        );
+        const lowerLimit = whereHeight.value.fields.find(
+          (field: any) =>
+            field.name.value === '_gt' || field.name.value === '_gte'
+        );
+        const isRange =
+          whereHeight.value.fields.find(
+            (field: any) => field.name.value === '_eq'
+          ) ||
+          (lowerLimit && upperLimit);
+        if (isRange) {
+          heightRange = Math.abs(
+            Number(upperLimit.value.value) - Number(lowerLimit.value.value)
+          );
+          return true;
+        }
+      }
+      return false;
+    };
+
+    extractFieldNeedHeightArgument(object);
+    if (result.length > 0) {
+      response = result.some((res: any) => {
+        const where = res.arguments.find(
+          (arg: any) => arg.name.value === 'where'
+        );
+        if (where) return checkCondition(where);
+        return false;
+      });
+    }
+    if (resultRelations.length > 0) {
+      response = resultRelations.some(checkCondition);
+    }
+
+    return [response, heightRange];
+  }
 }
