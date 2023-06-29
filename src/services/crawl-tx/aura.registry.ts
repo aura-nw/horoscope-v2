@@ -108,7 +108,7 @@ export default class AuraRegistry {
       ) {
         if (result.msg) {
           try {
-            result.msg = JSON.parse(fromUtf8(fromBase64(result.msg)));
+            result.msg = fromUtf8(fromBase64(result.msg));
           } catch (error) {
             this._logger.error('This msg instantite/execute is not valid JSON');
           }
