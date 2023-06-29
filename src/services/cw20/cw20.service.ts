@@ -1,12 +1,7 @@
-import { cosmwasm } from '@aura-nw/aurajs';
-import { fromBase64, fromUtf8, toHex, toUtf8 } from '@cosmjs/encoding';
-import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
-import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
-import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { Knex } from 'knex';
-import { ServiceBroker } from 'moleculer';
 import _ from 'lodash';
+import { ServiceBroker } from 'moleculer';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
@@ -14,17 +9,17 @@ import {
   Config,
   IContextUpdateCw20,
   SERVICE,
-  getHttpBatchClient,
 } from '../../common';
 import knex from '../../common/utils/db_connection';
+import { getAttributeFrom } from '../../common/utils/smart_contract';
 import {
   BlockCheckpoint,
   Cw20Contract,
   Cw20Event,
   EventAttribute,
+  IHolderEvent,
 } from '../../models';
 import { SmartContractEvent } from '../../models/smart_contract_event';
-import { getAttributeFrom } from '../../common/utils/smart_contract';
 
 const { NODE_ENV } = Config;
 export const CW20_ACTION = {
@@ -37,35 +32,15 @@ export const CW20_ACTION = {
   BURN_FROM: 'burn_from',
   SEND_FROM: 'send_from',
 };
-
-interface IContractInfo {
-  address: string;
-  symbol?: string;
-  minter?: string;
-  decimal?: string;
-  marketing_info?: any;
-  name?: string;
-}
-
-interface IHolderEvent {
-  address: string;
-  amount: string;
-  contract_address: string;
-  event_height: number;
-}
-
 @Service({
   name: SERVICE.V1.Cw20.key,
   version: 1,
 })
 export default class Cw20Service extends BullableService {
-  _httpBatchClient!: HttpBatchClient;
-
   _blocksPerBatch!: number;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
-    this._httpBatchClient = getHttpBatchClient();
   }
 
   @QueueHandler({
@@ -129,7 +104,7 @@ export default class Cw20Service extends BullableService {
     trx: Knex.Transaction
   ) {
     if (cw20InstantiateEvents.length > 0) {
-      const contractsInfo = await this.getContractsInfo(
+      const contractsInfo = await Cw20Contract.getContractsInfo(
         cw20InstantiateEvents.map((event) => event.contract_address)
       );
       const instantiateContracts = await Promise.all(
@@ -141,7 +116,7 @@ export default class Cw20Service extends BullableService {
           let initBalances: IHolderEvent[] = [];
           // get init address holder, init amount
           try {
-            initBalances = await this.getInstantiateBalances(
+            initBalances = await Cw20Contract.getInstantiateBalances(
               event.contract_address
             );
           } catch (error) {
@@ -263,216 +238,6 @@ export default class Cw20Service extends BullableService {
         'tx.height as height',
         'smart_contract_event.id as smart_contract_event_id'
       );
-  }
-
-  // get contract info (minter, symbol, decimal, marketing_info) by query rpc
-  async getContractsInfo(
-    contractAddresses: string[]
-  ): Promise<IContractInfo[]> {
-    const promisesInfo: any[] = [];
-    const promisesMinter: any[] = [];
-    const promisesMarketingInfo: any[] = [];
-    contractAddresses.forEach((address: string) => {
-      promisesInfo.push(
-        this._httpBatchClient.execute(
-          createJsonRpcRequest('abci_query', {
-            path: '/cosmwasm.wasm.v1.Query/SmartContractState',
-            data: toHex(
-              cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
-                address,
-                queryData: toUtf8('{"token_info":{}}'),
-              }).finish()
-            ),
-          })
-        )
-      );
-      promisesMinter.push(
-        this._httpBatchClient.execute(
-          createJsonRpcRequest('abci_query', {
-            path: '/cosmwasm.wasm.v1.Query/SmartContractState',
-            data: toHex(
-              cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
-                address,
-                queryData: toUtf8('{"minter":{}}'),
-              }).finish()
-            ),
-          })
-        )
-      );
-      promisesMarketingInfo.push(
-        this._httpBatchClient.execute(
-          createJsonRpcRequest('abci_query', {
-            path: '/cosmwasm.wasm.v1.Query/SmartContractState',
-            data: toHex(
-              cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
-                address,
-                queryData: toUtf8('{"marketing_info":{}}'),
-              }).finish()
-            ),
-          })
-        )
-      );
-    });
-    const contractsInfo: IContractInfo[] = [];
-    const resultsContractsInfo: JsonRpcSuccessResponse[] = await Promise.all(
-      promisesInfo
-    );
-    const resultsMinters: JsonRpcSuccessResponse[] = await Promise.all(
-      promisesMinter
-    );
-    const resultsMarketingInfo: JsonRpcSuccessResponse[] = await Promise.all(
-      promisesMarketingInfo
-    );
-    for (let index = 0; index < resultsContractsInfo.length; index += 1) {
-      let minter;
-      let contractInfo;
-      let marketingInfo;
-      try {
-        contractInfo = JSON.parse(
-          fromUtf8(
-            cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
-              fromBase64(resultsContractsInfo[index].result.response.value)
-            ).data
-          )
-        );
-      } catch (error) {
-        if (error instanceof SyntaxError || error instanceof TypeError) {
-          this.logger.error(
-            `Response contract info from CW20 contract ${contractAddresses[index]} not support`
-          );
-        } else {
-          this.logger.error(error);
-          throw error;
-        }
-      }
-      try {
-        minter = JSON.parse(
-          fromUtf8(
-            cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
-              fromBase64(resultsMinters[index].result.response.value)
-            ).data
-          )
-        ).minter;
-      } catch (error) {
-        if (error instanceof SyntaxError || error instanceof TypeError) {
-          this.logger.error(
-            `Response minter from CW20 contract ${contractAddresses[index]} not support`
-          );
-        } else {
-          this.logger.error(error);
-          throw error;
-        }
-      }
-      try {
-        marketingInfo = JSON.parse(
-          fromUtf8(
-            cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
-              fromBase64(resultsMarketingInfo[index].result.response.value)
-            ).data
-          )
-        );
-      } catch (error) {
-        if (error instanceof SyntaxError || error instanceof TypeError) {
-          this.logger.error(
-            `Response marketing info from CW20 contract ${contractAddresses[index]} not support`
-          );
-        } else {
-          this.logger.error(error);
-          throw error;
-        }
-      }
-      contractsInfo.push({
-        address: contractAddresses[index],
-        symbol: contractInfo?.symbol,
-        minter,
-        decimal: contractInfo?.decimals,
-        marketing_info: marketingInfo,
-        name: contractInfo?.name,
-      });
-    }
-    return contractsInfo;
-  }
-
-  // get instantiate balances
-  async getInstantiateBalances(
-    contractAddress: string
-  ): Promise<IHolderEvent[]> {
-    const holders: IHolderEvent[] = [];
-    // get all owners of cw20 contract
-    let startAfter = null;
-    do {
-      let query = '{"all_accounts":{}}';
-      if (startAfter) {
-        query = `{"all_accounts":{"start_after":"${startAfter}"}}`;
-      }
-      // eslint-disable-next-line no-await-in-loop
-      const result = await this._httpBatchClient.execute(
-        createJsonRpcRequest('abci_query', {
-          path: '/cosmwasm.wasm.v1.Query/SmartContractState',
-          data: toHex(
-            cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
-              address: contractAddress,
-              queryData: toUtf8(query),
-            }).finish()
-          ),
-        })
-      );
-      const { accounts } = JSON.parse(
-        fromUtf8(
-          cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
-            fromBase64(result.result.response.value)
-          ).data
-        )
-      );
-      if (accounts.length > 0) {
-        accounts.forEach((account: string) => {
-          holders.push({
-            address: account,
-            amount: '',
-            contract_address: contractAddress,
-            event_height: -1,
-          });
-        });
-        startAfter = accounts[accounts.length - 1];
-      } else {
-        startAfter = null;
-      }
-    } while (startAfter);
-    const promiseBalanceHolders: any[] = [];
-    holders.forEach((holder) => {
-      promiseBalanceHolders.push(
-        this._httpBatchClient.execute(
-          createJsonRpcRequest('abci_query', {
-            path: '/cosmwasm.wasm.v1.Query/SmartContractState',
-            data: toHex(
-              cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
-                address: contractAddress,
-                queryData: toUtf8(
-                  `{"balance":{"address":"${holder.address}"}}`
-                ),
-              }).finish()
-            ),
-          })
-        )
-      );
-    });
-    const result: JsonRpcSuccessResponse[] = await Promise.all(
-      promiseBalanceHolders
-    );
-    holders.forEach((holder, index) => {
-      const { balance }: { balance: string } = JSON.parse(
-        fromUtf8(
-          cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
-            fromBase64(result[index].result.response.value)
-          ).data
-        )
-      );
-      // eslint-disable-next-line no-param-reassign
-      holder.amount = balance;
-      // eslint-disable-next-line no-param-reassign
-      holder.event_height = parseInt(result[index].result.response.height, 10);
-    });
-    return holders;
   }
 
   async _start(): Promise<void> {
