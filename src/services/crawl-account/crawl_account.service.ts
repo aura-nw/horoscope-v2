@@ -532,7 +532,7 @@ export default class CrawlAccountService extends BullableService {
     const addresses: string[] = [];
 
     const now = Math.floor(
-      new Date().setSeconds(new Date().getSeconds() - 6) / 1000
+      new Date().setSeconds(new Date().getSeconds()) / 1000
     );
     let page = 0;
     let done = false;
@@ -545,11 +545,15 @@ export default class CrawlAccountService extends BullableService {
               AccountType.CONTINUOUS_VESTING,
               AccountType.PERIODIC_VESTING,
             ])
-            .andWhere('vesting.end_time', '>=', now)
+            .andWhere('vesting.end_time', '>=', now - 6)
         )
         .orWhere((builder) =>
           builder
-            .where('account.type', AccountType.DELAYED_VESTING)
+            .whereIn('account.type', [
+              AccountType.CONTINUOUS_VESTING,
+              AccountType.PERIODIC_VESTING,
+              AccountType.DELAYED_VESTING,
+            ])
             .andWhere('vesting.end_time', '<=', now)
             .andWhere('vesting.end_time', '>', now - 60)
         )
