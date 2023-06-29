@@ -162,8 +162,8 @@ export default class CW721Contract extends BaseModel {
     return contractsInfo;
   }
 
-  // get holder status for momment
-  static async getTokensOwner(contractAddress: string) {
+  // get all current holders balance
+  static async getAllTokensOwner(contractAddress: string) {
     const httpBatchClient = getHttpBatchClient();
     const tokensOwner: {
       owner: string;
@@ -203,22 +203,19 @@ export default class CW721Contract extends BaseModel {
         startAfter = null;
       }
     } while (startAfter);
-    const promiseOwners: any[] = [];
-    tokenIds.forEach((token) => {
-      promiseOwners.push(
-        httpBatchClient.execute(
-          createJsonRpcRequest('abci_query', {
-            path: '/cosmwasm.wasm.v1.Query/SmartContractState',
-            data: toHex(
-              cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
-                address: contractAddress,
-                queryData: toUtf8(`{"owner_of":{"token_id":"${token}"}}`),
-              }).finish()
-            ),
-          })
-        )
-      );
-    });
+    const promiseOwners = tokenIds.map((token) =>
+      httpBatchClient.execute(
+        createJsonRpcRequest('abci_query', {
+          path: '/cosmwasm.wasm.v1.Query/SmartContractState',
+          data: toHex(
+            cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
+              address: contractAddress,
+              queryData: toUtf8(`{"owner_of":{"token_id":"${token}"}}`),
+            }).finish()
+          ),
+        })
+      )
+    );
     const result: JsonRpcSuccessResponse[] = await Promise.all(promiseOwners);
     tokenIds.forEach((tokenId, index) => {
       const { owner }: { owner: string } = JSON.parse(
