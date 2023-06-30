@@ -9,7 +9,10 @@ export default class CosmjsClient {
   public constructor() {
     const rpc =
       network.find((net: any) => net.chainId === config.chainId)?.RPC[0] || '';
-    this.httpBatchClient = new HttpBatchClient(rpc);
+    this.httpBatchClient = new HttpBatchClient(rpc, {
+      batchSizeLimit: config.httpBatchRequest.batchSizeLimit ?? 20,
+      dispatchInterval: config.httpBatchRequest.dispatchMilisecond ?? 20,
+    });
   }
 }
 
