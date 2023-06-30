@@ -56,7 +56,7 @@ export default class Cw721MissingContractService extends BullableService {
       const cw721Contract = await CW721Contract.query()
         .withGraphJoined('smart_contract')
         .where('smart_contract.address', ctx.params.contractAddress)
-        .select(['smart_contract.id'])
+        .select(['cw721_contract.id'])
         .first();
       if (cw721Contract) {
         await CW721Activity.query()
@@ -79,9 +79,7 @@ export default class Cw721MissingContractService extends BullableService {
               .joinRelated('contract')
               .where('contract.id', cw721Contract.id)
           );
-        // bug base
         await CW721Contract.query().delete(true).where('id', cw721Contract.id);
-        console.log(cw721Contract.id);
       }
       // query
       const contractInfo = (
