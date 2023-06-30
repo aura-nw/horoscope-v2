@@ -220,10 +220,10 @@ export default class Cw20 {
       },
     ];
     await knex.transaction(async (trx) => {
-      this.cw20Service.getContractsInfo = jest.fn(() =>
+      Cw20Contract.getContractsInfo = jest.fn(() =>
         Promise.resolve(mockContractsInfo)
       );
-      this.cw20Service.getInstantiateBalances = jest.fn((address) => {
+      Cw20Contract.getInstantiateBalances = jest.fn((address) => {
         if (address === this.codeId.contracts[0].address) {
           return Promise.resolve(mockInstantiateBalances1);
         }
@@ -314,20 +314,16 @@ export default class Cw20 {
       },
     ];
     await knex.transaction(async (trx) => {
-      this.cw20Service.getContractsInfo = jest.fn(() =>
+      Cw20Contract.getContractsInfo = jest.fn(() =>
         Promise.resolve(mockContractsInfo)
       );
-      this.cw20Service.getInstantiateBalances = jest.fn(() =>
-        Promise.resolve([])
-      );
+      Cw20Contract.getInstantiateBalances = jest.fn(() => Promise.resolve([]));
       await this.cw20Service.handleCw20Instantiate(
         cw20Events.map((event) => SmartContractEvent.fromJson(event)),
         trx
       );
       await this.cw20Service.handleCw20Histories(
         cw20Events.map((event) => SmartContractEvent.fromJson(event)),
-        1000,
-        2000,
         trx
       );
       const cw20ContractEvent1 = await Cw20Event.query()

@@ -33,6 +33,7 @@ const {
   REQUEST_IPFS_TIMEOUT,
   MAX_BODY_LENGTH_BYTE,
   MAX_CONTENT_LENGTH_BYTE,
+  S3_GATEWAY,
 } = Config;
 const IPFS_PREFIX = 'ipfs';
 interface ITokenMediaInfo {
@@ -273,7 +274,7 @@ export default class Cw721MediaService extends BullableService {
             .promise()
             .then(
               (response: { Location: string; Key: string }) => ({
-                linkS3: response.Location,
+                linkS3: S3_GATEWAY + response.Key,
                 contentType: type,
                 key: response.Key,
               }),
