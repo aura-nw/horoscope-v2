@@ -133,7 +133,8 @@
       "limitPerCall": 2000
     },
     "millisecondRepeatJob": 2000,
-    "key": "feegrant"
+    "key": "feegrant",
+    "blocksPerCall": 1000
   },
   "crawlValidatorImage": {
     "timeCrawImage": "0 0 * * *",
