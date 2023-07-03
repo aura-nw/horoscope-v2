@@ -501,6 +501,7 @@ export default class CrawlGenesisService extends BullableService {
               address: contract.contract_address,
               creator: contract.contract_info.creator,
               code_id: contract.contract_info.code_id,
+              status: SmartContract.STATUS.LATEST,
               instantiate_hash: '',
               instantiate_height: 0,
               version: null,
@@ -550,9 +551,9 @@ export default class CrawlGenesisService extends BullableService {
                 );
                 await SmartContract.query()
                   .insert(chunkContracts)
-                  .onConflict('address')
+                  .onConflict(['address', 'code_id'])
                   .merge()
-                  .returning('address')
+                  .returning(['address', 'code_id'])
                   .transacting(trx);
               }
             )

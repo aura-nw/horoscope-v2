@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-await-in-loop */
 /* eslint-disable import/no-extraneous-dependencies */
@@ -25,6 +27,7 @@ import {
   getHttpBatchClient,
   IContextInstantiateContracts,
   IInstantiateContracts,
+  IMigrateContracts,
   IStoreCodes,
   SERVICE,
 } from '../../common';
@@ -72,7 +75,7 @@ export default class CrawlSmartContractService extends BullableService {
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.CRAWL_SMART_CONTRACT,
         [BULL_JOB_NAME.CRAWL_CODE],
-        config.crawlCodeId.key
+        config.crawlSmartContract.key
       );
     this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
     if (startHeight >= endHeight) return;
@@ -121,6 +124,145 @@ export default class CrawlSmartContractService extends BullableService {
       });
   }
 
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.HANDLE_MIGRATE_CONTRACT,
+    jobName: BULL_JOB_NAME.HANDLE_MIGRATE_CONTRACT,
+    // prefix: `horoscope-v2-${config.chainId}`,
+  })
+  public async handleMigrateContract(_payload: object): Promise<void> {
+    const [startHeight, endHeight, updateBlockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.HANDLE_MIGRATE_CONTRACT,
+        [BULL_JOB_NAME.CRAWL_CODE],
+        config.crawlSmartContract.key
+      );
+    this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
+    if (startHeight >= endHeight) return;
+
+    const contracts: IMigrateContracts[] = [];
+    const resultTx = await Transaction.query()
+      .joinRelated('events.[attributes]')
+      .where('events.type', Event.EVENT_TYPE.MIGRATE)
+      .andWhere('transaction.height', '>', startHeight)
+      .andWhere('transaction.height', '<=', endHeight)
+      .andWhere('transaction.code', 0)
+      .select(
+        'transaction.hash',
+        'transaction.height',
+        'events:attributes.event_id',
+        'events:attributes.key',
+        'events:attributes.value'
+      );
+
+    if (resultTx.length > 0) {
+      resultTx.forEach((res: any) => {
+        if (res.key === EventAttribute.ATTRIBUTE_KEY._CONTRACT_ADDRESS)
+          contracts.push({
+            address: res.value,
+            codeId: resultTx.find(
+              (rs) =>
+                rs.event_id === res.event_id &&
+                rs.key === EventAttribute.ATTRIBUTE_KEY.CODE_ID
+            )?.value,
+            hash: res.hash,
+            height: res.height,
+          });
+      });
+    }
+
+    if (contracts.length > 0) {
+      const [migratedCodeContracts, migratingContracts] = await Promise.all([
+        SmartContract.query().whereIn(
+          'code_id',
+          contracts.map((contract) => contract.codeId)
+        ),
+        SmartContract.query().whereIn(
+          'address',
+          contracts.map((contract) => contract.address)
+        ),
+      ]);
+
+      const migratedContracts: SmartContract[] = [];
+      migratingContracts.forEach((contract) => {
+        const instantiateTx = contracts.find(
+          (con) => con.address === contract.address
+        );
+        const codeContract = migratedCodeContracts.find(
+          (con) =>
+            con.code_id.toString() ===
+            contracts.find((con) => con.address === contract.address)!.codeId
+        );
+
+        const migrateContract = SmartContract.fromJson({
+          name: codeContract ? codeContract.name : '',
+          address: contract.address,
+          creator: contract.creator,
+          code_id: instantiateTx ? instantiateTx.codeId : 0,
+          status: SmartContract.STATUS.LATEST,
+          instantiate_hash: instantiateTx ? instantiateTx.hash : '',
+          instantiate_height: instantiateTx ? instantiateTx.height : 0,
+          version: codeContract ? codeContract.version : '',
+        });
+
+        contract.status = SmartContract.STATUS.MIGRATED;
+
+        migratedContracts.push(...[migrateContract, contract]);
+      });
+
+      if (
+        migratedContracts.filter((contract) => contract.name === '').length > 0
+      ) {
+        const contractCw2s = await SmartContract.getMigratedContractData(
+          migratedContracts
+            .filter((contract) => contract.name === '')
+            .map((contract) => contract.address),
+          this._httpBatchClient
+        );
+
+        contractCw2s.forEach((cw2) => {
+          if (cw2?.data) {
+            const data = JSON.parse(fromUtf8(cw2?.data || new Uint8Array()));
+            const index = migratedContracts.indexOf(
+              migratedContracts.find(
+                (contract) => contract.address === cw2.address
+              )!
+            );
+            migratedContracts[index].name = data.name;
+            migratedContracts[index].version = data.version;
+          }
+        });
+      }
+
+      await knex
+        .transaction(async (trx) => {
+          await SmartContract.query()
+            .insert(migratedContracts)
+            .onConflict(['address', 'code_id'])
+            .merge()
+            .returning(['address', 'code_id'])
+            .transacting(trx)
+            .catch((error) => {
+              this.logger.error(
+                'Error insert or update migrated smart contracts'
+              );
+              this.logger.error(error);
+            });
+
+          updateBlockCheckpoint.height = endHeight;
+          await BlockCheckpoint.query()
+            .insert(updateBlockCheckpoint)
+            .onConflict('job_name')
+            .merge()
+            .returning('id')
+            .transacting(trx);
+        })
+        .catch((error) => {
+          this.logger.error(error);
+          throw error;
+        });
+    }
+  }
+
   private async insertNewContracts(
     contracts: IInstantiateContracts[],
     trx: Knex.Transaction
@@ -138,6 +280,7 @@ export default class CrawlSmartContractService extends BullableService {
             address: contract.address,
             creator: '',
             code_id: 0,
+            status: SmartContract.STATUS.LATEST,
             instantiate_hash: contract.hash,
             instantiate_height: contract.height,
             version: null,
@@ -208,9 +351,9 @@ export default class CrawlSmartContractService extends BullableService {
       if (smartContracts.length > 0)
         instantiatedContracts = await SmartContract.query()
           .insert(smartContracts)
-          .onConflict('address')
+          .onConflict(['address', 'code_id'])
           .merge()
-          .returning('address')
+          .returning(['address', 'code_id'])
           .transacting(trx)
           .catch((error) => {
             this.logger.error('Error insert new smart contracts');

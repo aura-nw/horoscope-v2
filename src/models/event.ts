@@ -89,5 +89,6 @@ export class Event extends BaseModel {
     REVOKE_FEEGRANT: 'revoke_feegrant',
     USE_FEEGRANT: 'use_feegrant',
     SET_FEEGRANT: 'set_feegrant',
+    MIGRATE: 'migrate',
   };
 }

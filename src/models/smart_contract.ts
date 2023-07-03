@@ -26,6 +26,8 @@ export class SmartContract extends BaseModel {
 
   code_id!: number;
 
+  status!: string;
+
   instantiate_hash!: string;
 
   instantiate_height!: number;
@@ -34,6 +36,13 @@ export class SmartContract extends BaseModel {
 
   static get tableName() {
     return 'smart_contract';
+  }
+
+  static get STATUS() {
+    return {
+      LATEST: 'Latest',
+      MIGRATED: 'Migrated',
+    };
   }
 
   static get jsonSchema() {
@@ -51,6 +60,7 @@ export class SmartContract extends BaseModel {
         address: { type: 'string' },
         creator: { type: 'string' },
         code_id: { type: 'number' },
+        status: { type: 'string' },
         instantiate_hash: { type: 'string' },
         instantiate_height: { type: 'number' },
         version: { type: ['string', 'null'] },
@@ -140,5 +150,49 @@ export class SmartContract extends BaseModel {
     }
 
     return [contractCw2s, contractInfos];
+  }
+
+  static async getMigratedContractData(
+    addresses: string[],
+    _httpBatchClient: HttpBatchClient
+  ) {
+    const batchQueries: any[] = [];
+
+    addresses.forEach((address) => {
+      const requestCw2: QueryRawContractStateRequest = {
+        address,
+        queryData: fromBase64('Y29udHJhY3RfaW5mbw=='), // contract_info
+      };
+      const dataCw2 = toHex(
+        cosmwasm.wasm.v1.QueryRawContractStateRequest.encode(
+          requestCw2
+        ).finish()
+      );
+
+      batchQueries.push(
+        _httpBatchClient.execute(
+          createJsonRpcRequest('abci_query', {
+            path: ABCI_QUERY_PATH.RAW_CONTRACT_STATE,
+            data: dataCw2,
+          })
+        )
+      );
+    });
+
+    const results: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
+
+    const contractCw2s: any[] = [];
+    for (let i = 0; i < results.length; i += 1) {
+      contractCw2s.push({
+        address: addresses[i],
+        result: results[i].result.response.value
+          ? cosmwasm.wasm.v1.QueryRawContractStateResponse.decode(
+              fromBase64(results[i].result.response.value)
+            )
+          : null,
+      });
+    }
+
+    return contractCw2s;
   }
 }
