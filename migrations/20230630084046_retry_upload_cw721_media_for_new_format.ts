@@ -9,14 +9,14 @@ export async function up(knex: Knex): Promise<void> {
   const tokens_new_image = await knex
     .table('cw721_token')
     .whereRaw("media_info->'onchain'->'metadata'->>'image' like '/ipfs/%'")
-    .andWhereRaw("media_info->'offchain'->>'image'==?", [{}])
+    .andWhereRaw("media_info->'offchain'->>'image'=?", [{}])
     .select('id');
   const tokens_new_animation = await knex
     .table('cw721_token')
     .whereRaw(
       "media_info->'onchain'->'metadata'->>'animation_url' like '/ipfs/%'"
     )
-    .andWhereRaw("media_info->'offchain'->>'animation_url'==?", [{}])
+    .andWhereRaw("media_info->'offchain'->>'animation_url'=?", [{}])
     .select('id');
   if (
     tokens_new_animation.length > 0 ||
