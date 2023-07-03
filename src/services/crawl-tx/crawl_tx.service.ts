@@ -437,7 +437,7 @@ export default class CrawlTxService extends BullableService {
       );
       const jobInDelayed = await queue.getDelayed();
       if (jobInDelayed?.length > 0) {
-        jobInDelayed[0].promote();
+        await jobInDelayed[0].promote();
       }
     } catch (error) {
       this.logger.error('No job can be promoted');
