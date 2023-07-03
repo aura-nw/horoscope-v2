@@ -180,9 +180,11 @@ export default class Utils {
           ) ||
           (lowerLimit && upperLimit);
         if (isRange) {
-          heightRange = Math.abs(
-            Number(upperLimit.value.value) - Number(lowerLimit.value.value)
-          );
+          if (upperLimit && lowerLimit) {
+            heightRange = Math.abs(
+              Number(upperLimit.value.value) - Number(lowerLimit.value.value)
+            );
+          }
           return true;
         }
       }
