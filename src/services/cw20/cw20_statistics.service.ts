@@ -1,12 +1,16 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { CW20TotalHolderStats, Cw20Contract } from '../../models';
+import {
+  BlockCheckpoint,
+  CW20Holder,
+  CW20TotalHolderStats,
+  Cw20Contract,
+} from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import { BULL_JOB_NAME, Config, SERVICE } from '../../common';
 
 export interface ICrawlCw20TotalHolderByContract {
   cw20ContractId: number;
-  cw20ContractAddress: string;
 }
 
 const { NODE_ENV } = Config;
@@ -22,13 +26,15 @@ export default class CW20Statistics extends BullableService {
   async jobHandleCrawlCw20TotalHolderByContract(
     _payload: ICrawlCw20TotalHolderByContract
   ): Promise<void> {
-    const { cw20ContractId, cw20ContractAddress } = _payload;
-    const holders = await Cw20Contract.getAllHolders(cw20ContractAddress);
+    const { cw20ContractId } = _payload;
+    const totalHolder = await CW20Holder.query()
+      .where('cw20_contract_id', cw20ContractId)
+      .count();
     await CW20TotalHolderStats.query()
       .insert(
         CW20TotalHolderStats.fromJson({
           cw20_contract_id: cw20ContractId,
-          total_holder: holders.length,
+          total_holder: totalHolder[0].count,
         })
       )
       .onConflict(['cw20_contract_id', 'created_at'])
@@ -40,29 +46,38 @@ export default class CW20Statistics extends BullableService {
     jobName: BULL_JOB_NAME.CRAWL_CW20_TOTAL_HOLDER,
   })
   async jobHandleCrawlCw20TotalHolder(): Promise<void> {
-    const cw20Contracts = await Cw20Contract.query()
-      .withGraphJoined('smart_contract')
-      .where('track', true);
-    // eslint-disable-next-line no-restricted-syntax
-    for (const cw20Contract of cw20Contracts) {
-      this.logger.info(cw20Contract);
-      // eslint-disable-next-line no-await-in-loop
-      await this.createJob(
-        BULL_JOB_NAME.CRAWL_CW20_TOTAL_HOLDER_BY_CONTRACT,
-        BULL_JOB_NAME.CRAWL_CW20_TOTAL_HOLDER_BY_CONTRACT,
-        {
-          cw20ContractAddress: cw20Contract.smart_contract.address,
-          cw20ContractId: cw20Contract.id,
-        },
-        {
-          removeOnComplete: true,
-          removeOnFail: {
-            count: 3,
+    const cw20BlockCheckpoint = await BlockCheckpoint.query()
+      .findOne({
+        job_name: BULL_JOB_NAME.HANDLE_CW20,
+      })
+      .withGraphJoined('block')
+      .throwIfNotFound();
+    const { time }: { time: Date } = cw20BlockCheckpoint.block;
+    if (this.isToday(time)) {
+      const cw20Contracts = await Cw20Contract.query()
+        .withGraphJoined('smart_contract')
+        .where('track', true);
+      // eslint-disable-next-line no-restricted-syntax
+      for (const cw20Contract of cw20Contracts) {
+        // eslint-disable-next-line no-await-in-loop
+        await this.createJob(
+          BULL_JOB_NAME.CRAWL_CW20_TOTAL_HOLDER_BY_CONTRACT,
+          BULL_JOB_NAME.CRAWL_CW20_TOTAL_HOLDER_BY_CONTRACT,
+          {
+            cw20ContractId: cw20Contract.id,
           },
-          attempts: config.jobRetryAttempt,
-          backoff: config.jobRetryBackoff,
-        }
-      );
+          {
+            removeOnComplete: true,
+            removeOnFail: {
+              count: 3,
+            },
+            attempts: config.jobRetryAttempt,
+            backoff: config.jobRetryBackoff,
+          }
+        );
+      }
+    } else {
+      throw new Error('CW20 service not catch up on current');
     }
   }
 
@@ -86,5 +101,13 @@ export default class CW20Statistics extends BullableService {
       );
     }
     return super._start();
+  }
+
+  isToday(date: Date) {
+    const today = new Date();
+    if (today.toDateString() === date.toDateString()) {
+      return true;
+    }
+    return false;
   }
 }

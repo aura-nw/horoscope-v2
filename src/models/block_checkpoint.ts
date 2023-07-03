@@ -1,7 +1,11 @@
+import { Model } from 'objection';
 import BaseModel from './base';
 import config from '../../config.json' assert { type: 'json' };
+import { Block } from './block';
 
 export class BlockCheckpoint extends BaseModel {
+  [relation: string]: any;
+
   job_name!: string;
 
   height!: number;
@@ -17,6 +21,19 @@ export class BlockCheckpoint extends BaseModel {
       properties: {
         job_name: { type: 'string' },
         height: { type: 'number' },
+      },
+    };
+  }
+
+  static get relationMappings() {
+    return {
+      block: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: Block,
+        join: {
+          from: 'block_checkpoint.height',
+          to: 'block.height',
+        },
       },
     };
   }

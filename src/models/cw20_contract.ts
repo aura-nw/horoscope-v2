@@ -263,47 +263,6 @@ export class Cw20Contract extends BaseModel {
     return contractsInfo;
   }
 
-  static async getAllHolders(contractAddress: string) {
-    const httpBatchClient = getHttpBatchClient();
-    const holders: string[] = [];
-    // get all owners of cw20 contract
-    let startAfter = null;
-    do {
-      let query = '{"all_accounts":{}}';
-      if (startAfter) {
-        query = `{"all_accounts":{"start_after":"${startAfter}"}}`;
-      }
-      // eslint-disable-next-line no-await-in-loop
-      const result = await httpBatchClient.execute(
-        createJsonRpcRequest('abci_query', {
-          path: '/cosmwasm.wasm.v1.Query/SmartContractState',
-          data: toHex(
-            cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
-              address: contractAddress,
-              queryData: toUtf8(query),
-            }).finish()
-          ),
-        })
-      );
-      const { accounts } = JSON.parse(
-        fromUtf8(
-          cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
-            fromBase64(result.result.response.value)
-          ).data
-        )
-      );
-      if (accounts.length > 0) {
-        accounts.forEach((account: string) => {
-          holders.push(account);
-        });
-        startAfter = accounts[accounts.length - 1];
-      } else {
-        startAfter = null;
-      }
-    } while (startAfter);
-    return holders;
-  }
-
   static get relationMappings() {
     return {
       smart_contract: {
