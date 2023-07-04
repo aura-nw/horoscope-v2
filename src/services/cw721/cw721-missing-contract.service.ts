@@ -4,7 +4,6 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
-import CW721Activity from '../../models/cw721_tx';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService from '../../base/bullable.service';
 import {
@@ -39,7 +38,7 @@ export default class Cw721MissingContractService extends BullableService {
       contractAddress: 'string',
     },
   })
-  private async CrawlMissingContract(ctx: Context<IAddressParam>) {
+  public async CrawlMissingContract(ctx: Context<IAddressParam>) {
     const smartContract = await SmartContract.query()
       .withGraphJoined('code')
       .where('address', ctx.params.contractAddress)
@@ -58,29 +57,6 @@ export default class Cw721MissingContractService extends BullableService {
         .where('smart_contract.address', ctx.params.contractAddress)
         .select(['cw721_contract.id'])
         .first();
-      if (cw721Contract) {
-        await CW721Activity.query()
-          .delete(true)
-          .whereIn(
-            'id',
-            CW721Activity.query()
-              .alias('cw721_activity')
-              .select('cw721_activity.id')
-              .joinRelated('relate_contract')
-              .where('relate_contract.id', cw721Contract.id)
-          );
-        await CW721Token.query()
-          .delete(true)
-          .whereIn(
-            'id',
-            CW721Token.query()
-              .alias('cw721_token')
-              .select('cw721_token.id')
-              .joinRelated('contract')
-              .where('contract.id', cw721Contract.id)
-          );
-        await CW721Contract.query().delete(true).where('id', cw721Contract.id);
-      }
       // query
       const contractInfo = (
         await CW721Contract.getContractsInfo([ctx.params.contractAddress])
@@ -105,8 +81,10 @@ export default class Cw721MissingContractService extends BullableService {
             )
           : 0;
       if (maxUpdatedHeightOwner - cw721BlockCheckpoint < 2000000) {
-        await CW721Contract.query().insertGraph({
+        CW721Token.softDelete = false;
+        await CW721Contract.query().upsertGraph({
           ...CW721Contract.fromJson({
+            id: cw721Contract?.id,
             contract_id: smartContract.id,
             symbol: contractInfo?.symbol,
             minter: contractInfo?.minter,
@@ -123,6 +101,7 @@ export default class Cw721MissingContractService extends BullableService {
             })
           ),
         });
+        CW721Token.softDelete = true;
         // handle from minUpdatedHeightOwner to blockHeight
         await this.broker.call(
           SERVICE.V1.Cw721.HandleRangeBlockMissingContract.path,

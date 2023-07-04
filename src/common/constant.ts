@@ -212,7 +212,7 @@ export const SERVICE = {
       name: 'v1.Cw721CrawlMissingContract',
       CrawlMissingContract: {
         key: 'CrawlMissingContract',
-        path: 'v1.CW721CrawlMissingContract.CrawlMissingContract',
+        path: 'v1.Cw721CrawlMissingContract.CrawlMissingContract',
       },
     },
     JobService: {

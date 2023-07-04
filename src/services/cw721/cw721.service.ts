@@ -26,7 +26,7 @@ import { SmartContractEvent } from '../../models/smart_contract_event';
 
 const { NODE_ENV } = Config;
 
-const CW721_ACTION = {
+export const CW721_ACTION = {
   MINT: 'mint',
   BURN: 'burn',
   TRANSFER: 'transfer_nft',
