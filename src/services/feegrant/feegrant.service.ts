@@ -240,7 +240,7 @@ export default class HandleFeegrantHistoryService extends BullableService {
     if (type === ALLOWANCE_TYPE.PERIODIC_ALLOWANCE) {
       basicAllowance = basicAllowance.basic;
     }
-    if (basicAllowance.spend_limit && basicAllowance.spend_limit.length > 0) {
+    if (basicAllowance?.spend_limit && basicAllowance?.spend_limit.length > 0) {
       spendLimit = basicAllowance.spend_limit[0].amount; // need upgrade
       denom = basicAllowance.spend_limit[0].denom;
     }
@@ -249,7 +249,7 @@ export default class HandleFeegrantHistoryService extends BullableService {
       type,
       spend_limit: spendLimit,
       denom,
-      expiration: basicAllowance.expiration
+      expiration: basicAllowance?.expiration
         ? new Date(basicAllowance.expiration)
         : undefined,
     };
