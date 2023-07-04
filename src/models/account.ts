@@ -14,6 +14,8 @@ export interface IBalance extends ICoin {
 }
 
 export class Account extends BaseModel {
+  [relation: string]: any;
+
   id!: number;
 
   address!: string;

@@ -8,3 +8,22 @@ export interface IProposalIdParam {
 export interface ITxIdsParam {
   txIds: number[];
 }
+
+export interface IDailyStatsParam {
+  offset: number;
+  txIds: number[];
+  addresses: string[];
+}
+
+export interface IAccountStatsParam {
+  offset: number;
+  accountStats: IAccountStats[];
+}
+
+export interface IAccountStats {
+  address: string;
+  amount_sent: string;
+  amount_received: string;
+  tx_sent: number;
+  gas_used: string;
+}

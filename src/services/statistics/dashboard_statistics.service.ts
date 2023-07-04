@@ -101,7 +101,7 @@ export default class DashboardStatisticsService extends BullableService {
   public async _start() {
     this.createJob(
       BULL_JOB_NAME.HANDLE_DASHBOARD_STATISTICS,
-      'crawl',
+      BULL_JOB_NAME.HANDLE_DASHBOARD_STATISTICS,
       {},
       {
         removeOnComplete: true,
