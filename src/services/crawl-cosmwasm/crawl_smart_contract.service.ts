@@ -226,7 +226,7 @@ export default class CrawlSmartContractService extends BullableService {
 
     this.createJob(
       BULL_JOB_NAME.CRAWL_SMART_CONTRACT,
-      'crawl',
+      BULL_JOB_NAME.CRAWL_SMART_CONTRACT,
       {},
       {
         removeOnComplete: true,

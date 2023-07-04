@@ -136,7 +136,7 @@ export default class HandleAddressService extends BullableService {
 
     this.createJob(
       BULL_JOB_NAME.HANDLE_ADDRESS,
-      'crawl',
+      BULL_JOB_NAME.HANDLE_ADDRESS,
       {},
       {
         removeOnComplete: true,
