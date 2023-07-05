@@ -1,6 +1,7 @@
 export const REDIS_KEY = {
   IBC_DENOM: 'ibc_denom',
   DASHBOARD_STATISTICS: 'dashboard_statistics',
+  TOP_ACCOUNTS: 'top_accounts',
 };
 
 export const URL_TYPE_CONSTANTS = {
@@ -62,6 +63,9 @@ export const BULL_JOB_NAME = {
     'job:check-need-create-event-attr-partition',
   JOB_CREATE_EVENT_ATTR_PARTITION: 'job:create-event-attr-partition',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
+  CRAWL_DAILY_STATISTICS: 'crawl:daily-statistics',
+  CRAWL_ACCOUNT_STATISTICS: 'crawl:account-statistics',
+  HANDLE_TOP_ACCOUNTS: 'handle:top-accounts',
 };
 
 export const SERVICE = {
@@ -203,6 +207,14 @@ export const SERVICE = {
         path: 'v1.CreateEventAttrPartition',
       },
     },
+    DailyStatisticsService: {
+      key: 'DailyStatisticsService',
+      name: 'v1.DailyStatisticsService',
+    },
+    AccountStatisticsService: {
+      key: 'AccountStatisticsService',
+      name: 'v1.AccountStatisticsService',
+    },
   },
 };
 
@@ -212,6 +224,11 @@ export enum AccountType {
   DELAYED_VESTING = '/cosmos.vesting.v1beta1.DelayedVestingAccount',
   MODULE = '/cosmos.auth.v1beta1.ModuleAccount',
   BASE = '/cosmos.auth.v1beta1.BaseAccount',
+}
+
+export enum PubkeyType {
+  PUBKEY = '/cosmos.crypto.secp256k1.PubKey',
+  LEGACY_AMINO_PUBKEY = '/cosmos.crypto.multisig.LegacyAminoPubKey',
 }
 
 export const BLOCK_CHECKPOINT_JOB_NAME = {
@@ -240,6 +257,7 @@ export const MSG_TYPE = {
 export const ABCI_QUERY_PATH = {
   ACCOUNT_ALL_BALANCES: '/cosmos.bank.v1beta1.Query/AllBalances',
   ACCOUNT_SPENDABLE_BALANCES: '/cosmos.bank.v1beta1.Query/SpendableBalances',
+  ACCOUNT_AUTH: '/cosmos.auth.v1beta1.Query/Account',
   DENOM_TRACE: '/ibc.applications.transfer.v1.Query/DenomTrace',
   VALIDATOR_DELEGATION: '/cosmos.staking.v1beta1.Query/Delegation',
   PROPOSAL: '/cosmos.gov.v1beta1.Query/Proposal',

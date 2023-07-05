@@ -75,7 +75,9 @@ export default class AuraRegistry {
         msg.typeUrl
       ) as TsProtoGeneratedType;
       if (!msgType) {
-        const decodedBase64 = toBase64(msg.value);
+        const decodedBase64 = Utils.isBase64(msg.value)
+          ? msg.value
+          : toBase64(msg.value);
         this._logger.info(decodedBase64);
         result.value = decodedBase64;
         this._logger.error('This typeUrl is not supported');
@@ -131,5 +133,11 @@ export default class AuraRegistry {
 
     // eslint-disable-next-line consistent-return
     return result;
+  }
+
+  public addTypes(types: string[]) {
+    types.forEach((type) =>
+      this.registry.register(type, _.get(this, type.slice(1)))
+    );
   }
 }
