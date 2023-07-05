@@ -39,6 +39,16 @@
 | proposer_address | validator who proposed this block, in hex format |
 | data             | full log block take from RPC block?height        |
 
+### block_checkpoint
+
+| Column     | Description                    |
+| ---------- | ------------------------------ |
+| id         | table's identity               |
+| created_at | created time                   |
+| updated_at | updated time                   |
+| job_name   | job name                       |
+| height     | height checkpoint for this job |
+
 ### signature
 
 | Column            | Description                     |
