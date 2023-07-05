@@ -218,7 +218,7 @@ export default class CrawlValidatorService extends BullableService {
   public async _start() {
     this.createJob(
       BULL_JOB_NAME.CRAWL_VALIDATOR,
-      'crawl',
+      BULL_JOB_NAME.CRAWL_VALIDATOR,
       {},
       {
         removeOnComplete: true,
