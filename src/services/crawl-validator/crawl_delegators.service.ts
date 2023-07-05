@@ -39,7 +39,7 @@ export default class CrawlDelegatorsService extends BullableService {
     validators.forEach(async (val) => {
       await this.createJob(
         BULL_JOB_NAME.CRAWL_VALIDATOR_DELEGATORS,
-        'crawl',
+        BULL_JOB_NAME.CRAWL_VALIDATOR_DELEGATORS,
         {
           id: val.id,
           address: val.operator_address,
@@ -145,7 +145,7 @@ export default class CrawlDelegatorsService extends BullableService {
   public async _start() {
     this.createJob(
       BULL_JOB_NAME.CRAWL_DELEGATORS,
-      'crawl',
+      BULL_JOB_NAME.CRAWL_DELEGATORS,
       {},
       {
         removeOnComplete: true,

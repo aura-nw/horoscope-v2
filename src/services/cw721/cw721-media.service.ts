@@ -360,7 +360,9 @@ export default class Cw721MediaService extends BullableService {
 
   // from IPFS uri, parse to http url
   parseIPFSUri(uri: string) {
-    const parsed = parse(uri);
+    const formatUri =
+      uri.substring(0, 5) === '/ipfs' ? `ipfs:/${uri.slice(5)}` : uri;
+    const parsed = parse(formatUri);
     let url = '';
     if (parsed.protocol === IPFS_PREFIX) {
       const cid = parsed.host;

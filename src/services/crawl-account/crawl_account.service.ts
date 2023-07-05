@@ -477,7 +477,7 @@ export default class CrawlAccountService extends BullableService {
     await Promise.all([
       this.createJob(
         BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH,
-        'crawl',
+        BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH,
         {
           addresses,
         },
@@ -492,7 +492,7 @@ export default class CrawlAccountService extends BullableService {
       ),
       this.createJob(
         BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
-        'crawl',
+        BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
         {
           addresses,
         },
@@ -507,7 +507,7 @@ export default class CrawlAccountService extends BullableService {
       ),
       this.createJob(
         BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES,
-        'crawl',
+        BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES,
         {
           addresses,
         },
@@ -574,7 +574,7 @@ export default class CrawlAccountService extends BullableService {
   public async _start() {
     this.createJob(
       BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT,
-      'crawl',
+      BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT,
       {},
       {
         removeOnComplete: true,
