@@ -302,7 +302,7 @@ export default class CrawlProposalService extends BullableService {
   public async _start() {
     this.createJob(
       BULL_JOB_NAME.CRAWL_PROPOSAL,
-      'crawl',
+      BULL_JOB_NAME.CRAWL_PROPOSAL,
       {},
       {
         removeOnComplete: true,
@@ -316,7 +316,7 @@ export default class CrawlProposalService extends BullableService {
     );
     this.createJob(
       BULL_JOB_NAME.HANDLE_ENDED_PROPOSAL,
-      'crawl',
+      BULL_JOB_NAME.HANDLE_ENDED_PROPOSAL,
       {},
       {
         removeOnComplete: true,
@@ -330,7 +330,7 @@ export default class CrawlProposalService extends BullableService {
     );
     this.createJob(
       BULL_JOB_NAME.HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL,
-      'crawl',
+      BULL_JOB_NAME.HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL,
       {},
       {
         removeOnComplete: true,
