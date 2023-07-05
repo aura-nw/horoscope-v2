@@ -1,7 +1,10 @@
-import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+import {
+  Action,
+  Service,
+} from '@ourparentcenter/moleculer-decorators-extended';
 import { Knex } from 'knex';
 import _ from 'lodash';
-import { ServiceBroker } from 'moleculer';
+import { Context, ServiceBroker } from 'moleculer';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
@@ -32,6 +35,11 @@ export const CW20_ACTION = {
   BURN_FROM: 'burn_from',
   SEND_FROM: 'send_from',
 };
+export interface IContextCrawlMissingContractHistory {
+  smartContractId: number;
+  startBlock: number;
+  endBlock: number;
+}
 @Service({
   name: SERVICE.V1.Cw20.key,
   version: 1,
@@ -259,5 +267,95 @@ export default class Cw20Service extends BullableService {
       );
     }
     return super._start();
+  }
+
+  @Action({
+    name: SERVICE.V1.Cw20.CrawlMissingContractHistory.key,
+    params: {
+      smartContractId: 'any',
+      startBlock: 'any',
+      endBlock: ' any',
+    },
+  })
+  public async CrawlMissingContractHistory(
+    ctx: Context<IContextCrawlMissingContractHistory>
+  ) {
+    const { smartContractId, startBlock, endBlock } = ctx.params;
+    const cw20Contract = await Cw20Contract.query()
+      .withGraphJoined('smart_contract')
+      .where('smart_contract.id', smartContractId)
+      .first()
+      .throwIfNotFound();
+    // insert data from event_attribute_backup to event_attribute
+    const { limitRecordGet, chunkSizeInsert } =
+      config.cw20.crawlMissingContract;
+    let currentId = 0;
+    await knex.transaction(async (trx) => {
+      for (;;) {
+        // eslint-disable-next-line no-await-in-loop
+        const events = await SmartContractEvent.query()
+          .alias('smart_contract_event')
+          .withGraphJoined(
+            '[message(selectMessage), tx(selectTransaction), attributes(selectAttribute), smart_contract(selectSmartContract).code(selectCode)]'
+          )
+          .modifiers({
+            selectCode(builder) {
+              builder.select('type');
+            },
+            selectTransaction(builder) {
+              builder.select('hash', 'height');
+            },
+            selectMessage(builder) {
+              builder.select('sender');
+            },
+            selectAttribute(builder) {
+              builder.select('key', 'value');
+            },
+            selectSmartContract(builder) {
+              builder.select('address', 'id');
+            },
+          })
+          .where('smart_contract:code.type', 'CW20')
+          .where('tx.height', '>', startBlock)
+          .andWhere('tx.height', '<=', endBlock)
+          .andWhere('smart_contract.id', smartContractId)
+          .andWhere('smart_contract_event.id', '>', currentId)
+          .orderBy('smart_contract_event.id', 'asc')
+          .limit(limitRecordGet);
+        if (events.length === 0) {
+          break;
+        }
+        const newHistories: Cw20Event[] = [];
+        // eslint-disable-next-line no-restricted-syntax
+        for (const event of events) {
+          newHistories.push(
+            Cw20Event.fromJson({
+              smart_contract_event_id: event.smart_contract_event.id,
+              sender: event.message.sender,
+              action: event.action,
+              cw20_contract_id: cw20Contract.id,
+              amount: getAttributeFrom(
+                event.attributes,
+                EventAttribute.ATTRIBUTE_KEY.AMOUNT
+              ),
+              from: getAttributeFrom(
+                event.attributes,
+                EventAttribute.ATTRIBUTE_KEY.FROM
+              ),
+              to: getAttributeFrom(
+                event.attributes,
+                EventAttribute.ATTRIBUTE_KEY.TO
+              ),
+              height: event.tx.height,
+            })
+          );
+          if (newHistories.length > 0) {
+            // eslint-disable-next-line no-await-in-loop
+            await trx.batchInsert('cw20_event', newHistories, chunkSizeInsert);
+          }
+          currentId = events[events.length - 1].id;
+        }
+      }
+    });
   }
 }

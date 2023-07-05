@@ -171,6 +171,14 @@ export const SERVICE = {
     Cw20: {
       key: 'Cw20Service',
       name: 'v1.Cw20Service',
+      CrawlMissingContractHistory: {
+        key: 'CrawlMissingContractHistory',
+        path: 'v1.Cw20Service.CrawlMissingContractHistory',
+      },
+      HandleRangeBlockMissingContract: {
+        key: 'HandleRangeBlockMissingContract',
+        path: 'v1.Cw20Service.HandleRangeBlockMissingContract',
+      },
     },
     Cw20UpdateByContract: {
       key: 'Cw20UpdateByContract',
@@ -201,6 +209,14 @@ export const SERVICE = {
       CreateEventAttrPartition: {
         key: 'CreateEventAttrPartition',
         path: 'v1.CreateEventAttrPartition',
+      },
+    },
+    Cw20CrawlMissingContract: {
+      key: 'Cw20CrawlMissingContract',
+      name: 'v1.Cw20CrawlMissingContract',
+      CrawlMissingContract: {
+        key: 'CrawlMissingContract',
+        path: 'v1.Cw20CrawlMissingContract.CrawlMissingContract',
       },
     },
   },
