@@ -10,12 +10,14 @@ export interface ITxIdsParam {
 }
 
 export interface IDailyStatsParam {
+  date: string;
   offset: number;
   txIds: number[];
   addresses: string[];
 }
 
 export interface IAccountStatsParam {
+  date: string;
   offset: number;
   accountStats: IAccountStats[];
 }

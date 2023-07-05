@@ -22,7 +22,7 @@ export default class DailyStatisticsService extends BullableService {
   })
   public async handleJob(_payload: IDailyStatsParam): Promise<void> {
     try {
-      const syncDate = new Date();
+      const syncDate = _payload.date ? new Date(_payload.date) : new Date();
       const endTime = syncDate.setUTCHours(0, 0, 0, 0);
       syncDate.setDate(syncDate.getDate() - 1);
       const startTime = syncDate.setUTCHours(0, 0, 0, 0);
@@ -123,6 +123,7 @@ export default class DailyStatisticsService extends BullableService {
       BULL_JOB_NAME.CRAWL_DAILY_STATISTICS,
       {
         offset: 0,
+        date: null,
         txIds: [],
         addresses: [],
       },
