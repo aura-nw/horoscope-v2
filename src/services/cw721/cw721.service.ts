@@ -1,4 +1,3 @@
-/* eslint-disable no-await-in-loop */
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import {
   Action,
@@ -539,8 +538,7 @@ export default class Cw721HandlerService extends BullableService {
       .first()
       .throwIfNotFound();
     // insert data from event_attribute_backup to event_attribute
-    const { limitRecordGet, chunkSizeInsert } =
-      config.cw721.crawlMissingContract;
+    const { limitRecordGet } = config.cw721.crawlMissingContract;
     let currentId = 0;
     await knex.transaction(async (trx) => {
       for (;;) {
@@ -577,6 +575,20 @@ export default class Cw721HandlerService extends BullableService {
         if (events.length === 0) {
           break;
         }
+
+        const tokens = _.keyBy(
+          // eslint-disable-next-line no-await-in-loop
+          await this.getCw721TokensRecords(
+            events.map((event) => ({
+              contractAddress: event.smart_contract.address,
+              onchainTokenId: getAttributeFrom(
+                event.attributes,
+                EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+              ),
+            }))
+          ),
+          (e) => `${e.contract_address}_${e.token_id}`
+        );
         const newHistories: CW721Activity[] = [];
         // eslint-disable-next-line no-restricted-syntax
         for (const event of events) {
@@ -584,39 +596,37 @@ export default class Cw721HandlerService extends BullableService {
             event.attributes,
             EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
           );
+          let cw721TokenId = null;
           if (onchainTokenId) {
-            const token = (
-              await this.getCw721TokensRecords([
-                {
-                  contractAddress: event.smart_contract.address,
-                  onchainTokenId: getAttributeFrom(
-                    event.attributes,
-                    EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
-                  ),
-                },
-              ])
-            )[0];
+            const token =
+              tokens[`${event.smart_contract.address}_${onchainTokenId}`];
             if (token) {
-              newHistories.push(
-                CW721Activity.fromJson({
-                  action: event.action,
-                  sender: event.sender,
-                  tx_hash: event.tx.hash,
-                  cw721_contract_id: cw721Contract.id,
-                  cw721_token_id: token.cw721_token_id,
-                  height: event.tx.height,
-                })
+              cw721TokenId = token.cw721_token_id;
+            } else {
+              this.logger.error(
+                `From tx ${event.tx.hash}: Token ${onchainTokenId} in smart contract ${event.smart_contract.address} not found in DB`
               );
             }
           }
+          newHistories.push(
+            CW721Activity.fromJson({
+              action: event.action,
+              sender: event.message.sender,
+              tx_hash: event.tx.hash,
+              cw721_contract_id: cw721Contract.id,
+              cw721_token_id: cw721TokenId,
+              height: event.tx.height,
+              smart_contract_event_id: event.id,
+            })
+          );
         }
         if (newHistories.length > 0) {
           // eslint-disable-next-line no-await-in-loop
-          await trx.batchInsert(
-            'cw721_activity',
-            newHistories,
-            chunkSizeInsert
-          );
+          await CW721Activity.query()
+            .insert(newHistories)
+            .onConflict(['smart_contract_event_id'])
+            .merge()
+            .transacting(trx);
         }
         currentId = events[events.length - 1].id;
       }
