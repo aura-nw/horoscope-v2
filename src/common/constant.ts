@@ -62,8 +62,6 @@ export const BULL_JOB_NAME = {
     'job:check-need-create-event-attr-partition',
   JOB_CREATE_EVENT_ATTR_PARTITION: 'job:create-event-attr-partition',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
-  CRAWL_CW20_TOTAL_HOLDER: 'crawl:cw20_total_holder',
-  CRAWL_CW20_TOTAL_HOLDER_BY_CONTRACT: 'crawl:cw20_total_holder_by_contract',
 };
 
 export const SERVICE = {
@@ -181,10 +179,6 @@ export const SERVICE = {
         key: 'UpdateByContract',
         path: 'v1.Cw20UpdateByContract.UpdateByContract',
       },
-    },
-    Cw20Statistics: {
-      key: 'Cw20Statistics',
-      name: 'v1.Cw20Statistics',
     },
     DashboardStatisticsService: {
       key: 'DashboardStatisticsService',
