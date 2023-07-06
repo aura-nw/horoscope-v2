@@ -111,6 +111,9 @@ export default class DailyStatisticsService extends BullableService {
           date: new Date(startTime).toISOString(),
         });
 
+        this.logger.info(
+          `Insert new daily statistic for date ${new Date(startTime)}`
+        );
         await DailyStatistics.query()
           .insert(dailyStat)
           .catch((error) => {
