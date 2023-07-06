@@ -1,7 +1,6 @@
 export const REDIS_KEY = {
   IBC_DENOM: 'ibc_denom',
   DASHBOARD_STATISTICS: 'dashboard_statistics',
-  TOP_ACCOUNTS: 'top_accounts',
 };
 
 export const URL_TYPE_CONSTANTS = {
@@ -63,9 +62,6 @@ export const BULL_JOB_NAME = {
     'job:check-need-create-event-attr-partition',
   JOB_CREATE_EVENT_ATTR_PARTITION: 'job:create-event-attr-partition',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
-  CRAWL_DAILY_STATISTICS: 'crawl:daily-statistics',
-  CRAWL_ACCOUNT_STATISTICS: 'crawl:account-statistics',
-  HANDLE_TOP_ACCOUNTS: 'handle:top-accounts',
 };
 
 export const SERVICE = {
@@ -206,14 +202,6 @@ export const SERVICE = {
         key: 'CreateEventAttrPartition',
         path: 'v1.CreateEventAttrPartition',
       },
-    },
-    DailyStatisticsService: {
-      key: 'DailyStatisticsService',
-      name: 'v1.DailyStatisticsService',
-    },
-    AccountStatisticsService: {
-      key: 'AccountStatisticsService',
-      name: 'v1.AccountStatisticsService',
     },
   },
 };

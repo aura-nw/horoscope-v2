@@ -75,11 +75,10 @@ export default class AuraRegistry {
         msg.typeUrl
       ) as TsProtoGeneratedType;
       if (!msgType) {
-        const decodedBase64 = Utils.isBase64(msg.value)
-          ? msg.value
-          : toBase64(msg.value);
-        this._logger.info(decodedBase64);
-        result.value = decodedBase64;
+        const formattedValue =
+          msg.value instanceof Uint8Array ? toBase64(msg.value) : msg.value;
+        this._logger.info(formattedValue);
+        result.value = formattedValue;
         this._logger.error('This typeUrl is not supported');
         this._logger.error(msg.typeUrl);
       } else {
