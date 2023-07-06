@@ -1,10 +1,10 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
-import { fromBech32 } from '@cosmjs/encoding';
 import { Account, DailyStatistics, Transaction } from '../../models';
 import { BULL_JOB_NAME, IDailyStatsParam, SERVICE } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
+import Utils from '../../common/utils/utils';
 
 @Service({
   name: SERVICE.V1.DailyStatisticsService.key,
@@ -33,16 +33,16 @@ export default class DailyStatisticsService extends BullableService {
       );
 
       const dailyEvents = await Transaction.query()
-        .joinRelated('events[attributes]')
-        .select('id', 'code', 'events:attributes.value')
-        .where('timestamp', '>=', startTime)
-        .andWhere('timestamp', '<', endTime)
+        .joinRelated('events.[attributes]')
+        .select('transaction.id', 'transaction.code', 'events:attributes.value')
+        .where('transaction.timestamp', '>=', new Date(startTime))
+        .andWhere('transaction.timestamp', '<', new Date(endTime))
         .andWhere(
           'events:attributes.value',
           'like',
           `${config.networkPrefixAddress}%`
         )
-        .orderBy('id')
+        .orderBy('transaction.id')
         .limit(config.dailyStatistics.recordsPerCall)
         .offset(_payload.offset * config.dailyStatistics.recordsPerCall);
 
@@ -51,7 +51,13 @@ export default class DailyStatisticsService extends BullableService {
           new Set(
             _payload.addresses.concat(
               dailyEvents
-                .filter((event) => fromBech32(event.value).data.length === 20)
+                .filter((event) =>
+                  Utils.isValidAccountAddress(
+                    event.value,
+                    config.networkPrefixAddress,
+                    20
+                  )
+                )
                 .map((event) => event.value)
             )
           )
@@ -132,9 +138,9 @@ export default class DailyStatisticsService extends BullableService {
         removeOnFail: {
           count: 3,
         },
-        repeat: {
-          pattern: config.dailyStatistics.jobPattern,
-        },
+        // repeat: {
+        //   pattern: config.dailyStatistics.jobPattern,
+        // },
       }
     );
 
