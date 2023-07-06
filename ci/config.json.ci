@@ -137,7 +137,8 @@
       "limitPerCall": 2000
     },
     "millisecondRepeatJob": 2000,
-    "key": "feegrant"
+    "key": "feegrant",
+    "blocksPerCall": 1000
   },
   "crawlValidatorImage": {
     "timeCrawImage": "0 0 * * *",
@@ -154,5 +155,9 @@
     "range": 100000,
     "step": 10000,
     "millisecondCrawl": 10000
+  },
+  "httpBatchRequest": {
+    "dispatchMilisecond": 1000,
+    "batchSizeLimit": 10
   }
 }

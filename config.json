@@ -121,7 +121,8 @@
       "limitPerCall": 2000
     },
     "millisecondRepeatJob": 2000,
-    "key": "feegrant"
+    "key": "feegrant",
+    "blocksPerCall": 1000
   },
   "graphiqlApi": {
     "hasuraRole": "internal_service",
@@ -135,8 +136,13 @@
       "event_attribute",
       "view_event_attribute_value_index"
     ],
-    "queryNeedWhereRelation": ["event_attributes", "event_attribute_index"],
-    "queryNeedWhereCondition": ["block_height"],
+    "queryNeedWhereRelation": [
+      "event_attributes",
+      "event_attribute_index"
+    ],
+    "queryNeedWhereCondition": [
+      "block_height"
+    ],
     "queryHeightRangeLimit": 10000
   },
   "crawlValidatorImage": {
@@ -154,5 +160,9 @@
     "range": 100000,
     "step": 10000,
     "millisecondCrawl": 10000
+  },
+  "httpBatchRequest": {
+    "dispatchMilisecond": 1000,
+    "batchSizeLimit": 10
   }
 }

@@ -227,7 +227,7 @@ export default class CrawlCodeService extends BullableService {
   public async _start() {
     this.createJob(
       BULL_JOB_NAME.CRAWL_CODE,
-      'crawl',
+      BULL_JOB_NAME.CRAWL_CODE,
       {},
       {
         removeOnComplete: true,
