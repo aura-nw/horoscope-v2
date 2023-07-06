@@ -46,16 +46,16 @@ export default class AccountStatisticsService extends BullableService {
         } for day ${new Date(startTime)}`
       );
       const dailyEvents = await Transaction.query()
-        .joinRelated('events[attributes]')
+        .joinRelated('events.[attributes]')
         .select(
-          'id',
-          'gas_used',
+          'transaction.id',
+          'transaction.gas_used',
           'events:attributes.event_id',
           'events:attributes.composite_key',
           'events:attributes.value'
         )
-        .where('timestamp', '>=', startTime)
-        .andWhere('timestamp', '<', endTime)
+        .where('transaction.timestamp', '>=', new Date(startTime))
+        .andWhere('transaction.timestamp', '<', new Date(endTime))
         .andWhere((builder) =>
           builder.whereIn('events.type', [
             Event.EVENT_TYPE.COIN_SPENT,
@@ -365,9 +365,9 @@ export default class AccountStatisticsService extends BullableService {
         removeOnFail: {
           count: 3,
         },
-        repeat: {
-          pattern: config.accountStatistics.jobPattern,
-        },
+        // repeat: {
+        //   pattern: config.accountStatistics.jobPattern,
+        // },
       }
     );
 
