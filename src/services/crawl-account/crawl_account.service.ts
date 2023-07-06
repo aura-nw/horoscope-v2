@@ -427,7 +427,7 @@ export default class CrawlAccountService extends BullableService {
     await Promise.all([
       this.createJob(
         BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH,
-        'crawl',
+        BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH,
         {
           addresses,
         },
@@ -440,7 +440,7 @@ export default class CrawlAccountService extends BullableService {
       ),
       this.createJob(
         BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
-        'crawl',
+        BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
         {
           addresses,
         },
@@ -453,7 +453,7 @@ export default class CrawlAccountService extends BullableService {
       ),
       this.createJob(
         BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES,
-        'crawl',
+        BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES,
         {
           addresses,
         },
