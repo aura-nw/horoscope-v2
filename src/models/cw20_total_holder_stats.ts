@@ -3,7 +3,9 @@ import BaseModel from './base';
 import { Cw20Contract } from './cw20_contract';
 
 export class CW20TotalHolderStats extends BaseModel {
-  created_at!: Date;
+  [relation: string]: any;
+
+  date!: Date;
 
   cw20_contract_id!: number;
 
@@ -16,10 +18,11 @@ export class CW20TotalHolderStats extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['cw20_contract_id', 'total_holder'],
+      required: ['cw20_contract_id', 'total_holder', 'date'],
       properties: {
         cw20_contract_id: { type: 'number' },
         total_holder: { type: 'number' },
+        date: { type: 'object' },
       },
     };
   }

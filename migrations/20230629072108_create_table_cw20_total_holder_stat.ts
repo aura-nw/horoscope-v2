@@ -6,8 +6,8 @@ export async function up(knex: Knex): Promise<void> {
     table.integer('cw20_contract_id').notNullable().index();
     table.foreign('cw20_contract_id').references('cw20_contract.id');
     table.integer('total_holder');
-    table.date('created_at').index().notNullable().defaultTo(knex.raw('now()'));
-    table.unique(['cw20_contract_id', 'created_at']);
+    table.date('date').index().notNullable();
+    table.unique(['cw20_contract_id', 'date']);
   });
 }
 
