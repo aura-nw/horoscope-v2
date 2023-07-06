@@ -62,7 +62,6 @@ export const BULL_JOB_NAME = {
     'job:check-need-create-event-attr-partition',
   JOB_CREATE_EVENT_ATTR_PARTITION: 'job:create-event-attr-partition',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
-  FILL_HISTORY_BY_MISSING_CONTRACT: 'fill:history-by-missing-contract',
   HANDLE_HISTORY_MISSING_CONTRACT: 'handle:history-missing-contract',
 };
 

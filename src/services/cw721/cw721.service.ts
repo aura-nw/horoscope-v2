@@ -326,6 +326,8 @@ export default class Cw721HandlerService extends BullableService {
                   smart_contract_event_id: cw721Event.smart_contract_event_id,
                 })
               )
+              .onConflict(['smart_contract_event_id'])
+              .merge()
               .transacting(trx)
           );
         }
