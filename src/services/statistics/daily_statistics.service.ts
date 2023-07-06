@@ -81,6 +81,7 @@ export default class DailyStatisticsService extends BullableService {
           BULL_JOB_NAME.CRAWL_DAILY_STATISTICS,
           BULL_JOB_NAME.CRAWL_DAILY_STATISTICS,
           {
+            date: null,
             offset,
             txIds: dailyTxs,
             addresses: activeAddrs,
@@ -131,8 +132,8 @@ export default class DailyStatisticsService extends BullableService {
       BULL_JOB_NAME.CRAWL_DAILY_STATISTICS,
       BULL_JOB_NAME.CRAWL_DAILY_STATISTICS,
       {
-        offset: 0,
         date: null,
+        offset: 0,
         txIds: [],
         addresses: [],
       },
@@ -141,9 +142,9 @@ export default class DailyStatisticsService extends BullableService {
         removeOnFail: {
           count: 3,
         },
-        // repeat: {
-        //   pattern: config.dailyStatistics.jobPattern,
-        // },
+        repeat: {
+          pattern: config.dailyStatistics.jobPattern,
+        },
       }
     );
 

@@ -17,8 +17,8 @@ export interface IDailyStatsParam {
 }
 
 export interface IAccountStatsParam {
+  id: number;
   date: string;
-  offset: number;
   accountStats: IAccountStats[];
 }
 

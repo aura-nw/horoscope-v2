@@ -3,6 +3,7 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import { parseCoins } from '@cosmjs/proto-signing';
+import BigNumber from 'bignumber.js';
 import {
   AccountStatistics,
   Event,
@@ -17,6 +18,7 @@ import {
 } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
+import Utils from '../../common/utils/utils';
 
 @Service({
   name: SERVICE.V1.AccountStatisticsService.key,
@@ -40,15 +42,26 @@ export default class AccountStatisticsService extends BullableService {
       const endTime = syncDate.setUTCHours(0, 0, 0, 0);
       syncDate.setDate(syncDate.getDate() - 1);
       const startTime = syncDate.setUTCHours(0, 0, 0, 0);
+
+      const startTxId = !_payload.id
+        ? (
+            await Transaction.query()
+              .select('id')
+              .where('transaction.timestamp', '>=', new Date(startTime))
+              .limit(1)
+              .orderBy('id')
+          )[0].id
+        : _payload.id;
+      const nextId = startTxId + 50;
       this.logger.info(
-        `Get account statistic events at page ${
-          _payload.offset
-        } for day ${new Date(startTime)}`
+        `Get account statistic events from id ${startTxId} for day ${new Date(
+          startTime
+        )}`
       );
+
       const dailyEvents = await Transaction.query()
         .joinRelated('events.[attributes]')
         .select(
-          'transaction.id',
           'transaction.gas_used',
           'events:attributes.event_id',
           'events:attributes.composite_key',
@@ -56,23 +69,36 @@ export default class AccountStatisticsService extends BullableService {
         )
         .where('transaction.timestamp', '>=', new Date(startTime))
         .andWhere('transaction.timestamp', '<', new Date(endTime))
+        .andWhere('transaction.id', '>=', startTxId)
+        .andWhere('transaction.id', '<', nextId)
         .andWhere((builder) =>
-          builder.whereIn('events.type', [
-            Event.EVENT_TYPE.COIN_SPENT,
-            Event.EVENT_TYPE.COIN_RECEIVED,
-            Event.EVENT_TYPE.USE_FEEGRANT,
-          ])
-        )
-        .orWhereIn('events:attributes.key', [
-          EventAttribute.ATTRIBUTE_KEY.FEE,
-          EventAttribute.ATTRIBUTE_KEY.FEE_PAYER,
-        ])
-        .limit(config.accountStatistics.recordsPerCall)
-        .offset(_payload.offset * config.accountStatistics.recordsPerCall);
+          builder
+            .whereIn('events.type', [
+              Event.EVENT_TYPE.COIN_SPENT,
+              Event.EVENT_TYPE.COIN_RECEIVED,
+              Event.EVENT_TYPE.USE_FEEGRANT,
+            ])
+            .orWhereIn('events:attributes.key', [
+              EventAttribute.ATTRIBUTE_KEY.FEE,
+              EventAttribute.ATTRIBUTE_KEY.FEE_PAYER,
+            ])
+        );
 
       if (dailyEvents.length > 0) {
         dailyEvents
-          .filter((event) => event.value.startsWith('aura'))
+          .filter(
+            (event) =>
+              Utils.isValidAccountAddress(
+                event.value,
+                config.networkPrefixAddress,
+                20
+              ) ||
+              Utils.isValidAccountAddress(
+                event.value,
+                config.networkPrefixAddress,
+                32
+              )
+          )
           .forEach((event) => {
             if (!accountStats.find((acc) => acc.address === event.value)) {
               accountStats.push({
@@ -86,7 +112,14 @@ export default class AccountStatisticsService extends BullableService {
           });
 
         dailyEvents
-          .filter((event) => !event.value.startsWith('aura'))
+          .filter(
+            (event) =>
+              !Utils.isValidAccountAddress(
+                event.value,
+                config.networkPrefixAddress,
+                20
+              )
+          )
           .forEach((event) => {
             switch (event.composite_key) {
               case EventAttribute.ATTRIBUTE_COMPOSITE_KEY.COIN_SPENT_AMOUNT:
@@ -157,13 +190,13 @@ export default class AccountStatisticsService extends BullableService {
               BigInt(accountStats[index].gas_used) + BigInt(event.gas_used)
             ).toString();
           });
-        const offset = _payload.offset + 1;
 
         await this.createJob(
           BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
           BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
           {
-            offset,
+            id: nextId,
+            date: null,
             accountStats,
           },
           {
@@ -184,14 +217,16 @@ export default class AccountStatisticsService extends BullableService {
         this.logger.info(
           `Insert new daily statistic for date ${new Date(startTime)}`
         );
-        await AccountStatistics.query()
-          .insert(dailyAccountStats)
-          .catch((error) => {
-            this.logger.error(
-              'Error insert new daily account statistic records'
-            );
-            this.logger.error(error);
-          });
+        if (dailyAccountStats.length > 0) {
+          await AccountStatistics.query()
+            .insert(dailyAccountStats)
+            .catch((error) => {
+              this.logger.error(
+                'Error insert new daily account statistic records'
+              );
+              this.logger.error(error);
+            });
+        }
 
         await this.createJob(
           BULL_JOB_NAME.HANDLE_TOP_ACCOUNTS,
@@ -229,30 +264,30 @@ export default class AccountStatisticsService extends BullableService {
       const [threeDayStat, fifteenDayStat, thirtyDayStat] = await Promise.all([
         AccountStatistics.query()
           .select('address')
-          .sum('amount_sent')
-          .sum('amount_received')
-          .sum('tx_sent')
-          .sum('gas_used')
-          .where('date', '>=', threeDays)
-          .andWhere('date', '<', now)
+          .sum('amount_sent as amount_sent')
+          .sum('amount_received as amount_received')
+          .sum('tx_sent as tx_sent')
+          .sum('gas_used as gas_used')
+          .where('date', '>=', new Date(threeDays))
+          .andWhere('date', '<', new Date(now))
           .groupBy('address'),
         AccountStatistics.query()
           .select('address')
-          .sum('amount_sent')
-          .sum('amount_received')
-          .sum('tx_sent')
-          .sum('gas_used')
-          .where('date', '>=', fifteenDays)
-          .andWhere('date', '<', now)
+          .sum('amount_sent as amount_sent')
+          .sum('amount_received as amount_received')
+          .sum('tx_sent as tx_sent')
+          .sum('gas_used as gas_used')
+          .where('date', '>=', new Date(fifteenDays))
+          .andWhere('date', '<', new Date(now))
           .groupBy('address'),
         AccountStatistics.query()
           .select('address')
-          .sum('amount_sent')
-          .sum('amount_received')
-          .sum('tx_sent')
-          .sum('gas_used')
-          .where('date', '>=', thirtyDays)
-          .andWhere('date', '<', now)
+          .sum('amount_sent as amount_sent')
+          .sum('amount_received as amount_received')
+          .sum('tx_sent as tx_sent')
+          .sum('gas_used as gas_used')
+          .where('date', '>=', new Date(thirtyDays))
+          .andWhere('date', '<', new Date(now))
           .groupBy('address'),
       ]);
 
@@ -263,7 +298,7 @@ export default class AccountStatisticsService extends BullableService {
         thirty_days: this.calculateTop(thirtyDayStat),
       };
 
-      this.logger.info(`Update top accounts for day ${now}`);
+      this.logger.info(`Update top accounts for day ${new Date(now)}`);
       await this.broker.cacher?.set(REDIS_KEY.TOP_ACCOUNTS, topAccounts);
     } catch (error) {
       this.logger.error(error);
@@ -277,76 +312,71 @@ export default class AccountStatisticsService extends BullableService {
       top_tx_sent: [] as any[],
       top_gas_used: [] as any[],
     };
+
+    const dayStatAmountSent = dayStat
+      .map((statistic) => statistic.amount_sent)
+      .reduce((a: string, b: string) => (BigInt(a) + BigInt(b)).toString());
+    const dayStatAmountReceived = dayStat
+      .map((statistic) => statistic.amount_received)
+      .reduce((a: string, b: string) => (BigInt(a) + BigInt(b)).toString());
+    const dayStatTxSent = dayStat
+      .map((statistic) => statistic.tx_sent)
+      .reduce((a: number, b: number) => Number(BigInt(a) + BigInt(b)));
+    const dayStatGasUsed = dayStat
+      .map((statistic) => statistic.gas_used)
+      .reduce((a: string, b: string) => (BigInt(a) + BigInt(b)).toString());
+
     dayStat.forEach((stat) => {
       newTopStat.top_amount_sent.push({
         address: stat.address,
         amount: stat.amount_sent,
         percentage: Number(
-          (BigInt(stat.amount_sent) * BigInt(100)) /
-            BigInt(
-              dayStat
-                .map((statistic) => statistic.amount_sent)
-                .reduce((a: string, b: string) =>
-                  (BigInt(a) + BigInt(b)).toString()
-                )
-            )
+          BigNumber(stat.amount_sent)
+            .multipliedBy(100)
+            .dividedBy(BigNumber(dayStatAmountSent))
         ),
       });
       newTopStat.top_amount_received.push({
         address: stat.address,
         amount: stat.amount_received,
         percentage: Number(
-          (BigInt(stat.amount_received) * BigInt(100)) /
-            BigInt(
-              dayStat
-                .map((statistic) => statistic.amount_received)
-                .reduce((a: string, b: string) =>
-                  (BigInt(a) + BigInt(b)).toString()
-                )
-            )
+          BigNumber(stat.amount_received)
+            .multipliedBy(100)
+            .dividedBy(BigNumber(dayStatAmountReceived))
         ),
       });
       newTopStat.top_tx_sent.push({
         address: stat.address,
         amount: stat.tx_sent,
-        percentage:
-          (stat.tx_sent * 100) /
-          dayStat
-            .map((statistic) => statistic.tx_sent)
-            .reduce((a: number, b: number) => a + b),
+        percentage: (stat.tx_sent * 100) / dayStatTxSent,
       });
       newTopStat.top_gas_used.push({
         address: stat.address,
         amount: stat.gas_used,
         percentage: Number(
-          (BigInt(stat.gas_used) * BigInt(100)) /
-            BigInt(
-              dayStat
-                .map((statistic) => statistic.gas_used)
-                .reduce((a: string, b: string) =>
-                  (BigInt(a) + BigInt(b)).toString()
-                )
-            )
+          BigNumber(stat.gas_used)
+            .multipliedBy(100)
+            .dividedBy(BigNumber(dayStatGasUsed))
         ),
       });
     });
     newTopStat.top_amount_sent = newTopStat.top_amount_sent
-      .sort((a, b) => a.percentage - b.percentage)
+      .sort((a, b) => b.percentage - a.percentage)
       .filter(
         (_, index) => index < config.accountStatistics.numberOfTopRecords
       );
     newTopStat.top_amount_received = newTopStat.top_amount_received
-      .sort((a, b) => a.percentage - b.percentage)
+      .sort((a, b) => b.percentage - a.percentage)
       .filter(
         (_, index) => index < config.accountStatistics.numberOfTopRecords
       );
     newTopStat.top_tx_sent = newTopStat.top_tx_sent
-      .sort((a, b) => a.percentage - b.percentage)
+      .sort((a, b) => b.percentage - a.percentage)
       .filter(
         (_, index) => index < config.accountStatistics.numberOfTopRecords
       );
     newTopStat.top_gas_used = newTopStat.top_gas_used
-      .sort((a, b) => a.percentage - b.percentage)
+      .sort((a, b) => b.percentage - a.percentage)
       .filter(
         (_, index) => index < config.accountStatistics.numberOfTopRecords
       );
@@ -355,22 +385,33 @@ export default class AccountStatisticsService extends BullableService {
   }
 
   public async _start() {
+    // this.createJob(
+    //   BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
+    //   BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
+    //   {
+    //     id: null,
+    //     date: null,
+    //     accountStats: [],
+    //   },
+    //   {
+    //     removeOnComplete: true,
+    //     removeOnFail: {
+    //       count: 3,
+    //     },
+    //     repeat: {
+    //       pattern: config.accountStatistics.jobPattern,
+    //     },
+    //   }
+    // );
     this.createJob(
-      BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
-      BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
-      {
-        date: null,
-        offset: 0,
-        accountStats: [],
-      },
+      BULL_JOB_NAME.HANDLE_TOP_ACCOUNTS,
+      BULL_JOB_NAME.HANDLE_TOP_ACCOUNTS,
+      {},
       {
         removeOnComplete: true,
         removeOnFail: {
           count: 3,
         },
-        // repeat: {
-        //   pattern: config.accountStatistics.jobPattern,
-        // },
       }
     );
 
