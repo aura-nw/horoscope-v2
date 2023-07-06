@@ -181,15 +181,12 @@ export default class Utils {
         );
         const isRange = lowerLimit && upperLimit;
         if (isRange) {
-          heightRange =
+          heightRange = Math.max(
             Math.abs(
               Number(upperLimit.value.value) - Number(lowerLimit.value.value)
-            ) > heightRange
-              ? Math.abs(
-                  Number(upperLimit.value.value) -
-                    Number(lowerLimit.value.value)
-                )
-              : heightRange;
+            ),
+            heightRange
+          );
           return true;
         }
       }
