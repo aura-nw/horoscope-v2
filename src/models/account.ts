@@ -4,11 +4,6 @@ import { ICoin } from '../common';
 import { AccountVesting } from './account_vesting';
 import BaseModel from './base';
 
-export interface IPubkey {
-  type: string;
-  key: string;
-}
-
 export interface IBalance extends ICoin {
   base_denom?: string;
 }
@@ -26,7 +21,7 @@ export class Account extends BaseModel {
 
   type!: string;
 
-  pubkey!: IPubkey;
+  pubkey!: any;
 
   account_number!: number;
 

@@ -180,7 +180,7 @@ export default class HandleStakeEventService extends BullableService {
   public async _start() {
     this.createJob(
       BULL_JOB_NAME.HANDLE_STAKE_EVENT,
-      'crawl',
+      BULL_JOB_NAME.HANDLE_STAKE_EVENT,
       {},
       {
         removeOnComplete: true,
