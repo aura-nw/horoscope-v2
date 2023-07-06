@@ -129,7 +129,7 @@ export default class CrawlTallyProposalService extends BullableService {
   public async _start() {
     this.createJob(
       BULL_JOB_NAME.CRAWL_TALLY_PROPOSAL,
-      'crawl',
+      BULL_JOB_NAME.CRAWL_TALLY_PROPOSAL,
       {},
       {
         removeOnComplete: true,

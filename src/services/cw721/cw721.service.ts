@@ -316,6 +316,7 @@ export default class Cw721HandlerService extends BullableService {
                   cw721_contract_id: cw721Contract.id,
                   cw721_token_id: cw721TokenId,
                   height: cw721Event.tx.height,
+                  smart_contract_event_id: cw721Event.smart_contract_event_id,
                 })
               )
               .transacting(trx)
@@ -457,7 +458,8 @@ export default class Cw721HandlerService extends BullableService {
         'smart_contract.address as contractAddress',
         'smart_contract_event.action',
         'smart_contract_event.event_id',
-        'smart_contract_event.index'
+        'smart_contract_event.index',
+        'smart_contract_event.id as smart_contract_event_id'
       );
   }
 

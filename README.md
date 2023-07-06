@@ -33,6 +33,10 @@ With crawler, we use [Bull](https://github.com/OptimalBits/bull/tree/master) to 
 - [**CW721**](./docs/services/cw721/README.md): handle registed asset type CW721
 - [**handle-vote**](./docs/services/handle-vote/handle-vote.md): parse vote message
 
+## Database schema
+
+You can view detail database schema [here](./docs/database_schema.md)
+
 ## How to run
 
 Horoscope currently use private packet [aurajs](https://github.com/aura-nw/aurajs) to decode tx from Aura Network. To install aurajs, you must create a Personal Access Token has read package permission, put it to (xxx_xxx) on .npmrc file in root source code
@@ -69,5 +73,5 @@ npm run dev
 - `yarn dev`: Start development mode (load all services locally with hot-reload & REPL)
 - `yarn build`: Build .dist folder to start production mode
 - `yarn start`: Start production mode (set `SERVICES` env variable to load certain services)
-- `yarn li nt`: Run ESLint
+- `yarn lint`: Run ESLint
 - `yarn test`: Run jest
