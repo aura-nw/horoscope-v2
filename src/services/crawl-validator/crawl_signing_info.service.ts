@@ -129,7 +129,7 @@ export default class CrawlSigningInfoService extends BullableService {
   public async _start() {
     this.createJob(
       BULL_JOB_NAME.CRAWL_SIGNING_INFO,
-      'crawl',
+      BULL_JOB_NAME.CRAWL_SIGNING_INFO,
       {},
       {
         removeOnComplete: true,

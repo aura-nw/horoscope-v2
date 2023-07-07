@@ -3,6 +3,7 @@ import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
 import CW721Contract from './cw721_contract';
 import CW721Token from './cw721_token';
+import { SmartContractEvent } from './smart_contract_event';
 
 export default class CW721Activity extends BaseModel {
   id?: number;
@@ -26,6 +27,8 @@ export default class CW721Activity extends BaseModel {
   to?: string;
 
   height?: number;
+
+  smart_contract_event_id!: number;
 
   static get tableName() {
     return 'cw721_activity';
@@ -62,6 +65,14 @@ export default class CW721Activity extends BaseModel {
         join: {
           from: 'cw721_activity.cw721_token_id',
           to: 'cw721_token.id',
+        },
+      },
+      smart_contract_event: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: SmartContractEvent,
+        join: {
+          from: 'cw721_activity.smart_contract_event_id',
+          to: 'smart_contract_event.id',
         },
       },
     };
