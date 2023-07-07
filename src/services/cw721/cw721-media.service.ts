@@ -258,42 +258,40 @@ export default class Cw721MediaService extends BullableService {
   // download image/animation from media_uri, then upload to S3
   async uploadMediaToS3(media_uri?: string) {
     if (media_uri) {
-      if (this.isValidURI(media_uri)) {
-        const uploadAttachmentToS3 = async (
-          type: string | undefined,
-          buffer: Buffer
-        ) => {
-          const params = {
-            Key: this.parseFilename(media_uri),
-            Body: buffer,
-            Bucket: BUCKET,
-            ContentType: type,
-          };
-          return s3Client
-            .upload(params)
-            .promise()
-            .then(
-              (response: { Location: string; Key: string }) => ({
-                linkS3: S3_GATEWAY + response.Key,
-                contentType: type,
-                key: response.Key,
-              }),
-              (err: string) => {
-                throw new Error(err);
-              }
-            );
+      const uploadAttachmentToS3 = async (
+        type: string | undefined,
+        buffer: Buffer
+      ) => {
+        const params = {
+          Key: this.parseFilename(media_uri),
+          Body: buffer,
+          Bucket: BUCKET,
+          ContentType: type,
         };
-        const mediaBuffer = await this.downloadAttachment(
-          this.parseIPFSUri(media_uri)
-        );
-        let type: string | undefined = (
-          await FileType.fileTypeFromBuffer(mediaBuffer)
-        )?.mime;
-        if (type === 'application/xml') {
-          type = 'image/svg+xml';
-        }
-        return uploadAttachmentToS3(type, mediaBuffer);
+        return s3Client
+          .upload(params)
+          .promise()
+          .then(
+            (response: { Location: string; Key: string }) => ({
+              linkS3: S3_GATEWAY + response.Key,
+              contentType: type,
+              key: response.Key,
+            }),
+            (err: string) => {
+              throw new Error(err);
+            }
+          );
+      };
+      const mediaBuffer = await this.downloadAttachment(
+        this.parseIPFSUri(media_uri)
+      );
+      let type: string | undefined = (
+        await FileType.fileTypeFromBuffer(mediaBuffer)
+      )?.mime;
+      if (type === 'application/xml') {
+        type = 'image/svg+xml';
       }
+      return uploadAttachmentToS3(type, mediaBuffer);
     }
     return null;
   }
@@ -401,15 +399,5 @@ export default class Cw721MediaService extends BullableService {
       const buffer = Buffer.from(response.data, 'base64');
       return buffer;
     });
-  }
-
-  isValidURI(str: string) {
-    try {
-      // eslint-disable-next-line no-new
-      new URL(str);
-    } catch (error) {
-      return false;
-    }
-    return true;
   }
 }
