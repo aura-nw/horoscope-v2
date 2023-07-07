@@ -40,8 +40,8 @@ export class SmartContract extends BaseModel {
 
   static get STATUS() {
     return {
-      LATEST: 'Latest',
-      MIGRATED: 'Migrated',
+      LATEST: 'LATEST',
+      MIGRATED: 'MIGRATED',
     };
   }
 
