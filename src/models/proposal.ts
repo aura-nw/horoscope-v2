@@ -51,9 +51,11 @@ export class Proposal extends BaseModel {
 
   total_deposit!: ICoin[];
 
-  turnout!: number;
+  turnout: number | undefined;
 
   count_vote!: ICountVote;
+
+  vote_counted!: boolean;
 
   static get tableName() {
     return 'proposal';
@@ -102,7 +104,7 @@ export class Proposal extends BaseModel {
         'tally',
         'initial_deposit',
         'total_deposit',
-        'turnout',
+        'vote_counted',
       ],
       properties: {
         proposal_id: { type: 'number' },
@@ -144,7 +146,8 @@ export class Proposal extends BaseModel {
             },
           },
         },
-        turnout: { type: 'number' },
+        turnout: { type: ['number', 'null'] },
+        vote_counted: { type: 'boolean' },
       },
     };
   }
@@ -173,7 +176,8 @@ export class Proposal extends BaseModel {
       tally: proposal.final_tally_result,
       initial_deposit: initialDeposit ?? [],
       total_deposit: proposal.total_deposit,
-      turnout: 0,
+      turnout: null,
+      vote_counted: false,
     });
   }
 

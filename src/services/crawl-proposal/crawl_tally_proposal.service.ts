@@ -63,6 +63,7 @@ export default class CrawlTallyProposalService extends BullableService {
           .andWhere('voting_end_time', '<=', now)
           .andWhere('voting_end_time', '>', prev)
       )
+      .orWhere('turnout', null)
       .select('*');
 
     votingProposals.forEach((proposal: Proposal) => {
