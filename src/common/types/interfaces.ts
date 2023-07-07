@@ -76,8 +76,6 @@ export interface IInstantiateContracts {
 export interface IMigrateContracts {
   address: string;
   codeId: string;
-  hash: string;
-  height: number;
 }
 
 export interface IContextInstantiateContracts {
