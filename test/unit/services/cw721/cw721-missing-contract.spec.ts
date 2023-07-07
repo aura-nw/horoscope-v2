@@ -1,11 +1,11 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
-import { SmartContractEvent } from '../../../../src/models/smart_contract_event';
-import { BULL_JOB_NAME, SERVICE } from '../../../../src/common';
+import { BULL_JOB_NAME } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
 import { BlockCheckpoint, Code, Transaction } from '../../../../src/models';
 import CW721Contract from '../../../../src/models/cw721_contract';
 import CW721Token from '../../../../src/models/cw721_token';
+import { SmartContractEvent } from '../../../../src/models/smart_contract_event';
 import Cw721MissingContractService from '../../../../src/services/cw721/cw721-missing-contract.service';
 import Cw721HandlerService, {
   CW721_ACTION,
@@ -372,12 +372,10 @@ export default class TestCw721MissingContractService {
     CW721Contract.getAllTokensOwner = jest.fn(() =>
       Promise.resolve(mockTokensOwner)
     );
-    await this.broker.call(
-      SERVICE.V1.CW721CrawlMissingContract.CrawlMissingContract.path,
-      {
-        contractAddress: this.codeId.contracts[0].address,
-      }
-    );
+    await this.cw721MissingContractService.jobHandler({
+      contractAddress: this.codeId.contracts[0].address,
+      smartContractId: 1,
+    });
     const cw721Contract = await CW721Contract.query()
       .withGraphJoined('smart_contract')
       .where('smart_contract.address', this.codeId.contracts[0].address)
@@ -413,7 +411,6 @@ export default class TestCw721MissingContractService {
           owner: 'ghgfhdgdsfgsdgfsd',
           last_updated_height: 1000000,
           burned: false,
-          cw721_contract_id: 1,
         },
       ],
     };
@@ -609,7 +606,7 @@ export default class TestCw721MissingContractService {
       )
     );
     const tokens = await CW721Token.query()
-      .where('cw721_contract_id', 2)
+      .where('cw721_contract_id', 3)
       .orderBy('id');
     expect(tokens[0].owner).toEqual(missingHistories[2].attributes[2].value);
     expect(tokens[0].last_updated_height).toEqual(

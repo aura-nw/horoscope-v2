@@ -18,6 +18,8 @@ export interface IContractInfoAndMinter {
   minter?: string;
 }
 export default class CW721Contract extends BaseModel {
+  static softDelete = false;
+
   [relation: string]: any;
 
   contract_id!: number;

@@ -4,6 +4,8 @@ import BaseModel from './base';
 import CW721Contract from './cw721_contract';
 
 export default class CW721Token extends BaseModel {
+  static softDelete = false;
+
   [relation: string]: any;
 
   token_id!: string;

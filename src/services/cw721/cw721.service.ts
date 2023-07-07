@@ -622,11 +622,7 @@ export default class Cw721HandlerService extends BullableService {
         }
         if (newHistories.length > 0) {
           // eslint-disable-next-line no-await-in-loop
-          await CW721Activity.query()
-            .insert(newHistories)
-            .onConflict(['smart_contract_event_id'])
-            .merge()
-            .transacting(trx);
+          await CW721Activity.query().insert(newHistories).transacting(trx);
         }
         currentId = events[events.length - 1].id;
       }
