@@ -157,12 +157,13 @@
     "batchSizeLimit": 10
   },
   "dailyStatistics": {
-    "recordsPerCall": 100,
-    "jobPattern": "0 0 0 * * ?"
+    "recordsPerCall": 100
   },
   "accountStatistics": {
     "numberOfTopRecords": 10,
-    "recordsPerCall": 100,
+    "recordsPerCall": 100
+  },
+  "dailyStatsJobs": {
     "jobPattern": "0 0 0 * * ?"
   }
 }

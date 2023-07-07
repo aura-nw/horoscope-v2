@@ -66,6 +66,7 @@ export const BULL_JOB_NAME = {
   CRAWL_DAILY_STATISTICS: 'crawl:daily-statistics',
   CRAWL_ACCOUNT_STATISTICS: 'crawl:account-statistics',
   HANDLE_TOP_ACCOUNTS: 'handle:top-accounts',
+  HANDLE_DAILY_STATS_JOBS: 'handle:daily-stats-jobs',
 };
 
 export const SERVICE = {
@@ -210,10 +211,22 @@ export const SERVICE = {
     DailyStatisticsService: {
       key: 'DailyStatisticsService',
       name: 'v1.DailyStatisticsService',
+      CreateSpecificDateJob: {
+        key: 'CreateSpecificDateJob',
+        path: 'v1.DailyStatisticsService.CreateSpecificDateJob',
+      },
     },
     AccountStatisticsService: {
       key: 'AccountStatisticsService',
       name: 'v1.AccountStatisticsService',
+      CreateSpecificDateJob: {
+        key: 'CreateSpecificDateJob',
+        path: 'v1.AccountStatisticsService.CreateSpecificDateJob',
+      },
+    },
+    DailyStatsJobsService: {
+      key: 'DailyStatsJobsService',
+      name: 'v1.DailyStatsJobsService',
     },
   },
 };

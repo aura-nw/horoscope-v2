@@ -1,7 +1,15 @@
-import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { ServiceBroker } from 'moleculer';
+import {
+  Action,
+  Service,
+} from '@ourparentcenter/moleculer-decorators-extended';
+import { Context, ServiceBroker } from 'moleculer';
 import { Account, DailyStatistics, Transaction } from '../../models';
-import { BULL_JOB_NAME, IDailyStatsParam, SERVICE } from '../../common';
+import {
+  BULL_JOB_NAME,
+  ICreateSpecificDateJob,
+  IDailyStatsParam,
+  SERVICE,
+} from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import Utils from '../../common/utils/utils';
@@ -15,6 +23,33 @@ export default class DailyStatisticsService extends BullableService {
     super(broker);
   }
 
+  @Action({
+    name: SERVICE.V1.DailyStatisticsService.CreateSpecificDateJob.key,
+    params: {
+      date: 'string',
+    },
+  })
+  public async actionCreateSpecificDateJob(
+    ctx: Context<ICreateSpecificDateJob>
+  ) {
+    await this.createJob(
+      BULL_JOB_NAME.CRAWL_DAILY_STATISTICS,
+      BULL_JOB_NAME.CRAWL_DAILY_STATISTICS,
+      {
+        date: ctx.params.date,
+        offset: 0,
+        txIds: [],
+        addresses: [],
+      },
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+      }
+    );
+  }
+
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_DAILY_STATISTICS,
     jobName: BULL_JOB_NAME.CRAWL_DAILY_STATISTICS,
@@ -22,7 +57,7 @@ export default class DailyStatisticsService extends BullableService {
   })
   public async handleJob(_payload: IDailyStatsParam): Promise<void> {
     try {
-      const syncDate = _payload.date ? new Date(_payload.date) : new Date();
+      const syncDate = new Date(_payload.date);
       const endTime = syncDate.setUTCHours(0, 0, 0, 0);
       syncDate.setDate(syncDate.getDate() - 1);
       const startTime = syncDate.setUTCHours(0, 0, 0, 0);
@@ -81,7 +116,7 @@ export default class DailyStatisticsService extends BullableService {
           BULL_JOB_NAME.CRAWL_DAILY_STATISTICS,
           BULL_JOB_NAME.CRAWL_DAILY_STATISTICS,
           {
-            date: null,
+            date: _payload.date,
             offset,
             txIds: dailyTxs,
             addresses: activeAddrs,
@@ -128,26 +163,6 @@ export default class DailyStatisticsService extends BullableService {
   }
 
   public async _start() {
-    this.createJob(
-      BULL_JOB_NAME.CRAWL_DAILY_STATISTICS,
-      BULL_JOB_NAME.CRAWL_DAILY_STATISTICS,
-      {
-        date: null,
-        offset: 0,
-        txIds: [],
-        addresses: [],
-      },
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-        repeat: {
-          pattern: config.dailyStatistics.jobPattern,
-        },
-      }
-    );
-
     return super._start();
   }
 }

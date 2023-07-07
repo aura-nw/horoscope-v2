@@ -29,3 +29,7 @@ export interface IAccountStats {
   tx_sent: number;
   gas_used: string;
 }
+
+export interface ICreateSpecificDateJob {
+  date: string;
+}

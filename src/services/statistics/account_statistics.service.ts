@@ -1,7 +1,10 @@
 /* eslint-disable no-case-declarations */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { ServiceBroker } from 'moleculer';
+import {
+  Action,
+  Service,
+} from '@ourparentcenter/moleculer-decorators-extended';
+import { Context, ServiceBroker } from 'moleculer';
 import { parseCoins } from '@cosmjs/proto-signing';
 import BigNumber from 'bignumber.js';
 import {
@@ -13,6 +16,7 @@ import {
 import {
   BULL_JOB_NAME,
   IAccountStatsParam,
+  ICreateSpecificDateJob,
   REDIS_KEY,
   SERVICE,
 } from '../../common';
@@ -29,6 +33,32 @@ export default class AccountStatisticsService extends BullableService {
     super(broker);
   }
 
+  @Action({
+    name: SERVICE.V1.AccountStatisticsService.CreateSpecificDateJob.key,
+    params: {
+      date: 'string',
+    },
+  })
+  public async actionCreateSpecificDateJob(
+    ctx: Context<ICreateSpecificDateJob>
+  ) {
+    await this.createJob(
+      BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
+      BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
+      {
+        id: null,
+        date: ctx.params.date,
+        accountStats: [],
+      },
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+      }
+    );
+  }
+
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
     jobName: BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
@@ -38,7 +68,7 @@ export default class AccountStatisticsService extends BullableService {
     try {
       const { accountStats } = _payload;
 
-      const syncDate = _payload.date ? new Date(_payload.date) : new Date();
+      const syncDate = new Date(_payload.date);
       const endTime = syncDate.setUTCHours(0, 0, 0, 0);
       syncDate.setDate(syncDate.getDate() - 1);
       const startTime = syncDate.setUTCHours(0, 0, 0, 0);
@@ -196,7 +226,7 @@ export default class AccountStatisticsService extends BullableService {
           BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
           {
             id: nextId,
-            date: null,
+            date: _payload.date,
             accountStats,
           },
           {
@@ -385,36 +415,6 @@ export default class AccountStatisticsService extends BullableService {
   }
 
   public async _start() {
-    // this.createJob(
-    //   BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
-    //   BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
-    //   {
-    //     id: null,
-    //     date: null,
-    //     accountStats: [],
-    //   },
-    //   {
-    //     removeOnComplete: true,
-    //     removeOnFail: {
-    //       count: 3,
-    //     },
-    //     repeat: {
-    //       pattern: config.accountStatistics.jobPattern,
-    //     },
-    //   }
-    // );
-    this.createJob(
-      BULL_JOB_NAME.HANDLE_TOP_ACCOUNTS,
-      BULL_JOB_NAME.HANDLE_TOP_ACCOUNTS,
-      {},
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-      }
-    );
-
     return super._start();
   }
 }
