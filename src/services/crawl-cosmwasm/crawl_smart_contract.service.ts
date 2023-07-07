@@ -237,9 +237,9 @@ export default class CrawlSmartContractService extends BullableService {
         .transaction(async (trx) => {
           await SmartContract.query()
             .insert(migratedContracts)
-            .onConflict(['address', 'code_id'])
+            .onConflict('id')
             .merge()
-            .returning(['address', 'code_id'])
+            .returning('id')
             .transacting(trx)
             .catch((error) => {
               this.logger.error(
@@ -351,9 +351,6 @@ export default class CrawlSmartContractService extends BullableService {
       if (smartContracts.length > 0)
         instantiatedContracts = await SmartContract.query()
           .insert(smartContracts)
-          .onConflict(['address', 'code_id'])
-          .merge()
-          .returning(['address', 'code_id'])
           .transacting(trx)
           .catch((error) => {
             this.logger.error('Error insert new smart contracts');
