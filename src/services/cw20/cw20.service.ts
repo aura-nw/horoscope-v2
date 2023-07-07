@@ -270,15 +270,17 @@ export default class Cw20Service extends BullableService {
       .count()
       .groupBy('holders.cw20_contract_id')
       .select('holders.cw20_contract_id');
-    await CW20TotalHolderStats.query().insert(
-      totalHolder.map((e) =>
-        CW20TotalHolderStats.fromJson({
-          cw20_contract_id: e.cw20_contract_id,
-          total_holder: e.count,
-          date: systemDate,
-        })
-      )
-    );
+    if (totalHolder.length > 0) {
+      await CW20TotalHolderStats.query().insert(
+        totalHolder.map((e) =>
+          CW20TotalHolderStats.fromJson({
+            cw20_contract_id: e.cw20_contract_id,
+            total_holder: e.count,
+            date: systemDate,
+          })
+        )
+      );
+    }
   }
 
   async _start(): Promise<void> {
