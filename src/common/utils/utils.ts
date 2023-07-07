@@ -166,6 +166,11 @@ export default class Utils {
     const checkCondition = (res: any) => {
       findConditionInObj(res);
       if (whereHeight) {
+        const isEqual = whereHeight.value.fields.find(
+          (field: any) => field.name.value === '_eq'
+        );
+        if (isEqual) return true;
+
         const upperLimit = whereHeight.value.fields.find(
           (field: any) =>
             field.name.value === '_lt' || field.name.value === '_lte'
@@ -174,14 +179,13 @@ export default class Utils {
           (field: any) =>
             field.name.value === '_gt' || field.name.value === '_gte'
         );
-        const isRange =
-          whereHeight.value.fields.find(
-            (field: any) => field.name.value === '_eq'
-          ) ||
-          (lowerLimit && upperLimit);
+        const isRange = lowerLimit && upperLimit;
         if (isRange) {
-          heightRange = Math.abs(
-            Number(upperLimit.value.value) - Number(lowerLimit.value.value)
+          heightRange = Math.max(
+            Math.abs(
+              Number(upperLimit.value.value) - Number(lowerLimit.value.value)
+            ),
+            heightRange
           );
           return true;
         }
