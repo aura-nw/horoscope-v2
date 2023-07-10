@@ -379,6 +379,20 @@ export default class CrawlSmartContractService extends BullableService {
         },
       }
     );
+    this.createJob(
+      BULL_JOB_NAME.HANDLE_MIGRATE_CONTRACT,
+      BULL_JOB_NAME.HANDLE_MIGRATE_CONTRACT,
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        repeat: {
+          every: config.crawlSmartContract.millisecondCrawl,
+        },
+      }
+    );
 
     return super._start();
   }
