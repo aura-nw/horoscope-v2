@@ -29,7 +29,7 @@ interface ICw721ReindexingServiceParams {
   name: SERVICE.V1.CW721ReindexingService.key,
   version: 1,
 })
-export default class Cw721MissingContractService extends BullableService {
+export default class CW721ReindexingService extends BullableService {
   public constructor(public broker: ServiceBroker) {
     super(broker);
   }
