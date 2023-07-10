@@ -214,7 +214,7 @@ export default class CrawlSmartContractService extends BullableService {
       });
 
       if (missingVersionContracts.length > 0) {
-        const contractCw2s = await SmartContract.getMigratedContractData(
+        const contractCw2s = await SmartContract.getContractCw2s(
           missingVersionContracts.map((contract) => contract.address),
           this._httpBatchClient
         );
@@ -289,7 +289,7 @@ export default class CrawlSmartContractService extends BullableService {
         );
       });
 
-      const [contractCw2s, contractInfos] = await SmartContract.getContractInfo(
+      const [contractCw2s, contractInfos] = await SmartContract.getContractData(
         queryAddresses,
         this._httpBatchClient
       );

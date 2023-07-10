@@ -510,7 +510,7 @@ export default class CrawlGenesisService extends BullableService {
 
           const updateContractTypes: any[] = [];
           const [contractCw2s, contractInfos]: [any, any] =
-            await SmartContract.getContractInfo(
+            await SmartContract.getContractData(
               genContracts.map((contract: any) => contract.contract_address),
               this._httpBatchClient
             );
