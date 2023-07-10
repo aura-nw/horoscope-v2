@@ -13,7 +13,9 @@ import {
 import knex from '../../common/utils/db_connection';
 import { getAttributeFrom } from '../../common/utils/smart_contract';
 import {
+  Block,
   BlockCheckpoint,
+  CW20TotalHolderStats,
   Cw20Contract,
   Cw20Event,
   EventAttribute,
@@ -55,6 +57,7 @@ export default class Cw20Service extends BullableService {
         [BULL_JOB_NAME.CRAWL_CONTRACT_EVENT],
         config.cw20.key
       );
+    await this.handleStatistic(startBlock);
     this.logger.info(`startBlock: ${startBlock} to endBlock: ${endBlock}`);
     if (startBlock >= endBlock) return;
     // get all contract Msg in above range blocks
@@ -238,6 +241,46 @@ export default class Cw20Service extends BullableService {
         'tx.height as height',
         'smart_contract_event.id as smart_contract_event_id'
       );
+  }
+
+  async handleStatistic(startBlock: number) {
+    const systemDate = (
+      await Block.query().where('height', startBlock).first().throwIfNotFound()
+    ).time;
+    const lastUpdatedDate = (
+      await CW20TotalHolderStats.query().max('date').first()
+    )?.max;
+    if (lastUpdatedDate) {
+      systemDate.setHours(0, 0, 0, 0);
+      lastUpdatedDate.setHours(0, 0, 0, 0);
+      if (systemDate > lastUpdatedDate) {
+        await this.handleTotalHolderStatistic(systemDate);
+      }
+    } else {
+      await this.handleTotalHolderStatistic(systemDate);
+    }
+  }
+
+  async handleTotalHolderStatistic(systemDate: Date) {
+    const totalHolder = await Cw20Contract.query()
+      .alias('cw20_contract')
+      .joinRelated('holders')
+      .where('cw20_contract.track', true)
+      .andWhere('holders.amount', '>', 0)
+      .count()
+      .groupBy('holders.cw20_contract_id')
+      .select('holders.cw20_contract_id');
+    if (totalHolder.length > 0) {
+      await CW20TotalHolderStats.query().insert(
+        totalHolder.map((e) =>
+          CW20TotalHolderStats.fromJson({
+            cw20_contract_id: e.cw20_contract_id,
+            total_holder: e.count,
+            date: systemDate,
+          })
+        )
+      );
+    }
   }
 
   async _start(): Promise<void> {

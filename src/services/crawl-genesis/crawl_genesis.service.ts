@@ -137,7 +137,7 @@ export default class CrawlGenesisService extends BullableService {
       if (job !== BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT) {
         await this.createJob(
           job,
-          'crawl',
+          job,
           {},
           {
             removeOnComplete: true,
@@ -460,7 +460,7 @@ export default class CrawlGenesisService extends BullableService {
 
     await this.createJob(
       BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT,
-      'crawl',
+      BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT,
       {},
       {
         removeOnComplete: true,
@@ -808,7 +808,7 @@ export default class CrawlGenesisService extends BullableService {
   public async _start() {
     this.createJob(
       BULL_JOB_NAME.CRAWL_GENESIS,
-      'crawl',
+      BULL_JOB_NAME.CRAWL_GENESIS,
       {},
       {
         removeOnComplete: true,
