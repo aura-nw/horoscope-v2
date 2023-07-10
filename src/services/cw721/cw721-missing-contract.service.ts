@@ -1,49 +1,44 @@
-import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import {
   Action,
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
-import CW721Activity from '../../models/cw721_tx';
-import CW721ContractStats from '../../models/cw721_stats';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
   BULL_JOB_NAME,
-  IContextCrawlMissingContractHistory,
+  IContextReindexingServiceHistory,
   SERVICE,
-  getHttpBatchClient,
 } from '../../common';
 import { SmartContract } from '../../models';
 import CW721Contract from '../../models/cw721_contract';
+import CW721ContractStats from '../../models/cw721_stats';
 import CW721Token from '../../models/cw721_token';
+import CW721Activity from '../../models/cw721_tx';
 
 export interface IAddressParam {
   contractAddress: string;
 }
 
-interface ICw721CrawlMissingContractParams {
+interface ICw721ReindexingServiceParams {
   contractAddress: string;
   smartContractId: number;
 }
 
 @Service({
-  name: SERVICE.V1.CW721CrawlMissingContract.key,
+  name: SERVICE.V1.CW721ReindexingService.key,
   version: 1,
 })
 export default class Cw721MissingContractService extends BullableService {
-  _httpBatchClient!: HttpBatchClient;
-
   public constructor(public broker: ServiceBroker) {
     super(broker);
-    this._httpBatchClient = getHttpBatchClient();
   }
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_CW721_MISSING_CONTRACT,
     jobName: BULL_JOB_NAME.CRAWL_CW721_MISSING_CONTRACT,
   })
-  async jobHandler(_payload: ICw721CrawlMissingContractParams): Promise<void> {
+  async jobHandler(_payload: ICw721ReindexingServiceParams): Promise<void> {
     const { smartContractId, contractAddress } = _payload;
     const cw721Contract = await CW721Contract.query()
       .withGraphJoined('smart_contract')
@@ -110,23 +105,23 @@ export default class Cw721MissingContractService extends BullableService {
         smartContractId,
         startBlock: minUpdatedHeightOwner,
         endBlock: maxUpdatedHeightOwner,
-      } satisfies IContextCrawlMissingContractHistory
+      } satisfies IContextReindexingServiceHistory
     );
     // insert histories
     await this.broker.call(SERVICE.V1.Cw721.CrawlMissingContractHistory.path, {
       smartContractId,
       startBlock: config.crawlBlock.startBlock,
       endBlock: maxUpdatedHeightOwner,
-    } satisfies IContextCrawlMissingContractHistory);
+    } satisfies IContextReindexingServiceHistory);
   }
 
   @Action({
-    name: SERVICE.V1.CW721CrawlMissingContract.CrawlMissingContract.key,
+    name: SERVICE.V1.CW721ReindexingService.ReindexingService.key,
     params: {
       contractAddress: 'string',
     },
   })
-  public async CrawlMissingContract(ctx: Context<IAddressParam>) {
+  public async ReindexingService(ctx: Context<IAddressParam>) {
     const smartContract = await SmartContract.query()
       .withGraphJoined('code')
       .where('address', ctx.params.contractAddress)
@@ -140,7 +135,7 @@ export default class Cw721MissingContractService extends BullableService {
         {
           contractAddress: ctx.params.contractAddress,
           smartContractId: smartContract.id,
-        } satisfies ICw721CrawlMissingContractParams,
+        } satisfies ICw721ReindexingServiceParams,
         {
           removeOnComplete: true,
         }

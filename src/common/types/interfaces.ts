@@ -92,7 +92,7 @@ export interface IContextUpdateCw20 {
   endBlock: number;
 }
 
-export interface IContextCrawlMissingContractHistory {
+export interface IContextReindexingServiceHistory {
   smartContractId: number;
   startBlock: number;
   endBlock: number;

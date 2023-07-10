@@ -330,8 +330,8 @@ export default class TestCw721MissingContractService {
     expect(tokens[4].burned).toEqual(false);
   }
 
-  @Test('Test CrawlMissingContract function')
-  public async testCrawlMissingContract() {
+  @Test('Test ReindexingService function')
+  public async testReindexingService() {
     const mockContractInfo = {
       address: this.codeId.contracts[0].address,
       name: 'dgjkfjgdkg',

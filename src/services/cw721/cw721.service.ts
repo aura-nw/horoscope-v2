@@ -9,7 +9,7 @@ import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
   Config,
-  IContextCrawlMissingContractHistory,
+  IContextReindexingServiceHistory,
   getHttpBatchClient,
 } from '../../common';
 import { BULL_JOB_NAME, SERVICE } from '../../common/constant';
@@ -545,7 +545,7 @@ export default class Cw721HandlerService extends BullableService {
     },
   })
   public async CrawlMissingContractHistory(
-    ctx: Context<IContextCrawlMissingContractHistory>
+    ctx: Context<IContextReindexingServiceHistory>
   ) {
     const { smartContractId, startBlock, endBlock } = ctx.params;
     // insert data from event_attribute_backup to event_attribute
@@ -577,7 +577,7 @@ export default class Cw721HandlerService extends BullableService {
     },
   })
   public async HandleRangeBlockMissingContract(
-    ctx: Context<IContextCrawlMissingContractHistory>
+    ctx: Context<IContextReindexingServiceHistory>
   ) {
     const { smartContractId, startBlock, endBlock } = ctx.params;
     const missingHistories = await this.getCw721ContractEvents(

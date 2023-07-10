@@ -206,12 +206,12 @@ export const SERVICE = {
     CrawlValidatorImgService: {
       key: 'CrawlValidatorImageService',
     },
-    CW721CrawlMissingContract: {
-      key: 'Cw721CrawlMissingContract',
-      name: 'v1.Cw721CrawlMissingContract',
-      CrawlMissingContract: {
-        key: 'CrawlMissingContract',
-        path: 'v1.Cw721CrawlMissingContract.CrawlMissingContract',
+    CW721ReindexingService: {
+      key: 'Cw721ReindexingService',
+      name: 'v1.Cw721ReindexingService',
+      ReindexingService: {
+        key: 'ReindexingService',
+        path: 'v1.Cw721ReindexingService.ReindexingService',
       },
     },
     JobService: {
