@@ -54,6 +54,7 @@ export default class CrawlTallyProposalTest {
       },
     ],
     turnout: 0,
+    vote_counted: true,
   });
 
   broker = new ServiceBroker({ logger: false });

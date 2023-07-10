@@ -1,7 +1,7 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import config from '../../../config.json' assert { type: 'json' };
-import { Proposal, Vote } from '../../models';
+import { Block, Proposal, Vote } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
 import knex from '../../common/utils/db_connection';
@@ -21,8 +21,14 @@ export default class CountVoteProposalService extends BullableService {
     // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: object): Promise<void> {
-    const now = new Date(Date.now() - 10);
-    const prev = new Date(Date.now() - 30);
+    const latestCheckpointTime =
+      (
+        await Block.query()
+          .join('block_checkpoint', 'block.height', 'block_checkpoint.height')
+          .select('block.time')
+          .findOne('block_checkpoint.job_name', BULL_JOB_NAME.HANDLE_VOTE_TX)
+      )?.time ?? new Date(Date.now() - 10);
+
     const votingProposals = await Proposal.query()
       .where('status', Proposal.STATUS.PROPOSAL_STATUS_VOTING_PERIOD)
       .orWhere((builder) =>
@@ -32,14 +38,17 @@ export default class CountVoteProposalService extends BullableService {
             Proposal.STATUS.PROPOSAL_STATUS_PASSED,
             Proposal.STATUS.PROPOSAL_STATUS_REJECTED,
           ])
-          .andWhere('voting_end_time', '<=', now)
-          .andWhere('voting_end_time', '>', prev)
+          .andWhere('voting_end_time', '<=', latestCheckpointTime)
+          .andWhere('vote_counted', false)
       )
       .select('*');
 
     votingProposals.forEach(async (proposal: Proposal) => {
       const proposalId = proposal.proposal_id;
       this.logger.info('Count vote for proposal id ', proposalId);
+
+      const voteCounted =
+        new Date(proposal.voting_end_time) <= latestCheckpointTime;
 
       await knex.transaction(async (trx) => {
         const [
@@ -86,6 +95,7 @@ export default class CountVoteProposalService extends BullableService {
               no_with_veto: countVoteNoWithVeto[0].count,
               unspecified: countVoteUnspecified[0].count,
             },
+            vote_counted: voteCounted,
           })
           .transacting(trx);
       });
