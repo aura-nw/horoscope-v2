@@ -51,8 +51,11 @@ export default class CrawlTallyProposalService extends BullableService {
 
     const now = new Date(Date.now() - 10);
     const prev = new Date(Date.now() - 30);
+    // Query proposals that match the conditions to update tally and turnout
     const votingProposals = await Proposal.query()
+      // Proposals that are still in the voting period
       .where('status', Proposal.STATUS.PROPOSAL_STATUS_VOTING_PERIOD)
+      // Proposals that had just completed
       .orWhere((builder) =>
         builder
           .whereIn('status', [
@@ -63,6 +66,7 @@ export default class CrawlTallyProposalService extends BullableService {
           .andWhere('voting_end_time', '<=', now)
           .andWhere('voting_end_time', '>', prev)
       )
+      // Old proposals that finished a long time ago but just got crawled recently so its tally and turnout are missing
       .orWhere('turnout', null)
       .select('*');
 
