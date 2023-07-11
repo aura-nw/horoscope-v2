@@ -2,7 +2,7 @@ import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { BULL_JOB_NAME } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
-import { BlockCheckpoint, Code, Transaction } from '../../../../src/models';
+import { BlockCheckpoint, Code } from '../../../../src/models';
 import CW721Contract from '../../../../src/models/cw721_contract';
 import CW721Token from '../../../../src/models/cw721_token';
 import { SmartContractEvent } from '../../../../src/models/smart_contract_event';
@@ -164,19 +164,8 @@ export default class TestCw721MissingContractService {
             value: this.cw721Contract.tokens[0].token_id,
           },
         ],
-        tx: Transaction.fromJson({
-          height: 122119,
-          hash: '',
-          code: 0,
-          gas_used: '123035',
-          gas_wanted: '141106',
-          gas_limit: '141106',
-          fee: 353,
-          timestamp: '2023-01-12T01:53:57.000Z',
-          codespace: '',
-          data: {},
-          index: 0,
-        }),
+        height: 122119,
+        hash: '',
         event_id: '10',
       },
       {
@@ -211,19 +200,8 @@ export default class TestCw721MissingContractService {
             value: this.cw721Contract.tokens[1].token_id,
           },
         ],
-        tx: Transaction.fromJson({
-          height: 200,
-          hash: '',
-          code: 0,
-          gas_used: '123035',
-          gas_wanted: '141106',
-          gas_limit: '141106',
-          fee: 353,
-          timestamp: '2023-01-12T01:53:57.000Z',
-          codespace: '',
-          data: {},
-          index: 0,
-        }),
+        height: 200,
+        hash: '',
         event_id: '100',
       },
       {
@@ -258,19 +236,8 @@ export default class TestCw721MissingContractService {
             value: this.cw721Contract.tokens[4].token_id,
           },
         ],
-        tx: Transaction.fromJson({
-          height: 651659,
-          hash: '',
-          code: 0,
-          gas_used: '123035',
-          gas_wanted: '141106',
-          gas_limit: '141106',
-          fee: 353,
-          timestamp: '2023-01-12T01:53:57.000Z',
-          codespace: '',
-          data: {},
-          index: 0,
-        }),
+        height: 651659,
+        hash: '',
         event_id: 100,
       },
       {
@@ -300,19 +267,8 @@ export default class TestCw721MissingContractService {
             value: this.cw721Contract.tokens[2].token_id,
           },
         ],
-        tx: Transaction.fromJson({
-          height: 42429,
-          hash: '',
-          code: 0,
-          gas_used: '123035',
-          gas_wanted: '141106',
-          gas_limit: '141106',
-          fee: 353,
-          timestamp: '2023-01-12T01:53:57.000Z',
-          codespace: '',
-          data: {},
-          index: 0,
-        }),
+        height: 42429,
+        hash: '',
         event_id: 10,
       },
     ];
@@ -448,19 +404,8 @@ export default class TestCw721MissingContractService {
             value: cw721Contract1.tokens[0].token_id,
           },
         ],
-        tx: Transaction.fromJson({
-          height: 100,
-          hash: '',
-          code: 0,
-          gas_used: '123035',
-          gas_wanted: '141106',
-          gas_limit: '141106',
-          fee: 353,
-          timestamp: '2023-01-12T01:53:57.000Z',
-          codespace: '',
-          data: {},
-          index: 0,
-        }),
+        height: 100,
+        hash: '',
         event_id: 100,
       },
       {
@@ -495,19 +440,8 @@ export default class TestCw721MissingContractService {
             value: cw721Contract1.tokens[0].token_id,
           },
         ],
-        tx: Transaction.fromJson({
-          height: 200,
-          hash: '',
-          code: 0,
-          gas_used: '123035',
-          gas_wanted: '141106',
-          gas_limit: '141106',
-          fee: 353,
-          timestamp: '2023-01-12T01:53:57.000Z',
-          codespace: '',
-          data: {},
-          index: 0,
-        }),
+        height: 200,
+        hash: '',
         event_id: '10',
       },
       {
@@ -542,19 +476,8 @@ export default class TestCw721MissingContractService {
             value: cw721Contract1.tokens[0].token_id,
           },
         ],
-        tx: Transaction.fromJson({
-          height: 300,
-          hash: '',
-          code: 0,
-          gas_used: '123035',
-          gas_wanted: '141106',
-          gas_limit: '141106',
-          fee: 353,
-          timestamp: '2023-01-12T01:53:57.000Z',
-          codespace: '',
-          data: {},
-          index: 0,
-        }),
+        height: 300,
+        hash: '',
         event_id: '100',
       },
       {
@@ -584,19 +507,8 @@ export default class TestCw721MissingContractService {
             value: cw721Contract1.tokens[0].token_id,
           },
         ],
-        tx: Transaction.fromJson({
-          height: 400,
-          hash: '',
-          code: 0,
-          gas_used: '123035',
-          gas_wanted: '141106',
-          gas_limit: '141106',
-          fee: 353,
-          timestamp: '2023-01-12T01:53:57.000Z',
-          codespace: '',
-          data: {},
-          index: 0,
-        }),
+        height: 400,
+        hash: '',
         event_id: 10,
       },
     ];
@@ -609,9 +521,7 @@ export default class TestCw721MissingContractService {
       .where('cw721_contract_id', 3)
       .orderBy('id');
     expect(tokens[0].owner).toEqual(missingHistories[2].attributes[2].value);
-    expect(tokens[0].last_updated_height).toEqual(
-      missingHistories[3].tx.height
-    );
+    expect(tokens[0].last_updated_height).toEqual(missingHistories[3].height);
     expect(tokens[0].burned).toEqual(true);
   }
 }

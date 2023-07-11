@@ -74,14 +74,14 @@ export default class Cw721HandlerService extends BullableService {
           await CW721Token.query()
             .where('cw721_contract_id', cw721Contract.id)
             .andWhere('token_id', tokenId)
-            .andWhere('last_updated_height', '<=', transferMsg.tx.height)
+            .andWhere('last_updated_height', '<=', transferMsg.height)
             .patch({
               owner: recipient,
-              last_updated_height: transferMsg.tx.height,
+              last_updated_height: transferMsg.height,
             });
         } else {
           throw new Error(
-            `Msg transfer in tx ${transferMsg.tx.hash} not found token id transfered or not found new owner`
+            `Msg transfer in tx ${transferMsg.hash} not found token id transfered or not found new owner`
           );
         }
       }
@@ -121,7 +121,7 @@ export default class Cw721HandlerService extends BullableService {
                       EventAttribute.ATTRIBUTE_KEY.OWNER
                     ),
                     cw721_contract_id: cw721Contract.id,
-                    last_updated_height: mintEvent.tx.height,
+                    last_updated_height: mintEvent.height,
                     burned: false,
                   })
                 )
@@ -166,9 +166,9 @@ export default class Cw721HandlerService extends BullableService {
             const query = CW721Token.query()
               .where('cw721_contract_id', cw721Contract.id)
               .andWhere('token_id', tokenId)
-              .andWhere('last_updated_height', '<=', burnMsg.tx.height)
+              .andWhere('last_updated_height', '<=', burnMsg.height)
               .patch({
-                last_updated_height: burnMsg.tx.height,
+                last_updated_height: burnMsg.height,
                 burned: true,
               })
               .transacting(trx);
@@ -308,7 +308,7 @@ export default class Cw721HandlerService extends BullableService {
               cw721TokenId = foundRecord.cw721_token_id;
             } else {
               this.logger.error(
-                `From tx ${cw721Event.tx.hash}: Token ${onchainTokenId} in smart contract ${cw721Event.contractAddress} not found in DB`
+                `From tx ${cw721Event.hash}: Token ${onchainTokenId} in smart contract ${cw721Event.contractAddress} not found in DB`
               );
             }
           }
@@ -318,10 +318,10 @@ export default class Cw721HandlerService extends BullableService {
                 CW721Activity.fromJson({
                   action: cw721Event.action,
                   sender: cw721Event.sender,
-                  tx_hash: cw721Event.tx.hash,
+                  tx_hash: cw721Event.hash,
                   cw721_contract_id: cw721Contract.id,
                   cw721_token_id: cw721TokenId,
-                  height: cw721Event.tx.height,
+                  height: cw721Event.height,
                   smart_contract_event_id: cw721Event.smart_contract_event_id,
                 })
               )
@@ -442,9 +442,9 @@ export default class Cw721HandlerService extends BullableService {
     page?: { currentId: number; limit: number }
   ) {
     return SmartContractEvent.query()
-      .alias('smart_contract_event')
-      .withGraphJoined(
-        '[message(selectMessage), tx(selectTransaction), attributes(selectAttribute), smart_contract(selectSmartContract).code(selectCode)]'
+      .withGraphFetched('attributes(selectAttribute)')
+      .joinRelated(
+        '[message(selectMessage), tx(selectTransaction), smart_contract(selectSmartContract).code(selectCode)]'
       )
       .modifiers({
         selectCode(builder) {
@@ -474,7 +474,7 @@ export default class Cw721HandlerService extends BullableService {
           builder
             .andWhere('smart_contract_event.id', '>', page.currentId)
             .orderBy('smart_contract_event.id', 'asc')
-            .limit(page.limit * 5);
+            .limit(page.limit);
         }
       })
       .select(
@@ -483,7 +483,9 @@ export default class Cw721HandlerService extends BullableService {
         'smart_contract_event.action',
         'smart_contract_event.event_id',
         'smart_contract_event.index',
-        'smart_contract_event.id as smart_contract_event_id'
+        'smart_contract_event.id as smart_contract_event_id',
+        'tx.hash',
+        'tx.height'
       );
   }
 
