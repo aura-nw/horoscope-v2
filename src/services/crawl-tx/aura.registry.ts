@@ -2,7 +2,7 @@
 import { Registry, TsProtoGeneratedType } from '@cosmjs/proto-signing';
 import { defaultRegistryTypes as defaultStargateTypes } from '@cosmjs/stargate';
 import { wasmTypes } from '@cosmjs/cosmwasm-stargate/build/modules';
-import { ibc, cosmos } from '@aura-nw/aurajs';
+import { ibc, cosmos, auranw } from '@aura-nw/aurajs';
 import { toBase64, fromUtf8, fromBase64 } from '@cosmjs/encoding';
 import { LoggerInstance } from 'moleculer';
 import _ from 'lodash';
@@ -18,10 +18,13 @@ export default class AuraRegistry {
 
   public ibc: any;
 
+  public auranw: any;
+
   constructor(logger: LoggerInstance) {
     this._logger = logger;
     this.cosmos = cosmos;
     this.ibc = ibc;
+    this.auranw = auranw;
     this.setDefaultRegistry();
   }
 
@@ -51,6 +54,10 @@ export default class AuraRegistry {
 
       // slashing
       '/cosmos.slashing.v1beta1.MsgUnjail',
+
+      // aura-nw
+      '/auranw.aura.smartaccount.MsgActivateAccount',
+      '/auranw.aura.smartaccount.MsgRecover',
     ];
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
