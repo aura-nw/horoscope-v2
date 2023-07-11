@@ -546,7 +546,7 @@ export default class Cw721HandlerService extends BullableService {
       endBlock: ' any',
     },
   })
-  public async CrawlMissingContractHistory(
+  public async crawlMissingContractHistory(
     ctx: Context<IContextReindexingServiceHistory>
   ) {
     const { smartContractId, startBlock, endBlock } = ctx.params;
@@ -578,7 +578,7 @@ export default class Cw721HandlerService extends BullableService {
       endBlock: ' any',
     },
   })
-  public async HandleRangeBlockMissingContract(
+  public async handleRangeBlockMissingContract(
     ctx: Context<IContextReindexingServiceHistory>
   ) {
     const { smartContractId, startBlock, endBlock } = ctx.params;

@@ -316,10 +316,10 @@ export default class TestCw721MissingContractService {
         last_updated_height: 400,
       },
     ];
-    this.cw721HandlerService.CrawlMissingContractHistory = jest.fn(() =>
+    this.cw721HandlerService.crawlMissingContractHistory = jest.fn(() =>
       Promise.resolve()
     );
-    this.cw721HandlerService.HandleRangeBlockMissingContract = jest.fn(() =>
+    this.cw721HandlerService.handleRangeBlockMissingContract = jest.fn(() =>
       Promise.resolve()
     );
     CW721Contract.getContractsInfo = jest.fn(() =>
