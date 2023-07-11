@@ -55,7 +55,7 @@ export default class AssetIndexerTest {
   mockBlockCheckpoint = [
     BlockCheckpoint.fromJson({
       job_name: BULL_JOB_NAME.CRAWL_CONTRACT_EVENT,
-      height: this.blockHeight,
+      height: this.blockHeight - 1,
     }),
     BlockCheckpoint.fromJson({
       job_name: BULL_JOB_NAME.CRAWL_SMART_CONTRACT,
@@ -366,24 +366,6 @@ export default class AssetIndexerTest {
       store_height: 1000,
       type: 'CW721',
     }),
-    // contracts: [
-    //   {
-    //     name: 'Base Contract 2',
-    //     address: 'mock_contract_address',
-    //     creator: 'phamphong_creator',
-    //     code_id: 100,
-    //     instantiate_hash: 'abc',
-    //     instantiate_height: 300000,
-    //   },
-    //   {
-    //     code_id: 100,
-    //     address: 'mock_contract_address_2',
-    //     name: 'name',
-    //     creator: 'phamphong_creator 2',
-    //     instantiate_hash: 'abc',
-    //     instantiate_height: 300000,
-    //   },
-    // ],
   };
 
   @BeforeAll()
@@ -491,6 +473,214 @@ export default class AssetIndexerTest {
           this.txInsert.messages[1].events[2].attributes[0],
           this.txInsert.messages[1].events[2].attributes[1],
         ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+      },
+    ]);
+  }
+
+  @Test('test getCw721ContractEvent function')
+  public async testGetCw721ContractEvent() {
+    const extractData = await this.cw721HandlerService.getCw721ContractEvents(
+      this.block.height - 1,
+      this.block.height
+    );
+    expect(
+      extractData.map((data) => ({
+        action: data.action,
+        sender: data.sender,
+        contractAddress: data.contractAddress,
+        attributes: data.attributes,
+        hash: data.hash,
+        height: data.height,
+      }))
+    ).toEqual([
+      {
+        action: 'instantiate',
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.messages[0].events[1].attributes[0].value,
+        attributes: [
+          this.txInsert.messages[0].events[1].attributes[0],
+          this.txInsert.messages[0].events[1].attributes[1],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+        hash: this.txInsert.hash,
+        height: this.txInsert.height,
+      },
+      {
+        action: 'instantiate',
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.messages[0].events[2].attributes[0].value,
+        attributes: [
+          this.txInsert.messages[0].events[2].attributes[0],
+          this.txInsert.messages[0].events[2].attributes[1],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+        hash: this.txInsert.hash,
+        height: this.txInsert.height,
+      },
+      {
+        action: this.txInsert.messages[0].events[3].attributes[1].value,
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.messages[0].events[3].attributes[0].value,
+        attributes: [
+          this.txInsert.messages[0].events[3].attributes[0],
+          this.txInsert.messages[0].events[3].attributes[1],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+        hash: this.txInsert.hash,
+        height: this.txInsert.height,
+      },
+      {
+        action: this.txInsert.messages[0].events[4].attributes[1].value,
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.messages[0].events[4].attributes[0].value,
+        attributes: [
+          this.txInsert.messages[0].events[4].attributes[0],
+          this.txInsert.messages[0].events[4].attributes[1],
+          this.txInsert.messages[0].events[4].attributes[2],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+        hash: this.txInsert.hash,
+        height: this.txInsert.height,
+      },
+      {
+        action: this.txInsert.messages[1].events[1].attributes[1].value,
+        sender: this.txInsert.messages[1].sender,
+        contractAddress:
+          this.txInsert.messages[1].events[1].attributes[0].value,
+        attributes: [
+          this.txInsert.messages[1].events[1].attributes[0],
+          this.txInsert.messages[1].events[1].attributes[1],
+          this.txInsert.messages[1].events[1].attributes[2],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+        hash: this.txInsert.hash,
+        height: this.txInsert.height,
+      },
+      {
+        action: null,
+        sender: this.txInsert.messages[1].sender,
+        contractAddress:
+          this.txInsert.messages[1].events[2].attributes[0].value,
+        attributes: [
+          this.txInsert.messages[1].events[2].attributes[0],
+          this.txInsert.messages[1].events[2].attributes[1],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+        hash: this.txInsert.hash,
+        height: this.txInsert.height,
+      },
+    ]);
+  }
+
+  @Test('test getCw721ContractEvent by contract function')
+  public async testGetCw721ContractEventByContract() {
+    const extractData = await this.cw721HandlerService.getCw721ContractEvents(
+      this.block.height - 1,
+      this.block.height,
+      1
+    );
+    expect(
+      extractData.map((data) => ({
+        action: data.action,
+        sender: data.sender,
+        contractAddress: data.contractAddress,
+        attributes: data.attributes,
+        hash: data.hash,
+        height: data.height,
+      }))
+    ).toEqual([
+      {
+        action: 'instantiate',
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.messages[0].events[1].attributes[0].value,
+        attributes: [
+          this.txInsert.messages[0].events[1].attributes[0],
+          this.txInsert.messages[0].events[1].attributes[1],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+        hash: this.txInsert.hash,
+        height: this.txInsert.height,
+      },
+      {
+        action: 'instantiate',
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.messages[0].events[2].attributes[0].value,
+        attributes: [
+          this.txInsert.messages[0].events[2].attributes[0],
+          this.txInsert.messages[0].events[2].attributes[1],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+        hash: this.txInsert.hash,
+        height: this.txInsert.height,
+      },
+      {
+        action: this.txInsert.messages[1].events[1].attributes[1].value,
+        sender: this.txInsert.messages[1].sender,
+        contractAddress:
+          this.txInsert.messages[1].events[1].attributes[0].value,
+        attributes: [
+          this.txInsert.messages[1].events[1].attributes[0],
+          this.txInsert.messages[1].events[1].attributes[1],
+          this.txInsert.messages[1].events[1].attributes[2],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+        hash: this.txInsert.hash,
+        height: this.txInsert.height,
+      },
+      {
+        action: null,
+        sender: this.txInsert.messages[1].sender,
+        contractAddress:
+          this.txInsert.messages[1].events[2].attributes[0].value,
+        attributes: [
+          this.txInsert.messages[1].events[2].attributes[0],
+          this.txInsert.messages[1].events[2].attributes[1],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+        hash: this.txInsert.hash,
+        height: this.txInsert.height,
+      },
+    ]);
+
+    const extractData1 = await this.cw721HandlerService.getCw721ContractEvents(
+      this.block.height - 1,
+      this.block.height,
+      1,
+      {
+        limit: 2,
+        currentId: 0,
+      }
+    );
+
+    expect(
+      extractData1.map((data) => ({
+        action: data.action,
+        sender: data.sender,
+        contractAddress: data.contractAddress,
+        attributes: data.attributes,
+        hash: data.hash,
+        height: data.height,
+      }))
+    ).toEqual([
+      {
+        action: 'instantiate',
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.messages[0].events[1].attributes[0].value,
+        attributes: [
+          this.txInsert.messages[0].events[1].attributes[0],
+          this.txInsert.messages[0].events[1].attributes[1],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+        hash: this.txInsert.hash,
+        height: this.txInsert.height,
+      },
+      {
+        action: 'instantiate',
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.messages[0].events[2].attributes[0].value,
+        attributes: [
+          this.txInsert.messages[0].events[2].attributes[0],
+          this.txInsert.messages[0].events[2].attributes[1],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+        hash: this.txInsert.hash,
+        height: this.txInsert.height,
       },
     ]);
   }

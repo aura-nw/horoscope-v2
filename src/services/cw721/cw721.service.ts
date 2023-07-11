@@ -443,26 +443,7 @@ export default class Cw721HandlerService extends BullableService {
   ) {
     return SmartContractEvent.query()
       .withGraphFetched('attributes(selectAttribute)')
-      .joinRelated(
-        '[message(selectMessage), tx(selectTransaction), smart_contract(selectSmartContract).code(selectCode)]'
-      )
-      .modifiers({
-        selectCode(builder) {
-          builder.select('type');
-        },
-        selectTransaction(builder) {
-          builder.select('hash', 'height');
-        },
-        selectMessage(builder) {
-          builder.select('sender');
-        },
-        selectAttribute(builder) {
-          builder.select('key', 'value');
-        },
-        selectSmartContract(builder) {
-          builder.select('address');
-        },
-      })
+      .joinRelated('[message, tx, smart_contract.code]')
       .where('smart_contract:code.type', 'CW721')
       .where('tx.height', '>', startBlock)
       .andWhere('tx.height', '<=', endBlock)
@@ -486,7 +467,8 @@ export default class Cw721HandlerService extends BullableService {
         'smart_contract_event.id as smart_contract_event_id',
         'tx.hash',
         'tx.height'
-      );
+      )
+      .orderBy('smart_contract_event.id');
   }
 
   @QueueHandler({
