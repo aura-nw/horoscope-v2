@@ -5,6 +5,7 @@ import {
 } from '@ourparentcenter/moleculer-decorators-extended';
 import _ from 'lodash';
 import { Context, ServiceBroker } from 'moleculer';
+import { Queue } from 'bullmq';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
@@ -32,6 +33,14 @@ export const CW721_ACTION = {
   INSTANTIATE: 'instantiate',
   SEND_NFT: 'send_nft',
 };
+
+export interface ICw721ReindexingHistoryParams {
+  smartContractId: number;
+  startBlock: number;
+  endBlock: number;
+  currentId: number;
+  contractAddress: string;
+}
 @Service({
   name: SERVICE.V1.Cw721.key,
   version: 1,
@@ -520,35 +529,50 @@ export default class Cw721HandlerService extends BullableService {
       .groupBy('cw721_contract.id');
   }
 
-  @Action({
-    name: SERVICE.V1.Cw721.CrawlMissingContractHistory.key,
-    params: {
-      smartContractId: 'any',
-      startBlock: 'any',
-      endBlock: ' any',
-    },
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.REINDEX_CW721_HISTORY,
+    jobName: BULL_JOB_NAME.REINDEX_CW721_HISTORY,
   })
   public async crawlMissingContractHistory(
-    ctx: Context<IContextReindexingServiceHistory>
+    _payload: ICw721ReindexingHistoryParams
   ) {
-    const { smartContractId, startBlock, endBlock } = ctx.params;
+    const {
+      smartContractId,
+      startBlock,
+      endBlock,
+      currentId,
+      contractAddress,
+    } = _payload;
     // insert data from event_attribute_backup to event_attribute
     const { limitRecordGet } = config.cw721.crawlMissingContract;
-    let currentId = 0;
-    for (;;) {
-      // eslint-disable-next-line no-await-in-loop
-      const events = await this.getCw721ContractEvents(
-        startBlock,
-        endBlock,
-        smartContractId,
-        { limit: limitRecordGet, currentId }
-      );
-      if (events.length === 0) {
-        break;
-      }
-      // eslint-disable-next-line no-await-in-loop
+    // eslint-disable-next-line no-await-in-loop
+    const events = await this.getCw721ContractEvents(
+      startBlock,
+      endBlock,
+      smartContractId,
+      { limit: limitRecordGet, currentId }
+    );
+    if (events.length > 0) {
       await this.handleCW721Activity(events);
-      currentId = events[events.length - 1].smart_contract_event_id;
+      await this.createJob(
+        BULL_JOB_NAME.REINDEX_CW721_HISTORY,
+        BULL_JOB_NAME.REINDEX_CW721_HISTORY,
+        {
+          smartContractId,
+          startBlock,
+          endBlock,
+          currentId: events[events.length - 1].smart_contract_event_id,
+          contractAddress,
+        } satisfies ICw721ReindexingHistoryParams,
+        {
+          removeOnComplete: true,
+        }
+      );
+    } else {
+      const queue: Queue = this.getQueueManager().getQueue(
+        BULL_JOB_NAME.REINDEX_CW721_CONTRACT
+      );
+      (await queue.getJob(contractAddress))?.remove();
     }
   }
 

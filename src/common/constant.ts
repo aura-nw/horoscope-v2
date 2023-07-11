@@ -62,7 +62,8 @@ export const BULL_JOB_NAME = {
     'job:check-need-create-event-attr-partition',
   JOB_CREATE_EVENT_ATTR_PARTITION: 'job:create-event-attr-partition',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
-  CRAWL_CW721_MISSING_CONTRACT: 'crawl:cw721-missing-contract',
+  REINDEX_CW721_CONTRACT: 'reindex:cw721-contract',
+  REINDEX_CW721_HISTORY: 'reindex:cw721-history',
 };
 
 export const SERVICE = {
@@ -93,10 +94,6 @@ export const SERVICE = {
       UpdateMedia: {
         key: 'updateCw721Media',
         path: 'v1.Cw721Service.updateCw721Media',
-      },
-      CrawlMissingContractHistory: {
-        key: 'CrawlMissingContractHistory',
-        path: 'v1.Cw721Service.CrawlMissingContractHistory',
       },
       HandleRangeBlockMissingContract: {
         key: 'HandleRangeBlockMissingContract',
@@ -209,9 +206,9 @@ export const SERVICE = {
     CW721ReindexingService: {
       key: 'Cw721ReindexingService',
       name: 'v1.Cw721ReindexingService',
-      ReindexingService: {
-        key: 'ReindexingService',
-        path: 'v1.Cw721ReindexingService.ReindexingService',
+      ReindexingApi: {
+        key: 'ReindexingApi',
+        path: 'v1.Cw721ReindexingService.ReindexingApi',
       },
     },
     JobService: {
