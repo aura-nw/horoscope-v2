@@ -8,6 +8,6 @@ export async function up(knex: Knex): Promise<void> {
 
 export async function down(knex: Knex): Promise<void> {
   await knex.schema.alterTable('cw721_activity', (table) => {
-    table.dropUnique(['cw20_contract_id']);
+    table.dropUnique(['smart_contract_event_id']);
   });
 }

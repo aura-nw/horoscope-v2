@@ -6,7 +6,7 @@ import { BlockCheckpoint, Code } from '../../../../src/models';
 import CW721Contract from '../../../../src/models/cw721_contract';
 import CW721Token from '../../../../src/models/cw721_token';
 import { SmartContractEvent } from '../../../../src/models/smart_contract_event';
-import Cw721MissingContractService from '../../../../src/services/cw721/cw721-missing-contract.service';
+import Cw721MissingContractService from '../../../services/cw721/cw721-reindexing.service';
 import Cw721HandlerService, {
   CW721_ACTION,
 } from '../../../../src/services/cw721/cw721.service';

@@ -121,7 +121,7 @@ export default class CW721ReindexingService extends BullableService {
       contractAddress: 'string',
     },
   })
-  public async ReindexingService(ctx: Context<IAddressParam>) {
+  public async reindexingService(ctx: Context<IAddressParam>) {
     const smartContract = await SmartContract.query()
       .withGraphJoined('code')
       .where('address', ctx.params.contractAddress)
