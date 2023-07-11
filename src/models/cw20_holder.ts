@@ -13,7 +13,7 @@ export class CW20Holder extends BaseModel {
 
   amount!: string;
 
-  last_updated_height?: number;
+  last_updated_height!: number;
 
   cw20_contract_id!: number;
 

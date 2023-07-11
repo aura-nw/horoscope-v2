@@ -48,6 +48,9 @@ export default class AuraRegistry {
 
       // ibc header
       '/ibc.lightclients.tendermint.v1.Header',
+
+      // slashing
+      '/cosmos.slashing.v1beta1.MsgUnjail',
     ];
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -72,9 +75,10 @@ export default class AuraRegistry {
         msg.typeUrl
       ) as TsProtoGeneratedType;
       if (!msgType) {
-        const decodedBase64 = toBase64(msg.value);
-        this._logger.info(decodedBase64);
-        result.value = decodedBase64;
+        const formattedValue =
+          msg.value instanceof Uint8Array ? toBase64(msg.value) : msg.value;
+        this._logger.info(formattedValue);
+        result.value = formattedValue;
         this._logger.error('This typeUrl is not supported');
         this._logger.error(msg.typeUrl);
       } else {
@@ -105,7 +109,7 @@ export default class AuraRegistry {
       ) {
         if (result.msg) {
           try {
-            result.msg = JSON.parse(fromUtf8(fromBase64(result.msg)));
+            result.msg = fromUtf8(fromBase64(result.msg));
           } catch (error) {
             this._logger.error('This msg instantite/execute is not valid JSON');
           }
@@ -128,5 +132,11 @@ export default class AuraRegistry {
 
     // eslint-disable-next-line consistent-return
     return result;
+  }
+
+  public addTypes(types: string[]) {
+    types.forEach((type) =>
+      this.registry.register(type, _.get(this, type.slice(1)))
+    );
   }
 }

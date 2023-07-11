@@ -21,6 +21,7 @@ import {
   Proposal,
   SmartContract,
   Validator,
+  Feegrant,
 } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
@@ -28,12 +29,14 @@ import {
   AccountType,
   BULL_JOB_NAME,
   getHttpBatchClient,
+  ICoin,
   MSG_TYPE,
   REDIS_KEY,
   SERVICE,
 } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
+import { ALLOWANCE_TYPE, FEEGRANT_STATUS } from '../feegrant/feegrant.service';
 
 @Service({
   name: SERVICE.V1.CrawlGenesisService.key,
@@ -48,6 +51,7 @@ export default class CrawlGenesisService extends BullableService {
     BULL_JOB_NAME.CRAWL_GENESIS_PROPOSAL,
     BULL_JOB_NAME.CRAWL_GENESIS_CODE,
     BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT,
+    BULL_JOB_NAME.CRAWL_GENESIS_FEEGRANT,
   ];
 
   public constructor(public broker: ServiceBroker) {
@@ -133,7 +137,7 @@ export default class CrawlGenesisService extends BullableService {
       if (job !== BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT) {
         await this.createJob(
           job,
-          'crawl',
+          job,
           {},
           {
             removeOnComplete: true,
@@ -159,7 +163,7 @@ export default class CrawlGenesisService extends BullableService {
     let accounts: Account[] = [];
     let done = false;
 
-    const genesisProcess = await this.checckGenesisJobProcess(
+    const genesisProcess = await this.checkGenesisJobProcess(
       BULL_JOB_NAME.CRAWL_GENESIS_ACCOUNT
     );
     if (genesisProcess !== 0) return;
@@ -257,7 +261,7 @@ export default class CrawlGenesisService extends BullableService {
   public async crawlGenesisValidators(_payload: object): Promise<void> {
     this.logger.info('Crawl genesis validators');
 
-    const genesisProcess = await this.checckGenesisJobProcess(
+    const genesisProcess = await this.checkGenesisJobProcess(
       BULL_JOB_NAME.CRAWL_GENESIS_VALIDATOR
     );
     if (genesisProcess !== 0) return;
@@ -327,7 +331,7 @@ export default class CrawlGenesisService extends BullableService {
   public async crawlGenesisProposals(_payload: object): Promise<void> {
     this.logger.info('Crawl genesis proposals');
 
-    const genesisProcess = await this.checckGenesisJobProcess(
+    const genesisProcess = await this.checkGenesisJobProcess(
       BULL_JOB_NAME.CRAWL_GENESIS_PROPOSAL
     );
     if (genesisProcess !== 0) return;
@@ -389,7 +393,7 @@ export default class CrawlGenesisService extends BullableService {
 
     let done = false;
 
-    const genesisProcess = await this.checckGenesisJobProcess(
+    const genesisProcess = await this.checkGenesisJobProcess(
       BULL_JOB_NAME.CRAWL_GENESIS_CODE
     );
     if (genesisProcess === 2) done = true;
@@ -456,7 +460,7 @@ export default class CrawlGenesisService extends BullableService {
 
     await this.createJob(
       BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT,
-      'crawl',
+      BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT,
       {},
       {
         removeOnComplete: true,
@@ -479,7 +483,7 @@ export default class CrawlGenesisService extends BullableService {
   public async crawlGenesisContracts(_payload: object): Promise<void> {
     this.logger.info('Crawl genesis contracts');
 
-    const genesisProcess = await this.checckGenesisJobProcess(
+    const genesisProcess = await this.checkGenesisJobProcess(
       BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT
     );
     if (genesisProcess !== 0) return;
@@ -497,6 +501,7 @@ export default class CrawlGenesisService extends BullableService {
               address: contract.contract_address,
               creator: contract.contract_info.creator,
               code_id: contract.contract_info.code_id,
+              status: SmartContract.STATUS.LATEST,
               instantiate_hash: '',
               instantiate_height: 0,
               version: null,
@@ -505,7 +510,7 @@ export default class CrawlGenesisService extends BullableService {
 
           const updateContractTypes: any[] = [];
           const [contractCw2s, contractInfos]: [any, any] =
-            await SmartContract.getContractInfo(
+            await SmartContract.getContractData(
               genContracts.map((contract: any) => contract.contract_address),
               this._httpBatchClient
             );
@@ -546,9 +551,6 @@ export default class CrawlGenesisService extends BullableService {
                 );
                 await SmartContract.query()
                   .insert(chunkContracts)
-                  .onConflict('address')
-                  .merge()
-                  .returning('address')
                   .transacting(trx);
               }
             )
@@ -559,6 +561,98 @@ export default class CrawlGenesisService extends BullableService {
           .insert(
             BlockCheckpoint.fromJson({
               job_name: BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT,
+              height: 1,
+            })
+          )
+          .onConflict('job_name')
+          .merge()
+          .returning('id')
+          .transacting(trx);
+      })
+      .catch((error) => {
+        this.logger.error(error);
+        throw error;
+      });
+
+    await this.terminateProcess();
+  }
+
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.CRAWL_GENESIS_FEEGRANT,
+    jobName: BULL_JOB_NAME.CRAWL_GENESIS_FEEGRANT,
+    // prefix: `horoscope-v2-${config.chainId}`,
+  })
+  public async crawlGenesisFeeGrants(_payload: object): Promise<void> {
+    this.logger.info('Crawl genesis feegrants');
+
+    const genesisProcess = await this.checkGenesisJobProcess(
+      BULL_JOB_NAME.CRAWL_GENESIS_FEEGRANT
+    );
+    if (genesisProcess !== 0) return;
+
+    const genFeegrants: any[] = await this.readStreamGenesis(
+      'app_state.feegrant.allowances'
+    );
+
+    const feeGrants: Feegrant[] = [];
+    genFeegrants.forEach((genFee: any) => {
+      let basicAllowance = genFee.allowance;
+      let type = basicAllowance['@type'];
+      while (
+        type !== ALLOWANCE_TYPE.BASIC_ALLOWANCE &&
+        type !== ALLOWANCE_TYPE.PERIODIC_ALLOWANCE
+      ) {
+        basicAllowance = basicAllowance.allowance;
+        type = basicAllowance['@type'];
+      }
+      if (type === ALLOWANCE_TYPE.PERIODIC_ALLOWANCE) {
+        basicAllowance = basicAllowance.basic;
+      }
+      if (basicAllowance.spend_limit.length > 0)
+        basicAllowance.spend_limit.forEach((limit: ICoin) => {
+          feeGrants.push(
+            Feegrant.fromJson({
+              init_tx_id: null,
+              revoke_tx_id: null,
+              granter: genFee.granter,
+              grantee: genFee.grantee,
+              type,
+              expiration: new Date(basicAllowance.expiration) ?? null,
+              status: FEEGRANT_STATUS.AVAILABLE,
+              spend_limit: limit.amount,
+              denom: limit.denom,
+            })
+          );
+        });
+      else
+        feeGrants.push(
+          Feegrant.fromJson({
+            init_tx_id: null,
+            revoke_tx_id: null,
+            granter: genFee.granter,
+            grantee: genFee.grantee,
+            type,
+            expiration: new Date(basicAllowance.expiration) ?? null,
+            status: FEEGRANT_STATUS.AVAILABLE,
+            spend_limit: null,
+            denom: null,
+          })
+        );
+    });
+
+    await knex
+      .transaction(async (trx) => {
+        this.logger.info('Insert genesis feegrants');
+        await trx.batchInsert(
+          'feegrant',
+          feeGrants,
+          config.crawlGenesis.feeGrantsPerBatch
+        );
+
+        await BlockCheckpoint.query()
+          .insert(
+            BlockCheckpoint.fromJson({
+              job_name: BULL_JOB_NAME.CRAWL_GENESIS_FEEGRANT,
               height: 1,
             })
           )
@@ -645,7 +739,7 @@ export default class CrawlGenesisService extends BullableService {
     return accounts;
   }
 
-  private async checckGenesisJobProcess(jobName: string): Promise<number> {
+  private async checkGenesisJobProcess(jobName: string): Promise<number> {
     const genesisCheckpoint = await BlockCheckpoint.query()
       .select('*')
       .whereIn('job_name', [BULL_JOB_NAME.CRAWL_GENESIS, jobName]);
@@ -712,7 +806,7 @@ export default class CrawlGenesisService extends BullableService {
   public async _start() {
     this.createJob(
       BULL_JOB_NAME.CRAWL_GENESIS,
-      'crawl',
+      BULL_JOB_NAME.CRAWL_GENESIS,
       {},
       {
         removeOnComplete: true,

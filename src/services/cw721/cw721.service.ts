@@ -1,38 +1,22 @@
-import { cosmwasm } from '@aura-nw/aurajs';
-import {
-  fromBase64,
-  fromUtf8,
-  toBase64,
-  toHex,
-  toUtf8,
-} from '@cosmjs/encoding';
-import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
-import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { ServiceBroker } from 'moleculer';
 import _ from 'lodash';
-import { SmartContractEvent } from '../../models/smart_contract_event';
+import { ServiceBroker } from 'moleculer';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { Config, getHttpBatchClient } from '../../common';
 import { BULL_JOB_NAME, SERVICE } from '../../common/constant';
 import knex from '../../common/utils/db_connection';
-import { BlockCheckpoint, EventAttribute } from '../../models';
+import { getAttributeFrom } from '../../common/utils/smart_contract';
+import { Block, BlockCheckpoint, EventAttribute } from '../../models';
 import CW721Contract from '../../models/cw721_contract';
+import CW721ContractStats from '../../models/cw721_stats';
 import CW721Token from '../../models/cw721_token';
 import CW721Activity from '../../models/cw721_tx';
 import { SmartContract } from '../../models/smart_contract';
-import { getAttributeFrom } from '../../common/utils/smart_contract';
+import { SmartContractEvent } from '../../models/smart_contract_event';
 
 const { NODE_ENV } = Config;
-
-interface IContractInfoAndMinter {
-  address: string;
-  name: string;
-  symbol: string;
-  minter: string;
-}
 
 const CW721_ACTION = {
   MINT: 'mint',
@@ -222,16 +206,16 @@ export default class Cw721HandlerService extends BullableService {
         }
       );
       await this.createJob(
-        BULL_JOB_NAME.REFRESH_CW721_M_VIEW,
-        BULL_JOB_NAME.REFRESH_CW721_M_VIEW,
+        BULL_JOB_NAME.REFRESH_CW721_STATS,
+        BULL_JOB_NAME.REFRESH_CW721_STATS,
         {},
         {
-          removeOnComplete: true,
+          removeOnComplete: { count: 1 },
           removeOnFail: {
             count: 3,
           },
           repeat: {
-            every: config.cw721.millisecondRefreshMView,
+            pattern: config.cw721.timeRefreshCw721Stats,
           },
         }
       );
@@ -332,6 +316,7 @@ export default class Cw721HandlerService extends BullableService {
                   cw721_contract_id: cw721Contract.id,
                   cw721_token_id: cw721TokenId,
                   height: cw721Event.tx.height,
+                  smart_contract_event_id: cw721Event.smart_contract_event_id,
                 })
               )
               .transacting(trx)
@@ -366,7 +351,7 @@ export default class Cw721HandlerService extends BullableService {
       );
     if (cw721Contracts.length > 0) {
       const contractsInfo = _.keyBy(
-        await this.getContractsInfo(
+        await CW721Contract.getContractsInfo(
           cw721Contracts.map((cw721Contract) => cw721Contract.contract_address)
         ),
         'address'
@@ -442,78 +427,6 @@ export default class Cw721HandlerService extends BullableService {
       .select('smart_contract.address as address', 'cw721_contract.id as id');
   }
 
-  // get contract info (minter, symbol, name) by query rpc
-  async getContractsInfo(
-    contractAddresses: string[]
-  ): Promise<IContractInfoAndMinter[]> {
-    const promisesInfo: any[] = [];
-    const promisesMinter: any[] = [];
-    contractAddresses.forEach((address: string) => {
-      promisesInfo.push(
-        this._httpBatchClient.execute(
-          createJsonRpcRequest('abci_query', {
-            path: '/cosmwasm.wasm.v1.Query/SmartContractState',
-            data: toHex(
-              cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
-                address,
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                queryData: toBase64(toUtf8('{"contract_info":{}}')),
-              }).finish()
-            ),
-          })
-        )
-      );
-    });
-    contractAddresses.forEach((address: string) => {
-      promisesMinter.push(
-        this._httpBatchClient.execute(
-          createJsonRpcRequest('abci_query', {
-            path: '/cosmwasm.wasm.v1.Query/SmartContractState',
-            data: toHex(
-              cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
-                address,
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                queryData: toBase64(toUtf8('{"minter":{}}')),
-              }).finish()
-            ),
-          })
-        )
-      );
-    });
-    const contractsInfo = [];
-    const resultsContractsInfo: JsonRpcSuccessResponse[] = await Promise.all(
-      promisesInfo
-    );
-    const resultsMinters: JsonRpcSuccessResponse[] = await Promise.all(
-      promisesMinter
-    );
-    for (let index = 0; index < resultsContractsInfo.length; index += 1) {
-      const contractInfo = JSON.parse(
-        fromUtf8(
-          cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
-            fromBase64(resultsContractsInfo[index].result.response.value)
-          ).data
-        )
-      );
-      const { minter }: { minter: string } = JSON.parse(
-        fromUtf8(
-          cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
-            fromBase64(resultsMinters[index].result.response.value)
-          ).data
-        )
-      );
-      contractsInfo.push({
-        address: contractAddresses[index],
-        name: contractInfo.name as string,
-        symbol: contractInfo.symbol as string,
-        minter,
-      });
-    }
-    return contractsInfo;
-  }
-
   async getCw721ContractEvents(startBlock: number, endBlock: number) {
     return SmartContractEvent.query()
       .alias('smart_contract_event')
@@ -545,19 +458,57 @@ export default class Cw721HandlerService extends BullableService {
         'smart_contract.address as contractAddress',
         'smart_contract_event.action',
         'smart_contract_event.event_id',
-        'smart_contract_event.index'
+        'smart_contract_event.index',
+        'smart_contract_event.id as smart_contract_event_id'
       );
   }
 
   @QueueHandler({
-    queueName: BULL_JOB_NAME.REFRESH_CW721_M_VIEW,
-    jobName: BULL_JOB_NAME.REFRESH_CW721_M_VIEW,
+    queueName: BULL_JOB_NAME.REFRESH_CW721_STATS,
+    jobName: BULL_JOB_NAME.REFRESH_CW721_STATS,
   })
   async jobHandlerRefresh(): Promise<void> {
-    await this.refreshMaterialView();
+    await this.refreshCw721Stats();
   }
 
-  async refreshMaterialView() {
-    await knex.schema.refreshMaterializedView('m_view_count_cw721_txs');
+  async refreshCw721Stats(): Promise<void> {
+    const cw721Stats = await this.calCw721Stats();
+
+    // Upsert cw721 stats
+    await CW721ContractStats.query()
+      .insert(cw721Stats)
+      .onConflict('cw721_contract_id')
+      .merge()
+      .returning('id');
+  }
+
+  async calCw721Stats(): Promise<CW721Contract[]> {
+    // Get once block height 24h ago.
+    const blockSince24hAgo = await Block.query()
+      .select('height')
+      .where('time', '<=', knex.raw("now() - '24 hours'::interval"))
+      .orderBy('height', 'desc')
+      .limit(1);
+
+    // Calculate total activity and transfer_24h of cw721
+    return CW721Contract.query()
+      .count('cw721_activity.id AS total_activity')
+      .select(
+        knex.raw(
+          "SUM( CASE WHEN cw721_activity.height >= ? AND cw721_activity.action != 'instantiate' THEN 1 ELSE 0 END ) AS transfer_24h",
+          blockSince24hAgo[0]?.height
+        )
+      )
+      .select('cw721_contract.id as cw721_contract_id')
+      .where('cw721_contract.track', '=', true)
+      .andWhere('smart_contract.name', '!=', 'crates.io:cw4973')
+      .andWhere('cw721_activity.action', '!=', '')
+      .join(
+        'cw721_activity',
+        'cw721_contract.id',
+        'cw721_activity.cw721_contract_id'
+      )
+      .join('smart_contract', 'cw721_contract.contract_id', 'smart_contract.id')
+      .groupBy('cw721_contract.id');
   }
 }

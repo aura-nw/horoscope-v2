@@ -50,7 +50,7 @@ export default class HandleAddressService extends BullableService {
 
     const eventAddresses: string[] = [];
     const resultTx = await EventAttribute.query()
-      .where('value', 'like', 'aura%')
+      .where('value', 'like', `${config.networkPrefixAddress}%`)
       .andWhere('block_height', '>', startHeight)
       .andWhere('block_height', '<=', endHeight)
       .select('value');
@@ -85,6 +85,11 @@ export default class HandleAddressService extends BullableService {
           .returning('id')
           .transacting(trx);
       })
+      .then(() =>
+        this.broker.call(SERVICE.V1.CrawlAccountService.UpdateAccount.path, {
+          addresses,
+        })
+      )
       .catch((error) => {
         this.logger.error(error);
         throw error;
@@ -116,7 +121,7 @@ export default class HandleAddressService extends BullableService {
       }
     });
 
-    if (accounts.length > 0)
+    if (accounts.length > 0) {
       await trx
         .batchInsert('account', accounts, config.crawlGenesis.accountsPerBatch)
         .catch((error) => {
@@ -125,10 +130,7 @@ export default class HandleAddressService extends BullableService {
           );
           this.logger.error(error);
         });
-
-    await this.broker.call(SERVICE.V1.CrawlAccountService.UpdateAccount.path, {
-      addresses,
-    });
+    }
   }
 
   public async _start() {

@@ -30,10 +30,9 @@ export const BULL_JOB_NAME = {
   HANDLE_VESTING_ACCOUNT: 'handle:vesting-account',
   HANDLE_STAKE_EVENT: 'handle:stake-event',
   CRAWL_BLOCK: 'crawl:block',
-  CRAWL_TRANSACTION: 'crawl:transaction',
   HANDLE_TRANSACTION: 'handle:transaction',
   HANDLE_CW721_TRANSACTION: 'handle:cw721-tx',
-  REFRESH_CW721_M_VIEW: 'refresh:cw721-m-view',
+  REFRESH_CW721_STATS: 'refresh:cw721-stats',
   CRAWL_PROPOSAL: 'crawl:proposal',
   CRAWL_TALLY_PROPOSAL: 'crawl:tally-proposal',
   COUNT_VOTE_PROPOSAL: 'handle:count-vote-proposal',
@@ -62,6 +61,14 @@ export const BULL_JOB_NAME = {
   HANDLE_IBC_TRANSACTION: 'handle:ibc-tx',
   HANDLE_IBC_EVENT: 'handle:ibc-event',
   CRAWL_IBC_CONNECTION_BY_ID: 'crawl:ibc-connection-by-id',
+  CW20_UPDATE_BY_CONTRACT: 'update:cw20-by-contract',
+  CRAWL_VALIDATOR_IMG: 'crawl:validator-img',
+  RETRY_CRAWL_VALIDATOR_IMG: 'retry:crawl-validator-img',
+  JOB_CHECK_NEED_CREATE_EVENT_ATTR_PARTITION:
+    'job:check-need-create-event-attr-partition',
+  JOB_CREATE_EVENT_ATTR_PARTITION: 'job:create-event-attr-partition',
+  CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
+  HANDLE_MIGRATE_CONTRACT: 'handle:migrate-contract',
 };
 
 export const SERVICE = {
@@ -127,6 +134,10 @@ export const SERVICE = {
         key: 'CrawlTxByHeight',
         path: 'v1.CrawlTransactionService.CrawlTxByHeight',
       },
+      TriggerHandleTxJob: {
+        key: 'TriggerHandleTxJob',
+        path: 'v1.CrawlTransactionService.TriggerHandleTxJob',
+      },
     },
     CrawlGenesisService: {
       key: 'CrawlGenesisService',
@@ -168,6 +179,14 @@ export const SERVICE = {
       key: 'Cw20Service',
       name: 'v1.Cw20Service',
     },
+    Cw20UpdateByContract: {
+      key: 'Cw20UpdateByContract',
+      name: 'v1.Cw20UpdateByContract',
+      UpdateByContract: {
+        key: 'UpdateByContract',
+        path: 'v1.Cw20UpdateByContract.UpdateByContract',
+      },
+    },
     DashboardStatisticsService: {
       key: 'DashboardStatisticsService',
       name: 'v1.DashboardStatisticsService',
@@ -195,6 +214,15 @@ export const SERVICE = {
         path: 'v1.Feegrant.UpdateFeegrantService',
       },
     },
+    CrawlValidatorImgService: {
+      key: 'CrawlValidatorImageService',
+    },
+    JobService: {
+      CreateEventAttrPartition: {
+        key: 'CreateEventAttrPartition',
+        path: 'v1.CreateEventAttrPartition',
+      },
+    },
   },
 };
 
@@ -204,6 +232,11 @@ export enum AccountType {
   DELAYED_VESTING = '/cosmos.vesting.v1beta1.DelayedVestingAccount',
   MODULE = '/cosmos.auth.v1beta1.ModuleAccount',
   BASE = '/cosmos.auth.v1beta1.BaseAccount',
+}
+
+export enum PubkeyType {
+  PUBKEY = '/cosmos.crypto.secp256k1.PubKey',
+  LEGACY_AMINO_PUBKEY = '/cosmos.crypto.multisig.LegacyAminoPubKey',
 }
 
 export const BLOCK_CHECKPOINT_JOB_NAME = {
@@ -232,6 +265,7 @@ export const MSG_TYPE = {
 export const ABCI_QUERY_PATH = {
   ACCOUNT_ALL_BALANCES: '/cosmos.bank.v1beta1.Query/AllBalances',
   ACCOUNT_SPENDABLE_BALANCES: '/cosmos.bank.v1beta1.Query/SpendableBalances',
+  ACCOUNT_AUTH: '/cosmos.auth.v1beta1.Query/Account',
   DENOM_TRACE: '/ibc.applications.transfer.v1.Query/DenomTrace',
   VALIDATOR_DELEGATION: '/cosmos.staking.v1beta1.Query/Delegation',
   PROPOSAL: '/cosmos.gov.v1beta1.Query/Proposal',

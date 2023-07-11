@@ -63,6 +63,7 @@ export default class CrawlValidatorService extends BullableService {
         EventAttribute.ATTRIBUTE_KEY.VALIDATOR,
         EventAttribute.ATTRIBUTE_KEY.SOURCE_VALIDATOR,
         EventAttribute.ATTRIBUTE_KEY.DESTINATION_VALIDATOR,
+        EventAttribute.ATTRIBUTE_KEY.EDIT_VALIDATOR,
       ])
       .andWhere('block_height', '>', startHeight)
       .andWhere('block_height', '<=', endHeight)
@@ -217,7 +218,7 @@ export default class CrawlValidatorService extends BullableService {
   public async _start() {
     this.createJob(
       BULL_JOB_NAME.CRAWL_VALIDATOR,
-      'crawl',
+      BULL_JOB_NAME.CRAWL_VALIDATOR,
       {},
       {
         removeOnComplete: true,

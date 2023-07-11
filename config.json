@@ -17,12 +17,17 @@
     "startBlock": 0,
     "millisecondRepeatJobMedia": 10000,
     "mediaPerBatch": 10,
-    "millisecondRefreshMView": 3600000
+    "timeRefreshCw721Stats": "1 * * * *"
   },
   "crawlBlock": {
     "millisecondCrawl": 5000,
     "numberOfBlockPerCall": 100,
     "startBlock": 4860000
+  },
+  "handleTransaction": {
+    "key": "handleTransaction",
+    "blocksPerCall": 100,
+    "millisecondCrawl": 5000
   },
   "crawlSigningInfo": {
     "millisecondCrawl": 5000
@@ -80,7 +85,8 @@
     "accountsPerBatch": 3000,
     "proposalsPerBatch": 3000,
     "codesPerBatch": 5000,
-    "smartContractsPerBatch": 5000
+    "smartContractsPerBatch": 5000,
+    "feeGrantsPerBatch": 5000
   },
   "handleVoteTx": {
     "key": "handleVoteTx",
@@ -111,14 +117,49 @@
       "limitPerCall": 2000
     },
     "millisecondRepeatJob": 2000,
-    "key": "feegrant"
+    "key": "feegrant",
+    "blocksPerCall": 1000
   },
   "graphiqlApi": {
     "hasuraRole": "internal_service",
     "hasuraGraphQL": "https://indexer-v2.dev.aurascan.io/v1/graphql",
     "depthLimit": 3,
+    "rootWhereDepthLimit": 2,
+    "subWhereDepthLimit": 1,
     "rateLimitWindow": 60000,
-    "rateLimitQuery": 30
+    "rateLimitQuery": 30,
+    "queryNeedWhereModel": [
+      "event_attribute",
+      "view_event_attribute_value_index"
+    ],
+    "queryNeedWhereRelation": [
+      "event_attributes",
+      "event_attribute_index"
+    ],
+    "queryNeedWhereCondition": [
+      "block_height"
+    ],
+    "queryHeightRangeLimit": 10000
+  },
+  "crawlValidatorImage": {
+    "timeCrawlImage": "0 0 * * *",
+    "milliSecondDelayRetry": 300000
+  },
+  "migrationEventAttributeToPartition": {
+    "startBlock": 0,
+    "endBlock": 13000000,
+    "step": 13000000,
+    "limitRecordGet": 10000,
+    "chunkSizeInsert": 1000
+  },
+  "jobCheckNeedCreateEventAttributePartition": {
+    "range": 100000,
+    "step": 10000,
+    "millisecondCrawl": 10000
+  },
+  "httpBatchRequest": {
+    "dispatchMilisecond": 1000,
+    "batchSizeLimit": 10
   },
   "crawlIbcConnection": {
     "key": "crawlIbcConnection",

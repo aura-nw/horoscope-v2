@@ -1,5 +1,5 @@
-import BaseModel from './base';
 import config from '../../config.json' assert { type: 'json' };
+import BaseModel from './base';
 
 export class BlockCheckpoint extends BaseModel {
   job_name!: string;

@@ -28,8 +28,7 @@ export default class HandleAuthzTxMsgTest {
     this.crawlTxService = this.broker.createService(
       CrawlTxService
     ) as CrawlTxService;
-    this.crawlTxService?.getQueueManager().stopAll();
-    this.handleAuthzTxServive?.getQueueManager().stopAll();
+
     await Promise.all([
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
@@ -37,16 +36,23 @@ export default class HandleAuthzTxMsgTest {
 
     await this.crawlTxService._start();
     await this.handleAuthzTxServive._start();
+
+    this.crawlTxService?.getQueueManager().stopAll();
+    this.handleAuthzTxServive?.getQueueManager().stopAll();
   }
 
   @Test('Parse transaction authz and insert to DB')
   public async testHandleTransactionAuthz() {
-    await BlockCheckpoint.query().insert(
+    await BlockCheckpoint.query().insert([
       BlockCheckpoint.fromJson({
         job_name: BULL_JOB_NAME.HANDLE_AUTHZ_TX,
         height: 452000,
-      })
-    );
+      }),
+      BlockCheckpoint.fromJson({
+        job_name: BULL_JOB_NAME.HANDLE_TRANSACTION,
+        height: 452049,
+      }),
+    ]);
 
     await Block.query().insert(
       Block.fromJson({
@@ -57,11 +63,21 @@ export default class HandleAuthzTxMsgTest {
         data: {},
       })
     );
-    await this.crawlTxService?.jobHandlerTx({
-      listTx: { ...tx_fixture_authz },
-      height: 452049,
-      timestamp: '2023-04-17T03:44:41.000Z',
-    });
+
+    const listdecodedTx = await this.crawlTxService?.decodeListRawTx([
+      {
+        listTx: { ...tx_fixture_authz },
+        height: 452049,
+        timestamp: '2023-04-17T03:44:41.000Z',
+      },
+    ]);
+    if (listdecodedTx)
+      await knex.transaction(async (trx) => {
+        await this.crawlTxService?.insertDecodedTxAndRelated(
+          listdecodedTx,
+          trx
+        );
+      });
     await this.handleAuthzTxServive?.handleJob();
     const tx = await Transaction.query().findOne(
       'hash',

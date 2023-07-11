@@ -505,27 +505,27 @@ export default class AssetIndexerTest {
         content: '',
         attributes: [
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: '_contract_address',
             value: this.mockInitContract.smart_contract.address,
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'action',
             value: 'transfer_nft',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'recipient',
             value: 'phamphong_transfer',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'sender',
             value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'token_id',
             value: this.mockInitContract.tokens[0].token_id,
           },
@@ -543,7 +543,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
-        event_id: 10,
+        event_id: '10',
       },
       {
         contractAddress: this.mockInitContract.smart_contract.address,
@@ -552,27 +552,27 @@ export default class AssetIndexerTest {
         content: '',
         attributes: [
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: '_contract_address',
             value: this.mockInitContract.smart_contract.address,
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'action',
             value: 'transfer_nft',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'recipient',
             value: 'phamphong_transfer2',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'sender',
             value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'token_id',
             value: this.mockInitContract.tokens[1].token_id,
           },
@@ -590,7 +590,7 @@ export default class AssetIndexerTest {
           data: {},
           index: 0,
         }),
-        event_id: 100,
+        event_id: '100',
       },
     ];
     await this.cw721HandlerService.handlerCw721Transfer(
@@ -625,27 +625,27 @@ export default class AssetIndexerTest {
           '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
         attributes: [
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: '_contract_address',
             value: this.mockInitContract.smart_contract.address,
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'action',
             value: 'mint',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'minter',
             value: 'aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'owner',
             value: 'phamphong_test_mint',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'token_id',
             value: 'bump',
           },
@@ -673,27 +673,27 @@ export default class AssetIndexerTest {
           '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
         attributes: [
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: '_contract_address',
             value: this.mockInitContract.smart_contract.address,
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'action',
             value: 'mint',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'minter',
             value: 'aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'owner',
             value: 'phamphong_test_mint2',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'token_id',
             value: 'nunu',
           },
@@ -747,22 +747,22 @@ export default class AssetIndexerTest {
         content: '',
         attributes: [
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: '_contract_address',
             value: this.mockInitContract.smart_contract.address,
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'action',
             value: 'burn',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'sender',
             value: 'aura15f6wn3nymdnhnh5ddlqletuptjag09tryrtpq5',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'token_id',
             value: this.mockInitContract.tokens[0].token_id,
           },
@@ -789,22 +789,22 @@ export default class AssetIndexerTest {
         content: '',
         attributes: [
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: '_contract_address',
             value: this.mockInitContract.smart_contract.address,
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'action',
             value: 'burn',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'sender',
             value: 'aura15f6wn3nymdnhnh5ddlqletuptjag09tryrtpq5',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'token_id',
             value: this.mockInitContract.tokens[1].token_id,
           },
@@ -859,27 +859,27 @@ export default class AssetIndexerTest {
           '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
         attributes: [
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: '_contract_address',
             value: this.mockInitContract.smart_contract.address,
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'action',
             value: 'mint',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'minter',
             value: 'pham_phong_re_mint_minter',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'owner',
             value: 'phamphong_test_re_mint_owner',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'token_id',
             value: this.mockInitContract.tokens[0].token_id,
           },
@@ -941,7 +941,7 @@ export default class AssetIndexerTest {
         minter: 'minter_1',
       },
     ];
-    this.cw721HandlerService.getContractsInfo = jest.fn(() =>
+    CW721Contract.getContractsInfo = jest.fn(() =>
       Promise.resolve(mockContractsInfo)
     );
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -1100,27 +1100,27 @@ export default class AssetIndexerTest {
           '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
         attributes: [
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: '_contract_address',
             value: this.mockInitContract.smart_contract.address,
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'action',
             value: 'mint',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'minter',
             value: 'pham_phong_re_mint_minter',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'owner',
             value: 'phamphong_test_re_mint_owner',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'token_id',
             value: this.mockInitContract.tokens[0].token_id,
           },
@@ -1147,22 +1147,22 @@ export default class AssetIndexerTest {
         content: '',
         attributes: [
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: '_contract_address',
             value: this.mockInitContract.smart_contract.address,
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'action',
             value: 'transfer_nft',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'recipient',
             value: 'phamphong_transfer',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'sender',
             value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
           },
@@ -1189,22 +1189,22 @@ export default class AssetIndexerTest {
         content: '',
         attributes: [
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: '_contract_address',
             value: this.mockInitContract.smart_contract.address,
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'action',
             value: 'burn',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'sender',
             value: 'aura15f6wn3nymdnhnh5ddlqletuptjag09tryrtpq5',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'token_id',
             value: this.mockInitContract.tokens[1].token_id,
           },
@@ -1264,27 +1264,27 @@ export default class AssetIndexerTest {
         content: '',
         attributes: [
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: '_contract_address',
             value: this.mockInitContract.smart_contract.address,
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'action',
             value: 'transfer_nft',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'recipient',
             value: 'recipient_11',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'sender',
             value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'token_id',
             value: token.token_id,
           },
@@ -1311,27 +1311,27 @@ export default class AssetIndexerTest {
         content: '',
         attributes: [
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: '_contract_address',
             value: this.mockInitContract.smart_contract.address,
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'action',
             value: 'transfer_nft',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'recipient',
             value: 'recipient_2',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'sender',
             value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'token_id',
             value: token.token_id,
           },
@@ -1358,27 +1358,27 @@ export default class AssetIndexerTest {
         content: '',
         attributes: [
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: '_contract_address',
             value: this.mockInitContract.smart_contract.address,
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'action',
             value: 'transfer_nft',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'recipient',
             value: 'recipient_3',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'sender',
             value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'token_id',
             value: token.token_id,
           },
@@ -1405,27 +1405,27 @@ export default class AssetIndexerTest {
         content: '',
         attributes: [
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: '_contract_address',
             value: this.mockInitContract.smart_contract.address,
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'action',
             value: 'transfer_nft',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'recipient',
             value: lastOwner,
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'sender',
             value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'token_id',
             value: token.token_id,
           },
@@ -1476,27 +1476,27 @@ export default class AssetIndexerTest {
           '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
         attributes: [
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: '_contract_address',
             value: this.untrackContract.smart_contract.address,
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'action',
             value: 'mint',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'minter',
             value: 'aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'owner',
             value: 'phamphong_',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'token_id',
             value: tokenId,
           },
@@ -1523,27 +1523,27 @@ export default class AssetIndexerTest {
         content: '',
         attributes: [
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: '_contract_address',
             value: this.untrackContract.smart_contract.address,
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'action',
             value: 'transfer_nft',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'recipient',
             value: 'phamphong_transfer',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'sender',
             value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'token_id',
             value: tokenId,
           },
@@ -1570,22 +1570,22 @@ export default class AssetIndexerTest {
         content: '',
         attributes: [
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: '_contract_address',
             value: this.untrackContract.smart_contract.address,
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'action',
             value: 'burn',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'sender',
             value: 'aura15f6wn3nymdnhnh5ddlqletuptjag09tryrtpq5',
           },
           {
-            smart_contract_event_id: 100,
+            smart_contract_event_id: '100',
             key: 'token_id',
             value: tokenId,
           },

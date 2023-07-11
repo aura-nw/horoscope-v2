@@ -22,14 +22,20 @@ With crawler, we use [Bull](https://github.com/OptimalBits/bull/tree/master) to 
 
 ## List services (currently)
 
+- [**crawl-account**](./docs/services/crawl-account/crawl-account.md): get account auth and its balances
 - [**crawl-block**](./docs/services/crawl-block/crawl-block.md): get block from network and insert to DB
 - [**crawl-transaction**](./docs/services/crawl-transaction/crawl-tx.md): get transaction in a block and decode to readable
 - [**handle-authz-msg**](./docs/services/crawl-transaction/handle-authz-tx-msg.md): handle authz message and decode to readable
-- **crawl-proposal**: get proposal and its status
-- **crawl-validator**: get validator and their power event, signing info
-- **crawl-genesis**: get state from genesis chunk
+- [**crawl-proposal**](./docs/services/crawl-proposal/crawl-proposal.md): get proposal and its status
+- [**crawl-validator**](./docs/services/crawl-validator/crawl-validator.md): get validator and their power event, signing info
+- [**crawl-genesis**](./docs/services/crawl-genesis/crawl-genesis.md): get state from genesis chunk
+- [**crawl-cosmwasm**](./docs/services/crawl-cosmwasm/crawl-smart-contract.md): get codes and contracts
 - [**CW721**](./docs/services/cw721/README.md): handle registed asset type CW721
 - [**handle-vote**](./docs/services/handle-vote/handle-vote.md): parse vote message
+
+## Database schema
+
+You can view detail database schema [here](./docs/database_schema.md)
 
 ## How to run
 
@@ -67,5 +73,5 @@ npm run dev
 - `yarn dev`: Start development mode (load all services locally with hot-reload & REPL)
 - `yarn build`: Build .dist folder to start production mode
 - `yarn start`: Start production mode (set `SERVICES` env variable to load certain services)
-- `yarn li nt`: Run ESLint
+- `yarn lint`: Run ESLint
 - `yarn test`: Run jest

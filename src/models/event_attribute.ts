@@ -4,7 +4,7 @@ import BaseModel from './base';
 import { Event } from './event';
 
 export class EventAttribute extends BaseModel {
-  event_id!: number;
+  event_id!: string;
 
   key!: string;
 
@@ -22,12 +22,16 @@ export class EventAttribute extends BaseModel {
     return 'event_attribute';
   }
 
+  static get idColumn(): string[] {
+    return ['event_id', 'index', 'block_height'];
+  }
+
   static get jsonSchema() {
     return {
       type: 'object',
       required: ['event_id', 'key', 'value'],
       properties: {
-        event_id: { type: 'number' },
+        event_id: { type: 'string' },
         key: { type: 'string' },
         value: { type: 'string' },
         composite_key: { type: 'string' },
@@ -69,6 +73,7 @@ export class EventAttribute extends BaseModel {
     VALIDATOR: 'validator',
     SOURCE_VALIDATOR: 'source_validator',
     DESTINATION_VALIDATOR: 'destination_validator',
+    EDIT_VALIDATOR: 'edit_validator',
     RECV_PACKET: 'recv_packet',
     PACKET_DATA: 'packet_data',
     _CONTRACT_ADDRESS: '_contract_address',
@@ -88,5 +93,6 @@ export class EventAttribute extends BaseModel {
     PACKET_SRC_CHANNEL: 'packet_src_channel',
     PACKET_CONNECTION: 'packet_connection',
     PACKET_SRC_PORT: 'packet_src_port',
+    FROM: 'from',
   };
 }

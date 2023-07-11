@@ -9,7 +9,7 @@ export class Cw20Event extends BaseModel {
 
   id!: number;
 
-  tx_hash!: string;
+  smart_contract_event_id!: number;
 
   sender?: string;
 
@@ -32,9 +32,9 @@ export class Cw20Event extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['tx_hash', 'cw20_contract_id', 'height'],
+      required: ['smart_contract_event_id', 'cw20_contract_id', 'height'],
       properties: {
-        tx_hash: { type: 'string' },
+        smart_contract_event_id: { type: 'number' },
         cw20_contract_id: { type: 'number' },
         height: { type: 'number' },
         to: { type: 'string' },
@@ -52,7 +52,7 @@ export class Cw20Event extends BaseModel {
         relation: Model.BelongsToOneRelation,
         modelClass: Cw20Contract,
         join: {
-          from: 'cw20_event.cw20_contract_id',
+          from: 'cw20_activity.cw20_contract_id',
           to: 'cw20_contract.id',
         },
       },
@@ -60,7 +60,7 @@ export class Cw20Event extends BaseModel {
         relation: Model.HasOneThroughRelation,
         modelClass: SmartContract,
         join: {
-          from: 'cw20_holder.cw20_contract_id',
+          from: 'cw20_activity.cw20_contract_id',
           to: 'smart_contract.id',
           through: {
             from: 'cw20_contract.id',

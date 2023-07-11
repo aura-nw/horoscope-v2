@@ -1,14 +1,18 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import _ from 'lodash';
-import FeegrantHistory from '../../models/feegrant_history';
 import { getAttributeFrom } from '../../common/utils/smart_contract';
-import { BlockCheckpoint, Event, EventAttribute } from '../../models';
+import {
+  BlockCheckpoint,
+  Event,
+  EventAttribute,
+  Feegrant,
+  FeegrantHistory,
+} from '../../models';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, Config, SERVICE } from '../../common';
 import knex from '../../common/utils/db_connection';
-import Feegrant from '../../models/feegrant';
 
 const { NODE_ENV } = Config;
 
@@ -236,7 +240,7 @@ export default class HandleFeegrantHistoryService extends BullableService {
     if (type === ALLOWANCE_TYPE.PERIODIC_ALLOWANCE) {
       basicAllowance = basicAllowance.basic;
     }
-    if (basicAllowance.spend_limit && basicAllowance.spend_limit.length > 0) {
+    if (basicAllowance?.spend_limit && basicAllowance?.spend_limit.length > 0) {
       spendLimit = basicAllowance.spend_limit[0].amount; // need upgrade
       denom = basicAllowance.spend_limit[0].denom;
     }
@@ -245,7 +249,7 @@ export default class HandleFeegrantHistoryService extends BullableService {
       type,
       spend_limit: spendLimit,
       denom,
-      expiration: basicAllowance.expiration
+      expiration: basicAllowance?.expiration
         ? new Date(basicAllowance.expiration)
         : undefined,
     };

@@ -1,3 +1,5 @@
+/* eslint-disable no-param-reassign */
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable no-await-in-loop */
 import {
   Action,
@@ -16,6 +18,10 @@ import {
   QuerySpendableBalancesRequest,
   QuerySpendableBalancesResponse,
 } from '@aura-nw/aurajs/types/codegen/cosmos/bank/v1beta1/query';
+import {
+  QueryAccountRequest,
+  QueryAccountResponse,
+} from '@aura-nw/aurajs/types/codegen/cosmos/auth/v1beta1/query';
 import knex from '../../common/utils/db_connection';
 import {
   AccountType,
@@ -28,10 +34,13 @@ import {
   REDIS_KEY,
   SERVICE,
   ABCI_QUERY_PATH,
+  PubkeyType,
 } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import { Account, AccountVesting } from '../../models';
+import AuraRegistry from '../crawl-tx/aura.registry';
+import Utils from '../../common/utils/utils';
 
 @Service({
   name: SERVICE.V1.CrawlAccountService.key,
@@ -41,6 +50,8 @@ export default class CrawlAccountService extends BullableService {
   private _lcdClient!: IAuraJSClientFactory;
 
   private _httpBatchClient: HttpBatchClient;
+
+  private registry: any;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -65,94 +76,106 @@ export default class CrawlAccountService extends BullableService {
   public async handleJobAccountAuth(_payload: IAddressesParam): Promise<void> {
     this._lcdClient = await getLcdClient();
 
-    const accounts: Account[] = [];
+    const accounts: any[] = [];
     const accountVestings: AccountVesting[] = [];
 
     if (_payload.addresses.length > 0) {
+      const batchQueries: any[] = [];
+
       const accountsInDb: Account[] = await Account.query()
         .select('*')
         .whereIn('address', _payload.addresses);
 
-      await Promise.all(
-        accountsInDb.map(async (acc) => {
-          let resultCallApi;
-          try {
-            resultCallApi =
-              await this._lcdClient.auranw.cosmos.auth.v1beta1.account({
-                address: acc.address,
-              });
+      accountsInDb.forEach((account) => {
+        const request: QueryAccountRequest = {
+          address: account.address,
+        };
+        const data = toHex(
+          cosmos.auth.v1beta1.QueryAccountRequest.encode(request).finish()
+        );
 
-            const account = acc;
-            account.type = resultCallApi.account['@type'];
-            switch (resultCallApi.account['@type']) {
-              case AccountType.CONTINUOUS_VESTING:
-              case AccountType.DELAYED_VESTING:
-              case AccountType.PERIODIC_VESTING:
-                account.pubkey =
-                  resultCallApi.account.base_vesting_account.base_account.pub_key;
-                account.account_number = Number.parseInt(
-                  resultCallApi.account.base_vesting_account.base_account
-                    .account_number,
-                  10
-                );
-                account.sequence = Number.parseInt(
-                  resultCallApi.account.base_vesting_account.base_account
-                    .sequence,
-                  10
-                );
-                break;
-              case AccountType.MODULE:
-                account.pubkey = resultCallApi.account.base_account.pub_key;
-                account.account_number = Number.parseInt(
-                  resultCallApi.account.base_account.account_number,
-                  10
-                );
-                account.sequence = Number.parseInt(
-                  resultCallApi.account.base_account.sequence,
-                  10
-                );
-                break;
-              default:
-                account.pubkey = resultCallApi.account.pub_key;
-                account.account_number = Number.parseInt(
-                  resultCallApi.account.account_number,
-                  10
-                );
-                account.sequence = Number.parseInt(
-                  resultCallApi.account.sequence,
-                  10
-                );
-                break;
-            }
+        batchQueries.push(
+          this._httpBatchClient.execute(
+            createJsonRpcRequest('abci_query', {
+              path: ABCI_QUERY_PATH.ACCOUNT_AUTH,
+              data,
+            })
+          )
+        );
+      });
 
-            accounts.push(account);
-
-            if (
-              resultCallApi.account['@type'] ===
-                AccountType.CONTINUOUS_VESTING ||
-              resultCallApi.account['@type'] === AccountType.DELAYED_VESTING ||
-              resultCallApi.account['@type'] === AccountType.PERIODIC_VESTING
-            ) {
-              const accountVesting: AccountVesting = AccountVesting.fromJson({
-                account_id: account.id,
-                original_vesting:
-                  resultCallApi.account.base_vesting_account.original_vesting,
-                delegated_free:
-                  resultCallApi.account.base_vesting_account.delegated_free,
-                delegated_vesting:
-                  resultCallApi.account.base_vesting_account.delegated_vesting,
-                start_time: resultCallApi.account.start_time
-                  ? Number.parseInt(resultCallApi.account.start_time, 10)
-                  : null,
-                end_time: resultCallApi.account.base_vesting_account.end_time,
-              });
-              accountVestings.push(accountVesting);
-            }
-          } catch (error) {
-            this.logger.error(error);
-          }
-        })
+      const result: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
+      const accountAuthsRes: QueryAccountResponse[] = result.map((res) =>
+        cosmos.auth.v1beta1.QueryAccountResponse.decode(
+          fromBase64(res.result.response.value)
+        )
       );
+      const accountAuths = accountAuthsRes.map((acc) =>
+        Utils.camelizeKeys(this.registry.decodeMsg(acc.account))
+      );
+
+      accountAuths.forEach((auth) => {
+        const account: any = {};
+        account.type = auth['@type'];
+        switch (auth['@type']) {
+          case AccountType.CONTINUOUS_VESTING:
+          case AccountType.DELAYED_VESTING:
+          case AccountType.PERIODIC_VESTING:
+            account.id = accountsInDb.find(
+              (acc) =>
+                acc.address === auth.base_vesting_account.base_account.address
+            )!.id;
+            account.pubkey = auth.base_vesting_account.base_account.pub_key;
+            account.account_number = Number.parseInt(
+              auth.base_vesting_account.base_account.account_number,
+              10
+            );
+            account.sequence = Number.parseInt(
+              auth.base_vesting_account.base_account.sequence,
+              10
+            );
+            break;
+          case AccountType.MODULE:
+            account.id = accountsInDb.find(
+              (acc) => acc.address === auth.base_account.address
+            )!.id;
+            account.pubkey = auth.base_account.pub_key;
+            account.account_number = Number.parseInt(
+              auth.base_account.account_number,
+              10
+            );
+            account.sequence = Number.parseInt(auth.base_account.sequence, 10);
+            break;
+          default:
+            account.id = accountsInDb.find(
+              (acc) => acc.address === auth.address
+            )!.id;
+            account.pubkey = auth.pub_key;
+            account.account_number = Number.parseInt(auth.account_number, 10);
+            account.sequence = Number.parseInt(auth.sequence, 10);
+            break;
+        }
+
+        accounts.push(account);
+
+        if (
+          auth['@type'] === AccountType.CONTINUOUS_VESTING ||
+          auth['@type'] === AccountType.DELAYED_VESTING ||
+          auth['@type'] === AccountType.PERIODIC_VESTING
+        ) {
+          const accountVesting: AccountVesting = AccountVesting.fromJson({
+            account_id: account.id,
+            original_vesting: auth.base_vesting_account.original_vesting,
+            delegated_free: auth.base_vesting_account.delegated_free,
+            delegated_vesting: auth.base_vesting_account.delegated_vesting,
+            start_time: auth.start_time
+              ? Number.parseInt(auth.start_time, 10)
+              : null,
+            end_time: auth.base_vesting_account.end_time,
+          });
+          accountVestings.push(accountVesting);
+        }
+      });
 
       await knex
         .transaction(async (trx) => {
@@ -208,86 +231,51 @@ export default class CrawlAccountService extends BullableService {
     this._lcdClient = await getLcdClient();
 
     if (_payload.addresses.length > 0) {
-      const accounts: Account[] = await Account.query()
-        .select('id', 'address', 'balances')
-        .whereIn('address', _payload.addresses);
-      accounts.forEach((acc) => {
-        acc.balances = [];
-      });
+      const batchQueries: any[] = [];
 
-      let accountsHaveNext: {
-        address: string;
-        idx: number;
-        next_key: Uint8Array | undefined;
-      }[] = accounts.map((acc, idx) => ({
-        address: acc.address,
-        idx,
-        next_key: undefined,
-      }));
+      _payload.addresses.forEach((address) => {
+        const request: QueryAllBalancesRequest = {
+          address,
+          pagination: {
+            key: new Uint8Array(),
+            limit: Long.fromInt(200),
+            offset: Long.fromInt(0),
+            countTotal: false,
+            reverse: false,
+          },
+        };
 
-      let done = false;
-      while (!done) {
-        const batchQueries: any[] = [];
-
-        // generate queries
-        accountsHaveNext.forEach((account) => {
-          const request: QueryAllBalancesRequest = {
-            address: account.address,
-          };
-          if (account.next_key)
-            request.pagination = {
-              key: account.next_key,
-              limit: Long.fromInt(0),
-              offset: Long.fromInt(0),
-              countTotal: false,
-              reverse: false,
-            };
-          const data = toHex(
-            cosmos.bank.v1beta1.QueryAllBalancesRequest.encode(request).finish()
-          );
-
-          batchQueries.push(
-            this._httpBatchClient.execute(
-              createJsonRpcRequest('abci_query', {
-                path: ABCI_QUERY_PATH.ACCOUNT_ALL_BALANCES,
-                data,
-              })
-            )
-          );
-        });
-
-        const result: JsonRpcSuccessResponse[] = await Promise.all(
-          batchQueries
+        const data = toHex(
+          cosmos.bank.v1beta1.QueryAllBalancesRequest.encode(request).finish()
         );
-        // decode result
-        const accountBalances: QueryAllBalancesResponse[] = result.map((res) =>
-          cosmos.bank.v1beta1.QueryAllBalancesResponse.decode(
-            fromBase64(res.result.response.value)
+
+        batchQueries.push(
+          this._httpBatchClient.execute(
+            createJsonRpcRequest('abci_query', {
+              path: ABCI_QUERY_PATH.ACCOUNT_ALL_BALANCES,
+              data,
+            })
           )
         );
+      });
 
-        // map to accounts and extract next key
-        const newAccHaveNext = [];
-        for (let i = 0; i < accountBalances.length; i += 1) {
-          const account = accounts[accountsHaveNext[i].idx];
-          account.balances.push(...accountBalances[i].balances);
-          if (accountBalances[i].pagination?.nextKey.length || -1 > 0)
-            newAccHaveNext.push({
-              address: account.address,
-              idx: accountsHaveNext[i].idx,
-              next_key: accountBalances[i].pagination?.nextKey,
-            });
-        }
-        accountsHaveNext = newAccHaveNext;
+      const result: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
+      const accountBalances: QueryAllBalancesResponse[] = result.map((res) =>
+        cosmos.bank.v1beta1.QueryAllBalancesResponse.decode(
+          fromBase64(res.result.response.value)
+        )
+      );
 
-        done = accountsHaveNext.length === 0;
-      }
+      const accounts = accountBalances.map((acc, index) => ({
+        address: _payload.addresses[index],
+        balances: acc.balances,
+      }));
 
       await Promise.all(
         accounts.map(async (account) => {
-          if (account.balances.length > 1)
-            // eslint-disable-next-line no-param-reassign
+          if (account.balances.length > 1) {
             account.balances = await this.handleIbcDenom(account.balances);
+          }
         })
       );
 
@@ -296,7 +284,7 @@ export default class CrawlAccountService extends BullableService {
           .patch({
             balances: account.balances,
           })
-          .where({ id: account.id })
+          .where({ address: account.address })
       );
       try {
         await Promise.all(patchQueries);
@@ -320,90 +308,52 @@ export default class CrawlAccountService extends BullableService {
     this._lcdClient = await getLcdClient();
 
     if (_payload.addresses.length > 0) {
-      const accounts: Account[] = await Account.query()
-        .select('id', 'address', 'spendable_balances')
-        .whereIn('address', _payload.addresses);
-      accounts.forEach((acc) => {
-        acc.spendable_balances = [];
+      const batchQueries: any[] = [];
+
+      _payload.addresses.forEach((address) => {
+        const request: QuerySpendableBalancesRequest = {
+          address,
+          pagination: {
+            key: new Uint8Array(),
+            limit: Long.fromInt(200),
+            offset: Long.fromInt(0),
+            countTotal: false,
+            reverse: false,
+          },
+        };
+
+        const data = toHex(
+          cosmos.bank.v1beta1.QuerySpendableBalancesRequest.encode(
+            request
+          ).finish()
+        );
+
+        batchQueries.push(
+          this._httpBatchClient.execute(
+            createJsonRpcRequest('abci_query', {
+              path: ABCI_QUERY_PATH.ACCOUNT_SPENDABLE_BALANCES,
+              data,
+            })
+          )
+        );
       });
 
-      let accountsHaveNext: {
-        address: string;
-        idx: number;
-        next_key: Uint8Array | undefined;
-      }[] = accounts.map((acc, idx) => ({
-        address: acc.address,
-        idx,
-        next_key: undefined,
-      }));
-
-      let done = false;
-      while (!done) {
-        const batchQueries: any[] = [];
-
-        // generate queries
-        accountsHaveNext.forEach((account) => {
-          const request: QuerySpendableBalancesRequest = {
-            address: account.address,
-          };
-          if (account.next_key)
-            request.pagination = {
-              key: account.next_key,
-              limit: Long.fromInt(0),
-              offset: Long.fromInt(0),
-              countTotal: false,
-              reverse: false,
-            };
-          const data = toHex(
-            cosmos.bank.v1beta1.QuerySpendableBalancesRequest.encode(
-              request
-            ).finish()
-          );
-
-          batchQueries.push(
-            this._httpBatchClient.execute(
-              createJsonRpcRequest('abci_query', {
-                path: ABCI_QUERY_PATH.ACCOUNT_SPENDABLE_BALANCES,
-                data,
-              })
-            )
-          );
-        });
-
-        const result: JsonRpcSuccessResponse[] = await Promise.all(
-          batchQueries
+      const result: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
+      const accountSpendableBalances: QuerySpendableBalancesResponse[] =
+        result.map((res) =>
+          cosmos.bank.v1beta1.QuerySpendableBalancesResponse.decode(
+            fromBase64(res.result.response.value)
+          )
         );
-        // decode result
-        const accountSpendableBalances: QuerySpendableBalancesResponse[] =
-          result.map((res) =>
-            cosmos.bank.v1beta1.QuerySpendableBalancesResponse.decode(
-              fromBase64(res.result.response.value)
-            )
-          );
 
-        // map to accounts and extract next key
-        const newAccHaveNext = [];
-        for (let i = 0; i < accountSpendableBalances.length; i += 1) {
-          const account = accounts[accountsHaveNext[i].idx];
-          account.spendable_balances.push(
-            ...accountSpendableBalances[i].balances
-          );
-          if (accountSpendableBalances[i].pagination?.nextKey.length || -1 > 0)
-            newAccHaveNext.push({
-              address: account.address,
-              idx: accountsHaveNext[i].idx,
-              next_key: accountSpendableBalances[i].pagination?.nextKey,
-            });
-        }
-        accountsHaveNext = newAccHaveNext;
-
-        done = accountsHaveNext.length === 0;
-      }
+      const accounts = accountSpendableBalances.map((acc, index) => ({
+        address: _payload.addresses[index],
+        spendable_balances: acc.balances,
+      }));
 
       await Promise.all(
         accounts.map(async (account) => {
           if (account.spendable_balances.length > 1)
-            // eslint-disable-next-line no-param-reassign
             account.spendable_balances = await this.handleIbcDenom(
               account.spendable_balances
             );
@@ -415,7 +365,7 @@ export default class CrawlAccountService extends BullableService {
           .patch({
             spendable_balances: account.spendable_balances,
           })
-          .where({ id: account.id })
+          .where({ address: account.address })
       );
       try {
         await Promise.all(patchQueries);
@@ -477,7 +427,7 @@ export default class CrawlAccountService extends BullableService {
     await Promise.all([
       this.createJob(
         BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH,
-        'crawl',
+        BULL_JOB_NAME.CRAWL_ACCOUNT_AUTH,
         {
           addresses,
         },
@@ -486,13 +436,11 @@ export default class CrawlAccountService extends BullableService {
           removeOnFail: {
             count: 3,
           },
-          attempts: config.jobRetryAttempt,
-          backoff: config.jobRetryBackoff,
         }
       ),
       this.createJob(
         BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
-        'crawl',
+        BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
         {
           addresses,
         },
@@ -501,13 +449,11 @@ export default class CrawlAccountService extends BullableService {
           removeOnFail: {
             count: 3,
           },
-          attempts: config.jobRetryAttempt,
-          backoff: config.jobRetryBackoff,
         }
       ),
       this.createJob(
         BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES,
-        'crawl',
+        BULL_JOB_NAME.CRAWL_ACCOUNT_SPENDABLE_BALANCES,
         {
           addresses,
         },
@@ -516,8 +462,6 @@ export default class CrawlAccountService extends BullableService {
           removeOnFail: {
             count: 3,
           },
-          attempts: config.jobRetryAttempt,
-          backoff: config.jobRetryBackoff,
         }
       ),
     ]);
@@ -532,7 +476,7 @@ export default class CrawlAccountService extends BullableService {
     const addresses: string[] = [];
 
     const now = Math.floor(
-      new Date().setSeconds(new Date().getSeconds() - 6) / 1000
+      new Date().setSeconds(new Date().getSeconds()) / 1000
     );
     let page = 0;
     let done = false;
@@ -545,11 +489,15 @@ export default class CrawlAccountService extends BullableService {
               AccountType.CONTINUOUS_VESTING,
               AccountType.PERIODIC_VESTING,
             ])
-            .andWhere('vesting.end_time', '>=', now)
+            .andWhere('vesting.end_time', '>=', now - 6)
         )
         .orWhere((builder) =>
           builder
-            .where('account.type', AccountType.DELAYED_VESTING)
+            .whereIn('account.type', [
+              AccountType.CONTINUOUS_VESTING,
+              AccountType.PERIODIC_VESTING,
+              AccountType.DELAYED_VESTING,
+            ])
             .andWhere('vesting.end_time', '<=', now)
             .andWhere('vesting.end_time', '>', now - 60)
         )
@@ -568,39 +516,24 @@ export default class CrawlAccountService extends BullableService {
   }
 
   public async _start() {
-    // this.createJob(
-    //   BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT,
-    //   'crawl',
-    //   {},
-    //   {
-    //     removeOnComplete: true,
-    //     removeOnFail: {
-    //       count: 3,
-    //     },
-    //     repeat: {
-    //       every: config.crawlAccount.handleVestingAccount.millisecondCrawl,
-    //     },
-    //   }
-    // );
+    this.registry = new AuraRegistry(this.logger);
+    this.registry.addTypes([
+      ...Object.values(AccountType),
+      ...Object.values(PubkeyType),
+    ]);
+
     this.createJob(
-      BULL_JOB_NAME.CRAWL_ACCOUNT_BALANCES,
+      BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT,
       'crawl',
-      {
-        addresses: [
-          'aura1m3h30wlvsf8llruxtpukdvsy0km2kum8n8s69e',
-          'aura17xpfvakm2amg962yls6f84z3kell8c5lt05zfy',
-          'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
-          'aura1gypt2w7xg5t9yr76hx6zemwd4xv72jckk03r6t',
-          'aura1tygms3xhhs3yv487phx3dw4a95jn7t7l6dzud6',
-        ],
-      },
+      {},
       {
         removeOnComplete: true,
         removeOnFail: {
           count: 3,
         },
-        attempts: config.jobRetryAttempt,
-        backoff: config.jobRetryBackoff,
+        repeat: {
+          every: config.crawlAccount.handleVestingAccount.millisecondCrawl,
+        },
       }
     );
 

@@ -73,6 +73,11 @@ export interface IInstantiateContracts {
   height: number;
 }
 
+export interface IMigrateContracts {
+  address: string;
+  codeId: string;
+}
+
 export interface IContextInstantiateContracts {
   contracts: IInstantiateContracts[];
 }
@@ -81,4 +86,13 @@ export interface IContextGraphQLQuery {
   operationName: string;
   query: string;
   variables: any;
+}
+
+export interface IContextUpdateCw20 {
+  cw20Contracts: {
+    id: number;
+    last_updated_height: number;
+  }[];
+  startBlock: number;
+  endBlock: number;
 }

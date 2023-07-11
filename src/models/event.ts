@@ -8,7 +8,7 @@ import { TransactionMessage } from './transaction_message';
 export class Event extends BaseModel {
   [relation: string]: any;
 
-  id!: number;
+  id!: string;
 
   tx_id!: number;
 
@@ -93,5 +93,6 @@ export class Event extends BaseModel {
     RECV_PACKET: 'recv_packet',
     ACKNOWLEDGE_PACKET: 'acknowledge_packet',
     TIMEOUT_PACKET: 'timeout_packet',
+    MIGRATE: 'migrate',
   };
 }

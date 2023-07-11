@@ -26,10 +26,16 @@ import {
 import { S3Service } from '../../common/utils/s3';
 import CW721Token from '../../models/cw721_token';
 
-const { NODE_ENV, BUCKET, IPFS_GATEWAY, REQUEST_IPFS_TIMEOUT } = Config;
+const {
+  NODE_ENV,
+  BUCKET,
+  IPFS_GATEWAY,
+  REQUEST_IPFS_TIMEOUT,
+  MAX_BODY_LENGTH_BYTE,
+  MAX_CONTENT_LENGTH_BYTE,
+  S3_GATEWAY,
+} = Config;
 const IPFS_PREFIX = 'ipfs';
-const MAX_CONTENT_LENGTH_BYTE = 100000000;
-const MAX_BODY_LENGTH_BYTE = 100000000;
 interface ITokenMediaInfo {
   cw721_token_id: number;
   address: string;
@@ -252,42 +258,40 @@ export default class Cw721MediaService extends BullableService {
   // download image/animation from media_uri, then upload to S3
   async uploadMediaToS3(media_uri?: string) {
     if (media_uri) {
-      if (this.isValidURI(media_uri)) {
-        const uploadAttachmentToS3 = async (
-          type: string | undefined,
-          buffer: Buffer
-        ) => {
-          const params = {
-            Key: this.parseFilename(media_uri),
-            Body: buffer,
-            Bucket: BUCKET,
-            ContentType: type,
-          };
-          return s3Client
-            .upload(params)
-            .promise()
-            .then(
-              (response: { Location: string; Key: string }) => ({
-                linkS3: response.Location,
-                contentType: type,
-                key: response.Key,
-              }),
-              (err: string) => {
-                throw new Error(err);
-              }
-            );
+      const uploadAttachmentToS3 = async (
+        type: string | undefined,
+        buffer: Buffer
+      ) => {
+        const params = {
+          Key: this.parseFilename(media_uri),
+          Body: buffer,
+          Bucket: BUCKET,
+          ContentType: type,
         };
-        const mediaBuffer = await this.downloadAttachment(
-          this.parseIPFSUri(media_uri)
-        );
-        let type: string | undefined = (
-          await FileType.fileTypeFromBuffer(mediaBuffer)
-        )?.mime;
-        if (type === 'application/xml') {
-          type = 'image/svg+xml';
-        }
-        return uploadAttachmentToS3(type, mediaBuffer);
+        return s3Client
+          .upload(params)
+          .promise()
+          .then(
+            (response: { Location: string; Key: string }) => ({
+              linkS3: S3_GATEWAY + response.Key,
+              contentType: type,
+              key: response.Key,
+            }),
+            (err: string) => {
+              throw new Error(err);
+            }
+          );
+      };
+      const mediaBuffer = await this.downloadAttachment(
+        this.parseIPFSUri(media_uri)
+      );
+      let type: string | undefined = (
+        await FileType.fileTypeFromBuffer(mediaBuffer)
+      )?.mime;
+      if (type === 'application/xml') {
+        type = 'image/svg+xml';
       }
+      return uploadAttachmentToS3(type, mediaBuffer);
     }
     return null;
   }
@@ -296,7 +300,7 @@ export default class Cw721MediaService extends BullableService {
   async updateMediaS3(tokenMediaInfo: ITokenMediaInfo) {
     try {
       const mediaImageUrl = await this.uploadMediaToS3(
-        tokenMediaInfo.onchain.metadata.image
+        tokenMediaInfo.onchain.metadata?.image
       );
       tokenMediaInfo.offchain.image.url = mediaImageUrl?.linkS3;
       tokenMediaInfo.offchain.image.content_type = mediaImageUrl?.contentType;
@@ -313,7 +317,7 @@ export default class Cw721MediaService extends BullableService {
     }
     try {
       const mediaAnimationUrl = await this.uploadMediaToS3(
-        tokenMediaInfo.onchain.metadata.animation_url
+        tokenMediaInfo.onchain.metadata?.animation_url
       );
       tokenMediaInfo.offchain.animation.url = mediaAnimationUrl?.linkS3;
       tokenMediaInfo.offchain.animation.content_type =
@@ -354,7 +358,9 @@ export default class Cw721MediaService extends BullableService {
 
   // from IPFS uri, parse to http url
   parseIPFSUri(uri: string) {
-    const parsed = parse(uri);
+    const formatUri =
+      uri.substring(0, 5) === '/ipfs' ? `ipfs:/${uri.slice(5)}` : uri;
+    const parsed = parse(formatUri);
     let url = '';
     if (parsed.protocol === IPFS_PREFIX) {
       const cid = parsed.host;
@@ -385,23 +391,13 @@ export default class Cw721MediaService extends BullableService {
     const axiosClient = axios.create({
       responseType: 'arraybuffer',
       timeout: parseInt(REQUEST_IPFS_TIMEOUT, 10),
-      maxContentLength: MAX_CONTENT_LENGTH_BYTE,
-      maxBodyLength: MAX_BODY_LENGTH_BYTE,
+      maxContentLength: parseInt(MAX_CONTENT_LENGTH_BYTE, 10),
+      maxBodyLength: parseInt(MAX_BODY_LENGTH_BYTE, 10),
     });
 
     return axiosClient.get(url).then((response: any) => {
       const buffer = Buffer.from(response.data, 'base64');
       return buffer;
     });
-  }
-
-  isValidURI(str: string) {
-    try {
-      // eslint-disable-next-line no-new
-      new URL(str);
-    } catch (error) {
-      return false;
-    }
-    return true;
   }
 }
