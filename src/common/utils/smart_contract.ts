@@ -1,10 +1,8 @@
 import { Transaction, Event, EventAttribute } from '../../models';
 
 export interface IContractMsgInfo {
-  sender: string;
   contractAddress: string;
   action?: string;
-  content: string;
   attributes?: {
     key: string;
     value: string;
@@ -28,14 +26,11 @@ export async function getContractActivities(
   const wasmEvents = await Event.query()
     .alias('event')
     .withGraphJoined(
-      '[attributes(selectAttribute), message(selectMessage), transaction(filterSuccess,selectTransaction)]'
+      '[attributes(selectAttribute), transaction(filterSuccess,selectTransaction)]'
     )
     .modifiers({
       selectAttribute(builder) {
         builder.select('event_id', 'index', 'key', 'value');
-      },
-      selectMessage(builder) {
-        builder.select('sender', 'content');
       },
       selectTransaction(builder) {
         builder.select('hash', 'height');
@@ -70,9 +65,7 @@ export async function getContractActivities(
         wasmAttribute,
         EventAttribute.ATTRIBUTE_KEY._CONTRACT_ADDRESS
       ),
-      sender: wasmEvent?.message?.sender,
       action,
-      content: wasmEvent?.message?.content?.msg,
       attributes: wasmAttribute,
       tx: wasmEvent.transaction,
       event_id: wasmEvent.id,

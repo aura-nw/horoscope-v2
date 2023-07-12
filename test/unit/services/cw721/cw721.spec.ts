@@ -418,18 +418,14 @@ export default class AssetIndexerTest {
     expect(
       extractData.map((data) => ({
         action: data.action,
-        sender: data.sender,
         contractAddress: data.contractAddress,
-        content: data.content,
         attributes: data.attributes,
       }))
     ).toEqual([
       {
         action: 'instantiate',
-        sender: this.txInsert.messages[0].sender,
         contractAddress:
           this.txInsert.messages[0].events[1].attributes[0].value,
-        content: this.txInsert.messages[0].content.msg,
         attributes: [
           this.txInsert.messages[0].events[1].attributes[0],
           this.txInsert.messages[0].events[1].attributes[1],
@@ -437,10 +433,8 @@ export default class AssetIndexerTest {
       },
       {
         action: 'instantiate',
-        sender: this.txInsert.messages[0].sender,
         contractAddress:
           this.txInsert.messages[0].events[2].attributes[0].value,
-        content: this.txInsert.messages[0].content.msg,
         attributes: [
           this.txInsert.messages[0].events[2].attributes[0],
           this.txInsert.messages[0].events[2].attributes[1],
@@ -448,10 +442,8 @@ export default class AssetIndexerTest {
       },
       {
         action: this.txInsert.messages[0].events[3].attributes[1].value,
-        sender: this.txInsert.messages[0].sender,
         contractAddress:
           this.txInsert.messages[0].events[3].attributes[0].value,
-        content: this.txInsert.messages[0].content.msg,
         attributes: [
           this.txInsert.messages[0].events[3].attributes[0],
           this.txInsert.messages[0].events[3].attributes[1],
@@ -459,10 +451,8 @@ export default class AssetIndexerTest {
       },
       {
         action: this.txInsert.messages[0].events[4].attributes[1].value,
-        sender: this.txInsert.messages[0].sender,
         contractAddress:
           this.txInsert.messages[0].events[4].attributes[0].value,
-        content: this.txInsert.messages[0].content.msg,
         attributes: [
           this.txInsert.messages[0].events[4].attributes[0],
           this.txInsert.messages[0].events[4].attributes[1],
@@ -471,10 +461,8 @@ export default class AssetIndexerTest {
       },
       {
         action: this.txInsert.messages[1].events[1].attributes[1].value,
-        sender: this.txInsert.messages[1].sender,
         contractAddress:
           this.txInsert.messages[1].events[1].attributes[0].value,
-        content: this.txInsert.messages[1].content.msg,
         attributes: [
           this.txInsert.messages[1].events[1].attributes[0],
           this.txInsert.messages[1].events[1].attributes[1],
@@ -483,10 +471,8 @@ export default class AssetIndexerTest {
       },
       {
         action: undefined,
-        sender: this.txInsert.messages[1].sender,
         contractAddress:
           this.txInsert.messages[1].events[2].attributes[0].value,
-        content: this.txInsert.messages[1].content.msg,
         attributes: [
           this.txInsert.messages[1].events[2].attributes[0],
           this.txInsert.messages[1].events[2].attributes[1],
