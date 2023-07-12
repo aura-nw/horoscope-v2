@@ -70,9 +70,9 @@ export async function getContractActivities(
         wasmAttribute,
         EventAttribute.ATTRIBUTE_KEY._CONTRACT_ADDRESS
       ),
-      sender: wasmEvent.message.sender,
+      sender: wasmEvent?.message?.sender,
       action,
-      content: wasmEvent.message.content.msg,
+      content: wasmEvent?.message?.content?.msg,
       attributes: wasmAttribute,
       tx: wasmEvent.transaction,
       event_id: wasmEvent.id,
