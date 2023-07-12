@@ -233,25 +233,26 @@ export default class CrawlSmartContractService extends BullableService {
 
       await knex
         .transaction(async (trx) => {
-          await SmartContract.query()
-            .insert([...newContracts, ...missingVersionContracts])
-            .transacting(trx)
-            .catch((error) => {
-              this.logger.error(
-                'Error insert smart contracts with new migrate data'
-              );
-              this.logger.error(error);
-            });
+          if ([...newContracts, ...missingVersionContracts].length > 0) {
+            await SmartContract.query()
+              .insert([...newContracts, ...missingVersionContracts])
+              .transacting(trx)
+              .catch((error) => {
+                this.logger.error(
+                  'Error insert smart contracts with new migrate data'
+                );
+                this.logger.error(error);
+              });
 
-          await SmartContract.query()
-            .patch({ status: SmartContract.STATUS.MIGRATED })
-            .whereIn('id', oldContractIds)
-            .transacting(trx)
-            .catch((error) => {
-              this.logger.error('Error update old migrated smart contracts');
-              this.logger.error(error);
-            });
-
+            await SmartContract.query()
+              .patch({ status: SmartContract.STATUS.MIGRATED })
+              .whereIn('id', oldContractIds)
+              .transacting(trx)
+              .catch((error) => {
+                this.logger.error('Error update old migrated smart contracts');
+                this.logger.error(error);
+              });
+          }
           updateBlockCheckpoint.height = endHeight;
           await BlockCheckpoint.query()
             .insert(updateBlockCheckpoint)
