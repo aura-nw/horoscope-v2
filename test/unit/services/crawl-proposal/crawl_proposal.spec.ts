@@ -332,6 +332,7 @@ export default class CrawlProposalTest {
     expect(newProposal?.type).toEqual('/cosmos.gov.v1beta1.TextProposal');
     expect(newProposal?.title).toEqual('Community Pool Spend test 1');
     expect(newProposal?.description).toEqual('Test 1');
+    expect(newProposal?.vote_counted).toEqual(false);
   }
 
   // @Test('Handle not enough deposit proposal success')

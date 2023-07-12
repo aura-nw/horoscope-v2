@@ -137,7 +137,7 @@ export default class CrawlGenesisService extends BullableService {
       if (job !== BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT) {
         await this.createJob(
           job,
-          'crawl',
+          job,
           {},
           {
             removeOnComplete: true,
@@ -460,7 +460,7 @@ export default class CrawlGenesisService extends BullableService {
 
     await this.createJob(
       BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT,
-      'crawl',
+      BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT,
       {},
       {
         removeOnComplete: true,
@@ -501,6 +501,7 @@ export default class CrawlGenesisService extends BullableService {
               address: contract.contract_address,
               creator: contract.contract_info.creator,
               code_id: contract.contract_info.code_id,
+              status: SmartContract.STATUS.LATEST,
               instantiate_hash: '',
               instantiate_height: 0,
               version: null,
@@ -509,7 +510,7 @@ export default class CrawlGenesisService extends BullableService {
 
           const updateContractTypes: any[] = [];
           const [contractCw2s, contractInfos]: [any, any] =
-            await SmartContract.getContractInfo(
+            await SmartContract.getContractData(
               genContracts.map((contract: any) => contract.contract_address),
               this._httpBatchClient
             );
@@ -550,9 +551,6 @@ export default class CrawlGenesisService extends BullableService {
                 );
                 await SmartContract.query()
                   .insert(chunkContracts)
-                  .onConflict('address')
-                  .merge()
-                  .returning('address')
                   .transacting(trx);
               }
             )
@@ -808,7 +806,7 @@ export default class CrawlGenesisService extends BullableService {
   public async _start() {
     this.createJob(
       BULL_JOB_NAME.CRAWL_GENESIS,
-      'crawl',
+      BULL_JOB_NAME.CRAWL_GENESIS,
       {},
       {
         removeOnComplete: true,

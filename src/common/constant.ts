@@ -62,6 +62,7 @@ export const BULL_JOB_NAME = {
     'job:check-need-create-event-attr-partition',
   JOB_CREATE_EVENT_ATTR_PARTITION: 'job:create-event-attr-partition',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
+  HANDLE_MIGRATE_CONTRACT: 'handle:migrate-contract',
 };
 
 export const SERVICE = {
@@ -230,6 +231,11 @@ export enum AccountType {
   BASE = '/cosmos.auth.v1beta1.BaseAccount',
 }
 
+export enum PubkeyType {
+  PUBKEY = '/cosmos.crypto.secp256k1.PubKey',
+  LEGACY_AMINO_PUBKEY = '/cosmos.crypto.multisig.LegacyAminoPubKey',
+}
+
 export const BLOCK_CHECKPOINT_JOB_NAME = {
   CW721_HANDLER: 'CW721_HANDLER',
 };
@@ -256,6 +262,7 @@ export const MSG_TYPE = {
 export const ABCI_QUERY_PATH = {
   ACCOUNT_ALL_BALANCES: '/cosmos.bank.v1beta1.Query/AllBalances',
   ACCOUNT_SPENDABLE_BALANCES: '/cosmos.bank.v1beta1.Query/SpendableBalances',
+  ACCOUNT_AUTH: '/cosmos.auth.v1beta1.Query/Account',
   DENOM_TRACE: '/ibc.applications.transfer.v1.Query/DenomTrace',
   VALIDATOR_DELEGATION: '/cosmos.staking.v1beta1.Query/Delegation',
   PROPOSAL: '/cosmos.gov.v1beta1.Query/Proposal',
