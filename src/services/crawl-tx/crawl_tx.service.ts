@@ -12,6 +12,8 @@ import _ from 'lodash';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { Knex } from 'knex';
 import { Queue } from 'bullmq';
+// import { Log } from '@cosmjs/stargate/build/logs';
+// import { Attribute } from '@cosmjs/stargate';
 import { BULL_JOB_NAME, getHttpBatchClient, SERVICE } from '../../common';
 import { Block, BlockCheckpoint, Event, Transaction } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -332,54 +334,102 @@ export default class CrawlTxService extends BullableService {
   }
 
   private setMsgIndexToEvent(tx: any) {
-    const mapEventMsgIdx: Map<string, number[]> = new Map();
+    // const mapEventMsgIdx: Map<string, number[]> = new Map();
 
     // set index_msg from log to mapEventMsgIdx
-    tx.tx_response.logs?.forEach((log: any, index: number) => {
-      log.events.forEach((event: any) => {
-        const { type } = event;
-        event.attributes.forEach((attribute: any) => {
-          const keyInMap = `${type}_${attribute.key}_${attribute.value}`;
-          if (mapEventMsgIdx.has(keyInMap)) {
-            const listIndex = mapEventMsgIdx.get(keyInMap);
-            listIndex?.push(index);
-          } else {
-            mapEventMsgIdx.set(keyInMap, [index]);
+    // tx.tx_response.logs?.forEach((log: any, index: number) => {
+    //   log.events.forEach((event: any) => {
+    //     const { type } = event;
+    //     event.attributes.forEach((attribute: any) => {
+    //       const keyInMap = `${type}_${attribute.key}_${attribute.value}`;
+    //       if (mapEventMsgIdx.has(keyInMap)) {
+    //         const listIndex = mapEventMsgIdx.get(keyInMap);
+    //         listIndex?.push(index);
+    //       } else {
+    //         mapEventMsgIdx.set(keyInMap, [index]);
+    //       }
+    //     });
+    //   });
+    // });
+
+    // // set index_msg from mapEventMsgIdx to event
+    // tx.tx_response.events.forEach((event: any) => {
+    //   const { type } = event;
+    //   event.attributes.forEach((attribute: any) => {
+    //     const key = attribute?.key
+    //       ? fromUtf8(fromBase64(attribute?.key))
+    //       : null;
+    //     const value = attribute?.value
+    //       ? fromUtf8(fromBase64(attribute?.value))
+    //       : null;
+    //     const keyInMap = `${type}_${key}_${value}`;
+
+    //     const listIndex = mapEventMsgIdx.get(keyInMap);
+    //     // get first index with this key
+    //     const firstIndex = listIndex?.shift();
+
+    //     if (firstIndex != null) {
+    //       if (event.msg_index && event.msg_index !== firstIndex) {
+    //         this.logger.warn(
+    //           `something wrong: setting index ${firstIndex} to existed index ${event.msg_index}`
+    //         );
+    //       } else {
+    //         // eslint-disable-next-line no-param-reassign
+    //         event.msg_index = firstIndex;
+    //       }
+    //     }
+
+    //     // delete key in map if value is empty
+    //     if (listIndex?.length === 0) {
+    //       mapEventMsgIdx.delete(keyInMap);
+    //     }
+    //   });
+    // });
+
+    const { logs } = tx.tx_response;
+    tx?.tx_response?.events?.forEach((mainEvent: any) => {
+      const typeInMainEvent = mainEvent.type;
+      const attrInMainEvent = mainEvent.attributes;
+
+      // compare this event with its attribute to logs
+      logs?.forEach((log: any, indexLog: number) => {
+        const eventInLog = log.events;
+
+        for (
+          let indexEvent = 0;
+          indexEvent < eventInLog.length;
+          indexEvent += 1
+        ) {
+          const event = eventInLog[indexEvent];
+          if (event.type === typeInMainEvent) {
+            let check = true;
+            // find attribute in eventInLog
+            for (
+              let indexAttr = 0;
+              indexAttr < attrInMainEvent.length;
+              indexAttr += 1
+            ) {
+              const attribute = attrInMainEvent[indexAttr];
+              const keyDecode = attribute?.key
+                ? fromUtf8(fromBase64(attribute?.key))
+                : null;
+              const valueDecode = attribute?.value
+                ? fromUtf8(fromBase64(attribute?.value))
+                : null;
+              const found = event.attributes.findIndex(
+                (attr: any) =>
+                  attr.key === keyDecode && attr.value === valueDecode
+              );
+              if (found === -1) {
+                check = false;
+                break;
+              }
+            }
+            if (check) {
+              // eslint-disable-next-line no-param-reassign
+              mainEvent.msg_index = indexLog;
+            }
           }
-        });
-      });
-    });
-
-    // set index_msg from mapEventMsgIdx to event
-    tx.tx_response.events.forEach((event: any) => {
-      const { type } = event;
-      event.attributes.forEach((attribute: any) => {
-        const key = attribute?.key
-          ? fromUtf8(fromBase64(attribute?.key))
-          : null;
-        const value = attribute?.value
-          ? fromUtf8(fromBase64(attribute?.value))
-          : null;
-        const keyInMap = `${type}_${key}_${value}`;
-
-        const listIndex = mapEventMsgIdx.get(keyInMap);
-        // get first index with this key
-        const firstIndex = listIndex?.shift();
-
-        if (firstIndex != null) {
-          if (event.msg_index && event.msg_index !== firstIndex) {
-            this.logger.warn(
-              `something wrong: setting index ${firstIndex} to existed index ${event.msg_index}`
-            );
-          } else {
-            // eslint-disable-next-line no-param-reassign
-            event.msg_index = firstIndex;
-          }
-        }
-
-        // delete key in map if value is empty
-        if (listIndex?.length === 0) {
-          mapEventMsgIdx.delete(keyInMap);
         }
       });
     });
