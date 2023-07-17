@@ -63,6 +63,8 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_EVENT_ATTR_PARTITION: 'job:create-event-attr-partition',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
   HANDLE_MIGRATE_CONTRACT: 'handle:migrate-contract',
+  REINDEX_CW20_CONTRACT: 'reindex:cw20-contract',
+  REINDEX_CW20_HISTORY: 'reindex:cw20-history',
 };
 
 export const SERVICE = {
@@ -172,14 +174,6 @@ export const SERVICE = {
     Cw20: {
       key: 'Cw20Service',
       name: 'v1.Cw20Service',
-      CrawlMissingContractHistory: {
-        key: 'CrawlMissingContractHistory',
-        path: 'v1.Cw20Service.CrawlMissingContractHistory',
-      },
-      HandleRangeBlockMissingContract: {
-        key: 'HandleRangeBlockMissingContract',
-        path: 'v1.Cw20Service.HandleRangeBlockMissingContract',
-      },
     },
     Cw20UpdateByContract: {
       key: 'Cw20UpdateByContract',
@@ -212,12 +206,12 @@ export const SERVICE = {
         path: 'v1.CreateEventAttrPartition',
       },
     },
-    Cw20CrawlMissingContract: {
-      key: 'Cw20CrawlMissingContract',
-      name: 'v1.Cw20CrawlMissingContract',
-      CrawlMissingContract: {
-        key: 'CrawlMissingContract',
-        path: 'v1.Cw20CrawlMissingContract.CrawlMissingContract',
+    Cw20ReindexingService: {
+      key: 'Cw20ReindexingService',
+      name: 'v1.Cw20ReindexingService',
+      ReindexingApi: {
+        key: 'ReindexingApi',
+        path: 'v1.Cw20ReindexingService.ReindexingApi',
       },
     },
   },

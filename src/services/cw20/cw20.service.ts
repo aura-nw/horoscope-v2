@@ -1,10 +1,8 @@
-import {
-  Action,
-  Service,
-} from '@ourparentcenter/moleculer-decorators-extended';
+import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+import { Queue } from 'bullmq';
 import { Knex } from 'knex';
 import _ from 'lodash';
-import { Context, ServiceBroker } from 'moleculer';
+import { ServiceBroker } from 'moleculer';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
@@ -41,6 +39,13 @@ export interface IContextCrawlMissingContractHistory {
   smartContractId: number;
   startBlock: number;
   endBlock: number;
+}
+export interface ICw20ReindexingHistoryParams {
+  smartContractId: number;
+  startBlock: number;
+  endBlock: number;
+  currentId: number;
+  contractAddress: string;
 }
 @Service({
   name: SERVICE.V1.Cw20.key,
@@ -213,42 +218,40 @@ export default class Cw20Service extends BullableService {
     }
   }
 
-  async getCw20ContractEvents(startBlock: number, endBlock: number) {
+  async getCw20ContractEvents(
+    startBlock: number,
+    endBlock: number,
+    smartContractId?: number,
+    page?: { currentId: number; limit: number }
+  ) {
     return SmartContractEvent.query()
-      .alias('smart_contract_event')
-      .withGraphJoined(
-        '[message(selectMessage), tx(selectTransaction), attributes(selectAttribute), smart_contract(selectSmartContract).code(selectCode)]'
-      )
-      .modifiers({
-        selectCode(builder) {
-          builder.select('type');
-        },
-        selectTransaction(builder) {
-          builder.select('hash', 'height');
-        },
-        selectMessage(builder) {
-          builder.select('sender', 'content');
-        },
-        selectAttribute(builder) {
-          builder.select('key', 'value');
-        },
-        selectSmartContract(builder) {
-          builder.select('address', 'id');
-        },
-      })
+      .withGraphFetched('attributes(selectAttribute)')
+      .joinRelated('[message, tx, smart_contract.code]')
       .where('smart_contract:code.type', 'CW20')
       .where('tx.height', '>', startBlock)
       .andWhere('tx.height', '<=', endBlock)
+      .modify((builder) => {
+        if (smartContractId) {
+          builder.andWhere('smart_contract.id', smartContractId);
+        }
+        if (page) {
+          builder
+            .andWhere('smart_contract_event.id', '>', page.currentId)
+            .orderBy('smart_contract_event.id', 'asc')
+            .limit(page.limit);
+        }
+      })
       .select(
         'message.sender as sender',
         'smart_contract.address as contract_address',
         'smart_contract_event.action',
         'smart_contract_event.event_id as event_id',
-        'smart_contract_event.index',
         'smart_contract.id as smart_contract_id',
+        'tx.hash',
         'tx.height as height',
         'smart_contract_event.id as smart_contract_event_id'
-      );
+      )
+      .orderBy('smart_contract_event.id');
   }
 
   async handleStatistic(startBlock: number) {
@@ -312,93 +315,47 @@ export default class Cw20Service extends BullableService {
     return super._start();
   }
 
-  @Action({
-    name: SERVICE.V1.Cw20.CrawlMissingContractHistory.key,
-    params: {
-      smartContractId: 'any',
-      startBlock: 'any',
-      endBlock: ' any',
-    },
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.REINDEX_CW20_HISTORY,
+    jobName: BULL_JOB_NAME.REINDEX_CW20_HISTORY,
   })
-  public async CrawlMissingContractHistory(
-    ctx: Context<IContextCrawlMissingContractHistory>
-  ) {
-    const { smartContractId, startBlock, endBlock } = ctx.params;
-    const cw20Contract = await Cw20Contract.query()
-      .withGraphJoined('smart_contract')
-      .where('smart_contract.id', smartContractId)
-      .first()
-      .throwIfNotFound();
+  public async reindexHistory(_payload: ICw20ReindexingHistoryParams) {
+    const {
+      smartContractId,
+      startBlock,
+      endBlock,
+      currentId,
+      contractAddress,
+    } = _payload;
     // insert data from event_attribute_backup to event_attribute
-    const { limitRecordGet, chunkSizeInsert } =
-      config.cw20.crawlMissingContract;
-    let currentId = 0;
-    await knex.transaction(async (trx) => {
-      for (;;) {
-        // eslint-disable-next-line no-await-in-loop
-        const events = await SmartContractEvent.query()
-          .alias('smart_contract_event')
-          .withGraphJoined(
-            '[message(selectMessage), tx(selectTransaction), attributes(selectAttribute), smart_contract(selectSmartContract).code(selectCode)]'
-          )
-          .modifiers({
-            selectCode(builder) {
-              builder.select('type');
-            },
-            selectTransaction(builder) {
-              builder.select('hash', 'height');
-            },
-            selectMessage(builder) {
-              builder.select('sender');
-            },
-            selectAttribute(builder) {
-              builder.select('key', 'value');
-            },
-            selectSmartContract(builder) {
-              builder.select('address', 'id');
-            },
-          })
-          .where('smart_contract:code.type', 'CW20')
-          .where('tx.height', '>', startBlock)
-          .andWhere('tx.height', '<=', endBlock)
-          .andWhere('smart_contract.id', smartContractId)
-          .andWhere('smart_contract_event.id', '>', currentId)
-          .orderBy('smart_contract_event.id', 'asc')
-          .limit(limitRecordGet);
-        if (events.length === 0) {
-          break;
+    const { limitRecordGet } = config.cw20.reindexHistory;
+    const events = await this.getCw20ContractEvents(
+      startBlock,
+      endBlock,
+      smartContractId,
+      { limit: limitRecordGet, currentId }
+    );
+    if (events.length > 0) {
+      await this.handleCW721Activity(events);
+      await this.createJob(
+        BULL_JOB_NAME.REINDEX_CW20_HISTORY,
+        BULL_JOB_NAME.REINDEX_CW20_HISTORY,
+        {
+          smartContractId,
+          startBlock,
+          endBlock,
+          currentId: events[events.length - 1].smart_contract_event_id,
+          contractAddress,
+        } satisfies ICw20ReindexingHistoryParams,
+        {
+          removeOnComplete: true,
         }
-        const newHistories: Cw20Event[] = [];
-        // eslint-disable-next-line no-restricted-syntax
-        for (const event of events) {
-          newHistories.push(
-            Cw20Event.fromJson({
-              smart_contract_event_id: event.smart_contract_event.id,
-              sender: event.message.sender,
-              action: event.action,
-              cw20_contract_id: cw20Contract.id,
-              amount: getAttributeFrom(
-                event.attributes,
-                EventAttribute.ATTRIBUTE_KEY.AMOUNT
-              ),
-              from: getAttributeFrom(
-                event.attributes,
-                EventAttribute.ATTRIBUTE_KEY.FROM
-              ),
-              to: getAttributeFrom(
-                event.attributes,
-                EventAttribute.ATTRIBUTE_KEY.TO
-              ),
-              height: event.tx.height,
-            })
-          );
-          if (newHistories.length > 0) {
-            // eslint-disable-next-line no-await-in-loop
-            await trx.batchInsert('cw20_event', newHistories, chunkSizeInsert);
-          }
-          currentId = events[events.length - 1].id;
-        }
-      }
-    });
+      );
+    } else {
+      const queue: Queue = this.getQueueManager().getQueue(
+        BULL_JOB_NAME.REINDEX_CW20_CONTRACT
+      );
+      (await queue.getJob(contractAddress))?.remove();
+    }
   }
 }
