@@ -38,7 +38,7 @@ export interface ICw721ReindexingHistoryParams {
   smartContractId: number;
   startBlock: number;
   endBlock: number;
-  currentId: number;
+  prevId: number;
   contractAddress: string;
 }
 @Service({
@@ -448,7 +448,7 @@ export default class Cw721HandlerService extends BullableService {
     startBlock: number,
     endBlock: number,
     smartContractId?: number,
-    page?: { currentId: number; limit: number }
+    page?: { prevId: number; limit: number }
   ) {
     return SmartContractEvent.query()
       .withGraphFetched('attributes(selectAttribute)')
@@ -462,7 +462,7 @@ export default class Cw721HandlerService extends BullableService {
         }
         if (page) {
           builder
-            .andWhere('smart_contract_event.id', '>', page.currentId)
+            .andWhere('smart_contract_event.id', '>', page.prevId)
             .orderBy('smart_contract_event.id', 'asc')
             .limit(page.limit);
         }
@@ -536,21 +536,15 @@ export default class Cw721HandlerService extends BullableService {
   public async crawlMissingContractHistory(
     _payload: ICw721ReindexingHistoryParams
   ) {
-    const {
-      smartContractId,
-      startBlock,
-      endBlock,
-      currentId,
-      contractAddress,
-    } = _payload;
+    const { smartContractId, startBlock, endBlock, prevId, contractAddress } =
+      _payload;
     // insert data from event_attribute_backup to event_attribute
-    const { limitRecordGet } = config.cw721.crawlMissingContract;
-    // eslint-disable-next-line no-await-in-loop
+    const { limitRecordGet } = config.cw721.reindexing;
     const events = await this.getCw721ContractEvents(
       startBlock,
       endBlock,
       smartContractId,
-      { limit: limitRecordGet, currentId }
+      { limit: limitRecordGet, prevId }
     );
     if (events.length > 0) {
       await this.handleCW721Activity(events);
@@ -561,7 +555,7 @@ export default class Cw721HandlerService extends BullableService {
           smartContractId,
           startBlock,
           endBlock,
-          currentId: events[events.length - 1].smart_contract_event_id,
+          prevId: events[events.length - 1].smart_contract_event_id,
           contractAddress,
         } satisfies ICw721ReindexingHistoryParams,
         {

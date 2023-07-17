@@ -109,7 +109,7 @@ export default class CW721ReindexingService extends BullableService {
         smartContractId,
         startBlock: config.crawlBlock.startBlock,
         endBlock: maxUpdatedHeightOwner,
-        currentId: 0,
+        prevId: 0,
         contractAddress,
       } satisfies ICw721ReindexingHistoryParams,
       {
@@ -119,16 +119,16 @@ export default class CW721ReindexingService extends BullableService {
   }
 
   @Action({
-    name: SERVICE.V1.CW721ReindexingService.ReindexingApi.key,
+    name: SERVICE.V1.CW721ReindexingService.Reindexing.key,
     params: {
       contractAddress: 'string',
     },
   })
-  public async reindexingApi(ctx: Context<IAddressParam>) {
+  public async reindexing(ctx: Context<IAddressParam>) {
     const { contractAddress } = ctx.params;
     const smartContract = await SmartContract.query()
       .withGraphJoined('code')
-      .where('address', ctx.params.contractAddress)
+      .where('address', contractAddress)
       .first()
       .throwIfNotFound();
     // check whether contract is CW721 type -> throw error to user
