@@ -64,6 +64,7 @@ export const BULL_JOB_NAME = {
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
   REINDEX_CW721_CONTRACT: 'reindex:cw721-contract',
   REINDEX_CW721_HISTORY: 'reindex:cw721-history',
+  HANDLE_MIGRATE_CONTRACT: 'handle:migrate-contract',
 };
 
 export const SERVICE = {
@@ -206,9 +207,9 @@ export const SERVICE = {
     CW721ReindexingService: {
       key: 'Cw721ReindexingService',
       name: 'v1.Cw721ReindexingService',
-      ReindexingApi: {
-        key: 'ReindexingApi',
-        path: 'v1.Cw721ReindexingService.ReindexingApi',
+      Reindexing: {
+        key: 'reindexing',
+        path: 'v1.Cw721ReindexingService.reindexing',
       },
     },
     JobService: {

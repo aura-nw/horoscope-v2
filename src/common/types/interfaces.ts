@@ -73,6 +73,11 @@ export interface IInstantiateContracts {
   height: number;
 }
 
+export interface IMigrateContracts {
+  address: string;
+  codeId: string;
+}
+
 export interface IContextInstantiateContracts {
   contracts: IInstantiateContracts[];
 }
