@@ -644,7 +644,7 @@ export default class AssetIndexerTest {
       1,
       {
         limit: 2,
-        currentId: 0,
+        prevId: 0,
       }
     );
 
