@@ -67,6 +67,7 @@ export const BULL_JOB_NAME = {
   CRAWL_ACCOUNT_STATISTICS: 'crawl:account-statistics',
   HANDLE_TOP_ACCOUNTS: 'handle:top-accounts',
   HANDLE_DAILY_STATS_JOBS: 'handle:daily-stats-jobs',
+  HANDLE_MIGRATE_CONTRACT: 'handle:migrate-contract',
 };
 
 export const SERVICE = {

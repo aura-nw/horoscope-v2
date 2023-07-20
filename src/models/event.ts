@@ -93,5 +93,6 @@ export class Event extends BaseModel {
     COIN_RECEIVED: 'coin_received',
     TX: 'tx',
     TRANSFER: 'transfer',
+    MIGRATE: 'migrate',
   };
 }
