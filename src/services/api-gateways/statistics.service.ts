@@ -1,10 +1,5 @@
-import {
-  Action,
-  Get,
-  Service,
-} from '@ourparentcenter/moleculer-decorators-extended';
+import { Get, Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
-import { REDIS_KEY } from '../../common';
 import BaseService from '../../base/base.service';
 import networks from '../../../network.json' assert { type: 'json' };
 
@@ -26,6 +21,10 @@ export default class StatisticsService extends BaseService {
         enum: networks.map((network) => network.chainId),
       },
     },
+    cache: {
+      keys: ['chainid'],
+      ttl: 3600,
+    },
   })
   async getTopAccountsByChainId(
     ctx: Context<{ chainid: string }, Record<string, unknown>>
@@ -35,16 +34,7 @@ export default class StatisticsService extends BaseService {
     );
 
     return this.broker.call(
-      `v1.statistics.getTopAccounts@${selectedChain?.moleculerNamespace}`
+      `v1.cross-chains.getTopAccounts@${selectedChain?.moleculerNamespace}`
     );
-  }
-
-  @Action({
-    name: 'getTopAccounts',
-    params: {},
-  })
-  async getTopAccounts() {
-    const result = await this.broker.cacher?.get(REDIS_KEY.TOP_ACCOUNTS);
-    return result;
   }
 }

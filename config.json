@@ -161,7 +161,7 @@
   },
   "accountStatistics": {
     "numberOfTopRecords": 10,
-    "recordsPerCall": 100
+    "dayRange": [3, 15, 30]
   },
   "dailyStatsJobs": {
     "jobPattern": "0 0 0 * * ?"

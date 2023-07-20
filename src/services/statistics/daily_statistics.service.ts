@@ -3,6 +3,8 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
 import { Account, DailyStatistics, Transaction } from '../../models';
 import {
   BULL_JOB_NAME,
@@ -57,10 +59,12 @@ export default class DailyStatisticsService extends BullableService {
   })
   public async handleJob(_payload: IDailyStatsParam): Promise<void> {
     try {
-      const syncDate = new Date(_payload.date);
-      const endTime = syncDate.setUTCHours(0, 0, 0, 0);
-      syncDate.setDate(syncDate.getDate() - 1);
-      const startTime = syncDate.setUTCHours(0, 0, 0, 0);
+      const startTime = dayjs
+        .utc(_payload.date)
+        .subtract(1, 'day')
+        .startOf('day')
+        .toDate();
+      const endTime = dayjs.utc(_payload.date).startOf('day').toDate();
       this.logger.info(
         `Get daily statistic events at page ${
           _payload.offset
@@ -70,8 +74,8 @@ export default class DailyStatisticsService extends BullableService {
       const dailyEvents = await Transaction.query()
         .joinRelated('events.[attributes]')
         .select('transaction.id', 'transaction.code', 'events:attributes.value')
-        .where('transaction.timestamp', '>=', new Date(startTime))
-        .andWhere('transaction.timestamp', '<', new Date(endTime))
+        .where('transaction.timestamp', '>=', startTime)
+        .andWhere('transaction.timestamp', '<', endTime)
         .andWhere(
           'events:attributes.value',
           'like',
@@ -129,12 +133,9 @@ export default class DailyStatisticsService extends BullableService {
           }
         );
       } else {
-        syncDate.setDate(syncDate.getDate() - 1);
-        const previousDay = syncDate.setUTCHours(0, 0, 0, 0);
-
         const [uniqueAddrs, prevDailyStat] = await Promise.all([
           Account.query().count('id'),
-          DailyStatistics.query().findOne('date', new Date(previousDay)),
+          DailyStatistics.query().findOne('date', startTime),
         ]);
 
         const dailyStat = DailyStatistics.fromJson({
@@ -144,12 +145,10 @@ export default class DailyStatisticsService extends BullableService {
           unique_addresses_increase: prevDailyStat
             ? uniqueAddrs[0].count - prevDailyStat.unique_addresses
             : 0,
-          date: new Date(startTime).toISOString(),
+          date: startTime.toISOString(),
         });
 
-        this.logger.info(
-          `Insert new daily statistic for date ${new Date(startTime)}`
-        );
+        this.logger.info(`Insert new daily statistic for date ${startTime}`);
         await DailyStatistics.query()
           .insert(dailyStat)
           .catch((error) => {
@@ -163,6 +162,8 @@ export default class DailyStatisticsService extends BullableService {
   }
 
   public async _start() {
+    dayjs.extend(utc);
+
     return super._start();
   }
 }
