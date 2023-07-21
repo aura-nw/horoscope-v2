@@ -566,7 +566,7 @@ export default class Cw721HandlerService extends BullableService {
       const queue: Queue = this.getQueueManager().getQueue(
         BULL_JOB_NAME.REINDEX_CW721_CONTRACT
       );
-      (await queue.getJob(contractAddress))?.remove();
+      await queue.remove(contractAddress);
     }
   }
 
