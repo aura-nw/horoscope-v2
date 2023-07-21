@@ -4,6 +4,7 @@ import { BULL_JOB_NAME } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
 import {
   Block,
+  CW20TotalHolderStats,
   Code,
   Cw20Contract,
   Cw20Event,
@@ -126,7 +127,7 @@ export default class Cw20 {
     this.cw20UpdateByContractService.getQueueManager().stopAll();
     await this.broker.start();
     await knex.raw(
-      'TRUNCATE TABLE code, cw20_contract, block, transaction RESTART IDENTITY CASCADE'
+      'TRUNCATE TABLE code, cw20_contract, block, transaction, cw20_total_holder_stats RESTART IDENTITY CASCADE'
     );
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);
@@ -334,6 +335,78 @@ export default class Cw20 {
         .throwIfNotFound();
       expect(cw20ContractEvent1.action).toBeNull();
       expect(cw20ContractEvent1.height).toEqual(cw20Events[0].height);
+      await trx.rollback();
+    });
+  }
+
+  @Test('test handleTotalHolderStatistic')
+  public async testHandleTotalHolderStatistic() {
+    const cw20Contract = [
+      {
+        ...Cw20Contract.fromJson({
+          smart_contract_id: 1,
+          marketing_info: {},
+          total_supply: '1121112133',
+          symbol: 'TEST SyMbol',
+          minter: 'jfglkdfjgklfdgklklfdkl',
+          name: 'dgbdfmnlkgsdfklgjksdfl',
+          track: true,
+          last_updated_height: 10000,
+        }),
+        holders: [
+          {
+            address: 'holder_hic_1',
+            amount: '0',
+            last_updated_height: 7000,
+          },
+        ],
+      },
+      {
+        ...Cw20Contract.fromJson({
+          smart_contract_id: 2,
+          marketing_info: {},
+          total_supply: '23434314',
+          symbol: 'TEST SyMbol 2',
+          minter: 'pham phong',
+          name: 'hic',
+          track: true,
+          last_updated_height: 15022,
+        }),
+        holders: [
+          {
+            address: 'holder_hic_1',
+            amount: '2154213',
+            last_updated_height: 7000,
+          },
+          {
+            address: 'holder_hic_2',
+            amount: '31245465465',
+            last_updated_height: 8000,
+          },
+          {
+            address: 'holder_hic_3',
+            amount: '874676446',
+            last_updated_height: 1500,
+          },
+          {
+            address: 'holder_hic_4',
+            amount: '0',
+            last_updated_height: 4500,
+          },
+        ],
+      },
+    ];
+    await knex.transaction(async (trx) => {
+      await Cw20Contract.query().insertGraph(cw20Contract[0]);
+      await Cw20Contract.query().insertGraph(cw20Contract[1]);
+      await this.cw20Service.handleTotalHolderStatistic(
+        new Date('2023-01-12T00:53:57.000Z')
+      );
+      const totalHolderStats = await CW20TotalHolderStats.query();
+      expect(totalHolderStats[0].total_holder).toEqual(0);
+      expect(totalHolderStats[1].total_holder).toEqual(
+        cw20Contract[1].holders.length - 1
+      );
       await trx.rollback();
     });
   }
