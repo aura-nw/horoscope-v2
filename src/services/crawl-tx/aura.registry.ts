@@ -132,6 +132,19 @@ export default class AuraRegistry {
         } catch (error) {
           this._logger.error('This msg ibc acknowledgement is not valid JSON');
         }
+      } else if (msg.typeUrl === MSG_TYPE.MSG_AUTHZ_EXEC) {
+        try {
+          result.msgs = result.msgs.map((subMsg: any) =>
+            this.decodeMsg({
+              typeUrl: subMsg.typeUrl,
+              value: Utils.isBase64(subMsg.value)
+                ? fromBase64(subMsg.value)
+                : subMsg.value,
+            })
+          );
+        } catch (error) {
+          this._logger.error('Cannot decoded sub messages authz exec');
+        }
       }
     } else {
       result = msg;
