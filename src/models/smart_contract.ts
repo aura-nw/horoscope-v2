@@ -16,6 +16,8 @@ import { Code } from './code';
 import BaseModel from './base';
 
 export class SmartContract extends BaseModel {
+  code!: Code;
+
   id!: number;
 
   name: string | undefined;
