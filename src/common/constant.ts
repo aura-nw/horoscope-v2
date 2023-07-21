@@ -63,6 +63,7 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_EVENT_ATTR_PARTITION: 'job:create-event-attr-partition',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
   HANDLE_MIGRATE_CONTRACT: 'handle:migrate-contract',
+  CRAWL_IBC_TAO: 'crawl:ibc-tao',
 };
 
 export const SERVICE = {
@@ -203,6 +204,10 @@ export const SERVICE = {
         key: 'CreateEventAttrPartition',
         path: 'v1.CreateEventAttrPartition',
       },
+    },
+    CrawlIBCTaoService: {
+      key: 'CrawlIBCTaoService',
+      name: 'v1.CrawlIBCTaoService',
     },
   },
 };

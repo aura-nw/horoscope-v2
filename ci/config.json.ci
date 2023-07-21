@@ -155,5 +155,10 @@
   "httpBatchRequest": {
     "dispatchMilisecond": 1000,
     "batchSizeLimit": 10
+  },
+  "crawlIbcTao": {
+    "key": "crawlIbcTao",
+    "millisecondRepeatJob": 2000,
+    "blocksPerCall": 100
   }
 }

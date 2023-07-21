@@ -90,5 +90,6 @@ export class Event extends BaseModel {
     USE_FEEGRANT: 'use_feegrant',
     SET_FEEGRANT: 'set_feegrant',
     MIGRATE: 'migrate',
+    CREATE_CLIENT: 'create_client',
   };
 }
