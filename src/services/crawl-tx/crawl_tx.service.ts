@@ -12,6 +12,7 @@ import _ from 'lodash';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { Knex } from 'knex';
 import { Queue } from 'bullmq';
+import Utils from '../../common/utils/utils';
 import { BULL_JOB_NAME, getHttpBatchClient, SERVICE } from '../../common';
 import { Block, BlockCheckpoint, Event, Transaction } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -144,7 +145,7 @@ export default class CrawlTxService extends BullableService {
             );
 
             const decodedMsgs = decodedTx.body.messages.map((msg) => {
-              const decodedMsg = this._camelizeKeys(
+              const decodedMsg = Utils.camelizeKeys(
                 this._registry.decodeMsg(msg)
               );
               decodedMsg['@type'] = msg.typeUrl;
@@ -383,25 +384,6 @@ export default class CrawlTxService extends BullableService {
         }
       });
     });
-  }
-
-  // convert camelcase to underscore
-  private _camelizeKeys(obj: any): any {
-    if (Array.isArray(obj)) {
-      return obj.map((v: any) => this._camelizeKeys(v));
-    }
-    if (obj != null && obj.constructor === Object) {
-      return Object.keys(obj).reduce(
-        (result, key) => ({
-          ...result,
-          [key === '@type' ? '@type' : _.snakeCase(key)]: this._camelizeKeys(
-            obj[key]
-          ),
-        }),
-        {}
-      );
-    }
-    return obj;
   }
 
   private _findAttribute(
