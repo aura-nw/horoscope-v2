@@ -63,6 +63,7 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_EVENT_ATTR_PARTITION: 'job:create-event-attr-partition',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
   HANDLE_MIGRATE_CONTRACT: 'handle:migrate-contract',
+  JOB_REDECODE_TX_IBC: 'job:redecode-tx-ibc',
 };
 
 export const SERVICE = {
@@ -202,6 +203,10 @@ export const SERVICE = {
       CreateEventAttrPartition: {
         key: 'CreateEventAttrPartition',
         path: 'v1.CreateEventAttrPartition',
+      },
+      ReDecodeTx: {
+        key: 'ReDecodeTx',
+        path: 'v1.ReDecodeTx',
       },
     },
   },

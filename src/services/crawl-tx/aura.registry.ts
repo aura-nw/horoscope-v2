@@ -46,8 +46,10 @@ export default class AuraRegistry {
       '/cosmos.feegrant.v1beta1.AllowedMsgAllowance',
       '/cosmos.vesting.v1beta1.MsgCreatePeriodicVestingAccount',
 
-      // ibc header
+      // ibc
       '/ibc.lightclients.tendermint.v1.Header',
+      '/ibc.lightclients.tendermint.v1.ClientState',
+      '/ibc.lightclients.tendermint.v1.ConsensusState',
 
       // slashing
       '/cosmos.slashing.v1beta1.MsgUnjail',
