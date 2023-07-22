@@ -402,7 +402,7 @@ export default class Cw20 {
       await this.cw20Service.handleTotalHolderStatistic(
         new Date('2023-01-12T00:53:57.000Z')
       );
-      const totalHolderStats = await CW20TotalHolderStats.query();
+      const totalHolderStats = await CW20TotalHolderStats.query().orderBy('id');
       expect(totalHolderStats[0].total_holder).toEqual(0);
       expect(totalHolderStats[1].total_holder).toEqual(
         cw20Contract[1].holders.length - 1
