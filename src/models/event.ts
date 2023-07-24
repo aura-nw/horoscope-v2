@@ -6,7 +6,7 @@ import { EventAttribute } from './event_attribute';
 import { TransactionMessage } from './transaction_message';
 
 export class Event extends BaseModel {
-  [relation: string]: any;
+  [relation: string]: any | any[];
 
   id!: string;
 
