@@ -65,7 +65,7 @@ export const BULL_JOB_NAME = {
   REINDEX_CW721_CONTRACT: 'reindex:cw721-contract',
   REINDEX_CW721_HISTORY: 'reindex:cw721-history',
   HANDLE_MIGRATE_CONTRACT: 'handle:migrate-contract',
-  JOB_REDECODE_TX_IBC: 'job:redecode-tx-ibc',
+  JOB_REDECODE_TX: 'job:redecode-tx',
 };
 
 export const SERVICE = {

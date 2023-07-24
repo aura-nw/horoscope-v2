@@ -3,7 +3,7 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import { decodeTxRaw } from '@cosmjs/proto-signing';
 import { fromBase64 } from '@cosmjs/encoding';
-import { BlockCheckpoint, Transaction, TransactionMessage } from '../../models';
+import { Transaction, TransactionMessage } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
@@ -20,20 +20,26 @@ export default class JobRedecodeTx extends BullableService {
     super(broker);
   }
 
-  async redecodeTxByType(type: string) {
-    this.logger.info('Job re decode tx ibc');
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.JOB_REDECODE_TX,
+    jobName: BULL_JOB_NAME.JOB_REDECODE_TX,
+  })
+  async redecodeTxByType(_payload: { type: string }) {
+    this.logger.info('Job re decode tx type: ', _payload.type);
     const registry = new AuraRegistry(this.logger);
     let currentId = 0;
     await knex.transaction(async (trx) => {
       let done = false;
       while (!done) {
-        this.logger.info(`Re decode tx ${type} at current id: ${currentId}`);
+        this.logger.info(
+          `Re decode tx ${_payload.type} at current id: ${currentId}`
+        );
         const txOnDB = await Transaction.query()
           .select('transaction.id', 'transaction.data')
           .distinct()
           .joinRelated('messages')
           .where('transaction.id', '>', currentId)
-          .andWhere('messages.type', type)
+          .andWhere('messages.type', _payload.type)
           .limit(config.jobRedecodeTx.limitRecordGet);
 
         if (txOnDB.length === 0) {
@@ -77,42 +83,21 @@ export default class JobRedecodeTx extends BullableService {
     });
   }
 
-  @QueueHandler({
-    queueName: BULL_JOB_NAME.JOB_REDECODE_TX_IBC,
-    jobName: BULL_JOB_NAME.JOB_REDECODE_TX_IBC,
-  })
-  async jobRedecodeTxIBC() {
-    // check if job not done, execute as
-    const blockCheckpoint = await BlockCheckpoint.query()
-      .where({
-        job_name: BULL_JOB_NAME.JOB_REDECODE_TX_IBC,
-      })
-      .findOne({});
-
-    if (!blockCheckpoint || blockCheckpoint.height === 0) {
-      this.logger.info('Job redecode tx ibc start');
-      await this.redecodeTxByType('/ibc.core.client.v1.MsgCreateClient');
-    }
-    // mark as job completed
-    await BlockCheckpoint.query()
-      .insert({
-        job_name: BULL_JOB_NAME.JOB_REDECODE_TX_IBC,
-        height: 1,
-      })
-      .onConflict('job_name')
-      .merge();
-  }
-
   async _start(): Promise<void> {
     this.createJob(
-      BULL_JOB_NAME.JOB_REDECODE_TX_IBC,
-      BULL_JOB_NAME.JOB_REDECODE_TX_IBC,
-      {},
+      BULL_JOB_NAME.JOB_REDECODE_TX,
+      BULL_JOB_NAME.JOB_REDECODE_TX,
       {
-        removeOnComplete: true,
+        type: '/ibc.core.client.v1.MsgCreateClient',
+      },
+      {
+        jobId: '/ibc.core.client.v1.MsgCreateClient',
+        removeOnComplete: false,
         removeOnFail: {
-          count: 3,
+          count: 100,
         },
+        attempts: config.jobRetryAttempt,
+        backoff: config.jobRetryBackoff,
       }
     );
     return super._start();
