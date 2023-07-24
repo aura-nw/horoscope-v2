@@ -266,10 +266,9 @@ export default class Cw20Service extends BullableService {
 
   async handleTotalHolderStatistic(systemDate: Date) {
     const totalHolder = await Cw20Contract.query()
-      .alias('cw20_contract')
       .joinRelated('holders')
       .where('cw20_contract.track', true)
-      .groupBy('holders.cw20_contract_id')
+      .groupBy('cw20_contract.id')
       .select(
         'holders.cw20_contract_id',
         knex.raw(
