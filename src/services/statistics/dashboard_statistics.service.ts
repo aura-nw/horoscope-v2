@@ -99,20 +99,20 @@ export default class DashboardStatisticsService extends BullableService {
   }
 
   public async _start() {
-    // this.createJob(
-    //   BULL_JOB_NAME.HANDLE_DASHBOARD_STATISTICS,
-    //   BULL_JOB_NAME.HANDLE_DASHBOARD_STATISTICS,
-    //   {},
-    //   {
-    //     removeOnComplete: true,
-    //     removeOnFail: {
-    //       count: 3,
-    //     },
-    //     repeat: {
-    //       every: config.dashboardStatistics.millisecondCrawl,
-    //     },
-    //   }
-    // );
+    this.createJob(
+      BULL_JOB_NAME.HANDLE_DASHBOARD_STATISTICS,
+      BULL_JOB_NAME.HANDLE_DASHBOARD_STATISTICS,
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        repeat: {
+          every: config.dashboardStatistics.millisecondCrawl,
+        },
+      }
+    );
 
     return super._start();
   }

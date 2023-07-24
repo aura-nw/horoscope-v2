@@ -10,12 +10,7 @@ import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import _ from 'lodash';
-import {
-  AccountStatistics,
-  Event,
-  EventAttribute,
-  Transaction,
-} from '../../models';
+import { AccountStatistics, EventAttribute, Transaction } from '../../models';
 import {
   BULL_JOB_NAME,
   IAccountStatsParam,
@@ -49,7 +44,8 @@ export default class AccountStatisticsService extends BullableService {
       BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
       BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
       {
-        id: null,
+        startId: null,
+        endId: null,
         date: ctx.params.date,
         accountStats: {},
       },
@@ -78,51 +74,73 @@ export default class AccountStatisticsService extends BullableService {
         .toDate();
       const endTime = dayjs.utc(date).startOf('day').toDate();
 
-      const startTxId = !_payload.id
-        ? (
-            await Transaction.query()
-              .select('id')
-              .where('transaction.timestamp', '>=', startTime)
-              .limit(1)
-              .orderBy('id')
-          )[0].id
-        : _payload.id;
-      const nextId = startTxId + 50;
+      let startTxId = _payload.startId;
+      // The end tx's ID needs to plus 1 since the query will select record with _lt not _lte
+      let nextId = Math.min(_payload.endId + 1, startTxId + 50);
+      let endTxId = _payload.endId;
+      // If job runs for the 1st time, then needs to query the start and end tx id of the day as the range
+      if (!_payload.startId && !_payload.endId) {
+        const startTx = await Transaction.query()
+          .select('id')
+          .where('transaction.timestamp', '>=', startTime)
+          .limit(1)
+          .orderBy('id');
+        const endTx = await Transaction.query()
+          .select('id')
+          .where('transaction.timestamp', '<', endTime)
+          .limit(1)
+          .orderBy('id', 'desc');
+
+        startTxId = startTx[0].id;
+        // The end tx's ID needs to plus 1 since the query will select record with _lt not _lte
+        nextId = Math.min(endTx[0].id + 1, startTxId + 50);
+        endTxId = endTx[0].id;
+      }
       this.logger.info(
         `Get account statistic events from id ${startTxId} for day ${new Date(
           startTime
         )}`
       );
 
-      const dailyEvents = await Transaction.query()
-        .joinRelated('events.[attributes]')
-        .select(
-          'transaction.gas_used',
-          'events:attributes.event_id',
-          'events:attributes.composite_key',
-          'events:attributes.value'
-        )
-        .where('transaction.timestamp', '>=', startTime)
-        .andWhere('transaction.timestamp', '<', endTime)
-        .andWhere('transaction.id', '>=', startTxId)
-        .andWhere('transaction.id', '<', nextId)
-        .andWhere((builder) =>
-          builder
-            // Get the address that actually spent or received token
-            .whereIn('events.type', [
-              Event.EVENT_TYPE.COIN_SPENT,
-              Event.EVENT_TYPE.COIN_RECEIVED,
-              Event.EVENT_TYPE.USE_FEEGRANT,
-            ])
-            // If fee_grant is involved, then needs these to track to the granters
-            .orWhereIn('events:attributes.key', [
-              EventAttribute.ATTRIBUTE_KEY.FEE,
-              EventAttribute.ATTRIBUTE_KEY.FEE_PAYER,
-            ])
-        );
+      const [dailyEvents, feeEvents]: [EventAttribute[], any[]] =
+        await Promise.all([
+          EventAttribute.query()
+            .select('event_id', 'composite_key', 'value')
+            .where('tx_id', '>=', startTxId)
+            .andWhere('tx_id', '<', nextId)
+            .andWhere((builder) =>
+              builder
+                // Get the address that actually spent or received token
+                .whereIn('composite_key', [
+                  EventAttribute.ATTRIBUTE_COMPOSITE_KEY.COIN_SPENT_SPENDER,
+                  EventAttribute.ATTRIBUTE_COMPOSITE_KEY.COIN_SPENT_AMOUNT,
+                  EventAttribute.ATTRIBUTE_COMPOSITE_KEY.COIN_RECEIVED_AMOUNT,
+                  EventAttribute.ATTRIBUTE_COMPOSITE_KEY.COIN_RECEIVED_RECEIVER,
+                ])
+            ),
+          EventAttribute.query()
+            .joinRelated('transaction')
+            .select(
+              'event_attribute.tx_id',
+              'event_attribute.composite_key',
+              'event_attribute.value',
+              'transaction.gas_used'
+            )
+            .where('tx_id', '>=', startTxId)
+            .andWhere('tx_id', '<', nextId)
+            .andWhere((builder) =>
+              builder
+                // If fee_grant is involved, then needs to track to the granters and grantees
+                .whereIn('composite_key', [
+                  EventAttribute.ATTRIBUTE_COMPOSITE_KEY.TX_FEE_PAYER,
+                  EventAttribute.ATTRIBUTE_COMPOSITE_KEY.USE_FEEGRANT_GRANTEE,
+                ])
+            ),
+        ]);
 
-      if (dailyEvents.length > 0) {
+      if (dailyEvents.length > 0 || feeEvents.length > 0) {
         dailyEvents
+          .concat(feeEvents)
           .filter(
             (event) =>
               Utils.isValidAccountAddress(
@@ -150,11 +168,10 @@ export default class AccountStatisticsService extends BullableService {
         dailyEvents
           .filter(
             (event) =>
-              !Utils.isValidAccountAddress(
-                event.value,
-                config.networkPrefixAddress,
-                20
-              )
+              event.composite_key ===
+                EventAttribute.ATTRIBUTE_COMPOSITE_KEY.COIN_SPENT_AMOUNT ||
+              event.composite_key ===
+                EventAttribute.ATTRIBUTE_COMPOSITE_KEY.COIN_RECEIVED_AMOUNT
           )
           .forEach((event) => {
             switch (event.composite_key) {
@@ -164,7 +181,7 @@ export default class AccountStatisticsService extends BullableService {
                     dEvent.event_id === event.event_id &&
                     dEvent.composite_key ===
                       EventAttribute.ATTRIBUTE_COMPOSITE_KEY.COIN_SPENT_SPENDER
-                )?.value;
+                )!.value;
 
                 accountStats[addrSpent].amount_sent = (
                   BigInt(accountStats[addrSpent].amount_sent) +
@@ -178,7 +195,7 @@ export default class AccountStatisticsService extends BullableService {
                     dEvent.composite_key ===
                       EventAttribute.ATTRIBUTE_COMPOSITE_KEY
                         .COIN_RECEIVED_RECEIVER
-                )?.value;
+                )!.value;
 
                 accountStats[addrReceived].amount_received = (
                   BigInt(accountStats[addrReceived].amount_received) +
@@ -190,7 +207,7 @@ export default class AccountStatisticsService extends BullableService {
             }
           });
 
-        dailyEvents
+        feeEvents
           .filter(
             (event) =>
               event.composite_key ===
@@ -199,9 +216,9 @@ export default class AccountStatisticsService extends BullableService {
           .forEach((event) => {
             let addr = event.value;
 
-            const feeGrant = dailyEvents.find(
+            const feeGrant = feeEvents.find(
               (dEvent) =>
-                dEvent.event_id === event.event_id &&
+                dEvent.tx_id === event.tx_id &&
                 dEvent.composite_key ===
                   EventAttribute.ATTRIBUTE_COMPOSITE_KEY.USE_FEEGRANT_GRANTEE
             );
@@ -220,7 +237,8 @@ export default class AccountStatisticsService extends BullableService {
           BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
           BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
           {
-            id: nextId,
+            startId: nextId,
+            endId: endTxId,
             date: _payload.date,
             accountStats,
           },

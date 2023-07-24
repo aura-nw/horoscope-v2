@@ -5,7 +5,12 @@ import {
 import { Context, ServiceBroker } from 'moleculer';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
-import { Account, DailyStatistics, Transaction } from '../../models';
+import {
+  Account,
+  DailyStatistics,
+  EventAttribute,
+  Transaction,
+} from '../../models';
 import {
   BULL_JOB_NAME,
   ICreateSpecificDateJob,
@@ -38,9 +43,10 @@ export default class DailyStatisticsService extends BullableService {
       BULL_JOB_NAME.CRAWL_DAILY_STATISTICS,
       BULL_JOB_NAME.CRAWL_DAILY_STATISTICS,
       {
+        startId: null,
+        endId: null,
         date: ctx.params.date,
         offset: 0,
-        txIds: [],
         addresses: [],
       },
       {
@@ -71,25 +77,38 @@ export default class DailyStatisticsService extends BullableService {
         } for day ${new Date(startTime)}`
       );
 
-      const dailyEvents = await Transaction.query()
-        .joinRelated('events.[attributes]')
-        .select('transaction.id', 'transaction.code', 'events:attributes.value')
-        .where('transaction.timestamp', '>=', startTime)
-        .andWhere('transaction.timestamp', '<', endTime)
-        .andWhere(
-          'events:attributes.value',
-          'like',
-          `${config.networkPrefixAddress}%`
-        )
-        .orderBy('transaction.id')
+      let startTxId = _payload.startId;
+      let endTxId = _payload.endId;
+      // If job runs for the 1st time, then needs to query the start and end tx id of the day as the range
+      if (!_payload.startId && !_payload.endId) {
+        const startTx = await Transaction.query()
+          .select('id')
+          .where('transaction.timestamp', '>=', startTime)
+          .limit(1)
+          .orderBy('id');
+        const endTx = await Transaction.query()
+          .select('id')
+          .where('transaction.timestamp', '<', endTime)
+          .limit(1)
+          .orderBy('id', 'desc');
+
+        startTxId = startTx[0].id;
+        endTxId = endTx[0].id;
+      }
+
+      const dailyAddresses = await EventAttribute.query()
+        .distinct('value')
+        .where('tx_id', '>=', startTxId)
+        .andWhere('tx_id', '<=', endTxId)
+        .andWhere('value', 'like', `${config.networkPrefixAddress}%`)
         .limit(config.dailyStatistics.recordsPerCall)
         .offset(_payload.offset * config.dailyStatistics.recordsPerCall);
 
-      if (dailyEvents.length > 0) {
+      if (dailyAddresses.length > 0) {
         const activeAddrs = Array.from(
           new Set(
             _payload.addresses.concat(
-              dailyEvents
+              dailyAddresses
                 .filter((event) =>
                   Utils.isValidAccountAddress(
                     event.value,
@@ -101,28 +120,16 @@ export default class DailyStatisticsService extends BullableService {
             )
           )
         );
-        const dailyTxs = Array.from(
-          new Set(
-            _payload.txIds.concat(
-              Array.from(
-                new Set(
-                  dailyEvents
-                    .filter((event) => event.code === 0)
-                    .map((event) => event.id)
-                )
-              )
-            )
-          )
-        );
         const offset = _payload.offset + 1;
 
         await this.createJob(
           BULL_JOB_NAME.CRAWL_DAILY_STATISTICS,
           BULL_JOB_NAME.CRAWL_DAILY_STATISTICS,
           {
+            startId: startTxId,
+            endId: endTxId,
             date: _payload.date,
             offset,
-            txIds: dailyTxs,
             addresses: activeAddrs,
           },
           {
@@ -133,13 +140,18 @@ export default class DailyStatisticsService extends BullableService {
           }
         );
       } else {
-        const [uniqueAddrs, prevDailyStat] = await Promise.all([
+        const [dailyTxs, uniqueAddrs, prevDailyStat] = await Promise.all([
+          Transaction.query()
+            .count('id')
+            .where('timestamp', '>=', startTime)
+            .andWhere('timestamp', '<', endTime)
+            .andWhere('code', 0),
           Account.query().count('id'),
           DailyStatistics.query().findOne('date', startTime),
         ]);
 
         const dailyStat = DailyStatistics.fromJson({
-          daily_txs: _payload.txIds.length,
+          daily_txs: dailyTxs[0].count,
           daily_active_addresses: _payload.addresses.length,
           unique_addresses: Number(uniqueAddrs[0].count),
           unique_addresses_increase: prevDailyStat

@@ -12,6 +12,28 @@ export default class StatisticsService extends BaseService {
     super(broker);
   }
 
+  @Get('/dashboard', {
+    name: 'getDashboardStatisticsByChainId',
+    params: {
+      chainid: {
+        type: 'string',
+        optional: false,
+        enum: networks.map((network) => network.chainId),
+      },
+    },
+  })
+  async getDashboardStatisticsByChainId(
+    ctx: Context<{ chainid: string }, Record<string, unknown>>
+  ) {
+    const selectedChain = networks.find(
+      (network) => network.chainId === ctx.params.chainid
+    );
+
+    return this.broker.call(
+      `v1.api-statistics.getDashboardStatistics@${selectedChain?.moleculerNamespace}`
+    );
+  }
+
   @Get('/top-accounts', {
     name: 'getTopAccountsByChainId',
     params: {
@@ -20,10 +42,6 @@ export default class StatisticsService extends BaseService {
         optional: false,
         enum: networks.map((network) => network.chainId),
       },
-    },
-    cache: {
-      keys: ['chainid'],
-      ttl: 3600,
     },
   })
   async getTopAccountsByChainId(
@@ -34,7 +52,7 @@ export default class StatisticsService extends BaseService {
     );
 
     return this.broker.call(
-      `v1.cross-chains.getTopAccounts@${selectedChain?.moleculerNamespace}`
+      `v1.api-statistics.getTopAccounts@${selectedChain?.moleculerNamespace}`
     );
   }
 }

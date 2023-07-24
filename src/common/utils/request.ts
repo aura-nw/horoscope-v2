@@ -10,14 +10,16 @@ export interface ITxIdsParam {
 }
 
 export interface IDailyStatsParam {
+  startId: number;
+  endId: number;
   date: string;
   offset: number;
-  txIds: number[];
   addresses: string[];
 }
 
 export interface IAccountStatsParam {
-  id: number;
+  startId: number;
+  endId: number;
   date: string;
   accountStats: any;
 }

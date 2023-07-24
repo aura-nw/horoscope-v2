@@ -21,11 +21,7 @@ import { bullBoardMixin } from '../../mixins/bullBoard/bullBoard.mixin';
         path: '/api',
         autoAliases: true, // allow generate rest info (GET/PUT/POST...) in the services
         mappingPolicy: 'restrict', // allow action called with exact method
-        whitelist: [
-          'v1.dashboard-statistics.*',
-          'v1.graphiql.*',
-          'v1.statistics.*',
-        ],
+        whitelist: ['v1.graphiql.*', 'v1.statistics.*'],
       },
     ],
     // empty cors object will have moleculer to generate handler for preflight request and CORS header which allow all origin

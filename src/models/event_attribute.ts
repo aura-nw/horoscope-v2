@@ -2,6 +2,7 @@ import { Model } from 'objection';
 import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
 import { Event } from './event';
+import { Transaction } from './transaction';
 
 export class EventAttribute extends BaseModel {
   event_id!: string;
@@ -50,6 +51,14 @@ export class EventAttribute extends BaseModel {
         join: {
           from: 'event_attribute.event_id',
           to: 'event.id',
+        },
+      },
+      transaction: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: Transaction,
+        join: {
+          from: 'event_attribute.tx_id',
+          to: 'transaction.id',
         },
       },
     };

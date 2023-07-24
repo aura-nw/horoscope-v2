@@ -7,10 +7,10 @@ import { REDIS_KEY } from '../../common';
 import BaseService from '../../base/base.service';
 
 @Service({
-  name: 'cross-chains',
+  name: 'api-statistics',
   version: 1,
 })
-export default class CrossChainsService extends BaseService {
+export default class ApiStatisticsService extends BaseService {
   public constructor(public broker: ServiceBroker) {
     super(broker);
   }
