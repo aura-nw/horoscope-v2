@@ -270,7 +270,7 @@ export default class Cw20Service extends BullableService {
       .where('cw20_contract.track', true)
       .groupBy('cw20_contract.id')
       .select(
-        'holders.cw20_contract_id',
+        'cw20_contract.id',
         knex.raw(
           'count(CASE when holders.amount > 0 THEN 1 ELSE null END) as count'
         )
