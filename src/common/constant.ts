@@ -66,6 +66,7 @@ export const BULL_JOB_NAME = {
   REINDEX_CW721_HISTORY: 'reindex:cw721-history',
   HANDLE_MIGRATE_CONTRACT: 'handle:migrate-contract',
   CRAWL_IBC_TAO: 'crawl:ibc-tao',
+  JOB_REDECODE_TX: 'job:redecode-tx',
 };
 
 export const SERVICE = {
@@ -217,6 +218,10 @@ export const SERVICE = {
       CreateEventAttrPartition: {
         key: 'CreateEventAttrPartition',
         path: 'v1.CreateEventAttrPartition',
+      },
+      ReDecodeTx: {
+        key: 'ReDecodeTx',
+        path: 'v1.ReDecodeTx',
       },
     },
     CrawlIBCTaoService: {

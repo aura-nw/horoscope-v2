@@ -159,6 +159,9 @@
     "dispatchMilisecond": 1000,
     "batchSizeLimit": 10
   },
+  "jobRedecodeTx": {
+    "limitRecordGet": 100
+  },
   "crawlIbcTao": {
     "key": "crawlIbcTao",
     "millisecondRepeatJob": 2000,
