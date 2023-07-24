@@ -40,4 +40,10 @@ export class SmartContractEventAttribute extends BaseModel {
       },
     };
   }
+
+  static modifiers = {
+    selectAttribute(query: any) {
+      query.select('key', 'value');
+    },
+  };
 }
