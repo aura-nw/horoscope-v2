@@ -96,3 +96,9 @@ export interface IContextUpdateCw20 {
   startBlock: number;
   endBlock: number;
 }
+
+export interface IContextReindexingServiceHistory {
+  smartContractId: number;
+  startBlock: number;
+  endBlock: number;
+}
