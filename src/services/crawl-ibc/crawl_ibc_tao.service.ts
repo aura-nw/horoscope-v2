@@ -113,7 +113,8 @@ export default class CrawlIbcTaoService extends BullableService {
           ),
         })
       );
-      this.logger.info(`New IBC Clients: ${newClients}`);
+      this.logger.info('New IBC Clients:');
+      this.logger.info(newClients);
       await IbcClient.query().insert(newClients).transacting(trx);
     }
   }
@@ -121,15 +122,17 @@ export default class CrawlIbcTaoService extends BullableService {
   async handleNewIbcConnection(events: Event[], trx: Knex.Transaction) {
     if (events.length > 0) {
       const ibcClientsByClientId = _.keyBy(
-        await IbcClient.query().whereIn(
-          'client_id',
-          events.map((event) =>
-            getAttributeFrom(
-              event.attributes,
-              EventAttribute.ATTRIBUTE_KEY.CLIENT_ID
+        await IbcClient.query()
+          .whereIn(
+            'client_id',
+            events.map((event) =>
+              getAttributeFrom(
+                event.attributes,
+                EventAttribute.ATTRIBUTE_KEY.CLIENT_ID
+              )
             )
           )
-        ),
+          .transacting(trx),
         'client_id'
       );
       const newConnections: IbcConnection[] = events.map((event) =>
@@ -155,7 +158,8 @@ export default class CrawlIbcTaoService extends BullableService {
           ),
         })
       );
-      this.logger.info(`New IBC Connections: ${newConnections}`);
+      this.logger.info('New IBC Connections:');
+      this.logger.info(newConnections);
       await IbcConnection.query().insert(newConnections).transacting(trx);
     }
   }
@@ -163,15 +167,17 @@ export default class CrawlIbcTaoService extends BullableService {
   async handleNewIbcChannel(events: Event[], trx: Knex.Transaction) {
     if (events.length > 0) {
       const ibcConnectionsByConnetionId = _.keyBy(
-        await IbcConnection.query().whereIn(
-          'connection_id',
-          events.map((event) =>
-            getAttributeFrom(
-              event.attributes,
-              EventAttribute.ATTRIBUTE_KEY.CONNECTION_ID
+        await IbcConnection.query()
+          .whereIn(
+            'connection_id',
+            events.map((event) =>
+              getAttributeFrom(
+                event.attributes,
+                EventAttribute.ATTRIBUTE_KEY.CONNECTION_ID
+              )
             )
           )
-        ),
+          .transacting(trx),
         'connection_id'
       );
       const newChannels: IbcChannel[] = events.map((event) =>
@@ -202,7 +208,8 @@ export default class CrawlIbcTaoService extends BullableService {
           state: true,
         })
       );
-      this.logger.info(`New IBC Channels: ${newChannels}`);
+      this.logger.info('New IBC Channels:');
+      this.logger.info(newChannels);
       await IbcChannel.query().insert(newChannels).transacting(trx);
     }
   }
