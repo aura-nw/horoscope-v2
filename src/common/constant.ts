@@ -62,6 +62,10 @@ export const BULL_JOB_NAME = {
     'job:check-need-create-event-attr-partition',
   JOB_CREATE_EVENT_ATTR_PARTITION: 'job:create-event-attr-partition',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
+  REINDEX_CW721_CONTRACT: 'reindex:cw721-contract',
+  REINDEX_CW721_HISTORY: 'reindex:cw721-history',
+  HANDLE_MIGRATE_CONTRACT: 'handle:migrate-contract',
+  JOB_REDECODE_TX: 'job:redecode-tx',
 };
 
 export const SERVICE = {
@@ -92,6 +96,10 @@ export const SERVICE = {
       UpdateMedia: {
         key: 'updateCw721Media',
         path: 'v1.Cw721Service.updateCw721Media',
+      },
+      HandleRangeBlockMissingContract: {
+        key: 'HandleRangeBlockMissingContract',
+        path: 'v1.Cw721Service.HandleRangeBlockMissingContract',
       },
     },
     CrawlProposalService: {
@@ -197,10 +205,22 @@ export const SERVICE = {
     CrawlValidatorImgService: {
       key: 'CrawlValidatorImageService',
     },
+    CW721ReindexingService: {
+      key: 'Cw721ReindexingService',
+      name: 'v1.Cw721ReindexingService',
+      Reindexing: {
+        key: 'reindexing',
+        path: 'v1.Cw721ReindexingService.reindexing',
+      },
+    },
     JobService: {
       CreateEventAttrPartition: {
         key: 'CreateEventAttrPartition',
         path: 'v1.CreateEventAttrPartition',
+      },
+      ReDecodeTx: {
+        key: 'ReDecodeTx',
+        path: 'v1.ReDecodeTx',
       },
     },
   },
@@ -212,6 +232,7 @@ export enum AccountType {
   DELAYED_VESTING = '/cosmos.vesting.v1beta1.DelayedVestingAccount',
   MODULE = '/cosmos.auth.v1beta1.ModuleAccount',
   BASE = '/cosmos.auth.v1beta1.BaseAccount',
+  SMART_ACCOUNT = '/auranw.aura.smartaccount.SmartAccount',
 }
 
 export enum PubkeyType {

@@ -6,6 +6,8 @@ import CW721Token from './cw721_token';
 import { SmartContractEvent } from './smart_contract_event';
 
 export default class CW721Activity extends BaseModel {
+  static softDelete = false;
+
   id?: number;
 
   action?: string;

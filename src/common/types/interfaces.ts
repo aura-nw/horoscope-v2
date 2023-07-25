@@ -73,6 +73,11 @@ export interface IInstantiateContracts {
   height: number;
 }
 
+export interface IMigrateContracts {
+  address: string;
+  codeId: string;
+}
+
 export interface IContextInstantiateContracts {
   contracts: IInstantiateContracts[];
 }
@@ -88,6 +93,12 @@ export interface IContextUpdateCw20 {
     id: number;
     last_updated_height: number;
   }[];
+  startBlock: number;
+  endBlock: number;
+}
+
+export interface IContextReindexingServiceHistory {
+  smartContractId: number;
   startBlock: number;
   endBlock: number;
 }

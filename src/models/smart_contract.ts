@@ -16,6 +16,8 @@ import { Code } from './code';
 import BaseModel from './base';
 
 export class SmartContract extends BaseModel {
+  code!: Code;
+
   id!: number;
 
   name: string | undefined;
@@ -26,6 +28,8 @@ export class SmartContract extends BaseModel {
 
   code_id!: number;
 
+  status!: string;
+
   instantiate_hash!: string;
 
   instantiate_height!: number;
@@ -34,6 +38,13 @@ export class SmartContract extends BaseModel {
 
   static get tableName() {
     return 'smart_contract';
+  }
+
+  static get STATUS() {
+    return {
+      LATEST: 'LATEST',
+      MIGRATED: 'MIGRATED',
+    };
   }
 
   static get jsonSchema() {
@@ -51,6 +62,7 @@ export class SmartContract extends BaseModel {
         address: { type: 'string' },
         creator: { type: 'string' },
         code_id: { type: 'number' },
+        status: { type: 'string' },
         instantiate_hash: { type: 'string' },
         instantiate_height: { type: 'number' },
         version: { type: ['string', 'null'] },
@@ -71,7 +83,7 @@ export class SmartContract extends BaseModel {
     };
   }
 
-  static async getContractInfo(
+  static async getContractData(
     addresses: string[],
     _httpBatchClient: HttpBatchClient
   ): Promise<
@@ -80,6 +92,64 @@ export class SmartContract extends BaseModel {
       (QueryContractInfoResponse | null)[]
     ]
   > {
+    const contractCw2s = await this.getContractCw2s(
+      addresses,
+      _httpBatchClient
+    );
+    const contractInfos = await this.getContractInfos(
+      addresses,
+      _httpBatchClient
+    );
+
+    return [contractCw2s, contractInfos];
+  }
+
+  static async getContractInfos(
+    addresses: string[],
+    _httpBatchClient: HttpBatchClient
+  ) {
+    const batchQueries: any[] = [];
+
+    addresses.forEach((address) => {
+      const requestContractInfo: QueryContractInfoRequest = {
+        address,
+      };
+      const dataContractInfo = toHex(
+        cosmwasm.wasm.v1.QueryContractInfoRequest.encode(
+          requestContractInfo
+        ).finish()
+      );
+
+      batchQueries.push(
+        _httpBatchClient.execute(
+          createJsonRpcRequest('abci_query', {
+            path: ABCI_QUERY_PATH.CONTRACT_INFO,
+            data: dataContractInfo,
+          })
+        )
+      );
+    });
+
+    const results: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
+
+    const contractInfos: any[] = [];
+    for (let i = 0; i < results.length; i += 1) {
+      contractInfos.push(
+        results[i].result.response.value
+          ? cosmwasm.wasm.v1.QueryContractInfoResponse.decode(
+              fromBase64(results[i].result.response.value)
+            )
+          : null
+      );
+    }
+
+    return contractInfos;
+  }
+
+  static async getContractCw2s(
+    addresses: string[],
+    _httpBatchClient: HttpBatchClient
+  ) {
     const batchQueries: any[] = [];
 
     addresses.forEach((address) => {
@@ -93,26 +163,11 @@ export class SmartContract extends BaseModel {
         ).finish()
       );
 
-      const requestContractInfo: QueryContractInfoRequest = {
-        address,
-      };
-      const dataContractInfo = toHex(
-        cosmwasm.wasm.v1.QueryContractInfoRequest.encode(
-          requestContractInfo
-        ).finish()
-      );
-
       batchQueries.push(
         _httpBatchClient.execute(
           createJsonRpcRequest('abci_query', {
             path: ABCI_QUERY_PATH.RAW_CONTRACT_STATE,
             data: dataCw2,
-          })
-        ),
-        _httpBatchClient.execute(
-          createJsonRpcRequest('abci_query', {
-            path: ABCI_QUERY_PATH.CONTRACT_INFO,
-            data: dataContractInfo,
           })
         )
       );
@@ -121,8 +176,7 @@ export class SmartContract extends BaseModel {
     const results: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
 
     const contractCw2s: any[] = [];
-    const contractInfos: any[] = [];
-    for (let i = 0; i < results.length; i += 2) {
+    for (let i = 0; i < results.length; i += 1) {
       contractCw2s.push(
         results[i].result.response.value
           ? cosmwasm.wasm.v1.QueryRawContractStateResponse.decode(
@@ -130,15 +184,8 @@ export class SmartContract extends BaseModel {
             )
           : null
       );
-      contractInfos.push(
-        results[i + 1].result.response.value
-          ? cosmwasm.wasm.v1.QueryContractInfoResponse.decode(
-              fromBase64(results[i + 1].result.response.value)
-            )
-          : null
-      );
     }
 
-    return [contractCw2s, contractInfos];
+    return contractCw2s;
   }
 }

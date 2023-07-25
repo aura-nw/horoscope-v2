@@ -17,7 +17,10 @@
     "startBlock": 0,
     "millisecondRepeatJobMedia": 10000,
     "mediaPerBatch": 10,
-    "timeRefreshCw721Stats": "1 * * * *"
+    "timeRefreshCw721Stats": "1 * * * *",
+    "reindexing": {
+      "limitRecordGet": 500
+    }
   },
   "crawlBlock": {
     "millisecondCrawl": 5000,
@@ -132,13 +135,8 @@
       "event_attribute",
       "view_event_attribute_value_index"
     ],
-    "queryNeedWhereRelation": [
-      "event_attributes",
-      "event_attribute_index"
-    ],
-    "queryNeedWhereCondition": [
-      "block_height"
-    ],
+    "queryNeedWhereRelation": ["event_attributes", "event_attribute_index"],
+    "queryNeedWhereCondition": ["block_height"],
     "queryHeightRangeLimit": 10000
   },
   "crawlValidatorImage": {
@@ -160,5 +158,8 @@
   "httpBatchRequest": {
     "dispatchMilisecond": 1000,
     "batchSizeLimit": 10
+  },
+  "jobRedecodeTx": {
+    "limitRecordGet": 100
   }
 }
