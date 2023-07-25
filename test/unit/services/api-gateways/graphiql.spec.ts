@@ -27,7 +27,7 @@ export default class GraphiQLTest {
   // @Test('Query success')
   // public async testQuerySuccess() {
   //   const result: ResponseDto = await this.broker.call(
-  //     'v1.graphiql.handleGraphQLQuery',
+  //     'v2.graphql.handleGraphQLQuery',
   //     {
   //       operationName: 'MyQuery',
   //       query:
@@ -43,7 +43,7 @@ export default class GraphiQLTest {
   @Test('Invalid query format')
   public async testInvalidQueryFormat() {
     const result: ResponseDto = await this.broker.call(
-      'v1.graphiql.handleGraphQLQuery',
+      'v2.graphql.handleGraphQLQuery',
       {
         operationName: 'MyQuery',
         query: 'abc',
@@ -59,7 +59,7 @@ export default class GraphiQLTest {
   @Test('Invalid mutation operation')
   public async testInvalidMutationOperation() {
     const result: ResponseDto = await this.broker.call(
-      'v1.graphiql.handleGraphQLQuery',
+      'v2.graphql.handleGraphQLQuery',
       {
         operationName: 'MyMutation',
         query:
@@ -78,7 +78,7 @@ export default class GraphiQLTest {
   @Test('Query depth exceed limit')
   public async testQueryDepthExceedLimit() {
     const result: ResponseDto = await this.broker.call(
-      'v1.graphiql.handleGraphQLQuery',
+      'v2.graphql.handleGraphQLQuery',
       {
         operationName: 'MyQuery',
         query:
@@ -97,7 +97,7 @@ export default class GraphiQLTest {
   @Test('Query root where depth exceed limit')
   public async testQueryRootWhereDepthExceedLimit() {
     const result: ResponseDto = await this.broker.call(
-      'v1.graphiql.handleGraphQLQuery',
+      'v2.graphql.handleGraphQLQuery',
       {
         operationName: 'MyQuery',
         query:
@@ -116,7 +116,7 @@ export default class GraphiQLTest {
   @Test('Query sub where depth exceed limit')
   public async testQuerySubWhereDepthExceedLimit() {
     const result: ResponseDto = await this.broker.call(
-      'v1.graphiql.handleGraphQLQuery',
+      'v2.graphql.handleGraphQLQuery',
       {
         operationName: 'MyQuery',
         query:
@@ -135,7 +135,7 @@ export default class GraphiQLTest {
   @Test('Query tables required where height failed - _eq case')
   public async testQueryRequireWhereHeight_EqCase() {
     const result: ResponseDto = await this.broker.call(
-      'v1.graphiql.handleGraphQLQuery',
+      'v2.graphql.handleGraphQLQuery',
       {
         operationName: 'MyQuery',
         query:
@@ -154,7 +154,7 @@ export default class GraphiQLTest {
   @Test('Query tables required where height failed - _gt _lt case')
   public async testQueryRequireWhereHeight_Gt_LtCase() {
     let result: ResponseDto = await this.broker.call(
-      'v1.graphiql.handleGraphQLQuery',
+      'v2.graphql.handleGraphQLQuery',
       {
         operationName: 'MyQuery',
         query:
@@ -169,7 +169,7 @@ export default class GraphiQLTest {
       `The query to one of the following tables needs to include exact height (_eq) or a height range (_gt/_gte & _lt/_lte) in where argument: ${config.graphiqlApi.queryNeedWhereModel}`
     );
 
-    result = await this.broker.call('v1.graphiql.handleGraphQLQuery', {
+    result = await this.broker.call('v2.graphql.handleGraphQLQuery', {
       operationName: 'MyQuery',
       query:
         'query MyQuery { auratestnet { event_attribute(where: { block_height: { _lte: 1 } }) { hash } } }',
@@ -186,7 +186,7 @@ export default class GraphiQLTest {
   @Test('Query tables required where height failed - in where case')
   public async testQueryRequireWhereHeightInWhereCase() {
     const result: ResponseDto = await this.broker.call(
-      'v1.graphiql.handleGraphQLQuery',
+      'v2.graphql.handleGraphQLQuery',
       {
         operationName: 'MyQuery',
         query:
@@ -205,7 +205,7 @@ export default class GraphiQLTest {
   @Test('Query tables required where height range exceed limit')
   public async testQueryRequireWhereHeightRangeExceedLimit() {
     const result: ResponseDto = await this.broker.call(
-      'v1.graphiql.handleGraphQLQuery',
+      'v2.graphql.handleGraphQLQuery',
       {
         operationName: 'MyQuery',
         query:

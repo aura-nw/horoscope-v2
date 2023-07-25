@@ -12,8 +12,8 @@ import { ErrorCode, ErrorMessage } from '../../common/types/errors';
 import Utils from '../../common/utils/utils';
 
 @Service({
-  name: 'graphiql',
-  version: 1,
+  name: 'graphql',
+  version: 2,
   settings: {
     rateLimit: {
       window: config.graphiqlApi.rateLimitWindow,
