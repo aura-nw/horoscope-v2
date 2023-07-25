@@ -24,3 +24,5 @@ export * from './feegrant';
 export * from './feegrant_history';
 export * from './cw20_total_holder_stats';
 export * from './ibc_client';
+export * from './ibc_connection';
+export * from './ibc_channel';

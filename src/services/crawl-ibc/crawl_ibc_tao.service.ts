@@ -1,6 +1,7 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import { Knex } from 'knex';
+import _ from 'lodash';
 import knex from '../../common/utils/db_connection';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -9,7 +10,9 @@ import {
   BlockCheckpoint,
   Event,
   EventAttribute,
+  IbcChannel,
   IbcClient,
+  IbcConnection,
 } from '../../models';
 import { getAttributeFrom } from '../../common/utils/smart_contract';
 
@@ -41,13 +44,47 @@ export default class CrawlIbcTaoService extends BullableService {
       .withGraphFetched('attributes')
       .joinRelated('[transaction,message]')
       .select('transaction.hash', 'event.id', 'event.type', 'message.content')
-      .whereIn('event.type', [Event.EVENT_TYPE.CREATE_CLIENT])
+      .whereIn('event.type', [
+        Event.EVENT_TYPE.CREATE_CLIENT,
+        Event.EVENT_TYPE.CONNECTION_OPEN_ACK,
+        Event.EVENT_TYPE.CONNECTION_OPEN_CONFIRM,
+        Event.EVENT_TYPE.CHANNEL_OPEN_ACK,
+        Event.EVENT_TYPE.CHANNEL_OPEN_CONFIRM,
+        Event.EVENT_TYPE.CHANNEL_CLOSE_INIT,
+        Event.EVENT_TYPE.CHANNEL_CLOSE_CONFIRM,
+        Event.EVENT_TYPE.CHANNEL_CLOSE,
+      ])
       .andWhere('event.block_height', '>', startHeight)
       .andWhere('event.block_height', '<=', endHeight)
       .orderBy('event.block_height');
     await knex.transaction(async (trx) => {
       await this.handleNewIbcClient(
         events.filter((event) => event.type === Event.EVENT_TYPE.CREATE_CLIENT),
+        trx
+      );
+      await this.handleNewIbcConnection(
+        events.filter(
+          (event) =>
+            event.type === Event.EVENT_TYPE.CONNECTION_OPEN_CONFIRM ||
+            event.type === Event.EVENT_TYPE.CONNECTION_OPEN_ACK
+        ),
+        trx
+      );
+      await this.handleNewIbcChannel(
+        events.filter(
+          (event) =>
+            event.type === Event.EVENT_TYPE.CHANNEL_OPEN_ACK ||
+            event.type === Event.EVENT_TYPE.CHANNEL_OPEN_CONFIRM
+        ),
+        trx
+      );
+      await this.handleCloseIbcChannel(
+        events.filter(
+          (event) =>
+            event.type === Event.EVENT_TYPE.CHANNEL_CLOSE ||
+            event.type === Event.EVENT_TYPE.CHANNEL_CLOSE_CONFIRM ||
+            event.type === Event.EVENT_TYPE.CHANNEL_CLOSE_INIT
+        ),
         trx
       );
       updateBlockCheckpoint.height = endHeight;
@@ -76,8 +113,122 @@ export default class CrawlIbcTaoService extends BullableService {
           ),
         })
       );
-      this.logger.info(`New IBC Client: ${newClients}`);
+      this.logger.info(`New IBC Clients: ${newClients}`);
       await IbcClient.query().insert(newClients).transacting(trx);
+    }
+  }
+
+  async handleNewIbcConnection(events: Event[], trx: Knex.Transaction) {
+    if (events.length > 0) {
+      const ibcClientsByClientId = _.keyBy(
+        await IbcClient.query().whereIn(
+          'client_id',
+          events.map((event) =>
+            getAttributeFrom(
+              event.attributes,
+              EventAttribute.ATTRIBUTE_KEY.CLIENT_ID
+            )
+          )
+        ),
+        'client_id'
+      );
+      const newConnections: IbcConnection[] = events.map((event) =>
+        IbcConnection.fromJson({
+          ibc_client_id:
+            ibcClientsByClientId[
+              getAttributeFrom(
+                event.attributes,
+                EventAttribute.ATTRIBUTE_KEY.CLIENT_ID
+              )
+            ].id,
+          connection_id: getAttributeFrom(
+            event.attributes,
+            EventAttribute.ATTRIBUTE_KEY.CONNECTION_ID
+          ),
+          counterparty_client_id: getAttributeFrom(
+            event.attributes,
+            EventAttribute.ATTRIBUTE_KEY.COUNTERPARTY_CLIENT_ID
+          ),
+          counterparty_connection_id: getAttributeFrom(
+            event.attributes,
+            EventAttribute.ATTRIBUTE_KEY.COUNTERPARTY_CONNECTION_ID
+          ),
+        })
+      );
+      this.logger.info(`New IBC Connections: ${newConnections}`);
+      await IbcConnection.query().insert(newConnections).transacting(trx);
+    }
+  }
+
+  async handleNewIbcChannel(events: Event[], trx: Knex.Transaction) {
+    if (events.length > 0) {
+      const ibcConnectionsByConnetionId = _.keyBy(
+        await IbcConnection.query().whereIn(
+          'connection_id',
+          events.map((event) =>
+            getAttributeFrom(
+              event.attributes,
+              EventAttribute.ATTRIBUTE_KEY.CONNECTION_ID
+            )
+          )
+        ),
+        'connection_id'
+      );
+      const newChannels: IbcChannel[] = events.map((event) =>
+        IbcChannel.fromJson({
+          ibc_connection_id:
+            ibcConnectionsByConnetionId[
+              getAttributeFrom(
+                event.attributes,
+                EventAttribute.ATTRIBUTE_KEY.CONNECTION_ID
+              )
+            ].id,
+          channel_id: getAttributeFrom(
+            event.attributes,
+            EventAttribute.ATTRIBUTE_KEY.CHANNEL_ID
+          ),
+          port_id: getAttributeFrom(
+            event.attributes,
+            EventAttribute.ATTRIBUTE_KEY.PORT_ID
+          ),
+          counterparty_port_id: getAttributeFrom(
+            event.attributes,
+            EventAttribute.ATTRIBUTE_KEY.COUNTERPARTY_PORT_ID
+          ),
+          counterparty_channel_id: getAttributeFrom(
+            event.attributes,
+            EventAttribute.ATTRIBUTE_KEY.COUNTERPARTY_CHANNEL_ID
+          ),
+          state: true,
+        })
+      );
+      this.logger.info(`New IBC Channels: ${newChannels}`);
+      await IbcChannel.query().insert(newChannels).transacting(trx);
+    }
+  }
+
+  async handleCloseIbcChannel(events: Event[], trx: Knex.Transaction) {
+    if (events.length > 0) {
+      const queries = events.map((event) => {
+        const channelId = getAttributeFrom(
+          event.attributes,
+          EventAttribute.ATTRIBUTE_KEY.CHANNEL_ID
+        );
+        if (!channelId) {
+          throw new Error(
+            `Event close channel not found channelId: ${event.id}`
+          );
+        }
+        return IbcChannel.query()
+          .update({
+            state: false,
+          })
+          .where({
+            channel_id: channelId,
+          })
+          .transacting(trx);
+      });
+      await Promise.all(queries);
     }
   }
 

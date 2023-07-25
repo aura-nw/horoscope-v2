@@ -91,5 +91,12 @@ export class Event extends BaseModel {
     SET_FEEGRANT: 'set_feegrant',
     MIGRATE: 'migrate',
     CREATE_CLIENT: 'create_client',
+    CONNECTION_OPEN_ACK: 'connection_open_ack',
+    CONNECTION_OPEN_CONFIRM: 'connection_open_confirm',
+    CHANNEL_OPEN_ACK: 'channel_open_ack',
+    CHANNEL_OPEN_CONFIRM: 'channel_open_confirm',
+    CHANNEL_CLOSE_INIT: 'channel_close_init',
+    CHANNEL_CLOSE_CONFIRM: 'channel_close_confirm',
+    CHANNEL_CLOSE: 'channel_close',
   };
 }
