@@ -8,7 +8,7 @@ import BaseService from '../../base/base.service';
 
 @Service({
   name: 'api-statistics',
-  version: 1,
+  version: 2,
 })
 export default class ApiStatisticsService extends BaseService {
   public constructor(public broker: ServiceBroker) {

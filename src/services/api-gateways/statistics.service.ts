@@ -5,7 +5,7 @@ import networks from '../../../network.json' assert { type: 'json' };
 
 @Service({
   name: 'statistics',
-  version: 1,
+  version: 2,
 })
 export default class StatisticsService extends BaseService {
   public constructor(public broker: ServiceBroker) {
@@ -30,7 +30,7 @@ export default class StatisticsService extends BaseService {
     );
 
     return this.broker.call(
-      `v1.api-statistics.getDashboardStatistics@${selectedChain?.moleculerNamespace}`
+      `v2.api-statistics.getDashboardStatistics@${selectedChain?.moleculerNamespace}`
     );
   }
 
@@ -52,7 +52,7 @@ export default class StatisticsService extends BaseService {
     );
 
     return this.broker.call(
-      `v1.api-statistics.getTopAccounts@${selectedChain?.moleculerNamespace}`
+      `v2.api-statistics.getTopAccounts@${selectedChain?.moleculerNamespace}`
     );
   }
 }

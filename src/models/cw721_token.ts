@@ -4,6 +4,8 @@ import BaseModel from './base';
 import CW721Contract from './cw721_contract';
 
 export default class CW721Token extends BaseModel {
+  static softDelete = false;
+
   [relation: string]: any;
 
   token_id!: string;
@@ -29,7 +31,7 @@ export default class CW721Token extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['token_id', 'cw721_contract_id', 'last_updated_height'],
+      required: ['token_id', 'last_updated_height'],
       properties: {
         token_id: { type: 'string' },
         cw721_contract_id: { type: 'number' },

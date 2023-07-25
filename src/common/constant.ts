@@ -67,7 +67,10 @@ export const BULL_JOB_NAME = {
   CRAWL_ACCOUNT_STATISTICS: 'crawl:account-statistics',
   HANDLE_TOP_ACCOUNTS: 'handle:top-accounts',
   HANDLE_DAILY_STATS_JOBS: 'handle:daily-stats-jobs',
+  REINDEX_CW721_CONTRACT: 'reindex:cw721-contract',
+  REINDEX_CW721_HISTORY: 'reindex:cw721-history',
   HANDLE_MIGRATE_CONTRACT: 'handle:migrate-contract',
+  JOB_REDECODE_TX: 'job:redecode-tx',
 };
 
 export const SERVICE = {
@@ -98,6 +101,10 @@ export const SERVICE = {
       UpdateMedia: {
         key: 'updateCw721Media',
         path: 'v1.Cw721Service.updateCw721Media',
+      },
+      HandleRangeBlockMissingContract: {
+        key: 'HandleRangeBlockMissingContract',
+        path: 'v1.Cw721Service.HandleRangeBlockMissingContract',
       },
     },
     CrawlProposalService: {
@@ -203,10 +210,22 @@ export const SERVICE = {
     CrawlValidatorImgService: {
       key: 'CrawlValidatorImageService',
     },
+    CW721ReindexingService: {
+      key: 'Cw721ReindexingService',
+      name: 'v1.Cw721ReindexingService',
+      Reindexing: {
+        key: 'reindexing',
+        path: 'v1.Cw721ReindexingService.reindexing',
+      },
+    },
     JobService: {
       CreateEventAttrPartition: {
         key: 'CreateEventAttrPartition',
         path: 'v1.CreateEventAttrPartition',
+      },
+      ReDecodeTx: {
+        key: 'ReDecodeTx',
+        path: 'v1.ReDecodeTx',
       },
     },
     DailyStatisticsService: {

@@ -177,24 +177,22 @@ export default class CrawlCodeService extends BullableService {
         );
 
       const newVerifications: CodeIdVerification[] = [];
-      codeIdVerifications.forEach((verification) => {
-        const codes = codeEntities.filter(
-          (code) => code.data_hash === verification.data_hash
+      codeEntities.forEach((newCode) => {
+        const foundVerification = codeIdVerifications.find(
+          (verification) => verification.data_hash === newCode.data_hash
         );
-        const omitVerification = _.omit(verification, [
-          'id',
-          'created_at',
-          'updated_at',
-        ]);
-        if (codes.length > 0) {
+        if (foundVerification) {
+          const omitVerification = _.omit(foundVerification, [
+            'id',
+            'created_at',
+            'updated_at',
+          ]);
           newVerifications.push(
-            ...codes.map((code) =>
-              CodeIdVerification.fromJson({
-                ...omitVerification,
-                code_id: code.code_id,
-                verified_at: new Date().toISOString(),
-              })
-            )
+            CodeIdVerification.fromJson({
+              ...omitVerification,
+              code_id: newCode.code_id,
+              verified_at: new Date().toISOString(),
+            })
           );
         }
       });

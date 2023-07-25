@@ -46,8 +46,10 @@ export default class AuraRegistry {
       '/cosmos.feegrant.v1beta1.AllowedMsgAllowance',
       '/cosmos.vesting.v1beta1.MsgCreatePeriodicVestingAccount',
 
-      // ibc header
+      // ibc
       '/ibc.lightclients.tendermint.v1.Header',
+      '/ibc.lightclients.tendermint.v1.ClientState',
+      '/ibc.lightclients.tendermint.v1.ConsensusState',
 
       // slashing
       '/cosmos.slashing.v1beta1.MsgUnjail',
@@ -124,6 +126,19 @@ export default class AuraRegistry {
           );
         } catch (error) {
           this._logger.error('This msg ibc acknowledgement is not valid JSON');
+        }
+      } else if (msg.typeUrl === MSG_TYPE.MSG_AUTHZ_EXEC) {
+        try {
+          result.msgs = result.msgs.map((subMsg: any) =>
+            this.decodeMsg({
+              typeUrl: subMsg.typeUrl,
+              value: Utils.isBase64(subMsg.value)
+                ? fromBase64(subMsg.value)
+                : subMsg.value,
+            })
+          );
+        } catch (error) {
+          this._logger.error('Cannot decoded sub messages authz exec');
         }
       }
     } else {
