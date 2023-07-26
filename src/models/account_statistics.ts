@@ -42,4 +42,15 @@ export class AccountStatistics extends BaseModel {
   static get relationMappings() {
     return {};
   }
+
+  static newAccountStat(address: string, date: string) {
+    return AccountStatistics.fromJson({
+      address,
+      amount_sent: '0',
+      amount_received: '0',
+      tx_sent: 0,
+      gas_used: '0',
+      date,
+    });
+  }
 }

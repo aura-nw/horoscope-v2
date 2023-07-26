@@ -6,7 +6,6 @@ export async function up(knex: Knex): Promise<void> {
     table.bigint('daily_txs').index().notNullable();
     table.bigint('daily_active_addresses').index().notNullable();
     table.bigint('unique_addresses').index().notNullable();
-    table.bigint('unique_addresses_increase').index().notNullable();
     table.timestamp('date').unique().notNullable();
   });
   await knex.schema.createTable('account_statistics', (table: any) => {

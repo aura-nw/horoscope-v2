@@ -9,19 +9,8 @@ export interface ITxIdsParam {
   txIds: number[];
 }
 
-export interface IDailyStatsParam {
-  startId: number;
-  endId: number;
+export interface IStatisticsParam {
   date: string;
-  offset: number;
-  addresses: string[];
-}
-
-export interface IAccountStatsParam {
-  startId: number;
-  endId: number;
-  date: string;
-  accountStats: any;
 }
 
 export interface ICreateSpecificDateJob {

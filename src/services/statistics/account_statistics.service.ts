@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 /* eslint-disable no-case-declarations */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import {
@@ -13,7 +14,7 @@ import _ from 'lodash';
 import { AccountStatistics, EventAttribute, Transaction } from '../../models';
 import {
   BULL_JOB_NAME,
-  IAccountStatsParam,
+  IStatisticsParam,
   ICreateSpecificDateJob,
   REDIS_KEY,
   SERVICE,
@@ -27,8 +28,6 @@ import knex from '../../common/utils/db_connection';
   version: 1,
 })
 export default class AccountStatisticsService extends BullableService {
-  private accountStats: any;
-
   public constructor(public broker: ServiceBroker) {
     super(broker);
   }
@@ -65,89 +64,63 @@ export default class AccountStatisticsService extends BullableService {
     jobName: BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
     // prefix: `horoscope-v2-${config.chainId}`,
   })
-  public async handleJob(_payload: IAccountStatsParam): Promise<void> {
+  public async handleJob(_payload: IStatisticsParam): Promise<void> {
     const { date } = _payload;
-    this.accountStats = _payload.accountStats;
+    const accountStats: any = {};
 
     const endTime = dayjs.utc(date).startOf('day').toDate();
     const startTime = dayjs.utc(endTime).subtract(1, 'day').toDate();
 
-    let startTxId = _payload.startId;
-    // The end tx's ID needs to plus 1 since the query will select record with _lt not _lte
-    let nextId = Math.min(_payload.endId + 1, startTxId + 50);
-    let endTxId = _payload.endId;
-    // If job runs for the 1st time, then needs to query the start and end tx id of the day as the range
-    if (!_payload.startId && !_payload.endId) {
-      const startTx = await Transaction.query()
-        .select('id')
-        .where('transaction.timestamp', '>=', startTime)
-        .limit(1)
-        .orderBy('id');
-      const endTx = await Transaction.query()
-        .select('id')
-        .where('transaction.timestamp', '<', endTime)
-        .limit(1)
-        .orderBy('id', 'desc');
+    const startTx = await Transaction.query()
+      .select('id')
+      .where('transaction.timestamp', '>=', startTime)
+      .limit(1)
+      .orderBy('id');
+    const endTx = await Transaction.query()
+      .select('id')
+      .where('transaction.timestamp', '<', endTime)
+      .limit(1)
+      .orderBy('id', 'desc');
 
-      startTxId = startTx[0].id;
-      // The end tx's ID needs to plus 1 since the query will select record with _lt not _lte
-      nextId = Math.min(endTx[0].id + 1, startTxId + 50);
-      endTxId = endTx[0].id;
-    }
     this.logger.info(
-      `Get account statistic events from id ${startTxId} for day ${new Date(
-        startTime
-      )}`
+      `Get account statistic events for day ${new Date(startTime)}`
     );
 
-    const [spendReceiveDone, gasTxSentDone] = await Promise.all([
-      this.calculateSpendReceive(startTxId, nextId),
-      this.calculateGasUsedTxSent(startTxId, nextId),
+    await Promise.all([
+      this.calculateSpendReceive(
+        startTx[0].id,
+        endTx[0].id,
+        accountStats,
+        startTime.toISOString()
+      ),
+      this.calculateGasUsedTxSent(
+        startTx[0].id,
+        endTx[0].id,
+        accountStats,
+        startTime.toISOString()
+      ),
     ]);
 
-    if (!spendReceiveDone || !gasTxSentDone) {
-      await this.createJob(
-        BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
-        BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
-        {
-          startId: nextId,
-          endId: endTxId,
-          date: _payload.date,
-          accountStats: this.accountStats,
-        },
-        {
-          removeOnComplete: true,
-          removeOnFail: {
-            count: 3,
-          },
-        }
-      );
-    } else {
-      const dailyAccountStats = Object.keys(this.accountStats).map((acc) =>
-        AccountStatistics.fromJson({
-          address: acc,
-          ...this.accountStats[acc],
-          date: startTime.toISOString(),
-        })
-      );
+    const dailyAccountStats = Object.keys(accountStats).map(
+      (acc) => accountStats[acc]
+    );
 
-      this.logger.info(`Insert new account statistics for date ${startTime}`);
-      if (dailyAccountStats.length > 0) {
-        await AccountStatistics.query().insert(dailyAccountStats);
-      }
-
-      await this.createJob(
-        BULL_JOB_NAME.HANDLE_TOP_ACCOUNTS,
-        BULL_JOB_NAME.HANDLE_TOP_ACCOUNTS,
-        {},
-        {
-          removeOnComplete: true,
-          removeOnFail: {
-            count: 3,
-          },
-        }
-      );
+    this.logger.info(`Insert new account statistics for date ${startTime}`);
+    if (dailyAccountStats.length > 0) {
+      await AccountStatistics.query().insert(dailyAccountStats);
     }
+
+    await this.createJob(
+      BULL_JOB_NAME.HANDLE_TOP_ACCOUNTS,
+      BULL_JOB_NAME.HANDLE_TOP_ACCOUNTS,
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+      }
+    );
   }
 
   @QueueHandler({
@@ -177,12 +150,14 @@ export default class AccountStatisticsService extends BullableService {
 
   private async calculateSpendReceive(
     startTxId: number,
-    nextId: number
-  ): Promise<boolean> {
+    endTxId: number,
+    accountStats: any,
+    date: string
+  ) {
     const dailyEvents: any[] = await EventAttribute.query()
       .select(knex.raw('jsonb_agg(jsonb_build_object(composite_key, value))'))
       .where('tx_id', '>=', startTxId)
-      .andWhere('tx_id', '<', nextId)
+      .andWhere('tx_id', '<', endTxId)
       .andWhere((builder) =>
         builder
           // Get the address that actually spent or received token
@@ -204,13 +179,11 @@ export default class AccountStatisticsService extends BullableService {
             event[EventAttribute.ATTRIBUTE_COMPOSITE_KEY.COIN_RECEIVED_RECEIVER]
         )
         .forEach((address) => {
-          if (!this.accountStats[address]) {
-            this.accountStats[address] = {
-              amount_sent: '0',
-              amount_received: '0',
-              tx_sent: 0,
-              gas_used: '0',
-            };
+          if (!accountStats[address]) {
+            accountStats[address] = AccountStatistics.newAccountStat(
+              address,
+              date
+            );
           }
         });
 
@@ -225,8 +198,8 @@ export default class AccountStatisticsService extends BullableService {
             const amountSpent =
               event[EventAttribute.ATTRIBUTE_COMPOSITE_KEY.COIN_SPENT_AMOUNT];
 
-            this.accountStats[addrSpent].amount_sent = (
-              BigInt(this.accountStats[addrSpent].amount_sent) +
+            accountStats[addrSpent].amount_sent = (
+              BigInt(accountStats[addrSpent].amount_sent) +
               BigInt(parseCoins(amountSpent)[0].amount)
             ).toString();
           } else if (
@@ -241,23 +214,21 @@ export default class AccountStatisticsService extends BullableService {
                 EventAttribute.ATTRIBUTE_COMPOSITE_KEY.COIN_RECEIVED_AMOUNT
               ];
 
-            this.accountStats[addrReceived].amount_received = (
-              BigInt(this.accountStats[addrReceived].amount_received) +
+            accountStats[addrReceived].amount_received = (
+              BigInt(accountStats[addrReceived].amount_received) +
               BigInt(parseCoins(amountReceived)[0].amount)
             ).toString();
           }
         });
-
-      return false;
     }
-
-    return true;
   }
 
   private async calculateGasUsedTxSent(
     startTxId: number,
-    nextId: number
-  ): Promise<boolean> {
+    endTxId: number,
+    accountStats: any,
+    date: string
+  ) {
     const feeEvents: any[] = await EventAttribute.query()
       .joinRelated('transaction')
       .select(
@@ -265,7 +236,7 @@ export default class AccountStatisticsService extends BullableService {
         'gas_used'
       )
       .where('tx_id', '>=', startTxId)
-      .andWhere('tx_id', '<', nextId)
+      .andWhere('tx_id', '<', endTxId)
       .andWhere((builder) =>
         builder
           // If fee_grant is involved, then needs to track to the granters and grantees
@@ -285,13 +256,11 @@ export default class AccountStatisticsService extends BullableService {
             event[EventAttribute.ATTRIBUTE_COMPOSITE_KEY.USE_FEEGRANT_GRANTEE]
         )
         .forEach((address) => {
-          if (!this.accountStats[address]) {
-            this.accountStats[address] = {
-              amount_sent: '0',
-              amount_received: '0',
-              tx_sent: 0,
-              gas_used: '0',
-            };
+          if (!accountStats[address]) {
+            accountStats[address] = AccountStatistics.newAccountStat(
+              address,
+              date
+            );
           }
         });
 
@@ -311,16 +280,12 @@ export default class AccountStatisticsService extends BullableService {
               ];
           }
 
-          this.accountStats[addr].tx_sent += 1;
-          this.accountStats[addr].gas_used = (
-            BigInt(this.accountStats[addr].gas_used) + BigInt(event.gas_used)
+          accountStats[addr].tx_sent += 1;
+          accountStats[addr].gas_used = (
+            BigInt(accountStats[addr].gas_used) + BigInt(event.gas_used)
           ).toString();
         });
-
-      return false;
     }
-
-    return true;
   }
 
   private async getStatsFromSpecificDaysAgo(
