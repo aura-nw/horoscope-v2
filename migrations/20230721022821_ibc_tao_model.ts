@@ -11,7 +11,7 @@ export async function up(knex: Knex): Promise<void> {
   });
   await knex.schema.createTable('ibc_connection', (table) => {
     table.increments();
-    table.integer('ibc_client_id');
+    table.integer('ibc_client_id').index();
     table.string('connection_id').notNullable().unique();
     table.string('counterparty_client_id').notNullable();
     table.string('counterparty_connection_id').notNullable();
@@ -19,12 +19,12 @@ export async function up(knex: Knex): Promise<void> {
   });
   await knex.schema.createTable('ibc_channel', (table) => {
     table.increments();
-    table.integer('ibc_connection_id');
+    table.integer('ibc_connection_id').index();
     table.string('channel_id').notNullable().unique();
-    table.string('port_id').notNullable();
+    table.string('port_id').notNullable().index();
     table.string('counterparty_port_id').notNullable();
     table.string('counterparty_channel_id').notNullable();
-    table.boolean('state').notNullable();
+    table.string('state').notNullable();
     table.foreign('ibc_connection_id').references('ibc_connection.id');
   });
 }

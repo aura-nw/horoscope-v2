@@ -16,7 +16,7 @@ export class IbcChannel extends BaseModel {
 
   counterparty_channel_id!: string;
 
-  state!: boolean;
+  state!: string;
 
   static get tableName() {
     return 'ibc_channel';
@@ -39,7 +39,7 @@ export class IbcChannel extends BaseModel {
         port_id: { type: 'string' },
         counterparty_port_id: { type: 'string' },
         counterparty_channel_id: { type: 'string' },
-        state: { type: 'boolean' },
+        state: { type: 'string' },
       },
     };
   }
@@ -56,4 +56,9 @@ export class IbcChannel extends BaseModel {
       },
     };
   }
+
+  static STATUS = {
+    OPEN: 'OPEN',
+    CLOSE: 'CLOSE',
+  };
 }

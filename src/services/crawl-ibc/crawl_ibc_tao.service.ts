@@ -42,8 +42,8 @@ export default class CrawlIbcTaoService extends BullableService {
     if (startHeight > endHeight) return;
     const events = await Event.query()
       .withGraphFetched('attributes')
-      .joinRelated('[transaction,message]')
-      .select('transaction.hash', 'event.id', 'event.type', 'message.content')
+      .joinRelated('message')
+      .select('event.id', 'event.type', 'message.content')
       .whereIn('event.type', [
         Event.EVENT_TYPE.CREATE_CLIENT,
         Event.EVENT_TYPE.CONNECTION_OPEN_ACK,
@@ -56,7 +56,7 @@ export default class CrawlIbcTaoService extends BullableService {
       ])
       .andWhere('event.block_height', '>', startHeight)
       .andWhere('event.block_height', '<=', endHeight)
-      .orderBy('event.block_height');
+      .orderBy('event.id');
     await knex.transaction(async (trx) => {
       await this.handleNewIbcClient(
         events.filter((event) => event.type === Event.EVENT_TYPE.CREATE_CLIENT),
@@ -205,7 +205,7 @@ export default class CrawlIbcTaoService extends BullableService {
             event.attributes,
             EventAttribute.ATTRIBUTE_KEY.COUNTERPARTY_CHANNEL_ID
           ),
-          state: true,
+          state: IbcChannel.STATUS.OPEN,
         })
       );
       this.logger.info('New IBC Channels:');
@@ -227,8 +227,8 @@ export default class CrawlIbcTaoService extends BullableService {
           );
         }
         return IbcChannel.query()
-          .update({
-            state: false,
+          .patch({
+            state: IbcChannel.STATUS.CLOSE,
           })
           .where({
             channel_id: channelId,
