@@ -105,75 +105,83 @@ export default class CrawlAccountService extends BullableService {
       });
 
       const result: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
-      const accountAuthsRes: QueryAccountResponse[] = result.map((res) =>
-        cosmos.auth.v1beta1.QueryAccountResponse.decode(
-          fromBase64(res.result.response.value)
-        )
+      const accountAuthsRes: (QueryAccountResponse | null)[] = result.map(
+        (res) =>
+          res.result.response.code === 0
+            ? cosmos.auth.v1beta1.QueryAccountResponse.decode(
+                fromBase64(res.result.response.value)
+              )
+            : null
       );
       const accountAuths = accountAuthsRes.map((acc) =>
-        Utils.camelizeKeys(this.registry.decodeMsg(acc.account))
+        acc ? Utils.camelizeKeys(this.registry.decodeMsg(acc.account)) : null
       );
 
       accountAuths.forEach((auth) => {
-        const account: any = {};
-        account.type = auth['@type'];
-        switch (auth['@type']) {
-          case AccountType.CONTINUOUS_VESTING:
-          case AccountType.DELAYED_VESTING:
-          case AccountType.PERIODIC_VESTING:
-            account.id = accountsInDb.find(
-              (acc) =>
-                acc.address === auth.base_vesting_account.base_account.address
-            )!.id;
-            account.pubkey = auth.base_vesting_account.base_account.pub_key;
-            account.account_number = Number.parseInt(
-              auth.base_vesting_account.base_account.account_number,
-              10
-            );
-            account.sequence = Number.parseInt(
-              auth.base_vesting_account.base_account.sequence,
-              10
-            );
-            break;
-          case AccountType.MODULE:
-            account.id = accountsInDb.find(
-              (acc) => acc.address === auth.base_account.address
-            )!.id;
-            account.pubkey = auth.base_account.pub_key;
-            account.account_number = Number.parseInt(
-              auth.base_account.account_number,
-              10
-            );
-            account.sequence = Number.parseInt(auth.base_account.sequence, 10);
-            break;
-          default:
-            account.id = accountsInDb.find(
-              (acc) => acc.address === auth.address
-            )!.id;
-            account.pubkey = auth.pub_key;
-            account.account_number = Number.parseInt(auth.account_number, 10);
-            account.sequence = Number.parseInt(auth.sequence, 10);
-            break;
-        }
+        if (auth) {
+          const account: any = {};
+          account.type = auth['@type'];
+          switch (auth['@type']) {
+            case AccountType.CONTINUOUS_VESTING:
+            case AccountType.DELAYED_VESTING:
+            case AccountType.PERIODIC_VESTING:
+              account.id = accountsInDb.find(
+                (acc) =>
+                  acc.address === auth.base_vesting_account.base_account.address
+              )!.id;
+              account.pubkey = auth.base_vesting_account.base_account.pub_key;
+              account.account_number = Number.parseInt(
+                auth.base_vesting_account.base_account.account_number,
+                10
+              );
+              account.sequence = Number.parseInt(
+                auth.base_vesting_account.base_account.sequence,
+                10
+              );
+              break;
+            case AccountType.MODULE:
+              account.id = accountsInDb.find(
+                (acc) => acc.address === auth.base_account.address
+              )!.id;
+              account.pubkey = auth.base_account.pub_key;
+              account.account_number = Number.parseInt(
+                auth.base_account.account_number,
+                10
+              );
+              account.sequence = Number.parseInt(
+                auth.base_account.sequence,
+                10
+              );
+              break;
+            default:
+              account.id = accountsInDb.find(
+                (acc) => acc.address === auth.address
+              )!.id;
+              account.pubkey = auth.pub_key;
+              account.account_number = Number.parseInt(auth.account_number, 10);
+              account.sequence = Number.parseInt(auth.sequence, 10);
+              break;
+          }
 
-        accounts.push(account);
+          accounts.push(account);
 
-        if (
-          auth['@type'] === AccountType.CONTINUOUS_VESTING ||
-          auth['@type'] === AccountType.DELAYED_VESTING ||
-          auth['@type'] === AccountType.PERIODIC_VESTING
-        ) {
-          const accountVesting: AccountVesting = AccountVesting.fromJson({
-            account_id: account.id,
-            original_vesting: auth.base_vesting_account.original_vesting,
-            delegated_free: auth.base_vesting_account.delegated_free,
-            delegated_vesting: auth.base_vesting_account.delegated_vesting,
-            start_time: auth.start_time
-              ? Number.parseInt(auth.start_time, 10)
-              : null,
-            end_time: auth.base_vesting_account.end_time,
-          });
-          accountVestings.push(accountVesting);
+          if (
+            auth['@type'] === AccountType.CONTINUOUS_VESTING ||
+            auth['@type'] === AccountType.DELAYED_VESTING ||
+            auth['@type'] === AccountType.PERIODIC_VESTING
+          ) {
+            const accountVesting: AccountVesting = AccountVesting.fromJson({
+              account_id: account.id,
+              original_vesting: auth.base_vesting_account.original_vesting,
+              delegated_free: auth.base_vesting_account.delegated_free,
+              delegated_vesting: auth.base_vesting_account.delegated_vesting,
+              start_time: auth.start_time
+                ? Number.parseInt(auth.start_time, 10)
+                : null,
+              end_time: auth.base_vesting_account.end_time,
+            });
+            accountVestings.push(accountVesting);
+          }
         }
       });
 
@@ -530,7 +538,7 @@ export default class CrawlAccountService extends BullableService {
 
     this.createJob(
       BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT,
-      'crawl',
+      BULL_JOB_NAME.HANDLE_VESTING_ACCOUNT,
       {},
       {
         removeOnComplete: true,
