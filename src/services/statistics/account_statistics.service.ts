@@ -197,13 +197,16 @@ export default class AccountStatisticsService extends BullableService {
           ) {
             const addrSpent =
               event[EventAttribute.ATTRIBUTE_COMPOSITE_KEY.COIN_SPENT_SPENDER];
-            const amountSpent =
-              event[EventAttribute.ATTRIBUTE_COMPOSITE_KEY.COIN_SPENT_AMOUNT];
+            const amountSpent = parseCoins(
+              event[EventAttribute.ATTRIBUTE_COMPOSITE_KEY.COIN_SPENT_AMOUNT]
+            )[0];
 
-            accountStats[addrSpent].amount_sent = (
-              BigInt(accountStats[addrSpent].amount_sent) +
-              BigInt(parseCoins(amountSpent)[0].amount)
-            ).toString();
+            if (amountSpent.denom === config.networkDenom) {
+              accountStats[addrSpent].amount_sent = (
+                BigInt(accountStats[addrSpent].amount_sent) +
+                BigInt(amountSpent.amount)
+              ).toString();
+            }
           } else if (
             event[EventAttribute.ATTRIBUTE_COMPOSITE_KEY.COIN_RECEIVED_RECEIVER]
           ) {
@@ -211,15 +214,16 @@ export default class AccountStatisticsService extends BullableService {
               event[
                 EventAttribute.ATTRIBUTE_COMPOSITE_KEY.COIN_RECEIVED_RECEIVER
               ];
-            const amountReceived =
-              event[
-                EventAttribute.ATTRIBUTE_COMPOSITE_KEY.COIN_RECEIVED_AMOUNT
-              ];
+            const amountReceived = parseCoins(
+              event[EventAttribute.ATTRIBUTE_COMPOSITE_KEY.COIN_RECEIVED_AMOUNT]
+            )[0];
 
-            accountStats[addrReceived].amount_received = (
-              BigInt(accountStats[addrReceived].amount_received) +
-              BigInt(parseCoins(amountReceived)[0].amount)
-            ).toString();
+            if (amountReceived.denom === config.networkDenom) {
+              accountStats[addrReceived].amount_received = (
+                BigInt(accountStats[addrReceived].amount_received) +
+                BigInt(amountReceived.amount)
+              ).toString();
+            }
           }
         });
     }
