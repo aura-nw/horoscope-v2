@@ -45,17 +45,15 @@ export default class DailyStatisticsService extends BullableService {
       BULL_JOB_NAME.CRAWL_DAILY_STATISTICS,
       BULL_JOB_NAME.CRAWL_DAILY_STATISTICS,
       {
-        startId: null,
-        endId: null,
         date: ctx.params.date,
-        offset: 0,
-        addresses: [],
       },
       {
         removeOnComplete: true,
         removeOnFail: {
           count: 3,
         },
+        attempts: config.jobRetryAttempt,
+        backoff: config.jobRetryBackoff,
       }
     );
   }

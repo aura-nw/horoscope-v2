@@ -1,4 +1,8 @@
-import { Get, Service } from '@ourparentcenter/moleculer-decorators-extended';
+import {
+  Get,
+  Post,
+  Service,
+} from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
 import BaseService from '../../base/base.service';
 import networks from '../../../network.json' assert { type: 'json' };
@@ -53,6 +57,45 @@ export default class StatisticsService extends BaseService {
 
     return this.broker.call(
       `v2.api-statistics.getTopAccounts@${selectedChain?.moleculerNamespace}`
+    );
+  }
+
+  @Post('/sync-prev-date-stats', {
+    name: 'syncPrevDateStatsByChainId',
+    params: {
+      chainid: {
+        type: 'string',
+        optional: false,
+        enum: networks.map((network) => network.chainId),
+      },
+      startDate: {
+        type: 'string',
+        optional: false,
+        default: '2023-01-01',
+      },
+      endDate: {
+        type: 'string',
+        optional: true,
+        default: '2023-01-02',
+      },
+    },
+  })
+  async syncPrevDateStatsByChainId(
+    ctx: Context<
+      { chainid: string; startDate: string; endDate: string },
+      Record<string, unknown>
+    >
+  ) {
+    const selectedChain = networks.find(
+      (network) => network.chainId === ctx.params.chainid
+    );
+
+    return this.broker.call(
+      `v2.api-statistics.syncPrevDateStats@${selectedChain?.moleculerNamespace}`,
+      {
+        startDate: ctx.params.startDate,
+        endDate: ctx.params.endDate,
+      }
     );
   }
 }

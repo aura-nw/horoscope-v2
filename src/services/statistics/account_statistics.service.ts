@@ -47,16 +47,15 @@ export default class AccountStatisticsService extends BullableService {
       BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
       BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
       {
-        startId: null,
-        endId: null,
         date: ctx.params.date,
-        accountStats: {},
       },
       {
         removeOnComplete: true,
         removeOnFail: {
           count: 3,
         },
+        attempts: config.jobRetryAttempt,
+        backoff: config.jobRetryBackoff,
       }
     );
   }
@@ -121,6 +120,8 @@ export default class AccountStatisticsService extends BullableService {
         removeOnFail: {
           count: 3,
         },
+        attempts: config.jobRetryAttempt,
+        backoff: config.jobRetryBackoff,
       }
     );
   }
