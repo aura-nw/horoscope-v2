@@ -64,6 +64,7 @@
     "bull": "^4.10.2",
     "bullmq": "^3.13.3",
     "cosmjs-types": "^0.6.1",
+    "dayjs": "^1.11.9",
     "dotenv": "^16.0.3",
     "file-type": "^18.4.0",
     "graphql": "^16.6.0",
