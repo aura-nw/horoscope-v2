@@ -126,8 +126,4 @@ export default class DailyStatisticsService extends BullableService {
         this.logger.error(error);
       });
   }
-
-  public async _start() {
-    return super._start();
-  }
 }

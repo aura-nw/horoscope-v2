@@ -405,8 +405,4 @@ export default class AccountStatisticsService extends BullableService {
       top_gas_used: topGasUsed,
     };
   }
-
-  public async _start() {
-    return super._start();
-  }
 }
