@@ -23,6 +23,8 @@ import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import knex from '../../common/utils/db_connection';
 
+dayjs.extend(utc);
+
 @Service({
   name: SERVICE.V1.AccountStatisticsService.key,
   version: 1,
@@ -405,8 +407,6 @@ export default class AccountStatisticsService extends BullableService {
   }
 
   public async _start() {
-    dayjs.extend(utc);
-
     return super._start();
   }
 }

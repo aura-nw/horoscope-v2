@@ -21,6 +21,8 @@ import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import Utils from '../../common/utils/utils';
 
+dayjs.extend(utc);
+
 @Service({
   name: SERVICE.V1.DailyStatisticsService.key,
   version: 1,
@@ -126,8 +128,6 @@ export default class DailyStatisticsService extends BullableService {
   }
 
   public async _start() {
-    dayjs.extend(utc);
-
     return super._start();
   }
 }
