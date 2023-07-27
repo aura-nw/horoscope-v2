@@ -81,12 +81,19 @@ export default class DailyStatisticsService extends BullableService {
       .limit(1)
       .orderBy('id', 'desc');
 
-    const dailyAddresses = await EventAttribute.query()
-      .distinct('value')
-      .where('tx_id', '>=', startTx[0].id)
-      .andWhere('tx_id', '<=', endTx[0].id)
-      .andWhere('value', 'like', `${config.networkPrefixAddress}%`);
-
+    const [dailyTxs, dailyAddresses, uniqueAddrs] = await Promise.all([
+      Transaction.query()
+        .count('id')
+        .where('timestamp', '>=', startTime)
+        .andWhere('timestamp', '<', endTime)
+        .andWhere('code', 0),
+      EventAttribute.query()
+        .distinct('value')
+        .where('tx_id', '>=', startTx[0].id)
+        .andWhere('tx_id', '<=', endTx[0].id)
+        .andWhere('value', 'like', `${config.networkPrefixAddress}%`),
+      Account.query().count('id'),
+    ]);
     // TODO: Need to re-define if it just count normal addresses only or also the contract addresses
     const activeAddrs = Array.from(
       new Set(
@@ -101,14 +108,6 @@ export default class DailyStatisticsService extends BullableService {
           .map((event) => event.value)
       )
     );
-    const [dailyTxs, uniqueAddrs] = await Promise.all([
-      Transaction.query()
-        .count('id')
-        .where('timestamp', '>=', startTime)
-        .andWhere('timestamp', '<', endTime)
-        .andWhere('code', 0),
-      Account.query().count('id'),
-    ]);
 
     const dailyStat = DailyStatistics.fromJson({
       daily_txs: dailyTxs[0].count,
