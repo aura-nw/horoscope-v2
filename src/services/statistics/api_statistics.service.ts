@@ -49,6 +49,7 @@ export default class ApiStatisticsService extends BaseService {
       },
       endDate: {
         type: 'string',
+        optional: true,
       },
     },
   })
@@ -61,11 +62,10 @@ export default class ApiStatisticsService extends BaseService {
     // Since each stats job query data of the prev date,
     // so the start and end date needs to change to the following date
     const startTime = dayjs.utc(ctx.params.startDate).add(1, 'day').toDate();
-    const endTime = dayjs.utc(ctx.params.endDate).add(1, 'day').toDate();
-    this.logger.info(ctx.params.startDate);
-    this.logger.info(ctx.params.endDate);
-    this.logger.info(startTime);
-    this.logger.info(endTime);
+    const endTime = ctx.params.endDate
+      ? dayjs.utc(ctx.params.endDate).add(1, 'day').toDate()
+      : dayjs.utc(ctx.params.startDate).add(1, 'day').toDate();
+
     for (
       let date = startTime;
       date <= endTime;

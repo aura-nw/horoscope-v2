@@ -71,12 +71,10 @@ export default class StatisticsService extends BaseService {
       startDate: {
         type: 'string',
         optional: false,
-        default: '2023-01-01',
       },
       endDate: {
         type: 'string',
         optional: true,
-        default: '2023-01-02',
       },
     },
   })
@@ -94,7 +92,7 @@ export default class StatisticsService extends BaseService {
       `v2.api-statistics.syncPrevDateStats@${selectedChain?.moleculerNamespace}`,
       {
         startDate: ctx.params.startDate,
-        endDate: ctx.params.endDate,
+        endDate: ctx.params.endDate ?? null,
       }
     );
   }
