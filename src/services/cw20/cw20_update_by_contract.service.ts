@@ -120,7 +120,7 @@ export default class Cw20UpdateByContractService extends BullableService {
           event.action === CW20_ACTION.BURN_FROM ||
           event.action === CW20_ACTION.SEND_FROM
       ),
-      ['height'],
+      ['id'],
       ['asc']
     );
     // get all holders send/receive in DB
