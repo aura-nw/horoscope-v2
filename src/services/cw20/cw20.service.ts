@@ -246,7 +246,7 @@ export default class Cw20Service extends BullableService {
         'tx.height as height',
         'smart_contract_event.id as smart_contract_event_id'
       )
-      .orderBy('smart_contract_event.id');
+      .orderBy('smart_contract_event.id', 'asc');
   }
 
   async handleStatistic(startBlock: number) {
