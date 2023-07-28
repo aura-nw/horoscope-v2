@@ -133,6 +133,7 @@ export default class Cw20UpdateByContract {
         smart_contract_event_id: '1000',
         cw20_contract_id: 1,
         to: this.cw20Contract[contractIndex - 1].holders[0].address,
+        id: 22999,
       },
       {
         action: CW20_ACTION.BURN,
@@ -141,6 +142,7 @@ export default class Cw20UpdateByContract {
         smart_contract_event_id: '1000',
         cw20_contract_id: 1,
         from: this.cw20Contract[contractIndex - 1].holders[1].address,
+        id: 22992,
       },
       {
         action: CW20_ACTION.TRANSFER,
@@ -150,6 +152,7 @@ export default class Cw20UpdateByContract {
         cw20_contract_id: 1,
         to: this.cw20Contract[contractIndex - 1].holders[1].address,
         from: this.cw20Contract[contractIndex - 1].holders[2].address,
+        id: 21102,
       },
       {
         action: CW20_ACTION.TRANSFER,
@@ -159,6 +162,7 @@ export default class Cw20UpdateByContract {
         cw20_contract_id: 1,
         to: this.cw20Contract[contractIndex - 1].holders[0].address,
         from: this.cw20Contract[contractIndex - 1].holders[1].address,
+        id: 21003,
       },
       {
         action: CW20_ACTION.SEND,
@@ -168,6 +172,7 @@ export default class Cw20UpdateByContract {
         cw20_contract_id: 1,
         to: this.cw20Contract[contractIndex - 1].holders[0].address,
         from: this.cw20Contract[contractIndex - 1].holders[1].address,
+        id: 21005,
       },
       {
         action: CW20_ACTION.MINT,
@@ -177,6 +182,7 @@ export default class Cw20UpdateByContract {
         cw20_contract_id: 1,
         to: this.cw20Contract[contractIndex - 1].holders[2].address,
         from: this.cw20Contract[contractIndex - 1].holders[0].address,
+        id: 21000,
       },
     ];
     await knex.transaction(async (trx) => {
@@ -273,6 +279,7 @@ export default class Cw20UpdateByContract {
         smart_contract_event_id: '1000',
         cw20_contract_id: 1,
         to: newHolder,
+        id: 4,
       },
       {
         action: CW20_ACTION.BURN,
@@ -281,6 +288,7 @@ export default class Cw20UpdateByContract {
         smart_contract_event_id: '1000',
         cw20_contract_id: 1,
         from: newHolder,
+        id: 3,
       },
       {
         action: CW20_ACTION.TRANSFER,
@@ -290,6 +298,7 @@ export default class Cw20UpdateByContract {
         cw20_contract_id: 1,
         to: this.cw20Contract[contractIndex - 1].holders[1].address,
         from: newHolder,
+        id: 5,
       },
       {
         action: CW20_ACTION.TRANSFER,
@@ -299,6 +308,7 @@ export default class Cw20UpdateByContract {
         cw20_contract_id: 1,
         to: newHolder,
         from: this.cw20Contract[contractIndex - 1].holders[1].address,
+        id: 2,
       },
       {
         action: CW20_ACTION.MINT,
@@ -308,6 +318,7 @@ export default class Cw20UpdateByContract {
         cw20_contract_id: 1,
         to: this.cw20Contract[contractIndex - 1].holders[2].address,
         from: this.cw20Contract[contractIndex - 1].holders[0].address,
+        id: 6,
       },
       {
         action: CW20_ACTION.SEND,
@@ -317,6 +328,7 @@ export default class Cw20UpdateByContract {
         cw20_contract_id: 1,
         to: newHolder,
         from: this.cw20Contract[contractIndex - 1].holders[1].address,
+        id: 1,
       },
     ];
     await knex.transaction(async (trx) => {
@@ -353,6 +365,7 @@ export default class Cw20UpdateByContract {
         smart_contract_event_id: '1000',
         cw20_contract_id: 1,
         to: this.cw20Contract[contractIndex - 1].holders[0].address,
+        id: 22999,
       },
       {
         action: CW20_ACTION.BURN,
@@ -361,6 +374,7 @@ export default class Cw20UpdateByContract {
         smart_contract_event_id: '1000',
         cw20_contract_id: 1,
         from: this.cw20Contract[contractIndex - 1].holders[1].address,
+        id: 22992,
       },
       {
         action: CW20_ACTION.TRANSFER,
@@ -370,6 +384,7 @@ export default class Cw20UpdateByContract {
         cw20_contract_id: 1,
         to: this.cw20Contract[contractIndex - 1].holders[1].address,
         from: this.cw20Contract[contractIndex - 1].holders[2].address,
+        id: 21102,
       },
       {
         action: CW20_ACTION.TRANSFER,
@@ -379,6 +394,7 @@ export default class Cw20UpdateByContract {
         cw20_contract_id: 1,
         to: this.cw20Contract[contractIndex - 1].holders[0].address,
         from: this.cw20Contract[contractIndex - 1].holders[1].address,
+        id: 21003,
       },
       {
         action: CW20_ACTION.SEND,
@@ -388,6 +404,7 @@ export default class Cw20UpdateByContract {
         cw20_contract_id: 1,
         to: this.cw20Contract[contractIndex - 1].holders[0].address,
         from: this.cw20Contract[contractIndex - 1].holders[1].address,
+        id: 21005,
       },
       {
         action: CW20_ACTION.MINT,
@@ -397,6 +414,7 @@ export default class Cw20UpdateByContract {
         cw20_contract_id: 1,
         to: this.cw20Contract[contractIndex - 1].holders[2].address,
         from: this.cw20Contract[contractIndex - 1].holders[0].address,
+        id: 21000,
       },
       {
         action: CW20_ACTION.MINT,
@@ -406,6 +424,7 @@ export default class Cw20UpdateByContract {
         cw20_contract_id: 1,
         to: this.cw20Contract[contractIndex - 1].holders[1].address,
         from: this.cw20Contract[contractIndex - 1].holders[0].address,
+        id: 1000,
       },
       {
         action: CW20_ACTION.MINT,
@@ -415,6 +434,7 @@ export default class Cw20UpdateByContract {
         cw20_contract_id: 1,
         to: this.cw20Contract[contractIndex - 1].holders[2].address,
         from: this.cw20Contract[contractIndex - 1].holders[0].address,
+        id: 500,
       },
     ];
     await knex.transaction(async (trx) => {
