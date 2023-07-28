@@ -44,7 +44,7 @@ export interface ICw20ReindexingHistoryParams {
   smartContractId: number;
   startBlock: number;
   endBlock: number;
-  currentId: number;
+  prevId: number;
   contractAddress: string;
 }
 @Service({
@@ -222,7 +222,7 @@ export default class Cw20Service extends BullableService {
     startBlock: number,
     endBlock: number,
     smartContractId?: number,
-    page?: { currentId: number; limit: number }
+    page?: { prevId: number; limit: number }
   ) {
     return SmartContractEvent.query()
       .withGraphFetched('attributes(selectAttribute)')
@@ -236,7 +236,7 @@ export default class Cw20Service extends BullableService {
         }
         if (page) {
           builder
-            .andWhere('smart_contract_event.id', '>', page.currentId)
+            .andWhere('smart_contract_event.id', '>', page.prevId)
             .orderBy('smart_contract_event.id', 'asc')
             .limit(page.limit);
         }
@@ -320,20 +320,15 @@ export default class Cw20Service extends BullableService {
     jobName: BULL_JOB_NAME.REINDEX_CW20_HISTORY,
   })
   public async reindexHistory(_payload: ICw20ReindexingHistoryParams) {
-    const {
-      smartContractId,
-      startBlock,
-      endBlock,
-      currentId,
-      contractAddress,
-    } = _payload;
+    const { smartContractId, startBlock, endBlock, prevId, contractAddress } =
+      _payload;
     // insert data from event_attribute_backup to event_attribute
     const { limitRecordGet } = config.cw20.reindexHistory;
     const events = await this.getCw20ContractEvents(
       startBlock,
       endBlock,
       smartContractId,
-      { limit: limitRecordGet, currentId }
+      { limit: limitRecordGet, prevId }
     );
     if (events.length > 0) {
       await this.handleCW721Activity(events);
@@ -344,7 +339,7 @@ export default class Cw20Service extends BullableService {
           smartContractId,
           startBlock,
           endBlock,
-          currentId: events[events.length - 1].smart_contract_event_id,
+          prevId: events[events.length - 1].smart_contract_event_id,
           contractAddress,
         } satisfies ICw20ReindexingHistoryParams,
         {

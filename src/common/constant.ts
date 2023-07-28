@@ -253,9 +253,9 @@ export const SERVICE = {
     Cw20ReindexingService: {
       key: 'Cw20ReindexingService',
       name: 'v1.Cw20ReindexingService',
-      ReindexingApi: {
-        key: 'ReindexingApi',
-        path: 'v1.Cw20ReindexingService.ReindexingApi',
+      Reindexing: {
+        key: 'Reindexing',
+        path: 'v1.Cw20ReindexingService.Reindexing',
       },
     },
   },

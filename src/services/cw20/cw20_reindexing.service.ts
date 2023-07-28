@@ -35,7 +35,7 @@ export default class Cw20CrawlMissingContract extends BullableService {
   }
 
   @Action({
-    name: SERVICE.V1.Cw20ReindexingService.ReindexingApi.key,
+    name: SERVICE.V1.Cw20ReindexingService.Reindexing.key,
     params: {
       contractAddress: 'string',
     },
@@ -44,7 +44,7 @@ export default class Cw20CrawlMissingContract extends BullableService {
     const { contractAddress } = ctx.params;
     const smartContract = await SmartContract.query()
       .withGraphJoined('code')
-      .where('address', ctx.params.contractAddress)
+      .where('address', contractAddress)
       .first()
       .throwIfNotFound();
     // check whether contract is Cw20 type -> throw error to user
@@ -149,7 +149,7 @@ export default class Cw20CrawlMissingContract extends BullableService {
         smartContractId,
         startBlock: config.crawlBlock.startBlock,
         endBlock: maxUpdatedHeightOwner,
-        currentId: 0,
+        prevId: 0,
         contractAddress,
       } satisfies ICw20ReindexingHistoryParams,
       {
