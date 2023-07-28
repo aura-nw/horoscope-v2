@@ -1,6 +1,7 @@
 export const REDIS_KEY = {
   IBC_DENOM: 'ibc_denom',
   DASHBOARD_STATISTICS: 'dashboard_statistics',
+  TOP_ACCOUNTS: 'top_accounts',
 };
 
 export const URL_TYPE_CONSTANTS = {
@@ -62,9 +63,16 @@ export const BULL_JOB_NAME = {
     'job:check-need-create-event-attr-partition',
   JOB_CREATE_EVENT_ATTR_PARTITION: 'job:create-event-attr-partition',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
+  CRAWL_DAILY_STATISTICS: 'crawl:daily-statistics',
+  CRAWL_ACCOUNT_STATISTICS: 'crawl:account-statistics',
+  HANDLE_TOP_ACCOUNTS: 'handle:top-accounts',
+  HANDLE_DAILY_STATS_JOBS: 'handle:daily-stats-jobs',
+  REINDEX_CW721_CONTRACT: 'reindex:cw721-contract',
+  REINDEX_CW721_HISTORY: 'reindex:cw721-history',
   HANDLE_MIGRATE_CONTRACT: 'handle:migrate-contract',
   REINDEX_CW20_CONTRACT: 'reindex:cw20-contract',
   REINDEX_CW20_HISTORY: 'reindex:cw20-history',
+  JOB_REDECODE_TX: 'job:redecode-tx',
 };
 
 export const SERVICE = {
@@ -95,6 +103,10 @@ export const SERVICE = {
       UpdateMedia: {
         key: 'updateCw721Media',
         path: 'v1.Cw721Service.updateCw721Media',
+      },
+      HandleRangeBlockMissingContract: {
+        key: 'HandleRangeBlockMissingContract',
+        path: 'v1.Cw721Service.HandleRangeBlockMissingContract',
       },
     },
     CrawlProposalService: {
@@ -200,11 +212,43 @@ export const SERVICE = {
     CrawlValidatorImgService: {
       key: 'CrawlValidatorImageService',
     },
+    CW721ReindexingService: {
+      key: 'Cw721ReindexingService',
+      name: 'v1.Cw721ReindexingService',
+      Reindexing: {
+        key: 'reindexing',
+        path: 'v1.Cw721ReindexingService.reindexing',
+      },
+    },
     JobService: {
       CreateEventAttrPartition: {
         key: 'CreateEventAttrPartition',
         path: 'v1.CreateEventAttrPartition',
       },
+      ReDecodeTx: {
+        key: 'ReDecodeTx',
+        path: 'v1.ReDecodeTx',
+      },
+    },
+    DailyStatisticsService: {
+      key: 'DailyStatisticsService',
+      name: 'v1.DailyStatisticsService',
+      CreateSpecificDateJob: {
+        key: 'CreateSpecificDateJob',
+        path: 'v1.DailyStatisticsService.CreateSpecificDateJob',
+      },
+    },
+    AccountStatisticsService: {
+      key: 'AccountStatisticsService',
+      name: 'v1.AccountStatisticsService',
+      CreateSpecificDateJob: {
+        key: 'CreateSpecificDateJob',
+        path: 'v1.AccountStatisticsService.CreateSpecificDateJob',
+      },
+    },
+    DailyStatsJobsService: {
+      key: 'DailyStatsJobsService',
+      name: 'v1.DailyStatsJobsService',
     },
     Cw20ReindexingService: {
       key: 'Cw20ReindexingService',

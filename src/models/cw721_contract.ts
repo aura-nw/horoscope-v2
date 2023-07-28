@@ -18,6 +18,8 @@ export interface IContractInfoAndMinter {
   minter?: string;
 }
 export default class CW721Contract extends BaseModel {
+  static softDelete = false;
+
   [relation: string]: any;
 
   contract_id!: number;
@@ -160,5 +162,77 @@ export default class CW721Contract extends BaseModel {
       });
     }
     return contractsInfo;
+  }
+
+  // get all current holders balance
+  static async getAllTokensOwner(contractAddress: string) {
+    const httpBatchClient = getHttpBatchClient();
+    const tokensOwner: {
+      owner: string;
+      token_id: string;
+      last_updated_height: number;
+    }[] = [];
+    const tokenIds: string[] = [];
+    let startAfter = null;
+    do {
+      let query = '{"all_tokens":{}}';
+      if (startAfter) {
+        query = `{"all_tokens":{"start_after":"${startAfter}"}}`;
+      }
+      // eslint-disable-next-line no-await-in-loop
+      const result = await httpBatchClient.execute(
+        createJsonRpcRequest('abci_query', {
+          path: '/cosmwasm.wasm.v1.Query/SmartContractState',
+          data: toHex(
+            cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
+              address: contractAddress,
+              queryData: toUtf8(query),
+            }).finish()
+          ),
+        })
+      );
+      const { tokens } = JSON.parse(
+        fromUtf8(
+          cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
+            fromBase64(result.result.response.value)
+          ).data
+        )
+      );
+      tokenIds.push(...tokens);
+      if (tokens.length > 0) {
+        startAfter = tokens[tokens.length - 1];
+      } else {
+        startAfter = null;
+      }
+    } while (startAfter);
+    const promiseOwners = tokenIds.map((token) =>
+      httpBatchClient.execute(
+        createJsonRpcRequest('abci_query', {
+          path: '/cosmwasm.wasm.v1.Query/SmartContractState',
+          data: toHex(
+            cosmwasm.wasm.v1.QuerySmartContractStateRequest.encode({
+              address: contractAddress,
+              queryData: toUtf8(`{"owner_of":{"token_id":"${token}"}}`),
+            }).finish()
+          ),
+        })
+      )
+    );
+    const result: JsonRpcSuccessResponse[] = await Promise.all(promiseOwners);
+    tokenIds.forEach((tokenId, index) => {
+      const { owner }: { owner: string } = JSON.parse(
+        fromUtf8(
+          cosmwasm.wasm.v1.QuerySmartContractStateResponse.decode(
+            fromBase64(result[index].result.response.value)
+          ).data
+        )
+      );
+      tokensOwner.push({
+        owner,
+        token_id: tokenId,
+        last_updated_height: parseInt(result[index].result.response.height, 10),
+      });
+    });
+    return tokensOwner;
   }
 }
