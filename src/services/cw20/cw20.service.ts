@@ -35,11 +35,6 @@ export const CW20_ACTION = {
   BURN_FROM: 'burn_from',
   SEND_FROM: 'send_from',
 };
-export interface IContextCrawlMissingContractHistory {
-  smartContractId: number;
-  startBlock: number;
-  endBlock: number;
-}
 export interface ICw20ReindexingHistoryParams {
   smartContractId: number;
   startBlock: number;

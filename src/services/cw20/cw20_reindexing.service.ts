@@ -6,7 +6,7 @@ import _ from 'lodash';
 import { Context, ServiceBroker } from 'moleculer';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { BULL_JOB_NAME, SERVICE } from '../../common';
+import { BULL_JOB_NAME, IContextUpdateCw20, SERVICE } from '../../common';
 import {
   CW20Holder,
   CW20TotalHolderStats,
@@ -16,7 +16,6 @@ import {
   SmartContract,
 } from '../../models';
 import { ICw20ReindexingHistoryParams } from './cw20.service';
-import { ICw20UpdateByContractParam } from './cw20_update_by_contract.service';
 
 export interface IAddressParam {
   contractAddress: string;
@@ -129,17 +128,18 @@ export default class Cw20CrawlMissingContract extends BullableService {
       })),
     });
     // handle from minUpdatedHeightOwner to blockHeight
-    await this.createJob(
-      BULL_JOB_NAME.CW20_UPDATE_BY_CONTRACT,
-      BULL_JOB_NAME.CW20_UPDATE_BY_CONTRACT,
+    await this.broker.call(
+      SERVICE.V1.Cw20UpdateByContract.UpdateByContract.path,
       {
-        cw20ContractId: newCw20Contract.id,
-        startBlock: config.crawlBlock.startBlock,
+        cw20Contracts: [
+          {
+            id: newCw20Contract.id,
+            last_updated_height: newCw20Contract.last_updated_height,
+          },
+        ],
+        startBlock: minUpdatedHeightOwner,
         endBlock: maxUpdatedHeightOwner,
-      } satisfies ICw20UpdateByContractParam,
-      {
-        removeOnComplete: true,
-      }
+      } satisfies IContextUpdateCw20
     );
     // insert histories
     await this.createJob(
