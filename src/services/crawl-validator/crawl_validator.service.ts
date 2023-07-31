@@ -111,7 +111,7 @@ export default class CrawlValidatorService extends BullableService {
     }
 
     const validatorInDB: Validator[] = await knex('validator').select('*');
-
+    const offchainMapped: Map<string, boolean> = new Map();
     await Promise.all(
       validators.map(async (validator) => {
         const foundValidator = validatorInDB.find(
@@ -123,6 +123,9 @@ export default class CrawlValidatorService extends BullableService {
         if (!foundValidator) {
           validatorEntity = Validator.createNewValidator(validator);
         } else {
+          // mark this offchain validator is mapped with onchain
+          offchainMapped.set(validator.operator_address, true);
+
           validatorEntity = foundValidator;
           validatorEntity.jailed = validator.jailed;
           validatorEntity.status = validator.status;
@@ -145,6 +148,23 @@ export default class CrawlValidatorService extends BullableService {
     );
 
     updateValidators = await this.loadCustomInfo(updateValidators);
+
+    // loop all validator not found onchain, update status is UNSPECIFIED
+    validatorInDB
+      .filter((val: any) => !offchainMapped.get(val.operator_address))
+      .forEach(async (validatorNotOnchain: any) => {
+        this.logger.debug(
+          'Account not found onchain: ',
+          validatorNotOnchain.operator_address
+        );
+        validatorNotOnchain.status = Validator.STATUS.UNSPECIFIED;
+
+        validatorNotOnchain.jailed_until =
+          validatorNotOnchain.jailed_until.toISOString();
+        validatorNotOnchain.unbonding_time =
+          validatorNotOnchain.unbonding_time.toISOString();
+        updateValidators.push(validatorNotOnchain);
+      });
 
     await Validator.query()
       .insert(updateValidators)
