@@ -66,6 +66,8 @@ export const BULL_JOB_NAME = {
   REINDEX_CW721_HISTORY: 'reindex:cw721-history',
   HANDLE_MIGRATE_CONTRACT: 'handle:migrate-contract',
   JOB_REDECODE_TX: 'job:redecode-tx',
+  REINDEX_CW20_CONTRACT: 'reindex:cw20-contract',
+  REINDEX_CW20_HISTORY: 'reindex:cw20-history',
 };
 
 export const SERVICE = {
@@ -221,6 +223,14 @@ export const SERVICE = {
       ReDecodeTx: {
         key: 'ReDecodeTx',
         path: 'v1.ReDecodeTx',
+      },
+    },
+    Cw20ReindexingService: {
+      key: 'Cw20ReindexingService',
+      name: 'v1.Cw20ReindexingService',
+      Reindexing: {
+        key: 'reindexing',
+        path: 'v1.Cw20ReindexingService.reindexing',
       },
     },
   },

@@ -3,6 +3,8 @@ import BaseModel from './base';
 import { Cw20Contract } from './cw20_contract';
 
 export class CW20TotalHolderStats extends BaseModel {
+  static softDelete = false;
+
   [relation: string]: any;
 
   date!: Date;

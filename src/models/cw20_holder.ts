@@ -5,6 +5,8 @@ import { Cw20Contract } from './cw20_contract';
 import { SmartContract } from './smart_contract';
 
 export class CW20Holder extends BaseModel {
+  static softDelete = false;
+
   [relation: string]: any;
 
   id?: number;
