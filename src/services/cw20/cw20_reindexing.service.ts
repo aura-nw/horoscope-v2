@@ -28,7 +28,7 @@ interface ICw20ReindexingParams {
   name: SERVICE.V1.Cw20ReindexingService.key,
   version: 1,
 })
-export default class Cw20CrawlMissingContract extends BullableService {
+export default class Cw20ReindexingContract extends BullableService {
   public constructor(public broker: ServiceBroker) {
     super(broker);
   }
