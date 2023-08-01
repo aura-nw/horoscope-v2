@@ -157,7 +157,9 @@ export default class CrawlValidatorService extends BullableService {
           'Account not found onchain: ',
           validatorNotOnchain.operator_address
         );
-        validatorNotOnchain.status = Validator.STATUS.UNSPECIFIED;
+        validatorNotOnchain.status = Validator.STATUS.UNRECOGNIZED;
+        validatorNotOnchain.tokens = 0;
+        validatorNotOnchain.delegator_shares = 0;
 
         validatorNotOnchain.jailed_until =
           validatorNotOnchain.jailed_until.toISOString();
