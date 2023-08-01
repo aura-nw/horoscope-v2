@@ -240,11 +240,11 @@ export default class Cw20Service extends BullableService {
         'message.sender as sender',
         'smart_contract.address as contract_address',
         'smart_contract_event.action',
-        'smart_contract_event.event_id as event_id',
+        'smart_contract_event.event_id',
         'smart_contract.id as smart_contract_id',
+        'smart_contract_event.id as smart_contract_event_id',
         'tx.hash',
-        'tx.height as height',
-        'smart_contract_event.id as smart_contract_event_id'
+        'tx.height'
       )
       .orderBy('smart_contract_event.id', 'asc');
   }
