@@ -98,6 +98,15 @@ export class EventAttribute extends BaseModel {
     FROM: 'from',
     FEE: 'fee',
     FEE_PAYER: 'fee_payer',
+    CLIENT_ID: 'client_id',
+    CLIENT_TYPE: 'client_type',
+    CONNECTION_ID: 'connection_id',
+    COUNTERPARTY_CLIENT_ID: 'counterparty_client_id',
+    COUNTERPARTY_CONNECTION_ID: 'counterparty_connection_id',
+    CHANNEL_ID: 'channel_id',
+    PORT_ID: 'port_id',
+    COUNTERPARTY_PORT_ID: 'counterparty_port_id',
+    COUNTERPARTY_CHANNEL_ID: 'counterparty_channel_id',
   };
 
   static ATTRIBUTE_COMPOSITE_KEY = {

@@ -71,6 +71,7 @@ export const BULL_JOB_NAME = {
   REINDEX_CW721_HISTORY: 'reindex:cw721-history',
   HANDLE_MIGRATE_CONTRACT: 'handle:migrate-contract',
   JOB_REDECODE_TX: 'job:redecode-tx',
+  CRAWL_IBC_TAO: 'crawl:ibc-tao',
 };
 
 export const SERVICE = {
@@ -247,6 +248,10 @@ export const SERVICE = {
     DailyStatsJobsService: {
       key: 'DailyStatsJobsService',
       name: 'v1.DailyStatsJobsService',
+    },
+    CrawlIBCTaoService: {
+      key: 'CrawlIBCTaoService',
+      name: 'v1.CrawlIBCTaoService',
     },
   },
 };
