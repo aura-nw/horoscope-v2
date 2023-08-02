@@ -2,6 +2,7 @@ import { Model } from 'objection';
 import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
 import { Event } from './event';
+import { Transaction } from './transaction';
 
 export class EventAttribute extends BaseModel {
   event_id!: string;
@@ -52,6 +53,14 @@ export class EventAttribute extends BaseModel {
           to: 'event.id',
         },
       },
+      transaction: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: Transaction,
+        join: {
+          from: 'event_attribute.tx_id',
+          to: 'transaction.id',
+        },
+      },
     };
   }
 
@@ -90,5 +99,14 @@ export class EventAttribute extends BaseModel {
     GRANTER: 'granter',
     GRANTEE: 'grantee',
     FROM: 'from',
+    CLIENT_ID: 'client_id',
+    CLIENT_TYPE: 'client_type',
+    CONNECTION_ID: 'connection_id',
+    COUNTERPARTY_CLIENT_ID: 'counterparty_client_id',
+    COUNTERPARTY_CONNECTION_ID: 'counterparty_connection_id',
+    CHANNEL_ID: 'channel_id',
+    PORT_ID: 'port_id',
+    COUNTERPARTY_PORT_ID: 'counterparty_port_id',
+    COUNTERPARTY_CHANNEL_ID: 'counterparty_channel_id',
   };
 }

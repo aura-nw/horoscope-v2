@@ -161,5 +161,10 @@
   },
   "jobRedecodeTx": {
     "limitRecordGet": 100
+  },
+  "crawlIbcTao": {
+    "key": "crawlIbcTao",
+    "millisecondRepeatJob": 2000,
+    "blocksPerCall": 100
   }
 }
