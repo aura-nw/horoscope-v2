@@ -240,12 +240,16 @@ export default class Cw20Service extends BullableService {
         'smart_contract.id as smart_contract_id',
         'tx.height as height',
         'smart_contract_event.id as smart_contract_event_id'
-      );
+      )
+      .orderBy('smart_contract_event.id', 'asc');
   }
 
   async handleStatistic(startBlock: number) {
     const systemDate = (
-      await Block.query().where('height', startBlock).first().throwIfNotFound()
+      await Block.query()
+        .where('height', startBlock + 1)
+        .first()
+        .throwIfNotFound()
     ).time;
     const lastUpdatedDate = (
       await CW20TotalHolderStats.query().max('date').first()
@@ -263,13 +267,15 @@ export default class Cw20Service extends BullableService {
 
   async handleTotalHolderStatistic(systemDate: Date) {
     const totalHolder = await Cw20Contract.query()
-      .alias('cw20_contract')
       .joinRelated('holders')
       .where('cw20_contract.track', true)
-      .andWhere('holders.amount', '>', 0)
-      .count()
-      .groupBy('holders.cw20_contract_id')
-      .select('holders.cw20_contract_id');
+      .groupBy('cw20_contract.id')
+      .select(
+        'cw20_contract.id as cw20_contract_id',
+        knex.raw(
+          'count(CASE when holders.amount > 0 THEN 1 ELSE null END) as count'
+        )
+      );
     if (totalHolder.length > 0) {
       await CW20TotalHolderStats.query().insert(
         totalHolder.map((e) =>
