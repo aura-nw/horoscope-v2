@@ -22,7 +22,7 @@ import { bullBoardMixin } from '../../mixins/bullBoard/bullBoard.mixin';
         autoAliases: true, // allow generate rest info (GET/PUT/POST...) in the services
         mappingPolicy: 'restrict', // allow action called with exact method
         whitelist: [
-          'v2.graphiql.*',
+          'v2.graphql.*',
           'v2.statistics.getDashboardStatisticsByChainId',
           'v2.statistics.getTopAccountsByChainId',
         ],
