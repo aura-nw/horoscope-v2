@@ -159,6 +159,16 @@
     "dispatchMilisecond": 1000,
     "batchSizeLimit": 10
   },
+  "dailyStatistics": {
+    "recordsPerCall": 100
+  },
+  "accountStatistics": {
+    "numberOfTopRecords": 10,
+    "dayRange": [3, 15, 30]
+  },
+  "dailyStatsJobs": {
+    "jobPattern": "0 0 0 * * ?"
+  },
   "jobRedecodeTx": {
     "limitRecordGet": 100
   }
