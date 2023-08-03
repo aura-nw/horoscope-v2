@@ -127,7 +127,7 @@ export default class Cw20 {
     this.cw20UpdateByContractService.getQueueManager().stopAll();
     await this.broker.start();
     await knex.raw(
-      'TRUNCATE TABLE code, cw20_contract, block, transaction RESTART IDENTITY CASCADE'
+      'TRUNCATE TABLE code, cw20_contract, block, transaction, cw20_total_holder_stats RESTART IDENTITY CASCADE'
     );
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);
