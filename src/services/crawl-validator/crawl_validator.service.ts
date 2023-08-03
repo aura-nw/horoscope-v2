@@ -70,7 +70,6 @@ export default class CrawlValidatorService extends BullableService {
       .select('value')
       .limit(1)
       .offset(0);
-
     await knex.transaction(async (trx) => {
       if (resultTx.length > 0) {
         await this.updateValidators(trx);
@@ -110,7 +109,9 @@ export default class CrawlValidatorService extends BullableService {
       }
     }
 
-    const validatorInDB: Validator[] = await knex('validator').select('*');
+    const validatorInDB: Validator[] = await knex('validator')
+      .select('*')
+      .whereNot('status', Validator.STATUS.UNRECOGNIZED);
     const offchainMapped: Map<string, boolean> = new Map();
     await Promise.all(
       validators.map(async (validator) => {
@@ -149,7 +150,7 @@ export default class CrawlValidatorService extends BullableService {
 
     updateValidators = await this.loadCustomInfo(updateValidators);
 
-    // loop all validator not found onchain, update status is UNSPECIFIED
+    // loop all validator not found onchain, update status is UNRECOGNIZED
     validatorInDB
       .filter((val: any) => !offchainMapped.get(val.operator_address))
       .forEach(async (validatorNotOnchain: any) => {
@@ -160,6 +161,7 @@ export default class CrawlValidatorService extends BullableService {
         validatorNotOnchain.status = Validator.STATUS.UNRECOGNIZED;
         validatorNotOnchain.tokens = 0;
         validatorNotOnchain.delegator_shares = 0;
+        validatorNotOnchain.percent_voting_power = 0;
 
         validatorNotOnchain.jailed_until =
           validatorNotOnchain.jailed_until.toISOString();
