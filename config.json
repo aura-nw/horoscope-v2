@@ -43,7 +43,8 @@
   "crawlAccount": {
     "handleVestingAccount": {
       "millisecondCrawl": 30000
-    }
+    },
+    "millisecondDelayJob": 1000
   },
   "crawlProposal": {
     "key": "crawlProposal",
