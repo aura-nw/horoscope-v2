@@ -55,6 +55,7 @@ export default class CrawlGenesisService extends BullableService {
     BULL_JOB_NAME.CRAWL_GENESIS_CODE,
     BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT,
     BULL_JOB_NAME.CRAWL_GENESIS_FEEGRANT,
+    BULL_JOB_NAME.CRAWL_GENESIS_IBC_TAO,
   ];
 
   public constructor(public broker: ServiceBroker) {
@@ -721,7 +722,8 @@ export default class CrawlGenesisService extends BullableService {
           'app_state.ibc.connection_genesis.connections'
         );
         const ibcConnections: IbcConnection[] = genConnections.map(
-          (genConnection: any) => IbcConnection.fromJson({
+          (genConnection: any) =>
+            IbcConnection.fromJson({
               ibc_client_id: newClients.find(
                 (client) => client.client_id === genConnection.client_id
               )?.id,
@@ -739,7 +741,8 @@ export default class CrawlGenesisService extends BullableService {
         const genChannels: any[] = await this.readStreamGenesis(
           'app_state.ibc.channel_genesis.channels'
         );
-        const IbcChannels: IbcChannel[] = genChannels.map((genChannel: any) => IbcChannel.fromJson({
+        const IbcChannels: IbcChannel[] = genChannels.map((genChannel: any) =>
+          IbcChannel.fromJson({
             ibc_connection_id: newConnections.find(
               (connection) =>
                 connection.connection_id === genChannel.connection_hops[0]
@@ -749,7 +752,8 @@ export default class CrawlGenesisService extends BullableService {
             counterparty_port_id: genChannel.counterparty.port_id,
             counterparty_channel_id: genChannel.counterparty.channel_id,
             state: genChannel.state,
-          }));
+          })
+        );
         await IbcChannel.query().insert(IbcChannels).transacting(trx);
         this.logger.info('Done channel');
         await BlockCheckpoint.query()
