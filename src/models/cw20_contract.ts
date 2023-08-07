@@ -26,6 +26,8 @@ export interface IContractInfo {
   name?: string;
 }
 export class Cw20Contract extends BaseModel {
+  static softDelete = false;
+
   [relation: string]: any;
 
   id!: number;
