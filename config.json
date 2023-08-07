@@ -179,5 +179,8 @@
     "key": "crawlIbcTao",
     "millisecondRepeatJob": 2000,
     "blocksPerCall": 100
+  },
+  "jobUpdateDataCw721Activity": {
+    "limitRecordGet": 100
   }
 }
