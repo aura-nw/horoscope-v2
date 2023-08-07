@@ -73,6 +73,9 @@ export class Validator extends BaseModel {
     return {
       BONDED: 'BOND_STATUS_BONDED',
       UNBONDED: 'BOND_STATUS_UNBONDED',
+      UNSPECIFIED: 'BOND_STATUS_UNSPECIFIED',
+      UNBONDING: 'BOND_STATUS_UNBONDING',
+      UNRECOGNIZED: 'UNRECOGNIZED',
     };
   }
 
