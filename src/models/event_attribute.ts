@@ -98,6 +98,7 @@ export class EventAttribute extends BaseModel {
     FROM: 'from',
     FEE: 'fee',
     FEE_PAYER: 'fee_payer',
+    MINTER: 'minter',
   };
 
   static ATTRIBUTE_COMPOSITE_KEY = {

@@ -2,8 +2,16 @@ import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { BULL_JOB_NAME } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
-import { getContractActivities } from '../../../../src/common/utils/smart_contract';
-import { Block, BlockCheckpoint, Transaction } from '../../../../src/models';
+import {
+  getAttributeFrom,
+  getContractActivities,
+} from '../../../../src/common/utils/smart_contract';
+import {
+  Block,
+  BlockCheckpoint,
+  EventAttribute,
+  Transaction,
+} from '../../../../src/models';
 import { Code } from '../../../../src/models/code';
 import CW721Contract from '../../../../src/models/cw721_contract';
 import CW721Token from '../../../../src/models/cw721_token';
@@ -1296,6 +1304,36 @@ export default class AssetIndexerTest {
     expect(cw721Activities[0].cw721_token_id).toEqual(1);
     expect(cw721Activities[1].cw721_token_id).toEqual(0);
     expect(cw721Activities[2].cw721_token_id).toEqual(2);
+    expect(cw721Activities[0].from).toEqual(
+      getAttributeFrom(
+        mockActivityMsgs[0].attributes,
+        EventAttribute.ATTRIBUTE_KEY.MINTER
+      )
+    );
+    expect(cw721Activities[0].to).toEqual(
+      getAttributeFrom(
+        mockActivityMsgs[0].attributes,
+        EventAttribute.ATTRIBUTE_KEY.OWNER
+      )
+    );
+    expect(cw721Activities[1].from).toEqual(
+      getAttributeFrom(
+        mockActivityMsgs[1].attributes,
+        EventAttribute.ATTRIBUTE_KEY.SENDER
+      )
+    );
+    expect(cw721Activities[1].to).toEqual(
+      getAttributeFrom(
+        mockActivityMsgs[1].attributes,
+        EventAttribute.ATTRIBUTE_KEY.RECIPIENT
+      )
+    );
+    expect(cw721Activities[2].from).toEqual(
+      getAttributeFrom(
+        mockActivityMsgs[2].attributes,
+        EventAttribute.ATTRIBUTE_KEY.SENDER
+      )
+    );
   }
 
   @Test('test handle multi contract events')
