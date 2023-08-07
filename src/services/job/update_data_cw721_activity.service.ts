@@ -40,15 +40,10 @@ export default class JobUpdateDataCw721Activity extends BullableService {
         patchQueries.push(
           CW721Activity.query()
             .patch({
-              from:
-                getAttributeFrom(
-                  record.smart_contract_event.attributes,
-                  EventAttribute.ATTRIBUTE_KEY.MINTER
-                ) ||
-                getAttributeFrom(
-                  record.smart_contract_event.attributes,
-                  EventAttribute.ATTRIBUTE_KEY.SENDER
-                ),
+              from: getAttributeFrom(
+                record.smart_contract_event.attributes,
+                EventAttribute.ATTRIBUTE_KEY.SENDER
+              ),
               to:
                 getAttributeFrom(
                   record.smart_contract_event.attributes,
