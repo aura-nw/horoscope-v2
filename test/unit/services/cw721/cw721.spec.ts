@@ -1304,12 +1304,7 @@ export default class AssetIndexerTest {
     expect(cw721Activities[0].cw721_token_id).toEqual(1);
     expect(cw721Activities[1].cw721_token_id).toEqual(0);
     expect(cw721Activities[2].cw721_token_id).toEqual(2);
-    expect(cw721Activities[0].from).toEqual(
-      getAttributeFrom(
-        mockActivityMsgs[0].attributes,
-        EventAttribute.ATTRIBUTE_KEY.MINTER
-      )
-    );
+    expect(cw721Activities[0].from).toEqual(null);
     expect(cw721Activities[0].to).toEqual(
       getAttributeFrom(
         mockActivityMsgs[0].attributes,
