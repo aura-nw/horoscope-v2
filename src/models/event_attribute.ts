@@ -90,5 +90,6 @@ export class EventAttribute extends BaseModel {
     GRANTER: 'granter',
     GRANTEE: 'grantee',
     FROM: 'from',
+    MINTER: 'minter',
   };
 }
