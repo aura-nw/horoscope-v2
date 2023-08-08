@@ -713,9 +713,12 @@ export default class CrawlGenesisService extends BullableService {
             ),
           });
         });
-        const newClients = await IbcClient.query()
-          .insert(ibcClients)
-          .transacting(trx);
+        let newClients: IbcClient[] = [];
+        if (ibcClients.length > 0) {
+          newClients = await IbcClient.query()
+            .insert(ibcClients)
+            .transacting(trx);
+        }
         this.logger.info('Done client');
         // crawl genesis ibc connections
         const genConnections: any[] = await this.readStreamGenesis(
@@ -733,9 +736,12 @@ export default class CrawlGenesisService extends BullableService {
                 genConnection.counterparty.connection_id,
             })
         );
-        const newConnections = await IbcConnection.query()
-          .insert(ibcConnections)
-          .transacting(trx);
+        let newConnections: IbcConnection[] = [];
+        if (ibcConnections.length > 0) {
+          newConnections = await IbcConnection.query()
+            .insert(ibcConnections)
+            .transacting(trx);
+        }
         this.logger.info('Done connections');
         // crawl genesis ibc channels
         const genChannels: any[] = await this.readStreamGenesis(
@@ -754,7 +760,9 @@ export default class CrawlGenesisService extends BullableService {
             state: genChannel.state,
           })
         );
-        await IbcChannel.query().insert(IbcChannels).transacting(trx);
+        if (IbcChannels.length > 0) {
+          await IbcChannel.query().insert(IbcChannels).transacting(trx);
+        }
         this.logger.info('Done channel');
         await BlockCheckpoint.query()
           .insert(
