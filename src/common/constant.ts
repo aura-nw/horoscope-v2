@@ -72,6 +72,7 @@ export const BULL_JOB_NAME = {
   HANDLE_MIGRATE_CONTRACT: 'handle:migrate-contract',
   JOB_REDECODE_TX: 'job:redecode-tx',
   CRAWL_IBC_TAO: 'crawl:ibc-tao',
+  CRAWL_GENESIS_IBC_TAO: 'crawl:genesis-ibc-tao',
 };
 
 export const SERVICE = {
