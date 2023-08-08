@@ -231,10 +231,6 @@ export const SERVICE = {
         key: 'ReDecodeTx',
         path: 'v1.ReDecodeTx',
       },
-      UpdateDataCw721Activity: {
-        key: 'UpdateDataCw721Activity',
-        path: 'v1.UpdateDataCw721Activity',
-      },
     },
     DailyStatisticsService: {
       key: 'DailyStatisticsService',
