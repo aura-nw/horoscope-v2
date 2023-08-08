@@ -9,7 +9,9 @@ Both The Graph and Subquery are open-source data indexer and provide GraphQL to 
 - messageHandler
 - eventHandler
 
-Their main flow:
+https://github.com/subquery/subql-cosmos/blob/main/packages/node/src/indexer/indexer.manager.ts
+
+Firstly, developer must define their graphql model, then generate typescipt model from graphql. Secondtly, they update their business logic in 4 functions, their main flow:
 
 ```mermaid
   sequenceDiagram
