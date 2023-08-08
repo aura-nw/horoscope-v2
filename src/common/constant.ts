@@ -75,7 +75,6 @@ export const BULL_JOB_NAME = {
   CRAWL_GENESIS_IBC_TAO: 'crawl:genesis-ibc-tao',
   REINDEX_CW20_CONTRACT: 'reindex:cw20-contract',
   REINDEX_CW20_HISTORY: 'reindex:cw20-history',
-  JOB_UPDATE_DATA_CW721_ACTIVITY: 'job:update-data-cw721-activity',
 };
 
 export const SERVICE = {
@@ -231,10 +230,6 @@ export const SERVICE = {
       ReDecodeTx: {
         key: 'ReDecodeTx',
         path: 'v1.ReDecodeTx',
-      },
-      UpdateDataCw721Activity: {
-        key: 'UpdateDataCw721Activity',
-        path: 'v1.UpdateDataCw721Activity',
       },
     },
     DailyStatisticsService: {
