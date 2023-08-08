@@ -80,3 +80,28 @@ Firstly, developer must define their graphql model, then generate typescipt mode
     deactivate B
   end
 ```
+
+## Horoscope handler
+
+```mermaid
+  sequenceDiagram
+  autonumber
+  participant A as Horoscope
+  participant B as Horoscope Handler
+  participant C as Database
+
+  B->>A: Register subcribe websocket (with condition)
+  activate A
+  A->>A: Query block, tx, messags, event by condition
+  A->>A: Package data to blocks
+  loop
+    A-->>B: Return data
+    deactivate A
+
+
+    B->>B: Handle custom logic with packaged data (block, transaction, message, event)
+
+    B->>C: Save result to database
+    C-->>B: Save success
+  end
+```
