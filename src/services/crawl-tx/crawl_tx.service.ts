@@ -81,7 +81,8 @@ export default class CrawlTxService extends BullableService {
         knex.raw("\"data\" #>ARRAY['block', 'data', 'txs'] AS txs")
       )
       .where('height', '>', startBlock)
-      .andWhere('height', '<=', endBlock);
+      .andWhere('height', '<=', endBlock)
+      .orderBy('height', 'asc');
     this.logger.debug(blocks);
     const promises: any[] = [];
     const mapBlockTime: Map<number, string> = new Map();
