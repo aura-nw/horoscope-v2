@@ -1,4 +1,4 @@
-import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
+import { AfterEach, BeforeEach, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { BULL_JOB_NAME } from '../../../../src/common';
 import {
@@ -75,7 +75,7 @@ export default class CrawlValidatorTest {
 
   crawlSigningInfoService?: CrawlSigningInfoService;
 
-  @BeforeAll()
+  @BeforeEach()
   async initSuite() {
     await this.broker.start();
     this.crawlSigningInfoService = this.broker.createService(
@@ -97,7 +97,7 @@ export default class CrawlValidatorTest {
     await BlockCheckpoint.query().insert(this.blockCheckpoint);
   }
 
-  @AfterAll()
+  @AfterEach()
   async tearDown() {
     await Promise.all([
       Validator.query().delete(true),
@@ -127,5 +127,46 @@ export default class CrawlValidatorTest {
           'auravaloper1phaxpevm5wecex2jyaqty2a4v02qj7qmhyhvcg'
       )?.consensus_address
     ).toEqual('auravalcons1rvq6km74pua3pt9g7u5svm4r6mrw8z08walfep');
+  }
+
+  @Test('Set validator not found onchain is UNRECOGNIZED')
+  public async testCrawlValidatorNotFoundOnchain() {
+    await Validator.query().insert(
+      Validator.fromJson({
+        operator_address: 'xxx',
+        account_address: 'xxx',
+        consensus_address: 'xxx',
+        consensus_hex_address: 'xxx',
+        consensus_pubkey: {},
+        jailed: false,
+        status: Validator.STATUS.UNBONDED,
+        tokens: 100,
+        delegator_shares: 100,
+        description: {},
+        unbonding_height: 0,
+        unbonding_time: '1970-01-01 00:00:00+00',
+        commission: {},
+        min_self_delegation: 0,
+        uptime: 0,
+        self_delegation_balance: 0,
+        percent_voting_power: 100,
+        start_height: 0,
+        index_offset: 0,
+        jailed_until: '1970-01-01 00:00:00+00',
+        tombstoned: false,
+        missed_blocks_counter: 0,
+        delegators_count: 0,
+        delegators_last_height: 0,
+        image_url: 'xxx',
+      })
+    );
+
+    await this.crawlValidatorService?.handleCrawlAllValidator({});
+
+    const validator = await Validator.query().findOne({
+      operator_address: 'xxx',
+    });
+    expect(validator?.status).toEqual(Validator.STATUS.UNRECOGNIZED);
+    expect(validator?.tokens).toEqual('0');
   }
 }
