@@ -171,8 +171,5 @@
   },
   "jobRedecodeTx": {
     "limitRecordGet": 100
-  },
-  "jobUpdateDataCw721Activity": {
-    "limitRecordGet": 100
   }
 }
