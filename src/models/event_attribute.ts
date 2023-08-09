@@ -107,6 +107,7 @@ export class EventAttribute extends BaseModel {
     PORT_ID: 'port_id',
     COUNTERPARTY_PORT_ID: 'counterparty_port_id',
     COUNTERPARTY_CHANNEL_ID: 'counterparty_channel_id',
+    MINTER: 'minter',
   };
 
   static ATTRIBUTE_COMPOSITE_KEY = {
