@@ -16,7 +16,7 @@ export async function up(knex: Knex): Promise<void> {
         .whereIn('cw721_activity.action', UPDATE_CW721_ACTIONS)
         .whereNotNull('smart_contract_event_id')
         .orderBy('cw721_activity.id')
-        .limit(config.jobUpdateDataCw721Activity.limitRecordGet)
+        .limit(100)
         .transacting(trx);
 
       if (handleRecords.length > 0) {
