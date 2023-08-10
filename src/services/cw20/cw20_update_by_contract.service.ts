@@ -120,7 +120,7 @@ export default class Cw20UpdateByContractService extends BullableService {
           event.action === CW20_ACTION.BURN_FROM ||
           event.action === CW20_ACTION.SEND_FROM
       ),
-      ['height'],
+      ['id'],
       ['asc']
     );
     // get all holders send/receive in DB
@@ -149,7 +149,7 @@ export default class Cw20UpdateByContractService extends BullableService {
         // sender event
         if (
           event.from &&
-          event.height > holders[event.from].last_updated_height
+          event.height >= holders[event.from].last_updated_height
         ) {
           holders[event.from] = CW20Holder.fromJson({
             amount: (
@@ -164,7 +164,7 @@ export default class Cw20UpdateByContractService extends BullableService {
         // recipient event
         if (
           event.to &&
-          event.height > (holders[event.to]?.last_updated_height || 0)
+          event.height >= (holders[event.to]?.last_updated_height || 0)
         ) {
           holders[event.to] = CW20Holder.fromJson({
             amount: (

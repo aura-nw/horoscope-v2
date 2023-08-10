@@ -10,6 +10,8 @@ import { TransactionMessage } from './transaction_message';
 export class SmartContractEvent extends BaseModel {
   [relation: string]: any;
 
+  attributes!: SmartContractEventAttribute;
+
   id!: number;
 
   smart_contract_id!: number;

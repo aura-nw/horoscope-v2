@@ -8,7 +8,9 @@ import { SmartContractEvent } from './smart_contract_event';
 export default class CW721Activity extends BaseModel {
   static softDelete = false;
 
-  id?: number;
+  smart_contract_event!: SmartContractEvent;
+
+  id!: number;
 
   action?: string;
 
