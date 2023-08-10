@@ -16,6 +16,8 @@ import { Code } from './code';
 import BaseModel from './base';
 
 export class SmartContract extends BaseModel {
+  static softDelete = false;
+
   code!: Code;
 
   id!: number;
