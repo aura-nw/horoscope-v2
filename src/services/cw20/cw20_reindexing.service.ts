@@ -16,6 +16,7 @@ import {
   SmartContract,
 } from '../../models';
 import { ICw20ReindexingHistoryParams } from './cw20.service';
+import knex from '../../common/utils/db_connection';
 
 export interface IAddressParam {
   contractAddress: string;
@@ -94,39 +95,50 @@ export default class Cw20ReindexingContract extends BullableService {
       _.min(initBalances.map((holder) => holder.event_height)) || 0;
     const maxUpdatedHeightOwner =
       _.max(initBalances.map((holder) => holder.event_height)) || 0;
-    if (cw20Contract) {
-      await Cw20Event.query()
-        .delete()
-        .where('cw20_contract_id', cw20Contract.id);
-      await CW20TotalHolderStats.query()
-        .delete()
-        .where('cw20_contract_id', cw20Contract.id);
-      await CW20Holder.query()
-        .delete()
-        .where('cw20_contract_id', cw20Contract.id);
-      await Cw20Contract.query().deleteById(cw20Contract.id);
-    }
-    const newCw20Contract = await Cw20Contract.query().insertGraph({
-      ...Cw20Contract.fromJson({
-        smart_contract_id: smartContractId,
-        symbol: contractInfo?.symbol,
-        minter: contractInfo?.minter,
-        marketing_info: contractInfo?.marketing_info,
-        name: contractInfo?.name,
-        total_supply: initBalances.reduce(
-          (acc: string, curr: { address: string; amount: string }) =>
-            (BigInt(acc) + BigInt(curr.amount)).toString(),
-          '0'
-        ),
-        track,
-        decimal: contractInfo?.decimal,
-        last_updated_height: minUpdatedHeightOwner,
-      }),
-      holders: initBalances.map((e) => ({
-        address: e.address,
-        amount: e.amount,
-        last_updated_height: e.event_height,
-      })),
+    let id = -1;
+    let lastUpdatedHeight = -1;
+    await knex.transaction(async (trx) => {
+      if (cw20Contract) {
+        await Cw20Event.query()
+          .delete()
+          .where('cw20_contract_id', cw20Contract.id)
+          .transacting(trx);
+        await CW20TotalHolderStats.query()
+          .delete()
+          .where('cw20_contract_id', cw20Contract.id)
+          .transacting(trx);
+        await CW20Holder.query()
+          .delete()
+          .where('cw20_contract_id', cw20Contract.id)
+          .transacting(trx);
+        await Cw20Contract.query().deleteById(cw20Contract.id).transacting(trx);
+      }
+      const newCw20Contract = await Cw20Contract.query()
+        .insertGraph({
+          ...Cw20Contract.fromJson({
+            smart_contract_id: smartContractId,
+            symbol: contractInfo?.symbol,
+            minter: contractInfo?.minter,
+            marketing_info: contractInfo?.marketing_info,
+            name: contractInfo?.name,
+            total_supply: initBalances.reduce(
+              (acc: string, curr: { address: string; amount: string }) =>
+                (BigInt(acc) + BigInt(curr.amount)).toString(),
+              '0'
+            ),
+            track,
+            decimal: contractInfo?.decimal,
+            last_updated_height: minUpdatedHeightOwner,
+          }),
+          holders: initBalances.map((e) => ({
+            address: e.address,
+            amount: e.amount,
+            last_updated_height: e.event_height,
+          })),
+        })
+        .transacting(trx);
+      id = newCw20Contract.id;
+      lastUpdatedHeight = newCw20Contract.last_updated_height;
     });
     // handle from minUpdatedHeightOwner to blockHeight
     await this.broker.call(
@@ -134,8 +146,8 @@ export default class Cw20ReindexingContract extends BullableService {
       {
         cw20Contracts: [
           {
-            id: newCw20Contract.id,
-            last_updated_height: newCw20Contract.last_updated_height,
+            id,
+            last_updated_height: lastUpdatedHeight,
           },
         ],
         startBlock: minUpdatedHeightOwner,
