@@ -332,6 +332,19 @@ export default class Cw721HandlerService extends BullableService {
                   cw721_token_id: cw721TokenId,
                   height: cw721Event.height,
                   smart_contract_event_id: cw721Event.smart_contract_event_id,
+                  from: getAttributeFrom(
+                    cw721Event.attributes,
+                    EventAttribute.ATTRIBUTE_KEY.SENDER
+                  ),
+                  to:
+                    getAttributeFrom(
+                      cw721Event.attributes,
+                      EventAttribute.ATTRIBUTE_KEY.OWNER
+                    ) ||
+                    getAttributeFrom(
+                      cw721Event.attributes,
+                      EventAttribute.ATTRIBUTE_KEY.RECIPIENT
+                    ),
                 })
               )
               .onConflict(['smart_contract_event_id'])
