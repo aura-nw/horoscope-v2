@@ -5,6 +5,7 @@ import knex from '../../../../src/common/utils/db_connection';
 import {
   Block,
   BlockCheckpoint,
+  CW20TotalHolderStats,
   Code,
   Cw20Contract,
   Cw20Event,
@@ -435,6 +436,80 @@ export default class Cw20 {
         .throwIfNotFound();
       expect(cw20ContractEvent1.action).toBeNull();
       expect(cw20ContractEvent1.height).toEqual(cw20Events[0].height);
+      await trx.rollback();
+    });
+  }
+
+  @Test('test handleTotalHolderStatistic')
+  public async testHandleTotalHolderStatistic() {
+    const cw20Contract = [
+      {
+        ...Cw20Contract.fromJson({
+          smart_contract_id: 1,
+          marketing_info: {},
+          total_supply: '1121112133',
+          symbol: 'TEST SyMbol',
+          minter: 'jfglkdfjgklfdgklklfdkl',
+          name: 'dgbdfmnlkgsdfklgjksdfl',
+          track: true,
+          last_updated_height: 10000,
+        }),
+        holders: [
+          {
+            address: 'holder_hic_1',
+            amount: '0',
+            last_updated_height: 7000,
+          },
+        ],
+      },
+      {
+        ...Cw20Contract.fromJson({
+          smart_contract_id: 2,
+          marketing_info: {},
+          total_supply: '23434314',
+          symbol: 'TEST SyMbol 2',
+          minter: 'pham phong',
+          name: 'hic',
+          track: true,
+          last_updated_height: 15022,
+        }),
+        holders: [
+          {
+            address: 'holder_hic_1',
+            amount: '2154213',
+            last_updated_height: 7000,
+          },
+          {
+            address: 'holder_hic_2',
+            amount: '31245465465',
+            last_updated_height: 8000,
+          },
+          {
+            address: 'holder_hic_3',
+            amount: '874676446',
+            last_updated_height: 1500,
+          },
+          {
+            address: 'holder_hic_4',
+            amount: '0',
+            last_updated_height: 4500,
+          },
+        ],
+      },
+    ];
+    await knex.transaction(async (trx) => {
+      await Cw20Contract.query().insertGraph(cw20Contract[0]);
+      await Cw20Contract.query().insertGraph(cw20Contract[1]);
+      await this.cw20Service.handleTotalHolderStatistic(
+        new Date('2023-01-12T00:53:57.000Z')
+      );
+      const totalHolderStats = await CW20TotalHolderStats.query().orderBy(
+        'cw20_contract_id'
+      );
+      expect(totalHolderStats[0].total_holder).toEqual(0);
+      expect(totalHolderStats[1].total_holder).toEqual(
+        cw20Contract[1].holders.length - 1
+      );
       await trx.rollback();
     });
   }
