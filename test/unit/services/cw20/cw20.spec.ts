@@ -4,8 +4,8 @@ import { BULL_JOB_NAME } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
 import {
   Block,
-  CW20TotalHolderStats,
   BlockCheckpoint,
+  CW20TotalHolderStats,
   Code,
   Cw20Contract,
   Cw20Event,
