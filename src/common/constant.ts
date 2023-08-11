@@ -76,6 +76,7 @@ export const BULL_JOB_NAME = {
   CRAWL_IBC_TAO: 'crawl:ibc-tao',
   CRAWL_GENESIS_IBC_TAO: 'crawl:genesis-ibc-tao',
   JOB_REASSIGN_MSG_INDEX_TO_EVENT: 'job:reassign-msg-index-to-event',
+  CRAWL_IBC_APP: 'crawl:ibc-app',
 };
 
 export const SERVICE = {
@@ -268,6 +269,10 @@ export const SERVICE = {
     CrawlIBCTaoService: {
       key: 'CrawlIBCTaoService',
       name: 'v1.CrawlIBCTaoService',
+    },
+    CrawlIBCAppService: {
+      key: 'CrawlIBCAppService',
+      name: 'v1.CrawlIBCAppService',
     },
   },
 };
