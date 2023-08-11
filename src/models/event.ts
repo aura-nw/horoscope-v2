@@ -20,6 +20,8 @@ export class Event extends BaseModel {
 
   source!: string;
 
+  attributes!: EventAttribute[];
+
   static get tableName() {
     return 'event';
   }
