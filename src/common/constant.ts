@@ -68,6 +68,7 @@ export const BULL_JOB_NAME = {
   JOB_REDECODE_TX: 'job:redecode-tx',
   CRAWL_IBC_TAO: 'crawl:ibc-tao',
   CRAWL_GENESIS_IBC_TAO: 'crawl:genesis-ibc-tao',
+  CRAWL_IBC_APP: 'crawl:ibc-app',
 };
 
 export const SERVICE = {
@@ -228,6 +229,10 @@ export const SERVICE = {
     CrawlIBCTaoService: {
       key: 'CrawlIBCTaoService',
       name: 'v1.CrawlIBCTaoService',
+    },
+    CrawlIBCAppService: {
+      key: 'CrawlIBCAppService',
+      name: 'v1.CrawlIBCAppService',
     },
   },
 };
