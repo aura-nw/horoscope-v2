@@ -76,6 +76,7 @@ export const BULL_JOB_NAME = {
   CRAWL_IBC_TAO: 'crawl:ibc-tao',
   CRAWL_GENESIS_IBC_TAO: 'crawl:genesis-ibc-tao',
   JOB_REASSIGN_MSG_INDEX_TO_EVENT: 'job:reassign-msg-index-to-event',
+  REINDEX_HISTORY_CW721_CONTRACT: 'reindex:cw721-history-contract',
 };
 
 export const SERVICE = {
