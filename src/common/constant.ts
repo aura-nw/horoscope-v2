@@ -66,6 +66,7 @@ export const BULL_JOB_NAME = {
   REINDEX_CW721_HISTORY: 'reindex:cw721-history',
   HANDLE_MIGRATE_CONTRACT: 'handle:migrate-contract',
   JOB_REDECODE_TX: 'job:redecode-tx',
+  REINDEX_HISTORY_CW721_CONTRACT: 'reindex:cw721-history-contract',
 };
 
 export const SERVICE = {
@@ -221,10 +222,6 @@ export const SERVICE = {
       ReDecodeTx: {
         key: 'ReDecodeTx',
         path: 'v1.ReDecodeTx',
-      },
-      ReindexCw721ActivityMissingSce: {
-        key: 'ReindexCw721ActivityMissingSce',
-        path: 'v1.ReindexCw721ActivityMissingSce',
       },
     },
   },

@@ -35,7 +35,7 @@ export const CW721_ACTION = {
 };
 
 export interface ICw721ReindexingHistoryParams {
-  smartContractId?: number;
+  smartContractId: number;
   startBlock: number;
   endBlock: number;
   prevId: number;
