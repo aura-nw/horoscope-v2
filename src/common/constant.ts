@@ -231,6 +231,10 @@ export const SERVICE = {
         key: 'ReDecodeTx',
         path: 'v1.ReDecodeTx',
       },
+      ReindexCw721ActivityMissingSce: {
+        key: 'ReindexCw721ActivityMissingSce',
+        path: 'v1.ReindexCw721ActivityMissingSce',
+      },
     },
     DailyStatisticsService: {
       key: 'DailyStatisticsService',

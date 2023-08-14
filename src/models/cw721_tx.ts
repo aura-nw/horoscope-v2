@@ -11,6 +11,8 @@ export default class CW721Activity extends BaseModel {
 
   smart_contract_event!: SmartContractEvent;
 
+  [relation: string]: any | any[];
+
   id!: number;
 
   action?: string;
