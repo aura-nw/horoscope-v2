@@ -524,4 +524,28 @@ export default class TestCw721MissingContractService {
     expect(tokens[0].last_updated_height).toEqual(missingHistories[3].height);
     expect(tokens[0].burned).toEqual(true);
   }
+
+  @Test('test action params')
+  public async testActionParams() {
+    let err = null;
+    try {
+      await this.broker.call('v1.Cw721ReindexingService.reindexing', {
+        contractAddress: undefined,
+        type: 'all',
+      });
+    } catch (e) {
+      err = e;
+    }
+    expect(err).not.toBeNull();
+    let err2 = null;
+    try {
+      await this.broker.call('v1.Cw721ReindexingService.reindexing', {
+        contractAddress: this.codeId.contracts[1].address,
+        type: 'heell',
+      });
+    } catch (e) {
+      err2 = e;
+    }
+    expect(err2).not.toBeNull();
+  }
 }
