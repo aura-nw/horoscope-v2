@@ -137,6 +137,41 @@
     ],
     "queryNeedWhereRelation": ["event_attributes", "event_attribute_index"],
     "queryNeedWhereCondition": ["block_height"],
+    "queryNeedCondition": [
+      {
+        "model": [
+          "event_attribute",
+          "view_event_attribute_value_index"
+        ],
+        "relation": [
+          "event_attributes", "event_attribute_index"
+        ],
+        "condition": [
+          {
+            "parent": [
+              "event_attributes", "event_attribute_index"
+            ],
+            "field": "block_height",
+            "range": 10000,
+            "type": "number"
+          }
+        ]
+      },
+      {
+        "model": [],
+        "relation": ["event_attributes", "event_attribute_index"],
+        "condition": [
+          {
+            "parent": [
+              "transaction"
+            ],
+            "field": "timestamp",
+            "range": 2592000,  
+            "type": "date" 
+          }
+        ]
+      }
+    ],
     "queryHeightRangeLimit": 10000
   },
   "crawlValidatorImage": {

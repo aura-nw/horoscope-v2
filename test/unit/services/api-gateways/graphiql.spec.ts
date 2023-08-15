@@ -217,7 +217,7 @@ export default class GraphiQLTest {
     expect(result?.code).toEqual(ErrorCode.WRONG);
     expect(result?.message).toEqual(ErrorMessage.VALIDATION_ERROR);
     expect(result?.errors).toEqual(
-      `The query height range in one of the following tables needs to be less than ${config.graphiqlApi.queryHeightRangeLimit}: ${config.graphiqlApi.queryNeedWhereModel}`
+      'The query range on field block_height needs to be less than 10000'
     );
   }
 }
