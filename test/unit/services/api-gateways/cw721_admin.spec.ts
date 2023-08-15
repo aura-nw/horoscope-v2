@@ -78,8 +78,9 @@ export default class Cw721AdminTest {
         type: 'all',
       });
     } finally {
-      expect(spy).toHaveBeenCalledTimes(5);
+      // eslint-disable-next-line no-empty
     }
+    expect(spy).toHaveBeenCalledTimes(5);
     try {
       await this.broker.call('v1.cw721-admin.cw721Reindexing', {
         chainid: 'euphoria-2',
@@ -87,7 +88,8 @@ export default class Cw721AdminTest {
         type: 'all',
       });
     } finally {
-      expect(spy).toHaveBeenCalledTimes(7);
+      // eslint-disable-next-line no-empty
     }
+    expect(spy).toHaveBeenCalledTimes(7);
   }
 }
