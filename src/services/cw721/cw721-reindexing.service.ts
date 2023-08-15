@@ -174,9 +174,11 @@ export default class CW721ReindexingService extends BullableService {
             items: 'string',
           },
         ],
+        optional: false,
       },
       type: {
         type: 'string',
+        optional: false,
       },
     },
   })
