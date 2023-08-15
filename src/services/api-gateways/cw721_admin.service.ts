@@ -36,7 +36,7 @@ export default class Cw721AdminService extends BaseService {
       },
       type: {
         type: 'enum',
-        default: REINDEX_TYPE,
+        optional: false,
         values: Object.values(REINDEX_TYPE),
       },
     },
