@@ -3,6 +3,7 @@
     "chainId": "aura-testnet-2",
     "RPC": ["http://localhost:26657"],
     "LCD": ["http://localhost:1317"],
-    "databaseName": "horoscope_dev_auratestnet1"
+    "databaseName": "horoscope_dev_auratestnet1",
+    "moleculerNamespace": "namespace-auratestnet"
   }
 ]
