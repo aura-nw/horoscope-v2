@@ -19,7 +19,7 @@ import CW721Activity from '../../models/cw721_tx';
 import { ICw721ReindexingHistoryParams } from './cw721.service';
 
 export interface IAddressParam {
-  contractAddress: string | string[];
+  contractAddresses: string[];
   type: string;
 }
 
@@ -163,17 +163,9 @@ export default class CW721ReindexingService extends BullableService {
   @Action({
     name: SERVICE.V1.CW721ReindexingService.Reindexing.key,
     params: {
-      contractAddress: {
-        type: 'multi',
-        rules: [
-          {
-            type: 'string',
-          },
-          {
-            type: 'array',
-            items: 'string',
-          },
-        ],
+      contractAddresses: {
+        type: 'array',
+        items: 'string',
         optional: false,
       },
       type: {
@@ -183,13 +175,10 @@ export default class CW721ReindexingService extends BullableService {
     },
   })
   public async reindexing(ctx: Context<IAddressParam>) {
-    const { contractAddress, type } = ctx.params;
-    const contractsAddress = Array.isArray(contractAddress)
-      ? [...contractAddress]
-      : [contractAddress];
+    const { contractAddresses, type } = ctx.params;
     const smartContracts = await SmartContract.query()
       .withGraphJoined('code')
-      .whereIn('address', contractsAddress);
+      .whereIn('address', contractAddresses);
     // eslint-disable-next-line no-restricted-syntax
     for (const smartContract of smartContracts) {
       // check whether contract is CW721 type -> throw error to user

@@ -6,7 +6,9 @@ import { BlockCheckpoint, Code } from '../../../../src/models';
 import CW721Contract from '../../../../src/models/cw721_contract';
 import CW721Token from '../../../../src/models/cw721_token';
 import { SmartContractEvent } from '../../../../src/models/smart_contract_event';
-import Cw721MissingContractService from '../../../../src/services/cw721/cw721-reindexing.service';
+import Cw721MissingContractService, {
+  REINDEX_TYPE,
+} from '../../../../src/services/cw721/cw721-reindexing.service';
 import Cw721HandlerService, {
   CW721_ACTION,
 } from '../../../../src/services/cw721/cw721.service';
@@ -530,7 +532,7 @@ export default class TestCw721MissingContractService {
     let err = null;
     try {
       await this.broker.call('v1.Cw721ReindexingService.reindexing', {
-        contractAddress: undefined,
+        contractAddresses: undefined,
         type: 'all',
       });
     } catch (e) {
@@ -540,12 +542,42 @@ export default class TestCw721MissingContractService {
     let err2 = null;
     try {
       await this.broker.call('v1.Cw721ReindexingService.reindexing', {
-        contractAddress: this.codeId.contracts[1].address,
+        contractAddresses: this.codeId.contracts[1].address,
         type: 'heell',
       });
     } catch (e) {
       err2 = e;
     }
     expect(err2).not.toBeNull();
+    let err3 = null;
+    try {
+      await this.broker.call('v1.Cw721ReindexingService.reindexing', {
+        contractAddresses: [this.codeId.contracts[1].address],
+        type: 'heell',
+      });
+    } catch (e) {
+      err3 = e;
+    }
+    expect(err3).not.toBeNull();
+    let err4 = null;
+    try {
+      await this.broker.call('v1.Cw721ReindexingService.reindexing', {
+        contractAddresses: [this.codeId.contracts[1].address],
+        type: REINDEX_TYPE.ALL,
+      });
+    } catch (e) {
+      err4 = e;
+    }
+    expect(err4).toBeNull();
+    let err5 = null;
+    try {
+      await this.broker.call('v1.Cw721ReindexingService.reindexing', {
+        contractAddresses: [this.codeId.contracts[1].address],
+        type: REINDEX_TYPE.HISTORY,
+      });
+    } catch (e) {
+      err5 = e;
+    }
+    expect(err5).toBeNull();
   }
 }
