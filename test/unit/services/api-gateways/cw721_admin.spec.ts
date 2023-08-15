@@ -77,7 +77,7 @@ export default class Cw721AdminTest {
         contractAddress: 'abc',
         type: 'all',
       });
-    } finally {
+    } catch {
       // eslint-disable-next-line no-empty
     }
     expect(spy).toHaveBeenCalledTimes(5);
@@ -87,7 +87,7 @@ export default class Cw721AdminTest {
         contractAddress: ['abc', 'xyz'],
         type: 'all',
       });
-    } finally {
+    } catch {
       // eslint-disable-next-line no-empty
     }
     expect(spy).toHaveBeenCalledTimes(7);
