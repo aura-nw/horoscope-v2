@@ -21,18 +21,10 @@ export default class Cw721AdminService extends BaseService {
         optional: false,
         enum: networks.map((network) => network.chainId),
       },
-      contractAddress: {
-        type: 'multi',
+      contractAddresses: {
+        type: 'array',
         optional: false,
-        rules: [
-          {
-            type: 'string',
-          },
-          {
-            type: 'array',
-            items: 'string',
-          },
-        ],
+        items: 'string',
       },
       type: {
         type: 'enum',
@@ -43,7 +35,7 @@ export default class Cw721AdminService extends BaseService {
   })
   async cw721Reindexing(
     ctx: Context<
-      { chainid: string; contractAddress: string | string[]; type: string },
+      { chainid: string; contractAddresses: string[]; type: string },
       Record<string, unknown>
     >
   ) {
@@ -53,7 +45,7 @@ export default class Cw721AdminService extends BaseService {
     return this.broker.call(
       `v1.Cw721ReindexingService.reindexing@${selectedChain?.moleculerNamespace}`,
       {
-        contractAddress: ctx.params.contractAddress,
+        contractAddress: ctx.params.contractAddresses,
         type: ctx.params.type,
       }
     );
