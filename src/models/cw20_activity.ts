@@ -7,6 +7,8 @@ import { SmartContractEvent } from './smart_contract_event';
 import { Event } from './event';
 
 export class Cw20Event extends BaseModel {
+  static softDelete = false;
+
   [relation: string]: any;
 
   id!: number;
