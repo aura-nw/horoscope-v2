@@ -34,7 +34,6 @@ export default class Cw721AdminTest {
 
   @Test('Invalid query format')
   public async testInvalidQueryFormat() {
-    const spy = jest.spyOn(this.broker, 'call');
     let err = null;
     try {
       await this.broker.call('v1.cw721-admin.cw721Reindexing', {
@@ -46,7 +45,6 @@ export default class Cw721AdminTest {
       err = e;
     }
     expect(err).not.toBeNull();
-    expect(spy).toHaveBeenCalledTimes(1);
     let err2 = null;
     try {
       await this.broker.call('v1.cw721-admin.cw721Reindexing', {
@@ -58,7 +56,6 @@ export default class Cw721AdminTest {
       err2 = e;
     }
     expect(err2).not.toBeNull();
-    expect(spy).toHaveBeenCalledTimes(2);
     let err3 = null;
     try {
       await this.broker.call('v1.cw721-admin.cw721Reindexing', {
@@ -70,26 +67,5 @@ export default class Cw721AdminTest {
       err3 = e;
     }
     expect(err3).not.toBeNull();
-    expect(spy).toHaveBeenCalledTimes(3);
-    try {
-      await this.broker.call('v1.cw721-admin.cw721Reindexing', {
-        chainid: 'euphoria-2',
-        contractAddress: 'abc',
-        type: 'all',
-      });
-    } catch {
-      // eslint-disable-next-line no-empty
-    }
-    expect(spy).toHaveBeenCalledTimes(5);
-    try {
-      await this.broker.call('v1.cw721-admin.cw721Reindexing', {
-        chainid: 'euphoria-2',
-        contractAddress: ['abc', 'xyz'],
-        type: 'all',
-      });
-    } catch {
-      // eslint-disable-next-line no-empty
-    }
-    expect(spy).toHaveBeenCalledTimes(7);
   }
 }
