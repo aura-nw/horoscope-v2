@@ -45,7 +45,7 @@ export default class Cw721AdminService extends BaseService {
     return this.broker.call(
       `v1.Cw721ReindexingService.reindexing@${selectedChain?.moleculerNamespace}`,
       {
-        contractAddress: ctx.params.contractAddresses,
+        contractAddresses: ctx.params.contractAddresses,
         type: ctx.params.type,
       }
     );

@@ -333,6 +333,7 @@ export default class TestCw721MissingContractService {
     await this.cw721MissingContractService.jobHandler({
       contractAddress: this.codeId.contracts[0].address,
       smartContractId: 1,
+      type: REINDEX_TYPE.ALL,
     });
     const cw721Contract = await CW721Contract.query()
       .withGraphJoined('smart_contract')
@@ -558,7 +559,7 @@ export default class TestCw721MissingContractService {
     } catch (e) {
       err3 = e;
     }
-    expect(err3).not.toBeNull();
+    expect(err3).toBeNull();
     let err4 = null;
     try {
       await this.broker.call('v1.Cw721ReindexingService.reindexing', {

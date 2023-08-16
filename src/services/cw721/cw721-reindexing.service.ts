@@ -26,6 +26,7 @@ export interface IAddressParam {
 interface ICw721ReindexingServiceParams {
   contractAddress: string;
   smartContractId: number;
+  type: string;
 }
 
 export const REINDEX_TYPE = {
@@ -47,7 +48,15 @@ export default class CW721ReindexingService extends BullableService {
     jobName: BULL_JOB_NAME.REINDEX_CW721_CONTRACT,
   })
   async jobHandler(_payload: ICw721ReindexingServiceParams): Promise<void> {
-    const { smartContractId, contractAddress } = _payload;
+    const { smartContractId, contractAddress, type } = _payload;
+    if (type === REINDEX_TYPE.ALL) {
+      await this.handleReindexAll(smartContractId, contractAddress);
+    } else if (type === REINDEX_TYPE.HISTORY) {
+      await this.handleReindexHistory(smartContractId, contractAddress);
+    }
+  }
+
+  async handleReindexAll(smartContractId: number, contractAddress: string) {
     const cw721Contract = await CW721Contract.query()
       .withGraphJoined('smart_contract')
       .where('smart_contract.address', contractAddress)
@@ -124,14 +133,7 @@ export default class CW721ReindexingService extends BullableService {
     );
   }
 
-  @QueueHandler({
-    queueName: BULL_JOB_NAME.REINDEX_HISTORY_CW721_CONTRACT,
-    jobName: BULL_JOB_NAME.REINDEX_HISTORY_CW721_CONTRACT,
-  })
-  async jobHandlerHistory(
-    _payload: ICw721ReindexingServiceParams
-  ): Promise<void> {
-    const { smartContractId, contractAddress } = _payload;
+  async handleReindexHistory(smartContractId: number, contractAddress: string) {
     const cw721Contract = await CW721Contract.query()
       .withGraphJoined('smart_contract')
       .where('smart_contract.address', contractAddress)
@@ -181,37 +183,20 @@ export default class CW721ReindexingService extends BullableService {
       .whereIn('address', contractAddresses);
     // eslint-disable-next-line no-restricted-syntax
     for (const smartContract of smartContracts) {
-      // check whether contract is CW721 type -> throw error to user
       if (smartContract.code.type === 'CW721') {
-        if (type === REINDEX_TYPE.ALL) {
-          // eslint-disable-next-line no-await-in-loop
-          await this.createJob(
-            BULL_JOB_NAME.REINDEX_CW721_CONTRACT,
-            BULL_JOB_NAME.REINDEX_CW721_CONTRACT,
-            {
-              contractAddress: smartContract.address,
-              smartContractId: smartContract.id,
-            } satisfies ICw721ReindexingServiceParams,
-            {
-              jobId: smartContract.address,
-            }
-          );
-        } else if (type === REINDEX_TYPE.HISTORY) {
-          // eslint-disable-next-line no-await-in-loop
-          await this.createJob(
-            BULL_JOB_NAME.REINDEX_HISTORY_CW721_CONTRACT,
-            BULL_JOB_NAME.REINDEX_HISTORY_CW721_CONTRACT,
-            {
-              contractAddress: smartContract.address,
-              smartContractId: smartContract.id,
-            } satisfies ICw721ReindexingServiceParams,
-            {
-              jobId: smartContract.address,
-            }
-          );
-        } else {
-          throw new Error('Type is not supported');
-        }
+        // eslint-disable-next-line no-await-in-loop
+        await this.createJob(
+          BULL_JOB_NAME.REINDEX_CW721_CONTRACT,
+          BULL_JOB_NAME.REINDEX_CW721_CONTRACT,
+          {
+            contractAddress: smartContract.address,
+            smartContractId: smartContract.id,
+            type,
+          } satisfies ICw721ReindexingServiceParams,
+          {
+            jobId: smartContract.address,
+          }
+        );
       }
     }
   }

@@ -25,8 +25,13 @@ import { bullBoardMixin } from '../../mixins/bullBoard/bullBoard.mixin';
           'v2.graphql.*',
           'v2.statistics.getDashboardStatisticsByChainId',
           'v2.statistics.getTopAccountsByChainId',
-          'v1.cw721-admin.*',
         ],
+      },
+      {
+        path: '/admin',
+        autoAliases: true, // allow generate rest info (GET/PUT/POST...) in the services
+        mappingPolicy: 'restrict', // allow action called with exact method
+        whitelist: ['v1.cw721-admin.*'],
       },
       {
         path: '/admin',
