@@ -333,56 +333,109 @@ export default class CrawlTxService extends BullableService {
     this.logger.debug('result insert tx', resultInsertGraph);
   }
 
-  private setMsgIndexToEvent(tx: any) {
-    const mapEventMsgIdx: Map<string, number[]> = new Map();
-
-    // set index_msg from log to mapEventMsgIdx
-    tx.tx_response.logs?.forEach((log: any, index: number) => {
-      log.events.forEach((event: any) => {
-        const { type } = event;
-        event.attributes.forEach((attribute: any) => {
-          const keyInMap = `${type}_${attribute.key}_${attribute.value}`;
-          if (mapEventMsgIdx.has(keyInMap)) {
-            const listIndex = mapEventMsgIdx.get(keyInMap);
-            listIndex?.push(index);
-          } else {
-            mapEventMsgIdx.set(keyInMap, [index]);
-          }
-        });
+  public mappingEventToLog(eventInLog: any, eventInTx: any, index: number) {
+    const arrSrc = eventInTx;
+    const arrFlat: any[] = [];
+    arrSrc.forEach((item: any, index: number) => {
+      item.attributes.forEach((attr: any) => {
+        arrFlat.push({ ...attr, indexEvent: index });
       });
     });
+    // eslint-disable-next-line no-inner-declarations
+    function checkMapping(arr: any, arrCompare: any) {
+      const indexes = _.uniq(
+        arr
+          .filter((item: any) => item.indexMapped !== undefined)
+          .map((e: any) => e.indexEvent)
+      );
+      // all event must be included in log
+      return indexes.every((index: any) => {
+        const isMapped = arrSrc[index].attributes.every((item: any) => {
+          const key = item.key ? fromUtf8(fromBase64(item.key)) : null;
+          const value = item.value ? fromUtf8(fromBase64(item.value)) : null;
+          // check if key and value found
+          return arrCompare.some(
+            (att: any) => att.key === key && att.value === value
+          );
+        });
+        return isMapped;
+      });
+    }
 
-    // set index_msg from mapEventMsgIdx to event
-    tx.tx_response.events.forEach((event: any) => {
-      const { type } = event;
-      event.attributes.forEach((attribute: any) => {
-        const key = attribute?.key
-          ? fromUtf8(fromBase64(attribute?.key))
+    // eslint-disable-next-line no-inner-declarations
+    function recursive(
+      arrSrc: any[],
+      arrDest: any[],
+      indexSrc: number,
+      indexDest: number,
+      indexMsg: number
+    ): boolean {
+      if (indexDest === arrDest.length) {
+        const isMapped = checkMapping(arrSrc, arrDest);
+        return isMapped;
+      }
+      if (indexSrc === arrSrc.length || indexDest === arrDest.length) {
+        return false;
+      }
+      let result = false;
+      for (let i = indexSrc; i < arrSrc.length; i += 1) {
+        const key = arrSrc[i].key ? fromUtf8(fromBase64(arrSrc[i].key)) : null;
+        const value = arrSrc[i].value
+          ? fromUtf8(fromBase64(arrSrc[i].value))
           : null;
-        const value = attribute?.value
-          ? fromUtf8(fromBase64(attribute?.value))
-          : null;
-        const keyInMap = `${type}_${key}_${value}`;
-
-        const listIndex = mapEventMsgIdx.get(keyInMap);
-        // get first index with this key
-        const firstIndex = listIndex?.shift();
-
-        if (firstIndex != null) {
-          if (event.msg_index && event.msg_index !== firstIndex) {
-            this.logger.warn(
-              `something wrong: setting index ${firstIndex} to existed index ${event.msg_index}`
-            );
-          } else {
-            // eslint-disable-next-line no-param-reassign
-            event.msg_index = firstIndex;
+        if (
+          key === arrDest[indexDest].key &&
+          value === arrDest[indexDest].value
+        ) {
+          // eslint-disable-next-line no-param-reassign
+          arrSrc[i].indexMapped = indexMsg;
+          result = recursive(arrSrc, arrDest, i + 1, indexDest + 1, indexMsg);
+          if (result) {
+            break;
           }
+          // eslint-disable-next-line no-param-reassign
+          delete arrSrc[i].indexMapped;
         }
+      }
+      return result;
+    }
 
-        // delete key in map if value is empty
-        if (listIndex?.length === 0) {
-          mapEventMsgIdx.delete(keyInMap);
-        }
+    const result = recursive(arrFlat, eventInLog.attributes, 0, 0, index);
+    if (result === false) {
+      this.logger.warn('something wrong: mapping event to log failed');
+    } else {
+      arrFlat
+        .filter((item) => item.indexMapped !== undefined)
+        .forEach((item) => {
+          if (
+            arrSrc[item.indexEvent].msg_index !== undefined &&
+            arrSrc[item.indexEvent].msg_index !== item.indexMapped
+          ) {
+            this.logger.warn(
+              `something wrong: setting index ${
+                item.indexMapped
+              } to existed index ${arrSrc[item.indexEvent].msg_index}`
+            );
+          }
+          arrSrc[item.indexEvent].msg_index = item.indexMapped;
+        });
+    }
+  }
+
+  private setMsgIndexToEvent(tx: any) {
+    // loop logs (has order for each messages)
+    tx.tx_response.logs.forEach((log: any, index: number) => {
+      // loop each event in log to compare with event encoded
+      log.events.forEach((eventInLog: any) => {
+        // filter list event has type equal eventInLog.type and not be setted index msg
+        const filtedEventByType = tx.tx_response.events.filter(
+          (eventEncoded: any) =>
+            eventEncoded.type === eventInLog.type &&
+            eventEncoded.msg_index === undefined
+        );
+
+        // mapping between log and event
+        this.mappingEventToLog(eventInLog, filtedEventByType, index);
       });
     });
   }
