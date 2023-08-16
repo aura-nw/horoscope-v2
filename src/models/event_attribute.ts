@@ -108,6 +108,12 @@ export class EventAttribute extends BaseModel {
     COUNTERPARTY_PORT_ID: 'counterparty_port_id',
     COUNTERPARTY_CHANNEL_ID: 'counterparty_channel_id',
     MINTER: 'minter',
+    DATA_HEX: 'packet_data_hex',
+    SEQUENCE: 'packet_sequence',
+    SRC_PORT: 'packet_src_port',
+    SRC_CHANNEL: 'packet_src_channel',
+    DST_PORT: 'packet_dst_port',
+    DST_CHANNEL: 'packet_dst_channel',
   };
 
   static ATTRIBUTE_COMPOSITE_KEY = {
@@ -119,11 +125,5 @@ export class EventAttribute extends BaseModel {
     USE_FEEGRANT_GRANTEE: 'use_feegrant.grantee',
     TX_FEE: 'tx.fee',
     TX_FEE_PAYER: 'tx.fee_payer',
-    DATA_HEX: 'packet_data_hex',
-    SEQUENCE: 'packet_sequence',
-    SRC_PORT: 'packet_src_port',
-    SRC_CHANNEL: 'packet_src_channel',
-    DST_PORT: 'packet_dst_port',
-    DST_CHANNEL: 'packet_dst_channel',
   };
 }
