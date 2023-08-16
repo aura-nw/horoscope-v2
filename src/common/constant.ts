@@ -69,6 +69,8 @@ export const BULL_JOB_NAME = {
   CRAWL_IBC_TAO: 'crawl:ibc-tao',
   CRAWL_GENESIS_IBC_TAO: 'crawl:genesis-ibc-tao',
   CRAWL_IBC_APP: 'crawl:ibc-app',
+  REINDEX_CW20_CONTRACT: 'reindex:cw20-contract',
+  REINDEX_CW20_HISTORY: 'reindex:cw20-history',
 };
 
 export const SERVICE = {
@@ -233,6 +235,14 @@ export const SERVICE = {
     CrawlIBCAppService: {
       key: 'CrawlIBCAppService',
       name: 'v1.CrawlIBCAppService',
+    },
+    Cw20ReindexingService: {
+      key: 'Cw20ReindexingService',
+      name: 'v1.Cw20ReindexingService',
+      Reindexing: {
+        key: 'reindexing',
+        path: 'v1.Cw20ReindexingService.reindexing',
+      },
     },
   },
 };

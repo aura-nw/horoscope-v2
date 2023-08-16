@@ -4,6 +4,7 @@ import { BULL_JOB_NAME } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
 import {
   Block,
+  BlockCheckpoint,
   Code,
   Cw20Contract,
   Cw20Event,
@@ -12,12 +13,17 @@ import {
 import { SmartContractEvent } from '../../../../src/models/smart_contract_event';
 import Cw20Service from '../../../../src/services/cw20/cw20.service';
 import Cw20UpdateByContractService from '../../../../src/services/cw20/cw20_update_by_contract.service';
+import CrawlContractEventService from '../../../../src/services/crawl-cosmwasm/crawl_contract_event.service';
 
 @Describe('Test cw20 service')
 export default class Cw20 {
   broker = new ServiceBroker({ logger: false });
 
   cw20Service = this.broker.createService(Cw20Service) as Cw20Service;
+
+  crawlContractEventService = this.broker.createService(
+    CrawlContractEventService
+  ) as CrawlContractEventService;
 
   cw20UpdateByContractService = this.broker.createService(
     Cw20UpdateByContractService
@@ -30,6 +36,36 @@ export default class Cw20 {
     proposer_address: 'auraomd;cvpio3j4eg',
     data: {},
   });
+
+  codeId = {
+    ...Code.fromJson({
+      creator: 'code_id_creator',
+      code_id: 100,
+      data_hash: 'code_id_data_hash',
+      instantiate_permission: { permission: '', address: '', addresses: [] },
+      store_hash: 'code_id_store_hash',
+      store_height: 1000,
+      type: 'CW20',
+    }),
+    contracts: [
+      {
+        name: 'Base Contract 2',
+        address: 'mock_contract_address',
+        creator: 'phamphong_creator',
+        code_id: 100,
+        instantiate_hash: 'abc',
+        instantiate_height: 300000,
+      },
+      {
+        code_id: 100,
+        address: 'mock_contract_address_2',
+        name: 'name',
+        creator: 'phamphong_creator 2',
+        instantiate_hash: 'abc',
+        instantiate_height: 300000,
+      },
+    ],
+  };
 
   txInsert = {
     ...Transaction.fromJson({
@@ -57,24 +93,114 @@ export default class Cw20 {
         content: {},
         events: [
           {
-            type: 'execute',
             block_height: this.block.height,
             source: 'TX_EVENT',
+            type: 'instantiate',
             attributes: [
               {
-                block_height: this.block.height,
                 index: 0,
+                block_height: this.block.height,
                 composite_key: 'execute._contract_address',
                 key: '_contract_address',
-                value: 'this.mockInitContract_2.smart_contract.address',
+                value: this.codeId.contracts[0].address,
               },
               {
-                block_height: this.block.height,
                 index: 1,
-                // tx_id: 1,
+                block_height: this.block.height,
+                composite_key: 'execute._contract_address',
+                key: 'code_id',
+                value: '6',
+              },
+            ],
+          },
+          {
+            block_height: this.block.height,
+            source: 'TX_EVENT',
+            type: 'wasm',
+            attributes: [
+              {
+                index: 0,
+                block_height: this.block.height,
                 composite_key: 'execute._contract_address',
                 key: '_contract_address',
-                value: 'fdgdgdfgdfg',
+                value: this.codeId.contracts[0].address,
+              },
+              {
+                index: 1,
+                block_height: this.block.height,
+                composite_key: 'execute._contract_address',
+                key: 'action',
+                value: 'add_whitelist',
+              },
+              {
+                index: 2,
+                block_height: this.block.height,
+                composite_key: 'execute._contract_address',
+                key: 'token_id',
+                value: 'test2',
+              },
+            ],
+          },
+          {
+            block_height: this.block.height,
+            source: 'TX_EVENT',
+            type: 'wasm',
+            attributes: [
+              {
+                index: 2,
+                block_height: this.block.height,
+                composite_key: 'execute._contract_address',
+                key: '_contract_address',
+                value: this.codeId.contracts[1].address,
+              },
+              {
+                index: 3,
+                block_height: this.block.height,
+                composite_key: 'execute._contract_address',
+                key: 'action',
+                value: 'add_mint_phase',
+              },
+              {
+                index: 4,
+                block_height: this.block.height,
+                composite_key: 'execute._contract_address',
+                key: 'token_id',
+                value: 'test1',
+              },
+            ],
+          },
+          {
+            block_height: this.block.height,
+            source: 'TX_EVENT',
+            type: 'wasm',
+            attributes: [
+              {
+                index: 0,
+                block_height: this.block.height,
+                composite_key: 'execute._contract_address',
+                key: '_contract_address',
+                value: this.codeId.contracts[0].address,
+              },
+              {
+                index: 1,
+                block_height: this.block.height,
+                composite_key: 'execute._contract_address',
+                key: 'action',
+                value: 'dfgdfgdfgdfg',
+              },
+              {
+                index: 2,
+                block_height: this.block.height,
+                composite_key: 'execute._contract_address',
+                key: 'bcvbcb',
+                value: 'fdsdfsdf',
+              },
+              {
+                index: 3,
+                block_height: this.block.height,
+                composite_key: 'execute._contract_address',
+                key: 'vbvbv',
+                value: 'sesesese',
               },
             ],
           },
@@ -83,42 +209,16 @@ export default class Cw20 {
     ],
   };
 
-  codeId = {
-    ...Code.fromJson({
-      creator: 'code_id_creator',
-      code_id: 100,
-      data_hash: 'code_id_data_hash',
-      instantiate_permission: { permission: '', address: '', addresses: [] },
-      store_hash: 'code_id_store_hash',
-      store_height: 1000,
-      type: 'CW721',
+  mockBlockCheckpoint = [
+    BlockCheckpoint.fromJson({
+      job_name: BULL_JOB_NAME.CRAWL_CONTRACT_EVENT,
+      height: this.block.height - 1,
     }),
-    contracts: [
-      {
-        name: 'Base Contract 2',
-        address: 'mock_contract_address',
-        creator: 'phamphong_creator',
-        code_id: 100,
-        instantiate_hash: 'abc',
-        instantiate_height: 300000,
-      },
-      {
-        code_id: 100,
-        address: 'mock_contract_address_2',
-        name: 'name',
-        creator: 'phamphong_creator 2',
-        instantiate_hash: 'abc',
-        instantiate_height: 300000,
-      },
-    ],
-  };
-
-  smartContractEvent = SmartContractEvent.fromJson({
-    smart_contract_id: 1,
-    action: 'huh',
-    event_id: '1',
-    index: 1,
-  });
+    BlockCheckpoint.fromJson({
+      job_name: BULL_JOB_NAME.CRAWL_SMART_CONTRACT,
+      height: this.block.height,
+    }),
+  ];
 
   @BeforeAll()
   async initSuite() {
@@ -126,12 +226,13 @@ export default class Cw20 {
     this.cw20UpdateByContractService.getQueueManager().stopAll();
     await this.broker.start();
     await knex.raw(
-      'TRUNCATE TABLE code, cw20_contract, block, transaction RESTART IDENTITY CASCADE'
+      'TRUNCATE TABLE code, cw20_contract, block, transaction, smart_contract_event, block_checkpoint RESTART IDENTITY CASCADE'
     );
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);
     await Code.query().insertGraph(this.codeId);
-    await SmartContractEvent.query().insert(this.smartContractEvent);
+    await BlockCheckpoint.query().insert(this.mockBlockCheckpoint);
+    await this.crawlContractEventService.jobHandler();
   }
 
   @AfterAll()
@@ -336,5 +437,177 @@ export default class Cw20 {
       expect(cw20ContractEvent1.height).toEqual(cw20Events[0].height);
       await trx.rollback();
     });
+  }
+
+  @Test('test getCw20ContractEvent function')
+  public async testGetCw20ContractEvent() {
+    const extractData = await this.cw20Service.getCw20ContractEvents(
+      this.block.height - 1,
+      this.block.height
+    );
+    expect(
+      extractData.map((data) => ({
+        action: data.action,
+        sender: data.sender,
+        contractAddress: data.contract_address,
+        attributes: data.attributes,
+        hash: data.hash,
+        height: data.height,
+      }))
+    ).toEqual([
+      {
+        action: 'instantiate',
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.messages[0].events[0].attributes[0].value,
+        attributes: [
+          this.txInsert.messages[0].events[0].attributes[0],
+          this.txInsert.messages[0].events[0].attributes[1],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+        hash: this.txInsert.hash,
+        height: this.txInsert.height,
+      },
+      {
+        action: this.txInsert.messages[0].events[1].attributes[1].value,
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.messages[0].events[1].attributes[0].value,
+        attributes: [
+          this.txInsert.messages[0].events[1].attributes[0],
+          this.txInsert.messages[0].events[1].attributes[1],
+          this.txInsert.messages[0].events[1].attributes[2],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+        hash: this.txInsert.hash,
+        height: this.txInsert.height,
+      },
+      {
+        action: this.txInsert.messages[0].events[2].attributes[1].value,
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.messages[0].events[2].attributes[0].value,
+        attributes: [
+          this.txInsert.messages[0].events[2].attributes[0],
+          this.txInsert.messages[0].events[2].attributes[1],
+          this.txInsert.messages[0].events[2].attributes[2],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+        hash: this.txInsert.hash,
+        height: this.txInsert.height,
+      },
+      {
+        action: this.txInsert.messages[0].events[3].attributes[1].value,
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.messages[0].events[3].attributes[0].value,
+        attributes: [
+          this.txInsert.messages[0].events[3].attributes[0],
+          this.txInsert.messages[0].events[3].attributes[1],
+          this.txInsert.messages[0].events[3].attributes[2],
+          this.txInsert.messages[0].events[3].attributes[3],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+        hash: this.txInsert.hash,
+        height: this.txInsert.height,
+      },
+    ]);
+  }
+
+  @Test('test getCw20ContractEvent function by contract')
+  public async testGetCw20ContractEventByContract() {
+    const extractData = await this.cw20Service.getCw20ContractEvents(
+      this.block.height - 1,
+      this.block.height,
+      1
+    );
+    expect(
+      extractData.map((data) => ({
+        action: data.action,
+        sender: data.sender,
+        contractAddress: data.contract_address,
+        attributes: data.attributes,
+        hash: data.hash,
+        height: data.height,
+      }))
+    ).toEqual([
+      {
+        action: 'instantiate',
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.messages[0].events[0].attributes[0].value,
+        attributes: [
+          this.txInsert.messages[0].events[0].attributes[0],
+          this.txInsert.messages[0].events[0].attributes[1],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+        hash: this.txInsert.hash,
+        height: this.txInsert.height,
+      },
+      {
+        action: this.txInsert.messages[0].events[1].attributes[1].value,
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.messages[0].events[1].attributes[0].value,
+        attributes: [
+          this.txInsert.messages[0].events[1].attributes[0],
+          this.txInsert.messages[0].events[1].attributes[1],
+          this.txInsert.messages[0].events[1].attributes[2],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+        hash: this.txInsert.hash,
+        height: this.txInsert.height,
+      },
+      {
+        action: this.txInsert.messages[0].events[3].attributes[1].value,
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.messages[0].events[3].attributes[0].value,
+        attributes: [
+          this.txInsert.messages[0].events[3].attributes[0],
+          this.txInsert.messages[0].events[3].attributes[1],
+          this.txInsert.messages[0].events[3].attributes[2],
+          this.txInsert.messages[0].events[3].attributes[3],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+        hash: this.txInsert.hash,
+        height: this.txInsert.height,
+      },
+    ]);
+    const extractData2 = await this.cw20Service.getCw20ContractEvents(
+      this.block.height - 1,
+      this.block.height,
+      1,
+      { prevId: 0, limit: 2 }
+    );
+    expect(
+      extractData2.map((data) => ({
+        action: data.action,
+        sender: data.sender,
+        contractAddress: data.contract_address,
+        attributes: data.attributes,
+        hash: data.hash,
+        height: data.height,
+      }))
+    ).toEqual([
+      {
+        action: 'instantiate',
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.messages[0].events[0].attributes[0].value,
+        attributes: [
+          this.txInsert.messages[0].events[0].attributes[0],
+          this.txInsert.messages[0].events[0].attributes[1],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+        hash: this.txInsert.hash,
+        height: this.txInsert.height,
+      },
+      {
+        action: this.txInsert.messages[0].events[1].attributes[1].value,
+        sender: this.txInsert.messages[0].sender,
+        contractAddress:
+          this.txInsert.messages[0].events[1].attributes[0].value,
+        attributes: [
+          this.txInsert.messages[0].events[1].attributes[0],
+          this.txInsert.messages[0].events[1].attributes[1],
+          this.txInsert.messages[0].events[1].attributes[2],
+        ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
+        hash: this.txInsert.hash,
+        height: this.txInsert.height,
+      },
+    ]);
   }
 }
