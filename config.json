@@ -103,7 +103,10 @@
   "cw20": {
     "blocksPerCall": 100,
     "millisecondRepeatJob": 2000,
-    "key": "cw20"
+    "key": "cw20",
+    "reindexHistory": {
+      "limitRecordGet": 500
+    }
   },
   "crawlContractEvent": {
     "key": "crawlContractEvent",
