@@ -97,7 +97,7 @@ export default class CrawlIbcAppService extends BullableService {
         type: event.type,
         sequence,
         sequence_key: `${srcChannel}.${srcPort}.${dstChannel}.${dstPort}.${sequence}`,
-        data: fromUtf8(fromHex(dataHex)),
+        data: dataHex ? fromUtf8(fromHex(dataHex)) : null,
       });
     });
     if (ibcMessage.length > 0) {
