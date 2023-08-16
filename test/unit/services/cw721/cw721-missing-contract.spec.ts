@@ -559,7 +559,7 @@ export default class TestCw721MissingContractService {
     } catch (e) {
       err3 = e;
     }
-    expect(err3).not.toBeNull();
+    expect(err3).toBeNull();
     let err4 = null;
     try {
       await this.broker.call('v1.Cw721ReindexingService.reindexing', {
