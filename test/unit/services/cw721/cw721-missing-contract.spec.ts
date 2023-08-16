@@ -333,6 +333,7 @@ export default class TestCw721MissingContractService {
     await this.cw721MissingContractService.jobHandler({
       contractAddress: this.codeId.contracts[0].address,
       smartContractId: 1,
+      type: REINDEX_TYPE.ALL,
     });
     const cw721Contract = await CW721Contract.query()
       .withGraphJoined('smart_contract')
