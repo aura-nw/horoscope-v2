@@ -338,10 +338,13 @@ export default class AccountStatisticsService extends BullableService {
         BigInt(0)
       )
       .toString();
-    const dayStatTxSent = dayStat.reduce(
-      (init: number, accStat: AccountStatistics) => init + accStat.tx_sent,
-      0
-    );
+    const dayStatTxSent = dayStat
+      .reduce(
+        (init: bigint, accStat: AccountStatistics) =>
+          init + BigInt(accStat.tx_sent),
+        BigInt(0)
+      )
+      .toString();
     const dayStatGasUsed = dayStat
       .reduce(
         (init: bigint, accStat: AccountStatistics) =>
@@ -372,7 +375,11 @@ export default class AccountStatisticsService extends BullableService {
       topTxSent.push({
         address: stat.address,
         amount: stat.tx_sent,
-        percentage: (stat.tx_sent * 100) / dayStatTxSent,
+        percentage: Number(
+          BigNumber(stat.tx_sent)
+            .multipliedBy(100)
+            .dividedBy(BigNumber(dayStatTxSent))
+        ),
       });
       topGasUsed.push({
         address: stat.address,
