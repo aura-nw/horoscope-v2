@@ -13,8 +13,6 @@ export default class CW721Activity extends BaseModel {
 
   id!: number;
 
-  [relation: string]: any | any[];
-
   action?: string;
 
   sender?: string;
