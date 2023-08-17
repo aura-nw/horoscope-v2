@@ -235,6 +235,7 @@ export default class CrawlTransactionTest {
 
   arrSrc: any[] = [
     {
+      // this event not has checkedIndex because its belong to tx event
       type: 'coin_received',
       attributes: [
         {
