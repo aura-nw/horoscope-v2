@@ -154,6 +154,85 @@ export default class CrawlTransactionTest {
     // );
   }
 
+  @Test('Mapping event and log')
+  public async testMappingEventToLog() {
+    const arrDest = {
+      index: 3,
+      type: 'message',
+      attributes: [
+        {
+          key: 'action',
+          value: '/cosmos.staking.v1beta1.MsgDelegate',
+        },
+        {
+          key: 'sender',
+          value: 'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+        },
+        {
+          key: 'module',
+          value: 'staking',
+        },
+        {
+          key: 'sender',
+          value: 'aura15x4v36r6rl73nhn9h0954mwp42sawrc25f0rnx',
+        },
+      ],
+    };
+    const arrSrc: any[] = [
+      {
+        // this event is not in log (arrDest), so it doesn't has checkedIndex
+        type: 'message',
+        attributes: [
+          {
+            key: 'c2VuZGVy',
+            value:
+              'YXVyYTE1eDR2MzZyNnJsNzNuaG45aDA5NTRtd3A0MnNhd3JjMjVmMHJueA==',
+          },
+        ],
+      },
+      {
+        checkedIndex: 3,
+        type: 'message',
+        attributes: [
+          {
+            key: 'YWN0aW9u',
+            value: 'L2Nvc21vcy5zdGFraW5nLnYxYmV0YTEuTXNnRGVsZWdhdGU=',
+          },
+        ],
+      },
+      {
+        checkedIndex: 3,
+        type: 'message',
+        attributes: [
+          {
+            key: 'c2VuZGVy',
+            value:
+              'YXVyYTFqdjY1czNncnFmNnY2amwzZHA0dDZjOXQ5cms5OWNkOHVmbjd0eA==',
+          },
+        ],
+      },
+      {
+        checkedIndex: 3,
+        type: 'message',
+        attributes: [
+          {
+            key: 'bW9kdWxl',
+            value: 'c3Rha2luZw==',
+          },
+          {
+            key: 'c2VuZGVy',
+            value:
+              'YXVyYTE1eDR2MzZyNnJsNzNuaG45aDA5NTRtd3A0MnNhd3JjMjVmMHJueA==',
+          },
+        ],
+      },
+    ];
+    this.crawlTxService?.mappingEventToLog(arrDest, arrSrc, arrDest.index);
+    arrSrc.forEach((item) => {
+      expect(item.checkedIndex).toEqual(item.msg_index);
+    });
+  }
+
   @AfterEach()
   async tearDown() {
     this.crawlTxService?.getQueueManager().stopAll();
