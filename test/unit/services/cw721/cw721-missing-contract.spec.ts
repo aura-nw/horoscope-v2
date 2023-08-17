@@ -1,5 +1,5 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
-import { ServiceBroker } from 'moleculer';
+import { Errors, ServiceBroker } from 'moleculer';
 import { BULL_JOB_NAME } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
 import { BlockCheckpoint, Code } from '../../../../src/models';
@@ -530,55 +530,35 @@ export default class TestCw721MissingContractService {
 
   @Test('test action params')
   public async testActionParams() {
-    let err = null;
-    try {
-      await this.broker.call('v1.Cw721ReindexingService.reindexing', {
+    expect(
+      this.broker.call('v1.Cw721ReindexingService.reindexing', {
         contractAddresses: undefined,
         type: 'all',
-      });
-    } catch (e) {
-      err = e;
-    }
-    expect(err).not.toBeNull();
-    let err2 = null;
-    try {
-      await this.broker.call('v1.Cw721ReindexingService.reindexing', {
+      })
+    ).rejects.toBeInstanceOf(Errors.ValidationError);
+    expect(
+      this.broker.call('v1.Cw721ReindexingService.reindexing', {
         contractAddresses: this.codeId.contracts[1].address,
         type: 'heell',
-      });
-    } catch (e) {
-      err2 = e;
-    }
-    expect(err2).not.toBeNull();
-    let err3 = null;
-    try {
-      await this.broker.call('v1.Cw721ReindexingService.reindexing', {
+      })
+    ).rejects.toBeInstanceOf(Errors.ValidationError);
+    expect(
+      this.broker.call('v1.Cw721ReindexingService.reindexing', {
         contractAddresses: [this.codeId.contracts[1].address],
         type: 'heell',
-      });
-    } catch (e) {
-      err3 = e;
-    }
-    expect(err3).toBeNull();
-    let err4 = null;
-    try {
-      await this.broker.call('v1.Cw721ReindexingService.reindexing', {
+      })
+    ).toBeDefined();
+    expect(
+      this.broker.call('v1.Cw721ReindexingService.reindexing', {
         contractAddresses: [this.codeId.contracts[1].address],
         type: REINDEX_TYPE.ALL,
-      });
-    } catch (e) {
-      err4 = e;
-    }
-    expect(err4).toBeNull();
-    let err5 = null;
-    try {
-      await this.broker.call('v1.Cw721ReindexingService.reindexing', {
+      })
+    ).toBeDefined();
+    expect(
+      this.broker.call('v1.Cw721ReindexingService.reindexing', {
         contractAddresses: [this.codeId.contracts[1].address],
         type: REINDEX_TYPE.HISTORY,
-      });
-    } catch (e) {
-      err5 = e;
-    }
-    expect(err5).toBeNull();
+      })
+    ).toBeDefined();
   }
 }

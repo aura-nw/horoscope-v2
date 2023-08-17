@@ -35,7 +35,11 @@ export default class Cw721AdminService extends BaseService {
   })
   async cw721Reindexing(
     ctx: Context<
-      { chainid: string; contractAddresses: string[]; type: string },
+      {
+        chainid: string;
+        contractAddresses: string[];
+        type: string;
+      },
       Record<string, unknown>
     >
   ) {
