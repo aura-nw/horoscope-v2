@@ -140,7 +140,9 @@ export default class CW721ReindexingService extends BullableService {
       .select(['cw721_contract.id'])
       .first()
       .throwIfNotFound();
-    const currentHeight = (await CW721Activity.query().max('height'))[0].max;
+    const currentHeight = (
+      await CW721Activity.query().max('height as height').throwIfNotFound()
+    )[0].height;
     await CW721Activity.query()
       .delete()
       .where('cw721_contract_id', cw721Contract.id)
@@ -181,24 +183,27 @@ export default class CW721ReindexingService extends BullableService {
     const smartContracts = await SmartContract.query()
       .withGraphJoined('code')
       .whereIn('address', contractAddresses);
-    // eslint-disable-next-line no-restricted-syntax
-    for (const smartContract of smartContracts) {
-      if (smartContract.code.type === 'CW721') {
-        // eslint-disable-next-line no-await-in-loop
-        await this.createJob(
-          BULL_JOB_NAME.REINDEX_CW721_CONTRACT,
-          BULL_JOB_NAME.REINDEX_CW721_CONTRACT,
-          {
-            contractAddress: smartContract.address,
-            smartContractId: smartContract.id,
-            type,
-          } satisfies ICw721ReindexingServiceParams,
-          {
-            jobId: smartContract.address,
-          }
-        );
-      }
-    }
+    await Promise.all(
+      smartContracts.reduce((acc: Promise<void>[], smartContract) => {
+        if (smartContract.code.type === 'CW721') {
+          acc.push(
+            this.createJob(
+              BULL_JOB_NAME.REINDEX_CW721_CONTRACT,
+              BULL_JOB_NAME.REINDEX_CW721_CONTRACT,
+              {
+                contractAddress: smartContract.address,
+                smartContractId: smartContract.id,
+                type,
+              } satisfies ICw721ReindexingServiceParams,
+              {
+                jobId: smartContract.address,
+              }
+            )
+          );
+        }
+        return acc;
+      }, [])
+    );
   }
 
   async _start(): Promise<void> {
