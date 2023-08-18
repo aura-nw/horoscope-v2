@@ -427,60 +427,108 @@ export default class CrawlTxService extends BullableService {
   }
 
   private setMsgIndexToEvent(tx: any) {
-    // flatten event and decode key value
-    const eventEncodedFlats: any[] = [];
-    tx.tx_response.events.forEach((event: any, index: number) => {
-      event.attributes.forEach((attr: any) => {
-        eventEncodedFlats.push({
-          ...{
-            key: attr.key ? fromUtf8(fromBase64(attr.key)) : null,
-            value: attr.value ? fromUtf8(fromBase64(attr.value)) : null,
-          },
-          indexEvent: index,
-          type: event.type,
-        });
-      });
+    /*------
+    DO NOT USE CURRENTLY
+    MAPPING BY ORDER IN EVENT AND LOG
+    THIS CASE BASED ON ORDER NOT CHANGED BETWEEN EVENT AND LOG
+    --------*/
+    // // flatten event and decode key value
+    // const eventEncodedFlats: any[] = [];
+    // tx.tx_response.events.forEach((event: any, index: number) => {
+    //   event.attributes.forEach((attr: any) => {
+    //     eventEncodedFlats.push({
+    //       ...{
+    //         key: attr.key ? fromUtf8(fromBase64(attr.key)) : null,
+    //         value: attr.value ? fromUtf8(fromBase64(attr.value)) : null,
+    //       },
+    //       indexEvent: index,
+    //       type: event.type,
+    //     });
+    //   });
+    // });
+    // // loop logs (has order for each messages)
+    // tx.tx_response.logs.forEach((log: any, index: number) => {
+    //   // loop each event in log to compare with event encoded
+    //   log.events.forEach((eventInLog: any) => {
+    //     // filter list event has type equal eventInLog.type and not be setted index msg
+    //     const filtedEventByTypeFlat = eventEncodedFlats.filter(
+    //       (eventEncoded: any) =>
+    //         eventEncoded.type === eventInLog.type &&
+    //         eventEncoded.msg_index === undefined
+    //     );
+    //     // mapping between log and event
+    //     this.mappingFlatEventToLog(eventInLog, filtedEventByTypeFlat, index);
+    //   });
+    // });
+    // // set index msg to event encoded
+    // eventEncodedFlats
+    //   .filter((item: any) => item.indexMapped !== undefined)
+    //   .forEach((item: any) => {
+    //     if (
+    //       tx.tx_response.events[item.indexEvent].msg_index !== undefined &&
+    //       tx.tx_response.events[item.indexEvent].msg_index !== item.indexMapped
+    //     ) {
+    //       this.logger.warn(
+    //         `something wrong: setting index ${
+    //           item.indexMapped
+    //         } to existed index ${
+    //           tx.tx_response.eventstx.tx_response.events[item.indexEvent]
+    //             .msg_index
+    //         }`
+    //       );
+    //     }
+    //     // eslint-disable-next-line no-param-reassign
+    //     tx.tx_response.events[item.indexEvent].msg_index = item.indexMapped;
+    //   });
+    // // self check msg index by counting event
+    // const selfCheck = this.selfCheckByAnotherWay(tx);
+    // if (!selfCheck) {
+    //   this.logger.warn('selfcheck fail');
+    // }
+
+    /*---------
+    TESTING
+    MAPPING EVENT BY COUNT EACH LOG AND EVENT MUST BE SAME
+    -----------*/
+    // count total attribute for each message, countAttributeInEvent[i] = x mean message i has x attributes
+    const countAttributeInEvent: number[] = [];
+    tx.tx_response.logs.forEach((log: any) => {
+      const countAttribute = log.events.reduce(
+        (acc: number, curr: any) => acc + curr.attributes.length,
+        0
+      );
+      countAttributeInEvent.push(countAttribute);
     });
 
-    // loop logs (has order for each messages)
-    tx.tx_response.logs.forEach((log: any, index: number) => {
-      // loop each event in log to compare with event encoded
-      log.events.forEach((eventInLog: any) => {
-        // filter list event has type equal eventInLog.type and not be setted index msg
-        const filtedEventByTypeFlat = eventEncodedFlats.filter(
-          (eventEncoded: any) =>
-            eventEncoded.type === eventInLog.type &&
-            eventEncoded.msg_index === undefined
-        );
-
-        // mapping between log and event
-        this.mappingFlatEventToLog(eventInLog, filtedEventByTypeFlat, index);
-      });
-    });
-    // set index msg to event encoded
-    eventEncodedFlats
-      .filter((item: any) => item.indexMapped !== undefined)
-      .forEach((item: any) => {
+    let reachLastEventTypeTx = false;
+    let countCurrentAttribute = 0;
+    let currentCompareEventId = 0;
+    for (let i = 0; i < tx.tx_response.events.length; i += 1) {
+      if (tx.tx_response.events[i].type === 'tx') {
+        reachLastEventTypeTx = true;
+      }
+      if (reachLastEventTypeTx && tx.tx_response.events[i].type !== 'tx') {
         if (
-          tx.tx_response.events[item.indexEvent].msg_index !== undefined &&
-          tx.tx_response.events[item.indexEvent].msg_index !== item.indexMapped
+          countCurrentAttribute < countAttributeInEvent[currentCompareEventId]
         ) {
-          this.logger.warn(
-            `something wrong: setting index ${
-              item.indexMapped
-            } to existed index ${
-              tx.tx_response.eventstx.tx_response.events[item.indexEvent]
-                .msg_index
-            }`
-          );
+          countCurrentAttribute += tx.tx_response.events[i].attributes.length;
+          // eslint-disable-next-line no-param-reassign
+          tx.tx_response.events[i].msg_index = currentCompareEventId;
         }
-        // eslint-disable-next-line no-param-reassign
-        tx.tx_response.events[item.indexEvent].msg_index = item.indexMapped;
-      });
-    // self check msg index by counting event
-    const selfCheck = this.selfCheckByAnotherWay(tx);
-    if (!selfCheck) {
-      this.logger.warn('selfcheck fail');
+
+        // after count, check if count is equal countAttributeInEvent[currentCompareEventId] or not
+        if (
+          countCurrentAttribute === countAttributeInEvent[currentCompareEventId]
+        ) {
+          // if true, count success, then next currentCompareEventId and reset count = 0
+          currentCompareEventId += 1;
+          countCurrentAttribute = 0;
+        } else if (
+          countCurrentAttribute > countAttributeInEvent[currentCompareEventId]
+        ) {
+          this.logger.warn('Count event in log is not equal event encoded');
+        }
+      }
     }
   }
 
