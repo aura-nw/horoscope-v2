@@ -4,6 +4,7 @@ import { AfterEach, BeforeEach, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { Log } from '@cosmjs/stargate/build/logs';
 import { Attribute, Event } from '@cosmjs/stargate/build/events';
+import { fromBase64, fromUtf8 } from '@cosmjs/encoding';
 import {
   Transaction,
   Event as EventModel,
@@ -537,14 +538,35 @@ export default class CrawlTransactionTest {
 
   @Test('Mapping event and log')
   public async testMappingEventToLog() {
-    this.crawlTxService?.mappingEventToLog(
+    const eventEncodedFlats: any[] = [];
+    this.arrSrc.forEach((event: any, index: number) => {
+      event.attributes.forEach((attr: any) => {
+        eventEncodedFlats.push({
+          ...{
+            key: attr.key ? fromUtf8(fromBase64(attr.key)) : null,
+            value: attr.value ? fromUtf8(fromBase64(attr.value)) : null,
+          },
+          indexEvent: index,
+          type: event.type,
+        });
+      });
+    });
+
+    this.crawlTxService?.mappingFlatEventToLog(
       this.arrDest,
       this.arrSrc,
       this.arrDest.index
     );
-    this.arrSrc.forEach((item) => {
-      expect(item.checkedIndex).toEqual(item.msg_index);
-    });
+
+    eventEncodedFlats
+      .filter((item: any) => item.indexMapped !== undefined)
+      .forEach((item: any) => {
+        // eslint-disable-next-line no-param-reassign
+        this.arrSrc[item.indexEvent].msg_index = item.indexMapped;
+        expect(this.arrSrc[item.indexEvent].msg_index).toEqual(
+          item.checkedIndex
+        );
+      });
   }
 
   @AfterEach()
