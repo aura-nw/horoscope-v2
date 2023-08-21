@@ -63,7 +63,7 @@ export default class CrawlIbcAppService extends BullableService {
   }
 
   async handleIbcMessage(events: Event[], trx: Knex.Transaction) {
-    const ibcMessage = events.map((event) => {
+    const ibcMessages = events.map((event) => {
       const srcChannel = getAttributeFrom(
         event.attributes,
         EventAttribute.ATTRIBUTE_KEY.SRC_CHANNEL
@@ -100,8 +100,8 @@ export default class CrawlIbcAppService extends BullableService {
         data: dataHex ? fromUtf8(fromHex(dataHex)) : null,
       });
     });
-    if (ibcMessage.length > 0) {
-      await IbcMessage.query().insert(ibcMessage).transacting(trx);
+    if (ibcMessages.length > 0) {
+      await IbcMessage.query().insert(ibcMessages).transacting(trx);
     }
   }
 

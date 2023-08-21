@@ -5,8 +5,6 @@ import { IbcChannel } from './ibc_channel';
 import { TransactionMessage } from './transaction_message';
 
 export class IbcMessage extends BaseModel {
-  [relation: string]: any | any[];
-
   id!: number;
 
   transaction_message_id!: number;
@@ -53,7 +51,6 @@ export class IbcMessage extends BaseModel {
         type: { type: 'string' },
         sequence: { type: 'number' },
         sequence_key: { type: 'string' },
-        status: { type: 'boolean' },
       },
     };
   }
