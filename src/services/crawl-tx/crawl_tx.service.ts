@@ -426,6 +426,38 @@ export default class CrawlTxService extends BullableService {
     return true;
   }
 
+  private checkMappingEventToLog(tx: any) {
+    const checkResult = tx?.tx_response?.logs?.every(
+      (log: any, index: number) =>
+        log?.events?.every((event: any) =>
+          event?.attributes?.every((attr: any) => {
+            const filtedEvent = tx?.tx_response?.events?.filter(
+              (item: any) =>
+                item.type === event.type && item.msg_index === index
+            );
+
+            return filtedEvent.some((event: any) =>
+              event.attributes.some((attrEncoded: any) => {
+                const key = attrEncoded.key
+                  ? fromUtf8(fromBase64(attrEncoded.key))
+                  : null;
+                const value = attrEncoded.value
+                  ? fromUtf8(fromBase64(attrEncoded.value))
+                  : null;
+                if (key === attr.key && value === attr.value) {
+                  return true;
+                }
+                return false;
+              })
+            );
+          })
+        )
+    );
+    if (checkResult === false) {
+      this.logger.warn('Mapping event to log is wrong');
+    }
+  }
+
   private setMsgIndexToEvent(tx: any) {
     /*------
     DO NOT USE CURRENTLY
@@ -492,7 +524,7 @@ export default class CrawlTxService extends BullableService {
     -----------*/
     // count total attribute for each message, countAttributeInEvent[i] = x mean message i has x attributes
     const countAttributeInEvent: number[] = [];
-    tx.tx_response.logs.forEach((log: any) => {
+    tx?.tx_response?.logs?.forEach((log: any) => {
       const countAttribute = log.events.reduce(
         (acc: number, curr: any) => acc + curr.attributes.length,
         0
@@ -503,7 +535,7 @@ export default class CrawlTxService extends BullableService {
     let reachLastEventTypeTx = false;
     let countCurrentAttribute = 0;
     let currentCompareEventId = 0;
-    for (let i = 0; i < tx.tx_response.events.length; i += 1) {
+    for (let i = 0; i < tx?.tx_response?.events?.length; i += 1) {
       if (tx.tx_response.events[i].type === 'tx') {
         reachLastEventTypeTx = true;
       }
@@ -530,6 +562,7 @@ export default class CrawlTxService extends BullableService {
         }
       }
     }
+    this.checkMappingEventToLog(tx);
   }
 
   private _findAttribute(
