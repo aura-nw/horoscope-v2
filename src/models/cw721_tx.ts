@@ -4,6 +4,7 @@ import BaseModel from './base';
 import CW721Contract from './cw721_contract';
 import CW721Token from './cw721_token';
 import { SmartContractEvent } from './smart_contract_event';
+import { Event } from './event';
 
 export default class CW721Activity extends BaseModel {
   static softDelete = false;
@@ -75,6 +76,18 @@ export default class CW721Activity extends BaseModel {
         join: {
           from: 'cw721_activity.smart_contract_event_id',
           to: 'smart_contract_event.id',
+        },
+      },
+      event: {
+        relation: Model.HasOneThroughRelation,
+        modelClass: Event,
+        join: {
+          from: 'cw721_activity.smart_contract_event_id',
+          to: 'event.id',
+          through: {
+            from: 'smart_contract_event.id',
+            to: 'smart_contract_event.event_id',
+          },
         },
       },
     };
