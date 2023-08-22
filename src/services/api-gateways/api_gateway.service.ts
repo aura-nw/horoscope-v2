@@ -32,8 +32,9 @@ import { bullBoardMixin } from '../../mixins/bullBoard/bullBoard.mixin';
         autoAliases: true, // allow generate rest info (GET/PUT/POST...) in the services
         mappingPolicy: 'restrict', // allow action called with exact method
         whitelist: [
-          'v2.statistics.syncPrevDateStatsByChainId',
           'v1.cw20-admin.*',
+          'v1.cw721-admin.*',
+          'v2.statistics.syncPrevDateStatsByChainId',
         ],
       },
     ],
