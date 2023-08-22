@@ -12,6 +12,9 @@ RUN npm install && rm .npmrc
 # Copy source
 COPY . .
 
+## Install hasura cli
+RUN apk update && apk add bash curl && curl -L https://github.com/hasura/graphql-engine/raw/stable/cli/get.sh | bash
+
 # Build and cleanup
 ENV NODE_ENV=production
 RUN npm run build
