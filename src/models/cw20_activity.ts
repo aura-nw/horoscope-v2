@@ -3,8 +3,12 @@ import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
 import { Cw20Contract } from './cw20_contract';
 import { SmartContract } from './smart_contract';
+import { SmartContractEvent } from './smart_contract_event';
+import { Event } from './event';
 
 export class Cw20Event extends BaseModel {
+  static softDelete = false;
+
   [relation: string]: any;
 
   id!: number;
@@ -65,6 +69,26 @@ export class Cw20Event extends BaseModel {
           through: {
             from: 'cw20_contract.id',
             to: 'cw20_contract.smart_contract_id',
+          },
+        },
+      },
+      smart_contract_event: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: SmartContractEvent,
+        join: {
+          from: 'cw20_activity.smart_contract_event_id',
+          to: 'smart_contract_event.id',
+        },
+      },
+      event: {
+        relation: Model.HasOneThroughRelation,
+        modelClass: Event,
+        join: {
+          from: 'cw20_activity.smart_contract_event_id',
+          to: 'event.id',
+          through: {
+            from: 'smart_contract_event.id',
+            to: 'smart_contract_event.event_id',
           },
         },
       },

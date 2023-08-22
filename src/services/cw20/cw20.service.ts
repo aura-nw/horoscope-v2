@@ -1,4 +1,5 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+import { Queue } from 'bullmq';
 import { Knex } from 'knex';
 import _ from 'lodash';
 import { ServiceBroker } from 'moleculer';
@@ -34,6 +35,13 @@ export const CW20_ACTION = {
   BURN_FROM: 'burn_from',
   SEND_FROM: 'send_from',
 };
+export interface ICw20ReindexingHistoryParams {
+  smartContractId: number;
+  startBlock: number;
+  endBlock: number;
+  prevId: number;
+  contractAddress: string;
+}
 @Service({
   name: SERVICE.V1.Cw20.key,
   version: 1,
@@ -205,42 +213,40 @@ export default class Cw20Service extends BullableService {
     }
   }
 
-  async getCw20ContractEvents(startBlock: number, endBlock: number) {
+  async getCw20ContractEvents(
+    startBlock: number,
+    endBlock: number,
+    smartContractId?: number,
+    page?: { prevId: number; limit: number }
+  ) {
     return SmartContractEvent.query()
-      .alias('smart_contract_event')
-      .withGraphJoined(
-        '[message(selectMessage), tx(selectTransaction), attributes(selectAttribute), smart_contract(selectSmartContract).code(selectCode)]'
-      )
-      .modifiers({
-        selectCode(builder) {
-          builder.select('type');
-        },
-        selectTransaction(builder) {
-          builder.select('hash', 'height');
-        },
-        selectMessage(builder) {
-          builder.select('sender', 'content');
-        },
-        selectAttribute(builder) {
-          builder.select('key', 'value');
-        },
-        selectSmartContract(builder) {
-          builder.select('address', 'id');
-        },
-      })
+      .withGraphFetched('attributes(selectAttribute)')
+      .joinRelated('[message, tx, smart_contract.code]')
       .where('smart_contract:code.type', 'CW20')
       .where('tx.height', '>', startBlock)
       .andWhere('tx.height', '<=', endBlock)
+      .modify((builder) => {
+        if (smartContractId) {
+          builder.andWhere('smart_contract.id', smartContractId);
+        }
+        if (page) {
+          builder
+            .andWhere('smart_contract_event.id', '>', page.prevId)
+            .orderBy('smart_contract_event.id', 'asc')
+            .limit(page.limit);
+        }
+      })
       .select(
         'message.sender as sender',
         'smart_contract.address as contract_address',
         'smart_contract_event.action',
-        'smart_contract_event.event_id as event_id',
-        'smart_contract_event.index',
+        'smart_contract_event.event_id',
         'smart_contract.id as smart_contract_id',
-        'tx.height as height',
-        'smart_contract_event.id as smart_contract_event_id'
-      );
+        'smart_contract_event.id as smart_contract_event_id',
+        'tx.hash',
+        'tx.height'
+      )
+      .orderBy('smart_contract_event.id', 'asc');
   }
 
   async handleStatistic(startBlock: number) {
@@ -302,5 +308,46 @@ export default class Cw20Service extends BullableService {
       );
     }
     return super._start();
+  }
+
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.REINDEX_CW20_HISTORY,
+    jobName: BULL_JOB_NAME.REINDEX_CW20_HISTORY,
+  })
+  public async reindexHistory(_payload: ICw20ReindexingHistoryParams) {
+    const { smartContractId, startBlock, endBlock, prevId, contractAddress } =
+      _payload;
+    // insert data from event_attribute_backup to event_attribute
+    const { limitRecordGet } = config.cw20.reindexHistory;
+    const events = await this.getCw20ContractEvents(
+      startBlock,
+      endBlock,
+      smartContractId,
+      { limit: limitRecordGet, prevId }
+    );
+    if (events.length > 0) {
+      await knex.transaction(async (trx) => {
+        await this.handleCw20Histories(events, trx);
+      });
+      await this.createJob(
+        BULL_JOB_NAME.REINDEX_CW20_HISTORY,
+        BULL_JOB_NAME.REINDEX_CW20_HISTORY,
+        {
+          smartContractId,
+          startBlock,
+          endBlock,
+          prevId: events[events.length - 1].smart_contract_event_id,
+          contractAddress,
+        } satisfies ICw20ReindexingHistoryParams,
+        {
+          removeOnComplete: true,
+        }
+      );
+    } else {
+      const queue: Queue = this.getQueueManager().getQueue(
+        BULL_JOB_NAME.REINDEX_CW20_CONTRACT
+      );
+      (await queue.getJob(contractAddress))?.remove();
+    }
   }
 }
