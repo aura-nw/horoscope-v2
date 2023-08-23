@@ -27,10 +27,7 @@
     "test-ci": "yarn jest --verbose --runInBand --forceExit",
     "test-watch": "yarn jest --watch",
     "test-coverage": "yarn jest --coverage",
-    "lint": "echo 'Running lint for repository' && eslint .",
-    "hasura:metadata:export": "touch config.yaml; hasura metadata export --envfile .env.hasura;rm config.yaml;",
-    "hasura:metadata:diff": "touch config.yaml; hasura metadata diff --envfile .env.hasura;rm config.yaml;",
-    "hasura:metadata:apply": "touch config.yaml; hasura metadata apply --envfile .env.hasura;rm config.yaml;"
+    "lint": "echo 'Running lint for repository' && eslint ."
   },
   "nodemonConfig": {
     "ignore": [

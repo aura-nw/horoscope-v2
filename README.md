@@ -67,17 +67,23 @@ npm run dev
 Read [link](https://hasura.io/docs/latest/hasura-cli/install-hasura-cli/) to install Hasura CLI for your operating system. To make update to hasura metadata programmatically, use sample code below:
 
 ```
+# init hasura directory
+hasura init hasura
+
 # create file env hasura
-cp .env.hasura.sample .env.hasura
+cp .env.hasura.sample hasura/.env
+
+# go to hasura directory
+cd hasura
 
 # export current metadata from hasura
-npm run hasura:metadata:export
+hasura metadata export
 
 # check current diff between local and hasura server
-npm run hasura:metadata:diff
+hasura metadata diff
 
 # apply current hasura metadata to server
-npm run hasura:metadata:apply
+hasura metadata apply
 ```
 
 ## Configuration
