@@ -25,6 +25,8 @@ export class IbcMessage extends BaseModel {
 
   data!: any;
 
+  message!: TransactionMessage;
+
   static get tableName() {
     return 'ibc_message';
   }

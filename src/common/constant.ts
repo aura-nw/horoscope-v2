@@ -80,6 +80,7 @@ export const BULL_JOB_NAME = {
   REINDEX_HISTORY_CW721_CONTRACT: 'reindex:cw721-history-contract',
   JOB_CREATE_COMPOSITE_INDEX_ATTR_PARTITION:
     'job:create-index-composite-attr-partition',
+  CRAWL_IBC_ICS20: 'crawl:ibc-ics20',
 };
 
 export const SERVICE = {
@@ -292,6 +293,10 @@ export const SERVICE = {
         key: 'HealthCheck',
         path: 'v1.ServicesManager.HealthCheck',
       },
+    },
+    CrawlIBCIcs20Service: {
+      key: 'CrawlIBCIcs20Service',
+      name: 'v1.CrawlIBCIcs20Service',
     },
   },
 };
