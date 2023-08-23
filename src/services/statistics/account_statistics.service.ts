@@ -418,23 +418,4 @@ export default class AccountStatisticsService extends BullableService {
       top_gas_used: topGasUsed,
     };
   }
-
-  async _start(): Promise<void> {
-    this.createJob(
-      BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
-      BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
-      {
-        date: '2023-08-23',
-      },
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-        attempts: config.jobRetryAttempt,
-        backoff: config.jobRetryBackoff,
-      }
-    );
-    return super._start();
-  }
 }
