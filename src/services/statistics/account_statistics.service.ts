@@ -259,8 +259,9 @@ export default class AccountStatisticsService extends BullableService {
         .map((event) => Object.assign({}, ...event.jsonb_agg))
         .map(
           (event) =>
-            event[EventAttribute.ATTRIBUTE_COMPOSITE_KEY.TX_FEE_PAYER] ??
-            event[EventAttribute.ATTRIBUTE_COMPOSITE_KEY.USE_FEEGRANT_GRANTEE]
+            event[
+              EventAttribute.ATTRIBUTE_COMPOSITE_KEY.USE_FEEGRANT_GRANTEE
+            ] ?? event[EventAttribute.ATTRIBUTE_COMPOSITE_KEY.TX_FEE_PAYER]
         )
         .forEach((address) => {
           if (!accountStats[address]) {
@@ -416,5 +417,24 @@ export default class AccountStatisticsService extends BullableService {
       top_tx_sent: topTxSent,
       top_gas_used: topGasUsed,
     };
+  }
+
+  async _start(): Promise<void> {
+    this.createJob(
+      BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
+      BULL_JOB_NAME.CRAWL_ACCOUNT_STATISTICS,
+      {
+        date: '2023-08-23',
+      },
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        attempts: config.jobRetryAttempt,
+        backoff: config.jobRetryBackoff,
+      }
+    );
+    return super._start();
   }
 }
