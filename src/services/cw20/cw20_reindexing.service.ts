@@ -96,7 +96,7 @@ export default class Cw20ReindexingContract extends BullableService {
     const maxUpdatedHeightOwner =
       _.max(initBalances.map((holder) => holder.event_height)) || 0;
     let id = -1;
-      let lastUpdatedHeight = -1;
+    let lastUpdatedHeight = -1;
     await knex.transaction(async (trx) => {
       if (cw20Contract) {
         await Cw20Event.query()

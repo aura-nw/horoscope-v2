@@ -580,6 +580,7 @@ export default class Cw721HandlerService extends BullableService {
         BULL_JOB_NAME.REINDEX_CW721_CONTRACT
       );
       await queue.remove(contractAddress);
+      this.logger.info('Reindex cw721 history done!!!');
     }
   }
 
