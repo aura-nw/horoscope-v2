@@ -184,5 +184,11 @@
     "key": "crawlIbcApp",
     "millisecondRepeatJob": 2000,
     "blocksPerCall": 100
+  },
+  "crawlIbcIcs20": {
+    "key": "crawlIbcIcs20",
+    "millisecondRepeatJob": 2000,
+    "blocksPerCall": 100,
+    "port": "transfer"
   }
 }
