@@ -22,6 +22,8 @@ export class TransactionMessage extends BaseModel {
 
   parent_id!: number;
 
+  events!: Event[];
+
   static get tableName() {
     return 'transaction_message';
   }
