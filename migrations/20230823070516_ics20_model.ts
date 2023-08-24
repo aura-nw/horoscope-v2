@@ -3,7 +3,7 @@ import { Knex } from 'knex';
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('ibc_ics20', (table) => {
     table.increments();
-    table.string('ibc_message_id').notNullable().unique();
+    table.integer('ibc_message_id').notNullable().unique();
     table.string('sender').index();
     table.string('receiver').index().notNullable();
     table.decimal('amount', 80, 0).notNullable();
