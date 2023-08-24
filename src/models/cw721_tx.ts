@@ -29,7 +29,7 @@ export default class CW721Activity extends BaseModel {
 
   to?: string;
 
-  height?: number;
+  height!: number;
 
   smart_contract_event_id!: number;
 
