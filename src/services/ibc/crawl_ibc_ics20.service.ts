@@ -1,9 +1,11 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+import { Knex } from 'knex';
 import { ServiceBroker } from 'moleculer';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
-import { BlockCheckpoint, IbcMessage } from '../../models';
+import knex from '../../common/utils/db_connection';
+import { BlockCheckpoint, IbcIcs20, IbcMessage } from '../../models';
 
 const PORT = config.crawlIbcIcs20.port;
 @Service({
@@ -30,33 +32,33 @@ export default class CrawlIBCIcs20Service extends BullableService {
       `Handle IBC/ICS20, startHeight: ${startHeight}, endHeight: ${endHeight}`
     );
     if (startHeight > endHeight) return;
-    const ics20Transfers = await IbcMessage.query()
-      .withGraphFetched('message.events(selectIcs20Event).attributes')
+    await knex.transaction(async (trx) => {
+      await this.handleIcs20Send(startHeight, endHeight, trx);
+    });
+    this.logger.info(updateBlockCheckpoint);
+  }
+
+  async handleIcs20Send(
+    startHeight: number,
+    endHeight: number,
+    trx: Knex.Transaction
+  ) {
+    const ics20Sends = await IbcMessage.query()
       .joinRelated('message.transaction')
-      .modifiers({
-        selectIcs20Event(builder) {
-          builder.where('type', 'fungible_token_packet');
-        },
-      })
       .where('src_port_id', PORT)
-      .andWhere('ibc_message.type', IbcMessage.EVENT_TYPE.ACKNOWLEDGE_PACKET)
+      .andWhere('ibc_message.type', IbcMessage.EVENT_TYPE.SEND_PACKET)
       .andWhere('message:transaction.height', '>', startHeight)
       .andWhere('message:transaction.height', '<=', endHeight)
       .orderBy('message.id');
-    const ics20Receives = await IbcMessage.query()
-      .withGraphFetched('message.events(selectIcs20Event).attributes')
-      .joinRelated('message.transaction')
-      .modifiers({
-        selectIcs20Event(builder) {
-          builder.where('type', 'fungible_token_packet');
-        },
-      })
-      .where('src_port_id', PORT)
-      .andWhere('ibc_message.type', IbcMessage.EVENT_TYPE.RECV_PACKET)
-      .andWhere('message:transaction.height', '>', startHeight)
-      .andWhere('message:transaction.height', '<=', endHeight)
-      .orderBy('message.id');
-    this.logger.info(ics20Transfers, ics20Receives, updateBlockCheckpoint);
+    if (ics20Sends.length > 0) {
+      const ibcIcs20s = ics20Sends.map((msg) =>
+        IbcIcs20.fromJson({
+          ibc_message_id: msg.id,
+          ...msg.data,
+        })
+      );
+      await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
+    }
   }
 
   async _start(): Promise<void> {
