@@ -113,6 +113,8 @@ export class EventAttribute extends BaseModel {
     DST_CHANNEL: 'packet_dst_channel',
     FEE: 'fee',
     FEE_PAYER: 'fee_payer',
+    DENOM: 'denom',
+    SUCCESS: 'success',
   };
 
   static ATTRIBUTE_COMPOSITE_KEY = {
