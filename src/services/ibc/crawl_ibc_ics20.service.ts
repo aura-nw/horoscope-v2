@@ -5,7 +5,13 @@ import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
 import knex from '../../common/utils/db_connection';
-import { BlockCheckpoint, IbcIcs20, IbcMessage } from '../../models';
+import {
+  BlockCheckpoint,
+  EventAttribute,
+  IbcIcs20,
+  IbcMessage,
+} from '../../models';
+import { getAttributesFrom } from '../../common/utils/utils';
 
 const PORT = config.crawlIbcIcs20.port;
 @Service({
@@ -34,6 +40,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
     if (startHeight > endHeight) return;
     await knex.transaction(async (trx) => {
       await this.handleIcs20Send(startHeight, endHeight, trx);
+      await this.handleIcs20Recv(startHeight, endHeight, trx);
     });
     this.logger.info(updateBlockCheckpoint);
   }
@@ -57,6 +64,57 @@ export default class CrawlIBCIcs20Service extends BullableService {
           ...msg.data,
         })
       );
+      await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
+    }
+  }
+
+  async handleIcs20Recv(
+    startHeight: number,
+    endHeight: number,
+    trx: Knex.Transaction
+  ) {
+    const ics20Recvs = await IbcMessage.query()
+      .withGraphFetched('message.events(selectIcs20Event).attributes')
+      .joinRelated('message.transaction')
+      .modifiers({
+        selectIcs20Event(builder) {
+          builder
+            .where('type', IbcIcs20.EVENT_TYPE.FUNGIBLE_TOKEN_PACKET)
+            .orWhere('type', IbcIcs20.EVENT_TYPE.DENOM_TRACE);
+        },
+      })
+      .where('dst_port_id', PORT)
+      .andWhere('ibc_message.type', IbcMessage.EVENT_TYPE.RECV_PACKET)
+      .andWhere('message:transaction.height', '>', startHeight)
+      .andWhere('message:transaction.height', '<=', endHeight)
+      .orderBy('message.id');
+    if (ics20Recvs.length > 0) {
+      const ibcIcs20s = ics20Recvs.map((msg) => {
+        const recvEvent = msg.message.events.find(
+          (e) => e.type === IbcIcs20.EVENT_TYPE.FUNGIBLE_TOKEN_PACKET
+        );
+        if (recvEvent === undefined) {
+          throw Error(`Recv ibc hasn't emmitted events: ${  msg.id}`);
+        }
+        const [sender, receiver, amount, denom, ackStatus] = getAttributesFrom(
+          recvEvent.attributes,
+          [
+            EventAttribute.ATTRIBUTE_KEY.SENDER,
+            EventAttribute.ATTRIBUTE_KEY.RECEIVER,
+            EventAttribute.ATTRIBUTE_KEY.AMOUNT,
+            EventAttribute.ATTRIBUTE_KEY.DENOM,
+            EventAttribute.ATTRIBUTE_KEY.SUCCESS,
+          ]
+        );
+        return IbcIcs20.fromJson({
+          ibc_message_id: msg.id,
+          sender,
+          receiver,
+          amount,
+          denom,
+          ack_status: ackStatus === 'true',
+        });
+      });
       await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
     }
   }
