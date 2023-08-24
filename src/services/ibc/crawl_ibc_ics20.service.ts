@@ -94,17 +94,24 @@ export default class CrawlIBCIcs20Service extends BullableService {
           (e) => e.type === IbcIcs20.EVENT_TYPE.FUNGIBLE_TOKEN_PACKET
         );
         if (recvEvent === undefined) {
-          throw Error(`Recv ibc hasn't emmitted events: ${  msg.id}`);
+          throw Error(`Recv ibc hasn't emmitted events: ${msg.id}`);
         }
-        const [sender, receiver, amount, denom, ackStatus] = getAttributesFrom(
-          recvEvent.attributes,
-          [
+        const [sender, receiver, amount, originalDenom, ackStatus] =
+          getAttributesFrom(recvEvent.attributes, [
             EventAttribute.ATTRIBUTE_KEY.SENDER,
             EventAttribute.ATTRIBUTE_KEY.RECEIVER,
             EventAttribute.ATTRIBUTE_KEY.AMOUNT,
             EventAttribute.ATTRIBUTE_KEY.DENOM,
             EventAttribute.ATTRIBUTE_KEY.SUCCESS,
-          ]
+          ]);
+        const denomTraceEvent = msg.message.events.find(
+          (e) => e.type === IbcIcs20.EVENT_TYPE.DENOM_TRACE
+        );
+        const denom = this.parseDenom(
+          originalDenom,
+          denomTraceEvent === undefined,
+          msg.dst_port_id,
+          msg.dst_channel_id
         );
         return IbcIcs20.fromJson({
           ibc_message_id: msg.id,
@@ -117,6 +124,19 @@ export default class CrawlIBCIcs20Service extends BullableService {
       });
       await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
     }
+  }
+
+  parseDenom(
+    denom: string,
+    isSource: boolean,
+    dstPort: string,
+    dstChannel: string
+  ) {
+    if (isSource) {
+      const tokens2 = denom.split('/').slice(2);
+      return tokens2.join('/');
+    }
+    return `${dstPort  }/${  dstChannel  }/${  denom}`;
   }
 
   async _start(): Promise<void> {
