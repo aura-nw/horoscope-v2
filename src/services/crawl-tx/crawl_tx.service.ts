@@ -428,8 +428,8 @@ export default class CrawlTxService extends BullableService {
 
   private checkMappingEventToLog(tx: any) {
     this.logger.info('checking mapping log in tx :', tx.tx_response.txhash);
-    const flattenLog: string[] = [];
-    const flattenEventEncoded: string[] = [];
+    let flattenLog: string[] = [];
+    let flattenEventEncoded: string[] = [];
 
     tx?.tx_response?.logs.forEach((log: any, index: number) => {
       log.events.forEach((event: any) => {
@@ -454,14 +454,11 @@ export default class CrawlTxService extends BullableService {
     if (flattenLog.length !== flattenEventEncoded.length) {
       this.logger.warn('Length between 2 flatten array is not equal');
     }
-    const checkResult = flattenLog.every((item: any) => {
-      const foundIndex = flattenEventEncoded.findIndex((e) => e === item);
-      if (foundIndex !== -1) {
-        flattenEventEncoded[foundIndex] = 'null';
-        return true;
-      }
-      return false;
-    });
+    flattenLog = flattenLog.sort();
+    flattenEventEncoded = flattenEventEncoded.sort();
+    const checkResult = flattenLog.every(
+      (item: string, index: number) => item === flattenEventEncoded[index]
+    );
     if (checkResult === false) {
       this.logger.warn('Mapping event to log is wrong');
     }
