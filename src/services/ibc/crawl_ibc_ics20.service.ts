@@ -41,6 +41,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
     await knex.transaction(async (trx) => {
       await this.handleIcs20Send(startHeight, endHeight, trx);
       await this.handleIcs20Recv(startHeight, endHeight, trx);
+      await this.handleIcs20Ack(startHeight, endHeight, trx);
     });
     this.logger.info(updateBlockCheckpoint);
   }
@@ -126,6 +127,54 @@ export default class CrawlIBCIcs20Service extends BullableService {
     }
   }
 
+  async handleIcs20Ack(
+    startHeight: number,
+    endHeight: number,
+    trx: Knex.Transaction
+  ) {
+    const ics20Acks = await IbcMessage.query()
+      .withGraphFetched('message.events(selectIcs20Event).attributes')
+      .joinRelated('message.transaction')
+      .modifiers({
+        selectIcs20Event(builder) {
+          builder.where('type', IbcIcs20.EVENT_TYPE.FUNGIBLE_TOKEN_PACKET);
+        },
+      })
+      .where('src_port_id', PORT)
+      .andWhere('ibc_message.type', IbcMessage.EVENT_TYPE.ACKNOWLEDGE_PACKET)
+      .andWhere('message:transaction.height', '>', startHeight)
+      .andWhere('message:transaction.height', '<=', endHeight)
+      .orderBy('message.id');
+    if (ics20Acks.length > 0) {
+      const ibcIcs20s = ics20Acks.map((msg) => {
+        const ackEvents = msg.message.events;
+        if (ackEvents.length !== 2) {
+          throw Error(`Ack ibc hasn't emmitted enough events: ${msg.id}`);
+        }
+        const [sender, receiver, amount, denom] = getAttributesFrom(
+          ackEvents[0].attributes,
+          [
+            EventAttribute.ATTRIBUTE_KEY.SENDER,
+            EventAttribute.ATTRIBUTE_KEY.RECEIVER,
+            EventAttribute.ATTRIBUTE_KEY.AMOUNT,
+            EventAttribute.ATTRIBUTE_KEY.DENOM,
+          ]
+        );
+        return IbcIcs20.fromJson({
+          ibc_message_id: msg.id,
+          sender,
+          receiver,
+          amount,
+          denom,
+          ack_status:
+            ackEvents[1].attributes[0].key ===
+            EventAttribute.ATTRIBUTE_KEY.SUCCESS,
+        });
+      });
+      await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
+    }
+  }
+
   parseDenom(
     denom: string,
     isSource: boolean,
@@ -136,7 +185,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
       const tokens2 = denom.split('/').slice(2);
       return tokens2.join('/');
     }
-    return `${dstPort  }/${  dstChannel  }/${  denom}`;
+    return `${dstPort}/${dstChannel}/${denom}`;
   }
 
   async _start(): Promise<void> {
