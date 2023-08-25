@@ -42,8 +42,14 @@ export default class CrawlIBCIcs20Service extends BullableService {
       await this.handleIcs20Send(startHeight, endHeight, trx);
       await this.handleIcs20Recv(startHeight, endHeight, trx);
       await this.handleIcs20Ack(startHeight, endHeight, trx);
+      await this.handleIcs20Timeout(startHeight, endHeight, trx);
+      updateBlockCheckpoint.height = endHeight;
+      await BlockCheckpoint.query()
+        .transacting(trx)
+        .insert(updateBlockCheckpoint)
+        .onConflict('job_name')
+        .merge();
     });
-    this.logger.info(updateBlockCheckpoint);
   }
 
   async handleIcs20Send(
@@ -169,6 +175,46 @@ export default class CrawlIBCIcs20Service extends BullableService {
           ack_status:
             ackEvents[1].attributes[0].key ===
             EventAttribute.ATTRIBUTE_KEY.SUCCESS,
+        });
+      });
+      await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
+    }
+  }
+
+  async handleIcs20Timeout(
+    startHeight: number,
+    endHeight: number,
+    trx: Knex.Transaction
+  ) {
+    const ics20Timeouts = await IbcMessage.query()
+      .withGraphFetched('message.events(selectIcs20Event).attributes')
+      .joinRelated('message.transaction')
+      .modifiers({
+        selectIcs20Event(builder) {
+          builder.where('type', IbcIcs20.EVENT_TYPE.TIMEOUT);
+        },
+      })
+      .where('src_port_id', PORT)
+      .andWhere('ibc_message.type', IbcMessage.EVENT_TYPE.TIMEOUT_PACKET)
+      .andWhere('message:transaction.height', '>', startHeight)
+      .andWhere('message:transaction.height', '<=', endHeight)
+      .orderBy('message.id');
+    if (ics20Timeouts.length > 0) {
+      const ibcIcs20s = ics20Timeouts.map((msg) => {
+        const timeoutEvent = msg.message.events[0];
+        const [receiver, amount, denom] = getAttributesFrom(
+          timeoutEvent.attributes,
+          [
+            EventAttribute.ATTRIBUTE_KEY.REFUND_RECEIVER,
+            EventAttribute.ATTRIBUTE_KEY.REFUND_AMOUNT,
+            EventAttribute.ATTRIBUTE_KEY.REFUND_DENOM,
+          ]
+        );
+        return IbcIcs20.fromJson({
+          ibc_message_id: msg.id,
+          receiver,
+          amount,
+          denom,
         });
       });
       await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
