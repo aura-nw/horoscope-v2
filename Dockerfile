@@ -1,5 +1,8 @@
 FROM node:16-alpine
 
+## Install hasura cli
+RUN apk update && apk add bash curl && curl -L https://github.com/hasura/graphql-engine/raw/stable/cli/get.sh | bash
+
 # Working directory
 WORKDIR /app
 
