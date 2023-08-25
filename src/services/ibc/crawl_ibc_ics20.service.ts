@@ -63,7 +63,8 @@ export default class CrawlIBCIcs20Service extends BullableService {
       .andWhere('ibc_message.type', IbcMessage.EVENT_TYPE.SEND_PACKET)
       .andWhere('message:transaction.height', '>', startHeight)
       .andWhere('message:transaction.height', '<=', endHeight)
-      .orderBy('message.id');
+      .orderBy('message.id')
+      .transacting(trx);
     if (ics20Sends.length > 0) {
       const ibcIcs20s = ics20Sends.map((msg) =>
         IbcIcs20.fromJson({
@@ -94,7 +95,8 @@ export default class CrawlIBCIcs20Service extends BullableService {
       .andWhere('ibc_message.type', IbcMessage.EVENT_TYPE.RECV_PACKET)
       .andWhere('message:transaction.height', '>', startHeight)
       .andWhere('message:transaction.height', '<=', endHeight)
-      .orderBy('message.id');
+      .orderBy('message.id')
+      .transacting(trx);
     if (ics20Recvs.length > 0) {
       const ibcIcs20s = ics20Recvs.map((msg) => {
         const recvEvent = msg.message.events.find(
@@ -150,20 +152,22 @@ export default class CrawlIBCIcs20Service extends BullableService {
       .andWhere('ibc_message.type', IbcMessage.EVENT_TYPE.ACKNOWLEDGE_PACKET)
       .andWhere('message:transaction.height', '>', startHeight)
       .andWhere('message:transaction.height', '<=', endHeight)
-      .orderBy('message.id');
+      .orderBy('message.id')
+      .transacting(trx);
     if (ics20Acks.length > 0) {
       const ibcIcs20s = ics20Acks.map((msg) => {
         const ackEvents = msg.message.events;
         if (ackEvents.length !== 2) {
           throw Error(`Ack ibc hasn't emmitted enough events: ${msg.id}`);
         }
-        const [sender, receiver, amount, denom] = getAttributesFrom(
-          ackEvents[0].attributes,
+        const [sender, receiver, amount, denom, success] = getAttributesFrom(
+          [...ackEvents[0].attributes, ...ackEvents[1].attributes],
           [
             EventAttribute.ATTRIBUTE_KEY.SENDER,
             EventAttribute.ATTRIBUTE_KEY.RECEIVER,
             EventAttribute.ATTRIBUTE_KEY.AMOUNT,
             EventAttribute.ATTRIBUTE_KEY.DENOM,
+            EventAttribute.ATTRIBUTE_KEY.SUCCESS,
           ]
         );
         return IbcIcs20.fromJson({
@@ -172,9 +176,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
           receiver,
           amount,
           denom,
-          ack_status:
-            ackEvents[1].attributes[0].key ===
-            EventAttribute.ATTRIBUTE_KEY.SUCCESS,
+          ack_status: success !== undefined,
         });
       });
       await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
@@ -198,7 +200,8 @@ export default class CrawlIBCIcs20Service extends BullableService {
       .andWhere('ibc_message.type', IbcMessage.EVENT_TYPE.TIMEOUT_PACKET)
       .andWhere('message:transaction.height', '>', startHeight)
       .andWhere('message:transaction.height', '<=', endHeight)
-      .orderBy('message.id');
+      .orderBy('message.id')
+      .transacting(trx);
     if (ics20Timeouts.length > 0) {
       const ibcIcs20s = ics20Timeouts.map((msg) => {
         const timeoutEvent = msg.message.events[0];
