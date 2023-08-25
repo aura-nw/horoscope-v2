@@ -427,32 +427,41 @@ export default class CrawlTxService extends BullableService {
   }
 
   private checkMappingEventToLog(tx: any) {
-    const checkResult = tx?.tx_response?.logs?.every(
-      (log: any, index: number) =>
-        log?.events?.every((event: any) =>
-          event?.attributes?.every((attr: any) => {
-            const filtedEvent = tx?.tx_response?.events?.filter(
-              (item: any) =>
-                item.type === event.type && item.msg_index === index
-            );
+    this.logger.info('checking mapping log in tx :', tx.tx_response.txhash);
+    const flattenLog: string[] = [];
+    const flattenEventEncoded: string[] = [];
 
-            return filtedEvent.some((event: any) =>
-              event.attributes.some((attrEncoded: any) => {
-                const key = attrEncoded.key
-                  ? fromUtf8(fromBase64(attrEncoded.key))
-                  : null;
-                const value = attrEncoded.value
-                  ? fromUtf8(fromBase64(attrEncoded.value))
-                  : null;
-                if (key === attr.key && value === attr.value) {
-                  return true;
-                }
-                return false;
-              })
-            );
-          })
-        )
-    );
+    tx?.tx_response?.logs.forEach((log: any, index: number) => {
+      log.events.forEach((event: any) => {
+        event.attributes.forEach((attr: any) => {
+          flattenLog.push(`${index}-${event.type}-${attr.key}-${attr.value}`);
+        });
+      });
+    });
+
+    tx?.tx_response?.events?.forEach((event: any) => {
+      event.attributes.forEach((attr: any) => {
+        if (event.msg_index !== undefined) {
+          const key = attr.key ? fromUtf8(fromBase64(attr.key)) : null;
+          const value = attr.value ? fromUtf8(fromBase64(attr.value)) : null;
+          flattenEventEncoded.push(
+            `${event.msg_index}-${event.type}-${key}-${value}`
+          );
+        }
+      });
+    });
+    // compare 2 array
+    if (flattenLog.length !== flattenEventEncoded.length) {
+      this.logger.warn('Length between 2 flatten array is not equal');
+    }
+    const checkResult = flattenLog.every((item: any) => {
+      const foundIndex = flattenEventEncoded.findIndex((e) => e === item);
+      if (foundIndex !== -1) {
+        flattenEventEncoded[foundIndex] = 'null';
+        return true;
+      }
+      return false;
+    });
     if (checkResult === false) {
       this.logger.warn('Mapping event to log is wrong');
     }
@@ -523,14 +532,13 @@ export default class CrawlTxService extends BullableService {
     MAPPING EVENT BY COUNT EACH LOG AND EVENT MUST BE SAME
     -----------*/
     // count total attribute for each message, countAttributeInEvent[i] = x mean message i has x attributes
-    const countAttributeInEvent: number[] = [];
-    tx?.tx_response?.logs?.forEach((log: any) => {
-      const countAttribute = log.events.reduce(
-        (acc: number, curr: any) => acc + curr.attributes.length,
-        0
-      );
-      countAttributeInEvent.push(countAttribute);
-    });
+    const countAttributeInEvent: number[] = tx?.tx_response?.logs?.map(
+      (log: any) =>
+        log.events.reduce(
+          (acc: number, curr: any) => acc + curr.attributes.length,
+          0
+        )
+    );
 
     let reachLastEventTypeTx = false;
     let countCurrentAttribute = 0;
