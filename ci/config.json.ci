@@ -174,5 +174,8 @@
   },
   "jobRedecodeTx": {
     "limitRecordGet": 100
+  },
+  "servicesManager": {
+    "healthCheckLimit": 100
   }
 }

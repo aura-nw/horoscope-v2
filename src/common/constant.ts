@@ -258,6 +258,14 @@ export const SERVICE = {
         path: 'v1.Cw20ReindexingService.reindexing',
       },
     },
+    ServicesManager: {
+      key: 'ServicesManager',
+      name: 'v1.ServicesManager',
+      HealthCheck: {
+        key: 'HealthCheck',
+        path: 'v1.ServicesManager.HealthCheck',
+      },
+    },
   },
 };
 
