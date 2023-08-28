@@ -182,10 +182,12 @@ export default class CrawlSmartContractService extends BullableService {
           'code_id',
           codeContractValues.map((contract) => contract.codeId)
         ),
-        SmartContract.query().whereIn(
-          'address',
-          codeContractValues.map((contract) => contract.address)
-        ),
+        SmartContract.query()
+          .whereIn(
+            'address',
+            codeContractValues.map((contract) => contract.address)
+          )
+          .andWhere('status', SmartContract.STATUS.LATEST),
       ]);
       const codeContractsByKey = _.keyBy(contractsWithMigrateCode, 'code_id');
 

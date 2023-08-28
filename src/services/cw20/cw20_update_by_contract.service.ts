@@ -78,7 +78,7 @@ export default class Cw20UpdateByContractService extends BullableService {
     const { startBlock, endBlock } = ctx.params;
     // eslint-disable-next-line no-restricted-syntax
     for (const cw20Contract of ctx.params.cw20Contracts) {
-      const startUpdateBlock = Math.min(
+      const startUpdateBlock = Math.max(
         startBlock,
         cw20Contract.last_updated_height
       );
