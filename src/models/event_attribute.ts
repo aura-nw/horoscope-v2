@@ -96,6 +96,7 @@ export class EventAttribute extends BaseModel {
     GRANTER: 'granter',
     GRANTEE: 'grantee',
     FROM: 'from',
+    MINTER: 'minter',
     FEE: 'fee',
     FEE_PAYER: 'fee_payer',
     CLIENT_ID: 'client_id',
