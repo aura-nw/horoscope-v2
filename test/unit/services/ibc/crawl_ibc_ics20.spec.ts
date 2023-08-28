@@ -222,11 +222,9 @@ export default class CrawlIbcIcs20Test {
         getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.AMOUNT)
       );
       expect(result?.denom).toEqual(
-        `${ibcMessage.dst_port_id 
-          }/${ 
-          ibcMessage.dst_channel_id 
-          }/${ 
-          getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.DENOM)}`
+        `${ibcMessage.dst_port_id}/${
+          ibcMessage.dst_channel_id
+        }/${getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.DENOM)}`
       );
       expect(result?.ack_status).toEqual(true);
       await trx.rollback();
