@@ -233,6 +233,10 @@ export const SERVICE = {
         path: 'v1.ReDecodeTx',
       },
     },
+    CrawlIBCTaoService: {
+      key: 'CrawlIBCTaoService',
+      name: 'v1.CrawlIBCTaoService',
+    },
     DailyStatisticsService: {
       key: 'DailyStatisticsService',
       name: 'v1.DailyStatisticsService',
