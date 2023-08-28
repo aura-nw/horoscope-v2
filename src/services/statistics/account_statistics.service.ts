@@ -259,8 +259,9 @@ export default class AccountStatisticsService extends BullableService {
         .map((event) => Object.assign({}, ...event.jsonb_agg))
         .map(
           (event) =>
-            event[EventAttribute.ATTRIBUTE_COMPOSITE_KEY.TX_FEE_PAYER] ??
-            event[EventAttribute.ATTRIBUTE_COMPOSITE_KEY.USE_FEEGRANT_GRANTEE]
+            event[
+              EventAttribute.ATTRIBUTE_COMPOSITE_KEY.USE_FEEGRANT_GRANTEE
+            ] ?? event[EventAttribute.ATTRIBUTE_COMPOSITE_KEY.TX_FEE_PAYER]
         )
         .forEach((address) => {
           if (!accountStats[address]) {
