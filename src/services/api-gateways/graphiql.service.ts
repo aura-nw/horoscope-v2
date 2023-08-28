@@ -12,8 +12,8 @@ import { ErrorCode, ErrorMessage } from '../../common/types/errors';
 import Utils from '../../common/utils/utils';
 
 @Service({
-  name: 'graphiql',
-  version: 1,
+  name: 'graphql',
+  version: 2,
   settings: {
     rateLimit: {
       window: config.graphiqlApi.rateLimitWindow,
@@ -54,24 +54,6 @@ export default class GraphiQLService extends BaseService {
       message: '',
       data: null,
     };
-    let openBrackets = 0;
-    let isWhere = false;
-    for (let i = 0; i < query.length; i += 1) {
-      if (query.charAt(i) === '(') isWhere = true;
-      else if (query.charAt(i) === ')') isWhere = false;
-
-      if (query.charAt(i) === '{' && !isWhere) openBrackets += 1;
-      else if (query.charAt(i) === '}' && !isWhere) openBrackets -= 1;
-
-      if (openBrackets > config.graphiqlApi.depthLimit + 2) {
-        result = {
-          code: ErrorCode.WRONG,
-          message: ErrorMessage.VALIDATION_ERROR,
-          errors: `The query depth must not be greater than ${config.graphiqlApi.depthLimit}`,
-        };
-        return result;
-      }
-    }
 
     let graphqlObj;
     try {
@@ -109,6 +91,25 @@ export default class GraphiQLService extends BaseService {
       if (
         !queryWhitelist.includes(query.replaceAll(' ', '').replaceAll('\n', ''))
       ) {
+        let openBrackets = 0;
+        let isWhere = false;
+        for (let i = 0; i < query.length; i += 1) {
+          if (query.charAt(i) === '(') isWhere = true;
+          else if (query.charAt(i) === ')') isWhere = false;
+
+          if (query.charAt(i) === '{' && !isWhere) openBrackets += 1;
+          else if (query.charAt(i) === '}' && !isWhere) openBrackets -= 1;
+
+          if (openBrackets > config.graphiqlApi.depthLimit + 2) {
+            result = {
+              code: ErrorCode.WRONG,
+              message: ErrorMessage.VALIDATION_ERROR,
+              errors: `The query depth must not be greater than ${config.graphiqlApi.depthLimit}`,
+            };
+            return result;
+          }
+        }
+
         const selections = (
           graphqlObj.definitions[0] as OperationDefinitionNode
         ).selectionSet.selections as FieldNode[];

@@ -22,4 +22,6 @@ export * from './delegator';
 export * from './code_id_verification';
 export * from './feegrant';
 export * from './feegrant_history';
+export * from './daily_statistics';
+export * from './account_statistics';
 export * from './cw20_total_holder_stats';
