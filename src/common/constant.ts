@@ -71,6 +71,8 @@ export const BULL_JOB_NAME = {
   REINDEX_CW721_HISTORY: 'reindex:cw721-history',
   HANDLE_MIGRATE_CONTRACT: 'handle:migrate-contract',
   JOB_REDECODE_TX: 'job:redecode-tx',
+  CRAWL_IBC_TAO: 'crawl:ibc-tao',
+  CRAWL_GENESIS_IBC_TAO: 'crawl:genesis-ibc-tao',
   REINDEX_CW20_CONTRACT: 'reindex:cw20-contract',
   REINDEX_CW20_HISTORY: 'reindex:cw20-history',
 };
@@ -229,6 +231,10 @@ export const SERVICE = {
         key: 'ReDecodeTx',
         path: 'v1.ReDecodeTx',
       },
+    },
+    CrawlIBCTaoService: {
+      key: 'CrawlIBCTaoService',
+      name: 'v1.CrawlIBCTaoService',
     },
     DailyStatisticsService: {
       key: 'DailyStatisticsService',
