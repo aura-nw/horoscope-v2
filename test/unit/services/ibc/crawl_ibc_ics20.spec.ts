@@ -185,9 +185,11 @@ export default class CrawlIbcIcs20Test {
           block_height: this.block.height,
           source: 'TX_EVENT',
           attributes: event1Attrs.map((e, index) => {
-            e.block_height = this.block.height;
-            e.event_id = 1;
-            e.index = index;
+            Object.assign(e, {
+              block_height: this.block.height,
+              event_id: 1,
+              index,
+            });
             return e;
           }),
         }),
@@ -198,9 +200,11 @@ export default class CrawlIbcIcs20Test {
           block_height: this.block.height,
           source: 'TX_EVENT',
           attributes: event2Attrs.map((e, index) => {
-            e.block_height = this.block.height;
-            e.event_id = 1;
-            e.index = index;
+            Object.assign(e, {
+              block_height: this.block.height,
+              event_id: 1,
+              index,
+            });
             return e;
           }),
         }),
@@ -290,9 +294,11 @@ export default class CrawlIbcIcs20Test {
           block_height: this.block.height,
           source: 'TX_EVENT',
           attributes: event1Attrs.map((e, index) => {
-            e.block_height = this.block.height;
-            e.event_id = 1;
-            e.index = index;
+            Object.assign(e, {
+              block_height: this.block.height,
+              event_id: 1,
+              index,
+            });
             return e;
           }),
         }),
@@ -385,9 +391,11 @@ export default class CrawlIbcIcs20Test {
           block_height: this.block.height,
           source: 'TX_EVENT',
           attributes: event2Attrs.map((e, index) => {
-            e.block_height = this.block.height;
-            e.event_id = 1;
-            e.index = index;
+            Object.assign(e, {
+              block_height: this.block.height,
+              event_id: 1,
+              index,
+            });
             return e;
           }),
         }),
@@ -398,9 +406,11 @@ export default class CrawlIbcIcs20Test {
           block_height: this.block.height,
           source: 'TX_EVENT',
           attributes: event1Attrs.map((e, index) => {
-            e.block_height = this.block.height;
-            e.event_id = 1;
-            e.index = index;
+            Object.assign(e, {
+              block_height: this.block.height,
+              event_id: 1,
+              index,
+            });
             return e;
           }),
         }),
@@ -480,9 +490,11 @@ export default class CrawlIbcIcs20Test {
           block_height: this.block.height,
           source: 'TX_EVENT',
           attributes: event1Attrs.map((e, index) => {
-            e.block_height = this.block.height;
-            e.event_id = 1;
-            e.index = index;
+            Object.assign(e, {
+              block_height: this.block.height,
+              event_id: 1,
+              index,
+            });
             return e;
           }),
         }),
