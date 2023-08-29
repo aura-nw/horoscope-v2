@@ -12,7 +12,6 @@ import {
   IbcMessage,
 } from '../../models';
 
-const PORT = config.crawlIbcIcs20.port;
 @Service({
   name: SERVICE.V1.CrawlIBCIcs20Service.key,
   version: 1,
@@ -58,7 +57,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
   ) {
     const ics20Sends = await IbcMessage.query()
       .joinRelated('message.transaction')
-      .where('src_port_id', PORT)
+      .where('src_port_id', IbcMessage.PORTS.ICS20)
       .andWhere('ibc_message.type', IbcMessage.EVENT_TYPE.SEND_PACKET)
       .andWhere('message:transaction.height', '>', startHeight)
       .andWhere('message:transaction.height', '<=', endHeight)
@@ -90,7 +89,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
             .orWhere('type', IbcIcs20.EVENT_TYPE.DENOM_TRACE);
         },
       })
-      .where('dst_port_id', PORT)
+      .where('dst_port_id', IbcMessage.PORTS.ICS20)
       .andWhere('ibc_message.type', IbcMessage.EVENT_TYPE.RECV_PACKET)
       .andWhere('message:transaction.height', '>', startHeight)
       .andWhere('message:transaction.height', '<=', endHeight)
@@ -113,7 +112,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
             EventAttribute.ATTRIBUTE_KEY.SUCCESS,
           ]);
         if (originalDenom === undefined) {
-          throw Error(`Recv ibc hasn't emit denom: ${  msg.id}`);
+          throw Error(`Recv ibc hasn't emit denom: ${msg.id}`);
         }
         const denomTraceEvent = msg.message.events.find(
           (e) => e.type === IbcIcs20.EVENT_TYPE.DENOM_TRACE
@@ -130,7 +129,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
           receiver,
           amount,
           denom,
-          ack_status: ackStatus === 'true',
+          status: ackStatus === 'true',
         });
       });
       await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
@@ -150,7 +149,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
           builder.where('type', IbcIcs20.EVENT_TYPE.FUNGIBLE_TOKEN_PACKET);
         },
       })
-      .where('src_port_id', PORT)
+      .where('src_port_id', IbcMessage.PORTS.ICS20)
       .andWhere('ibc_message.type', IbcMessage.EVENT_TYPE.ACKNOWLEDGE_PACKET)
       .andWhere('message:transaction.height', '>', startHeight)
       .andWhere('message:transaction.height', '<=', endHeight)
@@ -180,7 +179,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
           receiver,
           amount,
           denom,
-          ack_status: success !== undefined,
+          status: success !== undefined,
         });
       });
       await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
@@ -200,7 +199,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
           builder.where('type', IbcIcs20.EVENT_TYPE.TIMEOUT);
         },
       })
-      .where('src_port_id', PORT)
+      .where('src_port_id', IbcMessage.PORTS.ICS20)
       .andWhere('ibc_message.type', IbcMessage.EVENT_TYPE.TIMEOUT_PACKET)
       .andWhere('message:transaction.height', '>', startHeight)
       .andWhere('message:transaction.height', '<=', endHeight)

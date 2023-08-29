@@ -98,18 +98,21 @@ export default class CrawlIbcIcs20Test {
           sender: 'cosmos1e8288j8swfy7rwkyx0h3lz82fe58vz2m6xx0en',
         },
       });
-      await IbcMessage.query().insert(ibcMessage).transacting(trx);
+      const message = await IbcMessage.query()
+        .insert(ibcMessage)
+        .transacting(trx);
       await this.crawlIbcIcs20Serivce.handleIcs20Send(
         this.block.height - 1,
         this.block.height,
         trx
       );
       const result = await IbcIcs20.query().first().transacting(trx);
+      expect(result?.ibc_message_id).toEqual(message.id);
       expect(result?.sender).toEqual(ibcMessage.data.sender);
       expect(result?.receiver).toEqual(ibcMessage.data.receiver);
       expect(result?.amount).toEqual(ibcMessage.data.amount);
       expect(result?.denom).toEqual(ibcMessage.data.denom);
-      expect(result?.ack_status).toBeNull();
+      expect(result?.status).toEqual(true);
       await trx.rollback();
     });
   }
@@ -134,7 +137,9 @@ export default class CrawlIbcIcs20Test {
           sender: 'cosmos1e8288j8swfy7rwkyx0h3lz82fe58vz2m6xx0en',
         },
       });
-      await IbcMessage.query().insert(ibcMessage).transacting(trx);
+      const ibcMsg = await IbcMessage.query()
+        .insert(ibcMessage)
+        .transacting(trx);
       const event1Attrs = [
         {
           key: 'module',
@@ -216,6 +221,7 @@ export default class CrawlIbcIcs20Test {
         trx
       );
       const result = await IbcIcs20.query().first().transacting(trx);
+      expect(result?.ibc_message_id).toEqual(ibcMsg.id);
       expect(result?.receiver).toEqual(
         getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.RECEIVER)
       );
@@ -230,7 +236,7 @@ export default class CrawlIbcIcs20Test {
           ibcMessage.dst_channel_id
         }/${getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.DENOM)}`
       );
-      expect(result?.ack_status).toEqual(true);
+      expect(result?.status).toEqual(true);
       await trx.rollback();
     });
   }
@@ -255,7 +261,9 @@ export default class CrawlIbcIcs20Test {
           sender: 'cosmos1e8288j8swfy7rwkyx0h3lz82fe58vz2m6xx0en',
         },
       });
-      await IbcMessage.query().insert(ibcMessage).transacting(trx);
+      const ibcMsg = await IbcMessage.query()
+        .insert(ibcMessage)
+        .transacting(trx);
       const event1Attrs = [
         {
           key: 'module',
@@ -310,6 +318,7 @@ export default class CrawlIbcIcs20Test {
         trx
       );
       const result = await IbcIcs20.query().first().transacting(trx);
+      expect(result?.ibc_message_id).toEqual(ibcMsg.id);
       expect(result?.receiver).toEqual(
         getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.RECEIVER)
       );
@@ -320,7 +329,7 @@ export default class CrawlIbcIcs20Test {
         getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.AMOUNT)
       );
       expect(result?.denom).toEqual('uatom');
-      expect(result?.ack_status).toEqual(true);
+      expect(result?.status).toEqual(true);
       await trx.rollback();
     });
   }
@@ -434,7 +443,7 @@ export default class CrawlIbcIcs20Test {
       expect(result?.denom).toEqual(
         getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.DENOM)
       );
-      expect(result?.ack_status).toEqual(false);
+      expect(result?.status).toEqual(false);
       await trx.rollback();
     });
   }
@@ -459,7 +468,9 @@ export default class CrawlIbcIcs20Test {
           sender: 'cosmos1e8288j8swfy7rwkyx0h3lz82fe58vz2m6xx0en',
         },
       });
-      await IbcMessage.query().insert(ibcMessage).transacting(trx);
+      const ibcMsg = await IbcMessage.query()
+        .insert(ibcMessage)
+        .transacting(trx);
       const event1Attrs = [
         {
           key: 'module',
@@ -506,6 +517,7 @@ export default class CrawlIbcIcs20Test {
         trx
       );
       const result = await IbcIcs20.query().first().transacting(trx);
+      expect(result?.ibc_message_id).toEqual(ibcMsg.id);
       expect(result?.receiver).toEqual(
         getAttributeFrom(
           event1Attrs,
@@ -522,7 +534,7 @@ export default class CrawlIbcIcs20Test {
       expect(result?.denom).toEqual(
         getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.REFUND_DENOM)
       );
-      expect(result?.ack_status).toBeNull();
+      expect(result?.status).toBe(true);
       await trx.rollback();
     });
   }
