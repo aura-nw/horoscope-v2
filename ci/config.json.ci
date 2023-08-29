@@ -184,5 +184,9 @@
     "key": "crawlIbcApp",
     "millisecondRepeatJob": 2000,
     "blocksPerCall": 100
+  },
+  "jobReassignMsgIndexToEvent": {
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 100
   }
 }
