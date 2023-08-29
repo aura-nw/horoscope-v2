@@ -390,7 +390,7 @@ export default class CrawlIbcIcs20Test {
           type: IbcIcs20.EVENT_TYPE.FUNGIBLE_TOKEN_PACKET,
           block_height: this.block.height,
           source: 'TX_EVENT',
-          attributes: event2Attrs.map((e, index) => {
+          attributes: event1Attrs.map((e, index) => {
             Object.assign(e, {
               block_height: this.block.height,
               event_id: 1,
@@ -405,7 +405,7 @@ export default class CrawlIbcIcs20Test {
           type: IbcIcs20.EVENT_TYPE.FUNGIBLE_TOKEN_PACKET,
           block_height: this.block.height,
           source: 'TX_EVENT',
-          attributes: event1Attrs.map((e, index) => {
+          attributes: event2Attrs.map((e, index) => {
             Object.assign(e, {
               block_height: this.block.height,
               event_id: 1,
