@@ -431,7 +431,7 @@ export default class CrawlTxService extends BullableService {
     let flattenLog: string[] = [];
     let flattenEventEncoded: string[] = [];
 
-    tx?.tx_response?.logs.forEach((log: any, index: number) => {
+    tx?.tx_response?.logs?.forEach((log: any, index: number) => {
       log.events.forEach((event: any) => {
         event.attributes.forEach((attr: any) => {
           if (attr.value === undefined) {
@@ -468,7 +468,7 @@ export default class CrawlTxService extends BullableService {
     }
   }
 
-  private setMsgIndexToEvent(tx: any) {
+  public setMsgIndexToEvent(tx: any) {
     /*------
     DO NOT USE CURRENTLY
     MAPPING BY ORDER IN EVENT AND LOG

@@ -161,5 +161,9 @@
   },
   "jobRedecodeTx": {
     "limitRecordGet": 100
+  },
+  "jobReassignMsgIndexToEvent": {
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 100
   }
 }
