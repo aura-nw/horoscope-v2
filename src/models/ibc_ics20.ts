@@ -16,7 +16,7 @@ export class IbcIcs20 extends BaseModel {
 
   denom!: string;
 
-  ack_status!: boolean;
+  status!: boolean;
 
   ibc_message!: IbcMessage;
 

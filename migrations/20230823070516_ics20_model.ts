@@ -8,7 +8,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('receiver').index().notNullable();
     table.decimal('amount', 80, 0).notNullable();
     table.string('denom').notNullable().index();
-    table.boolean('ack_status');
+    table.boolean('status').defaultTo(true);
     table.foreign('ibc_message_id').references('ibc_message.id');
   });
 }
