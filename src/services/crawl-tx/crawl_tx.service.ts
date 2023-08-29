@@ -434,7 +434,11 @@ export default class CrawlTxService extends BullableService {
     tx?.tx_response?.logs?.forEach((log: any, index: number) => {
       log.events.forEach((event: any) => {
         event.attributes.forEach((attr: any) => {
-          flattenLog.push(`${index}-${event.type}-${attr.key}-${attr.value}`);
+          if (attr.value === undefined) {
+            flattenLog.push(`${index}-${event.type}-${attr.key}-null`);
+          } else {
+            flattenLog.push(`${index}-${event.type}-${attr.key}-${attr.value}`);
+          }
         });
       });
     });
