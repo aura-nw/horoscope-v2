@@ -11,7 +11,6 @@ import {
   IbcIcs20,
   IbcMessage,
 } from '../../models';
-import { getAttributesFrom } from '../../common/utils/utils';
 
 const PORT = config.crawlIbcIcs20.port;
 @Service({
@@ -106,13 +105,16 @@ export default class CrawlIBCIcs20Service extends BullableService {
           throw Error(`Recv ibc hasn't emmitted events: ${msg.id}`);
         }
         const [sender, receiver, amount, originalDenom, ackStatus] =
-          getAttributesFrom(recvEvent.attributes, [
+          recvEvent.getAttributesFrom([
             EventAttribute.ATTRIBUTE_KEY.SENDER,
             EventAttribute.ATTRIBUTE_KEY.RECEIVER,
             EventAttribute.ATTRIBUTE_KEY.AMOUNT,
             EventAttribute.ATTRIBUTE_KEY.DENOM,
             EventAttribute.ATTRIBUTE_KEY.SUCCESS,
           ]);
+        if (originalDenom === undefined) {
+          throw Error(`Recv ibc hasn't emit denom: ${  msg.id}`);
+        }
         const denomTraceEvent = msg.message.events.find(
           (e) => e.type === IbcIcs20.EVENT_TYPE.DENOM_TRACE
         );
@@ -160,16 +162,18 @@ export default class CrawlIBCIcs20Service extends BullableService {
         if (ackEvents.length !== 2) {
           throw Error(`Ack ibc hasn't emmitted enough events: ${msg.id}`);
         }
-        const [sender, receiver, amount, denom, success] = getAttributesFrom(
-          [...ackEvents[0].attributes, ...ackEvents[1].attributes],
-          [
+        const [sender, receiver, amount, denom, success] = [
+          ...ackEvents[0].getAttributesFrom([
             EventAttribute.ATTRIBUTE_KEY.SENDER,
             EventAttribute.ATTRIBUTE_KEY.RECEIVER,
             EventAttribute.ATTRIBUTE_KEY.AMOUNT,
             EventAttribute.ATTRIBUTE_KEY.DENOM,
+          ]),
+          ...ackEvents[1].getAttributesFrom([
             EventAttribute.ATTRIBUTE_KEY.SUCCESS,
-          ]
-        );
+          ]),
+        ];
+
         return IbcIcs20.fromJson({
           ibc_message_id: msg.id,
           sender,
@@ -205,14 +209,11 @@ export default class CrawlIBCIcs20Service extends BullableService {
     if (ics20Timeouts.length > 0) {
       const ibcIcs20s = ics20Timeouts.map((msg) => {
         const timeoutEvent = msg.message.events[0];
-        const [receiver, amount, denom] = getAttributesFrom(
-          timeoutEvent.attributes,
-          [
-            EventAttribute.ATTRIBUTE_KEY.REFUND_RECEIVER,
-            EventAttribute.ATTRIBUTE_KEY.REFUND_AMOUNT,
-            EventAttribute.ATTRIBUTE_KEY.REFUND_DENOM,
-          ]
-        );
+        const [receiver, amount, denom] = timeoutEvent.getAttributesFrom([
+          EventAttribute.ATTRIBUTE_KEY.REFUND_RECEIVER,
+          EventAttribute.ATTRIBUTE_KEY.REFUND_AMOUNT,
+          EventAttribute.ATTRIBUTE_KEY.REFUND_DENOM,
+        ]);
         return IbcIcs20.fromJson({
           ibc_message_id: msg.id,
           receiver,

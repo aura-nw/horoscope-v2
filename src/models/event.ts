@@ -77,6 +77,13 @@ export class Event extends BaseModel {
     };
   }
 
+  getAttributesFrom(attributesType: string[]) {
+    return attributesType.map(
+      (attributeType) =>
+        this.attributes?.find((attr: any) => attr.key === attributeType)?.value
+    );
+  }
+
   static EVENT_TYPE = {
     STORE_CODE: 'store_code',
     SUBMIT_PROPOSAL: 'submit_proposal',
