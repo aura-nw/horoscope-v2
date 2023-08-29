@@ -66,6 +66,7 @@ export const BULL_JOB_NAME = {
   REINDEX_CW721_HISTORY: 'reindex:cw721-history',
   HANDLE_MIGRATE_CONTRACT: 'handle:migrate-contract',
   JOB_REDECODE_TX: 'job:redecode-tx',
+  JOB_REASSIGN_MSG_INDEX_TO_EVENT: 'job:reassign-msg-index-to-event',
 };
 
 export const SERVICE = {
@@ -221,6 +222,10 @@ export const SERVICE = {
       ReDecodeTx: {
         key: 'ReDecodeTx',
         path: 'v1.ReDecodeTx',
+      },
+      ReAssignMsgIndexToEvent: {
+        key: 'ReAssignMsgIndexToEvent',
+        path: 'v1.ReAssignMsgIndexToEvent',
       },
     },
   },
