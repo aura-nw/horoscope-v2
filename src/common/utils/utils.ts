@@ -210,14 +210,3 @@ export default class Utils {
     return [response, heightRange];
   }
 }
-
-// get Attribute value by specified key from array of attributes
-export function getAttributesFrom(
-  listAttributes: any,
-  attributesType: string[]
-) {
-  return attributesType.map(
-    (attributeType) =>
-      listAttributes?.find((attr: any) => attr.key === attributeType)?.value
-  );
-}
