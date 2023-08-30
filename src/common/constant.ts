@@ -259,10 +259,6 @@ export const SERVICE = {
       key: 'DailyStatsJobsService',
       name: 'v1.DailyStatsJobsService',
     },
-    CrawlIBCTaoService: {
-      key: 'CrawlIBCTaoService',
-      name: 'v1.CrawlIBCTaoService',
-    },
     Cw20ReindexingService: {
       key: 'Cw20ReindexingService',
       name: 'v1.Cw20ReindexingService',
