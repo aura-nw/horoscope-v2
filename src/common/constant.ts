@@ -76,6 +76,8 @@ export const BULL_JOB_NAME = {
   REINDEX_CW20_CONTRACT: 'reindex:cw20-contract',
   REINDEX_CW20_HISTORY: 'reindex:cw20-history',
   CRAWL_IBC_APP: 'crawl:ibc-app',
+  UPDATE_CW721_ACTIVITY_OWNER: 'update:cw721-activity-owner',
+  UPDATE_CW721_ACTIVITY_OWNER_BY_TOKEN: 'update:cw721-activity-owner-by-token',
 };
 
 export const SERVICE = {
@@ -272,6 +274,10 @@ export const SERVICE = {
     CrawlIBCAppService: {
       key: 'CrawlIBCAppService',
       name: 'v1.CrawlIBCAppService',
+    },
+    Cw721ActivityUpdateOwnerService: {
+      key: 'Cw721ActivityUpdateOwnerService',
+      name: 'v1.Cw721ActivityUpdateOwnerService',
     },
   },
 };
