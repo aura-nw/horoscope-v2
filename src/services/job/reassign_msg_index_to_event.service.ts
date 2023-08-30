@@ -97,7 +97,7 @@ export default class JobReAssignMsgIndexToEvent extends BullableService {
               throw new Error('order attribute is wrong');
             } else {
               eventPatches.push(
-                knex.raw(
+                trx.raw(
                   'UPDATE EVENT SET tx_msg_index = :tx_msg_index WHERE id = :id',
                   {
                     tx_msg_index: rawEvents[index].msg_index ?? null,
