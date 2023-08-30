@@ -46,6 +46,12 @@ export default class JobReAssignMsgIndexToEvent extends BullableService {
     await knex.transaction(async (trx) => {
       const listTx = await Transaction.query()
         .withGraphFetched('events.[attributes]')
+        .modifyGraph('events', (builder) => {
+          builder.orderBy('id', 'asc');
+        })
+        .modifyGraph('events.[attributes]', (builder) => {
+          builder.orderBy('index', 'asc');
+        })
         .orderBy('id', 'asc')
         .where('height', '>=', blockCheckpoint?.height ?? 0)
         .andWhere('height', '<', lastBlock)
@@ -69,27 +75,26 @@ export default class JobReAssignMsgIndexToEvent extends BullableService {
             .transacting(trx)
         );
 
-        const events = tx.events.sort((a: any, b: any) => a.id - b.id);
-        events.forEach((event: any, index: number) => {
+        tx.events.forEach((event: any, index: number) => {
           const rawEvents = rawData.tx_response.events;
           // check if event in raw is the same as event in db
           if (rawEvents[index].type === event.type) {
-            const attributes = event.attributes.sort(
-              (a: any, b: any) => a.index - b.index
+            const checkIndex = event.attributes.every(
+              (attr: EventAttribute) => {
+                const decodedKey = rawEvents[index].attributes[attr.index].key
+                  ? fromUtf8(
+                      fromBase64(rawEvents[index].attributes[attr.index].key)
+                    )
+                  : null;
+                const decodedValue = rawEvents[index].attributes[attr.index]
+                  .value
+                  ? fromUtf8(
+                      fromBase64(rawEvents[index].attributes[attr.index].value)
+                    )
+                  : null;
+                return attr.key === decodedKey && attr.value === decodedValue;
+              }
             );
-            const checkIndex = attributes.every((attr: EventAttribute) => {
-              const decodedKey = rawEvents[index].attributes[attr.index].key
-                ? fromUtf8(
-                    fromBase64(rawEvents[index].attributes[attr.index].key)
-                  )
-                : null;
-              const decodedValue = rawEvents[index].attributes[attr.index].value
-                ? fromUtf8(
-                    fromBase64(rawEvents[index].attributes[attr.index].value)
-                  )
-                : null;
-              return attr.key === decodedKey && attr.value === decodedValue;
-            });
             if (!checkIndex) {
               throw new Error('order attribute is wrong');
             } else {
