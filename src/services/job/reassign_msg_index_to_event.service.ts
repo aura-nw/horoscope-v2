@@ -53,8 +53,7 @@ export default class JobReAssignMsgIndexToEvent extends BullableService {
 
       const eventPatches: any[] = [];
       const txPatches: any[] = [];
-      // eslint-disable-next-line no-restricted-syntax
-      for (const tx of listTx) {
+      listTx.forEach((tx: any) => {
         // get data raw in tx
         const rawData = tx.data;
         // set msg_index to event
@@ -71,9 +70,7 @@ export default class JobReAssignMsgIndexToEvent extends BullableService {
         );
 
         const events = tx.events.sort((a: any, b: any) => a.id - b.id);
-        for (let index = 0; index < events.length; index += 1) {
-          const event = events[index];
-          // events.forEach((event: Event, index: number) => {
+        events.forEach((event: any, index: number) => {
           const rawEvents = rawData.tx_response.events;
           // check if event in raw is the same as event in db
           if (rawEvents[index].type === event.type) {
@@ -109,8 +106,8 @@ export default class JobReAssignMsgIndexToEvent extends BullableService {
           } else {
             throw new Error(`order event is wrong, ${event.id}, ${index}`);
           }
-        }
-      }
+        });
+      });
       this.logger.info('mapping done');
       await Promise.all(eventPatches);
       this.logger.info('update event done');
