@@ -2,6 +2,7 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import { fromBase64, fromUtf8 } from '@cosmjs/encoding';
+import { Knex } from 'knex';
 import { Transaction, EventAttribute, BlockCheckpoint } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
@@ -60,58 +61,12 @@ export default class JobReAssignMsgIndexToEvent extends BullableService {
       const eventPatches: any[] = [];
       const txPatches: any[] = [];
       listTx.forEach((tx: any) => {
-        // get data raw in tx
-        const rawData = tx.data;
-        // set msg_index to event
-        rawData.tx_response.events.forEach((event: any) => {
-          // eslint-disable-next-line no-param-reassign
-          delete event.msg_index;
-        });
-        this.crawlTxService.setMsgIndexToEvent(rawData);
-        txPatches.push(
-          Transaction.query()
-            .patch({ data: rawData })
-            .where('id', tx.id)
-            .transacting(trx)
+        const { eventPatchInTx, txPatchInTx } = this.generateListUpdateMsgIndex(
+          trx,
+          tx
         );
-
-        tx.events.forEach((event: any, index: number) => {
-          const rawEvents = rawData.tx_response.events;
-          // check if event in raw is the same as event in db
-          if (rawEvents[index].type === event.type) {
-            const checkIndex = event.attributes.every(
-              (attr: EventAttribute) => {
-                const decodedKey = rawEvents[index].attributes[attr.index].key
-                  ? fromUtf8(
-                      fromBase64(rawEvents[index].attributes[attr.index].key)
-                    )
-                  : null;
-                const decodedValue = rawEvents[index].attributes[attr.index]
-                  .value
-                  ? fromUtf8(
-                      fromBase64(rawEvents[index].attributes[attr.index].value)
-                    )
-                  : null;
-                return attr.key === decodedKey && attr.value === decodedValue;
-              }
-            );
-            if (!checkIndex) {
-              throw new Error('order attribute is wrong');
-            } else {
-              eventPatches.push(
-                trx.raw(
-                  'UPDATE EVENT SET tx_msg_index = :tx_msg_index WHERE id = :id',
-                  {
-                    tx_msg_index: rawEvents[index].msg_index ?? null,
-                    id: event.id,
-                  }
-                )
-              );
-            }
-          } else {
-            throw new Error(`order event is wrong, ${event.id}, ${index}`);
-          }
-        });
+        eventPatches.push(...eventPatchInTx);
+        txPatches.push(...txPatchInTx);
       });
       this.logger.info('mapping done');
       await Promise.all(eventPatches);
@@ -130,6 +85,66 @@ export default class JobReAssignMsgIndexToEvent extends BullableService {
           job_name: BULL_JOB_NAME.JOB_REASSIGN_MSG_INDEX_TO_EVENT,
         });
     });
+  }
+
+  generateListUpdateMsgIndex(
+    trx: Knex.Transaction,
+    tx: any
+  ): { eventPatchInTx: any[]; txPatchInTx: any } {
+    const eventPatchInTx: any[] = [];
+    const txPatchInTx: any[] = [];
+
+    // get data raw in tx
+    const rawData = tx.data;
+    // set msg_index to event
+    rawData.tx_response.events.forEach((event: any) => {
+      // eslint-disable-next-line no-param-reassign
+      delete event.msg_index;
+    });
+    this.crawlTxService.setMsgIndexToEvent(rawData);
+    txPatchInTx.push(
+      Transaction.query()
+        .patch({ data: rawData })
+        .where('id', tx.id)
+        .transacting(trx)
+    );
+
+    tx.events.forEach((event: any, index: number) => {
+      const rawEvents = rawData.tx_response.events;
+      // check if event in raw is the same as event in db
+      if (rawEvents[index].type === event.type) {
+        const checkIndex = event.attributes.every((attr: EventAttribute) => {
+          const decodedKey = rawEvents[index].attributes[attr.index].key
+            ? fromUtf8(fromBase64(rawEvents[index].attributes[attr.index].key))
+            : null;
+          const decodedValue = rawEvents[index].attributes[attr.index].value
+            ? fromUtf8(
+                fromBase64(rawEvents[index].attributes[attr.index].value)
+              )
+            : null;
+          return attr.key === decodedKey && attr.value === decodedValue;
+        });
+        if (!checkIndex) {
+          throw new Error('order attribute is wrong');
+        } else {
+          eventPatchInTx.push(
+            trx.raw(
+              'UPDATE EVENT SET tx_msg_index = :tx_msg_index WHERE id = :id',
+              {
+                tx_msg_index: rawEvents[index].msg_index ?? null,
+                id: event.id,
+              }
+            )
+          );
+        }
+      } else {
+        throw new Error(`order event is wrong, ${event.id}, ${index}`);
+      }
+    });
+    return {
+      eventPatchInTx,
+      txPatchInTx,
+    };
   }
 
   async _start(): Promise<void> {
