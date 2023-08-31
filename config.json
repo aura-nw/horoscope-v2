@@ -20,7 +20,8 @@
     "timeRefreshCw721Stats": "1 * * * *",
     "reindexing": {
       "limitRecordGet": 500
-    }
+    },
+    "limitTokensActivityUpdate": 10
   },
   "crawlBlock": {
     "millisecondCrawl": 5000,

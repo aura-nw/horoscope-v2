@@ -30,6 +30,7 @@ export default class Cw721ActivityUpdateOwnerService extends BullableService {
     const { cw721ContractId, cw721TokenId } = _payload;
     const activities = await CW721Activity.query()
       .whereIn('action', [
+        CW721_ACTION.MINT,
         CW721_ACTION.TRANSFER,
         CW721_ACTION.SEND_NFT,
         CW721_ACTION.BURN,
@@ -37,20 +38,26 @@ export default class Cw721ActivityUpdateOwnerService extends BullableService {
       .whereNull('owner')
       .andWhere('cw721_token_id', cw721TokenId)
       .andWhere('cw721_contract_id', cw721ContractId)
-      .orderBy('id')
-      .limit(100);
+      .orderBy('height');
     const lastOwnerActivity = await CW721Activity.query()
-      .whereIn('action', [CW721_ACTION.MINT, CW721_ACTION.TRANSFER])
+      .whereIn('action', [
+        CW721_ACTION.MINT,
+        CW721_ACTION.TRANSFER,
+        CW721_ACTION.SEND_NFT,
+        CW721_ACTION.BURN,
+      ])
       .andWhere('cw721_token_id', cw721TokenId)
       .andWhere('cw721_contract_id', cw721ContractId)
       .whereNotNull('owner')
       .orderBy('height', 'DESC')
-      .first()
-      .throwIfNotFound();
-    const sortedActivities = _.sortBy(
-      [...activities, lastOwnerActivity],
-      (e) => e.height
-    );
+      .first();
+    if (!lastOwnerActivity) {
+      activities[0].owner = activities[0].to;
+    }
+    const allActivities = lastOwnerActivity
+      ? [...activities, lastOwnerActivity]
+      : activities;
+    const sortedActivities = _.sortBy(allActivities, (e) => e.height);
     for (let index = 1; index < sortedActivities.length; index += 1) {
       sortedActivities[index].owner = sortedActivities[index - 1].to;
     }
@@ -65,65 +72,35 @@ export default class Cw721ActivityUpdateOwnerService extends BullableService {
     jobName: BULL_JOB_NAME.UPDATE_CW721_ACTIVITY_OWNER,
   })
   async jobHandler(): Promise<void> {
-    const unprocessedActivities = await CW721Activity.query()
+    const tokens = await CW721Activity.query()
       .whereIn('action', [
-        CW721_ACTION.MINT,
         CW721_ACTION.TRANSFER,
         CW721_ACTION.SEND_NFT,
         CW721_ACTION.BURN,
       ])
       .whereNull('owner')
-      .orderBy('id')
-      .limit(100);
-    await this.updateOwnerForMintActs(
-      unprocessedActivities.filter((e) => e.action === CW721_ACTION.MINT)
-    );
-    const tokens = unprocessedActivities.reduce(
-      (acc: { cw721ContractId: number; cw721TokenId: number }[], curr) => {
-        if (
-          acc.find(
-            (e) =>
-              e.cw721ContractId === curr.cw721_contract_id &&
-              e.cw721TokenId === curr.cw721_token_id
-          ) === undefined
-        ) {
-          acc.push({
-            cw721ContractId: curr.cw721_contract_id,
-            cw721TokenId: curr.cw721_token_id,
-          });
-        }
-        return acc;
-      },
-      []
-    );
+      .groupBy('cw721_contract_id', 'cw721_token_id')
+      .select('cw721_contract_id', 'cw721_token_id')
+      .limit(config.cw721.limitTokensActivityUpdate);
     await Promise.all(
       tokens.map(async (token) =>
         this.createJob(
           BULL_JOB_NAME.UPDATE_CW721_ACTIVITY_OWNER_BY_TOKEN,
           BULL_JOB_NAME.UPDATE_CW721_ACTIVITY_OWNER_BY_TOKEN,
-          token,
+          {
+            cw721ContractId: token.cw721_contract_id,
+            cw721TokenId: token.cw721_token_id,
+          },
           {
             removeOnComplete: true,
             removeOnFail: {
               count: 3,
             },
+            jobId: `${token.cw721_contract_id}_${token.cw721_token_id}`,
           }
         )
       )
     );
-  }
-
-  async updateOwnerForMintActs(activities: CW721Activity[]) {
-    const patchQueries = activities.map((act) =>
-      CW721Activity.query()
-        .patch({
-          owner: act.to,
-        })
-        .where('id', act.id)
-    );
-    if (patchQueries.length > 0) {
-      await Promise.all(patchQueries);
-    }
   }
 
   async _start(): Promise<void> {
