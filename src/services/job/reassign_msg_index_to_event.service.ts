@@ -3,7 +3,12 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import { fromBase64, fromUtf8 } from '@cosmjs/encoding';
 import { Knex } from 'knex';
-import { Transaction, EventAttribute, BlockCheckpoint } from '../../models';
+import {
+  Transaction,
+  EventAttribute,
+  BlockCheckpoint,
+  Event,
+} from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
@@ -60,6 +65,7 @@ export default class JobReAssignMsgIndexToEvent extends BullableService {
 
       const eventPatches: any[] = [];
       const txPatches: any[] = [];
+      this.logger.info(`Re assign msg index ${listTx.length} txs`);
       listTx.forEach((tx: any) => {
         const { eventPatchInTx, txPatchInTx } = this.generateListUpdateMsgIndex(
           trx,
@@ -108,7 +114,7 @@ export default class JobReAssignMsgIndexToEvent extends BullableService {
         .where('id', tx.id)
         .transacting(trx)
     );
-
+    const mapUpdateEvent = new Map();
     tx.events.forEach((event: any, index: number) => {
       const rawEvents = rawData.tx_response.events;
       // check if event in raw is the same as event in db
@@ -127,19 +133,26 @@ export default class JobReAssignMsgIndexToEvent extends BullableService {
         if (!checkIndex) {
           throw new Error('order attribute is wrong');
         } else {
-          eventPatchInTx.push(
-            trx.raw(
-              'UPDATE EVENT SET tx_msg_index = :tx_msg_index WHERE id = :id',
-              {
-                tx_msg_index: rawEvents[index].msg_index ?? null,
-                id: event.id,
-              }
-            )
-          );
+          const msgIndex = rawEvents[index].msg_index ?? null;
+          if (mapUpdateEvent.has(msgIndex)) {
+            mapUpdateEvent.get(msgIndex).push(event.id);
+          } else {
+            mapUpdateEvent.set(msgIndex, [event.id]);
+          }
         }
       } else {
         throw new Error(`order event is wrong, ${event.id}, ${index}`);
       }
+    });
+    mapUpdateEvent.forEach((value: number[], key: null | number) => {
+      eventPatchInTx.push(
+        Event.query()
+          .patch({
+            tx_msg_index: key,
+          })
+          .whereIn('id', value)
+          .transacting(trx)
+      );
     });
     return {
       eventPatchInTx,
