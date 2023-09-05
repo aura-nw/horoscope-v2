@@ -1,0 +1,22 @@
+table:
+  name: view_count_holder_cw721
+  schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - owner
+        - contract_address
+        - count
+      filter: {}
+      limit: 100
+      allow_aggregations: true
+  - role: public
+    permission:
+      columns:
+        - owner
+        - contract_address
+        - count
+      filter: {}
+      limit: 100
+      allow_aggregations: true

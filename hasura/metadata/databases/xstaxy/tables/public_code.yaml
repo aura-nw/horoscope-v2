@@ -1,0 +1,50 @@
+table:
+  name: code
+  schema: public
+array_relationships:
+  - name: code_id_verifications
+    using:
+      foreign_key_constraint_on:
+        column: code_id
+        table:
+          name: code_id_verification
+          schema: public
+  - name: smart_contracts
+    using:
+      foreign_key_constraint_on:
+        column: code_id
+        table:
+          name: smart_contract
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - creator
+        - data_hash
+        - status
+        - store_hash
+        - type
+        - code_id
+        - store_height
+        - instantiate_permission
+        - created_at
+        - updated_at
+      filter: {}
+      limit: 100
+      allow_aggregations: true
+  - role: public
+    permission:
+      columns:
+        - creator
+        - data_hash
+        - status
+        - store_hash
+        - type
+        - code_id
+        - store_height
+        - instantiate_permission
+        - created_at
+        - updated_at
+      filter: {}
+      limit: 100

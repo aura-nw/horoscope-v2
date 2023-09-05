@@ -1,0 +1,56 @@
+table:
+  name: transaction_message
+  schema: public
+object_relationships:
+  - name: transaction
+    using:
+      foreign_key_constraint_on: tx_id
+array_relationships:
+  - name: events
+    using:
+      manual_configuration:
+        column_mapping:
+          index: tx_msg_index
+          tx_id: tx_id
+        insertion_order: null
+        remote_table:
+          name: event
+          schema: public
+  - name: transaction_message_receivers
+    using:
+      foreign_key_constraint_on:
+        column: tx_msg_id
+        table:
+          name: transaction_message_receiver
+          schema: public
+computed_fields:
+  - name: smart_contract
+    definition:
+      function:
+        name: related_contract_address
+        schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - sender
+        - type
+        - id
+        - index
+        - parent_id
+        - tx_id
+        - content
+      filter: {}
+      limit: 100
+  - role: public
+    permission:
+      columns:
+        - sender
+        - type
+        - id
+        - index
+        - parent_id
+        - tx_id
+        - content
+      filter: {}
+      limit: 100
