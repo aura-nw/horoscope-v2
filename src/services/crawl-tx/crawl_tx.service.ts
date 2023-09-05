@@ -464,7 +464,7 @@ export default class CrawlTxService extends BullableService {
     }
   }
 
-  private setMsgIndexToEvent(tx: any) {
+  public setMsgIndexToEvent(tx: any) {
     /*------
     DO NOT USE CURRENTLY
     MAPPING BY ORDER IN EVENT AND LOG
