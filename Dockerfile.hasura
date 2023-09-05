@@ -1,0 +1,16 @@
+FROM node:16
+
+## Install hasura cli
+RUN curl -L https://github.com/hasura/graphql-engine/raw/stable/cli/get.sh | bash
+
+# Working directory
+WORKDIR /app
+
+# Copy source
+COPY . .
+
+# cd to hasura directory
+RUN cd hasura
+
+# Apply metadata
+CMD ["hasura", "metadata", "apply"]
