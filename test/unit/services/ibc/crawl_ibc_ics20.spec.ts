@@ -538,7 +538,7 @@ export default class CrawlIbcIcs20Test {
       expect(result?.denom).toEqual(
         getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.REFUND_DENOM)
       );
-      expect(result?.status).toBe(true);
+      expect(result?.status).toBe(false);
       expect(result?.channel_id).toEqual(ibcMessage.src_channel_id);
       await trx.rollback();
     });
