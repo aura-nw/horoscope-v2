@@ -68,6 +68,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
         IbcIcs20.fromJson({
           ibc_message_id: msg.id,
           ...msg.data,
+          channel_id: msg.src_channel_id,
         })
       );
       await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
@@ -114,12 +115,13 @@ export default class CrawlIBCIcs20Service extends BullableService {
         if (originalDenom === undefined) {
           throw Error(`Recv ibc hasn't emit denom: ${msg.id}`);
         }
-        const denomTraceEvent = msg.message.events.find(
-          (e) => e.type === IbcIcs20.EVENT_TYPE.DENOM_TRACE
-        );
+        const isSource =
+          msg.message.events.find(
+            (e) => e.type === IbcIcs20.EVENT_TYPE.DENOM_TRACE
+          ) === undefined;
         const denom = this.parseDenom(
           originalDenom,
-          denomTraceEvent === undefined,
+          isSource,
           msg.dst_port_id,
           msg.dst_channel_id
         );
@@ -130,6 +132,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
           amount,
           denom,
           status: ackStatus === 'true',
+          channel_id: msg.dst_channel_id,
         });
       });
       await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
@@ -180,6 +183,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
           amount,
           denom,
           status: success !== undefined,
+          channel_id: msg.src_channel_id,
         });
       });
       await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
@@ -218,6 +222,8 @@ export default class CrawlIBCIcs20Service extends BullableService {
           receiver,
           amount,
           denom,
+          channel_id: msg.src_channel_id,
+          status: false,
         });
       });
       await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);

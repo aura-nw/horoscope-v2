@@ -113,6 +113,7 @@ export default class CrawlIbcIcs20Test {
       expect(result?.amount).toEqual(ibcMessage.data.amount);
       expect(result?.denom).toEqual(ibcMessage.data.denom);
       expect(result?.status).toEqual(true);
+      expect(result?.channel_id).toEqual(ibcMessage.src_channel_id);
       await trx.rollback();
     });
   }
@@ -237,6 +238,7 @@ export default class CrawlIbcIcs20Test {
         }/${getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.DENOM)}`
       );
       expect(result?.status).toEqual(true);
+      expect(result?.channel_id).toEqual(ibcMessage.dst_channel_id);
       await trx.rollback();
     });
   }
@@ -330,6 +332,7 @@ export default class CrawlIbcIcs20Test {
       );
       expect(result?.denom).toEqual('uatom');
       expect(result?.status).toEqual(true);
+      expect(result?.channel_id).toEqual(ibcMessage.dst_channel_id);
       await trx.rollback();
     });
   }
@@ -444,6 +447,7 @@ export default class CrawlIbcIcs20Test {
         getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.DENOM)
       );
       expect(result?.status).toEqual(false);
+      expect(result?.channel_id).toEqual(ibcMessage.src_channel_id);
       await trx.rollback();
     });
   }
@@ -535,6 +539,7 @@ export default class CrawlIbcIcs20Test {
         getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.REFUND_DENOM)
       );
       expect(result?.status).toBe(true);
+      expect(result?.channel_id).toEqual(ibcMessage.src_channel_id);
       await trx.rollback();
     });
   }
