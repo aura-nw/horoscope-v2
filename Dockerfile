@@ -1,7 +1,4 @@
-FROM node:16
-
-## Install hasura cli
-RUN curl -L https://github.com/hasura/graphql-engine/raw/stable/cli/get.sh | bash
+FROM node:16-alpine
 
 # Working directory
 WORKDIR /app
