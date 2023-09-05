@@ -78,6 +78,7 @@ export const BULL_JOB_NAME = {
   CRAWL_IBC_APP: 'crawl:ibc-app',
   UPDATE_CW721_ACTIVITY_OWNER: 'update:cw721-activity-owner',
   UPDATE_CW721_ACTIVITY_OWNER_BY_TOKEN: 'update:cw721-activity-owner-by-token',
+  JOB_REASSIGN_MSG_INDEX_TO_EVENT: 'job:reassign-msg-index-to-event',
 };
 
 export const SERVICE = {
@@ -233,6 +234,10 @@ export const SERVICE = {
       ReDecodeTx: {
         key: 'ReDecodeTx',
         path: 'v1.ReDecodeTx',
+      },
+      ReAssignMsgIndexToEvent: {
+        key: 'ReAssignMsgIndexToEvent',
+        path: 'v1.ReAssignMsgIndexToEvent',
       },
     },
     CrawlIBCTaoService: {
