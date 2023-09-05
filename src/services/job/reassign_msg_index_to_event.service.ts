@@ -122,12 +122,12 @@ export default class JobReAssignMsgIndexToEvent extends BullableService {
         const checkIndex = event.attributes.every((attr: EventAttribute) => {
           const decodedKey = rawEvents[index].attributes[attr.index].key
             ? fromUtf8(fromBase64(rawEvents[index].attributes[attr.index].key))
-            : null;
+            : '';
           const decodedValue = rawEvents[index].attributes[attr.index].value
             ? fromUtf8(
                 fromBase64(rawEvents[index].attributes[attr.index].value)
               )
-            : null;
+            : '';
           return attr.key === decodedKey && attr.value === decodedValue;
         });
         if (!checkIndex) {
