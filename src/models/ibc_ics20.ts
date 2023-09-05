@@ -2,6 +2,7 @@
 import { Model } from 'objection';
 import BaseModel from './base';
 import { IbcMessage } from './ibc_message';
+import { IbcChannel } from './ibc_channel';
 
 export class IbcIcs20 extends BaseModel {
   id!: number;
@@ -18,6 +19,8 @@ export class IbcIcs20 extends BaseModel {
 
   status!: boolean;
 
+  channel_id!: string;
+
   ibc_message!: IbcMessage;
 
   static get tableName() {
@@ -27,12 +30,13 @@ export class IbcIcs20 extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['receiver', 'amount', 'denom', 'ibc_message_id'],
+      required: ['receiver', 'amount', 'denom', 'ibc_message_id', 'channel_id'],
       properties: {
         receiver: { type: 'string' },
         denom: { type: 'string' },
         ibc_message_id: { type: 'number' },
         amount: { type: 'string' },
+        channel_id: { type: 'string' },
       },
     };
   }
@@ -45,6 +49,14 @@ export class IbcIcs20 extends BaseModel {
         join: {
           from: 'ibc_ics20.ibc_message_id',
           to: 'ibc_message.id',
+        },
+      },
+      channel: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: IbcChannel,
+        join: {
+          from: 'ibc_ics20.channel_id',
+          to: 'ibc_channel.channel_id',
         },
       },
     };
