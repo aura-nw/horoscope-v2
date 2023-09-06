@@ -33,11 +33,14 @@ jobs:
         with:
           fetch-depth: 2
       - name: Check hasura changes
+        id: NUMBER_CHANGES
         run: |
           STATUS=`git diff HEAD^ HEAD hasura`
           NUMBER_CHANGES=${#STATUS}
           echo $NUMBER_CHANGES
           echo NUMBER_CHANGES=$NUMBER_CHANGES >> $GITHUB_OUTPUT
+    outputs:
+      NUMBER_CHANGES: ${{ steps.NUMBER_CHANGES.outputs.NUMBER_CHANGES}}
   build-hasura:
     runs-on: [ubuntu-latest]
     needs:
