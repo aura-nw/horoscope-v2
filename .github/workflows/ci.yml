@@ -3,7 +3,7 @@ name: CI
 on:
   workflow_dispatch:
   push:
-    branches: [develop, staging, feat/create-hasura-metadata]
+    branches: [develop, staging]
 jobs:
   lint:
     uses: ./.github/workflows/lint.yml
