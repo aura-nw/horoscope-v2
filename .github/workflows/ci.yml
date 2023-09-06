@@ -33,7 +33,7 @@ jobs:
       - name: Check hasura changes
         run: |
           CURRENT_COMMIT=$(git rev-parse HEAD)
-          STATUS=`git diff ${CURRENT_COMMIT}^ ${CURRENT_COMMIT} hasura`
+          STATUS=`git diff HEAD^ HEAD hasura`
           NUMBER_CHANGES=${#STATUS}
           echo NUMBER_CHANGES=${#STATUS} >> $GITHUB_ENV
     outputs:
