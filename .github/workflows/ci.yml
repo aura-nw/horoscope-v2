@@ -43,7 +43,7 @@ jobs:
     runs-on: [ubuntu-latest]
     needs:
       - check-hasura-metadata
-    if: needs.check-hasura-metadata.outputs.NUMBER_CHANGES
+    if: needs.check-hasura-metadata.outputs.NUMBER_CHANGES != 0
     steps:
       - run: echo "There is changes in hasura"
   updateManifest:
