@@ -10,7 +10,7 @@ WORKDIR /app
 COPY . .
 
 # cd to hasura directory
-RUN cd hasura
+WORKDIR /app/hasura
 
 # Apply metadata
 CMD ["hasura", "metadata", "apply"]
