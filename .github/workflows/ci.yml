@@ -34,7 +34,6 @@ jobs:
           fetch-depth: 2
       - name: Check hasura changes
         run: |
-          CURRENT_COMMIT=$(git rev-parse HEAD)
           STATUS=`git diff HEAD^ HEAD hasura`
           NUMBER_CHANGES=${#STATUS}
           echo NUMBER_CHANGES=${#STATUS} >> $GITHUB_ENV
@@ -44,7 +43,7 @@ jobs:
     runs-on: [ubuntu-latest]
     needs:
       - check-hasura-metadata
-    if: needs.check-hasura-metadata.outputs.NUMBER_CHANGES != '0'
+    if: needs.check-hasura-metadata.outputs.NUMBER_CHANGES
     steps:
       - run: echo "There is changes in hasura"
   updateManifest:
