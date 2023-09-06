@@ -431,7 +431,7 @@ export default class CrawlTxService extends BullableService {
     let flattenLog: string[] = [];
     let flattenEventEncoded: string[] = [];
 
-    tx?.tx_response?.logs.forEach((log: any, index: number) => {
+    tx?.tx_response?.logs?.forEach((log: any, index: number) => {
       log.events.forEach((event: any) => {
         event.attributes.forEach((attr: any) => {
           if (attr.value === undefined) {
@@ -468,7 +468,7 @@ export default class CrawlTxService extends BullableService {
     }
   }
 
-  private setMsgIndexToEvent(tx: any) {
+  public setMsgIndexToEvent(tx: any) {
     /*------
     DO NOT USE CURRENTLY
     MAPPING BY ORDER IN EVENT AND LOG
@@ -532,6 +532,12 @@ export default class CrawlTxService extends BullableService {
     TESTING
     MAPPING EVENT BY COUNT EACH LOG AND EVENT MUST BE SAME
     -----------*/
+
+    // if this is failed tx, then no need to set index msg
+    if (!tx.tx_response.logs) {
+      this.logger.info('Failed tx, no need to set index msg');
+      return;
+    }
     // count total attribute for each message, countAttributeInEvent[i] = x mean message i has x attributes
     const countAttributeInEvent: number[] = tx?.tx_response?.logs?.map(
       (log: any) =>

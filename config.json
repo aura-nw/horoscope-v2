@@ -178,6 +178,9 @@
   "crawlIbcTao": {
     "key": "crawlIbcTao",
     "millisecondRepeatJob": 2000,
+  },
+  "jobReassignMsgIndexToEvent": {
+    "millisecondCrawl": 1000,
     "blocksPerCall": 100
   }
 }

@@ -75,6 +75,7 @@ export const BULL_JOB_NAME = {
   REINDEX_CW20_HISTORY: 'reindex:cw20-history',
   CRAWL_IBC_TAO: 'crawl:ibc-tao',
   CRAWL_GENESIS_IBC_TAO: 'crawl:genesis-ibc-tao',
+  JOB_REASSIGN_MSG_INDEX_TO_EVENT: 'job:reassign-msg-index-to-event',
 };
 
 export const SERVICE = {
@@ -230,6 +231,10 @@ export const SERVICE = {
       ReDecodeTx: {
         key: 'ReDecodeTx',
         path: 'v1.ReDecodeTx',
+      },
+      ReAssignMsgIndexToEvent: {
+        key: 'ReAssignMsgIndexToEvent',
+        path: 'v1.ReAssignMsgIndexToEvent',
       },
     },
     DailyStatisticsService: {
