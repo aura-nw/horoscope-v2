@@ -3,7 +3,7 @@ name: CI
 on:
   workflow_dispatch:
   push:
-    branches: [develop, staging]
+    branches: [develop, staging, feat/create-hasura-metadata]
 jobs:
   lint:
     uses: ./.github/workflows/lint.yml
@@ -26,7 +26,24 @@ jobs:
           NPM_TOKEN: ${{ secrets.KEY_NPM_RC }}
         run: |
           ./ci/build.sh
-
+  check-hasura-metadata:
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check hasura changes
+        run: |
+          STATUS=`git status hasura -s`
+          NUMBER_CHANGES=${#STATUS}
+          echo "::set-output name=NUMBER_CHANGES::${#STATUS}"
+    outputs:
+      NUMBER_CHANGES: ${{ steps.set.outputs.NUMBER_CHANGES }}
+  build-hasura:
+    runs-on: [ubuntu-latest]
+    needs:
+      - check-hasura-metadata
+    if: needs.check-hasura-metadata.outputs.NUMBER_CHANGES == '0'
+    steps:
+      - run: echo "There is no changes in hasura"
   updateManifest:
     runs-on: [ubuntu-latest]
     needs: [lint, test, build]
