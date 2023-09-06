@@ -36,7 +36,7 @@ jobs:
         run: |
           STATUS=`git diff HEAD^ HEAD hasura`
           NUMBER_CHANGES=${#STATUS}
-          echo NUMBER_CHANGES=${#STATUS} >> $GITHUB_ENV
+          echo NUMBER_CHANGES=${#STATUS} >> $GITHUB_OUTPUT
     outputs:
       NUMBER_CHANGES: ${{ steps.set.outputs.NUMBER_CHANGES }}
   build-hasura:
