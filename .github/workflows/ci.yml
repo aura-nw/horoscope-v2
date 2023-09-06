@@ -39,17 +39,21 @@ jobs:
           NUMBER_CHANGES=${#STATUS}
           echo $NUMBER_CHANGES
           echo NUMBER_CHANGES=$NUMBER_CHANGES >> $GITHUB_OUTPUT
+      - name: Build hasura
+        run: |
+          echo ${{steps.NUMBER_CHANGES.outputs.NUMBER_CHANGES}}
+          echo 'There is changes in hasura'
     outputs:
       NUMBER_CHANGES: ${{ steps.NUMBER_CHANGES.outputs.NUMBER_CHANGES}}
-  build-hasura:
-    runs-on: [ubuntu-latest]
-    needs:
-      - check-hasura-metadata
-    # if: needs.check-hasura-metadata.outputs.NUMBER_CHANGES != 0
-    steps:
-      - run: |
-          echo ${{needs.check-hasura-metadata.outputs.NUMBER_CHANGES}}
-          echo "There is changes in hasura"
+  # build-hasura:
+  #   runs-on: [ubuntu-latest]
+  #   needs:
+  #     - check-hasura-metadata
+  #   # if: needs.check-hasura-metadata.outputs.NUMBER_CHANGES != 0
+  #   steps:
+  #     - run: |
+  #         echo ${{needs.check-hasura-metadata.outputs.NUMBER_CHANGES}}
+  #         echo "There is changes in hasura"
   updateManifest:
     runs-on: [ubuntu-latest]
     needs: [lint, test, build]
