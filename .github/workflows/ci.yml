@@ -44,7 +44,7 @@ jobs:
           echo ${{steps.NUMBER_CHANGES.outputs.NUMBER_CHANGES}}
           echo 'There is changes in hasura'
       - name: Test echo number changes
-        if: ${{steps.NUMBER_CHANGES.outputs.NUMBER_CHANGES == 0}}
+        if: ${{steps.NUMBER_CHANGES.outputs.NUMBER_CHANGES == '0'}}
         run: echo 'There is no changes in hasura'
   # build-hasura:
   #   runs-on: [ubuntu-latest]
