@@ -55,6 +55,7 @@ jobs:
         if: ${{steps.NUMBER_CHANGES.outputs.NUMBER_CHANGES != 0}}
         uses: docker/build-push-action@v4
         with:
+          file: Dockerfile.hasura
           context: .
           cache-from: type=gha
           cache-to: type=gha,mode=max
