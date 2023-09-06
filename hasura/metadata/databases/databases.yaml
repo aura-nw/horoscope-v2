@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 - name: default
   kind: postgres
   configuration:
@@ -73,3 +74,6 @@
     type_names:
       prefix: xstaxy_
   tables: "!include xstaxy/tables/tables.yaml"
+=======
+[]
+>>>>>>> c1752e1 (feat: create empty hasura directory)
