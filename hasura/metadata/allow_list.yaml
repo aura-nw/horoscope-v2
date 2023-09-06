@@ -1,7 +1,3 @@
-<<<<<<< HEAD
 - collection: allowed-queries
   scope:
     global: true
-=======
-[]
->>>>>>> c1752e1 (feat: create empty hasura directory)

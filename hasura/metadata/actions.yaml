@@ -1,13 +1,6 @@
 actions: []
 custom_types:
-<<<<<<< HEAD
   enums: []
   input_objects: []
   objects: []
   scalars: []
-=======
-    enums: []
-    input_objects: []
-    objects: []
-    scalars: []
->>>>>>> c1752e1 (feat: create empty hasura directory)

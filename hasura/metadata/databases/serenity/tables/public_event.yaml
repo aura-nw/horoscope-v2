@@ -19,6 +19,15 @@ object_relationships:
     using:
       foreign_key_constraint_on: tx_id
 array_relationships:
+  - name: event_attribute_index
+    using:
+      manual_configuration:
+        column_mapping:
+          id: event_id
+        insertion_order: null
+        remote_table:
+          name: view_event_attribute_value_index
+          schema: public
   - name: event_attributes
     using:
       foreign_key_constraint_on:
