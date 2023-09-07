@@ -3,6 +3,7 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
+import _ from 'lodash';
 import BaseService from '../../base/base.service';
 import { SERVICE } from '../../common';
 import { Block, Transaction } from '../../models';
@@ -77,23 +78,30 @@ export default class HoroscopeHandlerService extends BaseService {
       .andWhere('height', '<', endBlock)
       .orderBy('height', 'asc')
       .orderBy('index', 'asc');
-    const [resultBlock, resultTransaction] = await Promise.all([
+    const [listBlock, listTransaction] = await Promise.all([
       queryBlock,
       queryTransaction,
     ]);
-    resultTransaction.forEach((transaction) => {
-      const block: any = resultBlock.find(
-        (block) => block.height === transaction.height
-      );
-      if (block) {
-        const { txs } = block;
-        if (!txs) {
-          block.txs = [];
+
+    const resultGroupBy = _.groupBy(
+      [...listBlock, ...listTransaction],
+      'height'
+    );
+    const listData: any[] = [];
+    Object.keys(resultGroupBy).forEach((height) => {
+      if (resultGroupBy[height].length > 0) {
+        if (resultGroupBy[height][0] instanceof Block) {
+          const data: any = resultGroupBy[height][0];
+          if (resultGroupBy[height].length > 1) {
+            data.txs = resultGroupBy[height].slice(1);
+          }
+          listData.push(data);
+        } else {
+          throw Error('Block not found');
         }
-        block.txs.push(transaction);
       }
     });
     // handler response
-    return resultBlock;
+    return listData;
   }
 }
