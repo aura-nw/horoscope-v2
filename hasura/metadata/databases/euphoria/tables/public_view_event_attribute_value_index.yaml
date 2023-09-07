@@ -1,6 +1,16 @@
 table:
   name: view_event_attribute_value_index
   schema: public
+object_relationships:
+  - name: event
+    using:
+      manual_configuration:
+        column_mapping:
+          event_id: id
+        insertion_order: null
+        remote_table:
+          name: event
+          schema: public
 select_permissions:
   - role: internal_service
     permission:
