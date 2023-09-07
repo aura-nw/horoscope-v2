@@ -55,7 +55,8 @@ export default class HoroscopeHandlerService extends BaseService {
         builder.select('key', 'value');
       })
       .where('height', '>=', startBlock)
-      .andWhere('height', '<', endBlock);
+      .andWhere('height', '<', endBlock)
+      .orderBy('height', 'asc');
 
     const queryTransaction = Transaction.query()
       .select('height', 'hash', 'code', 'codespace', 'memo', 'index')
@@ -73,7 +74,9 @@ export default class HoroscopeHandlerService extends BaseService {
         builder.select('key', 'value');
       })
       .where('height', '>=', startBlock)
-      .andWhere('height', '<', endBlock);
+      .andWhere('height', '<', endBlock)
+      .orderBy('height', 'asc')
+      .orderBy('index', 'asc');
     const [resultBlock, resultTransaction] = await Promise.all([
       queryBlock,
       queryTransaction,
