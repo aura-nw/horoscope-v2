@@ -75,8 +75,6 @@ export const BULL_JOB_NAME = {
   CRAWL_GENESIS_IBC_TAO: 'crawl:genesis-ibc-tao',
   REINDEX_CW20_CONTRACT: 'reindex:cw20-contract',
   REINDEX_CW20_HISTORY: 'reindex:cw20-history',
-  UPDATE_CW721_ACTIVITY_OWNER: 'update:cw721-activity-owner',
-  UPDATE_CW721_ACTIVITY_OWNER_BY_TOKEN: 'update:cw721-activity-owner-by-token',
 };
 
 export const SERVICE = {
@@ -265,10 +263,6 @@ export const SERVICE = {
         key: 'reindexing',
         path: 'v1.Cw20ReindexingService.reindexing',
       },
-    },
-    Cw721ActivityUpdateOwnerService: {
-      key: 'Cw721ActivityUpdateOwnerService',
-      name: 'v1.Cw721ActivityUpdateOwnerService',
     },
   },
 };
