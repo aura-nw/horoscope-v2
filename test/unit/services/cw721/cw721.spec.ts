@@ -1221,7 +1221,7 @@ export default class AssetIndexerTest {
             value: this.mockInitContract.tokens[0].token_id,
           },
         ],
-        height: 100000,
+        height: 100,
         hash: 'cxvxcvxcvxcbvxcb',
         event_id: 100,
       },
@@ -1250,6 +1250,11 @@ export default class AssetIndexerTest {
             smart_contract_event_id: '100',
             key: 'sender',
             value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
+          },
+          {
+            smart_contract_event_id: '100',
+            key: 'token_id',
+            value: this.mockInitContract.tokens[0].token_id,
           },
         ],
         height: 100000,
@@ -1280,12 +1285,85 @@ export default class AssetIndexerTest {
           {
             smart_contract_event_id: '100',
             key: 'token_id',
-            value: this.mockInitContract.tokens[1].token_id,
+            value: this.mockInitContract.tokens[0].token_id,
           },
         ],
         height: 500000,
         hash: 'sdfdasrqewrasdEWEQE',
         event_id: 100,
+      },
+      {
+        contractAddress: this.mockInitContract.smart_contract.address,
+        sender: '',
+        action: 'mint',
+        content:
+          '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
+        attributes: [
+          {
+            smart_contract_event_id: '100',
+            key: '_contract_address',
+            value: this.mockInitContract.smart_contract.address,
+          },
+          {
+            smart_contract_event_id: '100',
+            key: 'action',
+            value: 'mint',
+          },
+          {
+            smart_contract_event_id: '100',
+            key: 'minter',
+            value: 'phamphong_test_re_mint_owner_haha',
+          },
+          {
+            smart_contract_event_id: '100',
+            key: 'owner',
+            value: 'phamphong_test_re_mint_owner_haha',
+          },
+          {
+            smart_contract_event_id: '100',
+            key: 'token_id',
+            value: this.mockInitContract.tokens[0].token_id,
+          },
+        ],
+        height: 10000000,
+        hash: 'cxvxcvxcvxcbvxcb',
+        event_id: 100,
+      },
+      {
+        contractAddress: this.mockInitContract.smart_contract.address,
+        sender: '',
+        action: 'transfer_nft',
+        content: '',
+        attributes: [
+          {
+            smart_contract_event_id: '100',
+            key: '_contract_address',
+            value: this.mockInitContract.smart_contract.address,
+          },
+          {
+            smart_contract_event_id: '100',
+            key: 'action',
+            value: 'transfer_nft',
+          },
+          {
+            smart_contract_event_id: '100',
+            key: 'recipient',
+            value: 'phamphong_transfer',
+          },
+          {
+            smart_contract_event_id: '100',
+            key: 'sender',
+            value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
+          },
+          {
+            smart_contract_event_id: '100',
+            key: 'token_id',
+            value: this.mockInitContract.tokens[0].token_id,
+          },
+        ],
+        height: 10000001,
+        hash: 'fghgfhgfhfhdf',
+        event_id: 10,
       },
     ];
     await this.cw721HandlerService.handleCW721Activity(
@@ -1302,8 +1380,8 @@ export default class AssetIndexerTest {
       expect(cw721Activity.tx_hash).toEqual(mockActivityMsgs[index].hash);
     });
     expect(cw721Activities[0].cw721_token_id).toEqual(1);
-    expect(cw721Activities[1].cw721_token_id).toEqual(0);
-    expect(cw721Activities[2].cw721_token_id).toEqual(2);
+    expect(cw721Activities[1].cw721_token_id).toEqual(1);
+    expect(cw721Activities[2].cw721_token_id).toEqual(1);
     expect(cw721Activities[0].from).toEqual(null);
     expect(cw721Activities[0].to).toEqual(
       getAttributeFrom(
@@ -1329,6 +1407,11 @@ export default class AssetIndexerTest {
         EventAttribute.ATTRIBUTE_KEY.SENDER
       )
     );
+    expect(cw721Activities[0].owner).toEqual(cw721Activities[0].to);
+    expect(cw721Activities[1].owner).toEqual(cw721Activities[0].to);
+    expect(cw721Activities[2].owner).toEqual(cw721Activities[1].to);
+    expect(cw721Activities[3].owner).toEqual(cw721Activities[1].to);
+    expect(cw721Activities[4].owner).toEqual(cw721Activities[3].to);
   }
 
   @Test('test handle multi contract events')

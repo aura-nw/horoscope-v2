@@ -296,9 +296,11 @@ export default class Cw721HandlerService extends BullableService {
       ),
       'address'
     );
+    const orderedEvents = _.orderBy(cw721Events, ['height'], ['asc']);
+    const cw721Activities: CW721Activity[] = [];
     await knex.transaction(async (trx) => {
-      const queries: any[] = [];
-      cw721Events.forEach((cw721Event) => {
+      // eslint-disable-next-line no-restricted-syntax
+      for (const cw721Event of orderedEvents) {
         // find the cw721 Event's smart contract id
         const cw721Contract =
           cw721ContractDbRecords[cw721Event.contractAddress];
@@ -321,47 +323,84 @@ export default class Cw721HandlerService extends BullableService {
               );
             }
           }
-          queries.push(
-            CW721Activity.query()
-              .insert(
-                CW721Activity.fromJson({
-                  action: cw721Event.action,
-                  sender: cw721Event.sender,
-                  tx_hash: cw721Event.hash,
-                  cw721_contract_id: cw721Contract.id,
-                  cw721_token_id: cw721TokenId,
-                  height: cw721Event.height,
-                  smart_contract_event_id: cw721Event.smart_contract_event_id,
-                  from: getAttributeFrom(
-                    cw721Event.attributes,
-                    EventAttribute.ATTRIBUTE_KEY.SENDER
-                  ),
-                  to:
-                    getAttributeFrom(
-                      cw721Event.attributes,
-                      EventAttribute.ATTRIBUTE_KEY.OWNER
-                    ) ||
-                    getAttributeFrom(
-                      cw721Event.attributes,
-                      EventAttribute.ATTRIBUTE_KEY.RECIPIENT
-                    ),
-                })
-              )
-              .onConflict(['smart_contract_event_id'])
-              .merge()
-              .transacting(trx)
+          // eslint-disable-next-line no-await-in-loop
+          const owner = await this.getLatestOwnerForToken(
+            cw721Contract.id,
+            cw721TokenId,
+            cw721Activities
+          );
+          const to =
+            getAttributeFrom(
+              cw721Event.attributes,
+              EventAttribute.ATTRIBUTE_KEY.OWNER
+            ) ||
+            getAttributeFrom(
+              cw721Event.attributes,
+              EventAttribute.ATTRIBUTE_KEY.RECIPIENT
+            );
+          cw721Activities.push(
+            CW721Activity.fromJson({
+              action: cw721Event.action,
+              sender: cw721Event.sender,
+              tx_hash: cw721Event.hash,
+              cw721_contract_id: cw721Contract.id,
+              cw721_token_id: cw721TokenId,
+              height: cw721Event.height,
+              smart_contract_event_id: cw721Event.smart_contract_event_id,
+              from: getAttributeFrom(
+                cw721Event.attributes,
+                EventAttribute.ATTRIBUTE_KEY.SENDER
+              ),
+              to,
+              owner: owner || to,
+            })
           );
         }
-      });
-      if (queries.length > 0) {
-        await Promise.all(queries) // Once every query is written
-          .then(trx.commit) // Try to execute all of them
-          .catch((e) => {
-            this.logger.error(e);
-            trx.rollback();
-          }); // And rollback in case any of them goes wrong
+      }
+      if (cw721Activities.length > 0) {
+        await CW721Activity.query()
+          .insert(cw721Activities)
+          .onConflict(['smart_contract_event_id'])
+          .merge()
+          .transacting(trx);
       }
     });
+  }
+
+  async getLatestOwnerForToken(
+    cw721ContractId: number,
+    cw721TokenId: number | null,
+    others: CW721Activity[]
+  ) {
+    const latestActivity = _.findLast(
+      others,
+      (e) =>
+        [
+          CW721_ACTION.MINT,
+          CW721_ACTION.TRANSFER,
+          CW721_ACTION.SEND_NFT,
+        ].includes(e.action) &&
+        e.cw721_contract_id === cw721ContractId &&
+        e.cw721_token_id === cw721TokenId
+    );
+    if (latestActivity) {
+      return latestActivity.to;
+    }
+    const latestActivityDB = await CW721Activity.query()
+      .joinRelated('event')
+      .whereIn('cw721_activity.action', [
+        CW721_ACTION.MINT,
+        CW721_ACTION.TRANSFER,
+        CW721_ACTION.SEND_NFT,
+      ])
+      .andWhere('cw721_contract_id', cw721ContractId)
+      .andWhere('cw721_token_id', cw721TokenId)
+      .orderBy('event.block_height', 'desc')
+      .first();
+    if (latestActivityDB) {
+      return latestActivityDB.to;
+    }
+    return null;
   }
 
   // handle Instantiate Msgs
