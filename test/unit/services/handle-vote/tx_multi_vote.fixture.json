@@ -1,1 +1,165 @@
-{ "txs": [ { "hash": "CD012FB920AB8AB432325EA6B0C16A09D731CB235AC999E64E524B7DCFDFFF74", "height": "4279260", "index": 0, "tx_result": { "code": 0, "data": "Ch0KGy9jb3Ntb3MuZ292LnYxYmV0YTEuTXNnVm90ZQodChsvY29zbW9zLmdvdi52MWJldGExLk1zZ1ZvdGU=", "log": "[{\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/cosmos.gov.v1beta1.MsgVote\"},{\"key\":\"module\",\"value\":\"governance\"},{\"key\":\"sender\",\"value\":\"aura17dv9s7hujzkruzmezeg4l39zfuks7mjfscddcm\"}]},{\"type\":\"proposal_vote\",\"attributes\":[{\"key\":\"option\",\"value\":\"{\\\"option\\\":4,\\\"weight\\\":\\\"1.000000000000000000\\\"}\"},{\"key\":\"proposal_id\",\"value\":\"428\"}]}]},{\"msg_index\":1,\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/cosmos.gov.v1beta1.MsgVote\"},{\"key\":\"module\",\"value\":\"governance\"},{\"key\":\"sender\",\"value\":\"aura17dv9s7hujzkruzmezeg4l39zfuks7mjfscddcm\"}]},{\"type\":\"proposal_vote\",\"attributes\":[{\"key\":\"option\",\"value\":\"{\\\"option\\\":3,\\\"weight\\\":\\\"1.000000000000000000\\\"}\"},{\"key\":\"proposal_id\",\"value\":\"428\"}]}]}]", "info": "", "gas_wanted": "1500000", "gas_used": "70704", "events": [ { "type": "coin_spent", "attributes": [ { "key": "c3BlbmRlcg==", "value": "YXVyYTE3ZHY5czdodWp6a3J1em1lemVnNGwzOXpmdWtzN21qZnNjZGRjbQ==", "index": true }, { "key": "YW1vdW50", "value": "MjUwMDB1dGF1cmE=", "index": true } ] }, { "type": "coin_received", "attributes": [ { "key": "cmVjZWl2ZXI=", "value": "YXVyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHQwNXpmeQ==", "index": true }, { "key": "YW1vdW50", "value": "MjUwMDB1dGF1cmE=", "index": true } ] }, { "type": "transfer", "attributes": [ { "key": "cmVjaXBpZW50", "value": "YXVyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHQwNXpmeQ==", "index": true }, { "key": "c2VuZGVy", "value": "YXVyYTE3ZHY5czdodWp6a3J1em1lemVnNGwzOXpmdWtzN21qZnNjZGRjbQ==", "index": true }, { "key": "YW1vdW50", "value": "MjUwMDB1dGF1cmE=", "index": true } ] }, { "type": "message", "attributes": [ { "key": "c2VuZGVy", "value": "YXVyYTE3ZHY5czdodWp6a3J1em1lemVnNGwzOXpmdWtzN21qZnNjZGRjbQ==", "index": true } ] }, { "type": "tx", "attributes": [ { "key": "ZmVl", "value": "MjUwMDB1dGF1cmE=", "index": true }, { "key": "ZmVlX3BheWVy", "value": "YXVyYTE3ZHY5czdodWp6a3J1em1lemVnNGwzOXpmdWtzN21qZnNjZGRjbQ==", "index": true } ] }, { "type": "tx", "attributes": [ { "key": "YWNjX3NlcQ==", "value": "YXVyYTE3ZHY5czdodWp6a3J1em1lemVnNGwzOXpmdWtzN21qZnNjZGRjbS8zMA==", "index": true } ] }, { "type": "tx", "attributes": [ { "key": "c2lnbmF0dXJl", "value": "bXNob3d0b0E4cE85RHg1SEw0Y1ZMaWNZcjJqWVhxdWNNdFQ1bVdSZWlsby9MaGVwTFljcWZQcFRibnpiZ0lhS0ltQlVrM3ZVMTdOcjRZOVN6endJQlE9PQ==", "index": true } ] }, { "type": "message", "attributes": [ { "key": "YWN0aW9u", "value": "L2Nvc21vcy5nb3YudjFiZXRhMS5Nc2dWb3Rl", "index": true } ] }, { "type": "proposal_vote", "attributes": [ { "key": "b3B0aW9u", "value": "eyJvcHRpb24iOjQsIndlaWdodCI6IjEuMDAwMDAwMDAwMDAwMDAwMDAwIn0=", "index": true }, { "key": "cHJvcG9zYWxfaWQ=", "value": "NDI4", "index": true } ] }, { "type": "message", "attributes": [ { "key": "bW9kdWxl", "value": "Z292ZXJuYW5jZQ==", "index": true }, { "key": "c2VuZGVy", "value": "YXVyYTE3ZHY5czdodWp6a3J1em1lemVnNGwzOXpmdWtzN21qZnNjZGRjbQ==", "index": true } ] }, { "type": "message", "attributes": [ { "key": "YWN0aW9u", "value": "L2Nvc21vcy5nb3YudjFiZXRhMS5Nc2dWb3Rl", "index": true } ] }, { "type": "proposal_vote", "attributes": [ { "key": "b3B0aW9u", "value": "eyJvcHRpb24iOjMsIndlaWdodCI6IjEuMDAwMDAwMDAwMDAwMDAwMDAwIn0=", "index": true }, { "key": "cHJvcG9zYWxfaWQ=", "value": "NDI4", "index": true } ] }, { "type": "message", "attributes": [ { "key": "bW9kdWxl", "value": "Z292ZXJuYW5jZQ==", "index": true }, { "key": "c2VuZGVy", "value": "YXVyYTE3ZHY5czdodWp6a3J1em1lemVnNGwzOXpmdWtzN21qZnNjZGRjbQ==", "index": true } ] } ], "codespace": "" }, "tx": "CrcBClEKGy9jb3Ntb3MuZ292LnYxYmV0YTEuTXNnVm90ZRIyCKwDEithdXJhMTdkdjlzN2h1anprcnV6bWV6ZWc0bDM5emZ1a3M3bWpmc2NkZGNtGAQKUQobL2Nvc21vcy5nb3YudjFiZXRhMS5Nc2dWb3RlEjIIrAMSK2F1cmExN2R2OXM3aHVqemtydXptZXplZzRsMzl6ZnVrczdtamZzY2RkY20YAxIPdGVzdCBncmFudCB2b3RlEmkKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQPrbKd06+uu+OVWbtUu70PrFiJtb8AhBDjJfjVwNN64BRIECgIIARgeEhUKDwoGdXRhdXJhEgUyNTAwMBDgxlsaQJrIaMLaAPKTvQ8eRy+HFS4nGK9o2F6rnDLU+ZlkXopaPy4XqS2HKnz6U25824CGiiJgVJN71Neza+GPUs88CAU=" } ], "total_count": "1" }
+{
+  "txs": [
+    {
+      "hash": "CD012FB920AB8AB432325EA6B0C16A09D731CB235AC999E64E524B7DCFDFFF74",
+      "height": "4279260",
+      "index": 0,
+      "tx_result": {
+        "code": 0,
+        "data": "Ch0KGy9jb3Ntb3MuZ292LnYxYmV0YTEuTXNnVm90ZQodChsvY29zbW9zLmdvdi52MWJldGExLk1zZ1ZvdGU=",
+        "log": "[{\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/cosmos.gov.v1beta1.MsgVote\"},{\"key\":\"module\",\"value\":\"governance\"},{\"key\":\"sender\",\"value\":\"aura17dv9s7hujzkruzmezeg4l39zfuks7mjfscddcm\"}]},{\"type\":\"proposal_vote\",\"attributes\":[{\"key\":\"option\",\"value\":\"{\\\"option\\\":4,\\\"weight\\\":\\\"1.000000000000000000\\\"}\"},{\"key\":\"proposal_id\",\"value\":\"428\"}]}]},{\"msg_index\":1,\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/cosmos.gov.v1beta1.MsgVote\"},{\"key\":\"module\",\"value\":\"governance\"},{\"key\":\"sender\",\"value\":\"aura17dv9s7hujzkruzmezeg4l39zfuks7mjfscddcm\"}]},{\"type\":\"proposal_vote\",\"attributes\":[{\"key\":\"option\",\"value\":\"{\\\"option\\\":3,\\\"weight\\\":\\\"1.000000000000000000\\\"}\"},{\"key\":\"proposal_id\",\"value\":\"428\"}]}]}]",
+        "info": "",
+        "gas_wanted": "1500000",
+        "gas_used": "70704",
+        "events": [
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "c3BlbmRlcg==",
+                "value": "YXVyYTE3ZHY5czdodWp6a3J1em1lemVnNGwzOXpmdWtzN21qZnNjZGRjbQ==",
+                "index": true
+              },
+              { "key": "YW1vdW50", "value": "MjUwMDB1dGF1cmE=", "index": true }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "cmVjZWl2ZXI=",
+                "value": "YXVyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHQwNXpmeQ==",
+                "index": true
+              },
+              { "key": "YW1vdW50", "value": "MjUwMDB1dGF1cmE=", "index": true }
+            ]
+          },
+          {
+            "type": "transfer",
+            "attributes": [
+              {
+                "key": "cmVjaXBpZW50",
+                "value": "YXVyYTE3eHBmdmFrbTJhbWc5NjJ5bHM2Zjg0ejNrZWxsOGM1bHQwNXpmeQ==",
+                "index": true
+              },
+              {
+                "key": "c2VuZGVy",
+                "value": "YXVyYTE3ZHY5czdodWp6a3J1em1lemVnNGwzOXpmdWtzN21qZnNjZGRjbQ==",
+                "index": true
+              },
+              { "key": "YW1vdW50", "value": "MjUwMDB1dGF1cmE=", "index": true }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "c2VuZGVy",
+                "value": "YXVyYTE3ZHY5czdodWp6a3J1em1lemVnNGwzOXpmdWtzN21qZnNjZGRjbQ==",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "tx",
+            "attributes": [
+              { "key": "ZmVl", "value": "MjUwMDB1dGF1cmE=", "index": true },
+              {
+                "key": "ZmVlX3BheWVy",
+                "value": "YXVyYTE3ZHY5czdodWp6a3J1em1lemVnNGwzOXpmdWtzN21qZnNjZGRjbQ==",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "tx",
+            "attributes": [
+              {
+                "key": "YWNjX3NlcQ==",
+                "value": "YXVyYTE3ZHY5czdodWp6a3J1em1lemVnNGwzOXpmdWtzN21qZnNjZGRjbS8zMA==",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "tx",
+            "attributes": [
+              {
+                "key": "c2lnbmF0dXJl",
+                "value": "bXNob3d0b0E4cE85RHg1SEw0Y1ZMaWNZcjJqWVhxdWNNdFQ1bVdSZWlsby9MaGVwTFljcWZQcFRibnpiZ0lhS0ltQlVrM3ZVMTdOcjRZOVN6endJQlE9PQ==",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "YWN0aW9u",
+                "value": "L2Nvc21vcy5nb3YudjFiZXRhMS5Nc2dWb3Rl",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "proposal_vote",
+            "attributes": [
+              {
+                "key": "b3B0aW9u",
+                "value": "eyJvcHRpb24iOjQsIndlaWdodCI6IjEuMDAwMDAwMDAwMDAwMDAwMDAwIn0=",
+                "index": true
+              },
+              { "key": "cHJvcG9zYWxfaWQ=", "value": "NDI4", "index": true }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              { "key": "bW9kdWxl", "value": "Z292ZXJuYW5jZQ==", "index": true },
+              {
+                "key": "c2VuZGVy",
+                "value": "YXVyYTE3ZHY5czdodWp6a3J1em1lemVnNGwzOXpmdWtzN21qZnNjZGRjbQ==",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "YWN0aW9u",
+                "value": "L2Nvc21vcy5nb3YudjFiZXRhMS5Nc2dWb3Rl",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "proposal_vote",
+            "attributes": [
+              {
+                "key": "b3B0aW9u",
+                "value": "eyJvcHRpb24iOjMsIndlaWdodCI6IjEuMDAwMDAwMDAwMDAwMDAwMDAwIn0=",
+                "index": true
+              },
+              { "key": "cHJvcG9zYWxfaWQ=", "value": "NDI4", "index": true }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              { "key": "bW9kdWxl", "value": "Z292ZXJuYW5jZQ==", "index": true },
+              {
+                "key": "c2VuZGVy",
+                "value": "YXVyYTE3ZHY5czdodWp6a3J1em1lemVnNGwzOXpmdWtzN21qZnNjZGRjbQ==",
+                "index": true
+              }
+            ]
+          }
+        ],
+        "codespace": ""
+      },
+      "tx": "CrcBClEKGy9jb3Ntb3MuZ292LnYxYmV0YTEuTXNnVm90ZRIyCKwDEithdXJhMTdkdjlzN2h1anprcnV6bWV6ZWc0bDM5emZ1a3M3bWpmc2NkZGNtGAQKUQobL2Nvc21vcy5nb3YudjFiZXRhMS5Nc2dWb3RlEjIIrAMSK2F1cmExN2R2OXM3aHVqemtydXptZXplZzRsMzl6ZnVrczdtamZzY2RkY20YAxIPdGVzdCBncmFudCB2b3RlEmkKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQPrbKd06+uu+OVWbtUu70PrFiJtb8AhBDjJfjVwNN64BRIECgIIARgeEhUKDwoGdXRhdXJhEgUyNTAwMBDgxlsaQJrIaMLaAPKTvQ8eRy+HFS4nGK9o2F6rnDLU+ZlkXopaPy4XqS2HKnz6U25824CGiiJgVJN71Neza+GPUs88CAU="
+    }
+  ],
+  "total_count": "1"
+}
