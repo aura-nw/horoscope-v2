@@ -3,7 +3,7 @@ import {
   Action,
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
-import _ from 'lodash';
+import _, { Dictionary } from 'lodash';
 import { Context, ServiceBroker } from 'moleculer';
 import { Queue } from 'bullmq';
 import config from '../../../config.json' assert { type: 'json' };
@@ -298,6 +298,7 @@ export default class Cw721HandlerService extends BullableService {
     );
     const orderedEvents = _.orderBy(cw721Events, ['height'], ['asc']);
     const cw721Activities: CW721Activity[] = [];
+    const latestOwners: Dictionary<string> = {};
     await knex.transaction(async (trx) => {
       // eslint-disable-next-line no-restricted-syntax
       for (const cw721Event of orderedEvents) {
@@ -327,7 +328,7 @@ export default class Cw721HandlerService extends BullableService {
           const owner = await this.getLatestOwnerForToken(
             cw721Contract.id,
             cw721TokenId,
-            cw721Activities
+            latestOwners
           );
           const to =
             getAttributeFrom(
@@ -338,23 +339,35 @@ export default class Cw721HandlerService extends BullableService {
               cw721Event.attributes,
               EventAttribute.ATTRIBUTE_KEY.RECIPIENT
             );
-          cw721Activities.push(
-            CW721Activity.fromJson({
-              action: cw721Event.action,
-              sender: cw721Event.sender,
-              tx_hash: cw721Event.hash,
-              cw721_contract_id: cw721Contract.id,
-              cw721_token_id: cw721TokenId,
-              height: cw721Event.height,
-              smart_contract_event_id: cw721Event.smart_contract_event_id,
-              from: getAttributeFrom(
-                cw721Event.attributes,
-                EventAttribute.ATTRIBUTE_KEY.SENDER
-              ),
-              to,
-              owner: owner || to,
-            })
-          );
+          const cw721Activity = CW721Activity.fromJson({
+            action: cw721Event.action,
+            sender: cw721Event.sender,
+            tx_hash: cw721Event.hash,
+            cw721_contract_id: cw721Contract.id,
+            cw721_token_id: cw721TokenId,
+            height: cw721Event.height,
+            smart_contract_event_id: cw721Event.smart_contract_event_id,
+            from: getAttributeFrom(
+              cw721Event.attributes,
+              EventAttribute.ATTRIBUTE_KEY.SENDER
+            ),
+            to,
+            owner: owner || to,
+          });
+          // push to update records
+          cw721Activities.push(cw721Activity);
+          // update latestActivity for this token
+          if (
+            cw721Activity.action === CW721_ACTION.MINT ||
+            cw721Activity.action === CW721_ACTION.TRANSFER ||
+            cw721Activity.action === CW721_ACTION.SEND_NFT
+          ) {
+            latestOwners[
+              `${cw721Activity.cw721_contract_id 
+                }_${ 
+                cw721Activity.cw721_token_id}`
+            ] = cw721Activity.to;
+          }
         }
       }
       if (cw721Activities.length > 0) {
@@ -370,21 +383,11 @@ export default class Cw721HandlerService extends BullableService {
   async getLatestOwnerForToken(
     cw721ContractId: number,
     cw721TokenId: number | null,
-    others: CW721Activity[]
+    latestOwners: Dictionary<string>
   ) {
-    const latestActivity = _.findLast(
-      others,
-      (e) =>
-        [
-          CW721_ACTION.MINT,
-          CW721_ACTION.TRANSFER,
-          CW721_ACTION.SEND_NFT,
-        ].includes(e.action) &&
-        e.cw721_contract_id === cw721ContractId &&
-        e.cw721_token_id === cw721TokenId
-    );
-    if (latestActivity) {
-      return latestActivity.to;
+    const latestOwner = latestOwners[`${cw721ContractId  }_${  cw721TokenId}`];
+    if (latestOwner) {
+      return latestOwner;
     }
     const latestActivityDB = await CW721Activity.query()
       .joinRelated('event')
