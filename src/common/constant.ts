@@ -406,6 +406,14 @@ export const SERVICE = {
         path: 'v1.HoroscopeHandlerService.getData',
       },
     },
+    HoroscopeHandlerService: {
+      key: 'HoroscopeHandlerService',
+      path: 'v1.HoroscopeHandlerService',
+      getData: {
+        key: 'getData',
+        path: 'v1.HoroscopeHandlerService.getData',
+      },
+    },
   },
 };
 
