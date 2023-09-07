@@ -14,7 +14,12 @@
       "sourceMaps": true,
       "runtimeArgs": ["-r", "ts-node/register"],
       "cwd": "${workspaceRoot}",
-      "args": ["--env", "src/services/**/*.service.ts"]
+      "args": [
+        "--env",
+        "src/services/**/*.service.ts",
+        "--config",
+        "src/moleculer.config.ts"
+      ]
     },
     {
       "type": "node",
@@ -25,6 +30,17 @@
       "args": ["--runInBand"],
       "cwd": "${workspaceRoot}",
       "runtimeArgs": ["--inspect-brk"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Jest current file",
+      "runtimeExecutable": "ts-node",
+      "program": "${workspaceRoot}/node_modules/jest-cli/bin/jest.js",
+      "args": [
+        "${fileBasename}"
+      ],
+      "internalConsoleOptions": "neverOpen"
     },
     {
       "name": "Attach by Process ID",
