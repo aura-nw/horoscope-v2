@@ -19,13 +19,20 @@ import CW721Activity from '../../models/cw721_tx';
 import { ICw721ReindexingHistoryParams } from './cw721.service';
 
 export interface IAddressParam {
-  contractAddress: string;
+  contractAddresses: string[];
+  type: string;
 }
 
 interface ICw721ReindexingServiceParams {
   contractAddress: string;
   smartContractId: number;
+  type: string;
 }
+
+export const REINDEX_TYPE = {
+  ALL: 'all',
+  HISTORY: 'history',
+};
 
 @Service({
   name: SERVICE.V1.CW721ReindexingService.key,
@@ -41,7 +48,15 @@ export default class CW721ReindexingService extends BullableService {
     jobName: BULL_JOB_NAME.REINDEX_CW721_CONTRACT,
   })
   async jobHandler(_payload: ICw721ReindexingServiceParams): Promise<void> {
-    const { smartContractId, contractAddress } = _payload;
+    const { smartContractId, contractAddress, type } = _payload;
+    if (type === REINDEX_TYPE.ALL) {
+      await this.handleReindexAll(smartContractId, contractAddress);
+    } else if (type === REINDEX_TYPE.HISTORY) {
+      await this.handleReindexHistory(smartContractId, contractAddress);
+    }
+  }
+
+  async handleReindexAll(smartContractId: number, contractAddress: string) {
     const cw721Contract = await CW721Contract.query()
       .withGraphJoined('smart_contract')
       .where('smart_contract.address', contractAddress)
@@ -118,37 +133,77 @@ export default class CW721ReindexingService extends BullableService {
     );
   }
 
+  async handleReindexHistory(smartContractId: number, contractAddress: string) {
+    const cw721Contract = await CW721Contract.query()
+      .withGraphJoined('smart_contract')
+      .where('smart_contract.address', contractAddress)
+      .select(['cw721_contract.id'])
+      .first()
+      .throwIfNotFound();
+    const currentHeight = (
+      await CW721Activity.query().max('height as height').throwIfNotFound()
+    )[0].height;
+    await CW721Activity.query()
+      .delete()
+      .where('cw721_contract_id', cw721Contract.id)
+      .andWhere('height', '<=', currentHeight);
+    // insert histories
+    await this.createJob(
+      BULL_JOB_NAME.REINDEX_CW721_HISTORY,
+      BULL_JOB_NAME.REINDEX_CW721_HISTORY,
+      {
+        smartContractId,
+        startBlock: config.crawlBlock.startBlock,
+        endBlock: currentHeight,
+        prevId: 0,
+        contractAddress,
+      } satisfies ICw721ReindexingHistoryParams,
+      {
+        removeOnComplete: true,
+      }
+    );
+  }
+
   @Action({
     name: SERVICE.V1.CW721ReindexingService.Reindexing.key,
     params: {
-      contractAddress: 'string',
+      contractAddresses: {
+        type: 'array',
+        items: 'string',
+        optional: false,
+      },
+      type: {
+        type: 'string',
+        optional: false,
+      },
     },
   })
   public async reindexing(ctx: Context<IAddressParam>) {
-    const { contractAddress } = ctx.params;
-    const smartContract = await SmartContract.query()
+    const { contractAddresses, type } = ctx.params;
+    const smartContracts = await SmartContract.query()
       .withGraphJoined('code')
-      .where('address', contractAddress)
-      .first()
-      .throwIfNotFound();
-    // check whether contract is CW721 type -> throw error to user
-    if (smartContract.code.type === 'CW721') {
-      await this.createJob(
-        BULL_JOB_NAME.REINDEX_CW721_CONTRACT,
-        BULL_JOB_NAME.REINDEX_CW721_CONTRACT,
-        {
-          contractAddress,
-          smartContractId: smartContract.id,
-        } satisfies ICw721ReindexingServiceParams,
-        {
-          jobId: contractAddress,
+      .whereIn('address', contractAddresses);
+    await Promise.all(
+      smartContracts.reduce((acc: Promise<void>[], smartContract) => {
+        if (smartContract.code.type === 'CW721') {
+          acc.push(
+            this.createJob(
+              BULL_JOB_NAME.REINDEX_CW721_CONTRACT,
+              BULL_JOB_NAME.REINDEX_CW721_CONTRACT,
+              {
+                contractAddress: smartContract.address,
+                smartContractId: smartContract.id,
+                type,
+              } satisfies ICw721ReindexingServiceParams,
+              {
+                jobId: smartContract.address,
+              }
+            )
+          );
         }
-      );
-    } else {
-      throw new Error(
-        `Smart contract ${ctx.params.contractAddress} is not CW721 type`
-      );
-    }
+        return acc;
+      }, [])
+    );
   }
 
   async _start(): Promise<void> {

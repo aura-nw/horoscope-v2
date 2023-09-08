@@ -70,13 +70,10 @@ export class EventAttribute extends BaseModel {
     REDELEGATION_RESPONSES: 'redelegation_responses',
     UNBONDING_RESPONSES: 'unbonding_responses',
     ACTION: 'action',
-    TRANSFER: 'transfer',
     SENDER: 'sender',
     RECEIVER: 'receiver',
     SPENDER: 'spender',
     RECIPIENT: 'recipient',
-    COIN_RECEIVED: 'coin_received',
-    COIN_SPENT: 'coin_spent',
     WITHDRAW_REWARDS: 'withdraw_rewards',
     AMOUNT: 'amount',
     VALIDATOR: 'validator',
@@ -114,5 +111,19 @@ export class EventAttribute extends BaseModel {
     SRC_CHANNEL: 'packet_src_channel',
     DST_PORT: 'packet_dst_port',
     DST_CHANNEL: 'packet_dst_channel',
+    MINTER: 'minter',
+    FEE: 'fee',
+    FEE_PAYER: 'fee_payer',
+  };
+
+  static ATTRIBUTE_COMPOSITE_KEY = {
+    COIN_SPENT_SPENDER: 'coin_spent.spender',
+    COIN_RECEIVED_RECEIVER: 'coin_received.receiver',
+    COIN_SPENT_AMOUNT: 'coin_spent.amount',
+    COIN_RECEIVED_AMOUNT: 'coin_received.amount',
+    USE_FEEGRANT_GRANTER: 'use_feegrant.granter',
+    USE_FEEGRANT_GRANTEE: 'use_feegrant.grantee',
+    TX_FEE: 'tx.fee',
+    TX_FEE_PAYER: 'tx.fee_payer',
   };
 }

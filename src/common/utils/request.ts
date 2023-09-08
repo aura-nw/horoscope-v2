@@ -8,3 +8,11 @@ export interface IProposalIdParam {
 export interface ITxIdsParam {
   txIds: number[];
 }
+
+export interface IStatisticsParam {
+  date: string;
+}
+
+export interface ICreateSpecificDateJob {
+  date: string;
+}
