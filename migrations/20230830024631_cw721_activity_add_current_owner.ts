@@ -4,14 +4,8 @@ import _, { Dictionary } from 'lodash';
 import { CW721_ACTION } from '../src/services/cw721/cw721.service';
 
 export async function up(knex: Knex): Promise<void> {
-  await knex.schema.alterTable('cw721_activity', (table) => {
-    table.dropColumn('sender');
-  });
-  await knex.schema.alterTable('cw721_activity', (table) => {
-    table.renameColumn('from', 'sender');
-  });
-  await knex.schema.alterTable('cw721_activity', (table) => {
-    table.string('from');
+  await knex('cw721_activity').update({
+    sender: knex.ref('from'),
   });
   await knex.transaction(async (trx) => {
     const activities = await CW721Activity.query()
