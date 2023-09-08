@@ -5,7 +5,13 @@ import { CW721_ACTION } from '../src/services/cw721/cw721.service';
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.alterTable('cw721_activity', (table) => {
-    table.string('owner');
+    table.dropColumn('sender');
+  });
+  await knex.schema.alterTable('cw721_activity', (table) => {
+    table.renameColumn('from', 'sender');
+  });
+  await knex.schema.alterTable('cw721_activity', (table) => {
+    table.string('from');
   });
   await knex.transaction(async (trx) => {
     const activities = await CW721Activity.query()
@@ -19,9 +25,9 @@ export async function up(knex: Knex): Promise<void> {
           activity.cw721_contract_id + '_' + activity.cw721_token_id
         ];
       if (latestOwner) {
-        activity.owner = latestOwner;
+        activity.from = latestOwner;
       } else {
-        activity.owner = activity.to;
+        activity.from = null;
       }
       if (
         activity.action === CW721_ACTION.MINT ||
@@ -43,8 +49,4 @@ export async function up(knex: Knex): Promise<void> {
   });
 }
 
-export async function down(knex: Knex): Promise<void> {
-  await knex.schema.alterTable('cw721_activity', (table) => {
-    table.dropColumn('owner');
-  });
-}
+export async function down(knex: Knex): Promise<void> {}

@@ -325,7 +325,7 @@ export default class Cw721HandlerService extends BullableService {
             }
           }
           // eslint-disable-next-line no-await-in-loop
-          const owner = await this.getLatestOwnerForToken(
+          const from = await this.getLatestOwnerForToken(
             cw721Contract.id,
             cw721TokenId,
             latestOwners
@@ -347,12 +347,8 @@ export default class Cw721HandlerService extends BullableService {
             cw721_token_id: cw721TokenId,
             height: cw721Event.height,
             smart_contract_event_id: cw721Event.smart_contract_event_id,
-            from: getAttributeFrom(
-              cw721Event.attributes,
-              EventAttribute.ATTRIBUTE_KEY.SENDER
-            ),
             to,
-            owner: owner || to,
+            from,
           });
           // push to update records
           cw721Activities.push(cw721Activity);
@@ -363,9 +359,7 @@ export default class Cw721HandlerService extends BullableService {
             cw721Activity.action === CW721_ACTION.SEND_NFT
           ) {
             latestOwners[
-              `${cw721Activity.cw721_contract_id 
-                }_${ 
-                cw721Activity.cw721_token_id}`
+              `${cw721Activity.cw721_contract_id}_${cw721Activity.cw721_token_id}`
             ] = cw721Activity.to;
           }
         }
@@ -385,7 +379,7 @@ export default class Cw721HandlerService extends BullableService {
     cw721TokenId: number | null,
     latestOwners: Dictionary<string>
   ) {
-    const latestOwner = latestOwners[`${cw721ContractId  }_${  cw721TokenId}`];
+    const latestOwner = latestOwners[`${cw721ContractId}_${cw721TokenId}`];
     if (latestOwner) {
       return latestOwner;
     }
