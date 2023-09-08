@@ -96,6 +96,7 @@ export class EventAttribute extends BaseModel {
     GRANTER: 'granter',
     GRANTEE: 'grantee',
     FROM: 'from',
+    MINTER: 'minter',
     FEE: 'fee',
     FEE_PAYER: 'fee_payer',
     CLIENT_ID: 'client_id',
@@ -107,7 +108,12 @@ export class EventAttribute extends BaseModel {
     PORT_ID: 'port_id',
     COUNTERPARTY_PORT_ID: 'counterparty_port_id',
     COUNTERPARTY_CHANNEL_ID: 'counterparty_channel_id',
-    MINTER: 'minter',
+    DATA_HEX: 'packet_data_hex',
+    SEQUENCE: 'packet_sequence',
+    SRC_PORT: 'packet_src_port',
+    SRC_CHANNEL: 'packet_src_channel',
+    DST_PORT: 'packet_dst_port',
+    DST_CHANNEL: 'packet_dst_channel',
   };
 
   static ATTRIBUTE_COMPOSITE_KEY = {

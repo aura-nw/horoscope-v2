@@ -151,11 +151,11 @@ export default class TestCw20ReindexingService {
       .orderBy('address', 'asc');
     expect(
       cw20Holders.map((cw20Holder) => ({
-          address: cw20Holder.address,
-          amount: cw20Holder.amount,
-          event_height: cw20Holder.last_updated_height,
-          contract_address: this.codeId.contracts[0].address,
-        }))
+        address: cw20Holder.address,
+        amount: cw20Holder.amount,
+        event_height: cw20Holder.last_updated_height,
+        contract_address: this.codeId.contracts[0].address,
+      }))
     ).toEqual(mockHolders);
   }
 }
