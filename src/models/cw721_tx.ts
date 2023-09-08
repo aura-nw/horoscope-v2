@@ -27,7 +27,7 @@ export default class CW721Activity extends BaseModel {
 
   updated_at?: Date;
 
-  from!: string;
+  from!: string | null;
 
   to!: string;
 
