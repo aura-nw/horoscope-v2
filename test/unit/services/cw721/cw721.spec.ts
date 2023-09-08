@@ -1378,7 +1378,12 @@ export default class AssetIndexerTest {
         this.mockInitContract.tokens[0].cw721_contract_id
       );
       expect(cw721Activity.tx_hash).toEqual(mockActivityMsgs[index].hash);
-      expect(cw721Activity.sender).toEqual(mockActivityMsgs[index].sender);
+      expect(cw721Activity.sender).toEqual(
+        getAttributeFrom(
+          mockActivityMsgs[index].attributes,
+          EventAttribute.ATTRIBUTE_KEY.SENDER
+        ) || null
+      );
     });
     expect(cw721Activities[0].cw721_token_id).toEqual(1);
     expect(cw721Activities[1].cw721_token_id).toEqual(1);
