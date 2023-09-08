@@ -34,6 +34,7 @@ import { bullBoardMixin } from '../../mixins/bullBoard/bullBoard.mixin';
         whitelist: [
           'v2.statistics.syncPrevDateStatsByChainId',
           'v1.cw20-admin.*',
+          'v1.cw721-admin.*',
         ],
       },
     ],
