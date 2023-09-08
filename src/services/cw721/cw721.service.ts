@@ -341,7 +341,10 @@ export default class Cw721HandlerService extends BullableService {
             );
           const cw721Activity = CW721Activity.fromJson({
             action: cw721Event.action,
-            sender: cw721Event.sender,
+            sender: getAttributeFrom(
+              cw721Event.attributes,
+              EventAttribute.ATTRIBUTE_KEY.SENDER
+            ),
             tx_hash: cw721Event.hash,
             cw721_contract_id: cw721Contract.id,
             cw721_token_id: cw721TokenId,
