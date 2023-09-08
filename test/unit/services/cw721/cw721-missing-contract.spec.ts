@@ -1,12 +1,14 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
-import { ServiceBroker } from 'moleculer';
+import { Errors, ServiceBroker } from 'moleculer';
 import { BULL_JOB_NAME } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
 import { BlockCheckpoint, Code } from '../../../../src/models';
 import CW721Contract from '../../../../src/models/cw721_contract';
 import CW721Token from '../../../../src/models/cw721_token';
 import { SmartContractEvent } from '../../../../src/models/smart_contract_event';
-import Cw721MissingContractService from '../../../../src/services/cw721/cw721-reindexing.service';
+import Cw721MissingContractService, {
+  REINDEX_TYPE,
+} from '../../../../src/services/cw721/cw721-reindexing.service';
 import Cw721HandlerService, {
   CW721_ACTION,
 } from '../../../../src/services/cw721/cw721.service';
@@ -331,6 +333,7 @@ export default class TestCw721MissingContractService {
     await this.cw721MissingContractService.jobHandler({
       contractAddress: this.codeId.contracts[0].address,
       smartContractId: 1,
+      type: REINDEX_TYPE.ALL,
     });
     const cw721Contract = await CW721Contract.query()
       .withGraphJoined('smart_contract')
@@ -523,5 +526,39 @@ export default class TestCw721MissingContractService {
     expect(tokens[0].owner).toEqual(missingHistories[2].attributes[2].value);
     expect(tokens[0].last_updated_height).toEqual(missingHistories[3].height);
     expect(tokens[0].burned).toEqual(true);
+  }
+
+  @Test('test action params')
+  public async testActionParams() {
+    expect(
+      this.broker.call('v1.Cw721ReindexingService.reindexing', {
+        contractAddresses: undefined,
+        type: 'all',
+      })
+    ).rejects.toBeInstanceOf(Errors.ValidationError);
+    expect(
+      this.broker.call('v1.Cw721ReindexingService.reindexing', {
+        contractAddresses: this.codeId.contracts[1].address,
+        type: 'heell',
+      })
+    ).rejects.toBeInstanceOf(Errors.ValidationError);
+    expect(
+      this.broker.call('v1.Cw721ReindexingService.reindexing', {
+        contractAddresses: [this.codeId.contracts[1].address],
+        type: 'heell',
+      })
+    ).toBeDefined();
+    expect(
+      this.broker.call('v1.Cw721ReindexingService.reindexing', {
+        contractAddresses: [this.codeId.contracts[1].address],
+        type: REINDEX_TYPE.ALL,
+      })
+    ).toBeDefined();
+    expect(
+      this.broker.call('v1.Cw721ReindexingService.reindexing', {
+        contractAddresses: [this.codeId.contracts[1].address],
+        type: REINDEX_TYPE.HISTORY,
+      })
+    ).toBeDefined();
   }
 }
