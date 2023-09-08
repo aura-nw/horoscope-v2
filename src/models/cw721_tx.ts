@@ -33,8 +33,6 @@ export default class CW721Activity extends BaseModel {
 
   height!: number;
 
-  owner!: string;
-
   smart_contract_event_id!: number;
 
   static get tableName() {

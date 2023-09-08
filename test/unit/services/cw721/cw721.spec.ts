@@ -1190,7 +1190,7 @@ export default class AssetIndexerTest {
     const mockActivityMsgs = [
       {
         contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
+        sender: 'xv xcgfsgsfgsd',
         action: 'mint',
         content:
           '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
@@ -1227,7 +1227,7 @@ export default class AssetIndexerTest {
       },
       {
         contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
+        sender: 'xbvxcbfsdgfsgf',
         action: 'transfer_nft',
         content: '',
         attributes: [
@@ -1263,7 +1263,7 @@ export default class AssetIndexerTest {
       },
       {
         contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
+        sender: 'fsgvccxvsdfgfsdg',
         action: 'burn',
         content: '',
         attributes: [
@@ -1294,7 +1294,7 @@ export default class AssetIndexerTest {
       },
       {
         contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
+        sender: 'sdgsgfvfbvxcbx',
         action: 'mint',
         content:
           '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
@@ -1331,7 +1331,7 @@ export default class AssetIndexerTest {
       },
       {
         contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
+        sender: 'gdfgdfgdhgfh',
         action: 'transfer_nft',
         content: '',
         attributes: [
@@ -1378,21 +1378,15 @@ export default class AssetIndexerTest {
         this.mockInitContract.tokens[0].cw721_contract_id
       );
       expect(cw721Activity.tx_hash).toEqual(mockActivityMsgs[index].hash);
+      expect(cw721Activity.sender).toEqual(mockActivityMsgs[index].sender);
     });
     expect(cw721Activities[0].cw721_token_id).toEqual(1);
     expect(cw721Activities[1].cw721_token_id).toEqual(1);
     expect(cw721Activities[2].cw721_token_id).toEqual(1);
-    expect(cw721Activities[0].from).toEqual(null);
     expect(cw721Activities[0].to).toEqual(
       getAttributeFrom(
         mockActivityMsgs[0].attributes,
         EventAttribute.ATTRIBUTE_KEY.OWNER
-      )
-    );
-    expect(cw721Activities[1].from).toEqual(
-      getAttributeFrom(
-        mockActivityMsgs[1].attributes,
-        EventAttribute.ATTRIBUTE_KEY.SENDER
       )
     );
     expect(cw721Activities[1].to).toEqual(
@@ -1401,17 +1395,11 @@ export default class AssetIndexerTest {
         EventAttribute.ATTRIBUTE_KEY.RECIPIENT
       )
     );
-    expect(cw721Activities[2].from).toEqual(
-      getAttributeFrom(
-        mockActivityMsgs[2].attributes,
-        EventAttribute.ATTRIBUTE_KEY.SENDER
-      )
-    );
-    expect(cw721Activities[0].owner).toEqual(cw721Activities[0].to);
-    expect(cw721Activities[1].owner).toEqual(cw721Activities[0].to);
-    expect(cw721Activities[2].owner).toEqual(cw721Activities[1].to);
-    expect(cw721Activities[3].owner).toEqual(cw721Activities[1].to);
-    expect(cw721Activities[4].owner).toEqual(cw721Activities[3].to);
+    expect(cw721Activities[0].from).toBeNull();
+    expect(cw721Activities[1].from).toEqual(cw721Activities[0].to);
+    expect(cw721Activities[2].from).toEqual(cw721Activities[1].to);
+    expect(cw721Activities[3].from).toEqual(cw721Activities[1].to);
+    expect(cw721Activities[4].from).toEqual(cw721Activities[3].to);
   }
 
   @Test('test handle multi contract events')

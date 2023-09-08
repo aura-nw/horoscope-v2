@@ -325,7 +325,7 @@ export default class Cw721HandlerService extends BullableService {
             }
           }
           // eslint-disable-next-line no-await-in-loop
-          const owner = await this.getLatestOwnerForToken(
+          const from = await this.getLatestOwnerForToken(
             cw721Contract.id,
             cw721TokenId,
             latestOwners
@@ -347,12 +347,8 @@ export default class Cw721HandlerService extends BullableService {
             cw721_token_id: cw721TokenId,
             height: cw721Event.height,
             smart_contract_event_id: cw721Event.smart_contract_event_id,
-            from: getAttributeFrom(
-              cw721Event.attributes,
-              EventAttribute.ATTRIBUTE_KEY.SENDER
-            ),
             to,
-            owner: owner || to,
+            from,
           });
           // push to update records
           cw721Activities.push(cw721Activity);
