@@ -92,7 +92,11 @@ export default class HoroscopeHandlerService extends BaseService {
       if (resultGroupBy[height].length > 0) {
         if (resultGroupBy[height][0] instanceof Block) {
           const data: any = resultGroupBy[height][0];
-          if (resultGroupBy[height].length > 1) {
+
+          // resultGroupBy[height].length === 1 means there is block only, not has any txs
+          if (resultGroupBy[height].length === 1) {
+            data.txs = [];
+          } else {
             data.txs = resultGroupBy[height].slice(1);
           }
           listData.push(data);
