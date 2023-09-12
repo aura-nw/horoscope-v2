@@ -279,6 +279,14 @@ export const SERVICE = {
       key: 'CrawlIBCIcs20Service',
       name: 'v1.CrawlIBCIcs20Service',
     },
+    HoroscopeHandlerService: {
+      key: 'HoroscopeHandlerService',
+      path: 'v1.HoroscopeHandlerService',
+      getData: {
+        key: 'getData',
+        path: 'v1.HoroscopeHandlerService.getData',
+      },
+    },
   },
 };
 
