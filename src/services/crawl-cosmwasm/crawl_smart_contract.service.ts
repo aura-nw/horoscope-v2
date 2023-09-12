@@ -207,6 +207,7 @@ export default class CrawlSmartContractService extends BullableService {
           instantiate_hash: instantiateEvent ? instantiateEvent.hash : '',
           instantiate_height: instantiateEvent ? instantiateEvent.height : 0,
           version: codeContract ? codeContract.version : '',
+          label: contract.label,
         });
 
         if (codeContract) newContracts.push(migrateContract);
@@ -287,6 +288,7 @@ export default class CrawlSmartContractService extends BullableService {
             instantiate_hash: contract.hash,
             instantiate_height: contract.height,
             version: null,
+            label: '',
           })
         );
       });
@@ -320,7 +322,7 @@ export default class CrawlSmartContractService extends BullableService {
             10
           );
           contract.creator = contractInfos[index]?.contractInfo?.creator || '';
-
+          contract.label = contractInfos[index]?.contractInfo?.label || '';
           codeIds.push(
             parseInt(
               contractInfos[index]?.contractInfo?.codeId.toString() || '0',
