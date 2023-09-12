@@ -69,7 +69,7 @@ export default class HoroscopeHandlerService extends BaseService {
           .whereNull('parent_id');
       })
       .modifyGraph('events', (builder) => {
-        builder.select('type', 'source');
+        builder.select('type', 'source', 'tx_msg_index');
       })
       .modifyGraph('events.[attributes]', (builder) => {
         builder.select('key', 'value');
