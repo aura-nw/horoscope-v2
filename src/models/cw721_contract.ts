@@ -38,6 +38,8 @@ export default class CW721Contract extends BaseModel {
 
   updated_at?: Date;
 
+  smart_contract!: SmartContract;
+
   static get tableName() {
     return 'cw721_contract';
   }
