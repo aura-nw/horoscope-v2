@@ -24,6 +24,8 @@ export default class CW721Token extends BaseModel {
 
   burned?: boolean;
 
+  contract!: CW721Contract;
+
   static get tableName() {
     return 'cw721_token';
   }
