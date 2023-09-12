@@ -30,6 +30,8 @@ export class SmartContract extends BaseModel {
 
   status!: string;
 
+  label!: string;
+
   instantiate_hash!: string;
 
   instantiate_height!: number;
@@ -66,6 +68,7 @@ export class SmartContract extends BaseModel {
         instantiate_hash: { type: 'string' },
         instantiate_height: { type: 'number' },
         version: { type: ['string', 'null'] },
+        label: { type: 'string' },
       },
     };
   }
