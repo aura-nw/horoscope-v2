@@ -288,7 +288,6 @@ export default class CrawlSmartContractService extends BullableService {
             instantiate_hash: contract.hash,
             instantiate_height: contract.height,
             version: null,
-            label: '',
           })
         );
       });
@@ -322,7 +321,7 @@ export default class CrawlSmartContractService extends BullableService {
             10
           );
           contract.creator = contractInfos[index]?.contractInfo?.creator || '';
-          contract.label = contractInfos[index]?.contractInfo?.label || '';
+          contract.label = contractInfos[index]?.contractInfo?.label;
           codeIds.push(
             parseInt(
               contractInfos[index]?.contractInfo?.codeId.toString() || '0',
