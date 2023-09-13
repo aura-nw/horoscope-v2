@@ -4,7 +4,7 @@ import { SmartContract } from '../src/models';
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.alterTable('smart_contract', (table) => {
-    table.string('label');
+    table.string('label').defaultTo('');
   });
   await knex.transaction(async (trx) => {
     const smartContracts = await SmartContract.query().transacting(trx);

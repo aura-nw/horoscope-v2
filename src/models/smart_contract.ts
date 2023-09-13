@@ -30,7 +30,7 @@ export class SmartContract extends BaseModel {
 
   status!: string;
 
-  label!: string;
+  label?: string;
 
   instantiate_hash!: string;
 
