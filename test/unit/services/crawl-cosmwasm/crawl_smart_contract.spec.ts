@@ -192,6 +192,7 @@ export default class CrawlSmartContractTest {
         '4A8B0DE950F563553A81360D4782F6EC451F6BEF7AC50E2459D1997FA168997E',
       instantiate_height: 3967530,
       version: '0.19.0',
+      label: '',
     });
     expect(
       _.omit(
