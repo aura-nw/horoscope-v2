@@ -111,6 +111,7 @@ export class EventAttribute extends BaseModel {
     SRC_CHANNEL: 'packet_src_channel',
     DST_PORT: 'packet_dst_port',
     DST_CHANNEL: 'packet_dst_channel',
+    MINTER: 'minter',
     FEE: 'fee',
     FEE_PAYER: 'fee_payer',
     DENOM: 'denom',
