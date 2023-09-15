@@ -17,11 +17,15 @@ export class IbcIcs20 extends BaseModel {
 
   denom!: string;
 
-  status!: boolean;
+  status!: string;
 
   channel_id!: string;
 
   ibc_message!: IbcMessage;
+
+  sequence_key!: string;
+
+  type!: string;
 
   static get tableName() {
     return 'ibc_ics20';
@@ -30,13 +34,25 @@ export class IbcIcs20 extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['receiver', 'amount', 'denom', 'ibc_message_id', 'channel_id'],
+      required: [
+        'receiver',
+        'amount',
+        'denom',
+        'ibc_message_id',
+        'channel_id',
+        'sequence_key',
+        'status',
+        'type',
+      ],
       properties: {
         receiver: { type: 'string' },
         denom: { type: 'string' },
         ibc_message_id: { type: 'number' },
         amount: { type: 'string' },
         channel_id: { type: 'string' },
+        sequence_key: { type: 'string' },
+        status: { type: 'string' },
+        type: { type: 'string' },
       },
     };
   }
@@ -66,5 +82,12 @@ export class IbcIcs20 extends BaseModel {
     TIMEOUT: 'timeout',
     FUNGIBLE_TOKEN_PACKET: 'fungible_token_packet',
     DENOM_TRACE: 'denomination_trace',
+  };
+
+  static STATUS_TYPE = {
+    TIMEOUT: 'timeout',
+    ACK_ERROR: 'ack_error',
+    ACK_SUCCESS: 'ack_success',
+    ONGOING: 'ongoing',
   };
 }
