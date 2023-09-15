@@ -733,12 +733,10 @@ export default class AssetIndexerTest {
     );
     const token =
       tokens[
-        `${mockContractTransferMsg.contractAddress 
-          }_${ 
-          getAttributeFrom(
-            mockContractTransferMsg.attributes,
-            EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
-          )}`
+        `${mockContractTransferMsg.contractAddress}_${getAttributeFrom(
+          mockContractTransferMsg.attributes,
+          EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+        )}`
       ];
     expect(token.owner).toEqual(recipient);
     expect(token.last_updated_height).toEqual(mockContractTransferMsg.height);
@@ -806,12 +804,10 @@ export default class AssetIndexerTest {
     this.cw721HandlerService.handlerCw721Mint(msg, tokens, cw721Activities, 1);
     const token =
       tokens[
-        `${msg.contractAddress 
-          }_${ 
-          getAttributeFrom(
-            msg.attributes,
-            EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
-          )}`
+        `${msg.contractAddress}_${getAttributeFrom(
+          msg.attributes,
+          EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+        )}`
       ];
     expect(token.owner).toEqual(owner);
     expect(token.token_id).toEqual(tokenId);
@@ -873,12 +869,10 @@ export default class AssetIndexerTest {
     this.cw721HandlerService.handlerCw721Burn(msg, tokens, cw721Activities, 1);
     const token =
       tokens[
-        `${msg.contractAddress 
-          }_${ 
-          getAttributeFrom(
-            msg.attributes,
-            EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
-          )}`
+        `${msg.contractAddress}_${getAttributeFrom(
+          msg.attributes,
+          EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+        )}`
       ];
     expect(token.owner).toEqual(this.mockInitContract.tokens[0].owner);
     expect(token.token_id).toEqual(tokenId);
@@ -941,12 +935,10 @@ export default class AssetIndexerTest {
     this.cw721HandlerService.handleCw721Others(msg, cw721Activities, 1);
     const token =
       tokens[
-        `${msg.contractAddress 
-          }_${ 
-          getAttributeFrom(
-            msg.attributes,
-            EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
-          )}`
+        `${msg.contractAddress}_${getAttributeFrom(
+          msg.attributes,
+          EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+        )}`
       ];
     expect(token.burned).toEqual(false);
     this.testActivity(cw721Activities[0], {
@@ -1052,9 +1044,7 @@ export default class AssetIndexerTest {
       );
       const token =
         tokens[
-          `${this.mockInitContract.smart_contract.address 
-            }_${ 
-            this.mockInitContract.tokens[0].token_id}`
+          `${this.mockInitContract.smart_contract.address}_${this.mockInitContract.tokens[0].token_id}`
         ];
       const reMintedToken = await CW721Token.query()
         .transacting(trx)
