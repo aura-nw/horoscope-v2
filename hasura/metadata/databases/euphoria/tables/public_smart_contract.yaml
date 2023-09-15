@@ -42,6 +42,7 @@ select_permissions:
         - status
         - updated_at
         - version
+        - label
       filter: {}
       limit: 100
       allow_aggregations: true
