@@ -1787,6 +1787,7 @@ export default class AssetIndexerTest {
   @Test('test handleJob')
   public async testHandleJob() {
     const newTokenId = 'fgksdfjghkjsdfg';
+    const tmp = BlockCheckpoint.getCheckpoint;
     BlockCheckpoint.getCheckpoint = jest.fn(() =>
       Promise.resolve([
         1,
@@ -2126,6 +2127,7 @@ export default class AssetIndexerTest {
     );
     expect(newToken?.burned).toEqual(true);
     expect(newToken?.last_updated_height).toEqual(msgs[4].height);
+    BlockCheckpoint.getCheckpoint = tmp;
   }
 
   testActivity(cw721Activity: CW721Activity, actual: any) {
