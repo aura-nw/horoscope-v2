@@ -69,6 +69,9 @@ export default class CrawlIBCIcs20Service extends BullableService {
           ibc_message_id: msg.id,
           ...msg.data,
           channel_id: msg.src_channel_id,
+          status: IbcIcs20.STATUS_TYPE.ONGOING,
+          sequence_key: msg.sequence_key,
+          type: msg.type,
         })
       );
       await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
@@ -131,8 +134,13 @@ export default class CrawlIBCIcs20Service extends BullableService {
           receiver,
           amount,
           denom,
-          status: ackStatus === 'true',
+          status:
+            ackStatus === 'true'
+              ? IbcIcs20.STATUS_TYPE.ACK_SUCCESS
+              : IbcIcs20.STATUS_TYPE.ACK_ERROR,
           channel_id: msg.dst_channel_id,
+          sequence_key: msg.sequence_key,
+          type: msg.type,
         });
       });
       await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
@@ -182,11 +190,33 @@ export default class CrawlIBCIcs20Service extends BullableService {
           receiver,
           amount,
           denom,
-          status: success !== undefined,
+          status:
+            success !== undefined
+              ? IbcIcs20.STATUS_TYPE.ACK_SUCCESS
+              : IbcIcs20.STATUS_TYPE.ACK_ERROR,
           channel_id: msg.src_channel_id,
+          sequence_key: msg.sequence_key,
+          type: msg.type,
         });
       });
-      await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
+      const acks = await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
+      // update ack status for origin send ics20
+      const acksSuccess = acks.filter(
+        (ack) => ack.status === IbcIcs20.STATUS_TYPE.ACK_SUCCESS
+      );
+      const acksError = acks.filter(
+        (ack) => ack.status === IbcIcs20.STATUS_TYPE.ACK_ERROR
+      );
+      await this.updateSendStatus(
+        acksSuccess,
+        IbcIcs20.STATUS_TYPE.ACK_SUCCESS,
+        trx
+      );
+      await this.updateSendStatus(
+        acksError,
+        IbcIcs20.STATUS_TYPE.ACK_ERROR,
+        trx
+      );
     }
   }
 
@@ -223,10 +253,15 @@ export default class CrawlIBCIcs20Service extends BullableService {
           amount,
           denom,
           channel_id: msg.src_channel_id,
-          status: false,
+          status: IbcIcs20.STATUS_TYPE.TIMEOUT,
+          sequence_key: msg.sequence_key,
+          type: msg.type,
         });
       });
-      await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
+      const timeouts = await IbcIcs20.query()
+        .insert(ibcIcs20s)
+        .transacting(trx);
+      await this.updateSendStatus(timeouts, IbcIcs20.STATUS_TYPE.TIMEOUT, trx);
     }
   }
 
@@ -241,6 +276,23 @@ export default class CrawlIBCIcs20Service extends BullableService {
       return tokens2.join('/');
     }
     return `${dstPort}/${dstChannel}/${denom}`;
+  }
+
+  async updateSendStatus(
+    msgs: IbcIcs20[],
+    type: string,
+    trx: Knex.Transaction
+  ) {
+    await IbcIcs20.query()
+      .transacting(trx)
+      .patch({
+        status: type,
+      })
+      .whereIn(
+        'sequence_key',
+        msgs.map((msg) => msg.sequence_key)
+      )
+      .andWhere('type', IbcMessage.EVENT_TYPE.SEND_PACKET);
   }
 
   async _start(): Promise<void> {
