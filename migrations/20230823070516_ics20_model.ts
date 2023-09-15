@@ -8,9 +8,11 @@ export async function up(knex: Knex): Promise<void> {
     table.string('receiver').index().notNullable();
     table.decimal('amount', 80, 0).notNullable();
     table.string('denom').notNullable().index();
-    table.boolean('status').defaultTo(true);
+    table.string('status').notNullable();
     table.string('channel_id').notNullable().index();
     table.foreign('ibc_message_id').references('ibc_message.id');
+    table.string('sequence_key').notNullable().index();
+    table.string('type').notNullable().index();
   });
 }
 

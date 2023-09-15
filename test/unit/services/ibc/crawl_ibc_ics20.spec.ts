@@ -112,9 +112,10 @@ export default class CrawlIbcIcs20Test {
       expect(result?.receiver).toEqual(ibcMessage.data.receiver);
       expect(result?.amount).toEqual(ibcMessage.data.amount);
       expect(result?.denom).toEqual(ibcMessage.data.denom);
-      expect(result?.status).toEqual(true);
+      expect(result?.status).toEqual(IbcIcs20.STATUS_TYPE.ONGOING);
+      expect(result?.sequence_key).toEqual(ibcMessage.sequence_key);
+      expect(result?.type).toEqual(ibcMessage.type);
       expect(result?.channel_id).toEqual(ibcMessage.src_channel_id);
-      await trx.rollback();
     });
   }
 
@@ -221,7 +222,10 @@ export default class CrawlIbcIcs20Test {
         this.block.height,
         trx
       );
-      const result = await IbcIcs20.query().first().transacting(trx);
+      const result = await IbcIcs20.query()
+        .where('type', IbcMessage.EVENT_TYPE.RECV_PACKET)
+        .first()
+        .transacting(trx);
       expect(result?.ibc_message_id).toEqual(ibcMsg.id);
       expect(result?.receiver).toEqual(
         getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.RECEIVER)
@@ -237,7 +241,9 @@ export default class CrawlIbcIcs20Test {
           ibcMessage.dst_channel_id
         }/${getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.DENOM)}`
       );
-      expect(result?.status).toEqual(true);
+      expect(result?.status).toEqual(IbcIcs20.STATUS_TYPE.ACK_SUCCESS);
+      expect(result?.sequence_key).toEqual(ibcMessage.sequence_key);
+      expect(result?.type).toEqual(ibcMessage.type);
       expect(result?.channel_id).toEqual(ibcMessage.dst_channel_id);
       await trx.rollback();
     });
@@ -319,7 +325,10 @@ export default class CrawlIbcIcs20Test {
         this.block.height,
         trx
       );
-      const result = await IbcIcs20.query().first().transacting(trx);
+      const result = await IbcIcs20.query()
+        .where('type', IbcMessage.EVENT_TYPE.RECV_PACKET)
+        .first()
+        .transacting(trx);
       expect(result?.ibc_message_id).toEqual(ibcMsg.id);
       expect(result?.receiver).toEqual(
         getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.RECEIVER)
@@ -331,7 +340,9 @@ export default class CrawlIbcIcs20Test {
         getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.AMOUNT)
       );
       expect(result?.denom).toEqual('uatom');
-      expect(result?.status).toEqual(true);
+      expect(result?.status).toEqual(IbcIcs20.STATUS_TYPE.ACK_SUCCESS);
+      expect(result?.sequence_key).toEqual(ibcMessage.sequence_key);
+      expect(result?.type).toEqual(ibcMessage.type);
       expect(result?.channel_id).toEqual(ibcMessage.dst_channel_id);
       await trx.rollback();
     });
@@ -433,7 +444,10 @@ export default class CrawlIbcIcs20Test {
         this.block.height,
         trx
       );
-      const result = await IbcIcs20.query().first().transacting(trx);
+      const result = await IbcIcs20.query()
+        .where('type', IbcMessage.EVENT_TYPE.ACKNOWLEDGE_PACKET)
+        .first()
+        .transacting(trx);
       expect(result?.receiver).toEqual(
         getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.RECEIVER)
       );
@@ -446,8 +460,15 @@ export default class CrawlIbcIcs20Test {
       expect(result?.denom).toEqual(
         getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.DENOM)
       );
-      expect(result?.status).toEqual(false);
+      expect(result?.status).toEqual(IbcIcs20.STATUS_TYPE.ACK_ERROR);
+      expect(result?.sequence_key).toEqual(ibcMessage.sequence_key);
+      expect(result?.type).toEqual(ibcMessage.type);
       expect(result?.channel_id).toEqual(ibcMessage.src_channel_id);
+      const originSend = await IbcIcs20.query()
+        .where('type', IbcMessage.EVENT_TYPE.SEND_PACKET)
+        .first()
+        .transacting(trx);
+      expect(originSend?.status).toEqual(IbcIcs20.STATUS_TYPE.ACK_ERROR);
       await trx.rollback();
     });
   }
@@ -514,7 +535,10 @@ export default class CrawlIbcIcs20Test {
           }),
         }),
       ];
-      await Event.query().insertGraph(events).transacting(trx);
+      await Event.query()
+        .insertGraph(events)
+        .where('type', IbcMessage.EVENT_TYPE.TIMEOUT_PACKET)
+        .transacting(trx);
       await this.crawlIbcIcs20Serivce.handleIcs20Timeout(
         this.block.height - 1,
         this.block.height,
@@ -538,8 +562,15 @@ export default class CrawlIbcIcs20Test {
       expect(result?.denom).toEqual(
         getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.REFUND_DENOM)
       );
-      expect(result?.status).toBe(false);
+      expect(result?.status).toEqual(IbcIcs20.STATUS_TYPE.TIMEOUT);
+      expect(result?.sequence_key).toEqual(ibcMessage.sequence_key);
+      expect(result?.type).toEqual(ibcMessage.type);
       expect(result?.channel_id).toEqual(ibcMessage.src_channel_id);
+      const originSend = await IbcIcs20.query()
+        .where('type', IbcMessage.EVENT_TYPE.SEND_PACKET)
+        .first()
+        .transacting(trx);
+      expect(originSend?.status).toEqual(IbcIcs20.STATUS_TYPE.TIMEOUT);
       await trx.rollback();
     });
   }
