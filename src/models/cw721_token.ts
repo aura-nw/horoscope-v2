@@ -14,7 +14,7 @@ export default class CW721Token extends BaseModel {
 
   owner?: string;
 
-  id?: number;
+  id!: number;
 
   cw721_contract_id!: number;
 
