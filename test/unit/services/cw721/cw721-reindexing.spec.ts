@@ -113,9 +113,9 @@ export default class TestCw721MissingContractService {
 
   @BeforeAll()
   async initSuite() {
+    await this.broker.start();
     this.cw721HandlerService.getQueueManager().stopAll();
     this.cw721MissingContractService.getQueueManager().stopAll();
-    await this.broker.start();
     await knex.raw(
       'TRUNCATE TABLE code, cw721_contract, block_checkpoint RESTART IDENTITY CASCADE'
     );
@@ -132,6 +132,8 @@ export default class TestCw721MissingContractService {
   @AfterAll()
   async tearDown() {
     await this.broker.stop();
+    this.cw721HandlerService.getQueueManager().stopAll();
+    this.cw721MissingContractService.getQueueManager().stopAll();
   }
 
   @Test('Test HandleRangeBlockMissingContract')
