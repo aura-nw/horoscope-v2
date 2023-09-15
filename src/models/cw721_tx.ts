@@ -15,23 +15,23 @@ export default class CW721Activity extends BaseModel {
 
   id!: number;
 
-  action?: string;
+  action!: string;
 
-  sender?: string;
+  sender!: string;
 
   tx_hash!: string;
 
   cw721_contract_id!: number;
 
-  cw721_token_id?: number;
+  cw721_token_id!: number;
 
   created_at?: Date;
 
   updated_at?: Date;
 
-  from?: string;
+  from!: string | null;
 
-  to?: string;
+  to!: string | null;
 
   height!: number;
 
