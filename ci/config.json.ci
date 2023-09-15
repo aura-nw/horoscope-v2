@@ -179,5 +179,10 @@
     "key": "crawlIbcTao",
     "millisecondRepeatJob": 2000,
     "blocksPerCall": 100
+  },
+  "crawlIbcApp": {
+    "key": "crawlIbcApp",
+    "millisecondRepeatJob": 2000,
+    "blocksPerCall": 100
   }
 }
