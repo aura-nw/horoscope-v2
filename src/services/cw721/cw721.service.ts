@@ -71,25 +71,30 @@ export default class Cw721HandlerService extends BullableService {
       transferMsg.attributes,
       EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
     );
-    const token = tokens[`${transferMsg.contractAddress  }_${  tokenId}`];
-    cw721Activities.push(
-      CW721Activity.fromJson({
-        action: transferMsg.action,
-        sender: getAttributeFrom(
-          transferMsg.attributes,
-          EventAttribute.ATTRIBUTE_KEY.SENDER
-        ),
-        tx_hash: transferMsg.hash,
-        cw721_contract_id: cw721ContractId,
-        height: transferMsg.height,
-        smart_contract_event_id: transferMsg.smart_contract_event_id,
-        from: token.owner,
-        to: recipient,
-        token_id: tokenId,
-      })
-    );
-    token.owner = recipient;
-    token.last_updated_height = transferMsg.height;
+    const token = tokens[`${transferMsg.contractAddress}_${tokenId}`];
+    if (
+      token !== undefined &&
+      token.last_updated_height <= transferMsg.height
+    ) {
+      cw721Activities.push(
+        CW721Activity.fromJson({
+          action: transferMsg.action,
+          sender: getAttributeFrom(
+            transferMsg.attributes,
+            EventAttribute.ATTRIBUTE_KEY.SENDER
+          ),
+          tx_hash: transferMsg.hash,
+          cw721_contract_id: cw721ContractId,
+          height: transferMsg.height,
+          smart_contract_event_id: transferMsg.smart_contract_event_id,
+          from: token.owner,
+          to: recipient,
+          token_id: tokenId,
+        })
+      );
+      token.owner = recipient;
+      token.last_updated_height = transferMsg.height;
+    }
   }
 
   // Insert new token if it haven't been in cw721_token table, or update burned to false if it already have been there
@@ -103,38 +108,42 @@ export default class Cw721HandlerService extends BullableService {
       mintEvent.attributes,
       EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
     );
-    const mediaInfo = null;
-    // eslint-disable-next-line no-param-reassign
-    tokens[`${mintEvent.contractAddress  }_${  tokenId}`] = CW721Token.fromJson({
-      token_id: tokenId,
-      media_info: mediaInfo,
-      owner: getAttributeFrom(
-        mintEvent.attributes,
-        EventAttribute.ATTRIBUTE_KEY.OWNER
-      ),
-      cw721_contract_id: cw721ContractId,
-      last_updated_height: mintEvent.height,
-      burned: false,
-    });
-    cw721Activities.push(
-      CW721Activity.fromJson({
-        action: mintEvent.action,
-        sender: getAttributeFrom(
-          mintEvent.attributes,
-          EventAttribute.ATTRIBUTE_KEY.SENDER
-        ),
-        tx_hash: mintEvent.hash,
-        cw721_contract_id: cw721ContractId,
-        height: mintEvent.height,
-        smart_contract_event_id: mintEvent.smart_contract_event_id,
-        from: null,
-        to: getAttributeFrom(
+    const token = tokens[`${mintEvent.contractAddress}_${tokenId}`];
+    if (token === undefined || token.last_updated_height <= mintEvent.height) {
+      const mediaInfo = null;
+      // eslint-disable-next-line no-param-reassign
+      tokens[`${mintEvent.contractAddress}_${tokenId}`] = CW721Token.fromJson({
+        token_id: tokenId,
+        media_info: mediaInfo,
+        owner: getAttributeFrom(
           mintEvent.attributes,
           EventAttribute.ATTRIBUTE_KEY.OWNER
         ),
-        token_id: tokenId,
-      })
-    );
+        cw721_contract_id: cw721ContractId,
+        last_updated_height: mintEvent.height,
+        burned: false,
+        id: token === undefined ? undefined : token.id,
+      });
+      cw721Activities.push(
+        CW721Activity.fromJson({
+          action: mintEvent.action,
+          sender: getAttributeFrom(
+            mintEvent.attributes,
+            EventAttribute.ATTRIBUTE_KEY.MINTER
+          ),
+          tx_hash: mintEvent.hash,
+          cw721_contract_id: cw721ContractId,
+          height: mintEvent.height,
+          smart_contract_event_id: mintEvent.smart_contract_event_id,
+          from: null,
+          to: getAttributeFrom(
+            mintEvent.attributes,
+            EventAttribute.ATTRIBUTE_KEY.OWNER
+          ),
+          token_id: tokenId,
+        })
+      );
+    }
   }
 
   // update burned field in cw721_token to true, last updated height
@@ -148,31 +157,33 @@ export default class Cw721HandlerService extends BullableService {
       burnMsg.attributes,
       EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
     );
-    const token = tokens[`${burnMsg.contractAddress  }_${  tokenId}`];
-    cw721Activities.push(
-      CW721Activity.fromJson({
-        action: burnMsg.action,
-        sender: getAttributeFrom(
-          burnMsg.attributes,
-          EventAttribute.ATTRIBUTE_KEY.SENDER
-        ),
-        tx_hash: burnMsg.hash,
-        cw721_contract_id: cw721ContractId,
-        height: burnMsg.height,
-        smart_contract_event_id: burnMsg.smart_contract_event_id,
-        from: token.owner,
-        to: null,
-        token_id: tokenId,
-      })
-    );
-    token.burned = true;
-    token.last_updated_height = burnMsg.height;
+    const token = tokens[`${burnMsg.contractAddress}_${tokenId}`];
+    if (token !== undefined && token.last_updated_height <= burnMsg.height) {
+      cw721Activities.push(
+        CW721Activity.fromJson({
+          action: burnMsg.action,
+          sender: getAttributeFrom(
+            burnMsg.attributes,
+            EventAttribute.ATTRIBUTE_KEY.SENDER
+          ),
+          tx_hash: burnMsg.hash,
+          cw721_contract_id: cw721ContractId,
+          height: burnMsg.height,
+          smart_contract_event_id: burnMsg.smart_contract_event_id,
+          from: token.owner,
+          to: null,
+          token_id: tokenId,
+        })
+      );
+      token.burned = true;
+      token.last_updated_height = burnMsg.height;
+    }
   }
 
   handleCw721Others(
     msg: SmartContractEvent,
     cw721Activities: CW721Activity[],
-    cw721Contract: CW721Contract
+    cw721ContractId: number
   ) {
     const tokenId = getAttributeFrom(
       msg.attributes,
@@ -186,7 +197,7 @@ export default class Cw721HandlerService extends BullableService {
           EventAttribute.ATTRIBUTE_KEY.SENDER
         ),
         tx_hash: msg.hash,
-        cw721_contract_id: cw721Contract.id,
+        cw721_contract_id: cw721ContractId,
         height: msg.height,
         smart_contract_event_id: msg.smart_contract_event_id,
         token_id: tokenId,
@@ -265,7 +276,9 @@ export default class Cw721HandlerService extends BullableService {
         );
         // handle all cw721 execute messages
         await this.handleCw721MsgExec(listContractMsg, cw721Activities, trx);
-        await CW721Activity.query().transacting(trx).insert(cw721Activities);
+        await CW721Activity.query()
+          .transacting(trx)
+          .insert(cw721Activities.map((e) => _.omit(e, 'token_id')));
       }
       updateBlockCheckpoint.height = endBlock;
       await BlockCheckpoint.query()
@@ -325,7 +338,7 @@ export default class Cw721HandlerService extends BullableService {
     const tokensKeyBy = _.keyBy(
       await CW721Token.query()
         .transacting(trx)
-        .withGraphFetched('contract.smart_contract')
+        .withGraphJoined('contract.smart_contract')
         .whereIn(
           ['contract:smart_contract.address', 'token_id'],
           cw721MsgsExecute.map((msg) => [
@@ -336,7 +349,7 @@ export default class Cw721HandlerService extends BullableService {
             ),
           ])
         ),
-      (o) => `${o.contract.smart_contract.address  }_${  o.token_id}`
+      (o) => `${o.contract.smart_contract.address}_${o.token_id}`
     );
     const trackedCw721ContractsByAddr = _.keyBy(
       await this.getCw721TrackedContracts(
@@ -351,18 +364,23 @@ export default class Cw721HandlerService extends BullableService {
       tokensKeyBy,
       trackedCw721ContractsByAddr
     );
-    const tokens = await CW721Token.query()
-      .transacting(trx)
-      .insert(Object.values(tokensKeyBy))
-      .onConflict('id')
-      .merge();
-    const tokensKeyById: Dictionary<CW721Token> = _.keyBy(tokens, (o) => `${o.cw721_contract_id  }_${  o.token_id}`);
-    cw721Activities.forEach((act) => {
-      const token =
-        tokensKeyById[`${act.cw721_contract_id  }_${  act.cw721_token_id}`];
-      // eslint-disable-next-line no-param-reassign
-      act.cw721_token_id = token?.id;
-    });
+    const updatedTokens = Object.values(tokensKeyBy);
+    if (updatedTokens.length > 0) {
+      const tokens = await CW721Token.query()
+        .transacting(trx)
+        .insert(updatedTokens)
+        .onConflict('id')
+        .merge();
+      const tokensKeyById: Dictionary<CW721Token> = _.keyBy(
+        tokens,
+        (o) => `${o.cw721_contract_id}_${o.token_id}`
+      );
+      cw721Activities.forEach((act) => {
+        const token = tokensKeyById[`${act.cw721_contract_id}_${act.token_id}`];
+        // eslint-disable-next-line no-param-reassign
+        act.cw721_token_id = token?.id;
+      });
+    }
   }
 
   updateActivitiesAndTokens(
@@ -400,7 +418,7 @@ export default class Cw721HandlerService extends BullableService {
             cw721Contract.id
           );
         } else {
-          this.handleCw721Others(msg, cw721Activities, cw721Contract);
+          this.handleCw721Others(msg, cw721Activities, cw721Contract.id);
         }
       }
     });
@@ -534,6 +552,11 @@ export default class Cw721HandlerService extends BullableService {
         tokensKeyBy,
         cw721ContractKeyBy
       );
+      if (cw721Activities.length > 0) {
+        await CW721Activity.query().insert(
+          cw721Activities.map((e) => _.omit(e, 'token_id'))
+        );
+      }
       await this.createJob(
         BULL_JOB_NAME.REINDEX_CW721_HISTORY,
         BULL_JOB_NAME.REINDEX_CW721_HISTORY,
@@ -586,7 +609,11 @@ export default class Cw721HandlerService extends BullableService {
         cw721Activities,
         trx
       );
-      await CW721Activity.query().transacting(trx).insert(cw721Activities);
+      if (cw721Activities.length > 0) {
+        await CW721Activity.query()
+          .transacting(trx)
+          .insert(cw721Activities.map((e) => _.omit(e, 'token_id')));
+      }
     });
   }
 }
