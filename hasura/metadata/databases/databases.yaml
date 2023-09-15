@@ -73,5 +73,3 @@
     type_names:
       prefix: xstaxy_
   tables: "!include xstaxy/tables/tables.yaml"
-
-  
