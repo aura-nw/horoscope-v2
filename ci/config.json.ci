@@ -156,7 +156,8 @@
   "jobCheckNeedCreateEventAttributePartition": {
     "range": 100000,
     "step": 10000,
-    "millisecondCrawl": 10000
+    "millisecondCrawl": 10000,
+    "templateTable": "event_attribute"
   },
   "httpBatchRequest": {
     "dispatchMilisecond": 1000,
@@ -188,5 +189,14 @@
     "key": "crawlIbcApp",
     "millisecondRepeatJob": 2000,
     "blocksPerCall": 100
+  },
+  "jobCreateCompositeIndexInAttributeTable": {
+    "partitionTableNames": [
+      "event_attribute_partition_2000000_3000000",
+      "event_attribute_partition_3000000_4000000",
+      "event_attribute_partition_4000000_5000000",
+      "event_attribute_partition_5000000_6000000",
+      "event_attribute_partition_6000000_7000000"
+    ]
   }
 }
