@@ -258,12 +258,13 @@ export default class Cw721MediaService extends BullableService {
   // download image/animation from media_uri, then upload to S3
   async uploadMediaToS3(media_uri?: string) {
     if (media_uri) {
+      const fileName = this.parseFilename(media_uri);
       const uploadAttachmentToS3 = async (
         type: string | undefined,
         buffer: Buffer
       ) => {
         const params = {
-          Key: this.parseFilename(media_uri),
+          Key: fileName,
           Body: buffer,
           Bucket: BUCKET,
           ContentType: type,
@@ -282,16 +283,30 @@ export default class Cw721MediaService extends BullableService {
             }
           );
       };
-      const mediaBuffer = await this.downloadAttachment(
-        this.parseIPFSUri(media_uri)
-      );
-      let type: string | undefined = (
-        await FileType.fileTypeFromBuffer(mediaBuffer)
-      )?.mime;
-      if (type === 'application/xml') {
-        type = 'image/svg+xml';
+      try {
+        const s3Object = await s3Client
+          .headObject({
+            Bucket: BUCKET,
+            Key: fileName,
+          })
+          .promise();
+        return {
+          linkS3: S3_GATEWAY + fileName,
+          contentType: s3Object.ContentType,
+          key: fileName,
+        };
+      } catch {
+        const mediaBuffer = await this.downloadAttachment(
+          this.parseIPFSUri(media_uri)
+        );
+        let type: string | undefined = (
+          await FileType.fileTypeFromBuffer(mediaBuffer)
+        )?.mime;
+        if (type === 'application/xml') {
+          type = 'image/svg+xml';
+        }
+        return uploadAttachmentToS3(type, mediaBuffer);
       }
-      return uploadAttachmentToS3(type, mediaBuffer);
     }
     return null;
   }
