@@ -76,6 +76,8 @@ export const BULL_JOB_NAME = {
   CRAWL_IBC_APP: 'crawl:ibc-app',
   REINDEX_CW20_CONTRACT: 'reindex:cw20-contract',
   REINDEX_CW20_HISTORY: 'reindex:cw20-history',
+  JOB_CREATE_COMPOSITE_INDEX_ATTR_PARTITION:
+    'job:create-index-composite-attr-partition',
 };
 
 export const SERVICE = {
@@ -231,6 +233,10 @@ export const SERVICE = {
       ReDecodeTx: {
         key: 'ReDecodeTx',
         path: 'v1.ReDecodeTx',
+      },
+      CreateIndexCompositeAttrPartition: {
+        key: 'CreateIndexCompositeAttrPartition',
+        path: 'v1.CreateIndexCompositeAttrPartition',
       },
     },
     CrawlIBCTaoService: {
