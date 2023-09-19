@@ -1,4 +1,10 @@
-import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
+import {
+  AfterAll,
+  AfterEach,
+  BeforeAll,
+  Describe,
+  Test,
+} from '@jest-decorated/core';
 import _ from 'lodash';
 import { ServiceBroker } from 'moleculer';
 import { BULL_JOB_NAME } from '../../../../src/common';
@@ -399,6 +405,11 @@ export default class AssetIndexerTest {
   @AfterAll()
   async tearDown() {
     await this.broker.stop();
+  }
+
+  @AfterEach()
+  async afterEach() {
+    jest.resetAllMocks();
   }
 
   @Test('test getContractActivities function')
@@ -1411,9 +1422,9 @@ export default class AssetIndexerTest {
         minter: 'minter_1',
       },
     ];
-    CW721Contract.getContractsInfo = jest.fn(() =>
-      Promise.resolve(contractsInfo)
-    );
+    jest
+      .spyOn(CW721Contract, 'getContractsInfo')
+      .mockResolvedValue(contractsInfo);
     await knex.transaction(async (trx) => {
       await SmartContract.query()
         .transacting(trx)
@@ -1787,17 +1798,15 @@ export default class AssetIndexerTest {
   @Test('test handleJob')
   public async testHandleJob() {
     const newTokenId = 'fgksdfjghkjsdfg';
-    const tmp = BlockCheckpoint.getCheckpoint;
-    BlockCheckpoint.getCheckpoint = jest.fn(() =>
-      Promise.resolve([
-        1,
-        2,
-        BlockCheckpoint.fromJson({
-          job_name: 'dfdsfgsg',
-          height: 100,
-        }),
-      ])
-    );
+    const spy = jest.spyOn(BlockCheckpoint, 'getCheckpoint');
+    spy.mockResolvedValue([
+      1,
+      2,
+      BlockCheckpoint.fromJson({
+        job_name: 'dfdsfgsg',
+        height: 100,
+      }),
+    ]);
     const msgs = [
       SmartContractEvent.fromJson({
         contractAddress: this.mockInitContract.smart_contract.address,
@@ -2002,9 +2011,9 @@ export default class AssetIndexerTest {
         event_id: 10,
       }),
     ];
-    this.cw721HandlerService.getCw721ContractEvents = jest.fn(() =>
-      Promise.resolve(msgs)
-    );
+    jest
+      .spyOn(this.cw721HandlerService, 'getCw721ContractEvents')
+      .mockResolvedValue(msgs);
     await this.cw721HandlerService.handleJob();
     const cw721Activities = await CW721Activity.query().orderBy('id');
     const tokens = await CW721Token.query()
@@ -2127,7 +2136,6 @@ export default class AssetIndexerTest {
     );
     expect(newToken?.burned).toEqual(true);
     expect(newToken?.last_updated_height).toEqual(msgs[4].height);
-    BlockCheckpoint.getCheckpoint = tmp;
   }
 
   testActivity(cw721Activity: CW721Activity, actual: any) {
