@@ -1,11 +1,17 @@
-import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
+import {
+  AfterAll,
+  AfterEach,
+  BeforeAll,
+  Describe,
+  Test,
+} from '@jest-decorated/core';
 import { Errors, ServiceBroker } from 'moleculer';
-import CW721Activity from '../../../../src/models/cw721_tx';
 import { BULL_JOB_NAME, SERVICE } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
 import { BlockCheckpoint, Code } from '../../../../src/models';
 import CW721Contract from '../../../../src/models/cw721_contract';
 import CW721Token from '../../../../src/models/cw721_token';
+import CW721Activity from '../../../../src/models/cw721_tx';
 import { SmartContractEvent } from '../../../../src/models/smart_contract_event';
 import Cw721MissingContractService, {
   REINDEX_TYPE,
@@ -107,10 +113,6 @@ export default class TestCw721MissingContractService {
     Cw721MissingContractService
   ) as Cw721MissingContractService;
 
-  tmp = this.cw721MissingContractService.broker.call;
-
-  tmp2 = this.cw721MissingContractService.createJob;
-
   @BeforeAll()
   async initSuite() {
     await this.broker.start();
@@ -134,6 +136,11 @@ export default class TestCw721MissingContractService {
     await this.broker.stop();
     this.cw721HandlerService.getQueueManager().stopAll();
     this.cw721MissingContractService.getQueueManager().stopAll();
+  }
+
+  @AfterEach()
+  async afterEach() {
+    jest.resetAllMocks();
   }
 
   @Test('Test HandleRangeBlockMissingContract')
@@ -279,9 +286,9 @@ export default class TestCw721MissingContractService {
         event_id: 10,
       }),
     ];
-    this.cw721HandlerService.getCw721ContractEvents = jest.fn(() =>
-      Promise.resolve(msgs)
-    );
+    jest
+      .spyOn(this.cw721HandlerService, 'getCw721ContractEvents')
+      .mockResolvedValue(msgs);
     await this.broker.call(
       SERVICE.V1.Cw721.HandleRangeBlockMissingContract.path,
       {
@@ -329,18 +336,18 @@ export default class TestCw721MissingContractService {
         last_updated_height: 400,
       },
     ];
-    this.cw721MissingContractService.broker.call = jest.fn(() =>
-      Promise.resolve()
-    );
-    this.cw721MissingContractService.createJob = jest.fn(() =>
-      Promise.resolve()
-    );
-    CW721Contract.getContractsInfo = jest.fn(() =>
-      Promise.resolve([mockContractInfo])
-    );
-    CW721Contract.getAllTokensOwner = jest.fn(() =>
-      Promise.resolve(mockTokensOwner)
-    );
+    jest
+      .spyOn(this.cw721MissingContractService.broker, 'call')
+      .mockImplementation();
+    jest
+      .spyOn(this.cw721MissingContractService, 'createJob')
+      .mockImplementation();
+    jest
+      .spyOn(CW721Contract, 'getContractsInfo')
+      .mockResolvedValue([mockContractInfo]);
+    jest
+      .spyOn(CW721Contract, 'getAllTokensOwner')
+      .mockResolvedValue(mockTokensOwner);
     await this.cw721MissingContractService.jobHandler({
       contractAddress: this.codeId.contracts[0].address,
       smartContractId: 1,
@@ -526,9 +533,9 @@ export default class TestCw721MissingContractService {
         event_id: 10,
       }),
     ];
-    this.cw721HandlerService.getCw721ContractEvents = jest.fn(() =>
-      Promise.resolve(msgs)
-    );
+    jest
+      .spyOn(this.cw721HandlerService, 'getCw721ContractEvents')
+      .mockResolvedValue(msgs);
     await this.broker.call(
       SERVICE.V1.Cw721.HandleRangeBlockMissingContract.path,
       {
@@ -549,8 +556,6 @@ export default class TestCw721MissingContractService {
 
   @Test('test action params')
   public async testActionParams() {
-    this.cw721MissingContractService.broker.call = this.tmp;
-    this.cw721MissingContractService.createJob = this.tmp2;
     expect(
       this.broker.call('v1.Cw721ReindexingService.reindexing', {
         contractAddresses: undefined,
