@@ -282,6 +282,14 @@ export const SERVICE = {
         path: 'v1.ServicesManager.HealthCheck',
       },
     },
+    HoroscopeHandlerService: {
+      key: 'HoroscopeHandlerService',
+      path: 'v1.HoroscopeHandlerService',
+      getData: {
+        key: 'getData',
+        path: 'v1.HoroscopeHandlerService.getData',
+      },
+    },
   },
 };
 
