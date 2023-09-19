@@ -242,6 +242,10 @@ export const SERVICE = {
       CreateIndexCompositeAttrPartition: {
         key: 'CreateIndexCompositeAttrPartition',
         path: 'v1.CreateIndexCompositeAttrPartition',
+        actionCreateJob: {
+          key: 'actionCreateJob',
+          path: 'v1.CreateIndexCompositeAttrPartition.actionCreateJob',
+        },
       },
     },
     CrawlIBCTaoService: {
