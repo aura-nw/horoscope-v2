@@ -274,6 +274,14 @@ export const SERVICE = {
       key: 'CrawlIBCAppService',
       name: 'v1.CrawlIBCAppService',
     },
+    ServicesManager: {
+      key: 'ServicesManager',
+      name: 'v1.ServicesManager',
+      HealthCheck: {
+        key: 'HealthCheck',
+        path: 'v1.ServicesManager.HealthCheck',
+      },
+    },
     HoroscopeHandlerService: {
       key: 'HoroscopeHandlerService',
       path: 'v1.HoroscopeHandlerService',
