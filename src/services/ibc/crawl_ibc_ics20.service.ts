@@ -167,52 +167,35 @@ export default class CrawlIBCIcs20Service extends BullableService {
       .orderBy('message.id')
       .transacting(trx);
     if (ics20Acks.length > 0) {
-      const ibcIcs20s = ics20Acks.map((msg) => {
-        const ackEvents = msg.message.events;
+      // update success ack status for origin send ics20
+      const acksSuccess = ics20Acks.filter((ack) => {
+        const ackEvents = ack.message.events;
         if (ackEvents.length !== 2) {
-          throw Error(`Ack ibc hasn't emmitted enough events: ${msg.id}`);
+          throw Error(`Ack ibc hasn't emmitted enough events: ${ack.id}`);
         }
-        const [sender, receiver, amount, denom, success] = [
-          ...ackEvents[0].getAttributesFrom([
-            EventAttribute.ATTRIBUTE_KEY.SENDER,
-            EventAttribute.ATTRIBUTE_KEY.RECEIVER,
-            EventAttribute.ATTRIBUTE_KEY.AMOUNT,
-            EventAttribute.ATTRIBUTE_KEY.DENOM,
-          ]),
-          ...ackEvents[1].getAttributesFrom([
-            EventAttribute.ATTRIBUTE_KEY.SUCCESS,
-          ]),
-        ];
+        const [success] = ackEvents[1].getAttributesFrom([
+          EventAttribute.ATTRIBUTE_KEY.SUCCESS,
+        ]);
 
-        return IbcIcs20.fromJson({
-          ibc_message_id: msg.id,
-          sender,
-          receiver,
-          amount,
-          denom,
-          status:
-            success !== undefined
-              ? IbcIcs20.STATUS_TYPE.ACK_SUCCESS
-              : IbcIcs20.STATUS_TYPE.ACK_ERROR,
-          channel_id: msg.src_channel_id,
-          sequence_key: msg.sequence_key,
-          type: msg.type,
-        });
+        return success !== undefined;
       });
-      const acks = await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
-      // update ack status for origin send ics20
-      const acksSuccess = acks.filter(
-        (ack) => ack.status === IbcIcs20.STATUS_TYPE.ACK_SUCCESS
-      );
-      const acksError = acks.filter(
-        (ack) => ack.status === IbcIcs20.STATUS_TYPE.ACK_ERROR
-      );
-      await this.updateSendStatus(
+      await this.updateOriginSendStatus(
         acksSuccess,
         IbcIcs20.STATUS_TYPE.ACK_SUCCESS,
         trx
       );
-      await this.updateSendStatus(
+      // update error ack status for origin send ics20
+      const acksError = ics20Acks.filter((ack) => {
+        const ackEvents = ack.message.events;
+        if (ackEvents.length !== 2) {
+          throw Error(`Ack ibc hasn't emmitted enough events: ${ack.id}`);
+        }
+        const [success] = ackEvents[1].getAttributesFrom([
+          EventAttribute.ATTRIBUTE_KEY.SUCCESS,
+        ]);
+        return success === undefined;
+      });
+      await this.updateOriginSendStatus(
         acksError,
         IbcIcs20.STATUS_TYPE.ACK_ERROR,
         trx
@@ -226,7 +209,6 @@ export default class CrawlIBCIcs20Service extends BullableService {
     trx: Knex.Transaction
   ) {
     const ics20Timeouts = await IbcMessage.query()
-      .withGraphFetched('message.events(selectIcs20Event).attributes')
       .joinRelated('message.transaction')
       .modifiers({
         selectIcs20Event(builder) {
@@ -240,28 +222,11 @@ export default class CrawlIBCIcs20Service extends BullableService {
       .orderBy('message.id')
       .transacting(trx);
     if (ics20Timeouts.length > 0) {
-      const ibcIcs20s = ics20Timeouts.map((msg) => {
-        const timeoutEvent = msg.message.events[0];
-        const [receiver, amount, denom] = timeoutEvent.getAttributesFrom([
-          EventAttribute.ATTRIBUTE_KEY.REFUND_RECEIVER,
-          EventAttribute.ATTRIBUTE_KEY.REFUND_AMOUNT,
-          EventAttribute.ATTRIBUTE_KEY.REFUND_DENOM,
-        ]);
-        return IbcIcs20.fromJson({
-          ibc_message_id: msg.id,
-          receiver,
-          amount,
-          denom,
-          channel_id: msg.src_channel_id,
-          status: IbcIcs20.STATUS_TYPE.TIMEOUT,
-          sequence_key: msg.sequence_key,
-          type: msg.type,
-        });
-      });
-      const timeouts = await IbcIcs20.query()
-        .insert(ibcIcs20s)
-        .transacting(trx);
-      await this.updateSendStatus(timeouts, IbcIcs20.STATUS_TYPE.TIMEOUT, trx);
+      await this.updateOriginSendStatus(
+        ics20Timeouts,
+        IbcIcs20.STATUS_TYPE.TIMEOUT,
+        trx
+      );
     }
   }
 
@@ -278,8 +243,8 @@ export default class CrawlIBCIcs20Service extends BullableService {
     return `${dstPort}/${dstChannel}/${denom}`;
   }
 
-  async updateSendStatus(
-    msgs: IbcIcs20[],
+  async updateOriginSendStatus(
+    msgs: IbcMessage[],
     type: string,
     trx: Knex.Transaction
   ) {
