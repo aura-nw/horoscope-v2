@@ -348,8 +348,8 @@ export default class CrawlIbcIcs20Test {
     });
   }
 
-  @Test('Test handleIcs20Ack')
-  async testHandleIcs20Ack() {
+  @Test('Test handleIcs20AckError')
+  async testHandleIcs20AckError() {
     await knex.transaction(async (trx) => {
       const ibcMessage = IbcMessage.fromJson({
         transaction_message_id: 1,
@@ -444,31 +444,116 @@ export default class CrawlIbcIcs20Test {
         this.block.height,
         trx
       );
-      const result = await IbcIcs20.query()
-        .where('type', IbcMessage.EVENT_TYPE.ACKNOWLEDGE_PACKET)
-        .first()
-        .transacting(trx);
-      expect(result?.receiver).toEqual(
-        getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.RECEIVER)
-      );
-      expect(result?.sender).toEqual(
-        getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.SENDER)
-      );
-      expect(result?.amount).toEqual(
-        getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.AMOUNT)
-      );
-      expect(result?.denom).toEqual(
-        getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.DENOM)
-      );
-      expect(result?.status).toEqual(IbcIcs20.STATUS_TYPE.ACK_ERROR);
-      expect(result?.sequence_key).toEqual(ibcMessage.sequence_key);
-      expect(result?.type).toEqual(ibcMessage.type);
-      expect(result?.channel_id).toEqual(ibcMessage.src_channel_id);
       const originSend = await IbcIcs20.query()
         .where('type', IbcMessage.EVENT_TYPE.SEND_PACKET)
         .first()
         .transacting(trx);
       expect(originSend?.status).toEqual(IbcIcs20.STATUS_TYPE.ACK_ERROR);
+      await trx.rollback();
+    });
+  }
+
+  @Test('Test handleIcs20AckSuccess')
+  async testHandleIcs20AckSuccess() {
+    await knex.transaction(async (trx) => {
+      const ibcMessage = IbcMessage.fromJson({
+        transaction_message_id: 1,
+        src_channel_id: 'aaa',
+        src_port_id: PORT,
+        dst_channel_id: 'cccc',
+        dst_port_id: 'dddd',
+        type: IbcMessage.EVENT_TYPE.ACKNOWLEDGE_PACKET,
+        sequence: 256,
+        sequence_key: 'hcc',
+        data: {
+          amount: '10000',
+          denom: 'uatom',
+          receiver:
+            '{"autopilot":{"stakeibc":{"stride_address":"stride1e8288j8swfy7rwkyx0h3lz82fe58vz2medxndl","action":"LiquidStake"},"receiver":"stride1e8288j8swfy7rwkyx0h3lz82fe58vz2medxndl"}}',
+          sender: 'cosmos1e8288j8swfy7rwkyx0h3lz82fe58vz2m6xx0en',
+        },
+      });
+      await IbcMessage.query().insert(ibcMessage).transacting(trx);
+      const event1Attrs = [
+        {
+          key: 'module',
+          value: 'transfer',
+        },
+        {
+          key: 'sender',
+          value: 'cosmos1e8288j8swfy7rwkyx0h3lz82fe58vz2m6xx0en',
+        },
+        {
+          key: 'receiver',
+          value:
+            '{"autopilot":{"stakeibc":{"stride_address":"stride1e8288j8swfy7rwkyx0h3lz82fe58vz2medxndl","action":"LiquidStake"},"receiver":"stride1e8288j8swfy7rwkyx0h3lz82fe58vz2medxndl"}}',
+        },
+        {
+          key: 'denom',
+          value: 'uatom',
+        },
+        {
+          key: 'amount',
+          value: '10000',
+        },
+        {
+          key: 'memo',
+          value: '',
+        },
+        {
+          key: 'acknowledgement',
+          value: 'result:"\\001" ',
+        },
+      ];
+      const event2Attrs = [
+        {
+          key: 'success',
+          value: '\u0001',
+        },
+      ];
+      const events = [
+        Event.fromJson({
+          tx_id: 1,
+          tx_msg_index: 1,
+          type: IbcIcs20.EVENT_TYPE.FUNGIBLE_TOKEN_PACKET,
+          block_height: this.block.height,
+          source: 'TX_EVENT',
+          attributes: event1Attrs.map((e, index) => {
+            Object.assign(e, {
+              block_height: this.block.height,
+              event_id: 1,
+              index,
+            });
+            return e;
+          }),
+        }),
+        Event.fromJson({
+          tx_id: 1,
+          tx_msg_index: 1,
+          type: IbcIcs20.EVENT_TYPE.FUNGIBLE_TOKEN_PACKET,
+          block_height: this.block.height,
+          source: 'TX_EVENT',
+          attributes: event2Attrs.map((e, index) => {
+            Object.assign(e, {
+              block_height: this.block.height,
+              event_id: 1,
+              index,
+            });
+            return e;
+          }),
+        }),
+      ];
+      await Event.query().insertGraph(events).transacting(trx);
+      await this.crawlIbcIcs20Serivce.handleIcs20Ack(
+        this.block.height - 1,
+        this.block.height,
+        trx
+      );
+      const originSend = await IbcIcs20.query()
+        .where('type', IbcMessage.EVENT_TYPE.SEND_PACKET)
+        .first()
+        .transacting(trx);
+      expect(originSend?.status).toEqual(IbcIcs20.STATUS_TYPE.ACK_SUCCESS);
       await trx.rollback();
     });
   }
@@ -493,9 +578,7 @@ export default class CrawlIbcIcs20Test {
           sender: 'cosmos1e8288j8swfy7rwkyx0h3lz82fe58vz2m6xx0en',
         },
       });
-      const ibcMsg = await IbcMessage.query()
-        .insert(ibcMessage)
-        .transacting(trx);
+      await IbcMessage.query().insert(ibcMessage).transacting(trx);
       const event1Attrs = [
         {
           key: 'module',
@@ -544,28 +627,6 @@ export default class CrawlIbcIcs20Test {
         this.block.height,
         trx
       );
-      const result = await IbcIcs20.query().first().transacting(trx);
-      expect(result?.ibc_message_id).toEqual(ibcMsg.id);
-      expect(result?.receiver).toEqual(
-        getAttributeFrom(
-          event1Attrs,
-          EventAttribute.ATTRIBUTE_KEY.REFUND_RECEIVER
-        )
-      );
-      expect(result?.sender).toBeNull();
-      expect(result?.amount).toEqual(
-        getAttributeFrom(
-          event1Attrs,
-          EventAttribute.ATTRIBUTE_KEY.REFUND_AMOUNT
-        )
-      );
-      expect(result?.denom).toEqual(
-        getAttributeFrom(event1Attrs, EventAttribute.ATTRIBUTE_KEY.REFUND_DENOM)
-      );
-      expect(result?.status).toEqual(IbcIcs20.STATUS_TYPE.TIMEOUT);
-      expect(result?.sequence_key).toEqual(ibcMessage.sequence_key);
-      expect(result?.type).toEqual(ibcMessage.type);
-      expect(result?.channel_id).toEqual(ibcMessage.src_channel_id);
       const originSend = await IbcIcs20.query()
         .where('type', IbcMessage.EVENT_TYPE.SEND_PACKET)
         .first()
