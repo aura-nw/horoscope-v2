@@ -309,9 +309,8 @@ export default class Cw721MediaService extends BullableService {
             type = 'image/svg+xml';
           }
           return uploadAttachmentToS3(type, mediaBuffer);
-        } 
-          throw e;
-        
+        }
+        throw e;
       }
     }
     return null;
