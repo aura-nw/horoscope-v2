@@ -2,6 +2,7 @@ import { Get, Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
 import networks from '../../../network.json' assert { type: 'json' };
 import BaseService from '../../base/base.service';
+import { BULL_JOB_NAME } from '../../common';
 
 @Service({
   name: 'services-manager',
@@ -21,9 +22,16 @@ export default class ServicesManagerService extends BaseService {
         enum: networks.map((network) => network.chainId),
       },
       jobNames: {
-        type: 'array',
+        type: 'multi',
         optional: false,
-        items: 'string',
+        rules: [
+          {
+            type: 'array',
+            items: 'string',
+            enum: Object.values(BULL_JOB_NAME),
+          },
+          { type: 'enum', values: Object.values(BULL_JOB_NAME) },
+        ],
       },
     },
   })
@@ -31,7 +39,7 @@ export default class ServicesManagerService extends BaseService {
     ctx: Context<
       {
         chainid: string;
-        jobNames: string[];
+        jobNames: string[] | string;
       },
       Record<string, unknown>
     >
@@ -39,10 +47,13 @@ export default class ServicesManagerService extends BaseService {
     const selectedChain = networks.find(
       (network) => network.chainId === ctx.params.chainid
     );
+    const jobNames = Array.isArray(ctx.params.jobNames)
+      ? ctx.params.jobNames
+      : [ctx.params.jobNames];
     return this.broker.call(
       `v1.ServicesManager.HealthCheck@${selectedChain?.moleculerNamespace}`,
       {
-        jobNames: ctx.params.jobNames,
+        jobNames,
       }
     );
   }
