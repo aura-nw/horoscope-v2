@@ -2,6 +2,7 @@ import { Get, Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
 import networks from '../../../network.json' assert { type: 'json' };
 import BaseService from '../../base/base.service';
+import { BULL_JOB_NAME } from '../../common';
 
 @Service({
   name: 'services-manager',
@@ -24,6 +25,7 @@ export default class ServicesManagerService extends BaseService {
         type: 'array',
         optional: false,
         items: 'string',
+        enum: Object.values(BULL_JOB_NAME),
       },
     },
   })
