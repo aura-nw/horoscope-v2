@@ -22,16 +22,10 @@ export default class ServicesManagerService extends BaseService {
         enum: networks.map((network) => network.chainId),
       },
       jobNames: {
-        type: 'multi',
+        type: 'array',
         optional: false,
-        rules: [
-          {
-            type: 'array',
-            items: 'string',
-            enum: Object.values(BULL_JOB_NAME),
-          },
-          { type: 'enum', values: Object.values(BULL_JOB_NAME) },
-        ],
+        items: 'string',
+        enum: Object.values(BULL_JOB_NAME),
       },
     },
   })
@@ -39,7 +33,7 @@ export default class ServicesManagerService extends BaseService {
     ctx: Context<
       {
         chainid: string;
-        jobNames: string[] | string;
+        jobNames: string[];
       },
       Record<string, unknown>
     >
@@ -47,13 +41,10 @@ export default class ServicesManagerService extends BaseService {
     const selectedChain = networks.find(
       (network) => network.chainId === ctx.params.chainid
     );
-    const jobNames = Array.isArray(ctx.params.jobNames)
-      ? ctx.params.jobNames
-      : [ctx.params.jobNames];
     return this.broker.call(
       `v1.ServicesManager.HealthCheck@${selectedChain?.moleculerNamespace}`,
       {
-        jobNames,
+        jobNames: ctx.params.jobNames,
       }
     );
   }
