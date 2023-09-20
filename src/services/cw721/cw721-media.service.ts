@@ -15,6 +15,7 @@ import * as FileType from 'file-type';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import parse from 'parse-uri';
 import axios, { AxiosError } from 'axios';
+import { AWSError } from 'aws-sdk';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
@@ -258,12 +259,13 @@ export default class Cw721MediaService extends BullableService {
   // download image/animation from media_uri, then upload to S3
   async uploadMediaToS3(media_uri?: string) {
     if (media_uri) {
+      const fileName = this.parseFilename(media_uri);
       const uploadAttachmentToS3 = async (
         type: string | undefined,
         buffer: Buffer
       ) => {
         const params = {
-          Key: this.parseFilename(media_uri),
+          Key: fileName,
           Body: buffer,
           Bucket: BUCKET,
           ContentType: type,
@@ -282,16 +284,34 @@ export default class Cw721MediaService extends BullableService {
             }
           );
       };
-      const mediaBuffer = await this.downloadAttachment(
-        this.parseIPFSUri(media_uri)
-      );
-      let type: string | undefined = (
-        await FileType.fileTypeFromBuffer(mediaBuffer)
-      )?.mime;
-      if (type === 'application/xml') {
-        type = 'image/svg+xml';
+      try {
+        const s3Object = await s3Client
+          .headObject({
+            Bucket: BUCKET,
+            Key: fileName,
+          })
+          .promise();
+        return {
+          linkS3: S3_GATEWAY + fileName,
+          contentType: s3Object.ContentType,
+          key: fileName,
+        };
+      } catch (e) {
+        const error = e as AWSError;
+        if (error.statusCode === 404) {
+          const mediaBuffer = await this.downloadAttachment(
+            this.parseIPFSUri(media_uri)
+          );
+          let type: string | undefined = (
+            await FileType.fileTypeFromBuffer(mediaBuffer)
+          )?.mime;
+          if (type === 'application/xml') {
+            type = 'image/svg+xml';
+          }
+          return uploadAttachmentToS3(type, mediaBuffer);
+        }
+        throw e;
       }
-      return uploadAttachmentToS3(type, mediaBuffer);
     }
     return null;
   }
