@@ -105,36 +105,4 @@ export default class CreateIndexCompositeAttrPartitionJob extends BullableServic
       }
     );
   }
-
-  public async _start(): Promise<void> {
-    const { partitionTableNames } =
-      config.jobCreateCompositeIndexInAttributeTable;
-    partitionTableNames.forEach((partitionTableName: string) => {
-      let needConcurrently = false;
-      // if this partition is latest then need concurently
-      if (
-        partitionTableName ===
-        partitionTableNames[partitionTableNames.length - 1]
-      ) {
-        needConcurrently = true;
-      }
-
-      this.createJob(
-        BULL_JOB_NAME.JOB_CREATE_COMPOSITE_INDEX_ATTR_PARTITION,
-        BULL_JOB_NAME.JOB_CREATE_COMPOSITE_INDEX_ATTR_PARTITION,
-        {
-          partitionName: partitionTableName,
-          needConcurrently,
-        },
-        {
-          jobId: partitionTableName,
-          removeOnComplete: true,
-          removeOnFail: {
-            count: 3,
-          },
-        }
-      );
-    });
-    return super._start();
-  }
 }
