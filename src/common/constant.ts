@@ -77,6 +77,8 @@ export const BULL_JOB_NAME = {
   REINDEX_CW20_HISTORY: 'reindex:cw20-history',
   CRAWL_IBC_APP: 'crawl:ibc-app',
   JOB_REASSIGN_MSG_INDEX_TO_EVENT: 'job:reassign-msg-index-to-event',
+  JOB_CREATE_COMPOSITE_INDEX_ATTR_PARTITION:
+    'job:create-index-composite-attr-partition',
 };
 
 export const SERVICE = {
@@ -237,6 +239,22 @@ export const SERVICE = {
         key: 'ReAssignMsgIndexToEvent',
         path: 'v1.ReAssignMsgIndexToEvent',
       },
+      CreateIndexCompositeAttrPartition: {
+        key: 'CreateIndexCompositeAttrPartition',
+        path: 'v1.CreateIndexCompositeAttrPartition',
+        actionCreateJob: {
+          key: 'actionCreateJob',
+          path: 'v1.CreateIndexCompositeAttrPartition.actionCreateJob',
+        },
+      },
+    },
+    CrawlIBCTaoService: {
+      key: 'CrawlIBCTaoService',
+      name: 'v1.CrawlIBCTaoService',
+    },
+    CrawlIBCAppService: {
+      key: 'CrawlIBCAppService',
+      name: 'v1.CrawlIBCAppService',
     },
     DailyStatisticsService: {
       key: 'DailyStatisticsService',
@@ -258,10 +276,6 @@ export const SERVICE = {
       key: 'DailyStatsJobsService',
       name: 'v1.DailyStatsJobsService',
     },
-    CrawlIBCTaoService: {
-      key: 'CrawlIBCTaoService',
-      name: 'v1.CrawlIBCTaoService',
-    },
     Cw20ReindexingService: {
       key: 'Cw20ReindexingService',
       name: 'v1.Cw20ReindexingService',
@@ -269,10 +283,6 @@ export const SERVICE = {
         key: 'reindexing',
         path: 'v1.Cw20ReindexingService.reindexing',
       },
-    },
-    CrawlIBCAppService: {
-      key: 'CrawlIBCAppService',
-      name: 'v1.CrawlIBCAppService',
     },
     ServicesManager: {
       key: 'ServicesManager',
