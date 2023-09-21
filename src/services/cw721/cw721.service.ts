@@ -390,9 +390,7 @@ export default class Cw721HandlerService extends BullableService {
     await knex.transaction(async (trx) => {
       // handle all cw721 execute messages
       const { cw721Activities, tokens } = await this.handleCw721MsgExec(
-        missingHistories.filter(
-          (history) => history.action !== CW721_ACTION.MINT
-        ),
+        missingHistories,
         trx
       );
       await this.updateTokenAndActivities(tokens, cw721Activities, trx);
