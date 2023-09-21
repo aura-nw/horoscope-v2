@@ -16,7 +16,9 @@ import { SmartContractEvent } from '../../../../src/models/smart_contract_event'
 import Cw721MissingContractService, {
   REINDEX_TYPE,
 } from '../../../../src/services/cw721/cw721-reindexing.service';
-import Cw721HandlerService from '../../../../src/services/cw721/cw721.service';
+import Cw721HandlerService, {
+  CW721_ACTION,
+} from '../../../../src/services/cw721/cw721.service';
 import { getAttributeFrom } from '../../../../src/common/utils/smart_contract';
 
 @Describe('Test view count')
@@ -247,11 +249,6 @@ export default class TestCw721MissingContractService {
           },
           {
             smart_contract_event_id: '100',
-            key: 'sender',
-            value: 'aura15f6wn3nymdnhnh5ddlqletuptjag09tryrtpq5',
-          },
-          {
-            smart_contract_event_id: '100',
             key: 'token_id',
             value: this.cw721Contract.tokens[2].token_id,
           },
@@ -315,24 +312,22 @@ export default class TestCw721MissingContractService {
     expect(tokens[2].burned).toEqual(false);
     const cw721Activities = await CW721Activity.query().orderBy('id');
     cw721Activities.forEach((e, index) => {
-      console.log(index);
-
       this.testActivity(e, {
         sender: getAttributeFrom(
           msgs[index].attributes,
           EventAttribute.ATTRIBUTE_KEY.SENDER
-        ),
-        from: expect.anything(),
-        to:
-          getAttributeFrom(
-            msgs[index].attributes,
-            EventAttribute.ATTRIBUTE_KEY.RECIPIENT
-          ) !== undefined
-            ? getAttributeFrom(
-                msgs[index].attributes,
-                EventAttribute.ATTRIBUTE_KEY.RECIPIENT
-              )
-            : null,
+        )
+          ? getAttributeFrom(
+              msgs[index].attributes,
+              EventAttribute.ATTRIBUTE_KEY.SENDER
+            )
+          : getAttributeFrom(
+              msgs[index].attributes,
+              EventAttribute.ATTRIBUTE_KEY.MINTER
+            ),
+        from:
+          msgs[index].action === CW721_ACTION.MINT ? null : expect.anything(),
+        to: msgs[index].action !== CW721_ACTION.BURN ? expect.anything() : null,
         height: expect.anything(),
         tx_hash: expect.anything(),
         action: expect.anything(),
