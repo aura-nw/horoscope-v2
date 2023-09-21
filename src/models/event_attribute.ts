@@ -114,6 +114,11 @@ export class EventAttribute extends BaseModel {
     SRC_CHANNEL: 'packet_src_channel',
     DST_PORT: 'packet_dst_port',
     DST_CHANNEL: 'packet_dst_channel',
+    DENOM: 'denom',
+    SUCCESS: 'success',
+    REFUND_RECEIVER: 'refund_receiver',
+    REFUND_DENOM: 'refund_denom',
+    REFUND_AMOUNT: 'refund_amount',
   };
 
   static ATTRIBUTE_COMPOSITE_KEY = {
