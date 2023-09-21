@@ -756,7 +756,7 @@ export default class AssetIndexerTest {
       tx_hash: mockContractTransferMsg.hash,
       action: mockContractTransferMsg.action,
       cw721_contract_id: token.cw721_contract_id,
-      cw721_token_id: undefined,
+      token_id: token.token_id,
     });
   }
 
@@ -829,7 +829,7 @@ export default class AssetIndexerTest {
       tx_hash: msg.hash,
       action: msg.action,
       cw721_contract_id: token.cw721_contract_id,
-      cw721_token_id: undefined,
+      token_id: token.token_id,
     });
   }
 
@@ -896,7 +896,7 @@ export default class AssetIndexerTest {
       tx_hash: msg.hash,
       action: msg.action,
       cw721_contract_id: token.cw721_contract_id,
-      cw721_token_id: undefined,
+      token_id: token.token_id,
     });
   }
 
@@ -960,7 +960,7 @@ export default class AssetIndexerTest {
       tx_hash: msg.hash,
       action: msg.action,
       cw721_contract_id: token.cw721_contract_id,
-      cw721_token_id: undefined,
+      token_id: token.token_id,
     });
   }
 
@@ -1286,9 +1286,6 @@ export default class AssetIndexerTest {
       );
       const newToken = tokens.find((e) => e.token_id === newTokenId);
       expect(cw721Activities.length).toEqual(msgs.length);
-      console.log(cw721Activities);
-      console.log(tokens);
-
       this.testActivity(cw721Activities[0], {
         sender: getAttributeFrom(
           msgs[0].attributes,
@@ -1303,7 +1300,7 @@ export default class AssetIndexerTest {
         tx_hash: msgs[0].hash,
         action: msgs[0].action,
         cw721_contract_id: 1,
-        cw721_token_id: token?.id,
+        token_id: token?.token_id,
       });
       this.testActivity(cw721Activities[1], {
         sender: getAttributeFrom(
@@ -1319,7 +1316,7 @@ export default class AssetIndexerTest {
         tx_hash: msgs[1].hash,
         action: msgs[1].action,
         cw721_contract_id: 1,
-        cw721_token_id: newToken?.id,
+        token_id: newToken?.token_id,
       });
       this.testActivity(cw721Activities[2], {
         sender: getAttributeFrom(
@@ -1335,7 +1332,7 @@ export default class AssetIndexerTest {
         tx_hash: msgs[2].hash,
         action: msgs[2].action,
         cw721_contract_id: 1,
-        cw721_token_id: token?.id,
+        token_id: token?.token_id,
       });
       this.testActivity(cw721Activities[3], {
         sender: getAttributeFrom(
@@ -1354,7 +1351,7 @@ export default class AssetIndexerTest {
         tx_hash: msgs[3].hash,
         action: msgs[3].action,
         cw721_contract_id: 1,
-        cw721_token_id: newToken?.id,
+        token_id: newToken?.token_id,
       });
       this.testActivity(cw721Activities[4], {
         sender: getAttributeFrom(
@@ -1370,7 +1367,7 @@ export default class AssetIndexerTest {
         tx_hash: msgs[4].hash,
         action: msgs[4].action,
         cw721_contract_id: 1,
-        cw721_token_id: newToken?.id,
+        token_id: newToken?.token_id,
       });
       this.testActivity(cw721Activities[5], {
         sender: getAttributeFrom(
@@ -1381,7 +1378,10 @@ export default class AssetIndexerTest {
         tx_hash: msgs[5].hash,
         action: msgs[5].action,
         cw721_contract_id: 1,
-        cw721_token_id: undefined,
+        token_id: getAttributeFrom(
+          msgs[5].attributes,
+          EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+        ),
       });
       expect(token?.owner).toEqual(
         getAttributeFrom(
@@ -1770,7 +1770,7 @@ export default class AssetIndexerTest {
     await knex.transaction(async (trx) => {
       const { cw721Activities, tokens } =
         await this.cw721HandlerService.handleCw721MsgExec(msgs, trx);
-      const results = await tokens.filter(
+      const results = tokens.filter(
         (e) => e.cw721_contract_id === untrackContract.id
       );
       expect(results.length).toEqual(0);
@@ -1995,9 +1995,7 @@ export default class AssetIndexerTest {
         event_id: 10,
       }),
     ];
-    jest
-      .spyOn(this.cw721HandlerService, 'getCw721ContractEvents')
-      .mockResolvedValue(msgs);
+    jest.spyOn(CW721Activity, 'getCw721ContractEvents').mockResolvedValue(msgs);
     await this.cw721HandlerService.handleJob();
     const cw721Activities = await CW721Activity.query().orderBy('id');
     const tokens = await CW721Token.query()
@@ -2130,8 +2128,7 @@ export default class AssetIndexerTest {
     expect(cw721Activity.tx_hash).toEqual(actual.tx_hash);
     expect(cw721Activity.action).toEqual(actual.action);
     expect(cw721Activity.cw721_contract_id).toEqual(actual.cw721_contract_id);
-    console.log(cw721Activity.cw721_token_id);
-    console.log(actual.cw721_token_id);
+    expect(cw721Activity.token_id).toEqual(actual.token_id);
     expect(cw721Activity.cw721_token_id).toEqual(actual.cw721_token_id);
   }
 }
