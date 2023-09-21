@@ -499,6 +499,7 @@ export default class AssetIndexerTest {
         attributes: data.attributes,
         hash: data.hash,
         height: data.height,
+        smart_contract_event_id: data.smart_contract_event_id,
       }))
     ).toEqual([
       {
@@ -512,6 +513,7 @@ export default class AssetIndexerTest {
         ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
         hash: this.txInsert.hash,
         height: this.txInsert.height,
+        smart_contract_event_id: expect.anything(),
       },
       {
         action: 'instantiate',
@@ -524,6 +526,7 @@ export default class AssetIndexerTest {
         ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
         hash: this.txInsert.hash,
         height: this.txInsert.height,
+        smart_contract_event_id: expect.anything(),
       },
       {
         action: this.txInsert.messages[0].events[3].attributes[1].value,
@@ -536,6 +539,7 @@ export default class AssetIndexerTest {
         ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
         hash: this.txInsert.hash,
         height: this.txInsert.height,
+        smart_contract_event_id: expect.anything(),
       },
       {
         action: this.txInsert.messages[0].events[4].attributes[1].value,
@@ -549,6 +553,7 @@ export default class AssetIndexerTest {
         ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
         hash: this.txInsert.hash,
         height: this.txInsert.height,
+        smart_contract_event_id: expect.anything(),
       },
       {
         action: this.txInsert.messages[1].events[1].attributes[1].value,
@@ -562,6 +567,7 @@ export default class AssetIndexerTest {
         ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
         hash: this.txInsert.hash,
         height: this.txInsert.height,
+        smart_contract_event_id: expect.anything(),
       },
       {
         action: null,
@@ -574,6 +580,7 @@ export default class AssetIndexerTest {
         ].map((attribute) => ({ key: attribute.key, value: attribute.value })),
         hash: this.txInsert.hash,
         height: this.txInsert.height,
+        smart_contract_event_id: expect.anything(),
       },
     ]);
   }
