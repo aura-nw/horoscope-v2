@@ -312,6 +312,18 @@ export default class TestCw721MissingContractService {
     expect(tokens[2].burned).toEqual(false);
     const cw721Activities = await CW721Activity.query().orderBy('id');
     cw721Activities.forEach((e, index) => {
+      const recepient = getAttributeFrom(
+        msgs[index].attributes,
+        EventAttribute.ATTRIBUTE_KEY.RECIPIENT
+      )
+        ? getAttributeFrom(
+            msgs[index].attributes,
+            EventAttribute.ATTRIBUTE_KEY.RECIPIENT
+          )
+        : getAttributeFrom(
+            msgs[index].attributes,
+            EventAttribute.ATTRIBUTE_KEY.OWNER
+          );
       this.testActivity(e, {
         sender: getAttributeFrom(
           msgs[index].attributes,
@@ -326,11 +338,13 @@ export default class TestCw721MissingContractService {
               EventAttribute.ATTRIBUTE_KEY.MINTER
             ),
         from:
-          msgs[index].action === CW721_ACTION.MINT ? null : expect.anything(),
-        to: msgs[index].action !== CW721_ACTION.BURN ? expect.anything() : null,
-        height: expect.anything(),
-        tx_hash: expect.anything(),
-        action: expect.anything(),
+          msgs[index].action === CW721_ACTION.MINT
+            ? null
+            : this.cw721Contract.tokens[index].owner,
+        to: msgs[index].action !== CW721_ACTION.BURN ? recepient : null,
+        height: msgs[index].height,
+        tx_hash: msgs[index].hash,
+        action: msgs[index].action,
         cw721_contract_id: this.cw721Contract.tokens[index].cw721_contract_id,
         token_id: this.cw721Contract.tokens[index].token_id,
         cw721_token_id: tokens[index].id,
