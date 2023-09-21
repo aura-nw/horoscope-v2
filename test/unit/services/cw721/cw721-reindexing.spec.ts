@@ -8,7 +8,7 @@ import {
 import { Errors, ServiceBroker } from 'moleculer';
 import { BULL_JOB_NAME, SERVICE } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
-import { BlockCheckpoint, Code } from '../../../../src/models';
+import { BlockCheckpoint, Code, EventAttribute } from '../../../../src/models';
 import CW721Contract from '../../../../src/models/cw721_contract';
 import CW721Token from '../../../../src/models/cw721_token';
 import CW721Activity from '../../../../src/models/cw721_tx';
@@ -17,6 +17,7 @@ import Cw721MissingContractService, {
   REINDEX_TYPE,
 } from '../../../../src/services/cw721/cw721-reindexing.service';
 import Cw721HandlerService from '../../../../src/services/cw721/cw721.service';
+import { getAttributeFrom } from '../../../../src/common/utils/smart_contract';
 
 @Describe('Test view count')
 export default class TestCw721MissingContractService {
@@ -61,42 +62,42 @@ export default class TestCw721MissingContractService {
       {
         token_id: 'bhlvjdfkljkljg',
         owner: 'ghgfhdgdsfgsdgfsd',
-        last_updated_height: 122120,
+        last_updated_height: 1,
         burned: false,
         cw721_contract_id: 1,
       },
       {
         token_id: 'zzzvcxxb',
         owner: 'xctgxgvxcgxx',
-        last_updated_height: 155,
+        last_updated_height: 1,
         burned: false,
         cw721_contract_id: 1,
       },
       {
         token_id: 'vbmnnmn',
         owner: 'ghgfhdgdsfgsdgfsd',
-        last_updated_height: 42424,
+        last_updated_height: 1,
         burned: false,
         cw721_contract_id: 1,
       },
       {
         token_id: 'vcgasdfsdg',
         owner: 'ghgfhdgdsfgsdgfsd',
-        last_updated_height: 121012,
+        last_updated_height: 1,
         burned: false,
         cw721_contract_id: 1,
       },
       {
         token_id: 'cbvcxbvcxgbdv',
         owner: 'ghgfhdgdsfgsdgfsd',
-        last_updated_height: 651651,
+        last_updated_height: 1,
         burned: false,
         cw721_contract_id: 1,
       },
       {
         token_id: 'dghdfghdfgfdgdf',
         owner: 'ghgfhdgdsfgsdgfsd',
-        last_updated_height: 2314,
+        last_updated_height: 1,
         burned: false,
         cw721_contract_id: 1,
       },
@@ -170,7 +171,7 @@ export default class TestCw721MissingContractService {
           {
             smart_contract_event_id: '100',
             key: 'sender',
-            value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
+            value: 'aura15f6wn3nymdnhnh5ddlqletuptjag09tryrtpq5',
           },
           {
             smart_contract_event_id: '100',
@@ -178,7 +179,7 @@ export default class TestCw721MissingContractService {
             value: this.cw721Contract.tokens[0].token_id,
           },
         ],
-        height: 122119,
+        height: 100,
         hash: '',
         event_id: '10',
       }),
@@ -206,7 +207,7 @@ export default class TestCw721MissingContractService {
           {
             smart_contract_event_id: '100',
             key: 'sender',
-            value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
+            value: 'aura15f6wn3nymdnhnh5ddlqletuptjag09tryrtpq5',
           },
           {
             smart_contract_event_id: '100',
@@ -246,11 +247,16 @@ export default class TestCw721MissingContractService {
           },
           {
             smart_contract_event_id: '100',
+            key: 'sender',
+            value: 'aura15f6wn3nymdnhnh5ddlqletuptjag09tryrtpq5',
+          },
+          {
+            smart_contract_event_id: '100',
             key: 'token_id',
-            value: this.cw721Contract.tokens[4].token_id,
+            value: this.cw721Contract.tokens[2].token_id,
           },
         ],
-        height: 651659,
+        height: 300,
         hash: '',
         event_id: 100,
       }),
@@ -278,10 +284,10 @@ export default class TestCw721MissingContractService {
           {
             smart_contract_event_id: '100',
             key: 'token_id',
-            value: this.cw721Contract.tokens[2].token_id,
+            value: this.cw721Contract.tokens[3].token_id,
           },
         ],
-        height: 42429,
+        height: 400,
         hash: '',
         event_id: 10,
       }),
@@ -298,10 +304,43 @@ export default class TestCw721MissingContractService {
     const tokens = await CW721Token.query()
       .where('cw721_contract_id', 1)
       .orderBy('id');
-    expect(tokens[0].owner).toEqual(this.cw721Contract.tokens[0].owner);
+    expect(tokens[0].owner).toEqual(
+      getAttributeFrom(
+        msgs[0].attributes,
+        EventAttribute.ATTRIBUTE_KEY.RECIPIENT
+      )
+    );
     expect(tokens[1].owner).toEqual(msgs[1].attributes[2].value);
-    expect(tokens[2].burned).toEqual(true);
-    expect(tokens[4].burned).toEqual(false);
+    expect(tokens[3].burned).toEqual(true);
+    expect(tokens[2].burned).toEqual(false);
+    const cw721Activities = await CW721Activity.query().orderBy('id');
+    cw721Activities.forEach((e, index) => {
+      console.log(index);
+
+      this.testActivity(e, {
+        sender: getAttributeFrom(
+          msgs[index].attributes,
+          EventAttribute.ATTRIBUTE_KEY.SENDER
+        ),
+        from: expect.anything(),
+        to:
+          getAttributeFrom(
+            msgs[index].attributes,
+            EventAttribute.ATTRIBUTE_KEY.RECIPIENT
+          ) !== undefined
+            ? getAttributeFrom(
+                msgs[index].attributes,
+                EventAttribute.ATTRIBUTE_KEY.RECIPIENT
+              )
+            : null,
+        height: expect.anything(),
+        tx_hash: expect.anything(),
+        action: expect.anything(),
+        cw721_contract_id: this.cw721Contract.tokens[index].cw721_contract_id,
+        token_id: this.cw721Contract.tokens[index].token_id,
+        cw721_token_id: tokens[index].id,
+      });
+    });
   }
 
   @Test('Test ReindexingService function')
