@@ -286,9 +286,7 @@ export default class TestCw721MissingContractService {
         event_id: 10,
       }),
     ];
-    jest
-      .spyOn(this.cw721HandlerService, 'getCw721ContractEvents')
-      .mockResolvedValue(msgs);
+    jest.spyOn(CW721Activity, 'getCw721ContractEvents').mockResolvedValue(msgs);
     await this.broker.call(
       SERVICE.V1.Cw721.HandleRangeBlockMissingContract.path,
       {
@@ -533,9 +531,7 @@ export default class TestCw721MissingContractService {
         event_id: 10,
       }),
     ];
-    jest
-      .spyOn(this.cw721HandlerService, 'getCw721ContractEvents')
-      .mockResolvedValue(msgs);
+    jest.spyOn(CW721Activity, 'getCw721ContractEvents').mockResolvedValue(msgs);
     await this.broker.call(
       SERVICE.V1.Cw721.HandleRangeBlockMissingContract.path,
       {
