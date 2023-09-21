@@ -27,6 +27,7 @@ import CW721Activity from '../../../../src/models/cw721_tx';
 import { SmartContractEvent } from '../../../../src/models/smart_contract_event';
 import CrawlContractEventService from '../../../../src/services/crawl-cosmwasm/crawl_contract_event.service';
 import Cw721HandlerService from '../../../../src/services/cw721/cw721.service';
+import { Cw721Handler } from '../../../../src/common/utils/cw721_handler';
 
 @Describe('Test cw721 service')
 export default class AssetIndexerTest {
@@ -486,7 +487,7 @@ export default class AssetIndexerTest {
 
   @Test('test getCw721ContractEvent function')
   public async testGetCw721ContractEvent() {
-    const extractData = await this.cw721HandlerService.getCw721ContractEvents(
+    const extractData = await CW721Activity.getCw721ContractEvents(
       this.block.height - 1,
       this.block.height
     );
@@ -579,7 +580,7 @@ export default class AssetIndexerTest {
 
   @Test('test getCw721ContractEvent by contract function')
   public async testGetCw721ContractEventByContract() {
-    const extractData = await this.cw721HandlerService.getCw721ContractEvents(
+    const extractData = await CW721Activity.getCw721ContractEvents(
       this.block.height - 1,
       this.block.height,
       1
@@ -645,7 +646,7 @@ export default class AssetIndexerTest {
       },
     ]);
 
-    const extractData1 = await this.cw721HandlerService.getCw721ContractEvents(
+    const extractData1 = await CW721Activity.getCw721ContractEvents(
       this.block.height - 1,
       this.block.height,
       1,
@@ -736,14 +737,10 @@ export default class AssetIndexerTest {
       (o) => `${o.contract.smart_contract.address}_${o.token_id}`
     );
     const cw721Activities: CW721Activity[] = [];
-    this.cw721HandlerService.handlerCw721Transfer(
-      mockContractTransferMsg,
-      tokens,
-      cw721Activities,
-      1
-    );
+    const cw721Handler = new Cw721Handler(tokens, cw721Activities);
+    cw721Handler.handlerCw721Transfer(mockContractTransferMsg, 1);
     const token =
-      tokens[
+      cw721Handler.tokensKeyBy[
         `${mockContractTransferMsg.contractAddress}_${getAttributeFrom(
           mockContractTransferMsg.attributes,
           EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
@@ -751,7 +748,7 @@ export default class AssetIndexerTest {
       ];
     expect(token.owner).toEqual(recipient);
     expect(token.last_updated_height).toEqual(mockContractTransferMsg.height);
-    this.testActivity(cw721Activities[0], {
+    this.testActivity(cw721Handler.cw721Activities[0], {
       sender,
       from: this.mockInitContract.tokens[0].owner,
       to: recipient,
@@ -812,9 +809,10 @@ export default class AssetIndexerTest {
       (o) => `${o.contract.smart_contract.address}_${o.token_id}`
     );
     const cw721Activities: CW721Activity[] = [];
-    this.cw721HandlerService.handlerCw721Mint(msg, tokens, cw721Activities, 1);
+    const cw721Handler = new Cw721Handler(tokens, cw721Activities);
+    cw721Handler.handlerCw721Mint(msg, 1);
     const token =
-      tokens[
+      cw721Handler.tokensKeyBy[
         `${msg.contractAddress}_${getAttributeFrom(
           msg.attributes,
           EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
@@ -823,7 +821,7 @@ export default class AssetIndexerTest {
     expect(token.owner).toEqual(owner);
     expect(token.token_id).toEqual(tokenId);
     expect(token.last_updated_height).toEqual(msg.height);
-    this.testActivity(cw721Activities[0], {
+    this.testActivity(cw721Handler.cw721Activities[0], {
       sender: minter,
       from: null,
       to: owner,
@@ -877,9 +875,10 @@ export default class AssetIndexerTest {
       (o) => `${o.contract.smart_contract.address}_${o.token_id}`
     );
     const cw721Activities: CW721Activity[] = [];
-    this.cw721HandlerService.handlerCw721Burn(msg, tokens, cw721Activities, 1);
+    const cw721Handler = new Cw721Handler(tokens, cw721Activities);
+    cw721Handler.handlerCw721Burn(msg, 1);
     const token =
-      tokens[
+      cw721Handler.tokensKeyBy[
         `${msg.contractAddress}_${getAttributeFrom(
           msg.attributes,
           EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
@@ -889,7 +888,7 @@ export default class AssetIndexerTest {
     expect(token.token_id).toEqual(tokenId);
     expect(token.last_updated_height).toEqual(msg.height);
     expect(token.burned).toEqual(true);
-    this.testActivity(cw721Activities[0], {
+    this.testActivity(cw721Handler.cw721Activities[0], {
       sender,
       from: this.mockInitContract.tokens[0].owner,
       to: null,
@@ -943,16 +942,17 @@ export default class AssetIndexerTest {
       (o) => `${o.contract.smart_contract.address}_${o.token_id}`
     );
     const cw721Activities: CW721Activity[] = [];
-    this.cw721HandlerService.handleCw721Others(msg, cw721Activities, 1);
+    const cw721Handler = new Cw721Handler(tokens, cw721Activities);
+    cw721Handler.handleCw721Others(msg, 1);
     const token =
-      tokens[
+      cw721Handler.tokensKeyBy[
         `${msg.contractAddress}_${getAttributeFrom(
           msg.attributes,
           EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
         )}`
       ];
     expect(token.burned).toEqual(false);
-    this.testActivity(cw721Activities[0], {
+    this.testActivity(cw721Handler.cw721Activities[0], {
       sender,
       from: undefined,
       to: undefined,
@@ -1036,7 +1036,7 @@ export default class AssetIndexerTest {
         event_id: 100,
       }),
     ];
-    const tokens = _.keyBy(
+    const beforeTokens = _.keyBy(
       await CW721Token.query()
         .withGraphJoined('contract.smart_contract')
         .where('token_id', this.mockInitContract.tokens[0].token_id)
@@ -1046,25 +1046,21 @@ export default class AssetIndexerTest {
         ),
       (o) => `${o.contract.smart_contract.address}_${o.token_id}`
     );
-    const cw721Activities: CW721Activity[] = [];
     await knex.transaction(async (trx) => {
-      await this.cw721HandlerService.handleCw721MsgExec(
+      const { tokens } = await this.cw721HandlerService.handleCw721MsgExec(
         msgs,
-        cw721Activities,
         trx
       );
       const token =
-        tokens[
+        beforeTokens[
           `${this.mockInitContract.smart_contract.address}_${this.mockInitContract.tokens[0].token_id}`
         ];
-      const reMintedToken = await CW721Token.query()
-        .transacting(trx)
-        .where(
-          'cw721_contract_id',
-          this.mockInitContract.tokens[0].cw721_contract_id
-        )
-        .andWhere('token_id', msgs[1].attributes[4].value)
-        .first();
+      const reMintedToken = tokens.find(
+        (e) =>
+          e.cw721_contract_id ===
+            this.mockInitContract.tokens[0].cw721_contract_id &&
+          e.token_id === msgs[1].attributes[4].value
+      );
       expect(reMintedToken?.owner).toEqual(msgs[1].attributes[3].value);
       expect(reMintedToken?.id).toEqual(token.id);
       expect(reMintedToken?.media_info).toEqual(null);
@@ -1281,21 +1277,18 @@ export default class AssetIndexerTest {
       }),
     ];
     await knex.transaction(async (trx) => {
-      const cw721Activities: CW721Activity[] = [];
-      await this.cw721HandlerService.handleCw721MsgExec(
-        msgs,
-        cw721Activities,
-        trx
-      );
-      const tokens = await CW721Token.query()
-        .transacting(trx)
-        .withGraphJoined('contract.smart_contract')
-        .where('contract:smart_contract.address', msgs[0].contractAddress);
+      const { cw721Activities, tokens } =
+        await this.cw721HandlerService.handleCw721MsgExec(msgs, trx);
       const token = tokens.find(
-        (e) => e.token_id === this.mockInitContract.tokens[0].token_id
+        (e) =>
+          e.token_id === this.mockInitContract.tokens[0].token_id &&
+          e.cw721_contract_id === 1
       );
       const newToken = tokens.find((e) => e.token_id === newTokenId);
       expect(cw721Activities.length).toEqual(msgs.length);
+      console.log(cw721Activities);
+      console.log(tokens);
+
       this.testActivity(cw721Activities[0], {
         sender: getAttributeFrom(
           msgs[0].attributes,
@@ -1473,7 +1466,7 @@ export default class AssetIndexerTest {
   @Test('test getCw721TrackedContracts')
   public async testgetCw721TrackedContracts() {
     await knex.transaction(async (trx) => {
-      const results = await this.cw721HandlerService.getCw721TrackedContracts(
+      const results = await CW721Contract.getCw721TrackedContracts(
         [
           this.mockInitContract.smart_contract.address,
           this.untrackContract.smart_contract.address,
@@ -1489,174 +1482,169 @@ export default class AssetIndexerTest {
 
   @Test('test handle multi contract events')
   async testHandleMultiContractEvents() {
-    const token = await CW721Token.query().insert(
-      CW721Token.fromJson({
-        token_id: 'token_multi',
-        media_info: null,
-        owner: 'owner1',
-        cw721_contract_id: 1,
-        last_updated_height: 1000,
-      })
-    );
-    const lastOwner = 'recipient_4';
-    const expectHeight = 2000000;
-    const transferMsgs = [
-      SmartContractEvent.fromJson({
-        contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
-        action: 'transfer_nft',
-        content: '',
-        attributes: [
-          {
-            smart_contract_event_id: '100',
-            key: '_contract_address',
-            value: this.mockInitContract.smart_contract.address,
-          },
-          {
-            smart_contract_event_id: '100',
-            key: 'action',
-            value: 'transfer_nft',
-          },
-          {
-            smart_contract_event_id: '100',
-            key: 'recipient',
-            value: 'recipient_11',
-          },
-          {
-            smart_contract_event_id: '100',
-            key: 'sender',
-            value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
-          },
-          {
-            smart_contract_event_id: '100',
-            key: 'token_id',
-            value: token.token_id,
-          },
-        ],
-        height: 100000,
-        hash: '',
-        event_id: 10,
-      }),
-      SmartContractEvent.fromJson({
-        contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
-        action: 'transfer_nft',
-        content: '',
-        attributes: [
-          {
-            smart_contract_event_id: '100',
-            key: '_contract_address',
-            value: this.mockInitContract.smart_contract.address,
-          },
-          {
-            smart_contract_event_id: '100',
-            key: 'action',
-            value: 'transfer_nft',
-          },
-          {
-            smart_contract_event_id: '100',
-            key: 'recipient',
-            value: 'recipient_2',
-          },
-          {
-            smart_contract_event_id: '100',
-            key: 'sender',
-            value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
-          },
-          {
-            smart_contract_event_id: '100',
-            key: 'token_id',
-            value: token.token_id,
-          },
-        ],
-        height: expectHeight,
-        hash: '',
-        event_id: 100,
-      }),
-      SmartContractEvent.fromJson({
-        contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
-        action: 'transfer_nft',
-        content: '',
-        attributes: [
-          {
-            smart_contract_event_id: '100',
-            key: '_contract_address',
-            value: this.mockInitContract.smart_contract.address,
-          },
-          {
-            smart_contract_event_id: '100',
-            key: 'action',
-            value: 'transfer_nft',
-          },
-          {
-            smart_contract_event_id: '100',
-            key: 'recipient',
-            value: 'recipient_3',
-          },
-          {
-            smart_contract_event_id: '100',
-            key: 'sender',
-            value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
-          },
-          {
-            smart_contract_event_id: '100',
-            key: 'token_id',
-            value: token.token_id,
-          },
-        ],
-        height: expectHeight,
-        hash: '',
-        event_id: 100,
-      }),
-      SmartContractEvent.fromJson({
-        contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
-        action: 'transfer_nft',
-        content: '',
-        attributes: [
-          {
-            smart_contract_event_id: '100',
-            key: '_contract_address',
-            value: this.mockInitContract.smart_contract.address,
-          },
-          {
-            smart_contract_event_id: '100',
-            key: 'action',
-            value: 'transfer_nft',
-          },
-          {
-            smart_contract_event_id: '100',
-            key: 'recipient',
-            value: lastOwner,
-          },
-          {
-            smart_contract_event_id: '100',
-            key: 'sender',
-            value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
-          },
-          {
-            smart_contract_event_id: '100',
-            key: 'token_id',
-            value: token.token_id,
-          },
-        ],
-        height: expectHeight + 1,
-        hash: '',
-        event_id: 100,
-      }),
-    ];
-    const cw721Activities: CW721Activity[] = [];
     await knex.transaction(async (trx) => {
-      await this.cw721HandlerService.handleCw721MsgExec(
-        transferMsgs,
-        cw721Activities,
-        trx
-      );
-      const resultToken = await CW721Token.query()
+      const token = await CW721Token.query()
         .transacting(trx)
-        .where('id', token.id)
-        .first();
+        .insert(
+          CW721Token.fromJson({
+            token_id: 'token_multi',
+            media_info: null,
+            owner: 'owner1',
+            cw721_contract_id: 1,
+            last_updated_height: 1000,
+          })
+        );
+      const lastOwner = 'recipient_4';
+      const expectHeight = 2000000;
+      const transferMsgs = [
+        SmartContractEvent.fromJson({
+          contractAddress: this.mockInitContract.smart_contract.address,
+          sender: '',
+          action: 'transfer_nft',
+          content: '',
+          attributes: [
+            {
+              smart_contract_event_id: '100',
+              key: '_contract_address',
+              value: this.mockInitContract.smart_contract.address,
+            },
+            {
+              smart_contract_event_id: '100',
+              key: 'action',
+              value: 'transfer_nft',
+            },
+            {
+              smart_contract_event_id: '100',
+              key: 'recipient',
+              value: 'recipient_11',
+            },
+            {
+              smart_contract_event_id: '100',
+              key: 'sender',
+              value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
+            },
+            {
+              smart_contract_event_id: '100',
+              key: 'token_id',
+              value: token.token_id,
+            },
+          ],
+          height: 100000,
+          hash: '',
+          event_id: 10,
+        }),
+        SmartContractEvent.fromJson({
+          contractAddress: this.mockInitContract.smart_contract.address,
+          sender: '',
+          action: 'transfer_nft',
+          content: '',
+          attributes: [
+            {
+              smart_contract_event_id: '100',
+              key: '_contract_address',
+              value: this.mockInitContract.smart_contract.address,
+            },
+            {
+              smart_contract_event_id: '100',
+              key: 'action',
+              value: 'transfer_nft',
+            },
+            {
+              smart_contract_event_id: '100',
+              key: 'recipient',
+              value: 'recipient_2',
+            },
+            {
+              smart_contract_event_id: '100',
+              key: 'sender',
+              value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
+            },
+            {
+              smart_contract_event_id: '100',
+              key: 'token_id',
+              value: token.token_id,
+            },
+          ],
+          height: expectHeight,
+          hash: '',
+          event_id: 100,
+        }),
+        SmartContractEvent.fromJson({
+          contractAddress: this.mockInitContract.smart_contract.address,
+          sender: '',
+          action: 'transfer_nft',
+          content: '',
+          attributes: [
+            {
+              smart_contract_event_id: '100',
+              key: '_contract_address',
+              value: this.mockInitContract.smart_contract.address,
+            },
+            {
+              smart_contract_event_id: '100',
+              key: 'action',
+              value: 'transfer_nft',
+            },
+            {
+              smart_contract_event_id: '100',
+              key: 'recipient',
+              value: 'recipient_3',
+            },
+            {
+              smart_contract_event_id: '100',
+              key: 'sender',
+              value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
+            },
+            {
+              smart_contract_event_id: '100',
+              key: 'token_id',
+              value: token.token_id,
+            },
+          ],
+          height: expectHeight,
+          hash: '',
+          event_id: 100,
+        }),
+        SmartContractEvent.fromJson({
+          contractAddress: this.mockInitContract.smart_contract.address,
+          sender: '',
+          action: 'transfer_nft',
+          content: '',
+          attributes: [
+            {
+              smart_contract_event_id: '100',
+              key: '_contract_address',
+              value: this.mockInitContract.smart_contract.address,
+            },
+            {
+              smart_contract_event_id: '100',
+              key: 'action',
+              value: 'transfer_nft',
+            },
+            {
+              smart_contract_event_id: '100',
+              key: 'recipient',
+              value: lastOwner,
+            },
+            {
+              smart_contract_event_id: '100',
+              key: 'sender',
+              value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
+            },
+            {
+              smart_contract_event_id: '100',
+              key: 'token_id',
+              value: token.token_id,
+            },
+          ],
+          height: expectHeight + 1,
+          hash: '',
+          event_id: 100,
+        }),
+      ];
+      const { cw721Activities, tokens } =
+        await this.cw721HandlerService.handleCw721MsgExec(transferMsgs, trx);
+      const resultToken = tokens.find((e) => e.id === token.id);
       expect(resultToken?.owner).toEqual(lastOwner);
       expect(resultToken?.last_updated_height).toEqual(expectHeight + 1);
       expect(cw721Activities.length).toEqual(transferMsgs.length);
@@ -1780,16 +1768,12 @@ export default class AssetIndexerTest {
       }),
     ];
     await knex.transaction(async (trx) => {
-      const cw721Activities: CW721Activity[] = [];
-      await this.cw721HandlerService.handleCw721MsgExec(
-        msgs,
-        cw721Activities,
-        trx
+      const { cw721Activities, tokens } =
+        await this.cw721HandlerService.handleCw721MsgExec(msgs, trx);
+      const results = await tokens.filter(
+        (e) => e.cw721_contract_id === untrackContract.id
       );
-      const tokens = await CW721Token.query().transacting(trx).where({
-        cw721_contract_id: untrackContract.id,
-      });
-      expect(tokens.length).toEqual(0);
+      expect(results.length).toEqual(0);
       expect(cw721Activities.length).toEqual(0);
       await trx.rollback();
     });
@@ -2146,6 +2130,8 @@ export default class AssetIndexerTest {
     expect(cw721Activity.tx_hash).toEqual(actual.tx_hash);
     expect(cw721Activity.action).toEqual(actual.action);
     expect(cw721Activity.cw721_contract_id).toEqual(actual.cw721_contract_id);
+    console.log(cw721Activity.cw721_token_id);
+    console.log(actual.cw721_token_id);
     expect(cw721Activity.cw721_token_id).toEqual(actual.cw721_token_id);
   }
 }
