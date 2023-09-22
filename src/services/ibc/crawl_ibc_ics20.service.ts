@@ -1,6 +1,7 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { Knex } from 'knex';
 import { ServiceBroker } from 'moleculer';
+import _ from 'lodash';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
@@ -67,7 +68,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
       const ibcIcs20s = ics20Sends.map((msg) =>
         IbcIcs20.fromJson({
           ibc_message_id: msg.id,
-          ...msg.data,
+          ..._.pick(msg.data, ['sender', 'receiver', 'amount', 'denom']),
           channel_id: msg.src_channel_id,
           status: IbcIcs20.STATUS_TYPE.ONGOING,
           sequence_key: msg.sequence_key,
