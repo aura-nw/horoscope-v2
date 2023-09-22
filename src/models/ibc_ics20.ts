@@ -27,6 +27,8 @@ export class IbcIcs20 extends BaseModel {
 
   type!: string;
 
+  memo!: string;
+
   static get tableName() {
     return 'ibc_ics20';
   }
