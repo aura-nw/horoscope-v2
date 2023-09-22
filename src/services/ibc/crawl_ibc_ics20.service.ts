@@ -1,6 +1,7 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { Knex } from 'knex';
 import { ServiceBroker } from 'moleculer';
+import _ from 'lodash';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
@@ -67,7 +68,13 @@ export default class CrawlIBCIcs20Service extends BullableService {
       const ibcIcs20s = ics20Sends.map((msg) =>
         IbcIcs20.fromJson({
           ibc_message_id: msg.id,
-          ...msg.data,
+          ..._.pick(msg.data, [
+            'sender',
+            'receiver',
+            'amount',
+            'denom',
+            'memo',
+          ]),
           channel_id: msg.src_channel_id,
           status: IbcIcs20.STATUS_TYPE.ONGOING,
           sequence_key: msg.sequence_key,
@@ -107,13 +114,14 @@ export default class CrawlIBCIcs20Service extends BullableService {
         if (recvEvent === undefined) {
           throw Error(`Recv ibc hasn't emmitted events: ${msg.id}`);
         }
-        const [sender, receiver, amount, originalDenom, ackStatus] =
+        const [sender, receiver, amount, originalDenom, ackStatus, memo] =
           recvEvent.getAttributesFrom([
             EventAttribute.ATTRIBUTE_KEY.SENDER,
             EventAttribute.ATTRIBUTE_KEY.RECEIVER,
             EventAttribute.ATTRIBUTE_KEY.AMOUNT,
             EventAttribute.ATTRIBUTE_KEY.DENOM,
             EventAttribute.ATTRIBUTE_KEY.SUCCESS,
+            EventAttribute.ATTRIBUTE_KEY.MEMO,
           ]);
         if (originalDenom === undefined) {
           throw Error(`Recv ibc hasn't emit denom: ${msg.id}`);
@@ -141,6 +149,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
           channel_id: msg.dst_channel_id,
           sequence_key: msg.sequence_key,
           type: msg.type,
+          memo,
         });
       });
       await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
