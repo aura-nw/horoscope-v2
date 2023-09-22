@@ -1,6 +1,7 @@
 export const REDIS_KEY = {
   IBC_DENOM: 'ibc_denom',
   DASHBOARD_STATISTICS: 'dashboard_statistics',
+  TOP_ACCOUNTS: 'top_accounts',
 };
 
 export const URL_TYPE_CONSTANTS = {
@@ -62,11 +63,20 @@ export const BULL_JOB_NAME = {
     'job:check-need-create-event-attr-partition',
   JOB_CREATE_EVENT_ATTR_PARTITION: 'job:create-event-attr-partition',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
+  CRAWL_DAILY_STATISTICS: 'crawl:daily-statistics',
+  CRAWL_ACCOUNT_STATISTICS: 'crawl:account-statistics',
+  HANDLE_TOP_ACCOUNTS: 'handle:top-accounts',
+  HANDLE_DAILY_STATS_JOBS: 'handle:daily-stats-jobs',
   REINDEX_CW721_CONTRACT: 'reindex:cw721-contract',
   REINDEX_CW721_HISTORY: 'reindex:cw721-history',
   HANDLE_MIGRATE_CONTRACT: 'handle:migrate-contract',
   JOB_REDECODE_TX: 'job:redecode-tx',
   JOB_REASSIGN_MSG_INDEX_TO_EVENT: 'job:reassign-msg-index-to-event',
+  CRAWL_IBC_TAO: 'crawl:ibc-tao',
+  CRAWL_GENESIS_IBC_TAO: 'crawl:genesis-ibc-tao',
+  CRAWL_IBC_APP: 'crawl:ibc-app',
+  REINDEX_CW20_CONTRACT: 'reindex:cw20-contract',
+  REINDEX_CW20_HISTORY: 'reindex:cw20-history',
 };
 
 export const SERVICE = {
@@ -226,6 +236,42 @@ export const SERVICE = {
       ReAssignMsgIndexToEvent: {
         key: 'ReAssignMsgIndexToEvent',
         path: 'v1.ReAssignMsgIndexToEvent',
+      },
+    },
+    CrawlIBCTaoService: {
+      key: 'CrawlIBCTaoService',
+      name: 'v1.CrawlIBCTaoService',
+    },
+    CrawlIBCAppService: {
+      key: 'CrawlIBCAppService',
+      name: 'v1.CrawlIBCAppService',
+    },
+    DailyStatisticsService: {
+      key: 'DailyStatisticsService',
+      name: 'v1.DailyStatisticsService',
+      CreateSpecificDateJob: {
+        key: 'CreateSpecificDateJob',
+        path: 'v1.DailyStatisticsService.CreateSpecificDateJob',
+      },
+    },
+    AccountStatisticsService: {
+      key: 'AccountStatisticsService',
+      name: 'v1.AccountStatisticsService',
+      CreateSpecificDateJob: {
+        key: 'CreateSpecificDateJob',
+        path: 'v1.AccountStatisticsService.CreateSpecificDateJob',
+      },
+    },
+    DailyStatsJobsService: {
+      key: 'DailyStatsJobsService',
+      name: 'v1.DailyStatsJobsService',
+    },
+    Cw20ReindexingService: {
+      key: 'Cw20ReindexingService',
+      name: 'v1.Cw20ReindexingService',
+      Reindexing: {
+        key: 'reindexing',
+        path: 'v1.Cw20ReindexingService.reindexing',
       },
     },
   },

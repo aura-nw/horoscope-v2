@@ -6,7 +6,7 @@ import { EventAttribute } from './event_attribute';
 import { TransactionMessage } from './transaction_message';
 
 export class Event extends BaseModel {
-  [relation: string]: any;
+  [relation: string]: any | any[];
 
   id!: string;
 
@@ -19,6 +19,8 @@ export class Event extends BaseModel {
   block_height!: number | undefined;
 
   source!: string;
+
+  attributes!: EventAttribute[];
 
   static get tableName() {
     return 'event';
@@ -88,6 +90,18 @@ export class Event extends BaseModel {
     REVOKE_FEEGRANT: 'revoke_feegrant',
     USE_FEEGRANT: 'use_feegrant',
     SET_FEEGRANT: 'set_feegrant',
+    COIN_SPENT: 'coin_spent',
+    COIN_RECEIVED: 'coin_received',
+    TX: 'tx',
+    TRANSFER: 'transfer',
     MIGRATE: 'migrate',
+    CREATE_CLIENT: 'create_client',
+    CONNECTION_OPEN_ACK: 'connection_open_ack',
+    CONNECTION_OPEN_CONFIRM: 'connection_open_confirm',
+    CHANNEL_OPEN_ACK: 'channel_open_ack',
+    CHANNEL_OPEN_CONFIRM: 'channel_open_confirm',
+    CHANNEL_CLOSE_INIT: 'channel_close_init',
+    CHANNEL_CLOSE_CONFIRM: 'channel_close_confirm',
+    CHANNEL_CLOSE: 'channel_close',
   };
 }

@@ -182,10 +182,12 @@ export default class CrawlSmartContractService extends BullableService {
           'code_id',
           codeContractValues.map((contract) => contract.codeId)
         ),
-        SmartContract.query().whereIn(
-          'address',
-          codeContractValues.map((contract) => contract.address)
-        ),
+        SmartContract.query()
+          .whereIn(
+            'address',
+            codeContractValues.map((contract) => contract.address)
+          )
+          .andWhere('status', SmartContract.STATUS.LATEST),
       ]);
       const codeContractsByKey = _.keyBy(contractsWithMigrateCode, 'code_id');
 
@@ -205,6 +207,7 @@ export default class CrawlSmartContractService extends BullableService {
           instantiate_hash: instantiateEvent ? instantiateEvent.hash : '',
           instantiate_height: instantiateEvent ? instantiateEvent.height : 0,
           version: codeContract ? codeContract.version : '',
+          label: contract.label,
         });
 
         if (codeContract) newContracts.push(migrateContract);
@@ -318,7 +321,7 @@ export default class CrawlSmartContractService extends BullableService {
             10
           );
           contract.creator = contractInfos[index]?.contractInfo?.creator || '';
-
+          contract.label = contractInfos[index]?.contractInfo?.label;
           codeIds.push(
             parseInt(
               contractInfos[index]?.contractInfo?.codeId.toString() || '0',

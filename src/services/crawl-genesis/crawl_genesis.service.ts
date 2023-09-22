@@ -22,6 +22,9 @@ import {
   SmartContract,
   Validator,
   Feegrant,
+  IbcClient,
+  IbcConnection,
+  IbcChannel,
 } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
@@ -52,6 +55,7 @@ export default class CrawlGenesisService extends BullableService {
     BULL_JOB_NAME.CRAWL_GENESIS_CODE,
     BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT,
     BULL_JOB_NAME.CRAWL_GENESIS_FEEGRANT,
+    BULL_JOB_NAME.CRAWL_GENESIS_IBC_TAO,
   ];
 
   public constructor(public broker: ServiceBroker) {
@@ -666,6 +670,116 @@ export default class CrawlGenesisService extends BullableService {
         throw error;
       });
 
+    await this.terminateProcess();
+  }
+
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.CRAWL_GENESIS_IBC_TAO,
+    jobName: BULL_JOB_NAME.CRAWL_GENESIS_IBC_TAO,
+    // prefix: `horoscope-v2-${config.chainId}`,
+  })
+  public async crawlGenesisIbcTao(_payload: object): Promise<void> {
+    this.logger.info('Crawl genesis Ibc Tao');
+
+    const genesisProcess = await this.checkGenesisJobProcess(
+      BULL_JOB_NAME.CRAWL_GENESIS_IBC_TAO
+    );
+    if (genesisProcess !== 0) return;
+    await knex
+      .transaction(async (trx) => {
+        // crawl genesis ibc client
+        const genClients: any[] = await this.readStreamGenesis(
+          'app_state.ibc.client_genesis.clients'
+        );
+        const genClientsConsensus: any[] = await this.readStreamGenesis(
+          'app_state.ibc.client_genesis.clients_consensus'
+        );
+        const ibcClients: IbcClient[] = genClients.map((genClient: any) => {
+          const consensusStates = genClientsConsensus.find(
+            (clientConsensus) =>
+              clientConsensus.client_id === genClient.client_id
+          );
+          return IbcClient.fromJson({
+            client_id: genClient.client_id,
+            counterparty_chain_id: genClient.client_state.chain_id,
+            client_state: genClient.client_state,
+            consensus_state:
+              consensusStates.consensus_states[
+                consensusStates.consensus_states.length - 1
+              ],
+            client_type: genClient.client_id.substring(
+              0,
+              genClient.client_id.lastIndexOf('-')
+            ),
+          });
+        });
+        let newClients: IbcClient[] = [];
+        if (ibcClients.length > 0) {
+          newClients = await IbcClient.query()
+            .insert(ibcClients)
+            .transacting(trx);
+        }
+        this.logger.info('Done client');
+        // crawl genesis ibc connections
+        const genConnections: any[] = await this.readStreamGenesis(
+          'app_state.ibc.connection_genesis.connections'
+        );
+        const ibcConnections: IbcConnection[] = genConnections.map(
+          (genConnection: any) =>
+            IbcConnection.fromJson({
+              ibc_client_id: newClients.find(
+                (client) => client.client_id === genConnection.client_id
+              )?.id,
+              connection_id: genConnection.id,
+              counterparty_client_id: genConnection.counterparty.client_id,
+              counterparty_connection_id:
+                genConnection.counterparty.connection_id,
+            })
+        );
+        let newConnections: IbcConnection[] = [];
+        if (ibcConnections.length > 0) {
+          newConnections = await IbcConnection.query()
+            .insert(ibcConnections)
+            .transacting(trx);
+        }
+        this.logger.info('Done connections');
+        // crawl genesis ibc channels
+        const genChannels: any[] = await this.readStreamGenesis(
+          'app_state.ibc.channel_genesis.channels'
+        );
+        const IbcChannels: IbcChannel[] = genChannels.map((genChannel: any) =>
+          IbcChannel.fromJson({
+            ibc_connection_id: newConnections.find(
+              (connection) =>
+                connection.connection_id === genChannel.connection_hops[0]
+            )?.id,
+            channel_id: genChannel.channel_id,
+            port_id: genChannel.port_id,
+            counterparty_port_id: genChannel.counterparty.port_id,
+            counterparty_channel_id: genChannel.counterparty.channel_id,
+            state: genChannel.state,
+          })
+        );
+        if (IbcChannels.length > 0) {
+          await IbcChannel.query().insert(IbcChannels).transacting(trx);
+        }
+        this.logger.info('Done channel');
+        await BlockCheckpoint.query()
+          .insert(
+            BlockCheckpoint.fromJson({
+              job_name: BULL_JOB_NAME.CRAWL_GENESIS_IBC_TAO,
+              height: 1,
+            })
+          )
+          .onConflict('job_name')
+          .merge()
+          .returning('id')
+          .transacting(trx);
+      })
+      .catch((error) => {
+        this.logger.error(error);
+        throw error;
+      });
     await this.terminateProcess();
   }
 

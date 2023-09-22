@@ -108,7 +108,10 @@
   "cw20": {
     "blocksPerCall": 100,
     "millisecondRepeatJob": 2000,
-    "key": "cw20"
+    "key": "cw20",
+    "reindexHistory": {
+      "limitRecordGet": 500
+    }
   },
   "dashboardStatistics": {
     "millisecondCrawl": 10000,
@@ -159,11 +162,31 @@
     "dispatchMilisecond": 1000,
     "batchSizeLimit": 10
   },
+  "dailyStatistics": {
+    "recordsPerCall": 100
+  },
+  "accountStatistics": {
+    "numberOfTopRecords": 10,
+    "dayRange": [3, 15, 30]
+  },
+  "dailyStatsJobs": {
+    "jobPattern": "0 0 0 * * ?"
+  },
   "jobRedecodeTx": {
     "limitRecordGet": 100
   },
   "jobReassignMsgIndexToEvent": {
     "millisecondCrawl": 1000,
+    "blocksPerCall": 100
+  },
+  "crawlIbcTao": {
+    "key": "crawlIbcTao",
+    "millisecondRepeatJob": 2000,
+    "blocksPerCall": 100
+  },
+  "crawlIbcApp": {
+    "key": "crawlIbcApp",
+    "millisecondRepeatJob": 2000,
     "blocksPerCall": 100
   }
 }
