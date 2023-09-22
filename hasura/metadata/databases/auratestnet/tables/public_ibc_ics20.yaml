@@ -1,0 +1,19 @@
+table:
+  name: ibc_ics20
+  schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - id
+        - ibc_message_id
+        - sender
+        - receiver
+        - amount
+        - denom
+        - status
+        - channel_id
+        - sequence_key
+        - type
+      filter: {}
+      limit: 100
