@@ -12,13 +12,15 @@ export class Event extends BaseModel {
 
   tx_id!: number;
 
-  tx_msg_index: number | undefined;
+  tx_msg_index?: number | undefined;
 
   type!: string;
 
   block_height!: number | undefined;
 
   source!: string;
+
+  attributes!: EventAttribute[];
 
   static get tableName() {
     return 'event';
@@ -30,7 +32,6 @@ export class Event extends BaseModel {
       required: ['type'],
       properties: {
         tx_id: { type: 'number' },
-        tx_msg_index: { type: 'number' },
         type: { type: 'string' },
         block_height: { type: 'number' },
         source: { type: 'string', enum: Object.values(this.SOURCE) },
