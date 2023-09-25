@@ -212,21 +212,15 @@ export default class CrawlBlockService extends BullableService {
                   block_height: block?.block?.header?.height,
                   index,
                   composite_key: attribute?.key
-                    ? `${
-                        event.type
-                      }.${this._registry.decodeAttributeByCosmosSdkVersion(
+                    ? `${event.type}.${this._registry.decodeAttribute(
                         attribute?.key
                       )}`
                     : null,
                   key: attribute?.key
-                    ? this._registry.decodeAttributeByCosmosSdkVersion(
-                        attribute?.key
-                      )
+                    ? this._registry.decodeAttribute(attribute?.key)
                     : null,
                   value: attribute?.value
-                    ? this._registry.decodeAttributeByCosmosSdkVersion(
-                        attribute?.value
-                      )
+                    ? this._registry.decodeAttribute(attribute?.value)
                     : null,
                 })
               ),
