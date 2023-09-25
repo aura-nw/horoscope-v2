@@ -21,6 +21,10 @@ export default class AuraRegistry {
 
   public cosmosSdkVersion: SemVer = new SemVer('v0.45.17');
 
+  public decodeAttribute: any;
+
+  public encodeAttribute: any;
+
   constructor(logger: LoggerInstance) {
     this._logger = logger;
     this.cosmos = cosmos;
@@ -165,23 +169,18 @@ export default class AuraRegistry {
 
   public setCosmosSdkVersionByString(version: string) {
     this.cosmosSdkVersion = new SemVer(version);
-  }
 
-  // use for decode event attribute key value for each version cosmos sdk
-  public decodeAttributeByCosmosSdkVersion(input: string) {
-    if (!input) {
-      return input;
-    }
     if (this.cosmosSdkVersion.compare('v0.45.99') === -1) {
-      return fromUtf8(fromBase64(input));
+      this.decodeAttribute = (input: string) => {
+        if (!input) {
+          return input;
+        }
+        return fromUtf8(fromBase64(input));
+      };
+      this.encodeAttribute = (input: string) => toBase64(toUtf8(input));
+    } else {
+      this.decodeAttribute = (input: string) => input;
+      this.encodeAttribute = (input: string) => input;
     }
-    return input;
-  }
-
-  public encodeAttributeByCosmosSdkVersion(input: string) {
-    if (this.cosmosSdkVersion.compare('v0.45.99') === -1) {
-      return toBase64(toUtf8(input));
-    }
-    return input;
   }
 }

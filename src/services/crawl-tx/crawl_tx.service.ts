@@ -245,11 +245,11 @@ export default class CrawlTxService extends BullableService {
         this.logger.debug(tx, timestamp);
         let sender = '';
         try {
-          sender = this._registry.decodeAttributeByCosmosSdkVersion(
+          sender = this._registry.decodeAttribute(
             this._findAttribute(
               tx.tx_response.events,
               'message',
-              this._registry.encodeAttributeByCosmosSdkVersion('sender')
+              this._registry.encodeAttribute('sender')
             )
           );
         } catch (error) {
@@ -305,21 +305,15 @@ export default class CrawlTxService extends BullableService {
                 block_height: parseInt(tx.tx_response.height, 10),
                 index,
                 composite_key: attribute?.key
-                  ? `${
-                      event.type
-                    }.${this._registry.decodeAttributeByCosmosSdkVersion(
+                  ? `${event.type}.${this._registry.decodeAttribute(
                       attribute?.key
                     )}`
                   : null,
                 key: attribute?.key
-                  ? this._registry.decodeAttributeByCosmosSdkVersion(
-                      attribute?.key
-                    )
+                  ? this._registry.decodeAttribute(attribute?.key)
                   : null,
                 value: attribute?.value
-                  ? this._registry.decodeAttributeByCosmosSdkVersion(
-                      attribute?.value
-                    )
+                  ? this._registry.decodeAttribute(attribute?.value)
                   : null,
               })
             ),
@@ -458,10 +452,10 @@ export default class CrawlTxService extends BullableService {
       event.attributes.forEach((attr: any) => {
         if (event.msg_index !== undefined) {
           const key = attr.key
-            ? this._registry.decodeAttributeByCosmosSdkVersion(attr.key)
+            ? this._registry.decodeAttribute(attr.key)
             : null;
           const value = attr.value
-            ? this._registry.decodeAttributeByCosmosSdkVersion(attr.value)
+            ? this._registry.decodeAttribute(attr.value)
             : null;
           flattenEventEncoded.push(
             `${event.msg_index}-${event.type}-${key}-${value}`
