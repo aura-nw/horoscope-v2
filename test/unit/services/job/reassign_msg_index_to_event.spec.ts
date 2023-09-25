@@ -6,6 +6,7 @@ import { Block, Transaction } from '../../../../src/models';
 import knex from '../../../../src/common/utils/db_connection';
 import JobReAssignMsgIndexToEvent from '../../../../src/services/job/reassign_msg_index_to_event.service';
 import CrawlTxService from '../../../../src/services/crawl-tx/crawl_tx.service';
+import AuraRegistry from '../../../../src/services/crawl-tx/aura.registry';
 
 @Describe('Test job reassign msg index to event attribute')
 export default class CrawlTransactionTest {
@@ -24,7 +25,9 @@ export default class CrawlTransactionTest {
     this.crawlTxService = this.broker.createService(
       CrawlTxService
     ) as CrawlTxService;
-
+    this.crawlTxService.setRegistry(
+      new AuraRegistry(this.crawlTxService.logger)
+    );
     await Promise.all([
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
