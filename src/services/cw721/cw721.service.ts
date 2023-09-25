@@ -24,7 +24,7 @@ import CW721Token from '../../models/cw721_token';
 import CW721Activity from '../../models/cw721_tx';
 import { SmartContract } from '../../models/smart_contract';
 import { SmartContractEvent } from '../../models/smart_contract_event';
-import { Cw721Handler } from '../../common/utils/cw721_handler';
+import { Cw721Handler } from './cw721_handler';
 
 const { NODE_ENV } = Config;
 
@@ -210,23 +210,23 @@ export default class Cw721HandlerService extends BullableService {
       ),
       'address'
     );
-    const cw721Handler = new Cw721Handler(tokensKeyBy, cw721Activities);
+    const cw721Handler = new Cw721Handler(
+      tokensKeyBy,
+      cw721Activities,
+      trackedCw721ContractsByAddr
+    );
     cw721MsgsExecute.forEach((msg) => {
-      const cw721Contract = trackedCw721ContractsByAddr[msg.contractAddress];
-      // check token is in tracked cw721 contract
-      if (cw721Contract) {
-        if (msg.action === CW721_ACTION.MINT) {
-          cw721Handler.handlerCw721Mint(msg, cw721Contract.id);
-        } else if (
-          msg.action === CW721_ACTION.TRANSFER ||
-          msg.action === CW721_ACTION.SEND_NFT
-        ) {
-          cw721Handler.handlerCw721Transfer(msg, cw721Contract.id);
-        } else if (msg.action === CW721_ACTION.BURN) {
-          cw721Handler.handlerCw721Burn(msg, cw721Contract.id);
-        } else {
-          cw721Handler.handleCw721Others(msg, cw721Contract.id);
-        }
+      if (msg.action === CW721_ACTION.MINT) {
+        cw721Handler.handlerCw721Mint(msg);
+      } else if (
+        msg.action === CW721_ACTION.TRANSFER ||
+        msg.action === CW721_ACTION.SEND_NFT
+      ) {
+        cw721Handler.handlerCw721Transfer(msg);
+      } else if (msg.action === CW721_ACTION.BURN) {
+        cw721Handler.handlerCw721Burn(msg);
+      } else {
+        cw721Handler.handleCw721Others(msg);
       }
     });
     return {
