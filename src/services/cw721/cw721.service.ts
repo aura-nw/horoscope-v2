@@ -24,18 +24,9 @@ import CW721Token from '../../models/cw721_token';
 import CW721Activity from '../../models/cw721_tx';
 import { SmartContract } from '../../models/smart_contract';
 import { SmartContractEvent } from '../../models/smart_contract_event';
-// eslint-disable-next-line import/no-cycle
-import { Cw721Handler } from './cw721_handler';
+import { CW721_ACTION, Cw721Handler } from './cw721_handler';
 
 const { NODE_ENV } = Config;
-
-export const CW721_ACTION = {
-  MINT: 'mint',
-  BURN: 'burn',
-  TRANSFER: 'transfer_nft',
-  INSTANTIATE: 'instantiate',
-  SEND_NFT: 'send_nft',
-};
 
 export interface ICw721ReindexingHistoryParams {
   smartContractId: number;

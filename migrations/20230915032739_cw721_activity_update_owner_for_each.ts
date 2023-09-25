@@ -1,7 +1,7 @@
 import { Knex } from 'knex';
 import CW721Activity from '../src/models/cw721_tx';
 import _, { Dictionary } from 'lodash';
-import { CW721_ACTION } from '../src/services/cw721/cw721.service';
+import { CW721_ACTION } from '../src/services/cw721/cw721_handler';
 
 export async function up(knex: Knex): Promise<void> {
   await knex('cw721_activity').update({

@@ -16,10 +16,9 @@ import { SmartContractEvent } from '../../../../src/models/smart_contract_event'
 import Cw721MissingContractService, {
   REINDEX_TYPE,
 } from '../../../../src/services/cw721/cw721-reindexing.service';
-import Cw721HandlerService, {
-  CW721_ACTION,
-} from '../../../../src/services/cw721/cw721.service';
+import Cw721HandlerService from '../../../../src/services/cw721/cw721.service';
 import { getAttributeFrom } from '../../../../src/common/utils/smart_contract';
+import { CW721_ACTION } from '../../../../src/services/cw721/cw721_handler';
 
 @Describe('Test view count')
 export default class TestCw721MissingContractService {
