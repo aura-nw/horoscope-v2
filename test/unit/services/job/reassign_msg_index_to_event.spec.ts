@@ -25,9 +25,11 @@ export default class CrawlTransactionTest {
     this.crawlTxService = this.broker.createService(
       CrawlTxService
     ) as CrawlTxService;
-    this.crawlTxService.setRegistry(
-      new AuraRegistry(this.crawlTxService.logger)
-    );
+
+    const auraRegistry = new AuraRegistry(this.crawlTxService.logger);
+    auraRegistry.setCosmosSdkVersionByString('v0.45.7');
+
+    this.crawlTxService.setRegistry(auraRegistry);
     await Promise.all([
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
