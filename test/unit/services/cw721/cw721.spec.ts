@@ -27,7 +27,7 @@ import CW721Activity from '../../../../src/models/cw721_tx';
 import { SmartContractEvent } from '../../../../src/models/smart_contract_event';
 import CrawlContractEventService from '../../../../src/services/crawl-cosmwasm/crawl_contract_event.service';
 import Cw721HandlerService from '../../../../src/services/cw721/cw721.service';
-import { Cw721Handler } from '../../../../src/common/utils/cw721_handler';
+import { Cw721Handler } from '../../../../src/services/cw721/cw721_handler';
 
 @Describe('Test cw721 service')
 export default class AssetIndexerTest {
@@ -744,26 +744,39 @@ export default class AssetIndexerTest {
       (o) => `${o.contract.smart_contract.address}_${o.token_id}`
     );
     const cw721Activities: CW721Activity[] = [];
-    const cw721Handler = new Cw721Handler(tokens, cw721Activities);
-    cw721Handler.handlerCw721Transfer(mockContractTransferMsg, 1);
-    const token =
-      cw721Handler.tokensKeyBy[
-        `${mockContractTransferMsg.contractAddress}_${getAttributeFrom(
-          mockContractTransferMsg.attributes,
-          EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
-        )}`
-      ];
-    expect(token.owner).toEqual(recipient);
-    expect(token.last_updated_height).toEqual(mockContractTransferMsg.height);
-    this.testActivity(cw721Handler.cw721Activities[0], {
-      sender,
-      from: this.mockInitContract.tokens[0].owner,
-      to: recipient,
-      height: mockContractTransferMsg.height,
-      tx_hash: mockContractTransferMsg.hash,
-      action: mockContractTransferMsg.action,
-      cw721_contract_id: token.cw721_contract_id,
-      token_id: token.token_id,
+    await knex.transaction(async (trx) => {
+      const trackedCw721ContractsByAddr = _.keyBy(
+        await CW721Contract.getCw721TrackedContracts(
+          [mockContractTransferMsg.contractAddress],
+          trx
+        ),
+        'address'
+      );
+      const cw721Handler = new Cw721Handler(
+        tokens,
+        cw721Activities,
+        trackedCw721ContractsByAddr
+      );
+      cw721Handler.handlerCw721Transfer(mockContractTransferMsg);
+      const token =
+        cw721Handler.tokensKeyBy[
+          `${mockContractTransferMsg.contractAddress}_${getAttributeFrom(
+            mockContractTransferMsg.attributes,
+            EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+          )}`
+        ];
+      expect(token.owner).toEqual(recipient);
+      expect(token.last_updated_height).toEqual(mockContractTransferMsg.height);
+      this.testActivity(cw721Handler.cw721Activities[0], {
+        sender,
+        from: this.mockInitContract.tokens[0].owner,
+        to: recipient,
+        height: mockContractTransferMsg.height,
+        tx_hash: mockContractTransferMsg.hash,
+        action: mockContractTransferMsg.action,
+        cw721_contract_id: token.cw721_contract_id,
+        token_id: token.token_id,
+      });
     });
   }
 
@@ -816,27 +829,40 @@ export default class AssetIndexerTest {
       (o) => `${o.contract.smart_contract.address}_${o.token_id}`
     );
     const cw721Activities: CW721Activity[] = [];
-    const cw721Handler = new Cw721Handler(tokens, cw721Activities);
-    cw721Handler.handlerCw721Mint(msg, 1);
-    const token =
-      cw721Handler.tokensKeyBy[
-        `${msg.contractAddress}_${getAttributeFrom(
-          msg.attributes,
-          EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
-        )}`
-      ];
-    expect(token.owner).toEqual(owner);
-    expect(token.token_id).toEqual(tokenId);
-    expect(token.last_updated_height).toEqual(msg.height);
-    this.testActivity(cw721Handler.cw721Activities[0], {
-      sender: minter,
-      from: null,
-      to: owner,
-      height: msg.height,
-      tx_hash: msg.hash,
-      action: msg.action,
-      cw721_contract_id: token.cw721_contract_id,
-      token_id: token.token_id,
+    await knex.transaction(async (trx) => {
+      const trackedCw721ContractsByAddr = _.keyBy(
+        await CW721Contract.getCw721TrackedContracts(
+          [msg.contractAddress],
+          trx
+        ),
+        'address'
+      );
+      const cw721Handler = new Cw721Handler(
+        tokens,
+        cw721Activities,
+        trackedCw721ContractsByAddr
+      );
+      cw721Handler.handlerCw721Mint(msg);
+      const token =
+        cw721Handler.tokensKeyBy[
+          `${msg.contractAddress}_${getAttributeFrom(
+            msg.attributes,
+            EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+          )}`
+        ];
+      expect(token.owner).toEqual(owner);
+      expect(token.token_id).toEqual(tokenId);
+      expect(token.last_updated_height).toEqual(msg.height);
+      this.testActivity(cw721Handler.cw721Activities[0], {
+        sender: minter,
+        from: null,
+        to: owner,
+        height: msg.height,
+        tx_hash: msg.hash,
+        action: msg.action,
+        cw721_contract_id: token.cw721_contract_id,
+        token_id: token.token_id,
+      });
     });
   }
 
@@ -882,28 +908,41 @@ export default class AssetIndexerTest {
       (o) => `${o.contract.smart_contract.address}_${o.token_id}`
     );
     const cw721Activities: CW721Activity[] = [];
-    const cw721Handler = new Cw721Handler(tokens, cw721Activities);
-    cw721Handler.handlerCw721Burn(msg, 1);
-    const token =
-      cw721Handler.tokensKeyBy[
-        `${msg.contractAddress}_${getAttributeFrom(
-          msg.attributes,
-          EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
-        )}`
-      ];
-    expect(token.owner).toEqual(this.mockInitContract.tokens[0].owner);
-    expect(token.token_id).toEqual(tokenId);
-    expect(token.last_updated_height).toEqual(msg.height);
-    expect(token.burned).toEqual(true);
-    this.testActivity(cw721Handler.cw721Activities[0], {
-      sender,
-      from: this.mockInitContract.tokens[0].owner,
-      to: null,
-      height: msg.height,
-      tx_hash: msg.hash,
-      action: msg.action,
-      cw721_contract_id: token.cw721_contract_id,
-      token_id: token.token_id,
+    await knex.transaction(async (trx) => {
+      const trackedCw721ContractsByAddr = _.keyBy(
+        await CW721Contract.getCw721TrackedContracts(
+          [msg.contractAddress],
+          trx
+        ),
+        'address'
+      );
+      const cw721Handler = new Cw721Handler(
+        tokens,
+        cw721Activities,
+        trackedCw721ContractsByAddr
+      );
+      cw721Handler.handlerCw721Burn(msg);
+      const token =
+        cw721Handler.tokensKeyBy[
+          `${msg.contractAddress}_${getAttributeFrom(
+            msg.attributes,
+            EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+          )}`
+        ];
+      expect(token.owner).toEqual(this.mockInitContract.tokens[0].owner);
+      expect(token.token_id).toEqual(tokenId);
+      expect(token.last_updated_height).toEqual(msg.height);
+      expect(token.burned).toEqual(true);
+      this.testActivity(cw721Handler.cw721Activities[0], {
+        sender,
+        from: this.mockInitContract.tokens[0].owner,
+        to: null,
+        height: msg.height,
+        tx_hash: msg.hash,
+        action: msg.action,
+        cw721_contract_id: token.cw721_contract_id,
+        token_id: token.token_id,
+      });
     });
   }
 
@@ -949,25 +988,38 @@ export default class AssetIndexerTest {
       (o) => `${o.contract.smart_contract.address}_${o.token_id}`
     );
     const cw721Activities: CW721Activity[] = [];
-    const cw721Handler = new Cw721Handler(tokens, cw721Activities);
-    cw721Handler.handleCw721Others(msg, 1);
-    const token =
-      cw721Handler.tokensKeyBy[
-        `${msg.contractAddress}_${getAttributeFrom(
-          msg.attributes,
-          EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
-        )}`
-      ];
-    expect(token.burned).toEqual(false);
-    this.testActivity(cw721Handler.cw721Activities[0], {
-      sender,
-      from: undefined,
-      to: undefined,
-      height: msg.height,
-      tx_hash: msg.hash,
-      action: msg.action,
-      cw721_contract_id: token.cw721_contract_id,
-      token_id: token.token_id,
+    await knex.transaction(async (trx) => {
+      const trackedCw721ContractsByAddr = _.keyBy(
+        await CW721Contract.getCw721TrackedContracts(
+          [msg.contractAddress],
+          trx
+        ),
+        'address'
+      );
+      const cw721Handler = new Cw721Handler(
+        tokens,
+        cw721Activities,
+        trackedCw721ContractsByAddr
+      );
+      cw721Handler.handleCw721Others(msg);
+      const token =
+        cw721Handler.tokensKeyBy[
+          `${msg.contractAddress}_${getAttributeFrom(
+            msg.attributes,
+            EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
+          )}`
+        ];
+      expect(token.burned).toEqual(false);
+      this.testActivity(cw721Handler.cw721Activities[0], {
+        sender,
+        from: undefined,
+        to: undefined,
+        height: msg.height,
+        tx_hash: msg.hash,
+        action: msg.action,
+        cw721_contract_id: token.cw721_contract_id,
+        token_id: token.token_id,
+      });
     });
   }
 
