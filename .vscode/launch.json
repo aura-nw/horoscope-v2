@@ -37,9 +37,7 @@
       "name": "Jest current file",
       "runtimeExecutable": "ts-node",
       "program": "${workspaceRoot}/node_modules/jest-cli/bin/jest.js",
-      "args": [
-        "${fileBasename}"
-      ],
+      "args": ["${fileBasename}"],
       "internalConsoleOptions": "neverOpen"
     },
     {
