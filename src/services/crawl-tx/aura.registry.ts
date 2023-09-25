@@ -2,10 +2,11 @@
 import { Registry, TsProtoGeneratedType } from '@cosmjs/proto-signing';
 import { defaultRegistryTypes as defaultStargateTypes } from '@cosmjs/stargate';
 import { wasmTypes } from '@cosmjs/cosmwasm-stargate/build/modules';
-import { ibc, cosmos, auranw } from '@aura-nw/aurajs';
-import { toBase64, fromUtf8, fromBase64 } from '@cosmjs/encoding';
+import { ibc, cosmos } from '@aura-nw/aurajs';
+import { toBase64, fromUtf8, fromBase64, toUtf8 } from '@cosmjs/encoding';
 import { LoggerInstance } from 'moleculer';
 import _ from 'lodash';
+import { SemVer } from 'semver';
 import { MSG_TYPE } from '../../common';
 import Utils from '../../common/utils/utils';
 
@@ -18,7 +19,7 @@ export default class AuraRegistry {
 
   public ibc: any;
 
-  public auranw: any;
+  public cosmosSdkVersion: SemVer = new SemVer('v0.45.17');
 
   constructor(logger: LoggerInstance) {
     this._logger = logger;
@@ -160,5 +161,27 @@ export default class AuraRegistry {
     types.forEach((type) =>
       this.registry.register(type, _.get(this, type.slice(1)))
     );
+  }
+
+  public setCosmosSdkVersionByString(version: string) {
+    this.cosmosSdkVersion = new SemVer(version);
+  }
+
+  // use for decode event attribute key value for each version cosmos sdk
+  public decodeAttributeByCosmosSdkVersion(input: string) {
+    if (!input) {
+      return input;
+    }
+    if (this.cosmosSdkVersion.compare('v0.45.99') === -1) {
+      return fromUtf8(fromBase64(input));
+    }
+    return input;
+  }
+
+  public encodeAttributeByCosmosSdkVersion(input: string) {
+    if (this.cosmosSdkVersion.compare('v0.45.99') === -1) {
+      return toBase64(toUtf8(input));
+    }
+    return input;
   }
 }
