@@ -109,9 +109,11 @@ export default class JobReAssignMsgIndexToEvent extends BullableService {
       // eslint-disable-next-line no-param-reassign
       delete event.msg_index;
     });
-    this.crawlTxService.setRegistry(
-      new AuraRegistry(this.crawlTxService.logger)
-    );
+
+    const auraRegistry = new AuraRegistry(this.crawlTxService.logger);
+    auraRegistry.setCosmosSdkVersionByString('v0.45.7');
+    this.crawlTxService.setRegistry(auraRegistry);
+
     this.crawlTxService.setMsgIndexToEvent(rawData);
     txPatchInTx.push(
       Transaction.query()
