@@ -1,12 +1,14 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import { ServiceBroker } from 'moleculer';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { GetLatestBlockResponseSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/base/tendermint/v1beta1/query';
+import {
+  GetLatestBlockResponseSDKType,
+  GetNodeInfoResponseSDKType,
+} from '@aura-nw/aurajs/types/codegen/cosmos/base/tendermint/v1beta1/query';
 import { CommitSigSDKType } from '@aura-nw/aurajs/types/codegen/tendermint/types/types';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
-import { fromBase64, fromUtf8 } from '@cosmjs/encoding';
 import {
   BULL_JOB_NAME,
   getHttpBatchClient,
@@ -18,6 +20,7 @@ import { Block, BlockCheckpoint, Event } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
+import AuraRegistry from '../crawl-tx/aura.registry';
 
 @Service({
   name: SERVICE.V1.CrawlBlock.key,
@@ -30,9 +33,12 @@ export default class CrawlBlockService extends BullableService {
 
   private _lcdClient!: IAuraJSClientFactory;
 
+  private _registry!: AuraRegistry;
+
   public constructor(public broker: ServiceBroker) {
     super(broker);
     this._httpBatchClient = getHttpBatchClient();
+    this._registry = new AuraRegistry(this.logger);
   }
 
   @QueueHandler({
@@ -47,6 +53,14 @@ export default class CrawlBlockService extends BullableService {
 
   private async initEnv() {
     this._lcdClient = await getLcdClient();
+
+    // set version cosmos sdk to registry
+    const nodeInfo: GetNodeInfoResponseSDKType =
+      await this._lcdClient.auranw.cosmos.base.tendermint.v1beta1.getNodeInfo();
+    const cosmosSdkVersion = nodeInfo.application_version?.cosmos_sdk_version;
+    if (cosmosSdkVersion) {
+      this._registry.setCosmosSdkVersionByString(cosmosSdkVersion);
+    }
 
     // Get handled block from db
     let blockHeightCrawled = await BlockCheckpoint.query().findOne({
@@ -198,13 +212,21 @@ export default class CrawlBlockService extends BullableService {
                   block_height: block?.block?.header?.height,
                   index,
                   composite_key: attribute?.key
-                    ? `${event.type}.${fromUtf8(fromBase64(attribute?.key))}`
+                    ? `${
+                        event.type
+                      }.${this._registry.decodeAttributeByCosmosSdkVersion(
+                        attribute?.key
+                      )}`
                     : null,
                   key: attribute?.key
-                    ? fromUtf8(fromBase64(attribute?.key))
+                    ? this._registry.decodeAttributeByCosmosSdkVersion(
+                        attribute?.key
+                      )
                     : null,
                   value: attribute?.value
-                    ? fromUtf8(fromBase64(attribute?.value))
+                    ? this._registry.decodeAttributeByCosmosSdkVersion(
+                        attribute?.value
+                      )
                     : null,
                 })
               ),
