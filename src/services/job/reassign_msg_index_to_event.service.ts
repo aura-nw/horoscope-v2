@@ -14,6 +14,7 @@ import { BULL_JOB_NAME, SERVICE } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
 import CrawlTxService from '../crawl-tx/crawl_tx.service';
+import AuraRegistry from '../crawl-tx/aura.registry';
 
 // THIS JOB IS ONLY USED FOR TX WITH BASE64 EVENT
 @Service({
@@ -108,6 +109,9 @@ export default class JobReAssignMsgIndexToEvent extends BullableService {
       // eslint-disable-next-line no-param-reassign
       delete event.msg_index;
     });
+    this.crawlTxService.setRegistry(
+      new AuraRegistry(this.crawlTxService.logger)
+    );
     this.crawlTxService.setMsgIndexToEvent(rawData);
     txPatchInTx.push(
       Transaction.query()

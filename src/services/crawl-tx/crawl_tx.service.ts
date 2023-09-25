@@ -664,4 +664,8 @@ export default class CrawlTxService extends BullableService {
     );
     return super._start();
   }
+
+  public setRegistry(registry: AuraRegistry) {
+    this._registry = registry;
+  }
 }
