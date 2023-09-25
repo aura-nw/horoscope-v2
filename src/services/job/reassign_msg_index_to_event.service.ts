@@ -15,6 +15,7 @@ import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
 import CrawlTxService from '../crawl-tx/crawl_tx.service';
 
+// THIS JOB IS ONLY USED FOR TX WITH BASE64 EVENT
 @Service({
   name: SERVICE.V1.JobService.ReAssignMsgIndexToEvent.key,
   version: 1,
