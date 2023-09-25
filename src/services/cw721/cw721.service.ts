@@ -24,6 +24,7 @@ import CW721Token from '../../models/cw721_token';
 import CW721Activity from '../../models/cw721_tx';
 import { SmartContract } from '../../models/smart_contract';
 import { SmartContractEvent } from '../../models/smart_contract_event';
+// eslint-disable-next-line import/no-cycle
 import { Cw721Handler } from './cw721_handler';
 
 const { NODE_ENV } = Config;
@@ -213,22 +214,11 @@ export default class Cw721HandlerService extends BullableService {
     const cw721Handler = new Cw721Handler(
       tokensKeyBy,
       cw721Activities,
-      trackedCw721ContractsByAddr
+      trackedCw721ContractsByAddr,
+      cw721MsgsExecute
     );
-    cw721MsgsExecute.forEach((msg) => {
-      if (msg.action === CW721_ACTION.MINT) {
-        cw721Handler.handlerCw721Mint(msg);
-      } else if (
-        msg.action === CW721_ACTION.TRANSFER ||
-        msg.action === CW721_ACTION.SEND_NFT
-      ) {
-        cw721Handler.handlerCw721Transfer(msg);
-      } else if (msg.action === CW721_ACTION.BURN) {
-        cw721Handler.handlerCw721Burn(msg);
-      } else {
-        cw721Handler.handleCw721Others(msg);
-      }
-    });
+    // cw721 handler process msgs
+    cw721Handler.process();
     return {
       tokens: Object.values(cw721Handler.tokensKeyBy),
       cw721Activities: cw721Handler.cw721Activities,
