@@ -5,6 +5,8 @@ import { SmartContractEvent } from '../../models/smart_contract_event';
 import { getAttributeFrom } from '../../common/utils/smart_contract';
 import { EventAttribute } from '../../models';
 import CW721Contract from '../../models/cw721_contract';
+// eslint-disable-next-line import/no-cycle
+import { CW721_ACTION } from './cw721.service';
 
 export class Cw721Handler {
   tokensKeyBy: Dictionary<CW721Token>;
@@ -13,14 +15,18 @@ export class Cw721Handler {
 
   trackedCw721ContractsByAddr: Dictionary<CW721Contract>;
 
+  orderedMsgs: SmartContractEvent[];
+
   constructor(
     tokens: Dictionary<CW721Token>,
     cw721Activities: CW721Activity[],
-    trackedCw721ContractsByAddr: Dictionary<CW721Contract>
+    trackedCw721ContractsByAddr: Dictionary<CW721Contract>,
+    orderedMsgs: SmartContractEvent[]
   ) {
     this.tokensKeyBy = tokens;
     this.cw721Activities = cw721Activities;
     this.trackedCw721ContractsByAddr = trackedCw721ContractsByAddr;
+    this.orderedMsgs = orderedMsgs;
   }
 
   handlerCw721Transfer(transferMsg: SmartContractEvent) {
@@ -167,5 +173,22 @@ export class Cw721Handler {
         })
       );
     }
+  }
+
+  process() {
+    this.orderedMsgs.forEach((msg) => {
+      if (msg.action === CW721_ACTION.MINT) {
+        this.handlerCw721Mint(msg);
+      } else if (
+        msg.action === CW721_ACTION.TRANSFER ||
+        msg.action === CW721_ACTION.SEND_NFT
+      ) {
+        this.handlerCw721Transfer(msg);
+      } else if (msg.action === CW721_ACTION.BURN) {
+        this.handlerCw721Burn(msg);
+      } else {
+        this.handleCw721Others(msg);
+      }
+    });
   }
 }

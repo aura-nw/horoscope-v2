@@ -755,9 +755,10 @@ export default class AssetIndexerTest {
       const cw721Handler = new Cw721Handler(
         tokens,
         cw721Activities,
-        trackedCw721ContractsByAddr
+        trackedCw721ContractsByAddr,
+        [mockContractTransferMsg]
       );
-      cw721Handler.handlerCw721Transfer(mockContractTransferMsg);
+      cw721Handler.process();
       const token =
         cw721Handler.tokensKeyBy[
           `${mockContractTransferMsg.contractAddress}_${getAttributeFrom(
@@ -840,9 +841,10 @@ export default class AssetIndexerTest {
       const cw721Handler = new Cw721Handler(
         tokens,
         cw721Activities,
-        trackedCw721ContractsByAddr
+        trackedCw721ContractsByAddr,
+        [msg]
       );
-      cw721Handler.handlerCw721Mint(msg);
+      cw721Handler.process();
       const token =
         cw721Handler.tokensKeyBy[
           `${msg.contractAddress}_${getAttributeFrom(
@@ -919,9 +921,10 @@ export default class AssetIndexerTest {
       const cw721Handler = new Cw721Handler(
         tokens,
         cw721Activities,
-        trackedCw721ContractsByAddr
+        trackedCw721ContractsByAddr,
+        [msg]
       );
-      cw721Handler.handlerCw721Burn(msg);
+      cw721Handler.process();
       const token =
         cw721Handler.tokensKeyBy[
           `${msg.contractAddress}_${getAttributeFrom(
@@ -999,9 +1002,10 @@ export default class AssetIndexerTest {
       const cw721Handler = new Cw721Handler(
         tokens,
         cw721Activities,
-        trackedCw721ContractsByAddr
+        trackedCw721ContractsByAddr,
+        [msg]
       );
-      cw721Handler.handleCw721Others(msg);
+      cw721Handler.process();
       const token =
         cw721Handler.tokensKeyBy[
           `${msg.contractAddress}_${getAttributeFrom(
