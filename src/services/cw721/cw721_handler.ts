@@ -5,8 +5,14 @@ import { SmartContractEvent } from '../../models/smart_contract_event';
 import { getAttributeFrom } from '../../common/utils/smart_contract';
 import { EventAttribute } from '../../models';
 import CW721Contract from '../../models/cw721_contract';
-// eslint-disable-next-line import/no-cycle
-import { CW721_ACTION } from './cw721.service';
+
+export const CW721_ACTION = {
+  MINT: 'mint',
+  BURN: 'burn',
+  TRANSFER: 'transfer_nft',
+  INSTANTIATE: 'instantiate',
+  SEND_NFT: 'send_nft',
+};
 
 export class Cw721Handler {
   tokensKeyBy: Dictionary<CW721Token>;
