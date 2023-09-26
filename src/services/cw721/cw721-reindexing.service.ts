@@ -129,8 +129,6 @@ export default class CW721ReindexingService extends BullableService {
         endBlock: maxUpdatedHeightOwner,
         prevId: 0,
         contractAddress,
-        tokensKeyBy: {},
-        cw721ContractKeyBy: { [contractAddress]: cw721Contract },
       } satisfies ICw721ReindexingHistoryParams,
       {
         removeOnComplete: true,
@@ -162,8 +160,6 @@ export default class CW721ReindexingService extends BullableService {
         endBlock: currentHeight,
         prevId: 0,
         contractAddress,
-        tokensKeyBy: {},
-        cw721ContractKeyBy: { [contractAddress]: cw721Contract },
       } satisfies ICw721ReindexingHistoryParams,
       {
         removeOnComplete: true,

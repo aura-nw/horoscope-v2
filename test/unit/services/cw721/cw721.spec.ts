@@ -494,7 +494,6 @@ export default class AssetIndexerTest {
     expect(
       extractData.map((data) => ({
         action: data.action,
-        sender: data.sender,
         contractAddress: data.contractAddress,
         attributes: data.attributes,
         hash: data.hash,
@@ -504,7 +503,6 @@ export default class AssetIndexerTest {
     ).toEqual([
       {
         action: 'instantiate',
-        sender: this.txInsert.messages[0].sender,
         contractAddress:
           this.txInsert.messages[0].events[1].attributes[0].value,
         attributes: [
@@ -517,7 +515,6 @@ export default class AssetIndexerTest {
       },
       {
         action: 'instantiate',
-        sender: this.txInsert.messages[0].sender,
         contractAddress:
           this.txInsert.messages[0].events[2].attributes[0].value,
         attributes: [
@@ -530,7 +527,6 @@ export default class AssetIndexerTest {
       },
       {
         action: this.txInsert.messages[0].events[3].attributes[1].value,
-        sender: this.txInsert.messages[0].sender,
         contractAddress:
           this.txInsert.messages[0].events[3].attributes[0].value,
         attributes: [
@@ -543,7 +539,6 @@ export default class AssetIndexerTest {
       },
       {
         action: this.txInsert.messages[0].events[4].attributes[1].value,
-        sender: this.txInsert.messages[0].sender,
         contractAddress:
           this.txInsert.messages[0].events[4].attributes[0].value,
         attributes: [
@@ -557,7 +552,6 @@ export default class AssetIndexerTest {
       },
       {
         action: this.txInsert.messages[1].events[1].attributes[1].value,
-        sender: this.txInsert.messages[1].sender,
         contractAddress:
           this.txInsert.messages[1].events[1].attributes[0].value,
         attributes: [
@@ -571,7 +565,6 @@ export default class AssetIndexerTest {
       },
       {
         action: null,
-        sender: this.txInsert.messages[1].sender,
         contractAddress:
           this.txInsert.messages[1].events[2].attributes[0].value,
         attributes: [
@@ -595,7 +588,6 @@ export default class AssetIndexerTest {
     expect(
       extractData.map((data) => ({
         action: data.action,
-        sender: data.sender,
         contractAddress: data.contractAddress,
         attributes: data.attributes,
         hash: data.hash,
@@ -604,7 +596,6 @@ export default class AssetIndexerTest {
     ).toEqual([
       {
         action: 'instantiate',
-        sender: this.txInsert.messages[0].sender,
         contractAddress:
           this.txInsert.messages[0].events[1].attributes[0].value,
         attributes: [
@@ -616,7 +607,6 @@ export default class AssetIndexerTest {
       },
       {
         action: 'instantiate',
-        sender: this.txInsert.messages[0].sender,
         contractAddress:
           this.txInsert.messages[0].events[2].attributes[0].value,
         attributes: [
@@ -628,7 +618,6 @@ export default class AssetIndexerTest {
       },
       {
         action: this.txInsert.messages[1].events[1].attributes[1].value,
-        sender: this.txInsert.messages[1].sender,
         contractAddress:
           this.txInsert.messages[1].events[1].attributes[0].value,
         attributes: [
@@ -641,7 +630,6 @@ export default class AssetIndexerTest {
       },
       {
         action: null,
-        sender: this.txInsert.messages[1].sender,
         contractAddress:
           this.txInsert.messages[1].events[2].attributes[0].value,
         attributes: [
@@ -666,7 +654,6 @@ export default class AssetIndexerTest {
     expect(
       extractData1.map((data) => ({
         action: data.action,
-        sender: data.sender,
         contractAddress: data.contractAddress,
         attributes: data.attributes,
         hash: data.hash,
@@ -675,7 +662,6 @@ export default class AssetIndexerTest {
     ).toEqual([
       {
         action: 'instantiate',
-        sender: this.txInsert.messages[0].sender,
         contractAddress:
           this.txInsert.messages[0].events[1].attributes[0].value,
         attributes: [
@@ -687,7 +673,6 @@ export default class AssetIndexerTest {
       },
       {
         action: 'instantiate',
-        sender: this.txInsert.messages[0].sender,
         contractAddress:
           this.txInsert.messages[0].events[2].attributes[0].value,
         attributes: [
@@ -705,7 +690,6 @@ export default class AssetIndexerTest {
     const [recipient, sender] = ['phamphong_transfer', 'bhdgsdfgtsdtfsdfs'];
     const mockContractTransferMsg = SmartContractEvent.fromJson({
       contractAddress: this.mockInitContract.smart_contract.address,
-      sender: '',
       action: 'transfer_nft',
       content: '',
       attributes: [
@@ -790,7 +774,6 @@ export default class AssetIndexerTest {
     ];
     const msg = SmartContractEvent.fromJson({
       contractAddress: this.mockInitContract.smart_contract.address,
-      sender: '',
       action: 'mint',
       content:
         '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
@@ -876,7 +859,6 @@ export default class AssetIndexerTest {
     ];
     const msg = SmartContractEvent.fromJson({
       contractAddress: this.mockInitContract.smart_contract.address,
-      sender: '',
       action: 'burn',
       content: '',
       attributes: [
@@ -957,7 +939,6 @@ export default class AssetIndexerTest {
     ];
     const msg = SmartContractEvent.fromJson({
       contractAddress: this.mockInitContract.smart_contract.address,
-      sender: '',
       action: 'abc',
       content: '',
       attributes: [
@@ -1032,7 +1013,6 @@ export default class AssetIndexerTest {
     const msgs = [
       SmartContractEvent.fromJson({
         contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
         action: 'burn',
         content: '',
         attributes: [
@@ -1063,7 +1043,6 @@ export default class AssetIndexerTest {
       }),
       SmartContractEvent.fromJson({
         contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
         action: 'mint',
         content:
           '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
@@ -1138,7 +1117,6 @@ export default class AssetIndexerTest {
     const msgs = [
       SmartContractEvent.fromJson({
         contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
         action: 'transfer_nft',
         content: '',
         attributes: [
@@ -1174,7 +1152,6 @@ export default class AssetIndexerTest {
       }),
       SmartContractEvent.fromJson({
         contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
         action: 'mint',
         content:
           '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
@@ -1211,7 +1188,6 @@ export default class AssetIndexerTest {
       }),
       SmartContractEvent.fromJson({
         contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
         action: 'burn',
         content: '',
         attributes: [
@@ -1242,7 +1218,6 @@ export default class AssetIndexerTest {
       }),
       SmartContractEvent.fromJson({
         contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
         action: 'transfer_nft',
         content: '',
         attributes: [
@@ -1278,7 +1253,6 @@ export default class AssetIndexerTest {
       }),
       SmartContractEvent.fromJson({
         contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
         action: 'burn',
         content: '',
         attributes: [
@@ -1309,7 +1283,6 @@ export default class AssetIndexerTest {
       }),
       SmartContractEvent.fromJson({
         contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
         action: 'abc',
         content: '',
         attributes: [
@@ -1562,7 +1535,6 @@ export default class AssetIndexerTest {
       const transferMsgs = [
         SmartContractEvent.fromJson({
           contractAddress: this.mockInitContract.smart_contract.address,
-          sender: '',
           action: 'transfer_nft',
           content: '',
           attributes: [
@@ -1598,7 +1570,6 @@ export default class AssetIndexerTest {
         }),
         SmartContractEvent.fromJson({
           contractAddress: this.mockInitContract.smart_contract.address,
-          sender: '',
           action: 'transfer_nft',
           content: '',
           attributes: [
@@ -1634,7 +1605,6 @@ export default class AssetIndexerTest {
         }),
         SmartContractEvent.fromJson({
           contractAddress: this.mockInitContract.smart_contract.address,
-          sender: '',
           action: 'transfer_nft',
           content: '',
           attributes: [
@@ -1670,7 +1640,6 @@ export default class AssetIndexerTest {
         }),
         SmartContractEvent.fromJson({
           contractAddress: this.mockInitContract.smart_contract.address,
-          sender: '',
           action: 'transfer_nft',
           content: '',
           attributes: [
@@ -1727,7 +1696,6 @@ export default class AssetIndexerTest {
     const msgs = [
       SmartContractEvent.fromJson({
         contractAddress: this.untrackContract.smart_contract.address,
-        sender: '',
         action: 'mint',
         content:
           '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
@@ -1764,7 +1732,6 @@ export default class AssetIndexerTest {
       }),
       SmartContractEvent.fromJson({
         contractAddress: this.untrackContract.smart_contract.address,
-        sender: '',
         action: 'transfer_nft',
         content: '',
         attributes: [
@@ -1800,7 +1767,6 @@ export default class AssetIndexerTest {
       }),
       SmartContractEvent.fromJson({
         contractAddress: this.untrackContract.smart_contract.address,
-        sender: '',
         action: 'burn',
         content: '',
         attributes: [
@@ -1857,7 +1823,6 @@ export default class AssetIndexerTest {
     const msgs = [
       SmartContractEvent.fromJson({
         contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
         action: 'transfer_nft',
         content: '',
         attributes: [
@@ -1893,7 +1858,6 @@ export default class AssetIndexerTest {
       }),
       SmartContractEvent.fromJson({
         contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
         action: 'mint',
         content:
           '{"mint": {"extension": {"image": "https://twilight.s3.ap-southeast-1.amazonaws.com/dev/p69ceVxdSNaslECBLbwN5gjHNYZSjQtb.png","name": "FEB24_1003","attributes": []},"owner": "aura1afuqcya9g59v0slx4e930gzytxvpx2c43xhvtx","token_id": "1677207819871"}}',
@@ -1930,7 +1894,6 @@ export default class AssetIndexerTest {
       }),
       SmartContractEvent.fromJson({
         contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
         action: 'burn',
         content: '',
         attributes: [
@@ -1961,7 +1924,6 @@ export default class AssetIndexerTest {
       }),
       SmartContractEvent.fromJson({
         contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
         action: 'transfer_nft',
         content: '',
         attributes: [
@@ -1997,7 +1959,6 @@ export default class AssetIndexerTest {
       }),
       SmartContractEvent.fromJson({
         contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
         action: 'burn',
         content: '',
         attributes: [
@@ -2028,7 +1989,6 @@ export default class AssetIndexerTest {
       }),
       SmartContractEvent.fromJson({
         contractAddress: this.mockInitContract.smart_contract.address,
-        sender: '',
         action: 'abc',
         content: '',
         attributes: [
