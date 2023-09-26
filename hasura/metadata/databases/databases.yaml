@@ -1,1 +1,89 @@
-[]
+- name: default
+  kind: postgres
+  configuration:
+    connection_info:
+      database_url:
+        from_env: HASURA_GRAPHQL_DATABASE_URL
+      isolation_level: read-committed
+      pool_settings:
+        connection_lifetime: 600
+        idle_timeout: 180
+        max_connections: 50
+        retries: 1
+      use_prepared_statements: true
+  tables: '!include default/tables/tables.yaml'
+- name: euphoria
+  kind: postgres
+  configuration:
+    connection_info:
+      database_url:
+        from_env: DATABASE_URL_EUPHORIA
+      isolation_level: read-committed
+      use_prepared_statements: false
+  customization:
+    naming_convention: hasura-default
+    root_fields:
+      namespace: euphoria
+    type_names:
+      prefix: euphoria_
+  tables: '!include euphoria/tables/tables.yaml'
+- name: nois
+  kind: postgres
+  configuration:
+    connection_info:
+      database_url:
+        from_env: DATABASE_URL_NOIS
+      isolation_level: read-committed
+      use_prepared_statements: false
+  customization:
+    naming_convention: hasura-default
+    root_fields:
+      namespace: nois
+    type_names:
+      prefix: nois_
+  tables: '!include nois/tables/tables.yaml'
+- name: pion
+  kind: postgres
+  configuration:
+    connection_info:
+      database_url:
+        from_env: DATABASE_URL_PION
+      isolation_level: read-committed
+      use_prepared_statements: false
+  customization:
+    naming_convention: hasura-default
+    root_fields:
+      namespace: pion
+    type_names:
+      prefix: pion_
+  tables: '!include pion/tables/tables.yaml'
+- name: serenity
+  kind: postgres
+  configuration:
+    connection_info:
+      database_url:
+        from_env: DATABASE_URL_SERENITY
+      isolation_level: read-committed
+      use_prepared_statements: false
+  customization:
+    naming_convention: hasura-default
+    root_fields:
+      namespace: serenity
+    type_names:
+      prefix: serenity_
+  tables: '!include serenity/tables/tables.yaml'
+- name: xstaxy
+  kind: postgres
+  configuration:
+    connection_info:
+      database_url:
+        from_env: DATABASE_URL_XSTAXY
+      isolation_level: read-committed
+      use_prepared_statements: false
+  customization:
+    naming_convention: hasura-default
+    root_fields:
+      namespace: xstaxy
+    type_names:
+      prefix: xstaxy_
+  tables: '!include xstaxy/tables/tables.yaml'

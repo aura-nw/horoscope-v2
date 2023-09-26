@@ -1,0 +1,18 @@
+table:
+  name: code
+  schema: public
+array_relationships:
+  - name: code_id_verifications
+    using:
+      foreign_key_constraint_on:
+        column: code_id
+        table:
+          name: code_id_verification
+          schema: public
+  - name: smart_contracts
+    using:
+      foreign_key_constraint_on:
+        column: code_id
+        table:
+          name: smart_contract
+          schema: public

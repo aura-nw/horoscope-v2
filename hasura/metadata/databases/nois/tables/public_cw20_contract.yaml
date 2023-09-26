@@ -1,0 +1,22 @@
+table:
+  name: cw20_contract
+  schema: public
+object_relationships:
+  - name: smart_contract
+    using:
+      foreign_key_constraint_on: smart_contract_id
+array_relationships:
+  - name: cw20_activities
+    using:
+      foreign_key_constraint_on:
+        column: cw20_contract_id
+        table:
+          name: cw20_activity
+          schema: public
+  - name: cw20_holders
+    using:
+      foreign_key_constraint_on:
+        column: cw20_contract_id
+        table:
+          name: cw20_holder
+          schema: public

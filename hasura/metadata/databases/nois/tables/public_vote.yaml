@@ -1,0 +1,7 @@
+table:
+  name: vote
+  schema: public
+object_relationships:
+  - name: transaction
+    using:
+      foreign_key_constraint_on: tx_id

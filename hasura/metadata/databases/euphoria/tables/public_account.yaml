@@ -1,0 +1,43 @@
+table:
+  name: account
+  schema: public
+object_relationships:
+  - name: account_vesting
+    using:
+      foreign_key_constraint_on:
+        column: account_id
+        table:
+          name: account_vesting
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - address
+        - type
+        - account_number
+        - id
+        - sequence
+        - balances
+        - pubkey
+        - spendable_balances
+        - created_at
+        - updated_at
+      filter: {}
+      limit: 100
+      allow_aggregations: true
+  - role: public
+    permission:
+      columns:
+        - address
+        - type
+        - account_number
+        - id
+        - sequence
+        - balances
+        - pubkey
+        - spendable_balances
+        - created_at
+        - updated_at
+      filter: {}
+      limit: 100

@@ -1,0 +1,15 @@
+table:
+  name: transaction_message
+  schema: public
+object_relationships:
+  - name: transaction
+    using:
+      foreign_key_constraint_on: tx_id
+array_relationships:
+  - name: transaction_message_receivers
+    using:
+      foreign_key_constraint_on:
+        column: tx_msg_id
+        table:
+          name: transaction_message_receiver
+          schema: public

@@ -1,0 +1,120 @@
+table:
+  name: transaction
+  schema: public
+object_relationships:
+  - name: block
+    using:
+      foreign_key_constraint_on: height
+array_relationships:
+  - name: event_attribute_backups
+    using:
+      foreign_key_constraint_on:
+        column: tx_id
+        table:
+          name: event_attribute_backup
+          schema: public
+  - name: event_attribute_index
+    using:
+      manual_configuration:
+        column_mapping:
+          id: tx_id
+        insertion_order: null
+        remote_table:
+          name: view_event_attribute_value_index
+          schema: public
+  - name: event_attribute_partition_2000000_3000000s
+    using:
+      foreign_key_constraint_on:
+        column: tx_id
+        table:
+          name: event_attribute_partition_2000000_3000000
+          schema: public
+  - name: event_attribute_partition_3000000_4000000s
+    using:
+      foreign_key_constraint_on:
+        column: tx_id
+        table:
+          name: event_attribute_partition_3000000_4000000
+          schema: public
+  - name: event_attribute_partition_4000000_5000000s
+    using:
+      foreign_key_constraint_on:
+        column: tx_id
+        table:
+          name: event_attribute_partition_4000000_5000000
+          schema: public
+  - name: event_attribute_partition_5000000_6000000s
+    using:
+      foreign_key_constraint_on:
+        column: tx_id
+        table:
+          name: event_attribute_partition_5000000_6000000
+          schema: public
+  - name: event_attributes
+    using:
+      foreign_key_constraint_on:
+        column: tx_id
+        table:
+          name: event_attribute
+          schema: public
+  - name: events
+    using:
+      foreign_key_constraint_on:
+        column: tx_id
+        table:
+          name: event
+          schema: public
+  - name: feegrant_histories
+    using:
+      foreign_key_constraint_on:
+        column: tx_id
+        table:
+          name: feegrant_history
+          schema: public
+  - name: feegrants
+    using:
+      foreign_key_constraint_on:
+        column: init_tx_id
+        table:
+          name: feegrant
+          schema: public
+  - name: power_events
+    using:
+      foreign_key_constraint_on:
+        column: tx_id
+        table:
+          name: power_event
+          schema: public
+  - name: transaction_messages
+    using:
+      foreign_key_constraint_on:
+        column: tx_id
+        table:
+          name: transaction_message
+          schema: public
+  - name: votes
+    using:
+      foreign_key_constraint_on:
+        column: tx_id
+        table:
+          name: vote
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - gas_limit
+        - gas_used
+        - gas_wanted
+        - codespace
+        - hash
+        - code
+        - height
+        - id
+        - index
+        - data
+        - fee
+        - memo
+        - timestamp
+      filter: {}
+      limit: 100
