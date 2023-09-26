@@ -29,6 +29,8 @@ export class IbcIcs20 extends BaseModel {
 
   memo!: string;
 
+  timestamp!: Date;
+
   static get tableName() {
     return 'ibc_ics20';
   }

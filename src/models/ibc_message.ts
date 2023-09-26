@@ -6,6 +6,8 @@ import { TransactionMessage } from './transaction_message';
 import config from '../../config.json' assert { type: 'json' };
 
 export class IbcMessage extends BaseModel {
+  [relation: string]: any;
+
   id!: number;
 
   transaction_message_id!: number;
