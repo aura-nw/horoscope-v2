@@ -1,7 +1,7 @@
 import { Knex } from 'knex';
 import CW721Contract from '../src/models/cw721_contract';
 import _ from 'lodash';
-import { Cw20Contract } from 'src/models';
+import { Cw20Contract } from '../src/models';
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.alterTable('cw721_contract', (table) => {
