@@ -1,0 +1,7 @@
+table:
+  name: ibc_channel
+  schema: public
+object_relationships:
+  - name: ibc_connection
+    using:
+      foreign_key_constraint_on: ibc_connection_id

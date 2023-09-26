@@ -1,0 +1,13 @@
+table:
+  name: event_attribute_partition_0_1000000
+  schema: public
+object_relationships:
+  - name: block
+    using:
+      foreign_key_constraint_on: block_height
+  - name: event
+    using:
+      foreign_key_constraint_on: event_id
+  - name: transaction
+    using:
+      foreign_key_constraint_on: tx_id

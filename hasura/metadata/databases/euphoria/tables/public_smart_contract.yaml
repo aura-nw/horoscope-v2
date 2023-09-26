@@ -1,0 +1,47 @@
+table:
+  name: smart_contract
+  schema: public
+object_relationships:
+  - name: code
+    using:
+      foreign_key_constraint_on: code_id
+  - name: cw20_contract
+    using:
+      foreign_key_constraint_on:
+        column: smart_contract_id
+        table:
+          name: cw20_contract
+          schema: public
+  - name: cw721_contract
+    using:
+      foreign_key_constraint_on:
+        column: contract_id
+        table:
+          name: cw721_contract
+          schema: public
+array_relationships:
+  - name: smart_contract_events
+    using:
+      foreign_key_constraint_on:
+        column: smart_contract_id
+        table:
+          name: smart_contract_event
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - address
+        - code_id
+        - created_at
+        - creator
+        - id
+        - instantiate_hash
+        - instantiate_height
+        - name
+        - status
+        - updated_at
+        - version
+      filter: {}
+      limit: 100
+      allow_aggregations: true

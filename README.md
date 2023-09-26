@@ -56,10 +56,34 @@ then start service
 
 ```
 # create file env
-cp .env.example .env
+cp .env.sample .env
 
 # run with moleculer cli
 npm run dev
+```
+
+### Hasura metadata migration
+
+Read [link](https://hasura.io/docs/latest/hasura-cli/install-hasura-cli/) to install Hasura CLI for your operating system. To make update to hasura metadata programmatically, use sample code below:
+
+```
+# init hasura directory
+hasura init hasura
+
+# create file env hasura
+cp .env.hasura.sample hasura/.env
+
+# go to hasura directory
+cd hasura
+
+# export current metadata from hasura
+hasura metadata export
+
+# check current diff between local and hasura server
+hasura metadata diff
+
+# apply current hasura metadata to server
+hasura metadata apply
 ```
 
 ## Configuration

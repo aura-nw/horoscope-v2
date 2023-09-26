@@ -1,0 +1,13 @@
+table:
+  name: power_event
+  schema: public
+object_relationships:
+  - name: transaction
+    using:
+      foreign_key_constraint_on: tx_id
+  - name: validator
+    using:
+      foreign_key_constraint_on: validator_dst_id
+  - name: validatorByValidatorSrcId
+    using:
+      foreign_key_constraint_on: validator_src_id

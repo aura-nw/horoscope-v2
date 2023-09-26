@@ -1,0 +1,11 @@
+table:
+  name: ibc_client
+  schema: public
+array_relationships:
+  - name: ibc_connections
+    using:
+      foreign_key_constraint_on:
+        column: ibc_client_id
+        table:
+          name: ibc_connection
+          schema: public

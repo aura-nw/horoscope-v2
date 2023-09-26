@@ -1,0 +1,25 @@
+table:
+  name: feegrant_history
+  schema: public
+object_relationships:
+  - name: feegrant
+    using:
+      foreign_key_constraint_on: feegrant_id
+  - name: transaction
+    using:
+      foreign_key_constraint_on: tx_id
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - processed
+        - action
+        - denom
+        - grantee
+        - granter
+        - feegrant_id
+        - id
+        - tx_id
+        - amount
+      filter: {}
+      limit: 100

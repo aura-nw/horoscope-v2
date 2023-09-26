@@ -1,0 +1,7 @@
+table:
+  name: delegator
+  schema: public
+object_relationships:
+  - name: validator
+    using:
+      foreign_key_constraint_on: validator_id

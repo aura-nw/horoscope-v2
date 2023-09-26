@@ -1,0 +1,41 @@
+table:
+  name: feegrant
+  schema: public
+object_relationships:
+  - name: revoke_tx
+    using:
+      manual_configuration:
+        column_mapping:
+          revoke_tx_id: id
+        insertion_order: null
+        remote_table:
+          name: transaction
+          schema: public
+  - name: transaction
+    using:
+      foreign_key_constraint_on: init_tx_id
+array_relationships:
+  - name: feegrant_histories
+    using:
+      foreign_key_constraint_on:
+        column: feegrant_id
+        table:
+          name: feegrant_history
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - denom
+        - grantee
+        - granter
+        - status
+        - type
+        - id
+        - init_tx_id
+        - revoke_tx_id
+        - spend_limit
+        - expiration
+      filter: {}
+      limit: 100
+      allow_aggregations: true
