@@ -121,11 +121,8 @@ export default class CW721Activity extends BaseModel {
         }
       })
       .select(
-        'message.sender as sender',
         'smart_contract.address as contractAddress',
         'smart_contract_event.action',
-        'smart_contract_event.event_id',
-        'smart_contract_event.index',
         'smart_contract_event.id as smart_contract_event_id',
         'tx.hash',
         'tx.height'

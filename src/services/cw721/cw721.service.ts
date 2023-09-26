@@ -34,8 +34,6 @@ export interface ICw721ReindexingHistoryParams {
   endBlock: number;
   prevId: number;
   contractAddress: string;
-  tokensKeyBy: Dictionary<CW721Token>;
-  cw721ContractKeyBy: Dictionary<CW721Contract>;
 }
 @Service({
   name: SERVICE.V1.Cw721.key,
@@ -140,17 +138,15 @@ export default class Cw721HandlerService extends BullableService {
   ) {
     const cw721Contracts: any[] = await SmartContract.query()
       .transacting(trx)
-      .alias('contract')
       .withGraphJoined('code')
       .whereIn(
-        'contract.address',
+        'smart_contract.address',
         msgsInstantiate.map((msg) => msg.contractAddress)
       )
       .andWhere('code.type', 'CW721')
       .select(
-        'contract.address as contract_address',
-        'contract.name as contract_name',
-        'contract.id as id'
+        'smart_contract.address as contract_address',
+        'smart_contract.id as id'
       );
     if (cw721Contracts.length > 0) {
       const contractsInfo = _.keyBy(
@@ -178,7 +174,9 @@ export default class Cw721HandlerService extends BullableService {
     cw721MsgsExecute: SmartContractEvent[],
     trx: Knex.Transaction
   ) {
+    // init cw721Activities status
     const cw721Activities: CW721Activity[] = [];
+    // init cw721 tokens status
     const tokensKeyBy = _.keyBy(
       await CW721Token.query()
         .transacting(trx)
@@ -202,6 +200,7 @@ export default class Cw721HandlerService extends BullableService {
       ),
       'address'
     );
+    // construct cw721 handler object
     const cw721Handler = new Cw721Handler(
       tokensKeyBy,
       cw721Activities,
@@ -300,15 +299,8 @@ export default class Cw721HandlerService extends BullableService {
   public async crawlMissingContractHistory(
     _payload: ICw721ReindexingHistoryParams
   ) {
-    const {
-      cw721ContractKeyBy,
-      startBlock,
-      endBlock,
-      prevId,
-      contractAddress,
-      tokensKeyBy,
-      smartContractId,
-    } = _payload;
+    const { startBlock, endBlock, prevId, contractAddress, smartContractId } =
+      _payload;
     // insert data from event_attribute_backup to event_attribute
     const { limitRecordGet } = config.cw721.reindexing;
     const events = await CW721Activity.getCw721ContractEvents(
@@ -335,8 +327,6 @@ export default class Cw721HandlerService extends BullableService {
           endBlock,
           prevId: events[events.length - 1].smart_contract_event_id,
           contractAddress,
-          cw721ContractKeyBy,
-          tokensKeyBy,
         } satisfies ICw721ReindexingHistoryParams,
         {
           removeOnComplete: true,
