@@ -189,5 +189,8 @@
     "key": "crawlIbcApp",
     "millisecondRepeatJob": 2000,
     "blocksPerCall": 100
+  },
+  "servicesManager": {
+    "healthCheckLimit": 100
   }
 }
