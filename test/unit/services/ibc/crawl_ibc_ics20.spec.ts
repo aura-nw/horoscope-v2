@@ -116,7 +116,8 @@ export default class CrawlIbcIcs20Test {
       expect(result?.sequence_key).toEqual(ibcMessage.sequence_key);
       expect(result?.type).toEqual(ibcMessage.type);
       expect(result?.channel_id).toEqual(ibcMessage.src_channel_id);
-      expect(result?.timestamp).toBeNull();
+      expect(result?.finish_time).toBeNull();
+      expect(result?.start_time).toEqual(new Date(this.transaction.timestamp));
     });
   }
 
@@ -246,7 +247,8 @@ export default class CrawlIbcIcs20Test {
       expect(result?.sequence_key).toEqual(ibcMessage.sequence_key);
       expect(result?.type).toEqual(ibcMessage.type);
       expect(result?.channel_id).toEqual(ibcMessage.dst_channel_id);
-      expect(result?.timestamp).toBeNull();
+      expect(result?.finish_time).toBeNull();
+      expect(result?.start_time).toEqual(new Date(this.transaction.timestamp));
       await trx.rollback();
     });
   }
@@ -346,7 +348,8 @@ export default class CrawlIbcIcs20Test {
       expect(result?.sequence_key).toEqual(ibcMessage.sequence_key);
       expect(result?.type).toEqual(ibcMessage.type);
       expect(result?.channel_id).toEqual(ibcMessage.dst_channel_id);
-      expect(result?.timestamp).toBeNull();
+      expect(result?.finish_time).toBeNull();
+      expect(result?.start_time).toEqual(new Date(this.transaction.timestamp));
       await trx.rollback();
     });
   }
@@ -452,7 +455,7 @@ export default class CrawlIbcIcs20Test {
         .first()
         .transacting(trx);
       expect(originSend?.status).toEqual(IbcIcs20.STATUS_TYPE.ACK_ERROR);
-      expect(originSend?.timestamp).toEqual(
+      expect(originSend?.finish_time).toEqual(
         new Date(this.transaction.timestamp)
       );
       await trx.rollback();
@@ -560,7 +563,7 @@ export default class CrawlIbcIcs20Test {
         .first()
         .transacting(trx);
       expect(originSend?.status).toEqual(IbcIcs20.STATUS_TYPE.ACK_SUCCESS);
-      expect(originSend?.timestamp).toEqual(
+      expect(originSend?.finish_time).toEqual(
         new Date(this.transaction.timestamp)
       );
       await trx.rollback();
@@ -641,7 +644,7 @@ export default class CrawlIbcIcs20Test {
         .first()
         .transacting(trx);
       expect(originSend?.status).toEqual(IbcIcs20.STATUS_TYPE.TIMEOUT);
-      expect(originSend?.timestamp).toEqual(
+      expect(originSend?.finish_time).toEqual(
         new Date(this.transaction.timestamp)
       );
       await trx.rollback();
