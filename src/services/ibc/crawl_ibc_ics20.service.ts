@@ -167,7 +167,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
           sequence_key: msg.sequence_key,
           type: msg.type,
           memo,
-          start_time: msg.timestamp,
+          finish_time: msg.timestamp,
         });
       });
       await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
