@@ -3,6 +3,7 @@ import { fromBase64, fromUtf8, toHex, toUtf8 } from '@cosmjs/encoding';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { Model } from 'objection';
+import { Knex } from 'knex';
 import { getHttpBatchClient } from '../common';
 import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
@@ -37,6 +38,8 @@ export default class CW721Contract extends BaseModel {
   created_at?: Date;
 
   updated_at?: Date;
+
+  smart_contract!: SmartContract;
 
   static get tableName() {
     return 'cw721_contract';
@@ -234,5 +237,18 @@ export default class CW721Contract extends BaseModel {
       });
     });
     return tokensOwner;
+  }
+
+  static async getCw721TrackedContracts(
+    addresses: string[],
+    trx: Knex.Transaction
+  ) {
+    return CW721Contract.query()
+      .transacting(trx)
+      .alias('cw721_contract')
+      .withGraphJoined('smart_contract')
+      .whereIn('smart_contract.address', addresses)
+      .andWhere('track', true)
+      .select('smart_contract.address as address', 'cw721_contract.id as id');
   }
 }

@@ -43,14 +43,14 @@
     "ext": "ts, js"
   },
   "dependencies": {
-    "@aura-nw/aurajs": "^0.1.4-beta-smart-account",
+    "@aura-nw/aurajs": "^0.1.5-beta-3-upgrade-aura-dev-branch",
     "@bull-board/api": "^5.1.1",
     "@bull-board/express": "^5.1.1",
     "@cosmjs/cosmwasm-stargate": "^0.30.0",
     "@cosmjs/encoding": "^0.29.5",
     "@cosmjs/json-rpc": "^0.29.5",
     "@cosmjs/proto-signing": "^0.29.5",
-    "@cosmjs/stargate": "^0.29.5",
+    "@cosmjs/stargate": "^0.31.1",
     "@cosmjs/tendermint-rpc": "^0.30.0",
     "@cosmjs/utils": "^0.29.5",
     "@osmonauts/lcd": "^0.10.0",

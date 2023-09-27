@@ -3,33 +3,35 @@ import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
 import CW721Contract from './cw721_contract';
 import CW721Token from './cw721_token';
-import { SmartContractEvent } from './smart_contract_event';
 import { Event } from './event';
+import { SmartContractEvent } from './smart_contract_event';
 
 export default class CW721Activity extends BaseModel {
   static softDelete = false;
+
+  [relation: string]: any;
 
   smart_contract_event!: SmartContractEvent;
 
   id!: number;
 
-  action?: string;
+  action!: string;
 
-  sender?: string;
+  sender!: string;
 
   tx_hash!: string;
 
   cw721_contract_id!: number;
 
-  cw721_token_id?: number;
+  cw721_token_id!: number;
 
   created_at?: Date;
 
   updated_at?: Date;
 
-  from?: string;
+  from!: string | null;
 
-  to?: string;
+  to!: string | null;
 
   height!: number;
 
@@ -93,5 +95,38 @@ export default class CW721Activity extends BaseModel {
         },
       },
     };
+  }
+
+  static async getCw721ContractEvents(
+    startBlock: number,
+    endBlock: number,
+    smartContractId?: number,
+    page?: { prevId: number; limit: number }
+  ) {
+    return SmartContractEvent.query()
+      .withGraphFetched('attributes(selectAttribute)')
+      .joinRelated('[message, tx, smart_contract.code]')
+      .where('smart_contract:code.type', 'CW721')
+      .where('tx.height', '>', startBlock)
+      .andWhere('tx.height', '<=', endBlock)
+      .modify((builder) => {
+        if (smartContractId) {
+          builder.andWhere('smart_contract.id', smartContractId);
+        }
+        if (page) {
+          builder
+            .andWhere('smart_contract_event.id', '>', page.prevId)
+            .orderBy('smart_contract_event.id', 'asc')
+            .limit(page.limit);
+        }
+      })
+      .select(
+        'smart_contract.address as contractAddress',
+        'smart_contract_event.action',
+        'smart_contract_event.id as smart_contract_event_id',
+        'tx.hash',
+        'tx.height'
+      )
+      .orderBy('smart_contract_event.id');
   }
 }
