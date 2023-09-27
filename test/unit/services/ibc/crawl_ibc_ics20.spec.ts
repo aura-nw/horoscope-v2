@@ -247,8 +247,8 @@ export default class CrawlIbcIcs20Test {
       expect(result?.sequence_key).toEqual(ibcMessage.sequence_key);
       expect(result?.type).toEqual(ibcMessage.type);
       expect(result?.channel_id).toEqual(ibcMessage.dst_channel_id);
-      expect(result?.finish_time).toBeNull();
-      expect(result?.start_time).toEqual(new Date(this.transaction.timestamp));
+      expect(result?.start_time).toBeNull();
+      expect(result?.finish_time).toEqual(new Date(this.transaction.timestamp));
       await trx.rollback();
     });
   }
@@ -348,8 +348,8 @@ export default class CrawlIbcIcs20Test {
       expect(result?.sequence_key).toEqual(ibcMessage.sequence_key);
       expect(result?.type).toEqual(ibcMessage.type);
       expect(result?.channel_id).toEqual(ibcMessage.dst_channel_id);
-      expect(result?.finish_time).toBeNull();
-      expect(result?.start_time).toEqual(new Date(this.transaction.timestamp));
+      expect(result?.start_time).toBeNull();
+      expect(result?.finish_time).toEqual(new Date(this.transaction.timestamp));
       await trx.rollback();
     });
   }
