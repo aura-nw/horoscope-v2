@@ -8,37 +8,45 @@ export async function up(knex: Knex): Promise<void> {
     sender: knex.ref('from'),
   });
   await knex.transaction(async (trx) => {
-    const activities = await CW721Activity.query()
-      .joinRelated('event')
-      .orderBy('event.id', 'asc')
-      .transacting(trx);
+    let currentId = 0;
     const latestOwners: Dictionary<string | null> = {};
-    activities.forEach((activity) => {
-      const latestOwner =
-        latestOwners[
-          activity.cw721_contract_id + '_' + activity.cw721_token_id
-        ];
-      if (latestOwner) {
-        activity.from = latestOwner;
-      } else {
-        activity.from = null;
-      }
-      if (
-        activity.action === CW721_ACTION.MINT ||
-        activity.action === CW721_ACTION.TRANSFER ||
-        activity.action === CW721_ACTION.SEND_NFT
-      ) {
-        latestOwners[
-          activity.cw721_contract_id + '_' + activity.cw721_token_id
-        ] = activity.to;
-      }
-    });
-    if (activities.length > 0) {
-      await CW721Activity.query()
-        .insert(activities)
-        .onConflict(['id'])
-        .merge()
+    while (true) {
+      const activities = await CW721Activity.query()
+        .withGraphFetched('event')
+        .where('event.id', '>', currentId)
+        .orderBy('event.id', 'asc')
+        .limit(1000)
         .transacting(trx);
+      activities.forEach((activity) => {
+        const latestOwner =
+          latestOwners[
+            activity.cw721_contract_id + '_' + activity.cw721_token_id
+          ];
+        if (latestOwner) {
+          activity.from = latestOwner;
+        } else {
+          activity.from = null;
+        }
+        if (
+          activity.action === CW721_ACTION.MINT ||
+          activity.action === CW721_ACTION.TRANSFER ||
+          activity.action === CW721_ACTION.SEND_NFT
+        ) {
+          latestOwners[
+            activity.cw721_contract_id + '_' + activity.cw721_token_id
+          ] = activity.to;
+        }
+      });
+      if (activities.length > 0) {
+        await CW721Activity.query()
+          .insert(_.omit(activities, 'event'))
+          .onConflict(['id'])
+          .merge()
+          .transacting(trx);
+        currentId = activities[activities.length - 1].event.id;
+      } else {
+        break;
+      }
     }
   });
 }
