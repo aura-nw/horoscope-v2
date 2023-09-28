@@ -12,11 +12,12 @@ export async function up(knex: Knex): Promise<void> {
     const latestOwners: Dictionary<string | null> = {};
     while (true) {
       const activities = await CW721Activity.query()
-        .withGraphFetched('event')
+        .transacting(trx)
+        .joinRelated('event')
         .where('event.id', '>', currentId)
         .orderBy('event.id', 'asc')
         .limit(1000)
-        .transacting(trx);
+        .select('cw721_activity.*', 'event.id as event_id');
       activities.forEach((activity) => {
         const latestOwner =
           latestOwners[
@@ -39,11 +40,11 @@ export async function up(knex: Knex): Promise<void> {
       });
       if (activities.length > 0) {
         await CW721Activity.query()
-          .insert(_.omit(activities, 'event'))
+          .insert(_.omit(activities, 'event_id'))
           .onConflict(['id'])
           .merge()
           .transacting(trx);
-        currentId = activities[activities.length - 1].event.id;
+        currentId = activities[activities.length - 1].event_id;
       } else {
         break;
       }
