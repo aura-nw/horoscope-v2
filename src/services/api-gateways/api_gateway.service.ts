@@ -36,6 +36,7 @@ import { bullBoardMixin } from '../../mixins/bullBoard/bullBoard.mixin';
           'v2.statistics.syncPrevDateStatsByChainId',
           'v1.cw20-admin.*',
           'v1.cw721-admin.*',
+          'v1.job.composite-index-to-attribute-partition',
         ],
       },
     ],
