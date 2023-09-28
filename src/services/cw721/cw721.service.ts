@@ -188,7 +188,7 @@ export default class Cw721HandlerService extends BullableService {
             getAttributeFrom(
               msg.attributes,
               EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
-            ),
+            ) || null,
           ])
         ),
       (o) => `${o.contract.smart_contract.address}_${o.token_id}`
