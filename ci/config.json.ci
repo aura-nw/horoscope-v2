@@ -176,10 +176,17 @@
   "jobRedecodeTx": {
     "limitRecordGet": 100
   },
+  "jobReassignMsgIndexToEvent": {
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 100
+  },
   "crawlIbcTao": {
     "key": "crawlIbcTao",
     "millisecondRepeatJob": 2000,
     "blocksPerCall": 100
+  },
+  "servicesManager": {
+    "healthCheckLimit": 100
   },
   "crawlIbcApp": {
     "key": "crawlIbcApp",

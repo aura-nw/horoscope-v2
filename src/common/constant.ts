@@ -71,6 +71,7 @@ export const BULL_JOB_NAME = {
   REINDEX_CW721_HISTORY: 'reindex:cw721-history',
   HANDLE_MIGRATE_CONTRACT: 'handle:migrate-contract',
   JOB_REDECODE_TX: 'job:redecode-tx',
+  JOB_REASSIGN_MSG_INDEX_TO_EVENT: 'job:reassign-msg-index-to-event',
   CRAWL_IBC_TAO: 'crawl:ibc-tao',
   CRAWL_GENESIS_IBC_TAO: 'crawl:genesis-ibc-tao',
   CRAWL_IBC_APP: 'crawl:ibc-app',
@@ -242,6 +243,10 @@ export const SERVICE = {
           path: 'v1.CreateIndexCompositeAttrPartition.actionCreateJob',
         },
       },
+      ReAssignMsgIndexToEvent: {
+        key: 'ReAssignMsgIndexToEvent',
+        path: 'v1.ReAssignMsgIndexToEvent',
+      },
     },
     CrawlIBCTaoService: {
       key: 'CrawlIBCTaoService',
@@ -277,6 +282,14 @@ export const SERVICE = {
       Reindexing: {
         key: 'reindexing',
         path: 'v1.Cw20ReindexingService.reindexing',
+      },
+    },
+    ServicesManager: {
+      key: 'ServicesManager',
+      name: 'v1.ServicesManager',
+      HealthCheck: {
+        key: 'HealthCheck',
+        path: 'v1.ServicesManager.HealthCheck',
       },
     },
   },
