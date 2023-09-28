@@ -4,9 +4,9 @@ import _, { Dictionary } from 'lodash';
 import { CW721_ACTION } from '../src/services/cw721/cw721_handler';
 
 export async function up(knex: Knex): Promise<void> {
-  await knex('cw721_activity').update({
-    sender: knex.ref('from'),
-  });
+  // await knex('cw721_activity').update({
+  //   sender: knex.ref('from'),
+  // });
   await knex.transaction(async (trx) => {
     let currentId = 0;
     const latestOwners: Dictionary<string | null> = {};
@@ -39,8 +39,10 @@ export async function up(knex: Knex): Promise<void> {
         }
       });
       if (activities.length > 0) {
+        console.log(activities.map((activity) => _.omit(activity, 'event_id')));
+
         await CW721Activity.query()
-          .insert(_.omit(activities, 'event_id'))
+          .insert(activities.map((activity) => _.omit(activity, 'event_id')))
           .onConflict(['id'])
           .merge()
           .transacting(trx);
