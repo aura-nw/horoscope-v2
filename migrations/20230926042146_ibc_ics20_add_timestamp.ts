@@ -22,19 +22,23 @@ export async function up(knex: Knex): Promise<void> {
       );
     if (ibcIcs20s.length > 0) {
       ibcIcs20s.forEach((ibcIcs20) => {
-        ibcIcs20.start_time = ibcMsgs.find(
-          (e) =>
-            e.sequence_key === ibcIcs20.sequence_key &&
-            e.type === IbcMessage.EVENT_TYPE.SEND_PACKET
-        )?.timestamp;
+        ibcIcs20.start_time =
+          ibcIcs20.type === IbcMessage.EVENT_TYPE.SEND_PACKET
+            ? ibcMsgs.find(
+                (e) =>
+                  e.sequence_key === ibcIcs20.sequence_key &&
+                  e.type === IbcMessage.EVENT_TYPE.SEND_PACKET
+              )?.timestamp
+            : null;
         ibcIcs20.finish_time = ibcMsgs.find(
           (e) =>
             e.sequence_key === ibcIcs20.sequence_key &&
-            [
-              IbcMessage.EVENT_TYPE.RECV_PACKET,
-              IbcMessage.EVENT_TYPE.TIMEOUT_PACKET,
-              IbcMessage.EVENT_TYPE.ACKNOWLEDGE_PACKET,
-            ].includes(e.type)
+            (ibcIcs20.type === IbcMessage.EVENT_TYPE.SEND_PACKET
+              ? [
+                  IbcMessage.EVENT_TYPE.TIMEOUT_PACKET,
+                  IbcMessage.EVENT_TYPE.ACKNOWLEDGE_PACKET,
+                ].includes(e.type)
+              : [IbcMessage.EVENT_TYPE.RECV_PACKET].includes(e.type))
         )?.timestamp;
       });
       await IbcIcs20.query()
