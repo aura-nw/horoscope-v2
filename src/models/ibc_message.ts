@@ -48,7 +48,6 @@ export class IbcMessage extends BaseModel {
         'type',
         'sequence',
         'sequence_key',
-        'tx_hash',
       ],
       properties: {
         transaction_message_id: { type: 'number' },
@@ -59,7 +58,6 @@ export class IbcMessage extends BaseModel {
         type: { type: 'string' },
         sequence: { type: 'number' },
         sequence_key: { type: 'string' },
-        tx_hash: { type: 'string' },
       },
     };
   }
