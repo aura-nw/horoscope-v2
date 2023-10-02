@@ -19,5 +19,6 @@ select_permissions:
         - sequence
         - transaction_message_id
         - data
+        - tx_hash
       filter: {}
       limit: 100
