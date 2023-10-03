@@ -39,6 +39,7 @@ select_permissions:
         - id
         - created_at
         - updated_at
+        - smart_contract_address
       filter: {}
       limit: 100
       allow_aggregations: true
