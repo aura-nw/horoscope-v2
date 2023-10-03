@@ -14,7 +14,6 @@ import CrawlTxService from '../../../../src/services/crawl-tx/crawl_tx.service';
 import knex from '../../../../src/common/utils/db_connection';
 import tx_fixture from './tx.fixture.json' assert { type: 'json' };
 import tx_fixture_authz from './tx_authz.fixture.json' assert { type: 'json' };
-import AuraRegistry from '../../../../src/services/crawl-tx/aura.registry';
 
 @Describe('Test crawl transaction service')
 export default class CrawlTransactionTest {
@@ -32,9 +31,7 @@ export default class CrawlTransactionTest {
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
     ]);
-    const auraRegistry = new AuraRegistry(this.crawlTxService.logger);
-    auraRegistry.setCosmosSdkVersionByString('v0.45.7');
-    this.crawlTxService.setRegistry(auraRegistry);
+    await this.crawlTxService._start();
   }
 
   @Test('Parse transaction and insert to DB')
