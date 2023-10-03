@@ -126,7 +126,7 @@ export default class CrawlValidatorTest {
           val.operator_address ===
           'auravaloper1phaxpevm5wecex2jyaqty2a4v02qj7qmhyhvcg'
       )?.consensus_address
-    ).toEqual('auravalcons1uh6rtnpz7fuxchvl7m0gs2m46g0p35zgs8hqd4');
+    ).toEqual('auravalcons1rvq6km74pua3pt9g7u5svm4r6mrw8z08walfep');
   }
 
   @Test('Set validator not found onchain is UNRECOGNIZED')

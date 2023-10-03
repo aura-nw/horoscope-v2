@@ -1,6 +1,5 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
-import AuraRegistry from '../../../../src/services/crawl-tx/aura.registry';
 import CrawlTxService from '../../../../src/services/crawl-tx/crawl_tx.service';
 import CrawlBlockService from '../../../../src/services/crawl-block/crawl_block.service';
 import { Block, Event } from '../../../../src/models';
@@ -871,11 +870,6 @@ export default class CrawlBlockTest {
     this.crawlTxService = this.broker.createService(
       CrawlTxService
     ) as CrawlTxService;
-
-    const auraRegistry = new AuraRegistry(this.crawlTxService.logger);
-    auraRegistry.setCosmosSdkVersionByString('v0.45.7');
-    this.crawlBlockService.setRegistry(auraRegistry);
-
     this.crawlBlockService.getQueueManager().stopAll();
     this.crawlTxService.getQueueManager().stopAll();
     await knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE');

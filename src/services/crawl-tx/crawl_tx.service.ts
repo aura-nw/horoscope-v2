@@ -7,19 +7,13 @@ import {
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { decodeTxRaw } from '@cosmjs/proto-signing';
-import { toBase64, fromBase64 } from '@cosmjs/encoding';
+import { toBase64, fromBase64, fromUtf8 } from '@cosmjs/encoding';
 import _ from 'lodash';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { Knex } from 'knex';
 import { Queue } from 'bullmq';
-import { GetNodeInfoResponseSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/base/tendermint/v1beta1/query';
 import Utils from '../../common/utils/utils';
-import {
-  BULL_JOB_NAME,
-  getHttpBatchClient,
-  getLcdClient,
-  SERVICE,
-} from '../../common';
+import { BULL_JOB_NAME, getHttpBatchClient, SERVICE } from '../../common';
 import { Block, BlockCheckpoint, Event, Transaction } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
@@ -245,11 +239,14 @@ export default class CrawlTxService extends BullableService {
         this.logger.debug(tx, timestamp);
         let sender = '';
         try {
-          sender = this._registry.decodeAttribute(
-            this._findAttribute(
-              tx.tx_response.events,
-              'message',
-              this._registry.encodeAttribute('sender')
+          sender = fromUtf8(
+            fromBase64(
+              this._findAttribute(
+                tx.tx_response.events,
+                'message',
+                // c2VuZGVy is sender in base64
+                'c2VuZGVy'
+              )
             )
           );
         } catch (error) {
@@ -305,15 +302,13 @@ export default class CrawlTxService extends BullableService {
                 block_height: parseInt(tx.tx_response.height, 10),
                 index,
                 composite_key: attribute?.key
-                  ? `${event.type}.${this._registry.decodeAttribute(
-                      attribute?.key
-                    )}`
+                  ? `${event.type}.${fromUtf8(fromBase64(attribute?.key))}`
                   : null,
                 key: attribute?.key
-                  ? this._registry.decodeAttribute(attribute?.key)
+                  ? fromUtf8(fromBase64(attribute?.key))
                   : null,
                 value: attribute?.value
-                  ? this._registry.decodeAttribute(attribute?.value)
+                  ? fromUtf8(fromBase64(attribute?.value))
                   : null,
               })
             ),
@@ -451,12 +446,8 @@ export default class CrawlTxService extends BullableService {
     tx?.tx_response?.events?.forEach((event: any) => {
       event.attributes.forEach((attr: any) => {
         if (event.msg_index !== undefined) {
-          const key = attr.key
-            ? this._registry.decodeAttribute(attr.key)
-            : null;
-          const value = attr.value
-            ? this._registry.decodeAttribute(attr.value)
-            : null;
+          const key = attr.key ? fromUtf8(fromBase64(attr.key)) : null;
+          const value = attr.value ? fromUtf8(fromBase64(attr.value)) : null;
           flattenEventEncoded.push(
             `${event.msg_index}-${event.type}-${key}-${value}`
           );
@@ -632,16 +623,6 @@ export default class CrawlTxService extends BullableService {
 
   public async _start() {
     this._registry = new AuraRegistry(this.logger);
-
-    const lcdClient = await getLcdClient();
-    // set version cosmos sdk to registry
-    const nodeInfo: GetNodeInfoResponseSDKType =
-      await lcdClient.auranw.cosmos.base.tendermint.v1beta1.getNodeInfo();
-    const cosmosSdkVersion = nodeInfo.application_version?.cosmos_sdk_version;
-    if (cosmosSdkVersion) {
-      this._registry.setCosmosSdkVersionByString(cosmosSdkVersion);
-    }
-
     this.createJob(
       BULL_JOB_NAME.HANDLE_TRANSACTION,
       BULL_JOB_NAME.HANDLE_TRANSACTION,
@@ -657,9 +638,5 @@ export default class CrawlTxService extends BullableService {
       }
     );
     return super._start();
-  }
-
-  public setRegistry(registry: AuraRegistry) {
-    this._registry = registry;
   }
 }
