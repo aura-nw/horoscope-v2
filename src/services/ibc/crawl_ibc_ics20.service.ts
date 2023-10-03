@@ -62,6 +62,14 @@ export default class CrawlIBCIcs20Service extends BullableService {
       .andWhere('ibc_message.type', IbcMessage.EVENT_TYPE.SEND_PACKET)
       .andWhere('message:transaction.height', '>', startHeight)
       .andWhere('message:transaction.height', '<=', endHeight)
+      .select(
+        'message:transaction.timestamp',
+        'ibc_message.sequence_key',
+        'ibc_message.id',
+        'ibc_message.src_channel_id',
+        'ibc_message.type',
+        'ibc_message.data'
+      )
       .orderBy('message.id')
       .transacting(trx);
     if (ics20Sends.length > 0) {
@@ -79,6 +87,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
           status: IbcIcs20.STATUS_TYPE.ONGOING,
           sequence_key: msg.sequence_key,
           type: msg.type,
+          start_time: msg.timestamp,
         })
       );
       await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
@@ -104,6 +113,14 @@ export default class CrawlIBCIcs20Service extends BullableService {
       .andWhere('ibc_message.type', IbcMessage.EVENT_TYPE.RECV_PACKET)
       .andWhere('message:transaction.height', '>', startHeight)
       .andWhere('message:transaction.height', '<=', endHeight)
+      .select(
+        'message:transaction.timestamp',
+        'ibc_message.sequence_key',
+        'ibc_message.id',
+        'ibc_message.dst_port_id',
+        'ibc_message.dst_channel_id',
+        'ibc_message.type'
+      )
       .orderBy('message.id')
       .transacting(trx);
     if (ics20Recvs.length > 0) {
@@ -150,6 +167,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
           sequence_key: msg.sequence_key,
           type: msg.type,
           memo,
+          finish_time: msg.timestamp,
         });
       });
       await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
@@ -174,6 +192,11 @@ export default class CrawlIBCIcs20Service extends BullableService {
       .andWhere('message:transaction.height', '>', startHeight)
       .andWhere('message:transaction.height', '<=', endHeight)
       .orderBy('message.id')
+      .select(
+        'message:transaction.timestamp',
+        'ibc_message.sequence_key',
+        'ibc_message.id'
+      )
       .transacting(trx);
     if (ics20Acks.length > 0) {
       // update success ack status for origin send ics20
@@ -229,6 +252,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
       .andWhere('message:transaction.height', '>', startHeight)
       .andWhere('message:transaction.height', '<=', endHeight)
       .orderBy('message.id')
+      .select('message:transaction.timestamp', 'ibc_message.sequence_key')
       .transacting(trx);
     if (ics20Timeouts.length > 0) {
       await this.updateOriginSendStatus(
@@ -257,16 +281,26 @@ export default class CrawlIBCIcs20Service extends BullableService {
     type: string,
     trx: Knex.Transaction
   ) {
-    await IbcIcs20.query()
-      .transacting(trx)
-      .patch({
-        status: type,
-      })
-      .whereIn(
-        'sequence_key',
-        msgs.map((msg) => msg.sequence_key)
-      )
-      .andWhere('type', IbcMessage.EVENT_TYPE.SEND_PACKET);
+    if (msgs.length > 0) {
+      const ibcIcs20sKeyBy = _.keyBy(
+        await IbcIcs20.query()
+          .transacting(trx)
+          .whereIn(
+            'sequence_key',
+            msgs.map((msg) => msg.sequence_key)
+          )
+          .andWhere('type', IbcMessage.EVENT_TYPE.SEND_PACKET),
+        'sequence_key'
+      );
+      msgs.forEach((msg) => {
+        ibcIcs20sKeyBy[msg.sequence_key].finish_time = msg.timestamp;
+        ibcIcs20sKeyBy[msg.sequence_key].status = type;
+      });
+      await IbcIcs20.query()
+        .insert(Object.values(ibcIcs20sKeyBy))
+        .onConflict('id')
+        .merge();
+    }
   }
 
   async _start(): Promise<void> {

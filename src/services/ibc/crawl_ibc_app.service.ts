@@ -40,8 +40,13 @@ export default class CrawlIbcAppService extends BullableService {
     if (startHeight > endHeight) return;
     const events = await Event.query()
       .withGraphFetched('attributes')
-      .joinRelated('message')
-      .select('event.id', 'event.type', 'message.id as message_id')
+      .joinRelated('message.transaction')
+      .select(
+        'event.id',
+        'event.type',
+        'message.id as message_id',
+        'message:transaction.hash as tx_hash'
+      )
       .whereIn('event.type', [
         IbcMessage.EVENT_TYPE.ACKNOWLEDGE_PACKET,
         IbcMessage.EVENT_TYPE.RECV_PACKET,
@@ -98,6 +103,7 @@ export default class CrawlIbcAppService extends BullableService {
         sequence,
         sequence_key: `${srcChannel}.${srcPort}.${dstChannel}.${dstPort}.${sequence}`,
         data: dataHex ? fromUtf8(fromHex(dataHex)) : null,
+        tx_hash: event.tx_hash,
       });
     });
     if (ibcMessages.length > 0) {
