@@ -39,6 +39,7 @@ select_permissions:
         - code_id
         - id
         - instantiate_height
+        - label
         - created_at
         - updated_at
       filter: {}

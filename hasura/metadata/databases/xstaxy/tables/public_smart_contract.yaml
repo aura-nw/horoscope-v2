@@ -38,6 +38,7 @@ select_permissions:
         - id
         - instantiate_hash
         - instantiate_height
+        - label
         - name
         - status
         - updated_at
