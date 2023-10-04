@@ -3,8 +3,11 @@ import { Model } from 'objection';
 import BaseModel from './base';
 import { IbcChannel } from './ibc_channel';
 import { TransactionMessage } from './transaction_message';
+import config from '../../config.json' assert { type: 'json' };
 
 export class IbcMessage extends BaseModel {
+  [relation: string]: any;
+
   id!: number;
 
   transaction_message_id!: number;
@@ -24,6 +27,8 @@ export class IbcMessage extends BaseModel {
   sequence_key!: string;
 
   data!: any;
+
+  message!: TransactionMessage;
 
   static get tableName() {
     return 'ibc_message';
@@ -89,5 +94,9 @@ export class IbcMessage extends BaseModel {
     RECV_PACKET: 'recv_packet',
     ACKNOWLEDGE_PACKET: 'acknowledge_packet',
     TIMEOUT_PACKET: 'timeout_packet',
+  };
+
+  static PORTS = {
+    ICS20: config.crawlIbcIcs20.port,
   };
 }

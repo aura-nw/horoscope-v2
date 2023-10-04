@@ -29,7 +29,7 @@ export class Transaction extends BaseModel {
 
   index!: number;
 
-  timstamp!: Date;
+  timestamp!: Date;
 
   data!: any;
 
