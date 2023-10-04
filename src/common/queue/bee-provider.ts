@@ -7,7 +7,7 @@ import {
 } from './queue-manager-types';
 
 export class BeeQueueProvider implements QueueProvider {
-  stopAll(): void {
+  stopAll(): Promise<void> {
     throw new Error('Method not implemented.');
   }
 

@@ -134,9 +134,9 @@ export default class HandleAddressTest {
     this.handleStakeEventService = this.broker.createService(
       HandleStakeEventService
     ) as HandleStakeEventService;
-    this.crawlAccountService.getQueueManager().stopAll();
-    this.handleAddressService.getQueueManager().stopAll();
-    this.handleStakeEventService.getQueueManager().stopAll();
+    await this.crawlAccountService.getQueueManager().stopAll();
+    await this.handleAddressService.getQueueManager().stopAll();
+    await this.handleStakeEventService.getQueueManager().stopAll();
 
     await Promise.all([
       Account.query().delete(true),

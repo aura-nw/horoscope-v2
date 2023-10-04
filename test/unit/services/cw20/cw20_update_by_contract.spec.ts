@@ -107,7 +107,7 @@ export default class Cw20UpdateByContract {
 
   @BeforeAll()
   async initSuite() {
-    this.cw20UpdateByContractService.getQueueManager().stopAll();
+    await this.cw20UpdateByContractService.getQueueManager().stopAll();
     await this.broker.start();
     await knex.raw(
       'TRUNCATE TABLE code, cw20_contract RESTART IDENTITY CASCADE'

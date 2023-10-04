@@ -76,7 +76,7 @@ export default class CrawlAccountTest {
     this.crawlAccountService = this.broker.createService(
       CrawlAccountService
     ) as CrawlAccountService;
-    this.crawlAccountService.getQueueManager().stopAll();
+    await this.crawlAccountService.getQueueManager().stopAll();
     await knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE');
     await Account.query().insert(this.accounts);
   }

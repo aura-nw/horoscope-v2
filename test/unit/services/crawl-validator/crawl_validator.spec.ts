@@ -84,8 +84,8 @@ export default class CrawlValidatorTest {
     this.crawlValidatorService = this.broker.createService(
       CrawlValidatorService
     ) as CrawlValidatorService;
-    this.crawlSigningInfoService.getQueueManager().stopAll();
-    this.crawlValidatorService.getQueueManager().stopAll();
+    await this.crawlSigningInfoService.getQueueManager().stopAll();
+    await this.crawlValidatorService.getQueueManager().stopAll();
 
     await Promise.all([
       Validator.query().delete(true),

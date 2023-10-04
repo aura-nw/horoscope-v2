@@ -284,7 +284,7 @@ export default class HandleStakeEventTest {
     this.handleStakeEventService = this.broker.createService(
       HandleStakeEventService
     ) as HandleStakeEventService;
-    this.handleStakeEventService.getQueueManager().stopAll();
+    await this.handleStakeEventService.getQueueManager().stopAll();
 
     await Promise.all([
       BlockCheckpoint.query().delete(true),

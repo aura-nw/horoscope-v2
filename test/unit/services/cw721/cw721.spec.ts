@@ -387,9 +387,9 @@ export default class AssetIndexerTest {
 
   @BeforeAll()
   async initSuite() {
+    await this.cw721HandlerService.getQueueManager().stopAll();
+    await this.crawlContractEventService.getQueueManager().stopAll();
     await this.broker.start();
-    this.cw721HandlerService.getQueueManager().stopAll();
-    this.crawlContractEventService.getQueueManager().stopAll();
     await knex.raw(
       'TRUNCATE TABLE smart_contract_event, smart_contract_event_attribute, smart_contract, code, event_attribute, transaction_message, event, transaction, block, block_checkpoint, cw721_token, cw721_contract, cw721_activity, code RESTART IDENTITY CASCADE'
     );

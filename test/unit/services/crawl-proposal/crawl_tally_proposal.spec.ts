@@ -68,7 +68,7 @@ export default class CrawlTallyProposalTest {
     this.crawlTallyProposalService = this.broker.createService(
       CrawlTallyProposalService
     ) as CrawlTallyProposalService;
-    this.crawlTallyProposalService.getQueueManager().stopAll();
+    await this.crawlTallyProposalService.getQueueManager().stopAll();
 
     await Proposal.query().delete(true);
     await Proposal.query().insert(this.proposal);
