@@ -51,7 +51,7 @@ export default class CrawlSigningInfoTest {
     this.crawlSigningInfoService = this.broker.createService(
       CrawlSigningInfoService
     ) as CrawlSigningInfoService;
-    this.crawlSigningInfoService.getQueueManager().stopAll();
+    await this.crawlSigningInfoService.getQueueManager().stopAll();
     await Validator.query().delete(true);
     await Validator.query().insert(this.validator);
   }

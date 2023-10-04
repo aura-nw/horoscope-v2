@@ -870,8 +870,8 @@ export default class CrawlBlockTest {
     this.crawlTxService = this.broker.createService(
       CrawlTxService
     ) as CrawlTxService;
-    this.crawlBlockService.getQueueManager().stopAll();
-    this.crawlTxService.getQueueManager().stopAll();
+    await this.crawlBlockService.getQueueManager().stopAll();
+    await this.crawlTxService.getQueueManager().stopAll();
     await knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE');
   }
 
@@ -893,8 +893,8 @@ export default class CrawlBlockTest {
 
   @AfterAll()
   async tearDown() {
-    this.crawlBlockService?.getQueueManager().stopAll();
-    this.crawlTxService?.getQueueManager().stopAll();
+    await this.crawlBlockService?.getQueueManager().stopAll();
+    await this.crawlTxService?.getQueueManager().stopAll();
     await Promise.all([
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       this.crawlBlockService?._stop(),

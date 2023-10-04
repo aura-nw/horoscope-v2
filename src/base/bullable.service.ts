@@ -63,7 +63,7 @@ export default class BullableService extends BaseService {
   async stopped() {
     super.stopped();
     try {
-      this.getQueueManager().stopAll();
+      await this.getQueueManager().stopAll();
     } catch (e) {
       this.logger.warn('Unable to stop redis queuegracefully.', e);
     }

@@ -18,7 +18,7 @@ const _redisCnn = {
 
 // TODO: Just placeholder, not implemented for BullJS yet
 export class BullJsProvider implements QueueProvider {
-  stopAll(): void {
+  stopAll(): Promise<void> {
     throw new Error('Method not implemented.');
   }
 

@@ -14,7 +14,7 @@ export default class TestCw721MediaService {
 
   @BeforeAll()
   async initSuite() {
-    this.cw721MediaService.getQueueManager().stopAll();
+    await this.cw721MediaService.getQueueManager().stopAll();
     await this.broker.start();
   }
 

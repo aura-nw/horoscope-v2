@@ -70,7 +70,7 @@ export default class CrawlDelegatorsTest {
     this.crawlDelegatorsService = this.broker.createService(
       CrawlDelegatorsService
     ) as CrawlDelegatorsService;
-    this.crawlDelegatorsService.getQueueManager().stopAll();
+    await this.crawlDelegatorsService.getQueueManager().stopAll();
     await Promise.all([
       knex.raw('TRUNCATE TABLE validator RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),

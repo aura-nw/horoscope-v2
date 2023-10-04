@@ -97,8 +97,8 @@ export default class QueueManager {
     this._queueProvider.submitJob(queueName, jobName, opts, payload);
   }
 
-  public stopAll(): void {
-    this._queueProvider.stopAll();
+  public async stopAll(): Promise<void> {
+    await this._queueProvider.stopAll();
   }
 
   public getQueue(queueName: string): any {

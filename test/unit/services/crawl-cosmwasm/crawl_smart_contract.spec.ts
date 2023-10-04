@@ -142,7 +142,7 @@ export default class CrawlSmartContractTest {
     this.crawlSmartContractService = this.broker.createService(
       CrawlSmartContractService
     ) as CrawlSmartContractService;
-    this.crawlSmartContractService.getQueueManager().stopAll();
+    await this.crawlSmartContractService.getQueueManager().stopAll();
     await Promise.all([
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE code RESTART IDENTITY CASCADE'),

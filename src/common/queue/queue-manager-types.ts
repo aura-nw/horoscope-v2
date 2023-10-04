@@ -13,7 +13,7 @@ export type JobOption = JobsOptions;
 
 /* abstract interface to decouple the queue manager from the queue implemenation (bull, bee..) */
 export interface QueueProvider {
-  stopAll(): void;
+  stopAll(): Promise<void>;
   submitJob(
     queueName: string,
     jobName?: string,
