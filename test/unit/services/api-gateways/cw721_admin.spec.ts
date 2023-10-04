@@ -24,10 +24,10 @@ export default class Cw721AdminTest {
 
   @BeforeAll()
   async initSuite() {
+    await this.broker.start();
     await this.cw721Admin.getQueueManager().stopAll();
     await this.cw721HandlerService.getQueueManager().stopAll();
     await this.cw721Reindex.getQueueManager().stopAll();
-    await this.broker.start();
   }
 
   @AfterAll()
