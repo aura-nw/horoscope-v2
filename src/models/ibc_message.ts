@@ -30,6 +30,8 @@ export class IbcMessage extends BaseModel {
 
   message!: TransactionMessage;
 
+  tx_hash!: string;
+
   static get tableName() {
     return 'ibc_message';
   }
