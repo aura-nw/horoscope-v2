@@ -78,6 +78,8 @@ export const BULL_JOB_NAME = {
   REINDEX_CW20_CONTRACT: 'reindex:cw20-contract',
   REINDEX_CW20_HISTORY: 'reindex:cw20-history',
   CRAWL_IBC_ICS20: 'crawl:ibc-ics20',
+  JOB_CREATE_COMPOSITE_INDEX_ATTR_PARTITION:
+    'job:create-index-composite-attr-partition',
 };
 
 export const SERVICE = {
@@ -233,6 +235,14 @@ export const SERVICE = {
       ReDecodeTx: {
         key: 'ReDecodeTx',
         path: 'v1.ReDecodeTx',
+      },
+      CreateIndexCompositeAttrPartition: {
+        key: 'CreateIndexCompositeAttrPartition',
+        path: 'v1.CreateIndexCompositeAttrPartition',
+        actionCreateJob: {
+          key: 'actionCreateJob',
+          path: 'v1.CreateIndexCompositeAttrPartition.actionCreateJob',
+        },
       },
       ReAssignMsgIndexToEvent: {
         key: 'ReAssignMsgIndexToEvent',

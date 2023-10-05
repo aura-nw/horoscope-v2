@@ -156,7 +156,8 @@
   "jobCheckNeedCreateEventAttributePartition": {
     "range": 100000,
     "step": 10000,
-    "millisecondCrawl": 10000
+    "millisecondCrawl": 10000,
+    "templateTable": "event_attribute"
   },
   "httpBatchRequest": {
     "dispatchMilisecond": 1000,
