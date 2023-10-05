@@ -25,6 +25,8 @@ export class IbcMessage extends BaseModel {
 
   data!: any;
 
+  tx_hash!: string;
+
   static get tableName() {
     return 'ibc_message';
   }
