@@ -248,14 +248,6 @@ export const SERVICE = {
         key: 'ReAssignMsgIndexToEvent',
         path: 'v1.ReAssignMsgIndexToEvent',
       },
-      CreateIndexCompositeAttrPartition: {
-        key: 'CreateIndexCompositeAttrPartition',
-        path: 'v1.CreateIndexCompositeAttrPartition',
-        actionCreateJob: {
-          key: 'actionCreateJob',
-          path: 'v1.CreateIndexCompositeAttrPartition.actionCreateJob',
-        },
-      },
     },
     CrawlIBCTaoService: {
       key: 'CrawlIBCTaoService',
