@@ -151,6 +151,7 @@ export default class CrawlIbcTest {
         attributes,
         content,
         message_id: 1,
+        tx_hash: this.transaction.hash,
       });
       await this.crawlIbcAppSerivce.handleIbcMessage([event], trx);
       const newPacket = await IbcMessage.query()
@@ -164,6 +165,7 @@ export default class CrawlIbcTest {
       expect(newPacket.type).toEqual(event.type);
       expect(newPacket.sequence).toEqual(parseInt(attributes[4].value, 10));
       expect(newPacket.data).toEqual(JSON.parse(attributes[0].value));
+      expect(newPacket.tx_hash).toEqual(this.transaction.hash);
       await trx.rollback();
     });
   }
@@ -258,6 +260,7 @@ export default class CrawlIbcTest {
         attributes,
         content,
         message_id: 1,
+        tx_hash: this.transaction.hash,
       });
       await this.crawlIbcAppSerivce.handleIbcMessage([event], trx);
       const newPacket = await IbcMessage.query()
@@ -271,6 +274,7 @@ export default class CrawlIbcTest {
       expect(newPacket.type).toEqual(event.type);
       expect(newPacket.sequence).toEqual(parseInt(attributes[4].value, 10));
       expect(newPacket.data).toEqual(JSON.parse(attributes[0].value));
+      expect(newPacket.tx_hash).toEqual(this.transaction.hash);
       await trx.rollback();
     });
   }
@@ -362,6 +366,7 @@ export default class CrawlIbcTest {
         attributes,
         content,
         message_id: 1,
+        tx_hash: this.transaction.hash,
       });
       await this.crawlIbcAppSerivce.handleIbcMessage([event], trx);
       const newPacket = await IbcMessage.query()
@@ -375,6 +380,7 @@ export default class CrawlIbcTest {
       expect(newPacket.type).toEqual(event.type);
       expect(newPacket.sequence).toEqual(parseInt(attributes[2].value, 10));
       expect(newPacket.data).toEqual(null);
+      expect(newPacket.tx_hash).toEqual(this.transaction.hash);
       await trx.rollback();
     });
   }
@@ -453,6 +459,7 @@ export default class CrawlIbcTest {
         attributes,
         content,
         message_id: 1,
+        tx_hash: this.transaction.hash,
       });
       await this.crawlIbcAppSerivce.handleIbcMessage([event], trx);
       const newPacket = await IbcMessage.query()
@@ -466,6 +473,7 @@ export default class CrawlIbcTest {
       expect(newPacket.type).toEqual(event.type);
       expect(newPacket.sequence).toEqual(parseInt(attributes[2].value, 10));
       expect(newPacket.data).toEqual(null);
+      expect(newPacket.tx_hash).toEqual(this.transaction.hash);
       await trx.rollback();
     });
   }
