@@ -11,7 +11,7 @@
         max_connections: 50
         retries: 1
       use_prepared_statements: true
-  tables: "!include default/tables/tables.yaml"
+  tables: '!include default/tables/tables.yaml'
 - name: auratestnet
   kind: postgres
   configuration:
@@ -26,8 +26,8 @@
       namespace: auratestnet
     type_names:
       prefix: auratestnet_
-  tables: "!include auratestnet/tables/tables.yaml"
-  functions: "!include auratestnet/functions/functions.yaml"
+  tables: '!include auratestnet/tables/tables.yaml'
+  functions: '!include auratestnet/functions/functions.yaml'
 - name: euphoria
   kind: postgres
   configuration:
@@ -42,7 +42,7 @@
       namespace: euphoria
     type_names:
       prefix: euphoria_
-  tables: "!include euphoria/tables/tables.yaml"
+  tables: '!include euphoria/tables/tables.yaml'
 - name: serenity
   kind: postgres
   configuration:
@@ -57,7 +57,7 @@
       namespace: serenity
     type_names:
       prefix: serenity_
-  tables: "!include serenity/tables/tables.yaml"
+  tables: '!include serenity/tables/tables.yaml'
 - name: xstaxy
   kind: postgres
   configuration:
@@ -72,4 +72,34 @@
       namespace: xstaxy
     type_names:
       prefix: xstaxy_
-  tables: "!include xstaxy/tables/tables.yaml"
+  tables: '!include xstaxy/tables/tables.yaml'
+- name: nois
+  kind: postgres
+  configuration:
+    connection_info:
+      database_url:
+        from_env: DATABASE_URL_NOIS
+      isolation_level: read-committed
+      use_prepared_statements: false
+  customization:
+    naming_convention: hasura-default
+    root_fields:
+      namespace: nois
+    type_names:
+      prefix: nois_
+  tables: '!include nois/tables/tables.yaml'
+- name: theta
+  kind: postgres
+  configuration:
+    connection_info:
+      database_url:
+        from_env: DATABASE_URL_THETA
+      isolation_level: read-committed
+      use_prepared_statements: false
+  customization:
+    naming_convention: hasura-default
+    root_fields:
+      namespace: theta
+    type_names:
+      prefix: theta_
+  tables: '!include nois/tables/tables.yaml'

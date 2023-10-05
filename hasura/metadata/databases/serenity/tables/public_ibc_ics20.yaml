@@ -9,15 +9,19 @@ select_permissions:
   - role: internal_service
     permission:
       columns:
-        - id
-        - ibc_message_id
-        - sender
-        - receiver
-        - amount
-        - denom
-        - status
         - channel_id
+        - denom
+        - memo
+        - receiver
+        - sender
         - sequence_key
+        - status
         - type
+        - ibc_message_id
+        - id
+        - amount
+        - finish_time
+        - start_time
       filter: {}
       limit: 100
+      allow_aggregations: true
