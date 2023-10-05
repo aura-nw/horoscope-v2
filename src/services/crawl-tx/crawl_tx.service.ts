@@ -7,19 +7,11 @@ import {
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { decodeTxRaw } from '@cosmjs/proto-signing';
-import { toBase64, fromBase64 } from '@cosmjs/encoding';
-import _ from 'lodash';
-import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
+import { fromBase64, fromUtf8, toBase64 } from '@cosmjs/encoding';
 import { Knex } from 'knex';
 import { Queue } from 'bullmq';
-import { GetNodeInfoResponseSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/base/tendermint/v1beta1/query';
 import Utils from '../../common/utils/utils';
-import {
-  BULL_JOB_NAME,
-  getHttpBatchClient,
-  getLcdClient,
-  SERVICE,
-} from '../../common';
+import { BULL_JOB_NAME, getHttpBatchClient, SERVICE } from '../../common';
 import { Block, BlockCheckpoint, Event, Transaction } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
@@ -33,7 +25,7 @@ import AuraRegistry from './aura.registry';
 export default class CrawlTxService extends BullableService {
   private _httpBatchClient: HttpBatchClient;
 
-  public _registry!: AuraRegistry;
+  private _registry!: AuraRegistry;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -90,50 +82,29 @@ export default class CrawlTxService extends BullableService {
       .andWhere('height', '<=', endBlock)
       .orderBy('height', 'asc');
     this.logger.debug(blocks);
-    const promises: any[] = [];
-    const filterBlocks = blocks.filter((block) => block.txs.length > 0);
-    filterBlocks.forEach((block) => {
-      this.logger.info('crawl tx by height: ', block.height);
 
-      const totalPages = Math.ceil(
-        block.txs.length / config.handleTransaction.txsPerCall
+    const mapBlockTime: Map<number, string> = new Map();
+    const handleResult = async (blockHeight: number) => {
+      const result = await this._httpBatchClient.execute(
+        createJsonRpcRequest('tx_search', {
+          query: `tx.height=${blockHeight}`,
+        })
       );
-      [...Array(totalPages)].forEach((e, i) => {
-        const pageIndex = (i + 1).toString();
-        promises.push(
-          this._httpBatchClient.execute(
-            createJsonRpcRequest('tx_search', {
-              query: `tx.height=${block.height}`,
-              page: pageIndex,
-              per_page: config.handleTransaction.txsPerCall.toString(),
-            })
-          )
-        );
-      });
-    });
-    const resultPromises: JsonRpcSuccessResponse[] = await Promise.all(
-      promises
-    );
-
-    const listRawTx: any[] = filterBlocks.map((block) => {
-      const listTxs: any[] = [];
-      resultPromises
-        .filter(
-          (result) => result.result.txs[0].height === block.height.toString()
-        )
-        .forEach((resultPromise) => {
-          listTxs.push(...resultPromise.result.txs);
-        });
       return {
-        listTx: {
-          txs: listTxs,
-          total_count: block.txs.length,
-        },
-        height: block.height,
-        timestamp: block.time,
+        listTx: result.result,
+        height: blockHeight,
+        timestamp: mapBlockTime[blockHeight],
       };
-    });
-    return listRawTx;
+    };
+    const handleResultParallel: any[] = [];
+    blocks
+      .filter((block) => block.txs.length > 0)
+      .forEach((block) => {
+        this.logger.info('crawl tx by height: ', block.height);
+        mapBlockTime[block.height] = block.time;
+        handleResultParallel.push(handleResult(block.height));
+      });
+    return Promise.all(handleResultParallel);
   }
 
   // decode list raw tx
@@ -265,11 +236,14 @@ export default class CrawlTxService extends BullableService {
         this.logger.debug(tx, timestamp);
         let sender = '';
         try {
-          sender = this._registry.decodeAttribute(
-            this._findAttribute(
-              tx.tx_response.events,
-              'message',
-              this._registry.encodeAttribute('sender')
+          sender = fromUtf8(
+            fromBase64(
+              this._findAttribute(
+                tx.tx_response.events,
+                'message',
+                // c2VuZGVy is sender in base64
+                'c2VuZGVy'
+              )
             )
           );
         } catch (error) {
@@ -306,17 +280,17 @@ export default class CrawlTxService extends BullableService {
             index: tx.tx_response.index,
             height: parseInt(tx.tx_response.height, 10),
             hash: tx.tx_response.txhash,
-            codespace: tx.tx_response.codespace,
-            code: parseInt(tx.tx_response.code, 10),
-            gas_used: tx.tx_response.gas_used.toString(),
-            gas_wanted: tx.tx_response.gas_wanted.toString(),
-            gas_limit: tx.tx.auth_info.fee.gas_limit.toString(),
+            codespace: tx.tx_response.codespace ?? '',
+            code: parseInt(tx.tx_response.code ?? '0', 10),
+            gas_used: tx.tx_response.gas_used?.toString() ?? '0',
+            gas_wanted: tx.tx_response.gas_wanted?.toString() ?? '0',
+            gas_limit: tx.tx.auth_info.fee.gas_limit?.toString() ?? '0',
             fee: JSON.stringify(tx.tx.auth_info.fee.amount),
             timestamp,
             data: tx,
             memo: tx.tx.body.memo,
           }),
-          events: tx.tx_response.events.map((event: any) => ({
+          events: tx.tx_response.events?.map((event: any) => ({
             tx_msg_index: event.msg_index ?? undefined,
             type: event.type,
             attributes: event.attributes.map(
@@ -325,15 +299,13 @@ export default class CrawlTxService extends BullableService {
                 block_height: parseInt(tx.tx_response.height, 10),
                 index,
                 composite_key: attribute?.key
-                  ? `${event.type}.${this._registry.decodeAttribute(
-                      attribute?.key
-                    )}`
+                  ? `${event.type}.${fromUtf8(fromBase64(attribute?.key))}`
                   : null,
                 key: attribute?.key
-                  ? this._registry.decodeAttribute(attribute?.key)
+                  ? fromUtf8(fromBase64(attribute?.key))
                   : null,
                 value: attribute?.value
-                  ? this._registry.decodeAttribute(attribute?.value)
+                  ? fromUtf8(fromBase64(attribute?.value))
                   : null,
               })
             ),
@@ -471,12 +443,8 @@ export default class CrawlTxService extends BullableService {
     tx?.tx_response?.events?.forEach((event: any) => {
       event.attributes.forEach((attr: any) => {
         if (event.msg_index !== undefined) {
-          const key = attr.key
-            ? this._registry.decodeAttribute(attr.key)
-            : null;
-          const value = attr.value
-            ? this._registry.decodeAttribute(attr.value)
-            : null;
+          const key = attr.key ? fromUtf8(fromBase64(attr.key)) : null;
+          const value = attr.value ? fromUtf8(fromBase64(attr.value)) : null;
           flattenEventEncoded.push(
             `${event.msg_index}-${event.type}-${key}-${value}`
           );
@@ -615,19 +583,15 @@ export default class CrawlTxService extends BullableService {
     attributeKey: string
   ): string {
     let result = '';
-    const foundEvent = events.find(
-      (event: any) =>
-        event.type === eventType &&
-        event.attributes.some(
-          (attribute: any) => attribute.key === attributeKey
-        )
-    );
-    if (foundEvent) {
-      const foundAttribute = foundEvent.attributes.find(
-        (attribute: any) => attribute.key === attributeKey
-      );
-      result = foundAttribute.value;
-    }
+    events?.forEach((event: any) => {
+      if (event.type === eventType) {
+        event.attributes.forEach((attribute: any) => {
+          if (attribute.key === attributeKey) {
+            result = attribute.value;
+          }
+        });
+      }
+    });
     if (!result.length) {
       throw new Error(
         `Could not find attribute ${attributeKey} in event type ${eventType}`
@@ -656,16 +620,6 @@ export default class CrawlTxService extends BullableService {
 
   public async _start() {
     this._registry = new AuraRegistry(this.logger);
-
-    const lcdClient = await getLcdClient();
-    // set version cosmos sdk to registry
-    const nodeInfo: GetNodeInfoResponseSDKType =
-      await lcdClient.auranw.cosmos.base.tendermint.v1beta1.getNodeInfo();
-    const cosmosSdkVersion = nodeInfo.application_version?.cosmos_sdk_version;
-    if (cosmosSdkVersion) {
-      this._registry.setCosmosSdkVersionByString(cosmosSdkVersion);
-    }
-
     this.createJob(
       BULL_JOB_NAME.HANDLE_TRANSACTION,
       BULL_JOB_NAME.HANDLE_TRANSACTION,
@@ -681,9 +635,5 @@ export default class CrawlTxService extends BullableService {
       }
     );
     return super._start();
-  }
-
-  public setRegistry(registry: AuraRegistry) {
-    this._registry = registry;
   }
 }
