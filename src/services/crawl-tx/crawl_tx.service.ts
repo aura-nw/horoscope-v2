@@ -7,9 +7,7 @@ import {
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { decodeTxRaw } from '@cosmjs/proto-signing';
-import { toBase64, fromBase64, fromUtf8 } from '@cosmjs/encoding';
-import _ from 'lodash';
-import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
+import { fromBase64, fromUtf8, toBase64 } from '@cosmjs/encoding';
 import { Knex } from 'knex';
 import { Queue } from 'bullmq';
 import Utils from '../../common/utils/utils';
@@ -84,30 +82,29 @@ export default class CrawlTxService extends BullableService {
       .andWhere('height', '<=', endBlock)
       .orderBy('height', 'asc');
     this.logger.debug(blocks);
-    const promises: any[] = [];
+
     const mapBlockTime: Map<number, string> = new Map();
+    const handleResult = async (blockHeight: number) => {
+      const result = await this._httpBatchClient.execute(
+        createJsonRpcRequest('tx_search', {
+          query: `tx.height=${blockHeight}`,
+        })
+      );
+      return {
+        listTx: result.result,
+        height: blockHeight,
+        timestamp: mapBlockTime[blockHeight],
+      };
+    };
+    const handleResultParallel: any[] = [];
     blocks
       .filter((block) => block.txs.length > 0)
       .forEach((block) => {
         this.logger.info('crawl tx by height: ', block.height);
         mapBlockTime[block.height] = block.time;
-        promises.push(
-          this._httpBatchClient.execute(
-            createJsonRpcRequest('tx_search', {
-              query: `tx.height=${block.height}`,
-            })
-          )
-        );
+        handleResultParallel.push(handleResult(block.height));
       });
-    const resultPromises: JsonRpcSuccessResponse[] = await Promise.all(
-      promises
-    );
-    const listRawTx: any[] = resultPromises.map((result) => ({
-      listTx: result.result,
-      height: result.result.txs[0].height,
-      timestamp: mapBlockTime[result.result.txs[0].height],
-    }));
-    return listRawTx;
+    return Promise.all(handleResultParallel);
   }
 
   // decode list raw tx
