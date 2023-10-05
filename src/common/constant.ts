@@ -236,6 +236,10 @@ export const SERVICE = {
         key: 'ReDecodeTx',
         path: 'v1.ReDecodeTx',
       },
+      ReAssignMsgIndexToEvent: {
+        key: 'ReAssignMsgIndexToEvent',
+        path: 'v1.ReAssignMsgIndexToEvent',
+      },
       CreateIndexCompositeAttrPartition: {
         key: 'CreateIndexCompositeAttrPartition',
         path: 'v1.CreateIndexCompositeAttrPartition',
@@ -243,10 +247,6 @@ export const SERVICE = {
           key: 'actionCreateJob',
           path: 'v1.CreateIndexCompositeAttrPartition.actionCreateJob',
         },
-      },
-      ReAssignMsgIndexToEvent: {
-        key: 'ReAssignMsgIndexToEvent',
-        path: 'v1.ReAssignMsgIndexToEvent',
       },
     },
     CrawlIBCTaoService: {
