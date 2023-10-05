@@ -297,6 +297,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
         ibcIcs20sKeyBy[msg.sequence_key].status = type;
       });
       await IbcIcs20.query()
+        .transacting(trx)
         .insert(Object.values(ibcIcs20sKeyBy))
         .onConflict('id')
         .merge();
