@@ -5,19 +5,28 @@ object_relationships:
   - name: transaction_message
     using:
       foreign_key_constraint_on: transaction_message_id
+array_relationships:
+  - name: ibc_ics20s
+    using:
+      foreign_key_constraint_on:
+        column: ibc_message_id
+        table:
+          name: ibc_ics20
+          schema: public
 select_permissions:
   - role: internal_service
     permission:
       columns:
-        - id
-        - transaction_message_id
-        - src_channel_id
-        - src_port_id
+        - data
         - dst_channel_id
         - dst_port_id
-        - type
+        - id
         - sequence
         - sequence_key
-        - data
+        - src_channel_id
+        - src_port_id
+        - transaction_message_id
+        - tx_hash
+        - type
       filter: {}
       limit: 100
