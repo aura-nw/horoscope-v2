@@ -6,7 +6,7 @@ import { BULL_JOB_NAME } from '../../common';
 
 @Service({
   name: 'services-manager',
-  version: 1,
+  version: 2,
 })
 export default class ServicesManagerService extends BaseService {
   public constructor(public broker: ServiceBroker) {
