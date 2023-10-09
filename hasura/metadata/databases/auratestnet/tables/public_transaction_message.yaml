@@ -16,6 +16,13 @@ array_relationships:
         remote_table:
           name: event
           schema: public
+  - name: ibc_messages
+    using:
+      foreign_key_constraint_on:
+        column: transaction_message_id
+        table:
+          name: ibc_message
+          schema: public
   - name: transaction_message_receivers
     using:
       foreign_key_constraint_on:
@@ -31,18 +38,6 @@ computed_fields:
         schema: public
 select_permissions:
   - role: internal_service
-    permission:
-      columns:
-        - sender
-        - type
-        - id
-        - index
-        - parent_id
-        - tx_id
-        - content
-      filter: {}
-      limit: 100
-  - role: public
     permission:
       columns:
         - sender

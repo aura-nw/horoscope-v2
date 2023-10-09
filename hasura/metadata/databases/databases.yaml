@@ -43,6 +43,21 @@
     type_names:
       prefix: euphoria_
   tables: '!include euphoria/tables/tables.yaml'
+- name: nois
+  kind: postgres
+  configuration:
+    connection_info:
+      database_url:
+        from_env: DATABASE_URL_NOIS
+      isolation_level: read-committed
+      use_prepared_statements: false
+  customization:
+    naming_convention: hasura-default
+    root_fields:
+      namespace: nois
+    type_names:
+      prefix: nois_
+  tables: '!include nois/tables/tables.yaml'
 - name: serenity
   kind: postgres
   configuration:
@@ -73,33 +88,3 @@
     type_names:
       prefix: xstaxy_
   tables: '!include xstaxy/tables/tables.yaml'
-- name: nois
-  kind: postgres
-  configuration:
-    connection_info:
-      database_url:
-        from_env: DATABASE_URL_NOIS
-      isolation_level: read-committed
-      use_prepared_statements: false
-  customization:
-    naming_convention: hasura-default
-    root_fields:
-      namespace: nois
-    type_names:
-      prefix: nois_
-  tables: '!include nois/tables/tables.yaml'
-- name: theta
-  kind: postgres
-  configuration:
-    connection_info:
-      database_url:
-        from_env: DATABASE_URL_THETA
-      isolation_level: read-committed
-      use_prepared_statements: false
-  customization:
-    naming_convention: hasura-default
-    root_fields:
-      namespace: theta
-    type_names:
-      prefix: theta_
-  tables: '!include nois/tables/tables.yaml'
