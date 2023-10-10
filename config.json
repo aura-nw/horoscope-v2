@@ -26,7 +26,8 @@
   "crawlBlock": {
     "millisecondCrawl": 5000,
     "numberOfBlockPerCall": 100,
-    "startBlock": 42162361
+    "startBlock": 42162361,
+    "saveRawLog": false
   },
   "handleCoinTransfer": {
     "key": "handleCoinTransfer",
@@ -38,7 +39,8 @@
     "key": "handleTransaction",
     "blocksPerCall": 100,
     "millisecondCrawl": 5000,
-    "txsPerCall": 100
+    "txsPerCall": 100,
+    "saveRawLog": false
   },
   "crawlSigningInfo": {
     "millisecondCrawl": null,
