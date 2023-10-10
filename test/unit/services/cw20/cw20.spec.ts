@@ -7,7 +7,7 @@ import {
   BlockCheckpoint,
   Code,
   Cw20Contract,
-  Cw20Event,
+  Cw20Activity,
   Transaction,
 } from '../../../../src/models';
 import { SmartContractEvent } from '../../../../src/models/smart_contract_event';
@@ -430,7 +430,7 @@ export default class Cw20 {
         cw20Events.map((event) => SmartContractEvent.fromJson(event)),
         trx
       );
-      const cw20ContractEvent1 = await Cw20Event.query()
+      const cw20ContractEvent1 = await Cw20Activity.query()
         .transacting(trx)
         .withGraphJoined('smart_contract')
         .where('smart_contract.address', this.codeId.contracts[0].address)

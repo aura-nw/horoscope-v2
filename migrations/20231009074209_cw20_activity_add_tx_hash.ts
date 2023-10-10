@@ -1,5 +1,5 @@
 import { Knex } from 'knex';
-import { Cw20Event } from '../src/models';
+import { Cw20Activity } from '../src/models';
 import _ from 'lodash';
 
 export async function up(knex: Knex): Promise<void> {
@@ -9,7 +9,7 @@ export async function up(knex: Knex): Promise<void> {
   await knex.transaction(async (trx) => {
     let currentId = 0;
     while (true) {
-      const cw20Activities = await Cw20Event.query()
+      const cw20Activities = await Cw20Activity.query()
         .transacting(trx)
         .joinRelated('event.message.transaction')
         .where('event.id', '>', currentId)
@@ -21,7 +21,7 @@ export async function up(knex: Knex): Promise<void> {
           'event.id as event_id'
         );
       if (cw20Activities.length > 0) {
-        await Cw20Event.query()
+        await Cw20Activity.query()
           .insert(
             cw20Activities.map((activity) => _.omit(activity, 'event_id'))
           )
