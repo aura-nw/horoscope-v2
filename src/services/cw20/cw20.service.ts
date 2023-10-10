@@ -18,7 +18,7 @@ import {
   BlockCheckpoint,
   CW20TotalHolderStats,
   Cw20Contract,
-  Cw20Event,
+  Cw20Activity,
   EventAttribute,
   IHolderEvent,
 } from '../../models';
@@ -188,7 +188,7 @@ export default class Cw20Service extends BullableService {
     const newHistories = cw20Events
       .filter((event) => cw20ContractsByAddress[event.contract_address]?.id)
       .map((event) =>
-        Cw20Event.fromJson({
+        Cw20Activity.fromJson({
           smart_contract_event_id: event.smart_contract_event_id,
           sender: event.sender,
           action: event.action,
@@ -210,7 +210,7 @@ export default class Cw20Service extends BullableService {
         })
       );
     if (newHistories.length > 0) {
-      await Cw20Event.query().insert(newHistories).transacting(trx);
+      await Cw20Activity.query().insert(newHistories).transacting(trx);
     }
   }
 
