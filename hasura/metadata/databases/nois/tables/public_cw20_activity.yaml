@@ -21,5 +21,6 @@ select_permissions:
         - id
         - smart_contract_event_id
         - amount
+        - tx_hash
       filter: {}
       limit: 100
