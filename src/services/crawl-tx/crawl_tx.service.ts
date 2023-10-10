@@ -106,7 +106,7 @@ export default class CrawlTxService extends BullableService {
     };
     const handleResultParallel: any[] = [];
     blocks
-      .filter((block) => block.txs.length > 0)
+      // .filter((block) => block.txs?.length > 0)
       .forEach((block) => {
         this.logger.info('crawl tx by height: ', block.height);
         mapBlockTime[block.height] = block.time;
