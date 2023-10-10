@@ -383,6 +383,7 @@ export default class Cw20 {
 
   @Test('test handleCw20Histories')
   public async testHandleCw20Histories() {
+    const txhash = 'sdfhsdfhksdjbvsdnbfnsdbfmnbnm';
     const cw20Events = [
       {
         cw20_contract_id: 1,
@@ -390,12 +391,14 @@ export default class Cw20 {
         smart_contract_id: 1,
         smart_contract_event_id: '1',
         height: 1530,
+        hash: txhash,
       },
       {
         contract_address: this.codeId.contracts[1].address,
         smart_contract_id: 2,
         smart_contract_event_id: '1',
         height: 1520,
+        hash: txhash,
       },
     ];
     const mockContractsInfo = [
@@ -436,6 +439,7 @@ export default class Cw20 {
         .throwIfNotFound();
       expect(cw20ContractEvent1.action).toBeNull();
       expect(cw20ContractEvent1.height).toEqual(cw20Events[0].height);
+      expect(cw20ContractEvent1.tx_hash).toEqual(txhash);
       await trx.rollback();
     });
   }

@@ -206,6 +206,7 @@ export default class Cw20Service extends BullableService {
             EventAttribute.ATTRIBUTE_KEY.TO
           ),
           height: event.height,
+          tx_hash: event.hash,
         })
       );
     if (newHistories.length > 0) {
