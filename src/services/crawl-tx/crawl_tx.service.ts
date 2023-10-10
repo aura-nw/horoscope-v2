@@ -292,7 +292,7 @@ export default class CrawlTxService extends BullableService {
             gas_limit: tx.tx.auth_info.fee.gas_limit?.toString() ?? '0',
             fee: JSON.stringify(tx.tx.auth_info.fee.amount),
             timestamp,
-            data: tx,
+            data: config.handleTransaction.saveRawLog ? tx : null,
             memo: tx.tx.body.memo,
           }),
           events: tx.tx_response.events?.map((event: any) => ({
