@@ -29,6 +29,8 @@ export class Cw20Event extends BaseModel {
 
   height!: number;
 
+  tx_hash!: string;
+
   static get tableName() {
     return 'cw20_activity';
   }
@@ -43,7 +45,6 @@ export class Cw20Event extends BaseModel {
         height: { type: 'number' },
         to: { type: 'string' },
         action: { type: 'string' },
-        amount: { type: 'string' },
         from: { type: 'string' },
         sender: { type: 'string' },
       },
