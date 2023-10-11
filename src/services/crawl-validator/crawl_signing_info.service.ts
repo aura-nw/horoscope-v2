@@ -137,7 +137,8 @@ export default class CrawlSigningInfoService extends BullableService {
           count: 3,
         },
         repeat: {
-          every: config.crawlSigningInfo.millisecondCrawl,
+          every: config.crawlSigningInfo.millisecondCrawl ?? undefined,
+          pattern: config.crawlSigningInfo.patternCrawl ?? undefined,
         },
       }
     );
