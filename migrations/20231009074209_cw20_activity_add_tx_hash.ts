@@ -12,23 +12,17 @@ export async function up(knex: Knex): Promise<void> {
       const cw20Activities = await Cw20Activity.query()
         .transacting(trx)
         .joinRelated('event.message.transaction')
-        .where('event.id', '>', currentId)
-        .orderBy('event.id', 'asc')
+        .where('cw20_activity.id', '>', currentId)
+        .orderBy('cw20_activity.id', 'asc')
         .limit(1000)
-        .select(
-          'cw20_activity.*',
-          'event:message:transaction.hash as tx_hash',
-          'event.id as event_id'
-        );
+        .select('cw20_activity.*', 'event:message:transaction.hash as tx_hash');
       if (cw20Activities.length > 0) {
         await Cw20Activity.query()
-          .insert(
-            cw20Activities.map((activity) => _.omit(activity, 'event_id'))
-          )
+          .insert(cw20Activities)
           .onConflict(['id'])
           .merge()
           .transacting(trx);
-        currentId = cw20Activities[cw20Activities.length - 1].event_id;
+        currentId = cw20Activities[cw20Activities.length - 1].id;
       } else {
         break;
       }
