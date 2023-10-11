@@ -7,8 +7,9 @@
   "jobRetryAttempt": 5,
   "jobRetryBackoff": 1000,
   "crawlValidator": {
-    "millisecondCrawl": 5000,
-    "queryPageLimit": 100
+    "millisecondCrawl": null,
+    "queryPageLimit": 100,
+    "patternCrawl": "30 */2 * * * *"
   },
   "cw721": {
     "key": "cw721",
@@ -33,7 +34,8 @@
     "millisecondCrawl": 5000
   },
   "crawlSigningInfo": {
-    "millisecondCrawl": 5000
+    "millisecondCrawl": null,
+    "patternCrawl": "0 */1 * * * *"
   },
   "handleAddress": {
     "key": "handleAddress",
