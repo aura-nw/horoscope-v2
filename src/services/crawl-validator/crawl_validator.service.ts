@@ -13,7 +13,6 @@ import {
   QueryDelegationResponse,
 } from '@aura-nw/aurajs/types/codegen/cosmos/staking/v1beta1/query';
 import { fromBase64, toHex } from '@cosmjs/encoding';
-import { Knex } from 'knex';
 import { Validator } from '../../models/validator';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import knex from '../../common/utils/db_connection';
@@ -70,9 +69,24 @@ export default class CrawlValidatorService extends BullableService {
       .select('value')
       .limit(1)
       .offset(0);
+    const updateValidators = await this.getFullInfoValidators();
+
     await knex.transaction(async (trx) => {
       if (resultTx.length > 0) {
-        await this.updateValidators(trx);
+        await Validator.query()
+          .insert(updateValidators)
+          .onConflict('operator_address')
+          .merge()
+          .returning('id')
+          .transacting(trx)
+          .catch((error) => {
+            this.logger.error(
+              `Error insert or update validators: ${JSON.stringify(
+                updateValidators
+              )}`
+            );
+            this.logger.error(error);
+          });
       }
 
       updateBlockCheckpoint.height = endHeight;
@@ -85,7 +99,7 @@ export default class CrawlValidatorService extends BullableService {
     });
   }
 
-  private async updateValidators(trx: Knex.Transaction) {
+  private async getFullInfoValidators(): Promise<Validator[]> {
     let updateValidators: Validator[] = [];
     const validators: any[] = [];
 
@@ -169,21 +183,7 @@ export default class CrawlValidatorService extends BullableService {
           validatorNotOnchain.unbonding_time.toISOString();
         updateValidators.push(validatorNotOnchain);
       });
-
-    await Validator.query()
-      .insert(updateValidators)
-      .onConflict('operator_address')
-      .merge()
-      .returning('id')
-      .transacting(trx)
-      .catch((error) => {
-        this.logger.error(
-          `Error insert or update validators: ${JSON.stringify(
-            updateValidators
-          )}`
-        );
-        this.logger.error(error);
-      });
+    return updateValidators;
   }
 
   private async loadCustomInfo(validators: Validator[]): Promise<Validator[]> {
