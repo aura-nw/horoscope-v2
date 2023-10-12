@@ -69,7 +69,11 @@ export default class CrawlValidatorService extends BullableService {
       .select('value')
       .limit(1)
       .offset(0);
-    const updateValidators = await this.getFullInfoValidators();
+    let updateValidators: Validator[];
+
+    if (resultTx.length > 0) {
+      updateValidators = await this.getFullInfoValidators();
+    }
 
     await knex.transaction(async (trx) => {
       if (resultTx.length > 0) {
