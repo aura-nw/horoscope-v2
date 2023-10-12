@@ -53,25 +53,25 @@ export class Cw721Handler {
         token !== undefined &&
         token.last_updated_height <= transferMsg.height
       ) {
-        this.cw721Activities.push(
-          CW721Activity.fromJson({
-            action: transferMsg.action,
-            sender: getAttributeFrom(
-              transferMsg.attributes,
-              EventAttribute.ATTRIBUTE_KEY.SENDER
-            ),
-            tx_hash: transferMsg.hash,
-            cw721_contract_id: cw721Contract.id,
-            height: transferMsg.height,
-            smart_contract_event_id: transferMsg.smart_contract_event_id,
-            from: token.owner,
-            to: recipient,
-            token_id: tokenId,
-          })
-        );
         token.owner = recipient;
         token.last_updated_height = transferMsg.height;
       }
+      this.cw721Activities.push(
+        CW721Activity.fromJson({
+          action: transferMsg.action,
+          sender: getAttributeFrom(
+            transferMsg.attributes,
+            EventAttribute.ATTRIBUTE_KEY.SENDER
+          ),
+          tx_hash: transferMsg.hash,
+          cw721_contract_id: cw721Contract.id,
+          height: transferMsg.height,
+          smart_contract_event_id: transferMsg.smart_contract_event_id,
+          from: token.owner,
+          to: recipient,
+          token_id: tokenId,
+        })
+      );
     }
   }
 
@@ -102,26 +102,26 @@ export class Cw721Handler {
             burned: false,
             id: token === undefined ? undefined : token.id,
           });
-        this.cw721Activities.push(
-          CW721Activity.fromJson({
-            action: mintEvent.action,
-            sender: getAttributeFrom(
-              mintEvent.attributes,
-              EventAttribute.ATTRIBUTE_KEY.MINTER
-            ),
-            tx_hash: mintEvent.hash,
-            cw721_contract_id: cw721Contract.id,
-            height: mintEvent.height,
-            smart_contract_event_id: mintEvent.smart_contract_event_id,
-            from: null,
-            to: getAttributeFrom(
-              mintEvent.attributes,
-              EventAttribute.ATTRIBUTE_KEY.OWNER
-            ),
-            token_id: tokenId,
-          })
-        );
       }
+      this.cw721Activities.push(
+        CW721Activity.fromJson({
+          action: mintEvent.action,
+          sender: getAttributeFrom(
+            mintEvent.attributes,
+            EventAttribute.ATTRIBUTE_KEY.MINTER
+          ),
+          tx_hash: mintEvent.hash,
+          cw721_contract_id: cw721Contract.id,
+          height: mintEvent.height,
+          smart_contract_event_id: mintEvent.smart_contract_event_id,
+          from: null,
+          to: getAttributeFrom(
+            mintEvent.attributes,
+            EventAttribute.ATTRIBUTE_KEY.OWNER
+          ),
+          token_id: tokenId,
+        })
+      );
     }
   }
 
@@ -135,25 +135,25 @@ export class Cw721Handler {
       );
       const token = this.tokensKeyBy[`${burnMsg.contractAddress}_${tokenId}`];
       if (token !== undefined && token.last_updated_height <= burnMsg.height) {
-        this.cw721Activities.push(
-          CW721Activity.fromJson({
-            action: burnMsg.action,
-            sender: getAttributeFrom(
-              burnMsg.attributes,
-              EventAttribute.ATTRIBUTE_KEY.SENDER
-            ),
-            tx_hash: burnMsg.hash,
-            cw721_contract_id: cw721Contract.id,
-            height: burnMsg.height,
-            smart_contract_event_id: burnMsg.smart_contract_event_id,
-            from: token.owner,
-            to: null,
-            token_id: tokenId,
-          })
-        );
         token.burned = true;
         token.last_updated_height = burnMsg.height;
       }
+      this.cw721Activities.push(
+        CW721Activity.fromJson({
+          action: burnMsg.action,
+          sender: getAttributeFrom(
+            burnMsg.attributes,
+            EventAttribute.ATTRIBUTE_KEY.SENDER
+          ),
+          tx_hash: burnMsg.hash,
+          cw721_contract_id: cw721Contract.id,
+          height: burnMsg.height,
+          smart_contract_event_id: burnMsg.smart_contract_event_id,
+          from: token.owner,
+          to: null,
+          token_id: tokenId,
+        })
+      );
     }
   }
 
