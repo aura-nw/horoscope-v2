@@ -114,7 +114,6 @@ export default class CrawlSigningInfoService extends BullableService {
         .insert(updateValidators)
         .onConflict('operator_address')
         .merge()
-        .returning('id')
         .catch((error) => {
           this.logger.error(
             `Update validator signing info error: ${JSON.stringify(
@@ -133,9 +132,9 @@ export default class CrawlSigningInfoService extends BullableService {
       {},
       {
         removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
+        // removeOnFail: {
+        //   count: 3,
+        // },
         repeat: {
           every: config.crawlSigningInfo.millisecondCrawl ?? undefined,
           pattern: config.crawlSigningInfo.patternCrawl ?? undefined,

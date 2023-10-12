@@ -250,9 +250,9 @@ export default class CrawlValidatorService extends BullableService {
       {},
       {
         removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
+        // removeOnFail: {
+        //   count: 3,
+        // },
         repeat: {
           every: config.crawlValidator.millisecondCrawl ?? undefined,
           pattern: config.crawlValidator.patternCrawl ?? undefined,
