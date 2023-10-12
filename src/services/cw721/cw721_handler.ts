@@ -49,13 +49,6 @@ export class Cw721Handler {
       );
       const token =
         this.tokensKeyBy[`${transferMsg.contractAddress}_${tokenId}`];
-      if (
-        token !== undefined &&
-        token.last_updated_height <= transferMsg.height
-      ) {
-        token.owner = recipient;
-        token.last_updated_height = transferMsg.height;
-      }
       this.cw721Activities.push(
         CW721Activity.fromJson({
           action: transferMsg.action,
@@ -72,6 +65,13 @@ export class Cw721Handler {
           token_id: tokenId,
         })
       );
+      if (
+        token !== undefined &&
+        token.last_updated_height <= transferMsg.height
+      ) {
+        token.owner = recipient;
+        token.last_updated_height = transferMsg.height;
+      }
     }
   }
 
@@ -84,25 +84,6 @@ export class Cw721Handler {
         EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
       );
       const token = this.tokensKeyBy[`${mintEvent.contractAddress}_${tokenId}`];
-      if (
-        token === undefined ||
-        token.last_updated_height <= mintEvent.height
-      ) {
-        const mediaInfo = null;
-        this.tokensKeyBy[`${mintEvent.contractAddress}_${tokenId}`] =
-          CW721Token.fromJson({
-            token_id: tokenId,
-            media_info: mediaInfo,
-            owner: getAttributeFrom(
-              mintEvent.attributes,
-              EventAttribute.ATTRIBUTE_KEY.OWNER
-            ),
-            cw721_contract_id: cw721Contract.id,
-            last_updated_height: mintEvent.height,
-            burned: false,
-            id: token === undefined ? undefined : token.id,
-          });
-      }
       this.cw721Activities.push(
         CW721Activity.fromJson({
           action: mintEvent.action,
@@ -122,6 +103,25 @@ export class Cw721Handler {
           token_id: tokenId,
         })
       );
+      if (
+        token === undefined ||
+        token.last_updated_height <= mintEvent.height
+      ) {
+        const mediaInfo = null;
+        this.tokensKeyBy[`${mintEvent.contractAddress}_${tokenId}`] =
+          CW721Token.fromJson({
+            token_id: tokenId,
+            media_info: mediaInfo,
+            owner: getAttributeFrom(
+              mintEvent.attributes,
+              EventAttribute.ATTRIBUTE_KEY.OWNER
+            ),
+            cw721_contract_id: cw721Contract.id,
+            last_updated_height: mintEvent.height,
+            burned: false,
+            id: token === undefined ? undefined : token.id,
+          });
+      }
     }
   }
 
@@ -134,10 +134,6 @@ export class Cw721Handler {
         EventAttribute.ATTRIBUTE_KEY.TOKEN_ID
       );
       const token = this.tokensKeyBy[`${burnMsg.contractAddress}_${tokenId}`];
-      if (token !== undefined && token.last_updated_height <= burnMsg.height) {
-        token.burned = true;
-        token.last_updated_height = burnMsg.height;
-      }
       this.cw721Activities.push(
         CW721Activity.fromJson({
           action: burnMsg.action,
@@ -154,6 +150,10 @@ export class Cw721Handler {
           token_id: tokenId,
         })
       );
+      if (token !== undefined && token.last_updated_height <= burnMsg.height) {
+        token.burned = true;
+        token.last_updated_height = burnMsg.height;
+      }
     }
   }
 
