@@ -1,0 +1,3 @@
+table:
+  name: delegator
+  schema: public

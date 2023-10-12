@@ -1,0 +1,3 @@
+table:
+  name: cw20_holder
+  schema: public

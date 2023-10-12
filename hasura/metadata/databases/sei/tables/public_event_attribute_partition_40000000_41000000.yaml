@@ -1,0 +1,3 @@
+table:
+  name: event_attribute_partition_40000000_41000000
+  schema: public

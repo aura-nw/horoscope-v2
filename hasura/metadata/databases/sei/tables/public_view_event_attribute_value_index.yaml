@@ -1,0 +1,3 @@
+table:
+  name: view_event_attribute_value_index
+  schema: public

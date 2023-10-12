@@ -1,0 +1,3 @@
+table:
+  name: ibc_channel
+  schema: public

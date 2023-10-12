@@ -1,0 +1,3 @@
+table:
+  name: transaction_message
+  schema: public

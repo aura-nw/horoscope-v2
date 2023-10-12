@@ -35,6 +35,9 @@
       database_url:
         from_env: DATABASE_URL_EUPHORIA
       isolation_level: read-committed
+      pool_settings:
+        connection_lifetime: 600
+        max_connections: 5
       use_prepared_statements: false
   customization:
     naming_convention: hasura-default
@@ -58,6 +61,24 @@
     type_names:
       prefix: nois_
   tables: '!include nois/tables/tables.yaml'
+- name: sei
+  kind: postgres
+  configuration:
+    connection_info:
+      database_url:
+        from_env: DATABASE_URL_SEI
+      isolation_level: read-committed
+      pool_settings:
+        connection_lifetime: 600
+        max_connections: 5
+      use_prepared_statements: false
+  customization:
+    naming_convention: hasura-default
+    root_fields:
+      namespace: sei
+    type_names:
+      prefix: sei_
+  tables: '!include sei/tables/tables.yaml'
 - name: serenity
   kind: postgres
   configuration:

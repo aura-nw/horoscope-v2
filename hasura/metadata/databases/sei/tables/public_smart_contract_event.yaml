@@ -1,0 +1,3 @@
+table:
+  name: smart_contract_event
+  schema: public

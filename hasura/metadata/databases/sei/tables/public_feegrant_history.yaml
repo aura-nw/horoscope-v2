@@ -1,0 +1,3 @@
+table:
+  name: feegrant_history
+  schema: public

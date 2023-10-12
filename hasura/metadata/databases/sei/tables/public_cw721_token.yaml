@@ -1,0 +1,3 @@
+table:
+  name: cw721_token
+  schema: public

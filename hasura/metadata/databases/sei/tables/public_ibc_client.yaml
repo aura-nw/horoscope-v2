@@ -1,0 +1,3 @@
+table:
+  name: ibc_client
+  schema: public
