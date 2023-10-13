@@ -14,6 +14,7 @@ import {
   SERVICE,
 } from '../../common';
 import { Validator } from '../../models';
+import knex from '../../common/utils/db_connection';
 
 @Service({
   name: SERVICE.V1.CrawlSigningInfoService.key,
@@ -38,7 +39,13 @@ export default class CrawlSigningInfoService extends BullableService {
     const updateValidators: Validator[] = [];
     const signingInfos: any[] = [];
 
-    const foundValidators: Validator[] = await Validator.query().select('*');
+    let foundValidators: Validator[] = [];
+    await knex.transaction(async (trx) => {
+      foundValidators = await Validator.query()
+        .select('*')
+        .forUpdate()
+        .transacting(trx);
+    });
 
     if (foundValidators.length > 0) {
       const paramSlashing =
@@ -65,7 +72,7 @@ export default class CrawlSigningInfoService extends BullableService {
       }
 
       await Promise.all(
-        foundValidators.map(async (foundValidator: Validator) => {
+        foundValidators.map((foundValidator: Validator) => {
           try {
             const signingInfo = signingInfos.find(
               (sign: any) => sign.address === foundValidator.consensus_address
@@ -103,25 +110,25 @@ export default class CrawlSigningInfoService extends BullableService {
               );
               updateValidator.uptime = uptime;
               updateValidators.push(updateValidator);
+
+              return Validator.query()
+                .patch({
+                  start_height: updateValidator.start_height,
+                  index_offset: updateValidator.index_offset,
+                  jailed_until: updateValidator.jailed_until,
+                  tombstoned: updateValidator.tombstoned,
+                  missed_blocks_counter: updateValidator.missed_blocks_counter,
+                  uptime: updateValidator.uptime,
+                })
+                .where('id', updateValidator.id);
             }
           } catch (error) {
             this.logger.error(error);
           }
+          return Promise.resolve(null);
         })
       );
-
-      await Validator.query()
-        .insert(updateValidators)
-        .onConflict('operator_address')
-        .merge()
-        .catch((error) => {
-          this.logger.error(
-            `Update validator signing info error: ${JSON.stringify(
-              updateValidators
-            )}`
-          );
-          this.logger.error(error);
-        });
+      this.logger.info('Update validator signing info done');
     }
   }
 
@@ -132,9 +139,9 @@ export default class CrawlSigningInfoService extends BullableService {
       {},
       {
         removeOnComplete: true,
-        // removeOnFail: {
-        //   count: 3,
-        // },
+        removeOnFail: {
+          count: 3,
+        },
         repeat: {
           every: config.crawlSigningInfo.millisecondCrawl ?? undefined,
           pattern: config.crawlSigningInfo.patternCrawl ?? undefined,

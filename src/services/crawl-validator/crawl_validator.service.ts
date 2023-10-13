@@ -76,7 +76,7 @@ export default class CrawlValidatorService extends BullableService {
     }
 
     await knex.transaction(async (trx) => {
-      if (resultTx.length > 0) {
+      if (resultTx.length > 0 && updateValidators.length > 0) {
         await Validator.query()
           .insert(updateValidators)
           .onConflict('operator_address')
@@ -84,11 +84,7 @@ export default class CrawlValidatorService extends BullableService {
           .returning('id')
           .transacting(trx)
           .catch((error) => {
-            this.logger.error(
-              `Error insert or update validators: ${JSON.stringify(
-                updateValidators
-              )}`
-            );
+            this.logger.error('Error insert or update validators');
             this.logger.error(error);
           });
       }
@@ -101,6 +97,7 @@ export default class CrawlValidatorService extends BullableService {
         .returning('id')
         .transacting(trx);
     });
+    this.logger.info('Crawl validator done');
   }
 
   private async getFullInfoValidators(): Promise<Validator[]> {
@@ -127,9 +124,15 @@ export default class CrawlValidatorService extends BullableService {
       }
     }
 
-    const validatorInDB: Validator[] = await knex('validator')
-      .select('*')
-      .whereNot('status', Validator.STATUS.UNRECOGNIZED);
+    let validatorInDB: Validator[] = [];
+    await knex.transaction(async (trx) => {
+      validatorInDB = await Validator.query()
+        .select('*')
+        .whereNot('status', Validator.STATUS.UNRECOGNIZED)
+        .forUpdate()
+        .transacting(trx);
+    });
+
     const offchainMapped: Map<string, boolean> = new Map();
     await Promise.all(
       validators.map(async (validator) => {
@@ -250,9 +253,9 @@ export default class CrawlValidatorService extends BullableService {
       {},
       {
         removeOnComplete: true,
-        // removeOnFail: {
-        //   count: 3,
-        // },
+        removeOnFail: {
+          count: 3,
+        },
         repeat: {
           every: config.crawlValidator.millisecondCrawl ?? undefined,
           pattern: config.crawlValidator.patternCrawl ?? undefined,
