@@ -81,6 +81,7 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_COMPOSITE_INDEX_ATTR_PARTITION:
     'job:create-index-composite-attr-partition',
   CRAWL_IBC_ICS20: 'crawl:ibc-ics20',
+  JOB_UPDATE_SENDER_IN_TX_MESSAGES: 'job:update-sender-in-tx-messages',
 };
 
 export const SERVICE = {
@@ -248,6 +249,10 @@ export const SERVICE = {
           key: 'actionCreateJob',
           path: 'v1.CreateIndexCompositeAttrPartition.actionCreateJob',
         },
+      },
+      UpdateSenderInTxMessages: {
+        key: 'UpdateSenderInTxMessages',
+        path: 'v1.UpdateSenderInTxMessages',
       },
     },
     CrawlIBCTaoService: {

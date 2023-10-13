@@ -198,5 +198,9 @@
     "millisecondRepeatJob": 2000,
     "blocksPerCall": 100,
     "port": "transfer"
+  },
+  "jobUpdateSenderInTxMessages": {
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 1000
   }
 }

@@ -596,9 +596,9 @@ export default class CrawlTxService extends BullableService {
   ): string {
     let result = '';
     events.forEach((event: any) => {
-      if (event.type === eventType) {
+      if (result === '' && event.type === eventType) {
         event.attributes.forEach((attribute: any) => {
-          if (attribute.key === attributeKey) {
+          if (result === '' && attribute.key === attributeKey) {
             result = attribute.value;
           }
         });
