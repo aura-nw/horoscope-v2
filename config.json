@@ -200,5 +200,9 @@
   },
   "servicesManager": {
     "healthCheckLimit": 100
+  },
+  "jobUpdateSenderInTxMessages": {
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 1000
   }
 }
