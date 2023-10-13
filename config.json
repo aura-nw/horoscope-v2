@@ -192,5 +192,9 @@
     "key": "crawlIbcApp",
     "millisecondRepeatJob": 2000,
     "blocksPerCall": 100
+  },
+  "jobUpdateSenderInTxMessages": {
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 1000
   }
 }
