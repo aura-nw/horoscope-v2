@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
-import { Transaction, BlockCheckpoint, TransactionMessage } from '../../models';
+import { Transaction, BlockCheckpoint } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
@@ -37,38 +37,40 @@ export default class UpdateSenderInTxMessages extends BullableService {
     if (lastBlock > _payload.lastBlockCrawled) {
       lastBlock = _payload.lastBlockCrawled;
     }
-    await knex.transaction(async (trx) => {
-      const listTx = await Transaction.query()
-        .withGraphFetched('events.[attributes]')
-        .modifyGraph('events', (builder) => {
-          builder.orderBy('id', 'asc');
-        })
-        .modifyGraph('events.[attributes]', (builder) => {
-          builder.orderBy('index', 'asc');
-        })
-        .modifyGraph('messages', (builder) => {
-          builder.orderBy('id', 'asc');
-        })
-        .orderBy('id', 'asc')
-        .where('height', '>=', blockCheckpoint?.height ?? 0)
-        .andWhere('height', '<', lastBlock)
-        .transacting(trx);
-      await Promise.all(
-        listTx.map((tx) => {
-          const sender = this._findFirstAttribute(
-            tx.events,
-            'message',
-            'sender'
-          );
-          return TransactionMessage.query()
-            .patch({
-              sender,
-            })
-            .where({ tx_id: tx.id })
-            .transacting(trx);
-        })
-      );
+    const listTx = await Transaction.query()
+      .withGraphFetched('events.[attributes]')
+      .modifyGraph('events', (builder) => {
+        builder.orderBy('id', 'asc');
+      })
+      .modifyGraph('events.[attributes]', (builder) => {
+        builder.orderBy('index', 'asc');
+      })
+      .modifyGraph('messages', (builder) => {
+        builder.orderBy('id', 'asc');
+      })
+      .orderBy('id', 'asc')
+      .where('height', '>=', blockCheckpoint?.height ?? 0)
+      .andWhere('height', '<', lastBlock);
+    const listUpdates = listTx.map((tx) => {
+      const sender = this._findFirstAttribute(tx.events, 'message', 'sender');
+      return {
+        tx_id: tx.id,
+        sender,
+      };
+    });
 
+    await knex.transaction(async (trx) => {
+      if (listUpdates.length > 0) {
+        const stringListUpdates = listUpdates
+          .map((update) => `(${update.tx_id}, '${update.sender}')`)
+          .join(',');
+
+        await knex
+          .raw(
+            `UPDATE transaction_message SET sender = temp.sender from (VALUES ${stringListUpdates}) as temp(tx_id, sender) where temp.tx_id = transaction_message.tx_id`
+          )
+          .transacting(trx);
+      }
       await BlockCheckpoint.query()
         .update(
           BlockCheckpoint.fromJson({
@@ -78,7 +80,8 @@ export default class UpdateSenderInTxMessages extends BullableService {
         )
         .where({
           job_name: BULL_JOB_NAME.JOB_UPDATE_SENDER_IN_TX_MESSAGES,
-        });
+        })
+        .transacting(trx);
     });
   }
 
