@@ -91,15 +91,19 @@ export default class UpdateSenderInTxMessages extends BullableService {
     attributeKey: string
   ): string {
     let result = '';
-    events.forEach((event: any) => {
-      if (result === '' && event.type === eventType) {
-        event.attributes.forEach((attribute: any) => {
-          if (result === '' && attribute.key === attributeKey) {
-            result = attribute.value;
-          }
-        });
-      }
-    });
+    const foundEvent = events.find(
+      (event: any) =>
+        event.type === eventType &&
+        event.attributes.some(
+          (attribute: any) => attribute.key === attributeKey
+        )
+    );
+    if (foundEvent) {
+      const foundAttribute = foundEvent.attributes.find(
+        (attribute: any) => attribute.key === attributeKey
+      );
+      result = foundAttribute.value;
+    }
     if (!result.length) {
       throw new Error(
         `Could not find attribute ${attributeKey} in event type ${eventType}`
