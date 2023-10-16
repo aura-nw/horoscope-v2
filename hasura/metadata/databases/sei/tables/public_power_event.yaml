@@ -1,3 +1,40 @@
 table:
   name: power_event
   schema: public
+object_relationships:
+  - name: transaction
+    using:
+      foreign_key_constraint_on: tx_id
+  - name: validatorDst
+    using:
+      foreign_key_constraint_on: validator_dst_id
+  - name: validatorSrc
+    using:
+      foreign_key_constraint_on: validator_src_id
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - height
+        - id
+        - tx_id
+        - validator_dst_id
+        - validator_src_id
+        - amount
+        - type
+        - time
+      filter: {}
+      limit: 100
+  - role: public
+    permission:
+      columns:
+        - height
+        - id
+        - tx_id
+        - validator_dst_id
+        - validator_src_id
+        - amount
+        - type
+        - time
+      filter: {}
+      limit: 100

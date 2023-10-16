@@ -1,3 +1,17 @@
 table:
   name: transaction_message_receiver
   schema: public
+object_relationships:
+  - name: transaction_message
+    using:
+      foreign_key_constraint_on: tx_msg_id
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - address
+        - reason
+        - id
+        - tx_msg_id
+      filter: {}
+      limit: 100
