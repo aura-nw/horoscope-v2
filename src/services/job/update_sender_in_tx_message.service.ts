@@ -52,11 +52,19 @@ export default class UpdateSenderInTxMessages extends BullableService {
       .where('height', '>=', blockCheckpoint?.height ?? 0)
       .andWhere('height', '<', lastBlock);
     const listUpdates = listTx.map((tx) => {
-      const sender = this._findFirstAttribute(tx.events, 'message', 'sender');
-      return {
-        tx_id: tx.id,
-        sender,
-      };
+      try {
+        const sender = this._findFirstAttribute(tx.events, 'message', 'sender');
+        return {
+          tx_id: tx.id,
+          sender,
+        };
+      } catch (error) {
+        this.logger.warn('Tx error not has message.sender: ', tx.hash);
+        return {
+          tx_id: tx.id,
+          sender: '',
+        };
+      }
     });
 
     await knex.transaction(async (trx) => {
