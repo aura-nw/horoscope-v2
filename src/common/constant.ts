@@ -80,6 +80,7 @@ export const BULL_JOB_NAME = {
   JOB_REASSIGN_MSG_INDEX_TO_EVENT: 'job:reassign-msg-index-to-event',
   JOB_CREATE_COMPOSITE_INDEX_ATTR_PARTITION:
     'job:create-index-composite-attr-partition',
+  JOB_UPDATE_SENDER_IN_TX_MESSAGES: 'job:update-sender-in-tx-messages',
 };
 
 export const SERVICE = {
@@ -247,6 +248,10 @@ export const SERVICE = {
           key: 'actionCreateJob',
           path: 'v1.CreateIndexCompositeAttrPartition.actionCreateJob',
         },
+      },
+      UpdateSenderInTxMessages: {
+        key: 'UpdateSenderInTxMessages',
+        path: 'v1.UpdateSenderInTxMessages',
       },
     },
     CrawlIBCTaoService: {
