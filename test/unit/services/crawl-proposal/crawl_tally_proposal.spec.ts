@@ -8,6 +8,7 @@ import {
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { cosmos } from '@aura-nw/aurajs';
+import Long from 'long';
 import { Proposal } from '../../../../src/models';
 import CrawlTallyProposalService from '../../../../src/services/crawl-proposal/crawl_tally_proposal.service';
 import config from '../../../../config.json' assert { type: 'json' };
@@ -127,7 +128,7 @@ export default class CrawlTallyProposalTest {
     const msgVoteYes: MsgVoteEncodeObject = {
       typeUrl: '/cosmos.gov.v1beta1.MsgVote',
       value: cosmos.gov.v1beta1.MsgVote.fromPartial({
-        proposalId: 1,
+        proposalId: Long.fromInt(1),
         option: cosmos.gov.v1beta1.VoteOption.VOTE_OPTION_YES,
         voter: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
       }),
