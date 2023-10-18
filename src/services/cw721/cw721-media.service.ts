@@ -403,7 +403,7 @@ export default class Cw721MediaService extends BullableService {
       if (parsed.path) {
         return `/ipfs/${cid}${parsed.path}`;
       }
-      return `/ipfs/${  cid}`; // ipfs://QmPAGifcMvxDBgYr1XmEz9gZiC3DEkfYeinFdVSe364uQp/689.png
+      return `/ipfs/${cid}`; // ipfs://QmPAGifcMvxDBgYr1XmEz9gZiC3DEkfYeinFdVSe364uQp/689.png
     }
     if (parsed.protocol === HTTP_PREFIX || parsed.protocol === HTTPS_PREFIX) {
       return parsed.path; // http://ipfs.io/ipfs/QmWov9DpE1vYZtTH7JLKXb7b8bJycN91rEPJEmXRXdmh2G/nerd_access_pass.gif
@@ -411,7 +411,7 @@ export default class Cw721MediaService extends BullableService {
     if (media_uri.startsWith('/ipfs/')) {
       return media_uri; // /ipfs/QmPAGifcMvxDBgYr1XmEz9gZiC3DEkfYeinFdVSe364uQp/689.png
     }
-    throw new Error('Media uri not supported');
+    return parsed.path;
   }
 
   async downloadAttachment(url: string) {
