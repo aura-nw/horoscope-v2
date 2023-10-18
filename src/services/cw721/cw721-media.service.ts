@@ -37,6 +37,8 @@ const {
   S3_GATEWAY,
 } = Config;
 const IPFS_PREFIX = 'ipfs';
+const HTTP_PREFIX = 'http';
+const HTTPS_PREFIX = 'https';
 interface ITokenMediaInfo {
   cw721_token_id: number;
   address: string;
@@ -401,10 +403,13 @@ export default class Cw721MediaService extends BullableService {
       if (parsed.path) {
         return `${cid}${parsed.path}`;
       }
-      return cid;
+      return cid; // ipfs://QmPAGifcMvxDBgYr1XmEz9gZiC3DEkfYeinFdVSe364uQp/689.png
+    }
+    if (parsed.protocol === HTTP_PREFIX || parsed.protocol === HTTPS_PREFIX) {
+      return parsed.path; // http://ipfs.io/ipfs/QmWov9DpE1vYZtTH7JLKXb7b8bJycN91rEPJEmXRXdmh2G/nerd_access_pass.gif
     }
     // eslint-disable-next-line no-useless-escape
-    return media_uri.replace(/^.*[\\\/]/, '');
+    return media_uri.substring(6); // /ipfs/QmPAGifcMvxDBgYr1XmEz9gZiC3DEkfYeinFdVSe364uQp/689.png
   }
 
   async downloadAttachment(url: string) {
