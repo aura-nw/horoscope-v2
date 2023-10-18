@@ -401,15 +401,17 @@ export default class Cw721MediaService extends BullableService {
     if (parsed.protocol === IPFS_PREFIX) {
       const cid = parsed.host;
       if (parsed.path) {
-        return `${cid}${parsed.path}`;
+        return `/ipfs/${cid}${parsed.path}`;
       }
-      return cid; // ipfs://QmPAGifcMvxDBgYr1XmEz9gZiC3DEkfYeinFdVSe364uQp/689.png
+      return `/ipfs/${  cid}`; // ipfs://QmPAGifcMvxDBgYr1XmEz9gZiC3DEkfYeinFdVSe364uQp/689.png
     }
     if (parsed.protocol === HTTP_PREFIX || parsed.protocol === HTTPS_PREFIX) {
       return parsed.path; // http://ipfs.io/ipfs/QmWov9DpE1vYZtTH7JLKXb7b8bJycN91rEPJEmXRXdmh2G/nerd_access_pass.gif
     }
-    // eslint-disable-next-line no-useless-escape
-    return media_uri.substring(6); // /ipfs/QmPAGifcMvxDBgYr1XmEz9gZiC3DEkfYeinFdVSe364uQp/689.png
+    if (media_uri.startsWith('/ipfs/')) {
+      return media_uri; // /ipfs/QmPAGifcMvxDBgYr1XmEz9gZiC3DEkfYeinFdVSe364uQp/689.png
+    }
+    throw new Error('Media uri not supported');
   }
 
   async downloadAttachment(url: string) {
