@@ -14,6 +14,7 @@ import {
   SERVICE,
 } from '../../common';
 import { Validator } from '../../models';
+import knex from '../../common/utils/db_connection';
 
 @Service({
   name: SERVICE.V1.CrawlSigningInfoService.key,
@@ -38,7 +39,13 @@ export default class CrawlSigningInfoService extends BullableService {
     const updateValidators: Validator[] = [];
     const signingInfos: any[] = [];
 
-    const foundValidators: Validator[] = await Validator.query().select('*');
+    let foundValidators: Validator[] = [];
+    await knex.transaction(async (trx) => {
+      foundValidators = await Validator.query()
+        .select('*')
+        .forUpdate()
+        .transacting(trx);
+    });
 
     if (foundValidators.length > 0) {
       const paramSlashing =
@@ -63,66 +70,82 @@ export default class CrawlSigningInfoService extends BullableService {
           pagination.key = fromBase64(resultCallApi.pagination.next_key);
         }
       }
+      if (foundValidators.length === 0) {
+        return;
+      }
 
-      await Promise.all(
-        foundValidators.map(async (foundValidator: Validator) => {
-          try {
-            const signingInfo = signingInfos.find(
-              (sign: any) => sign.address === foundValidator.consensus_address
-            );
-
-            if (signingInfo) {
-              let uptime = 0;
-              if (paramSlashing?.params) {
-                const blockWindow =
-                  paramSlashing?.params.signed_blocks_window.toString();
-                const missedBlock =
-                  signingInfo.missed_blocks_counter.toString();
-                uptime =
-                  Number(
-                    ((BigInt(blockWindow) - BigInt(missedBlock)) *
-                      BigInt(100000000)) /
-                      BigInt(blockWindow)
-                  ) / 1000000;
-              }
-
-              const updateValidator = foundValidator;
-              updateValidator.start_height = Number.parseInt(
-                signingInfo.start_height,
-                10
-              );
-              updateValidator.index_offset = Number.parseInt(
-                signingInfo.index_offset,
-                10
-              );
-              updateValidator.jailed_until = signingInfo.jailed_until;
-              updateValidator.tombstoned = signingInfo.tombstoned;
-              updateValidator.missed_blocks_counter = Number.parseInt(
-                signingInfo.missed_blocks_counter,
-                10
-              );
-              updateValidator.uptime = uptime;
-              updateValidators.push(updateValidator);
-            }
-          } catch (error) {
-            this.logger.error(error);
-          }
-        })
-      );
-
-      await Validator.query()
-        .insert(updateValidators)
-        .onConflict('operator_address')
-        .merge()
-        .returning('id')
-        .catch((error) => {
-          this.logger.error(
-            `Update validator signing info error: ${JSON.stringify(
-              updateValidators
-            )}`
+      const listUpdates: any[] = [];
+      foundValidators.forEach((foundValidator: Validator) => {
+        try {
+          const signingInfo = signingInfos.find(
+            (sign: any) => sign.address === foundValidator.consensus_address
           );
+
+          if (signingInfo) {
+            let uptime = 0;
+            if (paramSlashing?.params) {
+              const blockWindow =
+                paramSlashing?.params.signed_blocks_window.toString();
+              const missedBlock = signingInfo.missed_blocks_counter.toString();
+              uptime =
+                Number(
+                  ((BigInt(blockWindow) - BigInt(missedBlock)) *
+                    BigInt(100000000)) /
+                    BigInt(blockWindow)
+                ) / 1000000;
+            }
+
+            const updateValidator = foundValidator;
+            updateValidator.start_height = Number.parseInt(
+              signingInfo.start_height,
+              10
+            );
+            updateValidator.index_offset = Number.parseInt(
+              signingInfo.index_offset,
+              10
+            );
+            updateValidator.jailed_until = signingInfo.jailed_until;
+            updateValidator.tombstoned = signingInfo.tombstoned;
+            updateValidator.missed_blocks_counter = Number.parseInt(
+              signingInfo.missed_blocks_counter,
+              10
+            );
+            updateValidator.uptime = uptime;
+            updateValidators.push(updateValidator);
+
+            listUpdates.push({
+              id: updateValidator.id,
+              start_height: updateValidator.start_height,
+              index_offset: updateValidator.index_offset,
+              jailed_until: updateValidator.jailed_until,
+              tombstoned: updateValidator.tombstoned,
+              missed_blocks_counter: updateValidator.missed_blocks_counter,
+              uptime: updateValidator.uptime,
+            });
+          }
+        } catch (error) {
           this.logger.error(error);
-        });
+        }
+      });
+
+      if (listUpdates.length > 0) {
+        const stringListUpdate = listUpdates
+          .map(
+            (update) =>
+              `(${update.id}, ${update.start_height}, ${update.index_offset}, 
+                TO_TIMESTAMP('${update.jailed_until}','YYYY-MM-DDTHH24:MI:SSZ'), 
+                ${update.tombstoned}, ${update.missed_blocks_counter}, ${update.uptime})`
+          )
+          .join(',');
+        await knex.raw(
+          `update validator SET start_height = temp.start_height, index_offset = temp.index_offset, jailed_until = temp.jailed_until,
+          tombstoned = temp.tombstoned, missed_blocks_counter = temp.missed_blocks_counter, uptime = temp.uptime 
+          from (VALUES ${stringListUpdate}) as temp(id, start_height, index_offset, jailed_until, tombstoned, missed_blocks_counter, uptime)
+          where validator.id = temp.id`
+        );
+      }
+
+      this.logger.info('Update validator signing info done');
     }
   }
 
@@ -137,7 +160,8 @@ export default class CrawlSigningInfoService extends BullableService {
           count: 3,
         },
         repeat: {
-          every: config.crawlSigningInfo.millisecondCrawl,
+          every: config.crawlSigningInfo.millisecondCrawl ?? undefined,
+          pattern: config.crawlSigningInfo.patternCrawl ?? undefined,
         },
       }
     );
