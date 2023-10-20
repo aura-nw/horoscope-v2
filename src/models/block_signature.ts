@@ -10,8 +10,6 @@ export class BlockSignature extends BaseModel {
 
   timestamp!: Date;
 
-  signature!: string;
-
   static get tableName() {
     return 'block_signature';
   }
@@ -19,19 +17,12 @@ export class BlockSignature extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: [
-        'height',
-        'block_id_flag',
-        'validator_address',
-        'timestamp',
-        'signature',
-      ],
+      required: ['height', 'block_id_flag', 'validator_address', 'timestamp'],
       properties: {
         height: { type: 'number' },
         block_id_flag: { type: 'number' },
         validator_address: { type: 'string' },
         timestamp: { type: 'string', format: 'date-time' },
-        signature: { type: 'string' },
       },
     };
   }
