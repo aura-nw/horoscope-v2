@@ -61,6 +61,9 @@ export default class AuraRegistry {
       // slashing
       '/cosmos.slashing.v1beta1.MsgUnjail',
 
+      // aura-nw
+      '/auranw.aura.smartaccount.MsgActivateAccount',
+      '/auranw.aura.smartaccount.MsgRecover',
       // consensus
       '/cosmos.consensus.v1.MsgUpdateParams',
     ];
