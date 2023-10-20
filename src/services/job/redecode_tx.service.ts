@@ -88,10 +88,10 @@ export default class JobRedecodeTx extends BullableService {
       BULL_JOB_NAME.JOB_REDECODE_TX,
       BULL_JOB_NAME.JOB_REDECODE_TX,
       {
-        type: '/ibc.core.client.v1.MsgCreateClient',
+        type: '/cosmos.gov.v1.MsgSubmitProposal',
       },
       {
-        jobId: '/ibc.core.client.v1.MsgCreateClient',
+        jobId: '/cosmos.gov.v1.MsgSubmitProposal',
         removeOnComplete: false,
         removeOnFail: {
           count: 100,
