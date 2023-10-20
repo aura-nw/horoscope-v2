@@ -60,6 +60,9 @@ export default class AuraRegistry {
 
       // slashing
       '/cosmos.slashing.v1beta1.MsgUnjail',
+
+      // consensus
+      '/cosmos.consensus.v1.MsgUpdateParams',
     ];
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -146,6 +149,19 @@ export default class AuraRegistry {
           );
         } catch (error) {
           this._logger.error('Cannot decoded sub messages authz exec');
+        }
+      } else if (msg.typeUrl === MSG_TYPE.MSG_SUBMIT_PROPOSAL_V1) {
+        try {
+          result.messages = result.messages.map((subMsg: any) =>
+            this.decodeMsg({
+              typeUrl: subMsg.typeUrl,
+              value: Utils.isBase64(subMsg.value)
+                ? fromBase64(subMsg.value)
+                : subMsg.value,
+            })
+          );
+        } catch (error) {
+          this._logger.error('Cannot decoded sub messages in proposal');
         }
       }
     } else {
