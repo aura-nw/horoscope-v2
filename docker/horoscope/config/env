@@ -1,0 +1,47 @@
+NODE_ENV=development
+SERVICEDIR=src/services/
+SERVICES=crawl-tx/*.service.js,crawl-block/*.service.js
+#### Namespace ####
+NAMESPACE=namespace-local
+# NODEID=atlas
+
+#### Transporter to use ####
+TRANSPORTER=redis://redis:6379
+
+#### Casher to use ####
+CACHER=redis://redis:6379
+
+QUEUE_JOB_REDIS=redis://redis:6379
+
+#### Serializer to use ####
+SERIALIZER=JSON
+
+#### Validator ####
+VALIDATOR_ENABLED=true
+
+# Redis
+
+# PSQL
+POSTGRES_USER=user_horoscope_docker_compose
+POSTGRES_PASSWORD=password123
+POSTGRES_HOST=psql
+POSTGRES_PORT=5432
+
+# FOR TEST ENVIRONMENT
+POSTGRES_DB_TEST=test
+MNEMONIC=
+
+# IPFS
+IPFS_GATEWAY=
+REQUEST_IPFS_TIMEOUT=
+
+# AWS S3
+AWS_SECRET_ACCESS_KEY=
+AWS_ACCESS_KEY_ID=
+AWS_REGION=
+BUCKET=
+S3_GATEWAY=
+
+# IPFS
+IPFS_GATEWAY=
+REQUEST_IPFS_TIMEOUT=

@@ -68,6 +68,26 @@ services:
     networks:
       - dev_network
 
+  horoscope:
+    image: horoscope-v2:1.0.0
+    ports:
+      - '3000:3000'
+    depends_on:
+      - 'psql'
+      - 'redis'
+    env_file:
+      - ./docker/horoscope/config/env
+    volumes:
+      - ./src/common/queue/redis-connector.ts:/app/src/common/queue/redis-connector.ts
+      - ./docker/horoscope/config/code-type.json:/app/code-type.json
+      - ./docker/horoscope/config/config.json:/app/config.json
+      - ./docker/horoscope/config/graphql-query-whitelist.json:/app/config.json
+      - ./docker/horoscope/config/network.json:/app/network.json
+      - ./docker/horoscope/script/entrypoint.sh:/app/entrypoint.sh
+    command: ./entrypoint.sh
+    networks:
+      - dev_network
+
 networks:
   dev_network:
 

@@ -1,0 +1,9 @@
+[
+  {
+    "chainId": "aura-local",
+    "RPC": ["http://aurad:26657"],
+    "LCD": ["http://aurad:1317"],
+    "databaseName": "horoscope_dev_aura_local",
+    "moleculerNamespace": "namespace-local"
+  }
+]
