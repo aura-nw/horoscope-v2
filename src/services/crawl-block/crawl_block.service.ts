@@ -202,7 +202,6 @@ export default class CrawlBlockService extends BullableService {
                 block_id_flag: signature.block_id_flag,
                 validator_address: signature.validator_address,
                 timestamp: signature.timestamp,
-                signature: signature.signature,
               })
             ),
             events: events.map((event: any) => ({
