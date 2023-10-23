@@ -77,6 +77,7 @@ export const BULL_JOB_NAME = {
   CRAWL_IBC_APP: 'crawl:ibc-app',
   REINDEX_CW20_CONTRACT: 'reindex:cw20-contract',
   REINDEX_CW20_HISTORY: 'reindex:cw20-history',
+  CRAWL_IBC_ICS20: 'crawl:ibc-ics20',
   JOB_CREATE_COMPOSITE_INDEX_ATTR_PARTITION:
     'job:create-index-composite-attr-partition',
 };
@@ -283,6 +284,10 @@ export const SERVICE = {
         key: 'reindexing',
         path: 'v1.Cw20ReindexingService.reindexing',
       },
+    },
+    CrawlIBCIcs20Service: {
+      key: 'CrawlIBCIcs20Service',
+      name: 'v1.CrawlIBCIcs20Service',
     },
     ServicesManager: {
       key: 'ServicesManager',
