@@ -1,6 +1,9 @@
 /* eslint-disable no-await-in-loop */
-import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { ServiceBroker } from 'moleculer';
+import {
+  Action,
+  Service,
+} from '@ourparentcenter/moleculer-decorators-extended';
+import { Context, ServiceBroker } from 'moleculer';
 import { decodeTxRaw } from '@cosmjs/proto-signing';
 import { fromBase64 } from '@cosmjs/encoding';
 import { Transaction, TransactionMessage } from '../../models';
@@ -83,15 +86,21 @@ export default class JobRedecodeTx extends BullableService {
     });
   }
 
-  async _start(): Promise<void> {
+  @Action({
+    name: SERVICE.V1.JobService.ReDecodeTx.actionCreateJob.key,
+    params: {
+      type: 'string',
+    },
+  })
+  public async actionCreateJob(ctx: Context<{ type: string }>) {
     this.createJob(
       BULL_JOB_NAME.JOB_REDECODE_TX,
       BULL_JOB_NAME.JOB_REDECODE_TX,
       {
-        type: '/cosmos.gov.v1.MsgSubmitProposal',
+        type: ctx.params.type,
       },
       {
-        jobId: '/cosmos.gov.v1.MsgSubmitProposal',
+        jobId: ctx.params.type,
         removeOnComplete: false,
         removeOnFail: {
           count: 100,
@@ -100,6 +109,5 @@ export default class JobRedecodeTx extends BullableService {
         backoff: config.jobRetryBackoff,
       }
     );
-    return super._start();
   }
 }
