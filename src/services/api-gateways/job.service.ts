@@ -51,4 +51,33 @@ export default class JobService extends BaseService {
       }
     );
   }
+
+  @Post('/redecode-tx', {
+    name: 'redecode-tx',
+    params: {
+      chainid: {
+        type: 'string',
+        optional: false,
+        enum: networks.map((network) => network.chainId),
+      },
+      type: {
+        type: 'string',
+        optional: false,
+      },
+    },
+  })
+  async reDecodeTx(
+    ctx: Context<{ chainid: string; type: string }, Record<string, unknown>>
+  ) {
+    const selectedChain = networks.find(
+      (network) => network.chainId === ctx.params.chainid
+    );
+
+    return this.broker.call(
+      `${SERVICE.V1.JobService.ReDecodeTx.actionCreateJob.path}@${selectedChain?.moleculerNamespace}`,
+      {
+        type: ctx.params.type,
+      }
+    );
+  }
 }
