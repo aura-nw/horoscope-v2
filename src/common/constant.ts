@@ -232,6 +232,10 @@ export const SERVICE = {
       ReDecodeTx: {
         key: 'ReDecodeTx',
         path: 'v1.ReDecodeTx',
+        actionCreateJob: {
+          key: 'actionCreateJob',
+          path: 'v1.ReDecodeTx.actionCreateJob',
+        },
       },
       ReAssignMsgIndexToEvent: {
         key: 'ReAssignMsgIndexToEvent',
