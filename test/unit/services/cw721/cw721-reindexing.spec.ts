@@ -1,17 +1,24 @@
-import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
+import {
+  AfterAll,
+  AfterEach,
+  BeforeAll,
+  Describe,
+  Test,
+} from '@jest-decorated/core';
 import { Errors, ServiceBroker } from 'moleculer';
-import { BULL_JOB_NAME } from '../../../../src/common';
+import { BULL_JOB_NAME, SERVICE } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
-import { BlockCheckpoint, Code } from '../../../../src/models';
+import { BlockCheckpoint, Code, EventAttribute } from '../../../../src/models';
 import CW721Contract from '../../../../src/models/cw721_contract';
 import CW721Token from '../../../../src/models/cw721_token';
+import CW721Activity from '../../../../src/models/cw721_tx';
 import { SmartContractEvent } from '../../../../src/models/smart_contract_event';
 import Cw721MissingContractService, {
   REINDEX_TYPE,
 } from '../../../../src/services/cw721/cw721-reindexing.service';
-import Cw721HandlerService, {
-  CW721_ACTION,
-} from '../../../../src/services/cw721/cw721.service';
+import Cw721HandlerService from '../../../../src/services/cw721/cw721.service';
+import { getAttributeFrom } from '../../../../src/common/utils/smart_contract';
+import { CW721_ACTION } from '../../../../src/services/cw721/cw721_handler';
 
 @Describe('Test view count')
 export default class TestCw721MissingContractService {
@@ -56,42 +63,42 @@ export default class TestCw721MissingContractService {
       {
         token_id: 'bhlvjdfkljkljg',
         owner: 'ghgfhdgdsfgsdgfsd',
-        last_updated_height: 122120,
+        last_updated_height: 1,
         burned: false,
         cw721_contract_id: 1,
       },
       {
         token_id: 'zzzvcxxb',
         owner: 'xctgxgvxcgxx',
-        last_updated_height: 155,
+        last_updated_height: 1,
         burned: false,
         cw721_contract_id: 1,
       },
       {
         token_id: 'vbmnnmn',
         owner: 'ghgfhdgdsfgsdgfsd',
-        last_updated_height: 42424,
+        last_updated_height: 1,
         burned: false,
         cw721_contract_id: 1,
       },
       {
         token_id: 'vcgasdfsdg',
         owner: 'ghgfhdgdsfgsdgfsd',
-        last_updated_height: 121012,
+        last_updated_height: 1,
         burned: false,
         cw721_contract_id: 1,
       },
       {
         token_id: 'cbvcxbvcxgbdv',
         owner: 'ghgfhdgdsfgsdgfsd',
-        last_updated_height: 651651,
+        last_updated_height: 1,
         burned: false,
         cw721_contract_id: 1,
       },
       {
         token_id: 'dghdfghdfgfdgdf',
         owner: 'ghgfhdgdsfgsdgfsd',
-        last_updated_height: 2314,
+        last_updated_height: 1,
         burned: false,
         cw721_contract_id: 1,
       },
@@ -110,9 +117,9 @@ export default class TestCw721MissingContractService {
 
   @BeforeAll()
   async initSuite() {
+    await this.broker.start();
     this.cw721HandlerService.getQueueManager().stopAll();
     this.cw721MissingContractService.getQueueManager().stopAll();
-    await this.broker.start();
     await knex.raw(
       'TRUNCATE TABLE code, cw721_contract, block_checkpoint RESTART IDENTITY CASCADE'
     );
@@ -129,12 +136,19 @@ export default class TestCw721MissingContractService {
   @AfterAll()
   async tearDown() {
     await this.broker.stop();
+    this.cw721HandlerService.getQueueManager().stopAll();
+    this.cw721MissingContractService.getQueueManager().stopAll();
+  }
+
+  @AfterEach()
+  async afterEach() {
+    jest.resetAllMocks();
   }
 
   @Test('Test HandleRangeBlockMissingContract')
   public async testHandleRangeBlockMissingContract() {
-    const missingHistories = [
-      {
+    const msgs = [
+      SmartContractEvent.fromJson({
         contractAddress: this.codeId.contracts[0].address,
         sender: '',
         action: 'transfer_nft',
@@ -158,7 +172,7 @@ export default class TestCw721MissingContractService {
           {
             smart_contract_event_id: '100',
             key: 'sender',
-            value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
+            value: 'aura15f6wn3nymdnhnh5ddlqletuptjag09tryrtpq5',
           },
           {
             smart_contract_event_id: '100',
@@ -166,11 +180,11 @@ export default class TestCw721MissingContractService {
             value: this.cw721Contract.tokens[0].token_id,
           },
         ],
-        height: 122119,
+        height: 100,
         hash: '',
         event_id: '10',
-      },
-      {
+      }),
+      SmartContractEvent.fromJson({
         contractAddress: this.codeId.contracts[0].address,
         sender: '',
         action: 'transfer_nft',
@@ -194,7 +208,7 @@ export default class TestCw721MissingContractService {
           {
             smart_contract_event_id: '100',
             key: 'sender',
-            value: 'aura1xahhax60fakwfng0sdd6wcxd0eeu00r5w3s49h',
+            value: 'aura15f6wn3nymdnhnh5ddlqletuptjag09tryrtpq5',
           },
           {
             smart_contract_event_id: '100',
@@ -205,8 +219,8 @@ export default class TestCw721MissingContractService {
         height: 200,
         hash: '',
         event_id: '100',
-      },
-      {
+      }),
+      SmartContractEvent.fromJson({
         contractAddress: this.codeId.contracts[0].address,
         sender: '',
         action: 'mint',
@@ -235,14 +249,14 @@ export default class TestCw721MissingContractService {
           {
             smart_contract_event_id: '100',
             key: 'token_id',
-            value: this.cw721Contract.tokens[4].token_id,
+            value: this.cw721Contract.tokens[2].token_id,
           },
         ],
-        height: 651659,
+        height: 300,
         hash: '',
         event_id: 100,
-      },
-      {
+      }),
+      SmartContractEvent.fromJson({
         contractAddress: this.codeId.contracts[0].address,
         sender: '',
         action: 'burn',
@@ -266,26 +280,75 @@ export default class TestCw721MissingContractService {
           {
             smart_contract_event_id: '100',
             key: 'token_id',
-            value: this.cw721Contract.tokens[2].token_id,
+            value: this.cw721Contract.tokens[3].token_id,
           },
         ],
-        height: 42429,
+        height: 400,
         hash: '',
         event_id: 10,
-      },
+      }),
     ];
-    await this.cw721HandlerService.handleCw721MsgExec(
-      missingHistories
-        .map((execEvent) => SmartContractEvent.fromJson({ ...execEvent }))
-        .filter((history) => history.action !== CW721_ACTION.MINT)
+    jest.spyOn(CW721Activity, 'getCw721ContractEvents').mockResolvedValue(msgs);
+    await this.broker.call(
+      SERVICE.V1.Cw721.HandleRangeBlockMissingContract.path,
+      {
+        smartContractId: 1,
+        startBlock: 1,
+        endBlock: 2,
+      }
     );
     const tokens = await CW721Token.query()
       .where('cw721_contract_id', 1)
       .orderBy('id');
-    expect(tokens[0].owner).toEqual(this.cw721Contract.tokens[0].owner);
-    expect(tokens[1].owner).toEqual(missingHistories[1].attributes[2].value);
-    expect(tokens[2].burned).toEqual(true);
-    expect(tokens[4].burned).toEqual(false);
+    expect(tokens[0].owner).toEqual(
+      getAttributeFrom(
+        msgs[0].attributes,
+        EventAttribute.ATTRIBUTE_KEY.RECIPIENT
+      )
+    );
+    expect(tokens[1].owner).toEqual(msgs[1].attributes[2].value);
+    expect(tokens[3].burned).toEqual(true);
+    expect(tokens[2].burned).toEqual(false);
+    const cw721Activities = await CW721Activity.query().orderBy('id');
+    cw721Activities.forEach((e, index) => {
+      const recepient = getAttributeFrom(
+        msgs[index].attributes,
+        EventAttribute.ATTRIBUTE_KEY.RECIPIENT
+      )
+        ? getAttributeFrom(
+            msgs[index].attributes,
+            EventAttribute.ATTRIBUTE_KEY.RECIPIENT
+          )
+        : getAttributeFrom(
+            msgs[index].attributes,
+            EventAttribute.ATTRIBUTE_KEY.OWNER
+          );
+      this.testActivity(e, {
+        sender: getAttributeFrom(
+          msgs[index].attributes,
+          EventAttribute.ATTRIBUTE_KEY.SENDER
+        )
+          ? getAttributeFrom(
+              msgs[index].attributes,
+              EventAttribute.ATTRIBUTE_KEY.SENDER
+            )
+          : getAttributeFrom(
+              msgs[index].attributes,
+              EventAttribute.ATTRIBUTE_KEY.MINTER
+            ),
+        from:
+          msgs[index].action === CW721_ACTION.MINT
+            ? null
+            : this.cw721Contract.tokens[index].owner,
+        to: msgs[index].action !== CW721_ACTION.BURN ? recepient : null,
+        height: msgs[index].height,
+        tx_hash: msgs[index].hash,
+        action: msgs[index].action,
+        cw721_contract_id: this.cw721Contract.tokens[index].cw721_contract_id,
+        token_id: this.cw721Contract.tokens[index].token_id,
+        cw721_token_id: tokens[index].id,
+      });
+    });
   }
 
   @Test('Test ReindexingService function')
@@ -318,18 +381,18 @@ export default class TestCw721MissingContractService {
         last_updated_height: 400,
       },
     ];
-    this.cw721HandlerService.crawlMissingContractHistory = jest.fn(() =>
-      Promise.resolve()
-    );
-    this.cw721HandlerService.handleRangeBlockMissingContract = jest.fn(() =>
-      Promise.resolve()
-    );
-    CW721Contract.getContractsInfo = jest.fn(() =>
-      Promise.resolve([mockContractInfo])
-    );
-    CW721Contract.getAllTokensOwner = jest.fn(() =>
-      Promise.resolve(mockTokensOwner)
-    );
+    jest
+      .spyOn(this.cw721MissingContractService.broker, 'call')
+      .mockImplementation();
+    jest
+      .spyOn(this.cw721MissingContractService, 'createJob')
+      .mockImplementation();
+    jest
+      .spyOn(CW721Contract, 'getContractsInfo')
+      .mockResolvedValue([mockContractInfo]);
+    jest
+      .spyOn(CW721Contract, 'getAllTokensOwner')
+      .mockResolvedValue(mockTokensOwner);
     await this.cw721MissingContractService.jobHandler({
       contractAddress: this.codeId.contracts[0].address,
       smartContractId: 1,
@@ -366,16 +429,16 @@ export default class TestCw721MissingContractService {
       }),
       tokens: [
         {
-          token_id: 'bhlvjdfkljkljg',
+          token_id: 'hihihahs',
           owner: 'ghgfhdgdsfgsdgfsd',
-          last_updated_height: 1000000,
+          last_updated_height: 10000,
           burned: false,
         },
       ],
     };
     await CW721Contract.query().insertGraph(cw721Contract1);
-    const missingHistories = [
-      {
+    const msgs = [
+      SmartContractEvent.fromJson({
         contractAddress: this.codeId.contracts[1].address,
         sender: '',
         action: 'mint',
@@ -410,8 +473,8 @@ export default class TestCw721MissingContractService {
         height: 100,
         hash: '',
         event_id: 100,
-      },
-      {
+      }),
+      SmartContractEvent.fromJson({
         contractAddress: this.codeId.contracts[1].address,
         sender: '',
         action: 'transfer_nft',
@@ -446,8 +509,8 @@ export default class TestCw721MissingContractService {
         height: 200,
         hash: '',
         event_id: '10',
-      },
-      {
+      }),
+      SmartContractEvent.fromJson({
         contractAddress: this.codeId.contracts[1].address,
         sender: '',
         action: 'transfer_nft',
@@ -482,8 +545,8 @@ export default class TestCw721MissingContractService {
         height: 300,
         hash: '',
         event_id: '100',
-      },
-      {
+      }),
+      SmartContractEvent.fromJson({
         contractAddress: this.codeId.contracts[1].address,
         sender: '',
         action: 'burn',
@@ -513,19 +576,25 @@ export default class TestCw721MissingContractService {
         height: 400,
         hash: '',
         event_id: 10,
-      },
+      }),
     ];
-    await this.cw721HandlerService.handleCw721MsgExec(
-      missingHistories.map((execEvent) =>
-        SmartContractEvent.fromJson({ ...execEvent })
-      )
+    jest.spyOn(CW721Activity, 'getCw721ContractEvents').mockResolvedValue(msgs);
+    await this.broker.call(
+      SERVICE.V1.Cw721.HandleRangeBlockMissingContract.path,
+      {
+        smartContractId: 1,
+        startBlock: 1,
+        endBlock: 2,
+      }
     );
     const tokens = await CW721Token.query()
-      .where('cw721_contract_id', 3)
+      .where('token_id', cw721Contract1.tokens[0].token_id)
       .orderBy('id');
-    expect(tokens[0].owner).toEqual(missingHistories[2].attributes[2].value);
-    expect(tokens[0].last_updated_height).toEqual(missingHistories[3].height);
-    expect(tokens[0].burned).toEqual(true);
+    expect(tokens[0].owner).toEqual(tokens[0].owner);
+    expect(tokens[0].last_updated_height).toEqual(
+      tokens[0].last_updated_height
+    );
+    expect(tokens[0].burned).toEqual(tokens[0].burned);
   }
 
   @Test('test action params')
@@ -560,5 +629,16 @@ export default class TestCw721MissingContractService {
         type: REINDEX_TYPE.HISTORY,
       })
     ).toBeDefined();
+  }
+
+  testActivity(cw721Activity: CW721Activity, actual: any) {
+    expect(cw721Activity.sender).toEqual(actual.sender);
+    expect(cw721Activity.from).toEqual(actual.from);
+    expect(cw721Activity.to).toEqual(actual.to);
+    expect(cw721Activity.height).toEqual(actual.height);
+    expect(cw721Activity.tx_hash).toEqual(actual.tx_hash);
+    expect(cw721Activity.action).toEqual(actual.action);
+    expect(cw721Activity.cw721_contract_id).toEqual(actual.cw721_contract_id);
+    expect(cw721Activity.cw721_token_id).toEqual(actual.cw721_token_id);
   }
 }

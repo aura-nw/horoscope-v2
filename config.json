@@ -7,8 +7,9 @@
   "jobRetryAttempt": 5,
   "jobRetryBackoff": 1000,
   "crawlValidator": {
-    "millisecondCrawl": 5000,
-    "queryPageLimit": 100
+    "millisecondCrawl": null,
+    "queryPageLimit": 100,
+    "patternCrawl": "30 */2 * * * *"
   },
   "cw721": {
     "key": "cw721",
@@ -33,7 +34,8 @@
     "millisecondCrawl": 5000
   },
   "crawlSigningInfo": {
-    "millisecondCrawl": 5000
+    "millisecondCrawl": null,
+    "patternCrawl": "0 */1 * * * *"
   },
   "handleAddress": {
     "key": "handleAddress",
@@ -156,7 +158,8 @@
   "jobCheckNeedCreateEventAttributePartition": {
     "range": 100000,
     "step": 10000,
-    "millisecondCrawl": 10000
+    "millisecondCrawl": 10000,
+    "templateTable": "event_attribute"
   },
   "httpBatchRequest": {
     "dispatchMilisecond": 1000,
@@ -191,5 +194,15 @@
     "key": "crawlIbcApp",
     "millisecondRepeatJob": 2000,
     "blocksPerCall": 100
+  },
+  "jobUpdateSenderInTxMessages": {
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 1000
+  },
+  "crawlIbcIcs20": {
+    "key": "crawlIbcIcs20",
+    "millisecondRepeatJob": 2000,
+    "blocksPerCall": 100,
+    "port": "transfer"
   }
 }
