@@ -114,6 +114,12 @@ export class EventAttribute extends BaseModel {
     MINTER: 'minter',
     FEE: 'fee',
     FEE_PAYER: 'fee_payer',
+    DENOM: 'denom',
+    SUCCESS: 'success',
+    REFUND_RECEIVER: 'refund_receiver',
+    REFUND_DENOM: 'refund_denom',
+    REFUND_AMOUNT: 'refund_amount',
+    MEMO: 'memo',
   };
 
   static ATTRIBUTE_COMPOSITE_KEY = {

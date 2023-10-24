@@ -196,5 +196,11 @@
   "jobUpdateSenderInTxMessages": {
     "millisecondCrawl": 1000,
     "blocksPerCall": 1000
+  },
+  "crawlIbcIcs20": {
+    "key": "crawlIbcIcs20",
+    "millisecondRepeatJob": 2000,
+    "blocksPerCall": 100,
+    "port": "transfer"
   }
 }
