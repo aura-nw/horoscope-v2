@@ -80,6 +80,7 @@
     "moleculer-bull": "^0.3.1",
     "moleculer-db": "^0.8.21",
     "moleculer-web": "^0.10.5",
+    "multiformats": "^12.1.2",
     "mysql": "^2.18.1",
     "objection": "^3.0.1",
     "parse-uri": "^1.0.7",

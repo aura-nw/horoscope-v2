@@ -9,6 +9,7 @@ import {
 } from '@cosmjs/encoding';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+import { CID } from 'multiformats/cid';
 import { ServiceBroker } from 'moleculer';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import * as FileType from 'file-type';
@@ -262,6 +263,9 @@ export default class Cw721MediaService extends BullableService {
   async uploadMediaToS3(media_uri?: string) {
     if (media_uri) {
       const fileName = this.parseFilename(media_uri);
+      if (!fileName) {
+        return null;
+      }
       const uploadAttachmentToS3 = async (
         type: string | undefined,
         buffer: Buffer
@@ -406,12 +410,21 @@ export default class Cw721MediaService extends BullableService {
       return `/ipfs/${cid}`; // ipfs://QmPAGifcMvxDBgYr1XmEz9gZiC3DEkfYeinFdVSe364uQp/689.png
     }
     if (parsed.protocol === HTTP_PREFIX || parsed.protocol === HTTPS_PREFIX) {
-      return parsed.path; // http://ipfs.io/ipfs/QmWov9DpE1vYZtTH7JLKXb7b8bJycN91rEPJEmXRXdmh2G/nerd_access_pass.gif
+      if (parsed.path.startsWith('/ipfs/')) {
+        const ipfs = parsed.path.substring(6);
+        const cid = ipfs.substring(0, ipfs.indexOf('/'));
+        try {
+          Boolean(CID.parse(cid));
+        } catch {
+          return null;
+        }
+        return parsed.path; // http://ipfs.io/ipfs/QmWov9DpE1vYZtTH7JLKXb7b8bJycN91rEPJEmXRXdmh2G/nerd_access_pass.gif
+      }
     }
     if (media_uri.startsWith('/ipfs/')) {
       return media_uri; // /ipfs/QmPAGifcMvxDBgYr1XmEz9gZiC3DEkfYeinFdVSe364uQp/689.png
     }
-    return parsed.path;
+    return null;
   }
 
   async downloadAttachment(url: string) {
