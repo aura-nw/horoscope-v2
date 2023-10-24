@@ -1,3 +1,26 @@
 table:
   name: event_attribute
   schema: public
+object_relationships:
+  - name: block
+    using:
+      foreign_key_constraint_on: block_height
+  - name: event
+    using:
+      foreign_key_constraint_on: event_id
+  - name: transaction
+    using:
+      foreign_key_constraint_on: tx_id
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - composite_key
+        - key
+        - block_height
+        - event_id
+        - index
+        - tx_id
+        - value
+      filter: {}
+      limit: 100

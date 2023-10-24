@@ -13,7 +13,6 @@ import {
   QueryDelegationResponse,
 } from '@aura-nw/aurajs/types/codegen/cosmos/staking/v1beta1/query';
 import { fromBase64, toHex } from '@cosmjs/encoding';
-import { Knex } from 'knex';
 import { Validator } from '../../models/validator';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import knex from '../../common/utils/db_connection';
@@ -70,9 +69,24 @@ export default class CrawlValidatorService extends BullableService {
       .select('value')
       .limit(1)
       .offset(0);
+    let updateValidators: Validator[];
+
+    if (resultTx.length > 0) {
+      updateValidators = await this.getFullInfoValidators();
+    }
+
     await knex.transaction(async (trx) => {
-      if (resultTx.length > 0) {
-        await this.updateValidators(trx);
+      if (resultTx.length > 0 && updateValidators.length > 0) {
+        await Validator.query()
+          .insert(updateValidators)
+          .onConflict('operator_address')
+          .merge()
+          .returning('id')
+          .transacting(trx)
+          .catch((error) => {
+            this.logger.error('Error insert or update validators');
+            this.logger.error(error);
+          });
       }
 
       updateBlockCheckpoint.height = endHeight;
@@ -83,9 +97,10 @@ export default class CrawlValidatorService extends BullableService {
         .returning('id')
         .transacting(trx);
     });
+    this.logger.info('Crawl validator done');
   }
 
-  private async updateValidators(trx: Knex.Transaction) {
+  private async getFullInfoValidators(): Promise<Validator[]> {
     let updateValidators: Validator[] = [];
     const validators: any[] = [];
 
@@ -109,9 +124,15 @@ export default class CrawlValidatorService extends BullableService {
       }
     }
 
-    const validatorInDB: Validator[] = await knex('validator')
-      .select('*')
-      .whereNot('status', Validator.STATUS.UNRECOGNIZED);
+    let validatorInDB: Validator[] = [];
+    await knex.transaction(async (trx) => {
+      validatorInDB = await Validator.query()
+        .select('*')
+        .whereNot('status', Validator.STATUS.UNRECOGNIZED)
+        .forUpdate()
+        .transacting(trx);
+    });
+
     const offchainMapped: Map<string, boolean> = new Map();
     await Promise.all(
       validators.map(async (validator) => {
@@ -169,21 +190,7 @@ export default class CrawlValidatorService extends BullableService {
           validatorNotOnchain.unbonding_time.toISOString();
         updateValidators.push(validatorNotOnchain);
       });
-
-    await Validator.query()
-      .insert(updateValidators)
-      .onConflict('operator_address')
-      .merge()
-      .returning('id')
-      .transacting(trx)
-      .catch((error) => {
-        this.logger.error(
-          `Error insert or update validators: ${JSON.stringify(
-            updateValidators
-          )}`
-        );
-        this.logger.error(error);
-      });
+    return updateValidators;
   }
 
   private async loadCustomInfo(validators: Validator[]): Promise<Validator[]> {

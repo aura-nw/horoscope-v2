@@ -8,19 +8,3 @@ object_relationships:
   - name: smart_contract_event
     using:
       foreign_key_constraint_on: smart_contract_event_id
-select_permissions:
-  - role: internal_service
-    permission:
-      columns:
-        - action
-        - from
-        - sender
-        - to
-        - cw20_contract_id
-        - height
-        - id
-        - smart_contract_event_id
-        - amount
-        - tx_hash
-      filter: {}
-      limit: 100

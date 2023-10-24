@@ -1,3 +1,27 @@
 table:
   name: code_id_verification
   schema: public
+object_relationships:
+  - name: code
+    using:
+      foreign_key_constraint_on: code_id
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - compiler_version
+        - data_hash
+        - github_url
+        - s3_location
+        - verification_status
+        - code_id
+        - id
+        - verify_step
+        - execute_msg_schema
+        - instantiate_msg_schema
+        - query_msg_schema
+        - created_at
+        - updated_at
+        - verified_at
+      filter: {}
+      limit: 100

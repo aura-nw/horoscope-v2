@@ -185,7 +185,13 @@ export class Proposal extends BaseModel {
     const tx: any = await Transaction.query()
       .joinRelated('[messages, events.[attributes]]')
       .where('transaction.code', 0)
-      .andWhere('messages.type', MSG_TYPE.MSG_SUBMIT_PROPOSAL)
+      // .andWhere('messages.type', MSG_TYPE.MSG_SUBMIT_PROPOSAL)
+      .andWhere((builder) => {
+        builder.whereIn('messages.type', [
+          MSG_TYPE.MSG_SUBMIT_PROPOSAL,
+          MSG_TYPE.MSG_SUBMIT_PROPOSAL_V1,
+        ]);
+      })
       .andWhere('events.type', Event.EVENT_TYPE.SUBMIT_PROPOSAL)
       .andWhere(
         'events:attributes.key',
