@@ -236,6 +236,10 @@ export const SERVICE = {
       ReDecodeTx: {
         key: 'ReDecodeTx',
         path: 'v1.ReDecodeTx',
+        actionCreateJob: {
+          key: 'actionCreateJob',
+          path: 'v1.ReDecodeTx.actionCreateJob',
+        },
       },
       ReAssignMsgIndexToEvent: {
         key: 'ReAssignMsgIndexToEvent',
@@ -342,12 +346,14 @@ export const MSG_TYPE = {
   MSG_UNDELEGATE: '/cosmos.staking.v1beta1.MsgUndelegate',
   MSG_CREATE_VALIDATOR: '/cosmos.staking.v1beta1.MsgCreateValidator',
   MSG_SUBMIT_PROPOSAL: '/cosmos.gov.v1beta1.MsgSubmitProposal',
+  MSG_SUBMIT_PROPOSAL_V1: '/cosmos.gov.v1.MsgSubmitProposal',
   MSG_AUTHZ_EXEC: '/cosmos.authz.v1beta1.MsgExec',
   MSG_VOTE: '/cosmos.gov.v1beta1.MsgVote',
   MSG_ACKNOWLEDGEMENT: '/ibc.core.channel.v1.MsgAcknowledgement',
   MSG_GRANT_ALLOWANCE: '/cosmos.feegrant.v1beta1.MsgGrantAllowance',
   MSG_FEEGRANT_GRANT: '/cosmos.feegrant.v1beta1.MsgGrantAllowance',
   MSG_FEEGRANT_REVOKE: '/cosmos.feegrant.v1beta1.MsgRevokeAllowance',
+  MSG_CONSENSUS_UPDATE_PARAM: '/cosmos.consensus.v1.MsgUpdateParams',
 };
 
 export const ABCI_QUERY_PATH = {
