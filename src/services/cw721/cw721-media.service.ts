@@ -9,7 +9,7 @@ import {
 } from '@cosmjs/encoding';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { CID } from 'multiformats/cid';
+import * as isIPFS from 'is-ipfs';
 import { ServiceBroker } from 'moleculer';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import * as FileType from 'file-type';
@@ -410,15 +410,12 @@ export default class Cw721MediaService extends BullableService {
       return `/ipfs/${cid}`; // ipfs://QmPAGifcMvxDBgYr1XmEz9gZiC3DEkfYeinFdVSe364uQp/689.png
     }
     if (parsed.protocol === HTTP_PREFIX || parsed.protocol === HTTPS_PREFIX) {
-      if (parsed.path.startsWith('/ipfs/')) {
-        const ipfs = parsed.path.substring(6);
-        const cid = ipfs.substring(0, ipfs.indexOf('/'));
-        try {
-          Boolean(CID.parse(cid));
-        } catch {
-          return null;
-        }
-        return parsed.path; // http://ipfs.io/ipfs/QmWov9DpE1vYZtTH7JLKXb7b8bJycN91rEPJEmXRXdmh2G/nerd_access_pass.gif
+      if (isIPFS.ipfsUrl(media_uri)) {
+        if (isIPFS.ipfsSubdomain(media_uri)) {
+          return parsed.host; // http://bafybeie5gq4jxvzmsym6hjlwxej4rwdoxt7wadqvmmwbqi7r27fclha2va.ipfs.dweb.link
+        } 
+          return parsed.path; // http://ipfs.io/ipfs/QmWov9DpE1vYZtTH7JLKXb7b8bJycN91rEPJEmXRXdmh2G/nerd_access_pass.gif
+        
       }
     }
     if (media_uri.startsWith('/ipfs/')) {
