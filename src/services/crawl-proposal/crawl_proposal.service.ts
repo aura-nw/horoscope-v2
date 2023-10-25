@@ -5,13 +5,14 @@ import { ServiceBroker } from 'moleculer';
 import {
   QueryProposalRequest,
   QueryProposalResponse,
-} from '@aura-nw/aurajs/types/codegen/cosmos/gov/v1beta1/query';
+} from '@aura-nw/aurajs/types/codegen/cosmos/gov/v1/query';
 import Long from 'long';
 import { fromBase64, toHex } from '@cosmjs/encoding';
 import { cosmos } from '@aura-nw/aurajs';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
+import { GetNodeInfoResponseSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/base/tendermint/v1beta1/query';
 import knex from '../../common/utils/db_connection';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -43,7 +44,6 @@ export default class CrawlProposalService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_PROPOSAL,
     jobName: BULL_JOB_NAME.CRAWL_PROPOSAL,
-    // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleCrawlProposals(_payload: object): Promise<void> {
     this._lcdClient = await getLcdClient();
@@ -78,14 +78,41 @@ export default class CrawlProposalService extends BullableService {
             'proposal_id',
             proposalIds
           );
-
+          const nodeInfo: GetNodeInfoResponseSDKType =
+            await this._lcdClient.auranw.cosmos.base.tendermint.v1beta1.getNodeInfo();
+          const cosmosSdkVersion =
+            nodeInfo.application_version?.cosmos_sdk_version;
           await Promise.all(
             proposalIds.map(async (proposalId: number) => {
               try {
-                const proposal =
-                  await this._lcdClient.auranw.cosmos.gov.v1beta1.proposal({
-                    proposalId,
-                  });
+                let proposal;
+                if (Utils.compareVersion(cosmosSdkVersion, 'v0.45.99') === -1) {
+                  proposal =
+                    await this._lcdClient.auranw.cosmos.gov.v1beta1.proposal({
+                      proposalId,
+                    });
+                } else {
+                  // use gov.v1 to call proposal
+                  proposal =
+                    await this._lcdClient.auranw.cosmos.gov.v1.proposal({
+                      proposalId,
+                    });
+                  proposal.proposal = {
+                    ...proposal.proposal,
+                    proposal_id: proposal.proposal.id,
+                    content: proposal.proposal.messages,
+                    description: proposal.proposal.summary,
+                    proposer: proposal.proposal.proposer,
+                    final_tally_result: {
+                      yes: proposal.proposal.final_tally_result.yes_count,
+                      abstain:
+                        proposal.proposal.final_tally_result.abstain_count,
+                      no: proposal.proposal.final_tally_result.no_count,
+                      no_with_veto:
+                        proposal.proposal.final_tally_result.no_with_veto_count,
+                    },
+                  };
+                }
 
                 const foundProposal: Proposal | undefined =
                   listProposalsInDb.find(
@@ -157,7 +184,6 @@ export default class CrawlProposalService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_ENDED_PROPOSAL,
     jobName: BULL_JOB_NAME.HANDLE_ENDED_PROPOSAL,
-    // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleEndedProposals(_payload: object): Promise<void> {
     const batchQueries: any[] = [];
@@ -174,7 +200,7 @@ export default class CrawlProposalService extends BullableService {
         proposalId: Long.fromInt(proposal.proposal_id),
       };
       const data = toHex(
-        cosmos.gov.v1beta1.QueryProposalRequest.encode(request).finish()
+        cosmos.gov.v1.QueryProposalRequest.encode(request).finish()
       );
 
       batchQueries.push(
@@ -191,7 +217,7 @@ export default class CrawlProposalService extends BullableService {
     const resultProposals: (QueryProposalResponse | null)[] = result.map(
       (res: JsonRpcSuccessResponse) =>
         res.result.response.value
-          ? cosmos.gov.v1beta1.QueryProposalResponse.decode(
+          ? cosmos.gov.v1.QueryProposalResponse.decode(
               fromBase64(res.result.response.value)
             )
           : null
@@ -199,7 +225,7 @@ export default class CrawlProposalService extends BullableService {
 
     endedProposals.forEach((proposal: Proposal) => {
       const onchainPro = resultProposals.find((pro) =>
-        pro?.proposal?.proposalId.equals(Long.fromInt(proposal.proposal_id))
+        pro?.proposal?.id.equals(Long.fromInt(proposal.proposal_id))
       );
       if (onchainPro) {
         patchQueries.push(
@@ -207,9 +233,9 @@ export default class CrawlProposalService extends BullableService {
             .where('proposal_id', proposal.proposal_id)
             .patch({
               status:
-                Object.keys(cosmos.gov.v1beta1.ProposalStatus).find(
+                Object.keys(cosmos.gov.v1.ProposalStatus).find(
                   (key) =>
-                    cosmos.gov.v1beta1.ProposalStatus[key] ===
+                    cosmos.gov.v1.ProposalStatus[key] ===
                     onchainPro?.proposal?.status
                 ) || '',
               total_deposit: onchainPro?.proposal?.totalDeposit || [],
@@ -252,7 +278,7 @@ export default class CrawlProposalService extends BullableService {
         proposalId: Long.fromInt(proposal.proposal_id),
       };
       const data = toHex(
-        cosmos.gov.v1beta1.QueryProposalRequest.encode(request).finish()
+        cosmos.gov.v1.QueryProposalRequest.encode(request).finish()
       );
 
       batchQueries.push(
@@ -269,7 +295,7 @@ export default class CrawlProposalService extends BullableService {
     const resultProposals: (QueryProposalResponse | null)[] = result.map(
       (res: JsonRpcSuccessResponse) =>
         res.result.response.value
-          ? cosmos.gov.v1beta1.QueryProposalResponse.decode(
+          ? cosmos.gov.v1.QueryProposalResponse.decode(
               fromBase64(res.result.response.value)
             )
           : null
@@ -277,7 +303,7 @@ export default class CrawlProposalService extends BullableService {
 
     depositProposals.forEach((proposal: Proposal) => {
       const onchainPro = resultProposals.find((pro) =>
-        pro?.proposal?.proposalId.equals(Long.fromInt(proposal.proposal_id))
+        pro?.proposal?.id.equals(Long.fromInt(proposal.proposal_id))
       );
 
       if (!onchainPro)
