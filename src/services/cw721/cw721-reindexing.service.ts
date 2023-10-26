@@ -57,7 +57,7 @@ export default class CW721ReindexingService extends BullableService {
   }
 
   async handleReindexAll(smartContractId: number, contractAddress: string) {
-    const cw721Contract = await CW721Contract.query()
+    let cw721Contract = await CW721Contract.query()
       .withGraphJoined('smart_contract')
       .where('smart_contract.address', contractAddress)
       .select(['cw721_contract.id'])
@@ -89,25 +89,27 @@ export default class CW721ReindexingService extends BullableService {
         .where('cw721_contract_id', cw721Contract.id);
       await CW721Contract.query().deleteById(cw721Contract.id);
     }
-    await CW721Contract.query().insertGraph({
-      ...CW721Contract.fromJson({
+    cw721Contract = await CW721Contract.query().insert(
+      CW721Contract.fromJson({
         contract_id: smartContractId,
         symbol: contractInfo?.symbol,
         minter: contractInfo?.minter,
         name: contractInfo?.name,
         track: true,
-        smart_contract_address: contractAddress,
-      }),
-      tokens: currentTokensOwner.map((tokenOwner) =>
+      })
+    );
+    await CW721Token.query().insert(
+      currentTokensOwner.map((tokenOwner) =>
         CW721Token.fromJson({
+          cw721_contract_id: cw721Contract?.id,
           token_id: tokenOwner.token_id,
           media_info: null,
           owner: tokenOwner.owner,
           last_updated_height: tokenOwner.last_updated_height,
           burned: false,
         })
-      ),
-    });
+      )
+    );
     // handle from minUpdatedHeightOwner to blockHeight
     await this.broker.call(
       SERVICE.V1.Cw721.HandleRangeBlockMissingContract.path,
