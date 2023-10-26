@@ -16,6 +16,7 @@ select_permissions:
         - from
         - sender
         - to
+        - tx_hash
         - cw20_contract_id
         - height
         - id
