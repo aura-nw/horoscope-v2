@@ -6,6 +6,16 @@ object_relationships:
     using:
       foreign_key_constraint_on: tx_id
 array_relationships:
+  - name: events
+    using:
+      manual_configuration:
+        column_mapping:
+          index: tx_msg_index
+          tx_id: tx_id
+        insertion_order: null
+        remote_table:
+          name: event
+          schema: public
   - name: ibc_messages
     using:
       foreign_key_constraint_on:
@@ -22,18 +32,6 @@ array_relationships:
           schema: public
 select_permissions:
   - role: internal_service
-    permission:
-      columns:
-        - sender
-        - type
-        - id
-        - index
-        - parent_id
-        - tx_id
-        - content
-      filter: {}
-      limit: 100
-  - role: public
     permission:
       columns:
         - sender

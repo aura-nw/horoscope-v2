@@ -7,7 +7,7 @@ import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
 import { CW20Holder } from './cw20_holder';
 // eslint-disable-next-line import/no-cycle
-import { Cw20Event } from './cw20_activity';
+import { Cw20Activity } from './cw20_activity';
 import { SmartContract } from './smart_contract';
 import { getHttpBatchClient } from '../common';
 
@@ -287,7 +287,7 @@ export class Cw20Contract extends BaseModel {
       },
       events: {
         relation: Model.HasManyRelation,
-        modelClass: Cw20Event,
+        modelClass: Cw20Activity,
         join: {
           from: 'cw20_contract.id',
           to: 'cw20_event.cw20_contract_id',

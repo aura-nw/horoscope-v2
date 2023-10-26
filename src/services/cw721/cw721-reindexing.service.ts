@@ -99,18 +99,20 @@ export default class CW721ReindexingService extends BullableService {
         smart_contract_address: contractAddress,
       })
     );
-    await CW721Token.query().insert(
-      currentTokensOwner.map((tokenOwner) =>
-        CW721Token.fromJson({
-          cw721_contract_id: cw721Contract?.id,
-          token_id: tokenOwner.token_id,
-          media_info: null,
-          owner: tokenOwner.owner,
-          last_updated_height: tokenOwner.last_updated_height,
-          burned: false,
-        })
-      )
-    );
+    if (currentTokensOwner.length > 0) {
+      await CW721Token.query().insert(
+        currentTokensOwner.map((tokenOwner) =>
+          CW721Token.fromJson({
+            cw721_contract_id: cw721Contract?.id,
+            token_id: tokenOwner.token_id,
+            media_info: null,
+            owner: tokenOwner.owner,
+            last_updated_height: tokenOwner.last_updated_height,
+            burned: false,
+          })
+        )
+      );
+    }
     // handle from minUpdatedHeightOwner to blockHeight
     await this.broker.call(
       SERVICE.V1.Cw721.HandleRangeBlockMissingContract.path,

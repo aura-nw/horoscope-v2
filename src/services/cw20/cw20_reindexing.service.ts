@@ -11,7 +11,7 @@ import {
   CW20Holder,
   CW20TotalHolderStats,
   Cw20Contract,
-  Cw20Event,
+  Cw20Activity,
   IHolderEvent,
   SmartContract,
 } from '../../models';
@@ -99,7 +99,7 @@ export default class Cw20ReindexingContract extends BullableService {
     let lastUpdatedHeight = -1;
     await knex.transaction(async (trx) => {
       if (cw20Contract) {
-        await Cw20Event.query()
+        await Cw20Activity.query()
           .delete()
           .where('cw20_contract_id', cw20Contract.id)
           .transacting(trx);

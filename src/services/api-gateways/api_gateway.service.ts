@@ -26,7 +26,7 @@ import { bullBoardMixin } from '../../mixins/bullBoard/bullBoard.mixin';
           'v2.graphql.*',
           'v2.statistics.getDashboardStatisticsByChainId',
           'v2.statistics.getTopAccountsByChainId',
-          'v1.services-manager.*',
+          'v2.services-manager.*',
         ],
       },
       {
@@ -38,6 +38,7 @@ import { bullBoardMixin } from '../../mixins/bullBoard/bullBoard.mixin';
           'v1.cw721-admin.*',
           'v2.statistics.syncPrevDateStatsByChainId',
           'v1.job.composite-index-to-attribute-partition',
+          'v1.job.redecode-tx',
         ],
       },
       {
