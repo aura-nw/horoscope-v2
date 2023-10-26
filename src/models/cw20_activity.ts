@@ -6,7 +6,7 @@ import { SmartContract } from './smart_contract';
 import { SmartContractEvent } from './smart_contract_event';
 import { Event } from './event';
 
-export class Cw20Event extends BaseModel {
+export class Cw20Activity extends BaseModel {
   static softDelete = false;
 
   [relation: string]: any;
@@ -29,6 +29,8 @@ export class Cw20Event extends BaseModel {
 
   height!: number;
 
+  tx_hash!: string;
+
   static get tableName() {
     return 'cw20_activity';
   }
@@ -43,7 +45,6 @@ export class Cw20Event extends BaseModel {
         height: { type: 'number' },
         to: { type: 'string' },
         action: { type: 'string' },
-        amount: { type: 'string' },
         from: { type: 'string' },
         sender: { type: 'string' },
       },

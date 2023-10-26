@@ -4,7 +4,7 @@ import { CW20_ACTION } from '../../../../src/services/cw20/cw20.service';
 import knex from '../../../../src/common/utils/db_connection';
 import Cw20UpdateByContractService from '../../../../src/services/cw20/cw20_update_by_contract.service';
 import { Code } from '../../../../src/models/code';
-import { CW20Holder, Cw20Contract, Cw20Event } from '../../../../src/models';
+import { CW20Holder, Cw20Contract, Cw20Activity } from '../../../../src/models';
 
 @Describe('Test cw20_update_by_contract service')
 export default class Cw20UpdateByContract {
@@ -188,7 +188,7 @@ export default class Cw20UpdateByContract {
     await knex.transaction(async (trx) => {
       const addSppuly =
         await this.cw20UpdateByContractService.updateBalanceHolders(
-          cw20Events.map((event) => Cw20Event.fromJson(event)),
+          cw20Events.map((event) => Cw20Activity.fromJson(event)),
           contractIndex,
           trx
         );
@@ -333,7 +333,7 @@ export default class Cw20UpdateByContract {
     ];
     await knex.transaction(async (trx) => {
       await this.cw20UpdateByContractService.updateBalanceHolders(
-        cw20Events.map((event) => Cw20Event.fromJson(event)),
+        cw20Events.map((event) => Cw20Activity.fromJson(event)),
         contractIndex,
         trx
       );
@@ -439,7 +439,7 @@ export default class Cw20UpdateByContract {
     ];
     await knex.transaction(async (trx) => {
       await this.cw20UpdateByContractService.updateBalanceHolders(
-        cw20Events.map((event) => Cw20Event.fromJson(event)),
+        cw20Events.map((event) => Cw20Activity.fromJson(event)),
         contractIndex,
         trx
       );

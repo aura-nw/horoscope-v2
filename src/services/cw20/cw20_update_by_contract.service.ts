@@ -6,7 +6,7 @@ import { Context, ServiceBroker } from 'moleculer';
 import { Knex } from 'knex';
 import _ from 'lodash';
 import knex from '../../common/utils/db_connection';
-import { CW20Holder, Cw20Contract, Cw20Event } from '../../models';
+import { CW20Holder, Cw20Contract, Cw20Activity } from '../../models';
 import { BULL_JOB_NAME, IContextUpdateCw20, SERVICE } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
@@ -36,7 +36,7 @@ export default class Cw20UpdateByContractService extends BullableService {
   async jobHandle(_payload: ICw20UpdateByContractParam): Promise<void> {
     const { cw20ContractId, startBlock, endBlock } = _payload;
     // get all cw20_events from startBlock to endBlock and they occur after cw20 last_updated_height (max holders's last_updated_height)
-    const newEvents = await Cw20Event.query()
+    const newEvents = await Cw20Activity.query()
       .where('cw20_contract_id', cw20ContractId)
       .andWhere('height', '>', startBlock)
       .andWhere('height', '<=', endBlock);
@@ -103,7 +103,7 @@ export default class Cw20UpdateByContractService extends BullableService {
   }
 
   async updateBalanceHolders(
-    cw20Events: Cw20Event[],
+    cw20Events: Cw20Activity[],
     cw20ContractId: number,
     trx: Knex.Transaction
   ) {
