@@ -6,7 +6,7 @@ import { Context, ServiceBroker } from 'moleculer';
 import { Knex } from 'knex';
 import _ from 'lodash';
 import knex from '../../common/utils/db_connection';
-import { Account, BlockCheckpoint, EventAttribute } from '../../models';
+import { Account, BlockCheckpoint } from '../../models';
 import Utils from '../../common/utils/utils';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, IAddressesParam, SERVICE } from '../../common';
@@ -49,11 +49,14 @@ export default class HandleAddressService extends BullableService {
     if (startHeight >= endHeight) return;
 
     const eventAddresses: string[] = [];
-    const resultTx = await EventAttribute.query()
-      .where('value', 'like', `${config.networkPrefixAddress}%`)
-      .andWhere('block_height', '>', startHeight)
-      .andWhere('block_height', '<=', endHeight)
-      .select('value');
+    const resultTx = await knex.raw(
+      'SELECT value FROM view_event_attribute_value_index where value like :value and block_height > :startHeight and block_height <= :endHeight',
+      {
+        value: `${config.networkPrefixAddress}%`,
+        startHeight,
+        endHeight,
+      }
+    );
 
     if (resultTx.length > 0)
       resultTx.map((res: any) => eventAddresses.push(res.value));
