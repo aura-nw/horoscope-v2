@@ -58,8 +58,8 @@ export default class HandleAddressService extends BullableService {
       }
     );
 
-    if (resultTx.length > 0)
-      resultTx.map((res: any) => eventAddresses.push(res.value));
+    if (resultTx.rows.length > 0)
+      resultTx.rows.map((res: any) => eventAddresses.push(res.value));
 
     const addresses = Array.from(
       new Set(
