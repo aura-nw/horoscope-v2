@@ -63,6 +63,6 @@ export default class TestCw721MediaService {
     const httpFullSubDomain = `https://${subDomain}/${file}`;
     const parsedFullHttpSubDomain =
       this.cw721MediaService.parseFilename(httpFullSubDomain);
-    expect(parsedFullHttpSubDomain).toEqual(`${subDomain  }/${  file}`);
+    expect(parsedFullHttpSubDomain).toEqual(`${subDomain}/${file}`);
   }
 }
