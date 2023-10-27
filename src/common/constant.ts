@@ -250,10 +250,6 @@ export const SERVICE = {
           path: 'v1.CreateIndexCompositeAttrPartition.actionCreateJob',
         },
       },
-      ReAssignMsgIndexToEvent: {
-        key: 'ReAssignMsgIndexToEvent',
-        path: 'v1.ReAssignMsgIndexToEvent',
-      },
       SummarizeBrinIndex: {
         key: 'SummarizeBrinIndex',
         path: 'v1.SummarizeBrinIndex',
