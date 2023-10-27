@@ -48,12 +48,12 @@ export default class DashboardStatisticsService extends BullableService {
       totalTxStatistic = await Statistic.query().insert({
         key: StatisticKey.TotalTransaction,
         value: 0,
-        counted_since: `${minHeight}`,
+        statistic_since: `${minHeight}`,
       });
     }
 
     // Count transaction and get max height from height to height
-    const fromHeight = Number(totalTxStatistic?.counted_since) + 1;
+    const fromHeight = Number(totalTxStatistic?.statistic_since) + 1;
     const toHeight = fromHeight + 500;
     const txStatistic = await Transaction.query()
       .where('height', '>=', fromHeight)
@@ -70,7 +70,7 @@ export default class DashboardStatisticsService extends BullableService {
           Statistic.fromJson({
             key: StatisticKey.TotalTransaction,
             value: totalTx,
-            counted_since: txStatistic[0].max,
+            statistic_since: txStatistic[0].max,
           })
         )
         .where({
