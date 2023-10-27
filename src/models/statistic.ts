@@ -9,7 +9,7 @@ export class Statistic extends BaseModel {
 
   value!: number;
 
-  counted_since!: string;
+  statistic_since!: string;
 
   updated_at?: Date;
 
@@ -24,11 +24,11 @@ export class Statistic extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['key', 'value', 'counted_since'],
+      required: ['key', 'value', 'statistic_since'],
       properties: {
         key: { type: 'string' },
         value: { type: 'number' },
-        counted_since: { type: 'string' },
+        statistic_since: { type: 'string' },
       },
     };
   }
