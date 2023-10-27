@@ -412,6 +412,7 @@ export default class Cw721MediaService extends BullableService {
     if (parsed.protocol === HTTP_PREFIX || parsed.protocol === HTTPS_PREFIX) {
       if (isIPFS.ipfsUrl(media_uri)) {
         if (isIPFS.ipfsSubdomain(media_uri)) {
+          // TODO: parse cid from subdomain
           return parsed.host + parsed.path; // http://bafybeie5gq4jxvzmsym6hjlwxej4rwdoxt7wadqvmmwbqi7r27fclha2va.ipfs.dweb.link/1.jpg
         }
         return parsed.path; // http://ipfs.io/ipfs/QmWov9DpE1vYZtTH7JLKXb7b8bJycN91rEPJEmXRXdmh2G/nerd_access_pass.gif
