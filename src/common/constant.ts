@@ -79,6 +79,8 @@ export const BULL_JOB_NAME = {
   REINDEX_CW20_HISTORY: 'reindex:cw20-history',
   JOB_CREATE_COMPOSITE_INDEX_ATTR_PARTITION:
     'job:create-index-composite-attr-partition',
+  JOB_UPDATE_SENDER_IN_TX_MESSAGES: 'job:update-sender-in-tx-messages',
+  JOB_SUMMARIZE_BRIN_INDEX_IN_TABLE: 'job:summarize-brin-index-in-table',
 };
 
 export const SERVICE = {
@@ -246,6 +248,10 @@ export const SERVICE = {
       ReAssignMsgIndexToEvent: {
         key: 'ReAssignMsgIndexToEvent',
         path: 'v1.ReAssignMsgIndexToEvent',
+      },
+      SummarizeBrinIndex: {
+        key: 'SummarizeBrinIndex',
+        path: 'v1.SummarizeBrinIndex',
       },
     },
     CrawlIBCTaoService: {

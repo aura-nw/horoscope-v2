@@ -196,5 +196,29 @@
     "key": "crawlIbcApp",
     "millisecondRepeatJob": 2000,
     "blocksPerCall": 100
+  },
+  "crawlIbcIcs20": {
+    "key": "crawlIbcIcs20",
+    "millisecondRepeatJob": 2000,
+    "blocksPerCall": 100,
+    "port": "transfer"
+  },
+  "jobUpdateSenderInTxMessages": {
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 1000
+  },
+  "jobSummarizeBrinIndex": {
+    "transactionTable": {
+      "indexNamePattern": "%brin_idx_height_transaction%",
+      "milisecondInterval": 60000
+    },
+    "eventTable": {
+      "indexNamePattern": "%brin_idx_block_height_event%",
+      "milisecondInterval": 60000
+    },
+    "eventAttributePartitionTable": {
+      "indexNamePattern": "%(tx_id|block_height)%",
+      "milisecondInterval": 60000
+    }
   }
 }
