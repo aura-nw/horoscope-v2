@@ -1,5 +1,6 @@
 import { Knex } from 'knex';
 export async function up(knex: Knex): Promise<void> {
+  await knex.raw('set statement_timeout to 600000');
   await knex.schema.alterTable('event_attribute', (table) => {
     table.index('block_height', `brin_idx_blh_event_attribute`, 'brin');
     table.index('tx_id', `brin_idx_tx_id_event_attribute}`, 'brin');
