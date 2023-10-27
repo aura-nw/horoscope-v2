@@ -7,7 +7,7 @@ export async function up(knex: Knex): Promise<void> {
     // Value of key name above
     table.bigint('value').notNullable().defaultTo(0);
     // Determine statistic has been counted since something (block, timestamp, date, and so on)
-    table.string('counted_since').nullable();
+    table.string('statistic_since').nullable();
     table.dateTime('updated_at').defaultTo(knex.raw('now()'));
   });
 }
