@@ -80,6 +80,8 @@ export const BULL_JOB_NAME = {
   JOB_REASSIGN_MSG_INDEX_TO_EVENT: 'job:reassign-msg-index-to-event',
   JOB_CREATE_COMPOSITE_INDEX_ATTR_PARTITION:
     'job:create-index-composite-attr-partition',
+  JOB_UPDATE_SENDER_IN_TX_MESSAGES: 'job:update-sender-in-tx-messages',
+  JOB_SUMMARIZE_BRIN_INDEX_IN_TABLE: 'job:summarize-brin-index-in-table',
 };
 
 export const SERVICE = {
@@ -247,6 +249,14 @@ export const SERVICE = {
           key: 'actionCreateJob',
           path: 'v1.CreateIndexCompositeAttrPartition.actionCreateJob',
         },
+      },
+      ReAssignMsgIndexToEvent: {
+        key: 'ReAssignMsgIndexToEvent',
+        path: 'v1.ReAssignMsgIndexToEvent',
+      },
+      SummarizeBrinIndex: {
+        key: 'SummarizeBrinIndex',
+        path: 'v1.SummarizeBrinIndex',
       },
     },
     CrawlIBCTaoService: {
