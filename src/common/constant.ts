@@ -81,6 +81,7 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_COMPOSITE_INDEX_ATTR_PARTITION:
     'job:create-index-composite-attr-partition',
   JOB_UPDATE_SENDER_IN_TX_MESSAGES: 'job:update-sender-in-tx-messages',
+  JOB_SUMMARIZE_BRIN_INDEX_IN_TABLE: 'job:summarize-brin-index-in-table',
 };
 
 export const SERVICE = {
@@ -252,6 +253,10 @@ export const SERVICE = {
       UpdateSenderInTxMessages: {
         key: 'UpdateSenderInTxMessages',
         path: 'v1.UpdateSenderInTxMessages',
+      },
+      SummarizeBrinIndex: {
+        key: 'SummarizeBrinIndex',
+        path: 'v1.SummarizeBrinIndex',
       },
     },
     CrawlIBCTaoService: {
