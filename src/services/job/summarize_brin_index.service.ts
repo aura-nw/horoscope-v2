@@ -123,7 +123,7 @@ export default class JobSummarizeBrinIndex extends BullableService {
       },
       {
         jobId: 'event',
-        removeOnComplete: false,
+        removeOnComplete: true,
         removeOnFail: {
           count: 3,
         },
