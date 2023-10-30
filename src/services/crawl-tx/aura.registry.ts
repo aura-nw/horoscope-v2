@@ -6,9 +6,9 @@ import { ibc, cosmos } from '@aura-nw/aurajs';
 import { toBase64, fromUtf8, fromBase64 } from '@cosmjs/encoding';
 import { LoggerInstance } from 'moleculer';
 import _ from 'lodash';
+import txRegistryType from './registry-type/aura-network.json' assert { type: 'json' };
 import { MSG_TYPE } from '../../common';
 import Utils from '../../common/utils/utils';
-import txRegistryType from '../../../tx-registry-type.json' assert { type: 'json' };
 
 export default class AuraRegistry {
   public registry!: Registry;
