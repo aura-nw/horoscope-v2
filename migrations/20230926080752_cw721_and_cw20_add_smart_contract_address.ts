@@ -4,12 +4,13 @@ import _ from 'lodash';
 import { Cw20Contract } from '../src/models';
 
 export async function up(knex: Knex): Promise<void> {
-  await knex.schema.alterTable('cw721_contract', (table) => {
-    table.string('smart_contract_address').index();
-  });
-  await knex.schema.alterTable('cw20_contract', (table) => {
-    table.string('smart_contract_address').index();
-  });
+  await knex.schema
+    .alterTable('cw721_contract', (table) => {
+      table.string('smart_contract_address').index();
+    })
+    .alterTable('cw20_contract', (table) => {
+      table.string('smart_contract_address').index();
+    });
   await knex.transaction(async (trx) => {
     const cw721Contracts = await CW721Contract.query()
       .transacting(trx)
