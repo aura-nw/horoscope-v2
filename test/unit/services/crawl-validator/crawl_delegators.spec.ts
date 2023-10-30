@@ -75,6 +75,7 @@ export default class CrawlDelegatorsTest {
       knex.raw('TRUNCATE TABLE validator RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
     ]);
+    await knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE');
     await Promise.all([
       Validator.query().insert(this.validator),
       BlockCheckpoint.query().insert(this.blockCheckpoint),
