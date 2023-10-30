@@ -314,6 +314,19 @@ export default class Cw721HandlerService extends BullableService {
       await knex.transaction(async (trx) => {
         const { cw721Activities } = await this.handleCw721MsgExec(events, trx);
         if (cw721Activities.length > 0) {
+          const tokensKeyById = _.keyBy(
+            await CW721Token.query()
+              .transacting(trx)
+              .withGraphJoined('contract.smart_contract')
+              .where('contract:smart_contract.id', smartContractId),
+            (o) => `${o.cw721_contract_id}_${o.token_id}`
+          );
+          cw721Activities.forEach((act) => {
+            const token =
+              tokensKeyById[`${act.cw721_contract_id}_${act.token_id}`];
+            // eslint-disable-next-line no-param-reassign
+            act.cw721_token_id = token?.id;
+          });
           await CW721Activity.query()
             .transacting(trx)
             .insert(cw721Activities.map((e) => _.omit(e, 'token_id')));
