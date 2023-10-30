@@ -17,10 +17,6 @@ export class Statistic extends BaseModel {
     return 'statistics';
   }
 
-  static get idColumn(): string | string[] {
-    return 'key';
-  }
-
   static get jsonSchema() {
     return {
       type: 'object',
