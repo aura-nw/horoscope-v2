@@ -9,6 +9,7 @@ import _ from 'lodash';
 import { SemVer } from 'semver';
 import { MSG_TYPE } from '../../common';
 import Utils from '../../common/utils/utils';
+import txRegistryType from '../../../tx-registry-type.json' assert { type: 'json' };
 
 export default class AuraRegistry {
   public registry!: Registry;
@@ -37,39 +38,7 @@ export default class AuraRegistry {
 
   // set default registry to decode msg
   public setDefaultRegistry() {
-    const missingTypes = [
-      // content proposal
-      '/cosmos.gov.v1beta1.MsgSubmitProposal',
-      '/cosmos.upgrade.v1beta1.SoftwareUpgradeProposal',
-      '/cosmos.upgrade.v1beta1.CancelSoftwareUpgradeProposal',
-      '/cosmos.distribution.v1beta1.CommunityPoolSpendProposal',
-      '/cosmos.distribution.v1beta1.CommunityPoolSpendProposalWithDeposit',
-      '/cosmos.params.v1beta1.ParameterChangeProposal',
-      '/ibc.core.client.v1.UpgradeProposal',
-      '/ibc.core.client.v1.ClientUpdateProposal',
-      '/cosmos.params.v1beta1.ParameterChangeProposal',
-
-      // feegrant
-      '/cosmos.feegrant.v1beta1.BasicAllowance',
-      '/cosmos.feegrant.v1beta1.PeriodicAllowance',
-      '/cosmos.feegrant.v1beta1.AllowedContractAllowance',
-      '/cosmos.feegrant.v1beta1.AllowedMsgAllowance',
-      '/cosmos.vesting.v1beta1.MsgCreatePeriodicVestingAccount',
-
-      // ibc
-      '/ibc.lightclients.tendermint.v1.Header',
-      '/ibc.lightclients.tendermint.v1.ClientState',
-      '/ibc.lightclients.tendermint.v1.ConsensusState',
-
-      // slashing
-      '/cosmos.slashing.v1beta1.MsgUnjail',
-
-      // aura-nw
-      '/auranw.aura.smartaccount.MsgActivateAccount',
-      '/auranw.aura.smartaccount.MsgRecover',
-      // consensus
-      '/cosmos.consensus.v1.MsgUpdateParams',
-    ];
+    const missingTypes = txRegistryType;
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
