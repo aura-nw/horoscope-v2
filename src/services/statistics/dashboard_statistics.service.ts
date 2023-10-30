@@ -38,39 +38,51 @@ export default class DashboardStatisticsService extends BullableService {
    */
   private async statisticTotalTransaction(): Promise<number> {
     // Select and make sure that have statistic
-    let totalTxStatistic: Statistic | undefined =
+    const totalTxStatistic: Statistic | undefined =
       await Statistic.query().findOne('key', StatisticKey.TotalTransaction);
-    if (!totalTxStatistic) {
-      const minHeightTransaction = await Transaction.query().min('height');
-      const minHeight = minHeightTransaction
-        ? minHeightTransaction[0].min - 1
-        : 0;
-      totalTxStatistic = await Statistic.query().insert({
-        key: StatisticKey.TotalTransaction,
-        value: 0,
-        statistic_since: `${minHeight}`,
-      });
-    }
 
     // Count transaction and get max height from height to height
-    const fromHeight = Number(totalTxStatistic?.statistic_since) + 1;
-    const toHeight = fromHeight + 500;
+    const crawlTxJobInfo = await BlockCheckpoint.query().findOne(
+      'job_name',
+      BULL_JOB_NAME.HANDLE_TRANSACTION
+    );
+    if (!crawlTxJobInfo) return 0;
+
+    if (!totalTxStatistic) {
+      const transactionsInfo = await Transaction.query()
+        .where('height', '<=', crawlTxJobInfo.height)
+        .count();
+      console.log(transactionsInfo);
+      const totalTransaction = transactionsInfo ? transactionsInfo[0].count : 0;
+      await Statistic.query().insert({
+        key: StatisticKey.TotalTransaction,
+        value: totalTransaction,
+        statistic_since: `${crawlTxJobInfo.height}`,
+      });
+      return totalTransaction;
+    }
+    let totalTx = Number(totalTxStatistic?.value);
+
+    // Count tx and find max height determine by range of statistic
+    const fromHeight = Number(totalTxStatistic?.statistic_since);
+    const toHeight = crawlTxJobInfo.height;
+
+    if (fromHeight >= toHeight) return totalTx;
+
     const txStatistic = await Transaction.query()
-      .where('height', '>=', fromHeight)
+      .where('height', '>', fromHeight)
       .andWhere('height', '<=', toHeight)
-      .count()
-      .max('height');
+      .count();
 
     // If having new tx, then update total tx and update counter since for next time statistic
-    let totalTx = Number(totalTxStatistic?.value);
-    if (txStatistic[0].max) {
+    if (txStatistic[0]) {
       totalTx += Number(txStatistic[0].count);
       await Statistic.query()
         .update(
           Statistic.fromJson({
             key: StatisticKey.TotalTransaction,
             value: totalTx,
-            statistic_since: txStatistic[0].max,
+            statistic_since: toHeight,
           })
         )
         .where({
