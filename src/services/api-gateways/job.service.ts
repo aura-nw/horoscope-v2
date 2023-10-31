@@ -51,4 +51,63 @@ export default class JobService extends BaseService {
       }
     );
   }
+
+  @Post('/create-index-for-big-table', {
+    name: 'create-index-for-big-table',
+    params: {
+      chainId: {
+        type: 'string',
+        optional: false,
+        enum: networks.map((network) => network.chainId),
+      },
+      tableName: {
+        type: 'string',
+        optional: false,
+      },
+      indexName: {
+        type: 'string',
+        optional: false,
+      },
+      indexType: {
+        type: 'string',
+        optional: false,
+      },
+      columnName: {
+        type: 'string',
+        optional: false,
+      },
+      pagesPerRange: {
+        type: 'number',
+        optional: true,
+      },
+    },
+  })
+  async createBrinIndex(
+    ctx: Context<
+      {
+        chainId: string;
+        tableName: string;
+        indexName: string;
+        indexType: string;
+        columnName: string;
+        pagesPerRange: number;
+      },
+      Record<string, unknown>
+    >
+  ) {
+    const selectedChain = networks.find(
+      (network) => network.chainId === ctx.params.chainId
+    );
+
+    return this.broker.call(
+      `${SERVICE.V1.JobService.CreateIndexForBigTable.actionCreateJob.path}@${selectedChain?.moleculerNamespace}`,
+      {
+        tableName: ctx.params.tableName,
+        indexName: ctx.params.indexName,
+        indexType: ctx.params.indexType,
+        columnName: ctx.params.columnName,
+        pagesPerRange: ctx.params.pagesPerRange,
+      }
+    );
+  }
 }

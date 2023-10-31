@@ -81,6 +81,7 @@ export const BULL_JOB_NAME = {
     'job:create-index-composite-attr-partition',
   JOB_UPDATE_SENDER_IN_TX_MESSAGES: 'job:update-sender-in-tx-messages',
   JOB_SUMMARIZE_BRIN_INDEX_IN_TABLE: 'job:summarize-brin-index-in-table',
+  CREATE_IDX_FOR_BIG_TABLE: 'job:create-index-for-big-table',
 };
 
 export const SERVICE = {
@@ -243,6 +244,14 @@ export const SERVICE = {
         actionCreateJob: {
           key: 'actionCreateJob',
           path: 'v1.CreateIndexCompositeAttrPartition.actionCreateJob',
+        },
+      },
+      CreateIndexForBigTable: {
+        key: 'CreateIndexForBigTable',
+        path: 'v1.CreateIndexForBigTable',
+        actionCreateJob: {
+          key: 'actionCreateJob',
+          path: 'v1.CreateIndexForBigTable.actionCreateJob',
         },
       },
       ReAssignMsgIndexToEvent: {
