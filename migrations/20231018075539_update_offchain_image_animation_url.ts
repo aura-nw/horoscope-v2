@@ -7,31 +7,33 @@ export async function up(knex: Knex): Promise<void> {
       `/ipfs/%`,
     ])
     .orderBy('id');
-  for (const token of tokens_with_image) {
-    await knex
-      .table('cw721_token')
-      .update({
-        media_info: null,
-      })
-      .where('id', token.id);
-  }
+  await knex
+    .table('cw721_token')
+    .update({
+      media_info: null,
+    })
+    .whereIn(
+      'id',
+      tokens_with_image.map((token) => token.id)
+    );
   const tokens_with_animation = await knex
     .table('cw721_token')
-    .whereRaw("media_info->'onchain'->'metadata'->>'animation' LIKE ?", [
+    .whereRaw("media_info->'onchain'->'metadata'->>'animation_url' LIKE ?", [
       `http%`,
     ])
-    .orWhereRaw("media_info->'onchain'->'metadata'->>'animation' LIKE ?", [
+    .orWhereRaw("media_info->'onchain'->'metadata'->>'animation_url' LIKE ?", [
       `/ipfs/%`,
     ])
     .orderBy('id');
-  for (const token of tokens_with_animation) {
-    await knex
-      .table('cw721_token')
-      .update({
-        media_info: null,
-      })
-      .where('id', token.id);
-  }
+  await knex
+    .table('cw721_token')
+    .update({
+      media_info: null,
+    })
+    .whereIn(
+      'id',
+      tokens_with_animation.map((token) => token.id)
+    );
 }
 
 export async function down(knex: Knex): Promise<void> {}
