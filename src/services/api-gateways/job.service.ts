@@ -3,6 +3,7 @@ import { Context, ServiceBroker } from 'moleculer';
 import { SERVICE } from '../../common';
 import BaseService from '../../base/base.service';
 import networks from '../../../network.json' assert { type: 'json' };
+import CreateIndexForBigTableJob from '../job/create_index_for_big_table.service';
 
 @Service({
   name: 'job',
@@ -80,9 +81,17 @@ export default class JobService extends BaseService {
         type: 'number',
         optional: true,
       },
+      isCheckQuery: {
+        type: 'string',
+        optional: true,
+      },
+      whereClauses: {
+        type: 'array',
+        optional: true,
+      },
     },
   })
-  async createBrinIndex(
+  async createIndexForBigTable(
     ctx: Context<
       {
         chainId: string;
@@ -91,6 +100,12 @@ export default class JobService extends BaseService {
         indexType: string;
         columnName: string;
         pagesPerRange: number;
+        isCheckQuery: string;
+        whereClauses: {
+          column: 'string';
+          expression: 'string';
+          condition: 'string';
+        }[];
       },
       Record<string, unknown>
     >
@@ -98,6 +113,17 @@ export default class JobService extends BaseService {
     const selectedChain = networks.find(
       (network) => network.chainId === ctx.params.chainId
     );
+
+    if (ctx.params.isCheckQuery) {
+      return CreateIndexForBigTableJob.buildQueryCreateIndex({
+        tableName: ctx.params.tableName,
+        indexName: ctx.params.indexName,
+        indexType: ctx.params.indexType,
+        columnName: ctx.params.columnName,
+        pagesPerRange: ctx.params.pagesPerRange,
+        whereClauses: ctx.params.whereClauses,
+      });
+    }
 
     return this.broker.call(
       `${SERVICE.V1.JobService.CreateIndexForBigTable.actionCreateJob.path}@${selectedChain?.moleculerNamespace}`,
@@ -107,6 +133,7 @@ export default class JobService extends BaseService {
         indexType: ctx.params.indexType,
         columnName: ctx.params.columnName,
         pagesPerRange: ctx.params.pagesPerRange,
+        whereClauses: ctx.params.whereClauses,
       }
     );
   }

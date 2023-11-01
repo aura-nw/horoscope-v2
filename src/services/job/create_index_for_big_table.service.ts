@@ -16,6 +16,34 @@ export default class CreateIndexForBigTableJob extends BullableService {
     super(broker);
   }
 
+  public static buildQueryCreateIndex(payload: {
+    tableName: string;
+    indexName: string;
+    indexType: string;
+    columnName: string;
+    pagesPerRange: number;
+    whereClauses?: { column: string; expression: string; condition: string }[];
+  }): string {
+    let baseQuery = `
+        CREATE INDEX CONCURRENTLY IF NOT EXISTS ${payload.indexName}
+        ON ${payload.tableName} USING ${payload.indexType} (${payload.columnName})
+    `;
+
+    if (payload.pagesPerRange && payload.indexType === 'brin') {
+      baseQuery += ` WITH (pages_per_range = ${payload.pagesPerRange})`;
+    }
+
+    if (payload.whereClauses && payload.whereClauses.length > 0) {
+      let keywordCondition = 'where';
+      payload.whereClauses.forEach((whereClause) => {
+        baseQuery += ` ${keywordCondition} ${whereClause.column} ${whereClause.expression} ${whereClause.condition}`;
+        if (keywordCondition === 'where') keywordCondition = 'and';
+      });
+    }
+
+    return baseQuery;
+  }
+
   /**
    * @Description: Job create index for big table in CONCURRENTLY MODE
    * @Note: Only support create index, for partitioned table have to input partition name instead of table name
@@ -31,11 +59,10 @@ export default class CreateIndexForBigTableJob extends BullableService {
     indexType: string;
     columnName: string;
     pagesPerRange: number;
+    whereClauses?: { column: string; expression: string; condition: string }[];
   }) {
-    let sql = `CREATE INDEX CONCURRENTLY IF NOT EXISTS ${payload.indexName}
-                        ON ${payload.tableName} USING ${payload.indexType} (${payload.columnName})`;
-    if (payload.pagesPerRange)
-      sql += ` WITH (pages_per_range = ${payload.pagesPerRange})`;
+    const sql = CreateIndexForBigTableJob.buildQueryCreateIndex(payload);
+    this.logger.info(`STARTING: ${sql}`);
     await knex.raw(sql);
     this.logger.info(`DONE: ${sql}`);
   }
@@ -51,6 +78,10 @@ export default class CreateIndexForBigTableJob extends BullableService {
         type: 'number',
         optional: true,
       },
+      whereClauses: {
+        type: 'array',
+        optional: true,
+      },
     },
   })
   public async actionCreateJob(
@@ -60,6 +91,11 @@ export default class CreateIndexForBigTableJob extends BullableService {
       indexType: string;
       columnName: string;
       pagesPerRange: number;
+      whereClauses?: {
+        column: string;
+        expression: string;
+        condition: string;
+      }[];
     }>
   ) {
     await this.createJob(
@@ -71,6 +107,7 @@ export default class CreateIndexForBigTableJob extends BullableService {
         indexType: ctx.params.indexType,
         columnName: ctx.params.columnName,
         pagesPerRange: Number(ctx.params.pagesPerRange),
+        whereClauses: ctx.params.whereClauses,
       },
       {
         removeOnComplete: true,
