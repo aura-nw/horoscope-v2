@@ -163,14 +163,16 @@ export class Proposal extends BaseModel {
   ) {
     return Proposal.fromJson({
       proposal_id: proposal.proposal_id,
-      proposer_address: proposerAddress ?? null,
+      proposer_address: proposal.proposer_address ?? proposerAddress ?? null,
       voting_start_time: proposal.voting_start_time,
       voting_end_time: proposal.voting_end_time,
       submit_time: proposal.submit_time,
       deposit_end_time: proposal.deposit_end_time,
-      type: proposal.content['@type'],
-      title: proposal.content.title ?? '',
-      description: proposal.content.description ?? '',
+      type:
+        proposal.content['@type'] ??
+        proposal.messages.map((msg: string) => msg['@type']).join(','),
+      title: proposal.content.title ?? proposal.title ?? '',
+      description: proposal.content.description ?? proposal.description ?? '',
       content: proposal.content,
       status: proposal.status,
       tally: proposal.final_tally_result,

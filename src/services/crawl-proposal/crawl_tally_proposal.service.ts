@@ -3,7 +3,7 @@ import { ServiceBroker } from 'moleculer';
 import {
   QueryTallyResultRequest,
   QueryTallyResultResponse,
-} from '@aura-nw/aurajs/types/codegen/cosmos/gov/v1beta1/query';
+} from '@aura-nw/aurajs/types/codegen/cosmos/gov/v1/query';
 import Long from 'long';
 import { fromBase64, toHex } from '@cosmjs/encoding';
 import { cosmos } from '@aura-nw/aurajs';
@@ -75,7 +75,7 @@ export default class CrawlTallyProposalService extends BullableService {
         proposalId: Long.fromInt(proposal.proposal_id),
       };
       const data = toHex(
-        cosmos.gov.v1beta1.QueryTallyResultRequest.encode(request).finish()
+        cosmos.gov.v1.QueryTallyResultRequest.encode(request).finish()
       );
 
       batchQueries.push(
@@ -92,13 +92,18 @@ export default class CrawlTallyProposalService extends BullableService {
     const result: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
     const proposalTally: QueryTallyResultResponse[] = result.map(
       (res: JsonRpcSuccessResponse) =>
-        cosmos.gov.v1beta1.QueryTallyResultResponse.decode(
+        cosmos.gov.v1.QueryTallyResultResponse.decode(
           fromBase64(res.result.response.value)
         )
     );
 
     proposalTally.forEach((pro, index) => {
-      const { tally } = pro;
+      const tally = {
+        yes: pro.tally.yesCount,
+        no: pro.tally.noCount,
+        abstain: pro.tally.abstainCount,
+        noWithVeto: pro.tally.noWithVetoCount,
+      };
       let turnout = 0;
       if (pool && pool.pool && tally) {
         turnout =
