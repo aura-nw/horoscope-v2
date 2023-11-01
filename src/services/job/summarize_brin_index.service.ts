@@ -32,9 +32,14 @@ export default class JobSummarizeBrinIndex extends BullableService {
     if (_payload.isPartitionTable) {
       const listChilds = await this.getAllChildTable(_payload.table);
       listIndex = await knex.raw(
-        `select * from pg_indexes where tablename in (${listChilds
-          .map(() => '?')
-          .join(',')}) and indexname similar to ?`,
+        `select tab.relname as tablename, cls.relname as indexname, am.amname as type
+        from pg_index idx 
+        join pg_class cls on cls.oid=idx.indexrelid
+        join pg_class tab on tab.oid=idx.indrelid
+        join pg_am am on am.oid=cls.relam
+        where tab.relname in (${listChilds.map(() => '?').join(',')}) 
+        and cls.relname similar to ?
+        and am.amname = 'brin';`,
         [
           ...listChilds,
           config.jobSummarizeBrinIndex[_payload.tableConfigName]
@@ -43,7 +48,15 @@ export default class JobSummarizeBrinIndex extends BullableService {
       );
     } else {
       listIndex = await knex.raw(
-        'select * from pg_indexes where tablename = :tableName and indexname similar to :indexNamePattern',
+        // 'select * from pg_indexes where tablename = :tableName and indexname similar to :indexNamePattern',
+        `select tab.relname as tablename, cls.relname as indexname, am.amname as type
+        from pg_index idx 
+        join pg_class cls on cls.oid=idx.indexrelid
+        join pg_class tab on tab.oid=idx.indrelid
+        join pg_am am on am.oid=cls.relam
+        where tab.relname = :tableName
+        and cls.relname similar to :indexNamePattern
+        and am.amname = 'brin'`,
         {
           tableName: _payload.table,
           indexNamePattern:
