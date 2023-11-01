@@ -4,7 +4,13 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import { DecCoinSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/base/v1beta1/coin';
 import BigNumber from 'bignumber.js';
-import { BlockCheckpoint, Transaction, Validator } from '../../models';
+import {
+  BlockCheckpoint,
+  Transaction,
+  Validator,
+  Statistic,
+  StatisticKey,
+} from '../../models';
 import {
   BULL_JOB_NAME,
   IAuraJSClientFactory,
@@ -26,6 +32,67 @@ export default class DashboardStatisticsService extends BullableService {
     super(broker);
   }
 
+  /**
+   * @description: update statistic transaction and return current total transaction counted
+   * @private
+   */
+  private async statisticTotalTransaction(): Promise<number> {
+    // Select and make sure that have statistic
+    const totalTxStatistic: Statistic | undefined =
+      await Statistic.query().findOne('key', StatisticKey.TotalTransaction);
+
+    // Count transaction and get max height from height to height
+    const crawlTxJobInfo = await BlockCheckpoint.query().findOne(
+      'job_name',
+      BULL_JOB_NAME.HANDLE_TRANSACTION
+    );
+    if (!crawlTxJobInfo) return 0;
+
+    if (!totalTxStatistic) {
+      const transactionsInfo = await Transaction.query()
+        .where('height', '<=', crawlTxJobInfo.height)
+        .count();
+      console.log(transactionsInfo);
+      const totalTransaction = transactionsInfo ? transactionsInfo[0].count : 0;
+      await Statistic.query().insert({
+        key: StatisticKey.TotalTransaction,
+        value: totalTransaction,
+        statistic_since: `${crawlTxJobInfo.height}`,
+      });
+      return totalTransaction;
+    }
+    let totalTx = Number(totalTxStatistic?.value);
+
+    // Count tx and find max height determine by range of statistic
+    const fromHeight = Number(totalTxStatistic?.statistic_since);
+    const toHeight = crawlTxJobInfo.height;
+
+    if (fromHeight >= toHeight) return totalTx;
+
+    const txStatistic = await Transaction.query()
+      .where('height', '>', fromHeight)
+      .andWhere('height', '<=', toHeight)
+      .count();
+
+    // If having new tx, then update total tx and update counter since for next time statistic
+    if (txStatistic[0]) {
+      totalTx += Number(txStatistic[0].count);
+      await Statistic.query()
+        .update(
+          Statistic.fromJson({
+            key: StatisticKey.TotalTransaction,
+            value: totalTx,
+            statistic_since: toHeight,
+          })
+        )
+        .where({
+          key: StatisticKey.TotalTransaction,
+        });
+    }
+
+    return totalTx;
+  }
+
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_DASHBOARD_STATISTICS,
     jobName: BULL_JOB_NAME.HANDLE_DASHBOARD_STATISTICS,
@@ -37,7 +104,7 @@ export default class DashboardStatisticsService extends BullableService {
 
     const [totalBlocks, totalTxs, totalValidators] = await Promise.all([
       BlockCheckpoint.query().findOne('job_name', BULL_JOB_NAME.CRAWL_BLOCK),
-      Transaction.query().count('id'),
+      this.statisticTotalTransaction(),
       Validator.query(),
     ]);
 
@@ -64,7 +131,7 @@ export default class DashboardStatisticsService extends BullableService {
       community_pool: communityPool.pool.find(
         (pool: DecCoinSDKType) => pool.denom === config.networkDenom
       ).amount,
-      total_transactions: Number(totalTxs[0].count),
+      total_transactions: Number(totalTxs),
       total_validators: totalValidators.length,
       total_active_validators: totalValidators.filter(
         (val) => val.status === Validator.STATUS.BONDED

@@ -30,3 +30,4 @@ export * from './ibc_connection';
 export * from './ibc_channel';
 export * from './ibc_message';
 export * from './ibc_ics20';
+export * from './statistic';
