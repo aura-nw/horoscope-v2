@@ -97,7 +97,7 @@ export default class HandleFeegrantHistoryService extends BullableService {
           builder.select('fee', 'id', 'code', 'height');
         },
         selectMessage(builder) {
-          builder.select('content');
+          builder.select('content', 'id');
         },
       })
       .whereIn('type', [
@@ -159,6 +159,7 @@ export default class HandleFeegrantHistoryService extends BullableService {
               status: FEEGRANT_STATUS.AVAILABLE,
               spend_limit,
               denom,
+              init_msg_id: message.id,
             })
           );
           newHistories.push(
