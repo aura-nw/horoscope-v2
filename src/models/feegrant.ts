@@ -27,6 +27,8 @@ export class Feegrant extends BaseModel {
 
   denom?: string;
 
+  init_transaction!: Transaction;
+
   static get tableName() {
     return 'feegrant';
   }
