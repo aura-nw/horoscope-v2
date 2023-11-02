@@ -24,24 +24,44 @@ export default class CreateIndexForBigTableJob extends BullableService {
     pagesPerRange: number;
     whereClauses?: { column: string; expression: string; condition: string }[];
   }): string {
-    let baseQuery = `
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS ${payload.indexName}
-        ON ${payload.tableName} USING ${payload.indexType} (${payload.columnName})
+    let raw = `
+      CREATE INDEX CONCURRENTLY IF NOT EXISTS :indexName:
+      ON :tableName: USING :indexType: (:columnName:)
     `;
+    const rawParams = {
+      indexName: payload.indexName,
+      tableName: payload.tableName,
+      indexType: payload.indexType,
+      columnName: payload.columnName,
+    };
 
     if (payload.pagesPerRange && payload.indexType === 'brin') {
-      baseQuery += ` WITH (pages_per_range = ${payload.pagesPerRange})`;
+      raw += ' WITH (pages_per_range = :pagesPerRage)';
+      rawParams.pagesPerRage = payload.pagesPerRange;
     }
 
     if (payload.whereClauses && payload.whereClauses.length > 0) {
-      let keywordCondition = 'where';
+      let keywordCondition = 'WHERE';
       payload.whereClauses.forEach((whereClause) => {
-        baseQuery += ` ${keywordCondition} ${whereClause.column} ${whereClause.expression} ${whereClause.condition}`;
-        if (keywordCondition === 'where') keywordCondition = 'and';
+        const condition = ` ${keywordCondition} ? ? ?`;
+        const knexRawCondition = knex
+          .raw(condition, [
+            whereClause.column,
+            whereClause.expression,
+            whereClause.condition,
+          ])
+          .toQuery()
+          .toString()
+          .replaceAll('\'', '')
+          .replaceAll('`', '\'');
+
+        raw += knexRawCondition;
+        if (keywordCondition === 'WHERE') keywordCondition = 'AND';
       });
     }
 
-    return baseQuery;
+    const knexRaw = knex.raw(raw, rawParams);
+    return knexRaw.toQuery();
   }
 
   /**
