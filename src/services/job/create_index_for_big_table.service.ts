@@ -28,7 +28,7 @@ export default class CreateIndexForBigTableJob extends BullableService {
       CREATE INDEX CONCURRENTLY IF NOT EXISTS :indexName:
       ON :tableName: USING :indexType: (:columnName:)
     `;
-    const rawParams = {
+    const rawParams: any = {
       indexName: payload.indexName,
       tableName: payload.tableName,
       indexType: payload.indexType,
@@ -52,8 +52,8 @@ export default class CreateIndexForBigTableJob extends BullableService {
           ])
           .toQuery()
           .toString()
-          .replaceAll('\'', '')
-          .replaceAll('`', '\'');
+          .replaceAll("'", '')
+          .replaceAll('`', "'");
 
         raw += knexRawCondition;
         if (keywordCondition === 'WHERE') keywordCondition = 'AND';
