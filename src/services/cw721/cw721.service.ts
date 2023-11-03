@@ -275,7 +275,7 @@ export default class Cw721HandlerService extends BullableService {
       .count('cw721_activity.id AS total_activity')
       .select(
         knex.raw(
-          "SUM( CASE WHEN cw721_activity.height >= ? AND cw721_activity.action != 'instantiate' THEN 1 ELSE 0 END ) AS transfer_24h",
+          "SUM( CASE WHEN cw721_activity.height >= ? AND cw721_activity.action IN ('mint', 'burn', 'send_nft', 'transfer_nft') THEN 1 ELSE 0 END ) AS transfer_24h",
           blockSince24hAgo[0]?.height
         )
       )
