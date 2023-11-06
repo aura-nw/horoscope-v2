@@ -1,7 +1,11 @@
 import { Knex } from 'knex';
 export async function up(knex: Knex): Promise<void> {
+  await knex.raw(`
+    CREATE INDEX IF NOT EXISTS brin_idx_blh_event_attribute
+    ON event_attribute USING brin (block_height) WITH (PAGES_PER_RANGE = 10, AUTOSUMMARIZE = true)
+  `);
   await knex.schema.alterTable('event_attribute', (table) => {
-    table.index('block_height', `brin_idx_blh_event_attribute`, 'brin');
+    // table.index('block_height', `brin_idx_blh_event_attribute`, 'brin');
     table.index('tx_id', `brin_idx_tx_id_event_attribute}`, 'brin');
   });
 }
