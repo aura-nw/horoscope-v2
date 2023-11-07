@@ -405,9 +405,9 @@ export default class Cw721MediaService extends BullableService {
     if (parsed.protocol === IPFS_PREFIX) {
       const cid = parsed.host;
       if (parsed.path) {
-        return `/ipfs/${cid}${parsed.path}`;
+        return `ipfs/${cid}${parsed.path}`;
       }
-      return `/ipfs/${cid}`; // ipfs://QmPAGifcMvxDBgYr1XmEz9gZiC3DEkfYeinFdVSe364uQp/689.png
+      return `ipfs/${cid}`; // ipfs://QmPAGifcMvxDBgYr1XmEz9gZiC3DEkfYeinFdVSe364uQp/689.png
     }
     if (parsed.protocol === HTTP_PREFIX || parsed.protocol === HTTPS_PREFIX) {
       if (isIPFS.ipfsUrl(media_uri)) {
@@ -415,11 +415,11 @@ export default class Cw721MediaService extends BullableService {
           // TODO: parse cid from subdomain
           return parsed.host + parsed.path; // http://bafybeie5gq4jxvzmsym6hjlwxej4rwdoxt7wadqvmmwbqi7r27fclha2va.ipfs.dweb.link/1.jpg
         }
-        return parsed.path; // http://ipfs.io/ipfs/QmWov9DpE1vYZtTH7JLKXb7b8bJycN91rEPJEmXRXdmh2G/nerd_access_pass.gif
+        return parsed.path.substring(1); // http://ipfs.io/ipfs/QmWov9DpE1vYZtTH7JLKXb7b8bJycN91rEPJEmXRXdmh2G/nerd_access_pass.gif
       }
     }
     if (media_uri.startsWith('/ipfs/')) {
-      return media_uri; // /ipfs/QmPAGifcMvxDBgYr1XmEz9gZiC3DEkfYeinFdVSe364uQp/689.png
+      return media_uri.substring(1); // /ipfs/QmPAGifcMvxDBgYr1XmEz9gZiC3DEkfYeinFdVSe364uQp/689.png
     }
     return null;
   }
