@@ -89,7 +89,9 @@ export default class DailyStatisticsService extends BullableService {
         .andWhere('code', 0),
       EventAttribute.query()
         .distinct('value')
-        .where('tx_id', '>=', startTx[0].id)
+        .where('block_height', '>=', startTx[0].height)
+        .andWhere('block_height', '<=', endTx[0].height)
+        .andWhere('tx_id', '>=', startTx[0].id)
         .andWhere('tx_id', '<=', endTx[0].id)
         .andWhere('value', 'like', `${config.networkPrefixAddress}%`),
       Account.query().count('id'),

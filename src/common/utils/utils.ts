@@ -1,5 +1,6 @@
 import { fromBech32 } from '@cosmjs/encoding';
 import _ from 'lodash';
+import { SemVer } from 'semver';
 
 export default class Utils {
   public static isValidAddress(address: string, length = -1) {
@@ -208,5 +209,10 @@ export default class Utils {
     }
 
     return [response, heightRange];
+  }
+
+  public static compareVersion(version1: string, version2: string) {
+    const semver = new SemVer(version1);
+    return semver.compare(version2);
   }
 }
