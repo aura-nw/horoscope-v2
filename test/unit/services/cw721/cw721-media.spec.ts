@@ -35,4 +35,34 @@ export default class TestCw721MediaService {
     expect(parsedNativeUrl).toEqual(`${IPFS_GATEWAY}${path}`);
     expect(parsedIpfsPath).toEqual(`${IPFS_GATEWAY}${path}`);
   }
+
+  @Test('Test parseFilename function')
+  public async testParseFilename() {
+    const host = 'ipfs';
+    const path =
+      'Qme33YMXArHQzDdgRxQuL6m7JDJNDKeAUyJXDQU3wnL7sf/1000_F_260918513_EtP8xFDBIj4SvHIuXPGdFIyEXyBCmTEq.jpg';
+    const nativeUrl = `${host}://${path}`;
+    const ipfsPath = `/${host}/${path}`;
+    const httpPath = `http://ipfs.dev.aura.network:8080/ipfs/${path}`;
+    const parsedNativeUrl = this.cw721MediaService.parseFilename(nativeUrl);
+    const parsedIpfsPath = this.cw721MediaService.parseFilename(ipfsPath);
+    const parsedHttpPath = this.cw721MediaService.parseFilename(httpPath);
+    expect(parsedNativeUrl).toEqual(`ipfs/${path}`);
+    expect(parsedIpfsPath).toEqual(`ipfs/${path}`);
+    expect(parsedHttpPath).toEqual(`ipfs/${path}`);
+    const httpWrongPath =
+      'http://ipfs.dev.aura.network:8080/ipfs/Qme33YMXArHQzDdgRxQuL6m7JDJNDKeAUyJXDQU3wnL7s/1000_F_260918513_EtP8xFDBIj4SvHIuXPGdFIyEXyBCmTEq.jpg';
+    expect(this.cw721MediaService.parseFilename(httpWrongPath)).toBeNull();
+    const subDomain =
+      'bafybeie5gq4jxvzmsym6hjlwxej4rwdoxt7wadqvmmwbqi7r27fclha2va.ipfs.dweb.link';
+    const httpSubDomain = `https://${subDomain}`;
+    const parsedHttpSubDomain =
+      this.cw721MediaService.parseFilename(httpSubDomain);
+    expect(parsedHttpSubDomain).toEqual(subDomain);
+    const file = '1.json';
+    const httpFullSubDomain = `https://${subDomain}/${file}`;
+    const parsedFullHttpSubDomain =
+      this.cw721MediaService.parseFilename(httpFullSubDomain);
+    expect(parsedFullHttpSubDomain).toEqual(`${subDomain}/${file}`);
+  }
 }
