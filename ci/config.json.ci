@@ -31,7 +31,8 @@
   "handleTransaction": {
     "key": "handleTransaction",
     "blocksPerCall": 100,
-    "millisecondCrawl": 5000
+    "millisecondCrawl": 5000,
+    "txsPerCall": 100
   },
   "crawlSigningInfo": {
     "millisecondCrawl": null,
