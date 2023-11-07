@@ -9,6 +9,7 @@ import {
 } from '@cosmjs/encoding';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+import * as isIPFS from 'is-ipfs';
 import { ServiceBroker } from 'moleculer';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import * as FileType from 'file-type';
@@ -37,6 +38,8 @@ const {
   S3_GATEWAY,
 } = Config;
 const IPFS_PREFIX = 'ipfs';
+const HTTP_PREFIX = 'http';
+const HTTPS_PREFIX = 'https';
 interface ITokenMediaInfo {
   cw721_token_id: number;
   address: string;
@@ -260,6 +263,9 @@ export default class Cw721MediaService extends BullableService {
   async uploadMediaToS3(media_uri?: string) {
     if (media_uri) {
       const fileName = this.parseFilename(media_uri);
+      if (!fileName) {
+        return null;
+      }
       const uploadAttachmentToS3 = async (
         type: string | undefined,
         buffer: Buffer
@@ -399,12 +405,23 @@ export default class Cw721MediaService extends BullableService {
     if (parsed.protocol === IPFS_PREFIX) {
       const cid = parsed.host;
       if (parsed.path) {
-        return `${cid}${parsed.path}`;
+        return `/ipfs/${cid}${parsed.path}`;
       }
-      return cid;
+      return `/ipfs/${cid}`; // ipfs://QmPAGifcMvxDBgYr1XmEz9gZiC3DEkfYeinFdVSe364uQp/689.png
     }
-    // eslint-disable-next-line no-useless-escape
-    return media_uri.replace(/^.*[\\\/]/, '');
+    if (parsed.protocol === HTTP_PREFIX || parsed.protocol === HTTPS_PREFIX) {
+      if (isIPFS.ipfsUrl(media_uri)) {
+        if (isIPFS.ipfsSubdomain(media_uri)) {
+          // TODO: parse cid from subdomain
+          return parsed.host + parsed.path; // http://bafybeie5gq4jxvzmsym6hjlwxej4rwdoxt7wadqvmmwbqi7r27fclha2va.ipfs.dweb.link/1.jpg
+        }
+        return parsed.path; // http://ipfs.io/ipfs/QmWov9DpE1vYZtTH7JLKXb7b8bJycN91rEPJEmXRXdmh2G/nerd_access_pass.gif
+      }
+    }
+    if (media_uri.startsWith('/ipfs/')) {
+      return media_uri; // /ipfs/QmPAGifcMvxDBgYr1XmEz9gZiC3DEkfYeinFdVSe364uQp/689.png
+    }
+    return null;
   }
 
   async downloadAttachment(url: string) {

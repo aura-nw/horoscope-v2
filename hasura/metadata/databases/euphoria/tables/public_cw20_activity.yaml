@@ -8,6 +8,15 @@ object_relationships:
   - name: smart_contract_event
     using:
       foreign_key_constraint_on: smart_contract_event_id
+  - name: tx
+    using:
+      manual_configuration:
+        column_mapping:
+          tx_hash: hash
+        insertion_order: null
+        remote_table:
+          name: transaction
+          schema: public
 select_permissions:
   - role: internal_service
     permission:
@@ -16,6 +25,7 @@ select_permissions:
         - from
         - sender
         - to
+        - tx_hash
         - cw20_contract_id
         - height
         - id

@@ -14,15 +14,3 @@ object_relationships:
         remote_table:
           name: validator
           schema: public
-select_permissions:
-  - role: internal_service
-    permission:
-      columns:
-        - validator_address
-        - block_id_flag
-        - height
-        - id
-        - signature
-        - timestamp
-      filter: {}
-      limit: 100
