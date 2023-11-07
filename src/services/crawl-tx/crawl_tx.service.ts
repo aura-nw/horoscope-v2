@@ -27,7 +27,7 @@ import AuraRegistry from './aura.registry';
 export default class CrawlTxService extends BullableService {
   private _httpBatchClient: HttpBatchClient;
 
-  private _registry!: AuraRegistry;
+  public _registry!: AuraRegistry;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -85,28 +85,48 @@ export default class CrawlTxService extends BullableService {
       .orderBy('height', 'asc');
     this.logger.debug(blocks);
     const promises: any[] = [];
-    const mapBlockTime: Map<number, string> = new Map();
-    blocks
-      .filter((block) => block.txs.length > 0)
-      .forEach((block) => {
-        this.logger.info('crawl tx by height: ', block.height);
-        mapBlockTime[block.height] = block.time;
+    const filterBlocks = blocks.filter((block) => block.txs.length > 0);
+    filterBlocks.forEach((block) => {
+      this.logger.info('crawl tx by height: ', block.height);
+
+      const totalPages = Math.ceil(
+        block.txs.length / config.handleTransaction.txsPerCall
+      );
+      [...Array(totalPages)].forEach((e, i) => {
+        const pageIndex = (i + 1).toString();
         promises.push(
           this._httpBatchClient.execute(
             createJsonRpcRequest('tx_search', {
               query: `tx.height=${block.height}`,
+              page: pageIndex,
+              per_page: config.handleTransaction.txsPerCall.toString(),
             })
           )
         );
       });
+    });
     const resultPromises: JsonRpcSuccessResponse[] = await Promise.all(
       promises
     );
-    const listRawTx: any[] = resultPromises.map((result) => ({
-      listTx: result.result,
-      height: result.result.txs[0].height,
-      timestamp: mapBlockTime[result.result.txs[0].height],
-    }));
+
+    const listRawTx: any[] = filterBlocks.map((block) => {
+      const listTxs: any[] = [];
+      resultPromises
+        .filter(
+          (result) => result.result.txs[0].height === block.height.toString()
+        )
+        .forEach((resultPromise) => {
+          listTxs.push(...resultPromise.result.txs);
+        });
+      return {
+        listTx: {
+          txs: listTxs,
+          total_count: block.txs.length,
+        },
+        height: block.height,
+        timestamp: block.time,
+      };
+    });
     return listRawTx;
   }
 
