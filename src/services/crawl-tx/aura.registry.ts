@@ -6,7 +6,6 @@ import { ibc, cosmos } from '@aura-nw/aurajs';
 import { toBase64, fromUtf8, fromBase64 } from '@cosmjs/encoding';
 import { LoggerInstance } from 'moleculer';
 import _ from 'lodash';
-import txRegistryType from './registry-type/aura-network.json' assert { type: 'json' };
 import { MSG_TYPE } from '../../common';
 import Utils from '../../common/utils/utils';
 
@@ -28,7 +27,33 @@ export default class AuraRegistry {
 
   // set default registry to decode msg
   public setDefaultRegistry() {
-    const missingTypes = txRegistryType;
+    const missingTypes = [
+      // content proposal
+      '/cosmos.gov.v1beta1.MsgSubmitProposal',
+      '/cosmos.upgrade.v1beta1.SoftwareUpgradeProposal',
+      '/cosmos.upgrade.v1beta1.CancelSoftwareUpgradeProposal',
+      '/cosmos.distribution.v1beta1.CommunityPoolSpendProposal',
+      '/cosmos.distribution.v1beta1.CommunityPoolSpendProposalWithDeposit',
+      '/cosmos.params.v1beta1.ParameterChangeProposal',
+      '/ibc.core.client.v1.UpgradeProposal',
+      '/ibc.core.client.v1.ClientUpdateProposal',
+      '/cosmos.params.v1beta1.ParameterChangeProposal',
+
+      // feegrant
+      '/cosmos.feegrant.v1beta1.BasicAllowance',
+      '/cosmos.feegrant.v1beta1.PeriodicAllowance',
+      '/cosmos.feegrant.v1beta1.AllowedContractAllowance',
+      '/cosmos.feegrant.v1beta1.AllowedMsgAllowance',
+      '/cosmos.vesting.v1beta1.MsgCreatePeriodicVestingAccount',
+
+      // ibc
+      '/ibc.lightclients.tendermint.v1.Header',
+      '/ibc.lightclients.tendermint.v1.ClientState',
+      '/ibc.lightclients.tendermint.v1.ConsensusState',
+
+      // slashing
+      '/cosmos.slashing.v1beta1.MsgUnjail',
+    ];
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
