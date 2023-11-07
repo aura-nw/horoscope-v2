@@ -51,4 +51,35 @@ export default class JobService extends BaseService {
       }
     );
   }
+
+  @Post('/crawl-missing-tx-in-block', {
+    name: 'crawl-missing-tx-in-block',
+    params: {
+      chainid: {
+        type: 'string',
+        optional: false,
+        enum: networks.map((network) => network.chainId),
+      },
+      height: {
+        type: 'number',
+        optional: false,
+        convert: true,
+        integer: true,
+      },
+    },
+  })
+  async crawlMissingTxInBlock(
+    ctx: Context<{ chainid: string; height: number }, Record<string, unknown>>
+  ) {
+    const selectedChain = networks.find(
+      (network) => network.chainId === ctx.params.chainid
+    );
+
+    return this.broker.call(
+      `${SERVICE.V1.JobService.CrawlMissingTxInBlock.actionCreateJob.path}@${selectedChain?.moleculerNamespace}`,
+      {
+        height: ctx.params.height,
+      }
+    );
+  }
 }
