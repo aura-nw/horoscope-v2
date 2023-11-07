@@ -60,7 +60,7 @@ export class Cw721Handler {
           cw721_contract_id: cw721Contract.id,
           height: transferMsg.height,
           smart_contract_event_id: transferMsg.smart_contract_event_id,
-          from: token.owner,
+          from: token?.owner,
           to: recipient,
           token_id: tokenId,
         })
