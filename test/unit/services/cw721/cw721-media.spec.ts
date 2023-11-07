@@ -47,9 +47,9 @@ export default class TestCw721MediaService {
     const parsedNativeUrl = this.cw721MediaService.parseFilename(nativeUrl);
     const parsedIpfsPath = this.cw721MediaService.parseFilename(ipfsPath);
     const parsedHttpPath = this.cw721MediaService.parseFilename(httpPath);
-    expect(parsedNativeUrl).toEqual(`/ipfs/${path}`);
-    expect(parsedIpfsPath).toEqual(`/ipfs/${path}`);
-    expect(parsedHttpPath).toEqual(`/ipfs/${path}`);
+    expect(parsedNativeUrl).toEqual(`ipfs/${path}`);
+    expect(parsedIpfsPath).toEqual(`ipfs/${path}`);
+    expect(parsedHttpPath).toEqual(`ipfs/${path}`);
     const httpWrongPath =
       'http://ipfs.dev.aura.network:8080/ipfs/Qme33YMXArHQzDdgRxQuL6m7JDJNDKeAUyJXDQU3wnL7s/1000_F_260918513_EtP8xFDBIj4SvHIuXPGdFIyEXyBCmTEq.jpg';
     expect(this.cw721MediaService.parseFilename(httpWrongPath)).toBeNull();
