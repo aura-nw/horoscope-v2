@@ -8,6 +8,7 @@ import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { decodeTxRaw } from '@cosmjs/proto-signing';
 import { toBase64, fromBase64 } from '@cosmjs/encoding';
+import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { Knex } from 'knex';
 import { Queue } from 'bullmq';
 import { GetNodeInfoResponseSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/base/tendermint/v1beta1/query';
@@ -88,29 +89,50 @@ export default class CrawlTxService extends BullableService {
       .andWhere('height', '<=', endBlock)
       .orderBy('height', 'asc');
     this.logger.debug(blocks);
+    const promises: any[] = [];
+    const filterBlocks = blocks.filter((block) => block.txs.length > 0);
+    filterBlocks.forEach((block) => {
+      this.logger.info('crawl tx by height: ', block.height);
 
-    const mapBlockTime: Map<number, string> = new Map();
-    const handleResult = async (blockHeight: number) => {
-      const result = await this._httpBatchClient.execute(
-        createJsonRpcRequest('tx_search', {
-          query: `tx.height=${blockHeight}`,
-        })
+      const totalPages = Math.ceil(
+        block.txs.length / config.handleTransaction.txsPerCall
       );
-      return {
-        listTx: result.result,
-        height: blockHeight,
-        timestamp: mapBlockTime[blockHeight],
-      };
-    };
-    const handleResultParallel: any[] = [];
-    blocks
-      // .filter((block) => block.txs?.length > 0)
-      .forEach((block) => {
-        this.logger.info('crawl tx by height: ', block.height);
-        mapBlockTime[block.height] = block.time;
-        handleResultParallel.push(handleResult(block.height));
+      [...Array(totalPages)].forEach((e, i) => {
+        const pageIndex = (i + 1).toString();
+        promises.push(
+          this._httpBatchClient.execute(
+            createJsonRpcRequest('tx_search', {
+              query: `tx.height=${block.height}`,
+              page: pageIndex,
+              per_page: config.handleTransaction.txsPerCall.toString(),
+            })
+          )
+        );
       });
-    return Promise.all(handleResultParallel);
+    });
+    const resultPromises: JsonRpcSuccessResponse[] = await Promise.all(
+      promises
+    );
+
+    const listRawTx: any[] = filterBlocks.map((block) => {
+      const listTxs: any[] = [];
+      resultPromises
+        .filter(
+          (result) => result.result.txs[0].height === block.height.toString()
+        )
+        .forEach((resultPromise) => {
+          listTxs.push(...resultPromise.result.txs);
+        });
+      return {
+        listTx: {
+          txs: listTxs,
+          total_count: block.txs.length,
+        },
+        height: block.height,
+        timestamp: block.time,
+      };
+    });
+    return listRawTx;
   }
 
   // decode list raw tx
