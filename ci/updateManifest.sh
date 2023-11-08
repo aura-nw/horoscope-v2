@@ -22,6 +22,10 @@ elif [ ${GITHUB_REF_NAME} = "staging" ]
 then
   echo 'This is staging branch'
   cd ${REPO_MANIFEST_ENV_STAGING}
+elif [ ${GITHUB_REF_NAME} = "nois-testnet-005" ]
+then
+  echo 'This is nois-testnet-005 branch'
+  cd ${REPO_MANIFEST_ENV_NOIS_TESTNET}
 else
   exit
 fi
