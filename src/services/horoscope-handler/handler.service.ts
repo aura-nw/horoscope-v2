@@ -50,10 +50,16 @@ export default class HoroscopeHandlerService extends BaseService {
       .select('height', 'hash', 'time')
       .withGraphFetched('events.[attributes]')
       .modifyGraph('events', (builder) => {
-        builder.select('type', 'source');
+        builder
+          .where('block_height', '>=', startBlock)
+          .andWhere('block_height', '<', endBlock)
+          .select('type', 'source');
       })
       .modifyGraph('events.[attributes]', (builder) => {
-        builder.select('key', 'value');
+        builder
+          .where('block_height', '>=', startBlock)
+          .andWhere('block_height', '<', endBlock)
+          .select('key', 'value');
       })
       .where('height', '>=', startBlock)
       .andWhere('height', '<', endBlock)
@@ -69,10 +75,16 @@ export default class HoroscopeHandlerService extends BaseService {
           .whereNull('parent_id');
       })
       .modifyGraph('events', (builder) => {
-        builder.select('type', 'source', 'tx_msg_index');
+        builder
+          .where('block_height', '>=', startBlock)
+          .andWhere('block_height', '<', endBlock)
+          .select('type', 'source', 'tx_msg_index');
       })
       .modifyGraph('events.[attributes]', (builder) => {
-        builder.select('key', 'value');
+        builder
+          .where('block_height', '>=', startBlock)
+          .andWhere('block_height', '<', endBlock)
+          .select('key', 'value');
       })
       .where('height', '>=', startBlock)
       .andWhere('height', '<', endBlock)
