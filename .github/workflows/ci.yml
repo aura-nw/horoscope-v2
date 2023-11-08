@@ -3,7 +3,7 @@ name: CI
 on:
   workflow_dispatch:
   push:
-    branches: [develop, staging]
+    branches: [develop, staging, nois-testnet-005]
 jobs:
   lint:
     uses: ./.github/workflows/lint.yml
