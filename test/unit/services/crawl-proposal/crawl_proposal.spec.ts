@@ -329,7 +329,7 @@ export default class CrawlProposalTest {
     expect(newProposal?.proposer_address).toEqual(
       'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk'
     );
-    expect(newProposal?.type).toEqual('/cosmos.gov.v1beta1.TextProposal');
+    expect(newProposal?.type).toEqual('/cosmos.gov.v1.MsgExecLegacyContent');
     expect(newProposal?.title).toEqual('Community Pool Spend test 1');
     expect(newProposal?.description).toEqual('Test 1');
     expect(newProposal?.vote_counted).toEqual(false);
