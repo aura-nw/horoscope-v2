@@ -63,15 +63,13 @@ export default class CrawlDelegatorsService extends BullableService {
 
     const pagination = {
       limit: 1,
-      countTotal: true
+      countTotal: true,
     };
     const validatorDelegationInfo =
-      await this._lcdClient.auranw.cosmos.staking.v1beta1.validatorDelegations(
-        {
-          validatorAddr: _payload.address,
-          pagination,
-        }
-      );
+      await this._lcdClient.auranw.cosmos.staking.v1beta1.validatorDelegations({
+        validatorAddr: _payload.address,
+        pagination,
+      });
 
     const totalDelegator = Number(validatorDelegationInfo.pagination.total);
     const latestBlock: BlockCheckpoint | undefined =
