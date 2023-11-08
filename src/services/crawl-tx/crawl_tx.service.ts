@@ -8,8 +8,6 @@ import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { decodeTxRaw } from '@cosmjs/proto-signing';
 import { toBase64, fromBase64 } from '@cosmjs/encoding';
-import _ from 'lodash';
-import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { Knex } from 'knex';
 import { Queue } from 'bullmq';
 import { GetNodeInfoResponseSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/base/tendermint/v1beta1/query';
