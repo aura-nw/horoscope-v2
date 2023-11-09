@@ -340,6 +340,7 @@ export const MSG_TYPE = {
   MSG_SUBMIT_PROPOSAL_V1: '/cosmos.gov.v1.MsgSubmitProposal',
   MSG_AUTHZ_EXEC: '/cosmos.authz.v1beta1.MsgExec',
   MSG_VOTE: '/cosmos.gov.v1beta1.MsgVote',
+  MSG_VOTE_V1: '/cosmos.gov.v1.MsgVote',
   MSG_ACKNOWLEDGEMENT: '/ibc.core.channel.v1.MsgAcknowledgement',
   MSG_GRANT_ALLOWANCE: '/cosmos.feegrant.v1beta1.MsgGrantAllowance',
   MSG_FEEGRANT_GRANT: '/cosmos.feegrant.v1beta1.MsgGrantAllowance',
