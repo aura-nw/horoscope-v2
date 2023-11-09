@@ -239,7 +239,13 @@ export default class CrawlProposalService extends BullableService {
                     onchainPro?.proposal?.status
                 ) || '',
               total_deposit: onchainPro?.proposal?.totalDeposit || [],
-              tally: Utils.camelizeKeys(onchainPro.proposal?.finalTallyResult),
+              tally: {
+                yes: onchainPro.proposal?.finalTallyResult.yesCount,
+                no: onchainPro.proposal?.finalTallyResult.noCount,
+                abstain: onchainPro.proposal?.finalTallyResult.abstainCount,
+                no_with_veto:
+                  onchainPro.proposal?.finalTallyResult.noWithVetoCount,
+              },
             })
         );
       }
