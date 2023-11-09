@@ -41,7 +41,9 @@ export default class HandleTxVoteService extends BullableService {
       .joinRelated('transaction')
       .where('height', '>', startBlock)
       .andWhere('height', '<=', endBlock)
-      .andWhere('type', MSG_TYPE.MSG_VOTE)
+      .andWhere((builder) => {
+        builder.whereIn('type', [MSG_TYPE.MSG_VOTE, MSG_TYPE.MSG_VOTE_V1]);
+      })
       .andWhere('code', 0)
       .orderBy([
         { column: 'height', order: 'ASC' },
