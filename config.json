@@ -205,5 +205,11 @@
     "millisecondRepeatJob": 2000,
     "blocksPerCall": 100,
     "port": "transfer"
+  },
+  "jobCreateConstraintInAttrPartition": {
+    "jobRepeatCheckNeedCreateConstraint": {
+      "millisecondRepeatJob": 600000
+    },
+    "statementTimeout": 600000
   }
 }
