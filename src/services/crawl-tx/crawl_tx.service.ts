@@ -375,9 +375,22 @@ export default class CrawlTxService extends BullableService {
             tx_msg_id: tx.messages[event.tx_msg_index].id,
             from: event.attributes.find((attr) => attr.key === 'sender')?.value,
             to: '',
-            amount: '',
+            amount: 0,
             denom: '',
             timestamp: tx.timestamp,
+          };
+
+          // split amount to amount and denom using regex
+          // example: 10000uaura
+          // amount = 10000
+          // denom = uaura
+          // return [0, ''] if invalid
+          const extractAmount = (
+            rawAmount: string | undefined
+          ): [number, string] => {
+            const amount = rawAmount?.match(/(\d+)/)?.[0] ?? '0';
+            const denom = rawAmount?.replace(amount, '') ?? '';
+            return [Number.parseInt(amount, 10), denom];
           };
 
           // we expect 2 cases:
@@ -388,6 +401,10 @@ export default class CrawlTxService extends BullableService {
           //    sender is the coin_spent.spender
 
           if (event.attributes.length === 3) {
+            const rawAmount = event.attributes.find(
+              (attr) => attr.key === 'amount'
+            )?.value;
+            const [amount, denom] = extractAmount(rawAmount);
             coinTransfers.push(
               CoinTransfer.fromJson({
                 ...ctTemplate,
@@ -395,8 +412,8 @@ export default class CrawlTxService extends BullableService {
                   ?.value,
                 to: event.attributes.find((attr) => attr.key === 'recipient')
                   ?.value,
-                amount: event.attributes.find((attr) => attr.key === 'amount')
-                  ?.value,
+                amount,
+                denom,
               })
             );
           } else {
@@ -432,11 +449,14 @@ export default class CrawlTxService extends BullableService {
                 return;
               }
 
+              const rawAmount = event.attributes[i + 1].value;
+              const [amount, denom] = extractAmount(rawAmount);
               coinTransfers.push(
                 CoinTransfer.fromJson({
                   ...ctTemplate,
                   to: event.attributes[i].value,
-                  amount: event.attributes[i + 1].value,
+                  amount,
+                  denom,
                 })
               );
             }
