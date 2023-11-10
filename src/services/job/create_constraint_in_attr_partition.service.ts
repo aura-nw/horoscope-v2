@@ -42,8 +42,8 @@ export default class CreateConstraintInAttrPartitionJob extends BullableService 
     const listPartition = partitionTable.rows.map((partition: any) => {
       const partitionBounds = partition.bounds;
       const heightBound = {
-        lower: partitionBounds.match(/^\d+|\d+\b|\d+(?=\w)/g)[0],
-        upper: partitionBounds.match(/^\d+|\d+\b|\d+(?=\w)/g)[1],
+        lower: partitionBounds.match(/\d+/g)[0],
+        upper: partitionBounds.match(/\d+/g)[1],
       };
       return {
         name: partition.child,
