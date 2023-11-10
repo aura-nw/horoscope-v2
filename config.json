@@ -219,5 +219,11 @@
       "indexNamePattern": "%(tx_id|block_height)%",
       "milisecondInterval": 60000
     }
+  },
+  "jobCreateConstraintInAttrPartition": {
+    "jobRepeatCheckNeedCreateConstraint": {
+      "millisecondRepeatJob": 600000
+    },
+    "statementTimeout": 600000
   }
 }
