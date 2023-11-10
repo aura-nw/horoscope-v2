@@ -13,7 +13,6 @@ import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { Knex } from 'knex';
 import { Queue } from 'bullmq';
 import { GetNodeInfoResponseSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/base/tendermint/v1beta1/query';
-import { CoinTransfer } from 'src/models/coin_transfer';
 import Utils from '../../common/utils/utils';
 import {
   BULL_JOB_NAME,
@@ -21,7 +20,13 @@ import {
   getLcdClient,
   SERVICE,
 } from '../../common';
-import { Block, BlockCheckpoint, Event, Transaction } from '../../models';
+import {
+  Block,
+  BlockCheckpoint,
+  CoinTransfer,
+  Event,
+  Transaction,
+} from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
