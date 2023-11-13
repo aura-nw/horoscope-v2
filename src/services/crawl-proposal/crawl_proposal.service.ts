@@ -146,6 +146,7 @@ export default class CrawlProposalService extends BullableService {
               } catch (error) {
                 this.logger.error(`Error get proposal ${proposalId}`);
                 this.logger.debug(error);
+                throw error;
               }
             })
           );
@@ -164,6 +165,7 @@ export default class CrawlProposalService extends BullableService {
                   )}`
                 );
                 this.logger.error(error);
+                throw error;
               });
         }
 
