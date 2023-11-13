@@ -98,33 +98,35 @@ export default class CrawlTallyProposalService extends BullableService {
     );
 
     proposalTally.forEach((pro, index) => {
-      const tally = {
-        yes: pro.tally.yesCount,
-        no: pro.tally.noCount,
-        abstain: pro.tally.abstainCount,
-        noWithVeto: pro.tally.noWithVetoCount,
-      };
-      let turnout = 0;
-      if (pool && pool.pool && tally) {
-        turnout =
-          Number(
-            ((BigInt(tally.yes) +
-              BigInt(tally.no) +
-              BigInt(tally.abstain) +
-              BigInt(tally.noWithVeto)) *
-              BigInt(100000000)) /
-              BigInt(pool.pool.bonded_tokens)
-          ) / 1000000;
-      }
+      if (pro.tally) {
+        const tally = {
+          yes: pro.tally.yesCount,
+          no: pro.tally.noCount,
+          abstain: pro.tally.abstainCount,
+          noWithVeto: pro.tally.noWithVetoCount,
+        };
+        let turnout = 0;
+        if (pool && pool.pool && tally) {
+          turnout =
+            Number(
+              ((BigInt(tally.yes) +
+                BigInt(tally.no) +
+                BigInt(tally.abstain) +
+                BigInt(tally.noWithVeto)) *
+                BigInt(100000000)) /
+                BigInt(pool.pool.bonded_tokens)
+            ) / 1000000;
+        }
 
-      patchQueries.push(
-        Proposal.query()
-          .where('proposal_id', votingProposals[index].proposal_id)
-          .patch({
-            tally: Utils.camelizeKeys(tally),
-            turnout,
-          })
-      );
+        patchQueries.push(
+          Proposal.query()
+            .where('proposal_id', votingProposals[index].proposal_id)
+            .patch({
+              tally: Utils.camelizeKeys(tally),
+              turnout,
+            })
+        );
+      }
     });
 
     if (patchQueries.length > 0)
