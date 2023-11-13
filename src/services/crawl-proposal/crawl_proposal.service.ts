@@ -81,7 +81,7 @@ export default class CrawlProposalService extends BullableService {
           const nodeInfo: GetNodeInfoResponseSDKType =
             await this._lcdClient.auranw.cosmos.base.tendermint.v1beta1.getNodeInfo();
           const cosmosSdkVersion =
-            nodeInfo.application_version?.cosmos_sdk_version;
+            nodeInfo.application_version?.cosmos_sdk_version ?? 'v0.45.99';
           await Promise.all(
             proposalIds.map(async (proposalId: number) => {
               try {
@@ -240,11 +240,12 @@ export default class CrawlProposalService extends BullableService {
                 ) || '',
               total_deposit: onchainPro?.proposal?.totalDeposit || [],
               tally: {
-                yes: onchainPro.proposal?.finalTallyResult.yesCount,
-                no: onchainPro.proposal?.finalTallyResult.noCount,
-                abstain: onchainPro.proposal?.finalTallyResult.abstainCount,
+                yes: onchainPro.proposal?.finalTallyResult?.yesCount ?? '0',
+                no: onchainPro.proposal?.finalTallyResult?.noCount ?? '0',
+                abstain:
+                  onchainPro.proposal?.finalTallyResult?.abstainCount ?? '0',
                 no_with_veto:
-                  onchainPro.proposal?.finalTallyResult.noWithVetoCount,
+                  onchainPro.proposal?.finalTallyResult?.noWithVetoCount ?? '0',
               },
             })
         );
