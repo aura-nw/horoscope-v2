@@ -92,8 +92,6 @@ export class Proposal extends BaseModel {
       type: 'object',
       required: [
         'proposal_id',
-        'voting_start_time',
-        'voting_end_time',
         'submit_time',
         'deposit_end_time',
         'type',
@@ -109,8 +107,6 @@ export class Proposal extends BaseModel {
       properties: {
         proposal_id: { type: 'number' },
         proposer_address: { type: ['string', 'null'] },
-        voting_start_time: { type: 'string', format: 'date-time' },
-        voting_end_time: { type: 'string', format: 'date-time' },
         submit_time: { type: 'string', format: 'date-time' },
         deposit_end_time: { type: 'string', format: 'date-time' },
         type: { type: 'string' },
