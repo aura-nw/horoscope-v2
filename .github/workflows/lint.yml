@@ -33,7 +33,5 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.KEY_NPM_RC }}
       - name: Lint check
         run: npm run lint
