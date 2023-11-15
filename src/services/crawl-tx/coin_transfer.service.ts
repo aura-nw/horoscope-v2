@@ -92,131 +92,131 @@ export default class CrawlTxService extends BullableService {
       .first();
     let latestCoinTransferHeight = await this.getLatestCoinTransferHeight();
 
-    if (!transactionCheckPoint) {
+    if (
+      !transactionCheckPoint ||
+      latestCoinTransferHeight >= transactionCheckPoint.height
+    ) {
       this.logger.info('Waiting for new transaction crawled');
       return;
     }
 
-    while (latestCoinTransferHeight < transactionCheckPoint.height) {
-      const fromBlock = latestCoinTransferHeight;
-      const toBlock = fromBlock + 100;
-      this.logger.info(
-        `QUERY FROM ${fromBlock} - TO ${toBlock}................`
-      );
+    const fromBlock = latestCoinTransferHeight;
+    const toBlock = Math.min(
+      fromBlock + config.handleCoinTransfer.blocksPerCall,
+      transactionCheckPoint.height
+    );
+    this.logger.info(`QUERY FROM ${fromBlock} - TO ${toBlock}................`);
 
-      const coinTransfers: CoinTransfer[] = [];
-      // eslint-disable-next-line no-await-in-loop
-      const transactions = await this.fetchTransactionCTByHeight(
-        fromBlock,
-        toBlock
-      );
+    const coinTransfers: CoinTransfer[] = [];
+    const transactions = await this.fetchTransactionCTByHeight(
+      fromBlock,
+      toBlock
+    );
 
-      transactions.forEach((tx: Transaction) => {
-        tx.events.forEach((event: Event) => {
-          if (!event.tx_msg_index) return;
-          // skip if message is not 'MsgMultiSend'
+    transactions.forEach((tx: Transaction) => {
+      tx.events.forEach((event: Event) => {
+        if (!event.tx_msg_index) return;
+        // skip if message is not 'MsgMultiSend'
+        if (
+          event.attributes.length !== 3 &&
+          tx.messages[event.tx_msg_index].type !==
+            '/cosmos.bank.v1beta1.MsgMultiSend'
+        ) {
+          this.logger.error(
+            'Coin transfer detected in unsupported message type',
+            tx.hash,
+            tx.messages[event.tx_msg_index].content
+          );
+          return;
+        }
+
+        const ctTemplate = {
+          block_height: tx.height,
+          tx_id: tx.id,
+          tx_msg_id: tx.messages[event.tx_msg_index].id,
+          from: event.attributes.find((attr) => attr.key === 'sender')?.value,
+          to: '',
+          amount: 0,
+          denom: '',
+          timestamp: new Date(tx.timestamp).toISOString(),
+        };
+        /**
+         * we expect 2 cases:
+         * 1. transfer event has only 1 sender and 1 recipient
+         *    then the event will have 3 attributes: sender, recipient, amount
+         * 2. transfer event has 1 sender and multiple recipients, message must be 'MsgMultiSend'
+         *    then the event will be an array of attributes: recipient1, amount1, recipient2, amount2, ...
+         *    sender is the coin_spent.spender
+         */
+        if (event.attributes.length === 3) {
+          const rawAmount = event.attributes.find(
+            (attr) => attr.key === 'amount'
+          )?.value;
+          const [amount, denom] = this.extractAmount(rawAmount);
+          coinTransfers.push(
+            CoinTransfer.fromJson({
+              ...ctTemplate,
+              from: event.attributes.find((attr) => attr.key === 'sender')
+                ?.value,
+              to: event.attributes.find((attr) => attr.key === 'recipient')
+                ?.value,
+              amount,
+              denom,
+            })
+          );
+          return;
+        }
+
+        const coinSpentEvent = tx.events.find(
+          (e: Event) =>
+            e.type === 'coin_spent' && e.tx_msg_index === event.tx_msg_index
+        );
+        ctTemplate.from = coinSpentEvent?.attributes.find(
+          (attr: { key: string; value: string }) => attr.key === 'spender'
+        )?.value;
+        for (let i = 0; i < event.attributes.length; i += 2) {
           if (
-            event.attributes.length !== 3 &&
-            tx.messages[event.tx_msg_index].type !==
-              '/cosmos.bank.v1beta1.MsgMultiSend'
+            event.attributes[i].key !== 'recipient' &&
+            event.attributes[i + 1].key !== 'amount'
           ) {
             this.logger.error(
-              'Coin transfer detected in unsupported message type',
+              'Coin transfer in MsgMultiSend detected with invalid attributes',
               tx.hash,
-              tx.messages[event.tx_msg_index].content
+              event.attributes
             );
             return;
           }
 
-          const ctTemplate = {
-            block_height: tx.height,
-            tx_id: tx.id,
-            tx_msg_id: tx.messages[event.tx_msg_index].id,
-            from: event.attributes.find((attr) => attr.key === 'sender')?.value,
-            to: '',
-            amount: 0,
-            denom: '',
-            timestamp: new Date(tx.timestamp).toISOString(),
-          };
-          /**
-           * we expect 2 cases:
-           * 1. transfer event has only 1 sender and 1 recipient
-           *    then the event will have 3 attributes: sender, recipient, amount
-           * 2. transfer event has 1 sender and multiple recipients, message must be 'MsgMultiSend'
-           *    then the event will be an array of attributes: recipient1, amount1, recipient2, amount2, ...
-           *    sender is the coin_spent.spender
-           */
-          if (event.attributes.length === 3) {
-            const rawAmount = event.attributes.find(
-              (attr) => attr.key === 'amount'
-            )?.value;
-            const [amount, denom] = this.extractAmount(rawAmount);
-            coinTransfers.push(
-              CoinTransfer.fromJson({
-                ...ctTemplate,
-                from: event.attributes.find((attr) => attr.key === 'sender')
-                  ?.value,
-                to: event.attributes.find((attr) => attr.key === 'recipient')
-                  ?.value,
-                amount,
-                denom,
-              })
-            );
-            return;
-          }
-
-          const coinSpentEvent = tx.events.find(
-            (e: Event) =>
-              e.type === 'coin_spent' && e.tx_msg_index === event.tx_msg_index
+          const rawAmount = event.attributes[i + 1].value;
+          const [amount, denom] = this.extractAmount(rawAmount);
+          coinTransfers.push(
+            CoinTransfer.fromJson({
+              ...ctTemplate,
+              to: event.attributes[i].value,
+              amount,
+              denom,
+            })
           );
-          ctTemplate.from = coinSpentEvent?.attributes.find(
-            (attr: { key: string; value: string }) => attr.key === 'spender'
-          )?.value;
-          for (let i = 0; i < event.attributes.length; i += 2) {
-            if (
-              event.attributes[i].key !== 'recipient' &&
-              event.attributes[i + 1].key !== 'amount'
-            ) {
-              this.logger.error(
-                'Coin transfer in MsgMultiSend detected with invalid attributes',
-                tx.hash,
-                event.attributes
-              );
-              return;
-            }
-
-            const rawAmount = event.attributes[i + 1].value;
-            const [amount, denom] = this.extractAmount(rawAmount);
-            coinTransfers.push(
-              CoinTransfer.fromJson({
-                ...ctTemplate,
-                to: event.attributes[i].value,
-                amount,
-                denom,
-              })
-            );
-          }
-        });
-      });
-
-      latestCoinTransferHeight = toBlock;
-      // eslint-disable-next-line no-await-in-loop,@typescript-eslint/no-loop-func
-      await knex.transaction(async (trx) => {
-        await BlockCheckpoint.query()
-          .transacting(trx)
-          .insert({
-            height: latestCoinTransferHeight,
-            job_name: BULL_JOB_NAME.HANDLE_COIN_TRANSFER,
-          })
-          .onConflict('job_name')
-          .merge();
-
-        if (coinTransfers.length > 0) {
-          this.logger.info(`INSERTING ${coinTransfers.length} COIN TRANSFER`);
-          await CoinTransfer.query().transacting(trx).insert(coinTransfers);
         }
       });
-    }
+    });
+
+    latestCoinTransferHeight = toBlock;
+    await knex.transaction(async (trx) => {
+      await BlockCheckpoint.query()
+        .transacting(trx)
+        .insert({
+          height: latestCoinTransferHeight,
+          job_name: BULL_JOB_NAME.HANDLE_COIN_TRANSFER,
+        })
+        .onConflict('job_name')
+        .merge();
+
+      if (coinTransfers.length > 0) {
+        this.logger.info(`INSERTING ${coinTransfers.length} COIN TRANSFER`);
+        await CoinTransfer.query().transacting(trx).insert(coinTransfers);
+      }
+    });
   }
 
   public async _start() {
@@ -230,7 +230,7 @@ export default class CrawlTxService extends BullableService {
           count: 3,
         },
         repeat: {
-          every: config.handleTransaction.millisecondCrawl,
+          every: config.handleCoinTransfer.millisecondCrawl,
         },
       }
     );
