@@ -275,7 +275,7 @@ export default class Cw721HandlerService extends BullableService {
       .count('cw721_activity.id AS total_activity')
       .select(
         knex.raw(
-          "SUM( CASE WHEN cw721_activity.height >= ? AND cw721_activity.action != 'instantiate' THEN 1 ELSE 0 END ) AS transfer_24h",
+          "SUM( CASE WHEN cw721_activity.height >= ? AND cw721_activity.action IN ('mint', 'burn', 'send_nft', 'transfer_nft') THEN 1 ELSE 0 END ) AS transfer_24h",
           blockSince24hAgo[0]?.height
         )
       )
@@ -313,6 +313,19 @@ export default class Cw721HandlerService extends BullableService {
       await knex.transaction(async (trx) => {
         const { cw721Activities } = await this.handleCw721MsgExec(events, trx);
         if (cw721Activities.length > 0) {
+          const tokensKeyById = _.keyBy(
+            await CW721Token.query()
+              .transacting(trx)
+              .withGraphJoined('contract.smart_contract')
+              .where('contract:smart_contract.id', smartContractId),
+            (o) => `${o.cw721_contract_id}_${o.token_id}`
+          );
+          cw721Activities.forEach((act) => {
+            const token =
+              tokensKeyById[`${act.cw721_contract_id}_${act.token_id}`];
+            // eslint-disable-next-line no-param-reassign
+            act.cw721_token_id = token?.id;
+          });
           await CW721Activity.query()
             .transacting(trx)
             .insert(cw721Activities.map((e) => _.omit(e, 'token_id')));
