@@ -1,4 +1,3 @@
-/* eslint-disable import/no-extraneous-dependencies */
 import { ServiceBroker } from 'moleculer';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
@@ -13,40 +12,12 @@ import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
 
 @Service({
-  name: SERVICE.V1.CrawlTransaction.key,
+  name: SERVICE.V1.CoinTransfer.key,
   version: 1,
 })
-export default class CrawlTxService extends BullableService {
+export default class CoinTransferService extends BullableService {
   public constructor(public broker: ServiceBroker) {
     super(broker);
-  }
-
-  /**
-   * @description Get latest coin transfer to get latest height, otherwise get height from the oldest transaction crawled
-   * @private
-   */
-  private async getLatestCoinTransferHeight(): Promise<number> {
-    const blockCheckpointCT = await BlockCheckpoint.query()
-      .where('job_name', BULL_JOB_NAME.HANDLE_COIN_TRANSFER)
-      .first();
-
-    if (!blockCheckpointCT) {
-      const oldestTransaction = await Transaction.query()
-        .orderBy('height', 'ASC')
-        .first();
-      const latestBlockHeight = oldestTransaction
-        ? oldestTransaction.height
-        : 0;
-      await BlockCheckpoint.query()
-        .insert({
-          height: latestBlockHeight,
-          job_name: BULL_JOB_NAME.HANDLE_COIN_TRANSFER,
-        })
-        .onConflict('job_name')
-        .merge();
-      return latestBlockHeight;
-    }
-    return blockCheckpointCT.height;
   }
 
   /**
@@ -62,7 +33,7 @@ export default class CrawlTxService extends BullableService {
     return Transaction.query()
       .withGraphFetched('events.[attributes]')
       .modifyGraph('events', (builder) => {
-        builder.andWhere('type', '=', 'transfer').whereNotNull('tx_msg_index');
+        builder.whereNotNull('tx_msg_index');
       })
       .withGraphFetched('messages')
       .where('transaction.height', '>', fromHeight)
@@ -86,25 +57,19 @@ export default class CrawlTxService extends BullableService {
     queueName: BULL_JOB_NAME.HANDLE_COIN_TRANSFER,
     jobName: BULL_JOB_NAME.HANDLE_COIN_TRANSFER,
   })
-  public async jobHandlerCrawlTx() {
-    const transactionCheckPoint = await BlockCheckpoint.query()
-      .where('job_name', BULL_JOB_NAME.HANDLE_TRANSACTION)
-      .first();
-    let latestCoinTransferHeight = await this.getLatestCoinTransferHeight();
+  public async jobHandleTxCoinTransfer() {
+    const [fromBlock, toBlock, updateBlockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.HANDLE_COIN_TRANSFER,
+        [BULL_JOB_NAME.HANDLE_TRANSACTION],
+        'handleCoinTransfer'
+      );
 
-    if (
-      !transactionCheckPoint ||
-      latestCoinTransferHeight >= transactionCheckPoint.height
-    ) {
+    if (fromBlock >= toBlock) {
       this.logger.info('Waiting for new transaction crawled');
       return;
     }
 
-    const fromBlock = latestCoinTransferHeight;
-    const toBlock = Math.min(
-      fromBlock + config.handleCoinTransfer.blocksPerCall,
-      transactionCheckPoint.height
-    );
     this.logger.info(`QUERY FROM ${fromBlock} - TO ${toBlock}................`);
 
     const coinTransfers: CoinTransfer[] = [];
@@ -201,14 +166,11 @@ export default class CrawlTxService extends BullableService {
       });
     });
 
-    latestCoinTransferHeight = toBlock;
+    updateBlockCheckpoint.height = toBlock;
     await knex.transaction(async (trx) => {
       await BlockCheckpoint.query()
         .transacting(trx)
-        .insert({
-          height: latestCoinTransferHeight,
-          job_name: BULL_JOB_NAME.HANDLE_COIN_TRANSFER,
-        })
+        .insert(updateBlockCheckpoint)
         .onConflict('job_name')
         .merge();
 

@@ -157,6 +157,10 @@ export const SERVICE = {
         path: 'v1.CrawlTransactionService.TriggerHandleTxJob',
       },
     },
+    CoinTransfer: {
+      key: 'CoinTransferService',
+      name: 'v1.CoinTransferService',
+    },
     CrawlGenesisService: {
       key: 'CrawlGenesisService',
       name: 'v1.CrawlGenesisService',
