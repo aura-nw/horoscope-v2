@@ -31,7 +31,7 @@ export default class CreateEventAttrPartitionJob extends BullableService {
       // create table
       await knex
         .raw(
-          `create table ${tableName} (like ${config.jobCheckNeedCreateEventAttributePartition.templateTable} including all)`
+          `create table ${tableName} (like ${config.jobCheckNeedCreateEventAttributePartition.templateTable} including all excluding constraints)`
         )
         .transacting(trx);
       // attach table to partition table
