@@ -4,17 +4,15 @@ FROM node:16-alpine
 WORKDIR /app
 
 # Install dependencies
-ARG NPM_TOKEN
-RUN echo "@aura-nw:registry=https://npm.pkg.github.com"  >> .npmrc && echo "//npm.pkg.github.com/:_authToken=$NPM_TOKEN" >> .npmrc
-COPY package.json package.json ./
-RUN npm install && rm .npmrc
+COPY package.json package-lock.json yarn.lock ./
+RUN yarn install
 
 # Copy source
 COPY . .
 
 # Build and cleanup
 ENV NODE_ENV=production
-RUN npm run build
+RUN yarn build
 
 # Start server
-CMD ["npm", "run", "start"]
+CMD ["yarn", "start"]

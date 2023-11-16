@@ -3,9 +3,10 @@ import { Registry, TsProtoGeneratedType } from '@cosmjs/proto-signing';
 import { defaultRegistryTypes as defaultStargateTypes } from '@cosmjs/stargate';
 import { wasmTypes } from '@cosmjs/cosmwasm-stargate/build/modules';
 import { ibc, cosmos } from '@aura-nw/aurajs';
-import { toBase64, fromUtf8, fromBase64 } from '@cosmjs/encoding';
+import { toBase64, fromUtf8, fromBase64, toUtf8 } from '@cosmjs/encoding';
 import { LoggerInstance } from 'moleculer';
 import _ from 'lodash';
+import { SemVer } from 'semver';
 import { MSG_TYPE } from '../../common';
 import Utils from '../../common/utils/utils';
 
@@ -17,6 +18,12 @@ export default class AuraRegistry {
   public cosmos: any;
 
   public ibc: any;
+
+  public cosmosSdkVersion: SemVer = new SemVer('v0.45.17');
+
+  public decodeAttribute: any;
+
+  public encodeAttribute: any;
 
   constructor(logger: LoggerInstance) {
     this._logger = logger;
@@ -53,6 +60,12 @@ export default class AuraRegistry {
 
       // slashing
       '/cosmos.slashing.v1beta1.MsgUnjail',
+
+      // aura-nw
+      '/auranw.aura.smartaccount.MsgActivateAccount',
+      '/auranw.aura.smartaccount.MsgRecover',
+      // consensus
+      '/cosmos.consensus.v1.MsgUpdateParams',
     ];
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -140,6 +153,19 @@ export default class AuraRegistry {
         } catch (error) {
           this._logger.error('Cannot decoded sub messages authz exec');
         }
+      } else if (msg.typeUrl === MSG_TYPE.MSG_SUBMIT_PROPOSAL_V1) {
+        try {
+          result.messages = result.messages.map((subMsg: any) =>
+            this.decodeMsg({
+              typeUrl: subMsg.typeUrl,
+              value: Utils.isBase64(subMsg.value)
+                ? fromBase64(subMsg.value)
+                : subMsg.value,
+            })
+          );
+        } catch (error) {
+          this._logger.error('Cannot decoded sub messages in proposal');
+        }
       }
     } else {
       result = msg;
@@ -153,5 +179,22 @@ export default class AuraRegistry {
     types.forEach((type) =>
       this.registry.register(type, _.get(this, type.slice(1)))
     );
+  }
+
+  public setCosmosSdkVersionByString(version: string) {
+    this.cosmosSdkVersion = new SemVer(version);
+
+    if (this.cosmosSdkVersion.compare('v0.45.99') === -1) {
+      this.decodeAttribute = (input: string) => {
+        if (!input) {
+          return input;
+        }
+        return fromUtf8(fromBase64(input));
+      };
+      this.encodeAttribute = (input: string) => toBase64(toUtf8(input));
+    } else {
+      this.decodeAttribute = (input: string) => input;
+      this.encodeAttribute = (input: string) => input;
+    }
   }
 }

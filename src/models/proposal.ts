@@ -92,8 +92,6 @@ export class Proposal extends BaseModel {
       type: 'object',
       required: [
         'proposal_id',
-        'voting_start_time',
-        'voting_end_time',
         'submit_time',
         'deposit_end_time',
         'type',
@@ -109,8 +107,6 @@ export class Proposal extends BaseModel {
       properties: {
         proposal_id: { type: 'number' },
         proposer_address: { type: ['string', 'null'] },
-        voting_start_time: { type: 'string', format: 'date-time' },
-        voting_end_time: { type: 'string', format: 'date-time' },
         submit_time: { type: 'string', format: 'date-time' },
         deposit_end_time: { type: 'string', format: 'date-time' },
         type: { type: 'string' },
@@ -163,14 +159,16 @@ export class Proposal extends BaseModel {
   ) {
     return Proposal.fromJson({
       proposal_id: proposal.proposal_id,
-      proposer_address: proposerAddress ?? null,
+      proposer_address: proposal.proposer_address ?? proposerAddress ?? null,
       voting_start_time: proposal.voting_start_time,
       voting_end_time: proposal.voting_end_time,
       submit_time: proposal.submit_time,
       deposit_end_time: proposal.deposit_end_time,
-      type: proposal.content['@type'],
-      title: proposal.content.title ?? '',
-      description: proposal.content.description ?? '',
+      type:
+        proposal.content['@type'] ??
+        proposal.messages.map((msg: string) => msg['@type']).join(','),
+      title: proposal.content.title ?? proposal.title ?? '',
+      description: proposal.content.description ?? proposal.description ?? '',
       content: proposal.content,
       status: proposal.status,
       tally: proposal.final_tally_result,
@@ -185,7 +183,13 @@ export class Proposal extends BaseModel {
     const tx: any = await Transaction.query()
       .joinRelated('[messages, events.[attributes]]')
       .where('transaction.code', 0)
-      .andWhere('messages.type', MSG_TYPE.MSG_SUBMIT_PROPOSAL)
+      // .andWhere('messages.type', MSG_TYPE.MSG_SUBMIT_PROPOSAL)
+      .andWhere((builder) => {
+        builder.whereIn('messages.type', [
+          MSG_TYPE.MSG_SUBMIT_PROPOSAL,
+          MSG_TYPE.MSG_SUBMIT_PROPOSAL_V1,
+        ]);
+      })
       .andWhere('events.type', Event.EVENT_TYPE.SUBMIT_PROPOSAL)
       .andWhere(
         'events:attributes.key',
