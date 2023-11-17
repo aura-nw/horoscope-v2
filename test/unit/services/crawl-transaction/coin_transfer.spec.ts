@@ -1,4 +1,4 @@
-import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
+import { AfterAll, BeforeEach, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { Block, BlockCheckpoint, CoinTransfer } from '../../../../src/models';
 import { BULL_JOB_NAME } from '../../../../src/common';
@@ -7,6 +7,7 @@ import CoinTransferService from '../../../../src/services/crawl-tx/coin_transfer
 import CrawlTxService from '../../../../src/services/crawl-tx/crawl_tx.service';
 import single_tx_coin_transfer from './single_tx_coin_transfer.json' assert { type: 'json' };
 import multiple_tx_coin_transfer from './multiple_tx_coin_transfer.json' assert { type: 'json' };
+import AuraRegistry from '../../../../src/services/crawl-tx/aura.registry';
 
 @Describe('Test coin transfer')
 export default class CoinTransferSpec {
@@ -15,43 +16,6 @@ export default class CoinTransferSpec {
   coinTransferService?: CoinTransferService;
 
   crawlTxService?: CrawlTxService;
-
-  private status = {
-    test: 1,
-    stop: 2,
-  };
-
-  private async clearData(): Promise<void> {
-    await Promise.all([
-      knex.raw('TRUNCATE TABLE coin_transfer RESTART IDENTITY CASCADE'),
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
-      knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
-      knex.raw('TRUNCATE TABLE transaction RESTART IDENTITY CASCADE'),
-    ]);
-  }
-
-  private async prepareService(status: number): Promise<void> {
-    if (status === this.status.stop) {
-      await Promise.all([
-        this.crawlTxService?.getQueueManager().stopAll(),
-        this.coinTransferService?.getQueueManager().stopAll(),
-        this.coinTransferService?._stop(),
-        this.crawlTxService?._stop(),
-        this.broker.stop(),
-      ]);
-    }
-
-    if (status === this.status.test) {
-      await this.broker.start();
-      this.coinTransferService = this.broker.createService(
-        CoinTransferService
-      ) as CoinTransferService;
-      this.crawlTxService = this.broker.createService(
-        CrawlTxService
-      ) as CrawlTxService;
-      await this.crawlTxService._start();
-    }
-  }
 
   private async insertDataForTest(txHeight: number, tx: any): Promise<void> {
     // Insert job checkpoint
@@ -94,11 +58,23 @@ export default class CoinTransferSpec {
       });
   }
 
-  @BeforeAll()
+  @BeforeEach()
   async initSuite() {
-    await this.prepareService(this.status.stop);
-    await this.clearData();
-    await this.prepareService(this.status.test);
+    this.coinTransferService = this.broker.createService(
+      CoinTransferService
+    ) as CoinTransferService;
+    this.crawlTxService = this.broker.createService(
+      CrawlTxService
+    ) as CrawlTxService;
+    this.crawlTxService?.getQueueManager().stopAll();
+    await Promise.all([
+      knex.raw('TRUNCATE TABLE coin_transfer RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
+    ]);
+    const auraRegistry = new AuraRegistry(this.crawlTxService.logger);
+    auraRegistry.setCosmosSdkVersionByString('v0.45.7');
+    this.crawlTxService.setRegistry(auraRegistry);
   }
 
   @Test('Test single coin transfer')
@@ -161,7 +137,6 @@ export default class CoinTransferSpec {
     ];
 
     // Prepare data and run job
-    await this.clearData();
     await this.insertDataForTest(txHeight, multiple_tx_coin_transfer);
     await this.coinTransferService?.jobHandleTxCoinTransfer();
 
@@ -182,7 +157,15 @@ export default class CoinTransferSpec {
 
   @AfterAll()
   async tearDown() {
-    await this.clearData();
-    await this.prepareService(this.status.stop);
+    this.crawlTxService?.getQueueManager().stopAll();
+    this.coinTransferService?.getQueueManager().stopAll();
+    await Promise.all([
+      knex.raw('TRUNCATE TABLE coin_transfer RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
+      this.crawlTxService?._stop(),
+      this.coinTransferService?._stop(),
+      this.broker.stop(),
+    ]);
   }
 }
