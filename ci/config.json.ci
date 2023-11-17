@@ -27,7 +27,12 @@
     "millisecondCrawl": 5000,
     "numberOfBlockPerCall": 100,
     "startBlock": 4860000
-  },  
+  },
+  "handleCoinTransfer": {
+    "key": "handleCoinTransfer",
+    "blocksPerCall": 100,
+    "millisecondCrawl": 3000
+  },
   "handleTransaction": {
     "key": "handleTransaction",
     "blocksPerCall": 100,
