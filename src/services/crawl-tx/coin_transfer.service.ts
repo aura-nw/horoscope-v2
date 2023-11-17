@@ -33,7 +33,8 @@ export default class CoinTransferService extends BullableService {
     const transactions = await Transaction.query()
       .withGraphFetched('messages')
       .where('height', '>', fromHeight)
-      .andWhere('height', '<=', toHeight);
+      .andWhere('height', '<=', toHeight)
+      .orderBy('id', 'ASC');
     if (transactions.length === 0) return [];
 
     const transactionsWithId: any = [];
