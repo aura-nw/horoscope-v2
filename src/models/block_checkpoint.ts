@@ -21,6 +21,14 @@ export class BlockCheckpoint extends BaseModel {
     };
   }
 
+  /**
+   * @description Get or create a check point for job and step run (from, to)
+   * @param jobName Your job name want to run
+   * @param lastHeightJobNames Another one or more job that your job depending on. So if your job want to process
+   * block A, it needs to wait util those jobs process success block A before your job
+   * @param configName property of config (import config from '../../../config.json' assert { type: 'json' };).
+   * it used to set step call via blocksPerCall in config
+   */
   static async getCheckpoint(
     jobName: string,
     lastHeightJobNames: string[],
