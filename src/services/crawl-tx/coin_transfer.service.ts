@@ -30,14 +30,32 @@ export default class CoinTransferService extends BullableService {
     fromHeight: number,
     toHeight: number
   ): Promise<Transaction[]> {
-    return Transaction.query()
-      .withGraphFetched('events.[attributes]')
-      .modifyGraph('events', (builder) => {
-        builder.whereNotNull('tx_msg_index');
-      })
+    const transactions = await Transaction.query()
       .withGraphFetched('messages')
-      .where('transaction.height', '>', fromHeight)
-      .andWhere('transaction.height', '<=', toHeight);
+      .where('height', '>', fromHeight)
+      .andWhere('height', '<=', toHeight);
+    if (transactions.length === 0) return [];
+
+    const transactionsWithId: any = [];
+    transactions.forEach((transaction) => {
+      transactionsWithId[transaction.id] = {
+        ...transaction,
+        events: [],
+      };
+    });
+
+    const minTransactionId = transactions[0].id;
+    const maxTransactionId = transactions[transactions.length - 1].id;
+    const events = await Event.query()
+      .withGraphFetched('attributes')
+      .where('tx_id', '>=', minTransactionId)
+      .andWhere('tx_id', '<=', maxTransactionId)
+      .whereNotNull('tx_msg_index');
+    events.forEach((event) => {
+      transactionsWithId[event.tx_id].events.push(event);
+    });
+
+    return transactionsWithId;
   }
 
   /**
