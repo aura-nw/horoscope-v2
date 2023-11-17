@@ -18,13 +18,7 @@ import {
   getLcdClient,
   SERVICE,
 } from '../../common';
-import {
-  Block,
-  BlockCheckpoint,
-  CoinTransfer,
-  Event,
-  Transaction,
-} from '../../models';
+import { Block, BlockCheckpoint, Event, Transaction } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
@@ -335,113 +329,10 @@ export default class CrawlTxService extends BullableService {
       });
     });
 
-    const transactions = await Transaction.query()
+    const resultInsertGraph = await Transaction.query()
       .insertGraph(listTxModel, { allowRefs: true })
-      .transacting(transactionDB)
-      .returning('*');
-    this.logger.debug('result insert tx', transactions);
-
-    // TODO: make this a separate job
-    const coinTransfers: CoinTransfer[] = [];
-    transactions.forEach((tx: Transaction) => {
-      tx.events.forEach((event: Event) => {
-        if (event.type === 'transfer' && event.tx_msg_index) {
-          const ctTemplate = {
-            block_height: tx.height,
-            tx_id: tx.id,
-            tx_msg_id: tx.messages[event.tx_msg_index].id,
-            from: event.attributes.find((attr) => attr.key === 'sender')?.value,
-            to: '',
-            amount: 0,
-            denom: '',
-            timestamp: tx.timestamp,
-          };
-
-          // split amount to amount and denom using regex
-          // example: 10000uaura
-          // amount = 10000
-          // denom = uaura
-          // return [0, ''] if invalid
-          const extractAmount = (
-            rawAmount: string | undefined
-          ): [number, string] => {
-            const amount = rawAmount?.match(/(\d+)/)?.[0] ?? '0';
-            const denom = rawAmount?.replace(amount, '') ?? '';
-            return [Number.parseInt(amount, 10), denom];
-          };
-
-          // we expect 2 cases:
-          // 1. transfer event has only 1 sender and 1 recipient
-          //    then the event will has 3 attributes: sender, recipient, amount
-          // 2. transfer event has 1 sender and multiple recipients, message must be 'MsgMultiSend'
-          //    then the event will be an array of attributes: recipient1, amount1, recipient2, amount2, ...
-          //    sender is the coin_spent.spender
-
-          if (event.attributes.length === 3) {
-            const rawAmount = event.attributes.find(
-              (attr) => attr.key === 'amount'
-            )?.value;
-            const [amount, denom] = extractAmount(rawAmount);
-            coinTransfers.push(
-              CoinTransfer.fromJson({
-                ...ctTemplate,
-                from: event.attributes.find((attr) => attr.key === 'sender')
-                  ?.value,
-                to: event.attributes.find((attr) => attr.key === 'recipient')
-                  ?.value,
-                amount,
-                denom,
-              })
-            );
-          } else {
-            // skip if message is not 'MsgMultiSend'
-            if (
-              tx.messages[event.tx_msg_index].type !==
-              '/cosmos.bank.v1beta1.MsgMultiSend'
-            ) {
-              this.logger.error(
-                'Coin transfer detected in unsupported message type',
-                tx.hash,
-                tx.messages[event.tx_msg_index].content
-              );
-              return;
-            }
-            const coinSpentEvent = tx.events.find(
-              (e: Event) =>
-                e.type === 'coin_spent' && e.tx_msg_index === event.tx_msg_index
-            );
-            ctTemplate.from = coinSpentEvent?.attributes.find(
-              (attr: { key: string; value: string }) => attr.key === 'spender'
-            )?.value;
-            for (let i = 0; i < event.attributes.length; i += 2) {
-              if (
-                event.attributes[i].key !== 'recipient' &&
-                event.attributes[i + 1].key !== 'amount'
-              ) {
-                this.logger.error(
-                  'Coin transfer in MsgMultiSend detected with invalid attributes',
-                  tx.hash,
-                  event.attributes
-                );
-                return;
-              }
-
-              const rawAmount = event.attributes[i + 1].value;
-              const [amount, denom] = extractAmount(rawAmount);
-              coinTransfers.push(
-                CoinTransfer.fromJson({
-                  ...ctTemplate,
-                  to: event.attributes[i].value,
-                  amount,
-                  denom,
-                })
-              );
-            }
-          }
-        }
-      });
-    });
-    await CoinTransfer.query().insert(coinTransfers).transacting(transactionDB);
+      .transacting(transactionDB);
+    this.logger.debug('result insert tx', resultInsertGraph);
   }
 
   public mappingFlatEventToLog(
