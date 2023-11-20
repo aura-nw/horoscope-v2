@@ -83,6 +83,9 @@ export const BULL_JOB_NAME = {
     'job:create-index-composite-attr-partition',
   JOB_UPDATE_SENDER_IN_TX_MESSAGES: 'job:update-sender-in-tx-messages',
   JOB_SUMMARIZE_BRIN_INDEX_IN_TABLE: 'job:summarize-brin-index-in-table',
+  JOB_CREATE_CONSTRAINT_IN_ATTR_PARTITION:
+    'job:create-constraint-in-attr-partition',
+  JOB_CHECK_NEED_CREATE_CONSTRAINT: 'job:check-need-create-constraint',
 };
 
 export const SERVICE = {
@@ -266,6 +269,10 @@ export const SERVICE = {
       SummarizeBrinIndex: {
         key: 'SummarizeBrinIndex',
         path: 'v1.SummarizeBrinIndex',
+      },
+      CreateConstraintInAttrPartition: {
+        key: 'CreateConstraintInAttrPartition',
+        path: 'v1.CreateConstraintInAttrPartition',
       },
     },
     CrawlIBCTaoService: {
