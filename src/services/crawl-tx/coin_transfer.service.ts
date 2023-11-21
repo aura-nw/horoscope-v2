@@ -195,7 +195,11 @@ export default class CoinTransferService extends BullableService {
 
       if (coinTransfers.length > 0) {
         this.logger.info(`INSERTING ${coinTransfers.length} COIN TRANSFER`);
-        await CoinTransfer.query().transacting(trx).insert(coinTransfers);
+        await trx.batchInsert(
+          CoinTransfer.tableName,
+          coinTransfers,
+          config.handleCoinTransfer.chunkSize
+        );
       }
     });
   }
