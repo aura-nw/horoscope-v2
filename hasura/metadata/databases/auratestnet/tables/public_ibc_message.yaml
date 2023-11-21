@@ -2,6 +2,13 @@ table:
   name: ibc_message
   schema: public
 object_relationships:
+  - name: ibc_ics20
+    using:
+      foreign_key_constraint_on:
+        column: ibc_message_id
+        table:
+          name: ibc_ics20
+          schema: public
   - name: transaction_message
     using:
       foreign_key_constraint_on: transaction_message_id

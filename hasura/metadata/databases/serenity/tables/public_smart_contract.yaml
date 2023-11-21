@@ -5,6 +5,15 @@ object_relationships:
   - name: code
     using:
       foreign_key_constraint_on: code_id
+  - name: code_id_verification
+    using:
+      manual_configuration:
+        column_mapping:
+          code_id: code_id
+        insertion_order: null
+        remote_table:
+          name: code_id_verification
+          schema: public
   - name: cw20_contract
     using:
       foreign_key_constraint_on:
