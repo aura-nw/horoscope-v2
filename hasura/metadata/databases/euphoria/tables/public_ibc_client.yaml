@@ -21,3 +21,4 @@ select_permissions:
         - client_type
       filter: {}
       limit: 100
+      allow_aggregations: true

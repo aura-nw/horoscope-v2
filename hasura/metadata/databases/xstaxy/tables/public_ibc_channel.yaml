@@ -28,3 +28,4 @@ select_permissions:
         - state
       filter: {}
       limit: 100
+      allow_aggregations: true
