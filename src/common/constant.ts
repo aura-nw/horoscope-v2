@@ -78,6 +78,7 @@ export const BULL_JOB_NAME = {
   REINDEX_CW20_HISTORY: 'reindex:cw20-history',
   CRAWL_IBC_APP: 'crawl:ibc-app',
   CRAWL_IBC_ICS20: 'crawl:ibc-ics20',
+  REFRESH_IBC_RELAYER_STATISTIC: 'refresh:ibc-relayer-statistic',
   JOB_REASSIGN_MSG_INDEX_TO_EVENT: 'job:reassign-msg-index-to-event',
   JOB_CREATE_COMPOSITE_INDEX_ATTR_PARTITION:
     'job:create-index-composite-attr-partition',
@@ -282,6 +283,10 @@ export const SERVICE = {
     CrawlIBCAppService: {
       key: 'CrawlIBCAppService',
       name: 'v1.CrawlIBCAppService',
+    },
+    IbcStatistic: {
+      key: 'IbcStatistic',
+      name: 'v1.IbcStatistic',
     },
     DailyStatisticsService: {
       key: 'DailyStatisticsService',
