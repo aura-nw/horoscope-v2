@@ -99,7 +99,13 @@ export default class CoinTransferService extends BullableService {
 
     transactions.forEach((tx: Transaction) => {
       tx.events.forEach((event: Event) => {
-        if (!event.tx_msg_index || event.type !== 'transfer') return;
+        if (
+          event.tx_msg_index === null ||
+          event.tx_msg_index === undefined ||
+          event.type !== 'transfer'
+        )
+          return;
+
         // skip if message is not 'MsgMultiSend'
         if (
           event.attributes.length !== 3 &&
@@ -150,7 +156,6 @@ export default class CoinTransferService extends BullableService {
           );
           return;
         }
-
         const coinSpentEvent = tx.events.find(
           (e: Event) =>
             e.type === 'coin_spent' && e.tx_msg_index === event.tx_msg_index
