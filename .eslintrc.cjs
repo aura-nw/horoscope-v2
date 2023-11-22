@@ -35,6 +35,7 @@ module.exports = {
     // 'newline-per-chained-call': 'error',
     'import/extensions': 'off',
     'import/prefer-default-export': 'off',
+    "@typescript-eslint/strict-boolean-expressions": 'error',
     // TODO: remove rules quotes and semi, should be in prettier config. Cannot do it for now, as wrong nvim config
     '@typescript-eslint/quotes': [
       'error',
