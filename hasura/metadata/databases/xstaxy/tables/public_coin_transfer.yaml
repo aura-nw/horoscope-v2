@@ -2,22 +2,24 @@ table:
   name: coin_transfer
   schema: public
 object_relationships:
-  - name: block
-    using:
-      foreign_key_constraint_on: block_height
   - name: message
     using:
       manual_configuration:
         column_mapping:
-          tx_id: tx_id
-          tx_msg_index: index
+          tx_msg_id: id
         insertion_order: null
         remote_table:
           name: transaction_message
           schema: public
   - name: transaction
     using:
-      foreign_key_constraint_on: tx_id
+      manual_configuration:
+        column_mapping:
+          tx_id: id
+        insertion_order: null
+        remote_table:
+          name: transaction
+          schema: public
 select_permissions:
   - role: internal_service
     permission:
