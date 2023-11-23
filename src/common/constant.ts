@@ -63,6 +63,7 @@ export const BULL_JOB_NAME = {
   JOB_CHECK_NEED_CREATE_EVENT_ATTR_PARTITION:
     'job:check-need-create-event-attr-partition',
   JOB_CREATE_EVENT_ATTR_PARTITION: 'job:create-event-attr-partition',
+  JOB_CREATE_EVENT_PARTITION: 'job:create-event-partition',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
   CRAWL_DAILY_STATISTICS: 'crawl:daily-statistics',
   CRAWL_ACCOUNT_STATISTICS: 'crawl:account-statistics',
