@@ -35,5 +35,7 @@ export async function up(knex: Knex): Promise<void> {
 }
 
 export async function down(knex: Knex): Promise<void> {
-  await knex.schema.dropMaterializedViewIfExists('m_view_ibc_relayer_statistic');
+  await knex.schema.dropMaterializedViewIfExists(
+    'm_view_ibc_relayer_statistic'
+  );
 }
