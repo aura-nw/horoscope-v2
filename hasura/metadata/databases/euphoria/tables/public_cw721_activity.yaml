@@ -5,6 +5,15 @@ object_relationships:
   - name: cw721_contract
     using:
       foreign_key_constraint_on: cw721_contract_id
+  - name: cw721_token
+    using:
+      manual_configuration:
+        column_mapping:
+          cw721_token_id: id
+        insertion_order: null
+        remote_table:
+          name: cw721_token
+          schema: public
   - name: smart_contract_event
     using:
       foreign_key_constraint_on: smart_contract_event_id

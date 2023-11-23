@@ -81,7 +81,7 @@ export default class CoinTransferSpec {
   public async testSingleCoinTransfer() {
     // Expectation data
     const txHeight = 3652723;
-    const amount = '1050011';
+    const amounts = ['61688', '1050011'];
     const receiver = 'aura15x4v36r6rl73nhn9h0954mwp42sawrc25f0rnx';
     const sender = 'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx';
 
@@ -95,11 +95,13 @@ export default class CoinTransferSpec {
       txHeight
     );
     // Test determine single coin transfer
-    expect(coinTransfer.length).toEqual(1);
+    expect(coinTransfer.length).toEqual(2);
     // Test value
-    expect(coinTransfer[0].from).toEqual(sender);
-    expect(coinTransfer[0].to).toEqual(receiver);
-    expect(coinTransfer[0].amount).toEqual(amount);
+    for (let i = 0; i < coinTransfer.length; i += 1) {
+      expect(coinTransfer[i].from).toEqual(sender);
+      expect(coinTransfer[i].to).toEqual(receiver);
+      expect(coinTransfer[i].amount).toEqual(amounts[i]);
+    }
   }
 
   @Test('Test multi coin transfer')
@@ -107,6 +109,7 @@ export default class CoinTransferSpec {
     // Expectation data
     const txHeight = 3657660;
     const amounts = [
+      '31401099',
       '6279579',
       '9419368',
       '3601633',
@@ -120,8 +123,23 @@ export default class CoinTransferSpec {
       '282481',
       '282481',
     ];
-    const sender = 'aura15pzl0s6ym85qx4yeq29rflp702wtx3dnsdg8vr';
+    const senders = [
+      'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+      'aura15pzl0s6ym85qx4yeq29rflp702wtx3dnsdg8vr',
+      'aura15pzl0s6ym85qx4yeq29rflp702wtx3dnsdg8vr',
+      'aura15pzl0s6ym85qx4yeq29rflp702wtx3dnsdg8vr',
+      'aura15pzl0s6ym85qx4yeq29rflp702wtx3dnsdg8vr',
+      'aura15pzl0s6ym85qx4yeq29rflp702wtx3dnsdg8vr',
+      'aura15pzl0s6ym85qx4yeq29rflp702wtx3dnsdg8vr',
+      'aura15pzl0s6ym85qx4yeq29rflp702wtx3dnsdg8vr',
+      'aura15pzl0s6ym85qx4yeq29rflp702wtx3dnsdg8vr',
+      'aura15pzl0s6ym85qx4yeq29rflp702wtx3dnsdg8vr',
+      'aura15pzl0s6ym85qx4yeq29rflp702wtx3dnsdg8vr',
+      'aura15pzl0s6ym85qx4yeq29rflp702wtx3dnsdg8vr',
+      'aura15pzl0s6ym85qx4yeq29rflp702wtx3dnsdg8vr',
+    ];
     const receivers = [
+      'aura15pzl0s6ym85qx4yeq29rflp702wtx3dnsdg8vr',
       'aura1ewn73qp0aqrtya38p0nv5c2xsshdea7a7u3jzn',
       'aura1c03jkal0xplar2p7ndshxeqrh9kw4m6unncwsh',
       'aura1ytem9skzmq7n7tlfcqjw6wqfgd587cn3q80hxq',
@@ -146,10 +164,10 @@ export default class CoinTransferSpec {
       txHeight
     );
 
-    expect(coinTransfers.length).toEqual(12);
+    expect(coinTransfers.length).toEqual(13);
 
     for (let i = 0; i < coinTransfers.length; i += 1) {
-      expect(coinTransfers[i].from).toEqual(sender);
+      expect(coinTransfers[i].from).toEqual(senders[i]);
       expect(coinTransfers[i].to).toEqual(receivers[i]);
       expect(coinTransfers[i].amount).toEqual(amounts[i]);
     }
