@@ -240,6 +240,10 @@ export const SERVICE = {
       },
     },
     JobService: {
+      CreateEventPartition: {
+        key: 'CreateEventPartition',
+        path: 'v1.CreateEventPartition',
+      },
       CreateEventAttrPartition: {
         key: 'CreateEventAttrPartition',
         path: 'v1.CreateEventAttrPartition',
