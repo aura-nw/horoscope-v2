@@ -1,6 +1,6 @@
 import { Knex } from 'knex';
 import config from '../config.json' assert { type: 'json' };
-import { BULL_JOB_NAME } from '../src/common';
+
 export async function up(knex: Knex): Promise<void> {
   await knex.transaction(async (trx) => {
     /**
@@ -57,13 +57,6 @@ export async function up(knex: Knex): Promise<void> {
         )
         .transacting(trx);
     }
-
-    /**
-     * @description: Check point last value of partition
-     */
-    await knex.raw(
-      `insert into block_checkpoint(job_name, height) values ('${BULL_JOB_NAME.JOB_CREATE_EVENT_PARTITION}', ${endId})`
-    );
 
     /**
      * @description: Copy data from old table to new
