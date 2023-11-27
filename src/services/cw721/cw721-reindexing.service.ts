@@ -187,6 +187,7 @@ export default class CW721ReindexingService extends BullableService {
     const { contractAddresses, type } = ctx.params;
     const smartContracts = await SmartContract.query()
       .withGraphJoined('code')
+      .where('smart_contract.status', SmartContract.STATUS.LATEST)
       .whereIn('address', contractAddresses);
     await Promise.all(
       smartContracts.reduce((acc: Promise<void>[], smartContract) => {
