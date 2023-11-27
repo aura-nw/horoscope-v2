@@ -9,7 +9,8 @@ export async function up(knex: Knex): Promise<void> {
     SUM(COALESCE(open_channel.open_channel, 0)) AS open_channel,
     SUM(COALESCE(ics20.total_asset_transfer, 0)) AS total_asset_transfer,
     SUM(COALESCE(ics20.send_asset_transfer, 0)) AS send_asset_transfer,
-    SUM(COALESCE(ics20.receive_asset_transfer, 0)) AS receive_asset_transfer
+    SUM(COALESCE(ics20.receive_asset_transfer, 0)) AS receive_asset_transfer,
+    NOW() AS created_at
   FROM
     ibc_channel
     INNER JOIN ibc_connection ON ibc_connection.id = ibc_channel.ibc_connection_id
@@ -18,7 +19,7 @@ export async function up(knex: Knex): Promise<void> {
     (
       SELECT ibc_channel.channel_id, Count(ibc_channel.id) AS open_channel
       FROM ibc_channel
-      WHERE ibc_channel.state = 'OPEN'
+      WHERE ibc_channel.state IN('OPEN', 'STATE_OPEN')
       GROUP BY ibc_channel.channel_id
     ) AS open_channel
     ON ibc_channel.channel_id = open_channel.channel_id

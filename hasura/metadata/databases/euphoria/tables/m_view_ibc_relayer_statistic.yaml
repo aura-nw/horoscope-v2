@@ -11,6 +11,7 @@ select_permissions:
         - send_asset_transfer
         - total_asset_transfer
         - total_channel
+        - created_at
       filter: {}
       limit: 100
       allow_aggregations: true
