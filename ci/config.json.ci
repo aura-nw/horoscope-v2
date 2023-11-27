@@ -183,6 +183,10 @@
     "millisecondCrawl": 10000,
     "templateTable": "event_attribute"
   },
+  "jobCheckNeedCreateEventPartition": {
+    "millisecondCrawl": 10000,
+    "templateTable": "event"
+  },
   "httpBatchRequest": {
     "dispatchMilisecond": 1000,
     "batchSizeLimit": 10
