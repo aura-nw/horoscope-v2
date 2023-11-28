@@ -16,6 +16,20 @@ export default class CreateTableEventPartitionSpec {
     this.createEventPartitionJob = this.broker.createService(
       CreateEventPartitionJob
     ) as CreateEventPartitionJob;
+
+    const existPartitions = await knex.raw(`
+      SELECT child.relname AS child
+      FROM pg_inherits
+        JOIN pg_class parent ON pg_inherits.inhparent = parent.oid
+        JOIN pg_class child  ON pg_inherits.inhrelid  = child.oid
+      WHERE parent.relname = 'event';
+    `);
+
+    const dropPartitionQueries = existPartitions.rows.map(
+      (partitionName: { child: string }) =>
+        knex.raw(`DROP TABLE ${partitionName.child}`)
+    );
+    await Promise.all(dropPartitionQueries);
   }
 
   @Test('No event exist on table => Dont need to create partition')
@@ -34,12 +48,14 @@ export default class CreateTableEventPartitionSpec {
      * so id not reach to half of support value from partition, so we expect return null
      */
     mockEvent.id = (config.migrationEventToPartition.step / 2 - 1).toString();
-    const result = this.createEventPartitionJob?.createPartitionName(mockEvent);
+    const result = await this.createEventPartitionJob?.createPartitionName(
+      mockEvent
+    );
     expect(result).toBe(null);
 
     /**
      *@description: True because partition from 0 -> 200000000, id is 100000001
-     * so id reach to half of support value from partition, so we expect return partition infomation
+     * so id reach to half of support value from partition, so we expect return partition information
      */
     const mockEvent1 = new Event();
     mockEvent1.id = (config.migrationEventToPartition.step / 2 + 1).toString();
@@ -58,11 +74,7 @@ export default class CreateTableEventPartitionSpec {
     mockEvent.id = '100000001';
     const partitionInfo =
       await this.createEventPartitionJob?.createPartitionName(mockEvent);
-
-    /**
-     * @description: This because in migration we already create partition for hand value from 0 -> 1000000000
-     */
-    expect(partitionInfo).toEqual(null);
+    expect(partitionInfo).toBeDefined();
 
     /**
      * @description when max event id reach to 900000001 then we need to create next partition
@@ -96,7 +108,7 @@ export default class CreateTableEventPartitionSpec {
     const checkAgainPartitionInfo =
       await this.createEventPartitionJob?.createPartitionName(mockEvent);
     expect(checkAgainPartitionInfo).toEqual(null);
-    await knex.raw(`DROP TABLE ${checkAgainPartitionInfo?.partitionName}`);
+    await knex.raw(`DROP TABLE ${partitionInfo?.partitionName}`);
   }
 
   @AfterAll()

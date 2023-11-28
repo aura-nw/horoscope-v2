@@ -42,7 +42,9 @@ export async function up(knex: Knex): Promise<void> {
      * Then apply partition to table
      */
     let startId = config.migrationEventToPartition.startId;
-    const latestEvent = await knex('event').orderBy('id', 'DESC').first();
+    const latestEvent = await knex('event_backup')
+      .orderBy('id', 'DESC')
+      .first();
     const endId = latestEvent
       ? Number(latestEvent.id)
       : config.migrationEventToPartition.endId;
