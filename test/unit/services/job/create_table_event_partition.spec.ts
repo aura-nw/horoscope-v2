@@ -31,20 +31,21 @@ export default class CreateTableEventPartitionSpec {
     const mockEvent = new Event();
     /**
      *@description: Failed because partition from 0 -> 200000000, id is 99999999
-     * so id not reach to half of support value from partition, so we expect return false
+     * so id not reach to half of support value from partition, so we expect return null
      */
     mockEvent.id = (config.migrationEventToPartition.step / 2 - 1).toString();
-    const result = this.createEventPartitionJob?.isCreatePartition(mockEvent);
-    expect(result).toBe(false);
+    const result = this.createEventPartitionJob?.createPartitionName(mockEvent);
+    expect(result).toBe(null);
 
     /**
      *@description: True because partition from 0 -> 200000000, id is 100000001
-     * so id reach to half of support value from partition, so we expect return true
+     * so id reach to half of support value from partition, so we expect return partition infomation
      */
     const mockEvent1 = new Event();
     mockEvent1.id = (config.migrationEventToPartition.step / 2 + 1).toString();
-    const result1 = this.createEventPartitionJob?.isCreatePartition(mockEvent1);
-    expect(result1).toBe(true);
+    const result1 =
+      this.createEventPartitionJob?.createPartitionName(mockEvent1);
+    expect(result1).toBeDefined();
   }
 
   @Test('Test build partition name')
@@ -53,27 +54,23 @@ export default class CreateTableEventPartitionSpec {
      * @description: Because id not reach to half of partition will be blocked by test case above, so in this case
      * we just need to test for id reach to half of partition value
      */
-    const maxEventId = '100000001';
+    const mockEvent = new Event();
+    mockEvent.id = '100000001';
     const partitionInfo =
-      await this.createEventPartitionJob?.createPartitionName(maxEventId);
+      await this.createEventPartitionJob?.createPartitionName(mockEvent);
 
     /**
      * @description: This because in migration we already create partition for hand value from 0 -> 1000000000
      */
-    expect(partitionInfo?.isCreate).toEqual(false);
-    expect(partitionInfo?.fromEventId).toEqual('200000000');
-    expect(partitionInfo?.toEventId).toEqual('400000000');
-    expect(partitionInfo?.partitionName).toEqual(
-      'event_partition_200000000_400000000'
-    );
+    expect(partitionInfo).toEqual(null);
 
     /**
      * @description when max event id reach to 900000001 then we need to create next partition
      */
-    const maxEventId1 = '900000001';
+    const mockEvent1 = new Event();
+    mockEvent1.id = '900000001';
     const partitionInfo1 =
-      await this.createEventPartitionJob?.createPartitionName(maxEventId1);
-    expect(partitionInfo1?.isCreate).toEqual(true);
+      await this.createEventPartitionJob?.createPartitionName(mockEvent1);
     expect(partitionInfo1?.fromEventId).toEqual('1000000000');
     expect(partitionInfo1?.toEventId).toEqual('1200000000');
     expect(partitionInfo1?.partitionName).toEqual(
@@ -83,9 +80,10 @@ export default class CreateTableEventPartitionSpec {
 
   @Test('Test create partition on database')
   public async test4() {
-    const maxEventId = '900000001';
+    const mockEvent = new Event();
+    mockEvent.id = '900000001';
     const partitionInfo =
-      await this.createEventPartitionJob?.createPartitionName(maxEventId);
+      await this.createEventPartitionJob?.createPartitionName(mockEvent);
     if (partitionInfo) {
       await this.createEventPartitionJob?.createPartitionByPartitionInfo(
         partitionInfo
@@ -96,13 +94,13 @@ export default class CreateTableEventPartitionSpec {
      * @description partition now created so isCreated now will be false because partition already exist
      */
     const checkAgainPartitionInfo =
-      await this.createEventPartitionJob?.createPartitionName(maxEventId);
-    expect(checkAgainPartitionInfo?.isCreate).toEqual(false);
+      await this.createEventPartitionJob?.createPartitionName(mockEvent);
+    expect(checkAgainPartitionInfo).toEqual(null);
     await knex.raw(`DROP TABLE ${checkAgainPartitionInfo?.partitionName}`);
   }
 
   @AfterAll()
   async tearDown() {
-    console.log('DONE');
+    await knex.raw('TRUNCATE TABLE event RESTART IDENTITY CASCADE');
   }
 }

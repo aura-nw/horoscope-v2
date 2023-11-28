@@ -21,20 +21,20 @@ export async function up(knex: Knex): Promise<void> {
         ON event_partition (type);
 
       CREATE INDEX event_partition_tx_id_brin_idx
-        ON event_partition USING BRIN (tx_id);
+        ON event_partition USING BRIN (tx_id) WITH (PAGES_PER_RANGE = 10, AUTOSUMMARIZE = true);
 
       CREATE INDEX event_partition_block_height_brin_idx
-        ON event_partition USING BRIN (block_height);`
+        ON event_partition USING BRIN (block_height) WITH (PAGES_PER_RANGE = 10, AUTOSUMMARIZE = true);`
     );
 
     /**
      * @description: Update new table name(event_partition) to event name
      */
     await knex
-      .raw('alter table event rename to event_backup;')
+      .raw('ALTER TABLE event RENAME TO event_backup;')
       .transacting(trx);
     await knex
-      .raw('alter table event_partition rename to event;')
+      .raw('ALTER TABLE event_partition RENAME TO event;')
       .transacting(trx);
 
     /**
@@ -42,16 +42,19 @@ export async function up(knex: Knex): Promise<void> {
      * Then apply partition to table
      */
     let startId = config.migrationEventToPartition.startId;
-    const endId = config.migrationEventToPartition.endId;
+    const latestEvent = await knex('event').orderBy('id', 'DESC').first();
+    const endId = latestEvent
+      ? Number(latestEvent.id)
+      : config.migrationEventToPartition.endId;
     const step = config.migrationEventToPartition.step;
     for (let i = startId; i < endId; i += step) {
       const partitionName = `event_partition_${i}_${i + step}`;
       await knex
-        .raw(`create table ${partitionName} (like event including all)`)
+        .raw(`CREATE TABLE ${partitionName} (LIKE event INCLUDING ALL)`)
         .transacting(trx);
       await knex
         .raw(
-          `alter table event attach partition ${partitionName} for values from (${i}) to (${
+          `ALTER TABLE event ATTACH PARTITION ${partitionName} FOR VALUES FROM (${i}) TO (${
             i + step
           })`
         )
@@ -65,7 +68,6 @@ export async function up(knex: Knex): Promise<void> {
     while (!done) {
       console.log(`Latest id migrated: ${startId}`);
       const events = await knex('event_backup')
-        .select('*')
         .where('id', '>', startId)
         .orderBy('id', 'ASC')
         .limit(config.migrationEventToPartition.limitRecordGet);
