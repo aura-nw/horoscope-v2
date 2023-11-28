@@ -17,34 +17,29 @@ export default class CreateEventPartitionJob extends BullableService {
   }
 
   /**
-   * @description check should we consider to create partition
-   * We create partition when id of event reach to a half id support of current partition
-   * like partition from 0 -> 2000, we will create new partition when id reach to 1001
-   * @param latestEvent
-   */
-  public isCreatePartition(latestEvent: Event): boolean {
-    return BigNumber(latestEvent.id)
-      .mod(config.migrationEventToPartition.step)
-      .gte(config.migrationEventToPartition.step / 2);
-  }
-
-  /**
    * @description build partitionName by max id in event table, then check partition exist or not. isCreate false if
    * partition exist then do nothing, isCreate true if partition not exist and need to be created
-   * @param maxCurrentEventId
+   * @param latestEvent
    */
-  public async createPartitionName(maxCurrentEventId: string): Promise<{
+  public async createPartitionName(latestEvent: Event | undefined): Promise<{
     fromEventId: string;
     toEventId: string;
     partitionName: string;
-    isCreate: boolean;
-  }> {
+  } | null> {
+    if (
+      !latestEvent ||
+      BigNumber(latestEvent.id)
+        .mod(config.migrationEventToPartition.step)
+        .lt(config.migrationEventToPartition.step / 2)
+    )
+      return null;
+
     /**
      * @description Calculate current partition step then add 1 step for feature partition creation
      */
     const stepMultiple =
       Math.floor(
-        BigNumber(maxCurrentEventId)
+        BigNumber(latestEvent.id)
           .div(config.migrationEventToPartition.step)
           .toNumber()
       ) + 1;
@@ -73,19 +68,13 @@ export default class CreateEventPartitionJob extends BullableService {
       WHERE child.relname = '${partitionName}';
     `);
 
-    const partitionInfo = {
+    if (existPartition.rows.length > 0) return null;
+
+    return {
       fromEventId: minEventIdForNewPartition.toString(),
       toEventId: maxEventIdForNewPartition.toString(),
       partitionName,
-      isCreate: true,
     };
-
-    if (existPartition.rows.length > 0) {
-      partitionInfo.isCreate = false;
-      return partitionInfo;
-    }
-
-    return partitionInfo;
   }
 
   /**
@@ -96,7 +85,6 @@ export default class CreateEventPartitionJob extends BullableService {
     fromEventId: string;
     toEventId: string;
     partitionName: string;
-    isCreate: boolean;
   }): Promise<void> {
     await knex.transaction(async (trx) => {
       await knex
@@ -129,16 +117,10 @@ export default class CreateEventPartitionJob extends BullableService {
   })
   async jobCreateEventPartition(): Promise<boolean> {
     const latestEvent = await Event.query().findOne({}).orderBy('id', 'DESC');
+    const partitionInfo = await this.createPartitionName(latestEvent);
 
-    if (!latestEvent || !this.isCreatePartition(latestEvent)) {
+    if (!partitionInfo) {
       this.logger.info('Dont need to create partition');
-      return false;
-    }
-
-    const partitionInfo = await this.createPartitionName(latestEvent?.id);
-
-    if (!partitionInfo.isCreate) {
-      this.logger.info('Partition already existed on table', partitionInfo);
       return false;
     }
 
