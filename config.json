@@ -202,6 +202,9 @@
     "blocksPerCall": 100,
     "port": "transfer"
   },
+  "ibcStatistic": {
+    "timeRefreshIbcRelayerStats": "2 * * * *"
+  },
   "jobUpdateSenderInTxMessages": {
     "millisecondCrawl": 1000,
     "blocksPerCall": 1000
