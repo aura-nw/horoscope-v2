@@ -16,20 +16,6 @@ export default class CreateTableEventPartitionSpec {
     this.createEventPartitionJob = this.broker.createService(
       CreateEventPartitionJob
     ) as CreateEventPartitionJob;
-
-    const existPartitions = await knex.raw(`
-      SELECT child.relname AS child
-      FROM pg_inherits
-        JOIN pg_class parent ON pg_inherits.inhparent = parent.oid
-        JOIN pg_class child  ON pg_inherits.inhrelid  = child.oid
-      WHERE parent.relname = 'event';
-    `);
-
-    const dropPartitionQueries = existPartitions.rows.map(
-      (partitionName: { child: string }) =>
-        knex.raw(`DROP TABLE ${partitionName.child}`)
-    );
-    await Promise.all(dropPartitionQueries);
   }
 
   @Test('No event exist on table => Dont need to create partition')
