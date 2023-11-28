@@ -81,6 +81,9 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_COMPOSITE_INDEX_ATTR_PARTITION:
     'job:create-index-composite-attr-partition',
   JOB_UPDATE_SENDER_IN_TX_MESSAGES: 'job:update-sender-in-tx-messages',
+  JOB_CREATE_CONSTRAINT_IN_ATTR_PARTITION:
+    'job:create-constraint-in-attr-partition',
+  JOB_CHECK_NEED_CREATE_CONSTRAINT: 'job:check-need-create-constraint',
 };
 
 export const SERVICE = {
@@ -256,6 +259,10 @@ export const SERVICE = {
       UpdateSenderInTxMessages: {
         key: 'UpdateSenderInTxMessages',
         path: 'v1.UpdateSenderInTxMessages',
+      },
+      CreateConstraintInAttrPartition: {
+        key: 'CreateConstraintInAttrPartition',
+        path: 'v1.CreateConstraintInAttrPartition',
       },
     },
     CrawlIBCTaoService: {
