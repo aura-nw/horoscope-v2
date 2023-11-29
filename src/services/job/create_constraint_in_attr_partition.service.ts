@@ -178,12 +178,17 @@ export default class CreateConstraintInAttrPartitionJob extends BullableService 
             .transacting(trx);
           await knex
             .raw(
-              `alter table ${_payload.name} add constraint ${contraintName} check ${createFullConstraintScript}`
+              `alter table ${_payload.name} add constraint ${contraintName} check ${createFullConstraintScript} not valid`
+            )
+            .transacting(trx);
+          await knex
+            .raw(
+              `alter table ${_payload.name} validate constraint ${contraintName}`
             )
             .transacting(trx);
         });
         this.logger.info(
-          `Drop and create new constraint in partition ${_payload.name}`
+          `Dropped and created new constraint in partition ${_payload.name}`
         );
       }
     }
@@ -192,17 +197,23 @@ export default class CreateConstraintInAttrPartitionJob extends BullableService 
     if (constraintResult.rows.length === 0) {
       if (_payload.status === this.statusPartition.done) {
         await knex.raw(
-          `alter table ${_payload.name} add constraint ${contraintName} check ${createFullConstraintScript}`
+          `alter table ${_payload.name} add constraint ${contraintName} check ${createFullConstraintScript} not valid`
+        );
+        await knex.raw(
+          `alter table ${_payload.name} validate constraint ${contraintName}`
         );
         this.logger.info(
-          `Creating new full constraint in partition ${_payload.name}`
+          `Created new full constraint in partition ${_payload.name}`
         );
       } else if (_payload.status === this.statusPartition.running) {
         await knex.raw(
-          `alter table ${_payload.name} add constraint ${contraintName} check ${createLowerBoundConstraintScript}`
+          `alter table ${_payload.name} add constraint ${contraintName} check ${createLowerBoundConstraintScript} not valid`
+        );
+        await knex.raw(
+          `alter table ${_payload.name} validate constraint ${contraintName}`
         );
         this.logger.info(
-          `Creating new lower bound constraint in partition ${_payload.name}`
+          `Created new lower bound constraint in partition ${_payload.name}`
         );
       }
     }
