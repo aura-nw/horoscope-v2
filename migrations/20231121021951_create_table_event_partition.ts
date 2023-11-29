@@ -104,6 +104,18 @@ export async function up(knex: Knex): Promise<void> {
     `
       )
       .transacting(trx);
+
+    const currentEventIdSeq = await knex.raw(`
+      SELECT last_value FROM transaction_event_id_seq;
+    `);
+    const lastEventId = currentEventIdSeq.rows[0].last_value;
+    await knex
+      .raw(
+        `
+      SELECT setval('event_partition_id_seq', ${lastEventId}, true);
+    `
+      )
+      .transacting(trx);
   });
 }
 
