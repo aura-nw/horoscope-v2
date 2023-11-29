@@ -1,5 +1,5 @@
 {
-  "chainId": "aura-testnet",
+  "chainId": "sei-main-net",
   "networkPrefixAddress": "aura",
   "consensusPrefixAddress": "valcons",
   "validatorPrefixAddress": "valoper",
@@ -26,7 +26,7 @@
   "crawlBlock": {
     "millisecondCrawl": 5000,
     "numberOfBlockPerCall": 100,
-    "startBlock": 4860000
+    "startBlock": 42162361
   },
   "handleCoinTransfer": {
     "key": "handleCoinTransfer",
@@ -162,10 +162,17 @@
     "limitRecordGet": 10000,
     "chunkSizeInsert": 1000
   },
+  "migrationTransactionToPartition": {
+    "startId": 0,
+    "endId": 200000000,
+    "step": 100000000,
+    "limitRecordGet": 10000,
+    "chunkSizeInsert": 1000
+  },
   "migrationEventAttributeToPartition": {
     "startBlock": 0,
-    "endBlock": 13000000,
-    "step": 13000000,
+    "endBlock": 100000000,
+    "step": 1000000,
     "limitRecordGet": 10000,
     "chunkSizeInsert": 1000
   },

@@ -1,15 +1,16 @@
 import { Knex } from 'knex';
 
+// Drop block_height foreign key on transaction table that currently linked to block table
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.alterTable('transaction', (table) => {
-    table.dropIndex('height', 'transaction_height_index');
-    table.dropIndex('timestamp', 'transaction_timestamp_index');
+    table.dropForeign('height', 'transaction_height_foreign');
   });
 }
 
 export async function down(knex: Knex): Promise<void> {
   await knex.schema.alterTable('transaction', (table) => {
-    table.index('height', 'transaction_height_index', 'btree');
-    table.index('timestamp', 'transaction_timestamp_index', 'btree');
+    table
+      .foreign('height', 'transaction_height_foreign')
+      .references('block.height');
   });
 }
