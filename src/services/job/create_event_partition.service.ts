@@ -116,7 +116,10 @@ export default class CreateEventPartitionJob extends BullableService {
     jobName: BULL_JOB_NAME.JOB_CREATE_EVENT_PARTITION,
   })
   async jobCreateEventPartition(): Promise<boolean> {
-    const latestEvent = await Event.query().findOne({}).orderBy('id', 'DESC');
+    const latestEvent = await Event.query()
+      .limit(1)
+      .orderBy('id', 'DESC')
+      .first();
     const partitionInfo = await this.createPartitionName(latestEvent);
 
     if (!partitionInfo) {
