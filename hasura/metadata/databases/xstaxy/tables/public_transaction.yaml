@@ -15,7 +15,7 @@ array_relationships:
         remote_table:
           name: view_event_attribute_value_index
           schema: public
-  - name: coin_transfer
+  - name: coin_transfers
     using:
       manual_configuration:
         column_mapping:

@@ -30,16 +30,20 @@ array_relationships:
           schema: public
   - name: event_attributes
     using:
-      foreign_key_constraint_on:
-        column: event_id
-        table:
+      manual_configuration:
+        column_mapping:
+          id: event_id
+        insertion_order: null
+        remote_table:
           name: event_attribute
           schema: public
   - name: smart_contract_events
     using:
-      foreign_key_constraint_on:
-        column: event_id
-        table:
+      manual_configuration:
+        column_mapping:
+          id: event_id
+        insertion_order: null
+        remote_table:
           name: smart_contract_event
           schema: public
 select_permissions:
