@@ -19,7 +19,7 @@ export async function up(knex: Knex): Promise<void> {
         gas_limit BIGINT NOT NULL,
         fee JSONB NOT NULL,
         timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
-        data JSONB NOT NULL,
+        data JSONB,
         memo TEXT,
         index INTEGER
       ) PARTITION BY RANGE(id);
@@ -47,6 +47,39 @@ export async function up(knex: Knex): Promise<void> {
       .raw('ALTER TABLE transaction_partition RENAME TO transaction;')
       .transacting(trx);
 
+    /**
+     * @description: Drop fk on old table and create again fk point to new transaction partitioned table
+     */
+    await knex
+      .raw(
+        `
+        ALTER TABLE transaction_message
+        DROP CONSTRAINT transaction_message_tx_id_foreign;
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE transaction_message
+        ADD CONSTRAINT transaction_message_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE event DROP CONSTRAINT event_partition_transaction_foreign;
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE event ADD CONSTRAINT event_partition_transaction_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+    `
+      )
+      .transacting(trx);
     /**
      * @description: Create partition base on id column and range value by step
      * Then apply partition to table
@@ -79,5 +112,35 @@ export async function down(knex: Knex): Promise<void> {
       .raw('alter table transaction_backup rename to transaction;')
       .transacting(trx);
     await knex.schema.dropTableIfExists('transaction_partition');
+    await knex
+      .raw(
+        `
+        ALTER TABLE transaction_message
+        DROP CONSTRAINT transaction_message_tx_id_foreign;
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE transaction_message
+        ADD CONSTRAINT transaction_message_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE event DROP CONSTRAINT event_partition_transaction_foreign;
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE event ADD CONSTRAINT event_partition_transaction_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+    `
+      )
+      .transacting(trx);
   });
 }
