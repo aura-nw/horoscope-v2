@@ -188,6 +188,10 @@
     "millisecondCrawl": 10000,
     "templateTable": "event"
   },
+  "jobCheckNeedCreateTransactionPartition": {
+    "millisecondCrawl": 10000,
+    "templateTable": "transaction"
+  },
   "httpBatchRequest": {
     "dispatchMilisecond": 1000,
     "batchSizeLimit": 10
