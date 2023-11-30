@@ -1,0 +1,17 @@
+table:
+  name: m_view_ibc_relayer_statistic
+  schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - counterparty_chain_id
+        - open_channel
+        - receive_asset_transfer
+        - send_asset_transfer
+        - total_asset_transfer
+        - total_channel
+        - created_at
+      filter: {}
+      limit: 100
+      allow_aggregations: true

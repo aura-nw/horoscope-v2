@@ -1,0 +1,16 @@
+table:
+  name: view_ibc_channel_detail_statistic
+  schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - amount
+        - channel_id
+        - counterparty_channel_id
+        - denom
+        - total_messages
+        - type
+      filter: {}
+      limit: 100
+      allow_aggregations: true
