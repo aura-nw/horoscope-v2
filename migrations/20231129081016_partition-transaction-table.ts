@@ -80,6 +80,48 @@ export async function up(knex: Knex): Promise<void> {
     `
       )
       .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE event_attribute DROP CONSTRAINT event_attribute_partition_tx_id_foreign;
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE event_attribute ADD CONSTRAINT event_attribute_partition_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE event_attribute DROP CONSTRAINT event_attribute_partition_event_id_foreign;
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE event_attribute ADD CONSTRAINT event_attribute_partition_event_id_foreign FOREIGN KEY (event_id) REFERENCES event(id);
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE smart_contract_event DROP CONSTRAINT smart_contract_event_event_id_foreign;
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE smart_contract_event ADD CONSTRAINT smart_contract_event_event_id_foreign FOREIGN KEY (event_id) REFERENCES event(id);
+    `
+      )
+      .transacting(trx);
     /**
      * @description: Create partition base on id column and range value by step
      * Then apply partition to table
@@ -139,6 +181,20 @@ export async function down(knex: Knex): Promise<void> {
       .raw(
         `
         ALTER TABLE event ADD CONSTRAINT event_partition_transaction_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE event_attribute DROP CONSTRAINT event_attribute_partition_tx_id_foreign;
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE event_attribute ADD CONSTRAINT event_attribute_partition_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
     `
       )
       .transacting(trx);
