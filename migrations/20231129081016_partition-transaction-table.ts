@@ -122,6 +122,20 @@ export async function up(knex: Knex): Promise<void> {
     `
       )
       .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE vote DROP CONSTRAINT vote_tx_id_foreign;
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE vote ADD CONSTRAINT vote_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+    `
+      )
+      .transacting(trx);
     /**
      * @description: Create partition base on id column and range value by step
      * Then apply partition to table
@@ -195,6 +209,20 @@ export async function down(knex: Knex): Promise<void> {
       .raw(
         `
         ALTER TABLE event_attribute ADD CONSTRAINT event_attribute_partition_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE vote DROP CONSTRAINT vote_tx_id_foreign;
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE vote ADD CONSTRAINT vote_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
     `
       )
       .transacting(trx);
