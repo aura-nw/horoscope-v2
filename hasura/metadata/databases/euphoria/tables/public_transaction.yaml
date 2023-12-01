@@ -13,6 +13,15 @@ array_relationships:
         table:
           name: event_attribute_backup
           schema: public
+  - name: coin_transfers
+    using:
+      manual_configuration:
+        column_mapping:
+          id: tx_id
+        insertion_order: null
+        remote_table:
+          name: coin_transfer
+          schema: public
   - name: event_attribute_index
     using:
       manual_configuration:
