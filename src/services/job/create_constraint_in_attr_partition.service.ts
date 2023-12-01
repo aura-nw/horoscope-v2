@@ -220,7 +220,6 @@ export default class CreateConstraintInAttrPartitionJob extends BullableService 
   }
 
   public async _start(): Promise<void> {
-    await this.createContraintInAttrPartition();
     this.createJob(
       BULL_JOB_NAME.JOB_CHECK_NEED_CREATE_CONSTRAINT,
       BULL_JOB_NAME.JOB_CHECK_NEED_CREATE_CONSTRAINT,
