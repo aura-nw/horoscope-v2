@@ -391,6 +391,7 @@ export default class Cw20 {
         smart_contract_event_id: '1',
         height: 1530,
         hash: txhash,
+        message: {},
       },
       {
         contract_address: this.codeId.contracts[1].address,
@@ -398,6 +399,7 @@ export default class Cw20 {
         smart_contract_event_id: '1',
         height: 1520,
         hash: txhash,
+        message: {},
       },
     ];
     const mockContractsInfo = [
@@ -423,11 +425,15 @@ export default class Cw20 {
       );
       Cw20Contract.getInstantiateBalances = jest.fn(() => Promise.resolve([]));
       await this.cw20Service.handleCw20Instantiate(
-        cw20Events.map((event) => SmartContractEvent.fromJson(event)),
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        cw20Events as SmartContractEvent[],
         trx
       );
       await this.cw20Service.handleCw20Histories(
-        cw20Events.map((event) => SmartContractEvent.fromJson(event)),
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        cw20Events as SmartContractEvent[],
         trx
       );
       const cw20ContractEvent1 = await Cw20Activity.query()
@@ -452,7 +458,7 @@ export default class Cw20 {
     expect(
       extractData.map((data) => ({
         action: data.action,
-        sender: data.sender,
+        message: data.message,
         contractAddress: data.contract_address,
         attributes: data.attributes,
         hash: data.hash,
@@ -461,7 +467,9 @@ export default class Cw20 {
     ).toEqual([
       {
         action: 'instantiate',
-        sender: this.txInsert.messages[0].sender,
+        message: expect.objectContaining({
+          sender: this.txInsert.messages[0].sender,
+        }),
         contractAddress:
           this.txInsert.messages[0].events[0].attributes[0].value,
         attributes: [
@@ -473,7 +481,9 @@ export default class Cw20 {
       },
       {
         action: this.txInsert.messages[0].events[1].attributes[1].value,
-        sender: this.txInsert.messages[0].sender,
+        message: expect.objectContaining({
+          sender: this.txInsert.messages[0].sender,
+        }),
         contractAddress:
           this.txInsert.messages[0].events[1].attributes[0].value,
         attributes: [
@@ -486,7 +496,9 @@ export default class Cw20 {
       },
       {
         action: this.txInsert.messages[0].events[2].attributes[1].value,
-        sender: this.txInsert.messages[0].sender,
+        message: expect.objectContaining({
+          sender: this.txInsert.messages[0].sender,
+        }),
         contractAddress:
           this.txInsert.messages[0].events[2].attributes[0].value,
         attributes: [
@@ -499,7 +511,9 @@ export default class Cw20 {
       },
       {
         action: this.txInsert.messages[0].events[3].attributes[1].value,
-        sender: this.txInsert.messages[0].sender,
+        message: expect.objectContaining({
+          sender: this.txInsert.messages[0].sender,
+        }),
         contractAddress:
           this.txInsert.messages[0].events[3].attributes[0].value,
         attributes: [
@@ -524,7 +538,7 @@ export default class Cw20 {
     expect(
       extractData.map((data) => ({
         action: data.action,
-        sender: data.sender,
+        message: data.message,
         contractAddress: data.contract_address,
         attributes: data.attributes,
         hash: data.hash,
@@ -533,7 +547,9 @@ export default class Cw20 {
     ).toEqual([
       {
         action: 'instantiate',
-        sender: this.txInsert.messages[0].sender,
+        message: expect.objectContaining({
+          sender: this.txInsert.messages[0].sender,
+        }),
         contractAddress:
           this.txInsert.messages[0].events[0].attributes[0].value,
         attributes: [
@@ -545,7 +561,9 @@ export default class Cw20 {
       },
       {
         action: this.txInsert.messages[0].events[1].attributes[1].value,
-        sender: this.txInsert.messages[0].sender,
+        message: expect.objectContaining({
+          sender: this.txInsert.messages[0].sender,
+        }),
         contractAddress:
           this.txInsert.messages[0].events[1].attributes[0].value,
         attributes: [
@@ -558,7 +576,9 @@ export default class Cw20 {
       },
       {
         action: this.txInsert.messages[0].events[3].attributes[1].value,
-        sender: this.txInsert.messages[0].sender,
+        message: expect.objectContaining({
+          sender: this.txInsert.messages[0].sender,
+        }),
         contractAddress:
           this.txInsert.messages[0].events[3].attributes[0].value,
         attributes: [
@@ -580,7 +600,7 @@ export default class Cw20 {
     expect(
       extractData2.map((data) => ({
         action: data.action,
-        sender: data.sender,
+        message: data.message,
         contractAddress: data.contract_address,
         attributes: data.attributes,
         hash: data.hash,
@@ -589,7 +609,9 @@ export default class Cw20 {
     ).toEqual([
       {
         action: 'instantiate',
-        sender: this.txInsert.messages[0].sender,
+        message: expect.objectContaining({
+          sender: this.txInsert.messages[0].sender,
+        }),
         contractAddress:
           this.txInsert.messages[0].events[0].attributes[0].value,
         attributes: [
@@ -601,7 +623,9 @@ export default class Cw20 {
       },
       {
         action: this.txInsert.messages[0].events[1].attributes[1].value,
-        sender: this.txInsert.messages[0].sender,
+        message: expect.objectContaining({
+          sender: this.txInsert.messages[0].sender,
+        }),
         contractAddress:
           this.txInsert.messages[0].events[1].attributes[0].value,
         attributes: [
