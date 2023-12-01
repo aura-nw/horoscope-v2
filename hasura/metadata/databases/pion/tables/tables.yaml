@@ -36,4 +36,3 @@
 - '!include public_view_count_holder_cw721.yaml'
 - '!include public_view_event_attribute_value_index.yaml'
 - '!include public_vote.yaml'
-- '!include public_coin_transfer.yaml'
