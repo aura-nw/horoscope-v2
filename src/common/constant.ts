@@ -386,6 +386,14 @@ export const SERVICE = {
         path: 'v1.Cw20ReindexingService.reindexing',
       },
     },
+    HoroscopeHandlerService: {
+      key: 'HoroscopeHandlerService',
+      path: 'v1.HoroscopeHandlerService',
+      getData: {
+        key: 'getData',
+        path: 'v1.HoroscopeHandlerService.getData',
+      },
+    },
     CrawlIBCIcs20Service: {
       key: 'CrawlIBCIcs20Service',
       name: 'v1.CrawlIBCIcs20Service',
@@ -396,22 +404,6 @@ export const SERVICE = {
       HealthCheck: {
         key: 'HealthCheck',
         path: 'v1.ServicesManager.HealthCheck',
-      },
-    },
-    HoroscopeHandlerService: {
-      key: 'HoroscopeHandlerService',
-      path: 'v1.HoroscopeHandlerService',
-      getData: {
-        key: 'getData',
-        path: 'v1.HoroscopeHandlerService.getData',
-      },
-    },
-    HoroscopeHandlerService: {
-      key: 'HoroscopeHandlerService',
-      path: 'v1.HoroscopeHandlerService',
-      getData: {
-        key: 'getData',
-        path: 'v1.HoroscopeHandlerService.getData',
       },
     },
   },
