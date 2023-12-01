@@ -105,7 +105,7 @@ export default class CW721Activity extends BaseModel {
   ) {
     return SmartContractEvent.query()
       .withGraphFetched('attributes(selectAttribute)')
-      .joinRelated('[message, tx, smart_contract.code]')
+      .joinRelated('[tx, smart_contract.code]')
       .where('smart_contract:code.type', 'CW721')
       .where('tx.height', '>', startBlock)
       .andWhere('tx.height', '<=', endBlock)
