@@ -32,6 +32,7 @@ export const BULL_JOB_NAME = {
   HANDLE_STAKE_EVENT: 'handle:stake-event',
   CRAWL_BLOCK: 'crawl:block',
   HANDLE_TRANSACTION: 'handle:transaction',
+  HANDLE_COIN_TRANSFER: 'handle:coin_transfer',
   HANDLE_CW721_TRANSACTION: 'handle:cw721-tx',
   REFRESH_CW721_STATS: 'refresh:cw721-stats',
   CRAWL_PROPOSAL: 'crawl:proposal',
@@ -159,6 +160,10 @@ export const SERVICE = {
         key: 'TriggerHandleTxJob',
         path: 'v1.CrawlTransactionService.TriggerHandleTxJob',
       },
+    },
+    CoinTransfer: {
+      key: 'CoinTransferService',
+      name: 'v1.CoinTransferService',
     },
     CrawlGenesisService: {
       key: 'CrawlGenesisService',
