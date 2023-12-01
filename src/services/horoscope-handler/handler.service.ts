@@ -6,7 +6,7 @@ import { Context, ServiceBroker } from 'moleculer';
 import _ from 'lodash';
 import BaseService from '../../base/base.service';
 import { SERVICE } from '../../common';
-import { Block, Transaction } from '../../models';
+import { Block, Transaction, Event } from '../../models';
 import networks from '../../../network.json' assert { type: 'json' };
 
 @Service({
@@ -42,22 +42,28 @@ export default class HoroscopeHandlerService extends BaseService {
       Record<string, unknown>
     >
   ) {
-    // TODO: handler filter from request
-
     // query to get data
     const { startBlock, endBlock } = ctx.params;
     const queryBlock = Block.query()
       .select('height', 'hash', 'time')
-      .withGraphFetched('events.[attributes]')
-      .modifyGraph('events', (builder) => {
-        builder.select('type', 'source');
-      })
-      .modifyGraph('events.[attributes]', (builder) => {
-        builder.select('key', 'value');
-      })
       .where('height', '>=', startBlock)
       .andWhere('height', '<', endBlock)
       .orderBy('height', 'asc');
+
+    const queryEventBlock = Event.query()
+      .select('type', 'source', 'block_height as height')
+      .withGraphFetched('attributes')
+      .modifyGraph('attributes', (builder) => {
+        builder.select('key', 'value');
+      })
+      .whereIn('source', [
+        Event.SOURCE.BEGIN_BLOCK_EVENT,
+        Event.SOURCE.END_BLOCK_EVENT,
+      ])
+      .andWhere('block_height', '>=', startBlock)
+      .andWhere('block_height', '<', endBlock)
+      .orderBy('block_height')
+      .orderBy('id');
 
     const queryTransaction = Transaction.query()
       .select('height', 'hash', 'code', 'codespace', 'memo', 'index')
@@ -78,28 +84,32 @@ export default class HoroscopeHandlerService extends BaseService {
       .andWhere('height', '<', endBlock)
       .orderBy('height', 'asc')
       .orderBy('index', 'asc');
-    const [listBlock, listTransaction] = await Promise.all([
+    const [listBlock, listTransaction, listEventBlock] = await Promise.all([
       queryBlock,
       queryTransaction,
+      queryEventBlock,
     ]);
 
     const resultGroupBy = _.groupBy(
-      [...listBlock, ...listTransaction],
+      [...listBlock, ...listTransaction, ...listEventBlock],
       'height'
     );
     const listData: any[] = [];
     Object.keys(resultGroupBy).forEach((height) => {
       if (resultGroupBy[height].length > 0) {
         if (resultGroupBy[height][0] instanceof Block) {
-          const data: any = resultGroupBy[height][0];
-
-          // resultGroupBy[height].length === 1 means there is block only, not has any txs
-          if (resultGroupBy[height].length === 1) {
-            data.txs = [];
-          } else {
-            data.txs = resultGroupBy[height].slice(1);
-          }
-          listData.push(data);
+          const block: any = resultGroupBy[height].filter(
+            (e) => e instanceof Block
+          );
+          const eventBlocks = resultGroupBy[height].filter(
+            (e) => e instanceof Event
+          );
+          const txs = resultGroupBy[height].filter(
+            (e) => e instanceof Transaction
+          );
+          block.events = eventBlocks.length === 0 ? [] : eventBlocks;
+          block.txs = txs.length === 0 ? [] : txs;
+          listData.push(block);
         } else {
           throw Error('Block not found');
         }
