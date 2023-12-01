@@ -3,6 +3,7 @@ export * from './account_vesting';
 export * from './block';
 export * from './block_checkpoint';
 export * from './block_signature';
+export * from './coin_transfer';
 export * from './cw20_holder';
 export * from './cw20_contract';
 export * from './cw20_activity';
