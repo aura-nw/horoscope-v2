@@ -2,16 +2,17 @@
 import { Registry, TsProtoGeneratedType } from '@cosmjs/proto-signing';
 import { defaultRegistryTypes as defaultStargateTypes } from '@cosmjs/stargate';
 import { wasmTypes } from '@cosmjs/cosmwasm-stargate/build/modules';
-import { ibc, cosmos, auranw } from '@aura-nw/aurajs';
 import { toBase64, fromUtf8, fromBase64, toUtf8 } from '@cosmjs/encoding';
 import { LoggerInstance } from 'moleculer';
 import _ from 'lodash';
 import { SemVer } from 'semver';
-import txRegistryType from './registry-type/aura-network.json' assert { type: 'json' };
+import { ibc, cosmos } from '@sei-js/proto';
+import * as process from 'process';
+import txRegistryType from './registry-type/sei-network.json' assert { type: 'json' };
 import { MSG_TYPE } from '../../common';
 import Utils from '../../common/utils/utils';
 
-export default class AuraRegistry {
+export default class SeiRegistry {
   public registry!: Registry;
 
   private _logger: LoggerInstance;
@@ -20,9 +21,7 @@ export default class AuraRegistry {
 
   public ibc: any;
 
-  public auranw: any;
-
-  public cosmosSdkVersion: SemVer = new SemVer('v0.45.17');
+  public cosmosSdkVersion: SemVer = new SemVer('v0.45.10');
 
   public decodeAttribute: any;
 
@@ -32,7 +31,6 @@ export default class AuraRegistry {
     this._logger = logger;
     this.cosmos = cosmos;
     this.ibc = ibc;
-    this.auranw = auranw;
     this.setDefaultRegistry();
   }
 
@@ -68,6 +66,7 @@ export default class AuraRegistry {
         result.value = formattedValue;
         this._logger.error('This typeUrl is not supported');
         this._logger.error(msg.typeUrl);
+        process.exit(1);
       } else {
         // Utils.isBase64();
         const decoded: any = msgType.toJSON(
