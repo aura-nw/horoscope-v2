@@ -99,7 +99,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
     endHeight: number,
     trx: Knex.Transaction
   ) {
-    const ics20Recvs = await IbcMessage.query()
+    const portRecvs = await IbcMessage.query()
       .withGraphFetched('message.events(selectIcs20Event).attributes')
       .joinRelated('message.transaction')
       .modifiers({
@@ -123,59 +123,54 @@ export default class CrawlIBCIcs20Service extends BullableService {
       )
       .orderBy('message.id')
       .transacting(trx);
+    const ics20Recvs = portRecvs.filter((msg) => msg.message.events.length > 0); // filter ics20
     if (ics20Recvs.length > 0) {
-      const ibcIcs20s = ics20Recvs.reduce(
-        (acc: IbcIcs20[], msg: IbcMessage) => {
-          const recvEvent = msg.message.events.find(
-            (e) => e.type === IbcIcs20.EVENT_TYPE.FUNGIBLE_TOKEN_PACKET
-          );
-          if (recvEvent === undefined) {
-            return acc;
-          }
-          const [sender, receiver, amount, originalDenom, ackStatus, memo] =
-            recvEvent.getAttributesFrom([
-              EventAttribute.ATTRIBUTE_KEY.SENDER,
-              EventAttribute.ATTRIBUTE_KEY.RECEIVER,
-              EventAttribute.ATTRIBUTE_KEY.AMOUNT,
-              EventAttribute.ATTRIBUTE_KEY.DENOM,
-              EventAttribute.ATTRIBUTE_KEY.SUCCESS,
-              EventAttribute.ATTRIBUTE_KEY.MEMO,
-            ]);
-          if (originalDenom === undefined) {
-            throw Error(`Recv ibc hasn't emit denom: ${msg.id}`);
-          }
-          const isSource =
-            msg.message.events.find(
-              (e) => e.type === IbcIcs20.EVENT_TYPE.DENOM_TRACE
-            ) === undefined;
-          const denom = this.parseDenom(
-            originalDenom,
-            isSource,
-            msg.dst_port_id,
-            msg.dst_channel_id
-          );
-          acc.push(
-            IbcIcs20.fromJson({
-              ibc_message_id: msg.id,
-              sender,
-              receiver,
-              amount,
-              denom,
-              status:
-                ackStatus === 'true'
-                  ? IbcIcs20.STATUS_TYPE.ACK_SUCCESS
-                  : IbcIcs20.STATUS_TYPE.ACK_ERROR,
-              channel_id: msg.dst_channel_id,
-              sequence_key: msg.sequence_key,
-              type: msg.type,
-              memo,
-              finish_time: msg.timestamp,
-            })
-          );
-          return acc;
-        },
-        []
-      );
+      const ibcIcs20s = ics20Recvs.map((msg) => {
+        const recvEvent = msg.message.events.find(
+          (e) => e.type === IbcIcs20.EVENT_TYPE.FUNGIBLE_TOKEN_PACKET
+        );
+        if (recvEvent === undefined) {
+          throw Error(`Recv ibc hasn't emmitted events: ${msg.id}`);
+        }
+        const [sender, receiver, amount, originalDenom, ackStatus, memo] =
+          recvEvent.getAttributesFrom([
+            EventAttribute.ATTRIBUTE_KEY.SENDER,
+            EventAttribute.ATTRIBUTE_KEY.RECEIVER,
+            EventAttribute.ATTRIBUTE_KEY.AMOUNT,
+            EventAttribute.ATTRIBUTE_KEY.DENOM,
+            EventAttribute.ATTRIBUTE_KEY.SUCCESS,
+            EventAttribute.ATTRIBUTE_KEY.MEMO,
+          ]);
+        if (originalDenom === undefined) {
+          throw Error(`Recv ibc hasn't emit denom: ${msg.id}`);
+        }
+        const isSource =
+          msg.message.events.find(
+            (e) => e.type === IbcIcs20.EVENT_TYPE.DENOM_TRACE
+          ) === undefined;
+        const denom = this.parseDenom(
+          originalDenom,
+          isSource,
+          msg.dst_port_id,
+          msg.dst_channel_id
+        );
+        return IbcIcs20.fromJson({
+          ibc_message_id: msg.id,
+          sender,
+          receiver,
+          amount,
+          denom,
+          status:
+            ackStatus === 'true'
+              ? IbcIcs20.STATUS_TYPE.ACK_SUCCESS
+              : IbcIcs20.STATUS_TYPE.ACK_ERROR,
+          channel_id: msg.dst_channel_id,
+          sequence_key: msg.sequence_key,
+          type: msg.type,
+          memo,
+          finish_time: msg.timestamp,
+        });
+      });
       await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
     }
   }
