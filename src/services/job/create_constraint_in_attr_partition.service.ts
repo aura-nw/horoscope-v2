@@ -174,7 +174,9 @@ export default class CreateConstraintInAttrPartitionJob extends BullableService 
         const currentContraintName = constraintResult.rows[0].constraint;
         await knex.transaction(async (trx) => {
           await knex
-            .raw(`drop constraint ${currentContraintName}`)
+            .raw(
+              `alter table ${_payload.name} drop constraint ${currentContraintName}`
+            )
             .transacting(trx);
           await knex
             .raw(
