@@ -71,12 +71,12 @@ export default class DailyStatisticsService extends BullableService {
     );
 
     const startTx = await Transaction.query()
-      .select('id')
+      .select('id', 'height')
       .where('transaction.timestamp', '>=', startTime)
       .limit(1)
       .orderBy('id');
     const endTx = await Transaction.query()
-      .select('id')
+      .select('id', 'height')
       .where('transaction.timestamp', '<', endTime)
       .limit(1)
       .orderBy('id', 'desc');
