@@ -43,7 +43,8 @@ export async function getContractActivities(
       Event.EVENT_TYPE.INSTANTIATE,
     ])
     .where('event.block_height', '>', fromBlock)
-    .andWhere('event.block_height', '<=', toBlock);
+    .andWhere('event.block_height', '<=', toBlock)
+    .orderBy('event.id');
 
   wasmEvents.forEach((wasmEvent, index) => {
     const wasmAttribute: { key: string; value: string }[] =
