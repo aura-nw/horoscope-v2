@@ -234,7 +234,7 @@
   },
   "jobCreateConstraintInEventPartition": {
     "jobRepeatCheckNeedCreateConstraint": {
-      "millisecondRepeatJob": 5000
+      "millisecondRepeatJob": 600000
     },
     "statementTimeout": 600000
   }
