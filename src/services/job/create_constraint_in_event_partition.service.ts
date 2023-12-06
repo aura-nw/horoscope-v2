@@ -83,7 +83,7 @@ export default class CreateConstraintInEventPartitionJob extends BullableService
   }
 
   /**
-   * @description Get list constraint of partition
+   * @description Get current constraint of partition
    * @param partitionName
    */
   public async getCurrentConstrainInfo(partitionName: string): Promise<string> {
@@ -280,23 +280,6 @@ export default class CreateConstraintInEventPartitionJob extends BullableService
     jobName: BULL_JOB_NAME.JOB_CHECK_EVENT_CONSTRAINT,
   })
   public async createConstraintInEventPartition() {
-    this.createJob(
-      BULL_JOB_NAME.JOB_CREATE_EVENT_CONSTRAIN,
-      BULL_JOB_NAME.JOB_CREATE_EVENT_CONSTRAIN,
-      {
-        name: 'event_partition_0_200000000',
-        fromId: '0',
-        toId: '200000000',
-      },
-      {
-        jobId: '3',
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-      }
-    );
-    if (1) return;
     const listPartition = await this.getEventPartitionInfo();
     listPartition.forEach((partition: any) => {
       this.createJob(
