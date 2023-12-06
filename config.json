@@ -231,5 +231,11 @@
       "millisecondRepeatJob": 600000
     },
     "statementTimeout": 600000
+  },
+  "jobCreateConstraintInEventPartition": {
+    "jobRepeatCheckNeedCreateConstraint": {
+      "millisecondRepeatJob": 5000
+    },
+    "statementTimeout": 600000
   }
 }
