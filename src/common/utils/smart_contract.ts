@@ -29,8 +29,8 @@ export async function getContractActivities(
     .modifiers({
       selectAttribute(builder) {
         builder.select('event_id', 'index', 'key', 'value').orderBy([
-          { column: 'event_id', order: 'ASC' },
-          { column: 'index', order: 'ASC' },
+          { column: 'event_id', order: 'asc' },
+          { column: 'index', order: 'asc' },
         ]);
       },
       // NOTE: wasm events emitted should mean succeeded transactions
@@ -44,7 +44,7 @@ export async function getContractActivities(
     ])
     .where('event.block_height', '>', fromBlock)
     .andWhere('event.block_height', '<=', toBlock)
-    .orderBy('event.id');
+    .orderBy('event.id', 'asc');
 
   wasmEvents.forEach((wasmEvent, index) => {
     const wasmAttribute: { key: string; value: string }[] =
