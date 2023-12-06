@@ -99,7 +99,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
     endHeight: number,
     trx: Knex.Transaction
   ) {
-    const ics20Recvs = await IbcMessage.query()
+    const portRecvs = await IbcMessage.query()
       .withGraphFetched('message.events(selectIcs20Event).attributes')
       .joinRelated('message.transaction')
       .modifiers({
@@ -123,6 +123,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
       )
       .orderBy('message.id')
       .transacting(trx);
+    const ics20Recvs = portRecvs.filter((msg) => msg.message.events.length > 0); // filter ics20
     if (ics20Recvs.length > 0) {
       const ibcIcs20s = ics20Recvs.map((msg) => {
         const recvEvent = msg.message.events.find(
