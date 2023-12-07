@@ -1,3 +1,8 @@
+export const environmentDeploy = {
+  development: 'development',
+  staging: 'staging',
+};
+
 export const REDIS_KEY = {
   IBC_DENOM: 'ibc_denom',
   DASHBOARD_STATISTICS: 'dashboard_statistics',

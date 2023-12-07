@@ -1,6 +1,10 @@
 import { Knex } from 'knex';
+import { environmentDeploy } from '../src/common';
+const envDeploy = process.env.NODE_ENV;
 
 export async function up(knex: Knex): Promise<void> {
+  if (envDeploy !== environmentDeploy.development) return;
+
   await knex.raw(`
     CREATE INDEX IF NOT EXISTS brin_idx_block_height_event
     ON event USING brin (block_height) WITH (PAGES_PER_RANGE = 10, AUTOSUMMARIZE = true)
@@ -12,6 +16,8 @@ export async function up(knex: Knex): Promise<void> {
 }
 
 export async function down(knex: Knex): Promise<void> {
+  if (envDeploy !== environmentDeploy.development) return;
+
   await knex.schema.alterTable('event', (table) => {
     table.dropIndex('block_height', 'brin_idx_block_height_event');
     table.dropIndex('tx_id', 'brin_idx_tx_id_event');
