@@ -25,19 +25,18 @@ export async function getContractActivities(
   const contractActivities: IContractMsgInfo[] = [];
   const wasmEvents = await Event.query()
     .alias('event')
-    .withGraphJoined(
-      '[attributes(selectAttribute), transaction(filterSuccess,selectTransaction)]'
-    )
+    .withGraphFetched('[attributes(selectAttribute)]')
     .modifiers({
       selectAttribute(builder) {
-        builder.select('event_id', 'index', 'key', 'value');
+        builder.select('event_id', 'index', 'key', 'value').orderBy([
+          { column: 'event_id', order: 'asc' },
+          { column: 'index', order: 'asc' },
+        ]);
       },
-      selectTransaction(builder) {
-        builder.select('hash', 'height');
-      },
-      filterSuccess(builder) {
-        builder.where('code', 0);
-      },
+      // NOTE: wasm events emitted should mean succeeded transactions
+      // filterSuccess(builder) {
+      //   builder.where('code', 0);
+      // },
     })
     .whereIn('event.type', [
       Event.EVENT_TYPE.WASM,
@@ -45,10 +44,7 @@ export async function getContractActivities(
     ])
     .where('event.block_height', '>', fromBlock)
     .andWhere('event.block_height', '<=', toBlock)
-    .orderBy([
-      { column: 'attributes.event_id', order: 'ASC' },
-      { column: 'attributes.index', order: 'ASC' },
-    ]);
+    .orderBy('event.id', 'asc');
 
   wasmEvents.forEach((wasmEvent, index) => {
     const wasmAttribute: { key: string; value: string }[] =

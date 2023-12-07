@@ -100,7 +100,7 @@ export default class HoroscopeHandlerService extends BaseService {
         if (resultGroupBy[height][0] instanceof Block) {
           const block: any = resultGroupBy[height].filter(
             (e) => e instanceof Block
-          );
+          )[0];
           const eventBlocks = resultGroupBy[height].filter(
             (e) => e instanceof Event
           );

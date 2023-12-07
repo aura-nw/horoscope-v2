@@ -19,12 +19,7 @@ export async function up(knex: Knex): Promise<void> {
 
       CREATE INDEX event_partition_type_idx
         ON event_partition (type);
-
-      CREATE INDEX event_partition_tx_id_brin_idx
-        ON event_partition USING BRIN (tx_id) WITH (PAGES_PER_RANGE = 10, AUTOSUMMARIZE = true);
-
-      CREATE INDEX event_partition_block_height_brin_idx
-        ON event_partition USING BRIN (block_height) WITH (PAGES_PER_RANGE = 10, AUTOSUMMARIZE = true);`
+      `
     );
 
     /**
@@ -62,6 +57,76 @@ export async function up(knex: Knex): Promise<void> {
         )
         .transacting(trx);
     }
+
+    /**
+     * @description: Copy data from old table to new
+     */
+    let done = false;
+    while (!done) {
+      console.log(`Latest id migrated: ${startId}`);
+      const events = await knex('event_backup')
+        .where('id', '>', startId)
+        .orderBy('id', 'ASC')
+        .limit(config.migrationEventToPartition.limitRecordGet);
+
+      if (events.length === 0) {
+        done = true;
+        break;
+      }
+
+      await knex
+        .batchInsert(
+          'event',
+          events,
+          config.migrationEventToPartition.chunkSizeInsert
+        )
+        .transacting(trx);
+      startId = events[events.length - 1].id;
+    }
+    await knex
+      .raw(
+        `
+        ALTER TABLE event_attribute
+        DROP CONSTRAINT IF EXISTS event_attribute_partition_event_id_foreign cascade;
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE smart_contract_event
+        DROP CONSTRAINT IF EXISTS smart_contract_event_event_id_foreign cascade;
+    `
+      )
+      .transacting(trx);
+
+    const currentEventIdSeq = await knex.raw(`
+      SELECT last_value FROM transaction_event_id_seq;
+    `);
+    const lastEventId = currentEventIdSeq.rows[0].last_value;
+    await knex
+      .raw(
+        `
+      SELECT setval('event_partition_id_seq', ${lastEventId}, true);
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+      CREATE INDEX event_partition_tx_id_btree_idx
+      ON event USING BTREE (tx_id ASC NULLS LAST);
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+      CREATE INDEX event_partition_block_height_btree_idx
+      ON event USING BTREE (block_height ASC NULLS LAST);
+    `
+      )
+      .transacting(trx);
   });
 }
 
