@@ -1,4 +1,5 @@
 [
+  "/seiprotocol.seichain.oracle.MsgAggregateExchangeRateVote",
   "/cosmos.gov.v1beta1.MsgSubmitProposal",
   "/cosmos.upgrade.v1beta1.SoftwareUpgradeProposal",
   "/cosmos.upgrade.v1beta1.CancelSoftwareUpgradeProposal",

@@ -6,7 +6,7 @@ import { toBase64, fromUtf8, fromBase64, toUtf8 } from '@cosmjs/encoding';
 import { LoggerInstance } from 'moleculer';
 import _ from 'lodash';
 import { SemVer } from 'semver';
-import { ibc, cosmos } from '@sei-js/proto';
+import { ibc, cosmos, seiprotocol } from '@sei-js/proto';
 import * as process from 'process';
 import txRegistryType from './registry-type/sei-network.json' assert { type: 'json' };
 import { MSG_TYPE } from '../../common';
@@ -21,6 +21,8 @@ export default class SeiRegistry {
 
   public ibc: any;
 
+  public seiprotocol: any;
+
   public cosmosSdkVersion: SemVer = new SemVer('v0.45.10');
 
   public decodeAttribute: any;
@@ -31,6 +33,7 @@ export default class SeiRegistry {
     this._logger = logger;
     this.cosmos = cosmos;
     this.ibc = ibc;
+    this.seiprotocol = seiprotocol;
     this.setDefaultRegistry();
   }
 
@@ -69,14 +72,10 @@ export default class SeiRegistry {
         process.exit(1);
       } else {
         // Utils.isBase64();
-        const decoded: any = msgType.toJSON(
-          this.registry.decode({
-            typeUrl: msg.typeUrl,
-            value: Utils.isBase64(msg.value)
-              ? fromBase64(msg.value)
-              : msg.value,
-          })
-        );
+        const decoded: any = this.registry.decode({
+          typeUrl: msg.typeUrl,
+          value: Utils.isBase64(msg.value) ? fromBase64(msg.value) : msg.value,
+        });
         Object.keys(decoded).forEach((key) => {
           if (decoded[key].typeUrl) {
             const resultRecursive = this.decodeMsg(decoded[key]);

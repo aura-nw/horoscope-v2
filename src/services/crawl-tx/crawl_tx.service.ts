@@ -8,8 +8,6 @@ import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { decodeTxRaw } from '@cosmjs/proto-signing';
 import { toBase64, fromBase64 } from '@cosmjs/encoding';
-import _ from 'lodash';
-import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { Knex } from 'knex';
 import { Queue } from 'bullmq';
 import { GetNodeInfoResponseSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/base/tendermint/v1beta1/query';
@@ -90,50 +88,29 @@ export default class CrawlTxService extends BullableService {
       .andWhere('height', '<=', endBlock)
       .orderBy('height', 'asc');
     this.logger.debug(blocks);
-    const promises: any[] = [];
-    const filterBlocks = blocks.filter((block) => block.txs.length > 0);
-    filterBlocks.forEach((block) => {
-      this.logger.info('crawl tx by height: ', block.height);
 
-      const totalPages = Math.ceil(
-        block.txs.length / config.handleTransaction.txsPerCall
+    const mapBlockTime: Map<number, string> = new Map();
+    const handleResult = async (blockHeight: number) => {
+      const result = await this._httpBatchClient.execute(
+        createJsonRpcRequest('tx_search', {
+          query: `tx.height=${blockHeight}`,
+        })
       );
-      [...Array(totalPages)].forEach((e, i) => {
-        const pageIndex = (i + 1).toString();
-        promises.push(
-          this._httpBatchClient.execute(
-            createJsonRpcRequest('tx_search', {
-              query: `tx.height=${block.height}`,
-              page: pageIndex,
-              per_page: config.handleTransaction.txsPerCall.toString(),
-            })
-          )
-        );
-      });
-    });
-    const resultPromises: JsonRpcSuccessResponse[] = await Promise.all(
-      promises
-    );
-
-    const listRawTx: any[] = filterBlocks.map((block) => {
-      const listTxs: any[] = [];
-      resultPromises
-        .filter(
-          (result) => result.result.txs[0].height === block.height.toString()
-        )
-        .forEach((resultPromise) => {
-          listTxs.push(...resultPromise.result.txs);
-        });
       return {
-        listTx: {
-          txs: listTxs,
-          total_count: block.txs.length,
-        },
-        height: block.height,
-        timestamp: block.time,
+        listTx: result.result,
+        height: blockHeight,
+        timestamp: mapBlockTime[blockHeight],
       };
-    });
-    return listRawTx;
+    };
+    const handleResultParallel: any[] = [];
+    blocks
+      // .filter((block) => block.txs?.length > 0)
+      .forEach((block) => {
+        this.logger.info('crawl tx by height: ', block.height);
+        mapBlockTime[block.height] = block.time;
+        handleResultParallel.push(handleResult(block.height));
+      });
+    return Promise.all(handleResultParallel);
   }
 
   // decode list raw tx
@@ -306,17 +283,17 @@ export default class CrawlTxService extends BullableService {
             index: tx.tx_response.index,
             height: parseInt(tx.tx_response.height, 10),
             hash: tx.tx_response.txhash,
-            codespace: tx.tx_response.codespace,
-            code: parseInt(tx.tx_response.code, 10),
-            gas_used: tx.tx_response.gas_used.toString(),
-            gas_wanted: tx.tx_response.gas_wanted.toString(),
-            gas_limit: tx.tx.auth_info.fee.gas_limit.toString(),
+            codespace: tx.tx_response.codespace ?? '',
+            code: parseInt(tx.tx_response.code ?? '0', 10),
+            gas_used: tx.tx_response.gas_used?.toString() ?? '0',
+            gas_wanted: tx.tx_response.gas_wanted?.toString() ?? '0',
+            gas_limit: tx.tx.auth_info.fee.gas_limit?.toString() ?? '0',
             fee: JSON.stringify(tx.tx.auth_info.fee.amount),
             timestamp,
-            data: tx,
+            data: config.handleTransaction.saveRawLog ? tx : null,
             memo: tx.tx.body.memo,
           }),
-          events: tx.tx_response.events.map((event: any) => ({
+          events: tx.tx_response.events?.map((event: any) => ({
             tx_msg_index: event.msg_index ?? undefined,
             type: event.type,
             attributes: event.attributes.map(
