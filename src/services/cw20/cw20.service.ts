@@ -190,7 +190,7 @@ export default class Cw20Service extends BullableService {
       .map((event) =>
         Cw20Activity.fromJson({
           smart_contract_event_id: event.smart_contract_event_id,
-          sender: event.sender,
+          sender: event.message.sender,
           action: event.action,
           cw20_contract_id: cw20ContractsByAddress[event.contract_address].id,
           amount: getAttributeFrom(
@@ -221,8 +221,8 @@ export default class Cw20Service extends BullableService {
     page?: { prevId: number; limit: number }
   ) {
     return SmartContractEvent.query()
-      .withGraphFetched('attributes(selectAttribute)')
-      .joinRelated('[message, tx, smart_contract.code]')
+      .withGraphFetched('[message, attributes(selectAttribute)]')
+      .joinRelated('[tx, smart_contract.code]')
       .where('smart_contract:code.type', 'CW20')
       .where('tx.height', '>', startBlock)
       .andWhere('tx.height', '<=', endBlock)
@@ -238,7 +238,6 @@ export default class Cw20Service extends BullableService {
         }
       })
       .select(
-        'message.sender as sender',
         'smart_contract.address as contract_address',
         'smart_contract_event.action',
         'smart_contract_event.event_id',
