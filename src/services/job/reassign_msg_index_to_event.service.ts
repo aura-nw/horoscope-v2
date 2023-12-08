@@ -14,7 +14,7 @@ import { BULL_JOB_NAME, SERVICE } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
 import CrawlTxService from '../crawl-tx/crawl_tx.service';
-import AuraRegistry from '../crawl-tx/aura.registry';
+import SeiRegistry from '../crawl-tx/sei.registry';
 
 // THIS JOB IS ONLY USED FOR TX WITH BASE64 EVENT
 @Service({
@@ -110,9 +110,9 @@ export default class JobReAssignMsgIndexToEvent extends BullableService {
       delete event.msg_index;
     });
 
-    const auraRegistry = new AuraRegistry(this.crawlTxService.logger);
-    auraRegistry.setCosmosSdkVersionByString('v0.45.7');
-    this.crawlTxService.setRegistry(auraRegistry);
+    const seiRegistry = new SeiRegistry(this.crawlTxService.logger);
+    seiRegistry.setCosmosSdkVersionByString('v0.45.10');
+    this.crawlTxService.setRegistry(seiRegistry);
 
     this.crawlTxService.setMsgIndexToEvent(rawData);
     txPatchInTx.push(

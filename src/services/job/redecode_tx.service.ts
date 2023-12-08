@@ -10,7 +10,7 @@ import { Transaction, TransactionMessage } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
-import AuraRegistry from '../crawl-tx/aura.registry';
+import SeiRegistry from '../crawl-tx/sei.registry';
 import Utils from '../../common/utils/utils';
 import knex from '../../common/utils/db_connection';
 
@@ -29,7 +29,7 @@ export default class JobRedecodeTx extends BullableService {
   })
   async redecodeTxByType(_payload: { type: string }) {
     this.logger.info('Job re decode tx type: ', _payload.type);
-    const registry = new AuraRegistry(this.logger);
+    const registry = new SeiRegistry(this.logger);
     let currentId = 0;
     await knex.transaction(async (trx) => {
       let done = false;

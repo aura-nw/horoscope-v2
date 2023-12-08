@@ -39,7 +39,7 @@ import {
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import { Account, AccountVesting } from '../../models';
-import AuraRegistry from '../crawl-tx/aura.registry';
+import SeiRegistry from '../crawl-tx/sei.registry';
 import Utils from '../../common/utils/utils';
 
 @Service({
@@ -530,7 +530,7 @@ export default class CrawlAccountService extends BullableService {
   }
 
   public async _start() {
-    this.registry = new AuraRegistry(this.logger);
+    this.registry = new SeiRegistry(this.logger);
     this.registry.addTypes([
       ...Object.values(AccountType),
       ...Object.values(PubkeyType),
