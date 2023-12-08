@@ -1,8 +1,30 @@
 import { Knex } from 'knex';
 import config from '../config.json' assert { type: 'json' };
+import { environmentDeploy } from '../src/common';
+const envDeploy = process.env.NODE_ENV;
 
 export async function up(knex: Knex): Promise<void> {
   await knex.transaction(async (trx) => {
+    const createTxIdIndex =
+      envDeploy === environmentDeploy.development
+        ? `
+        CREATE INDEX event_partition_tx_id_brin_idx
+        ON event USING BRIN (tx_id) WITH (PAGES_PER_RANGE = 10, AUTOSUMMARIZE = true);
+      `
+        : `
+        CREATE INDEX event_partition_tx_id_btree_idx
+        ON event USING BTREE (tx_id ASC NULLS LAST);
+      `;
+    const createBlockHeightIndex =
+      envDeploy === environmentDeploy.development
+        ? `
+        CREATE INDEX event_partition_block_height_brin_idx
+        ON event USING BRIN (block_height) WITH (PAGES_PER_RANGE = 10, AUTOSUMMARIZE = true);
+      `
+        : `
+        CREATE INDEX event_partition_block_height_btree_idx
+        ON event USING BTREE (block_height ASC NULLS LAST);
+      `;
     /**
      * @description: Create event table with config support partition on id column
      */
@@ -19,12 +41,7 @@ export async function up(knex: Knex): Promise<void> {
 
       CREATE INDEX event_partition_type_idx
         ON event_partition (type);
-
-      CREATE INDEX event_partition_tx_id_brin_idx
-        ON event_partition USING BRIN (tx_id) WITH (PAGES_PER_RANGE = 10, AUTOSUMMARIZE = true);
-
-      CREATE INDEX event_partition_block_height_brin_idx
-        ON event_partition USING BRIN (block_height) WITH (PAGES_PER_RANGE = 10, AUTOSUMMARIZE = true);`
+      `
     );
 
     /**
@@ -116,6 +133,8 @@ export async function up(knex: Knex): Promise<void> {
     `
       )
       .transacting(trx);
+    await knex.raw(createTxIdIndex).transacting(trx);
+    await knex.raw(createBlockHeightIndex).transacting(trx);
   });
 }
 

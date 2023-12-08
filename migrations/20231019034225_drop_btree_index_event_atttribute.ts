@@ -1,5 +1,10 @@
 import { Knex } from 'knex';
+import { environmentDeploy } from '../src/common';
+const envDeploy = process.env.NODE_ENV;
+
 export async function up(knex: Knex): Promise<void> {
+  if (envDeploy !== environmentDeploy.development) return;
+
   await knex.schema.alterTable('event_attribute', (table) => {
     table.dropIndex(
       'block_height',
@@ -9,6 +14,8 @@ export async function up(knex: Knex): Promise<void> {
   });
 }
 export async function down(knex: Knex): Promise<void> {
+  if (envDeploy !== environmentDeploy.development) return;
+
   await knex.schema.alterTable('event_attribute', (table) => {
     table.index(
       'block_height',
