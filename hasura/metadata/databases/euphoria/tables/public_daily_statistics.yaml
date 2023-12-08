@@ -11,5 +11,5 @@ select_permissions:
         - unique_addresses
         - date
       filter: {}
-      limit: 100
+      limit: 365
       allow_aggregations: true
