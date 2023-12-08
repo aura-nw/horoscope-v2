@@ -136,10 +136,12 @@ export default class CreateConstraintInEventPartitionJob extends BullableService
       };
     }
 
-    // Naming like constraintName_status, so pop() will get current status of constraint
-    const constraintStatus = currentConstraintName.split('_').pop();
-    // Current done and having full constraint so do nothing
-    if (constraintStatus === this.insertionStatus.done) return null;
+    if (currentConstraintName) {
+      // Naming like constraintName_status, so pop() will get current status of constraint
+      const constraintStatus = currentConstraintName.split('_').pop();
+      // Current done and having full constraint so do nothing
+      if (constraintStatus === this.insertionStatus.done) return null;
+    }
 
     return {
       createConstraint: {
