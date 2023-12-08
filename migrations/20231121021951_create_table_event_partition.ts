@@ -83,23 +83,6 @@ export async function up(knex: Knex): Promise<void> {
         .transacting(trx);
       startId = events[events.length - 1].id;
     }
-    await knex
-      .raw(
-        `
-        ALTER TABLE event_attribute
-        DROP CONSTRAINT IF EXISTS event_attribute_partition_event_id_foreign cascade;
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
-        ALTER TABLE smart_contract_event
-        DROP CONSTRAINT IF EXISTS smart_contract_event_event_id_foreign cascade;
-    `
-      )
-      .transacting(trx);
-
     const currentEventIdSeq = await knex.raw(`
       SELECT last_value FROM transaction_event_id_seq;
     `);
