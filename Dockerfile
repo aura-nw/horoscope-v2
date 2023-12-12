@@ -4,15 +4,15 @@ FROM node:16-alpine
 WORKDIR /app
 
 # Install dependencies
-COPY package.json package-lock.json yarn.lock ./
-RUN yarn install
+COPY package.json package-lock.json ./
+RUN npm install
 
 # Copy source
 COPY . .
 
 # Build and cleanup
 ENV NODE_ENV=production
-RUN yarn build
+RUN npm run build
 
 # Start server
-CMD ["yarn", "start"]
+CMD ["npm", "start"]
