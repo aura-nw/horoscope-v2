@@ -94,7 +94,7 @@ export default class CreateTableEventPartitionSpec {
     const checkAgainPartitionInfo =
       await this.createEventPartitionJob?.createPartitionName(mockEvent);
     expect(checkAgainPartitionInfo).toEqual(null);
-    await knex.raw(`DROP TABLE ${partitionInfo?.partitionName}`);
+    await knex.raw(`DROP TABLE ${partitionInfo?.partitionName} CASCADE`);
   }
 
   @AfterAll()
