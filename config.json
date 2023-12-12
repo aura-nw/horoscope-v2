@@ -163,7 +163,7 @@
     "chunkSizeInsert": 1000
   },
   "migrationTransactionToPartition": {
-    "startId": 0,
+    "startId": 100000000,
     "endId": 200000000,
     "step": 100000000,
     "limitRecordGet": 10000,
