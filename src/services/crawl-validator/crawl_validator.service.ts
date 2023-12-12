@@ -112,7 +112,7 @@ export default class CrawlValidatorService extends BullableService {
 
     while (!done) {
       resultCallApi =
-        await this._lcdClient.auranw.cosmos.staking.v1beta1.validators({
+        await this._lcdClient.aura.cosmos.staking.v1beta1.validators({
           pagination,
         });
 
@@ -196,7 +196,7 @@ export default class CrawlValidatorService extends BullableService {
   private async loadCustomInfo(validators: Validator[]): Promise<Validator[]> {
     const batchQueries: any[] = [];
 
-    const pool = await this._lcdClient.auranw.cosmos.staking.v1beta1.pool();
+    const pool = await this._lcdClient.aura.cosmos.staking.v1beta1.pool();
 
     validators.forEach((validator: Validator) => {
       const request: QueryDelegationRequest = {
