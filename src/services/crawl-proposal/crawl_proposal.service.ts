@@ -79,7 +79,7 @@ export default class CrawlProposalService extends BullableService {
             proposalIds
           );
           const nodeInfo: GetNodeInfoResponseSDKType =
-            await this._lcdClient.auranw.cosmos.base.tendermint.v1beta1.getNodeInfo();
+            await this._lcdClient.aura.cosmos.base.tendermint.v1beta1.getNodeInfo();
           const cosmosSdkVersion =
             nodeInfo.application_version?.cosmos_sdk_version ?? 'v0.45.99';
           await Promise.all(
@@ -88,15 +88,14 @@ export default class CrawlProposalService extends BullableService {
                 let proposal;
                 if (Utils.compareVersion(cosmosSdkVersion, 'v0.45.99') === -1) {
                   proposal =
-                    await this._lcdClient.auranw.cosmos.gov.v1beta1.proposal({
+                    await this._lcdClient.aura.cosmos.gov.v1beta1.proposal({
                       proposalId,
                     });
                 } else {
                   // use gov.v1 to call proposal
-                  proposal =
-                    await this._lcdClient.auranw.cosmos.gov.v1.proposal({
-                      proposalId,
-                    });
+                  proposal = await this._lcdClient.aura.cosmos.gov.v1.proposal({
+                    proposalId,
+                  });
                   proposal.proposal = {
                     ...proposal.proposal,
                     proposal_id: proposal.proposal.id,

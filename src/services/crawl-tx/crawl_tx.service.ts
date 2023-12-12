@@ -660,7 +660,7 @@ export default class CrawlTxService extends BullableService {
     const lcdClient = await getLcdClient();
     // set version cosmos sdk to registry
     const nodeInfo: GetNodeInfoResponseSDKType =
-      await lcdClient.auranw.cosmos.base.tendermint.v1beta1.getNodeInfo();
+      await lcdClient.aura.cosmos.base.tendermint.v1beta1.getNodeInfo();
     const cosmosSdkVersion = nodeInfo.application_version?.cosmos_sdk_version;
     if (cosmosSdkVersion) {
       this._registry.setCosmosSdkVersionByString(cosmosSdkVersion);
