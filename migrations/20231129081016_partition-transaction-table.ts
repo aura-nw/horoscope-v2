@@ -38,7 +38,9 @@ export async function up(knex: Knex): Promise<void> {
      * @description: Update new table name(event_partition) to event name
      */
     await knex
-      .raw('ALTER TABLE transaction RENAME TO transaction_backup;')
+      .raw(
+        'ALTER TABLE transaction RENAME TO transaction_partition_0_100000000;'
+      )
       .transacting(trx);
     await knex
       .raw('ALTER TABLE transaction_partition RENAME TO transaction;')
@@ -162,6 +164,14 @@ export async function up(knex: Knex): Promise<void> {
       )
       .transacting(trx);
     /**
+     * @description add old table transaction into transaction partitioned
+     */
+    await knex
+      .raw(
+        `ALTER TABLE transaction ATTACH PARTITION transaction_partition_0_100000000 FOR VALUES FROM (0) TO (100000000)`
+      )
+      .transacting(trx);
+    /**
      * @description: Create partition base on id column and range value by step
      * Then apply partition to table
      */
@@ -187,10 +197,19 @@ export async function up(knex: Knex): Promise<void> {
 export async function down(knex: Knex): Promise<void> {
   await knex.transaction(async (trx) => {
     await knex
+      .raw(
+        `
+        ALTER TABLE transaction DETACH PARTITION transaction_partition_0_100000000;
+      `
+      )
+      .transacting(trx);
+    await knex
       .raw('alter table transaction rename to transaction_partition;')
       .transacting(trx);
     await knex
-      .raw('alter table transaction_backup rename to transaction;')
+      .raw(
+        'alter table transaction_partition_0_100000000 rename to transaction;'
+      )
       .transacting(trx);
     await knex.schema.dropTableIfExists('transaction_partition');
     await knex
