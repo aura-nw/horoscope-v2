@@ -2,7 +2,7 @@
 import { Registry, TsProtoGeneratedType } from '@cosmjs/proto-signing';
 import { defaultRegistryTypes as defaultStargateTypes } from '@cosmjs/stargate';
 import { wasmTypes } from '@cosmjs/cosmwasm-stargate/build/modules';
-import { ibc, cosmos, auranw } from '@aura-nw/aurajs';
+import { ibc, cosmos, aura } from '@aura-nw/aurajs';
 import { toBase64, fromUtf8, fromBase64, toUtf8 } from '@cosmjs/encoding';
 import { LoggerInstance } from 'moleculer';
 import _ from 'lodash';
@@ -20,7 +20,7 @@ export default class AuraRegistry {
 
   public ibc: any;
 
-  public auranw: any;
+  public aura: any;
 
   public cosmosSdkVersion: SemVer = new SemVer('v0.45.17');
 
@@ -32,7 +32,7 @@ export default class AuraRegistry {
     this._logger = logger;
     this.cosmos = cosmos;
     this.ibc = ibc;
-    this.auranw = auranw;
+    this.aura = aura;
     this.setDefaultRegistry();
   }
 
