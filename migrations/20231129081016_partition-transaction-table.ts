@@ -10,7 +10,8 @@ export async function up(knex: Knex): Promise<void> {
       CREATE TABLE transaction_partition
       (
         id SERIAL PRIMARY KEY,
-        height INTEGER NOT NULL,
+        height INTEGER NOT NULL CONSTRAINT transaction_height_foreign
+            REFERENCES block,
         hash VARCHAR(255) NOT NULL,
         codespace  VARCHAR(255) NOT NULL,
         code INTEGER NOT NULL,
@@ -118,6 +119,48 @@ export async function up(knex: Knex): Promise<void> {
     `
       )
       .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE power_event DROP CONSTRAINT power_event_tx_id_foreign;
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE power_event ADD CONSTRAINT power_event_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE feegrant_history DROP CONSTRAINT feegrant_history_tx_id_foreign;
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE feegrant_history ADD CONSTRAINT feegrant_history_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE feegrant DROP CONSTRAINT feegrant_init_tx_id_foreign;
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE feegrant ADD CONSTRAINT feegrant_init_tx_id_foreign FOREIGN KEY (init_tx_id) REFERENCES transaction(id);
+    `
+      )
+      .transacting(trx);
     /**
      * @description: Create partition base on id column and range value by step
      * Then apply partition to table
@@ -205,6 +248,48 @@ export async function down(knex: Knex): Promise<void> {
       .raw(
         `
         ALTER TABLE vote ADD CONSTRAINT vote_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE power_event DROP CONSTRAINT power_event_tx_id_foreign;
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE power_event ADD CONSTRAINT power_event_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE feegrant_history DROP CONSTRAINT feegrant_history_tx_id_foreign;
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE feegrant_history ADD CONSTRAINT feegrant_history_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE feegrant DROP CONSTRAINT feegrant_init_tx_id_foreign;
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE feegrant ADD CONSTRAINT feegrant_init_tx_id_foreign FOREIGN KEY (init_tx_id) REFERENCES transaction(id);
     `
       )
       .transacting(trx);
