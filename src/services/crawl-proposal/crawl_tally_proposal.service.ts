@@ -88,7 +88,7 @@ export default class CrawlTallyProposalService extends BullableService {
       );
     });
 
-    const pool = await this._lcdClient.aura.cosmos.staking.v1beta1.pool();
+    const pool = await this._lcdClient.cosmos.cosmos.staking.v1beta1.pool();
     const result: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
     const proposalTally: QueryTallyResultResponse[] = result.map(
       (res: JsonRpcSuccessResponse) =>

@@ -4,6 +4,7 @@ export interface IAuraJSClientFactory {
   aura: any;
   cosmwasm: any;
   ibc: any;
+  cosmos: any;
 }
 
 export interface INetworkInfo {

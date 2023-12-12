@@ -1,4 +1,4 @@
-import { aura, cosmwasm, ibc } from '@aura-nw/aurajs';
+import { aura, cosmwasm, ibc, cosmos } from '@aura-nw/aurajs';
 import { IAuraJSClientFactory } from '../types/interfaces';
 import network from '../../../network.json' assert { type: 'json' };
 import config from '../../../config.json' assert { type: 'json' };
@@ -8,12 +8,14 @@ export default class AuraJsClient {
     aura: null,
     cosmwasm: null,
     ibc: null,
+    cosmos: null,
   };
 
   public rpcClient: IAuraJSClientFactory = {
     aura: null,
     cosmwasm: null,
     ibc: null,
+    cosmos: null,
   };
 }
 
@@ -41,6 +43,12 @@ export async function getLcdClient() {
       restEndpoint: lcd,
     });
   }
+  if (!client.lcdClient.cosmos) {
+    const cosmosClient = cosmos.ClientFactory;
+    client.lcdClient.cosmos = await cosmosClient.createLCDClient({
+      restEndpoint: lcd,
+    });
+  }
   return client.lcdClient;
 }
 
@@ -54,15 +62,21 @@ export async function getRpcClient() {
       rpcEndpoint: rpc,
     });
   }
-  if (!client.lcdClient.cosmwasm) {
+  if (!client.rpcClient.cosmwasm) {
     const cosmwasmClient = cosmwasm.ClientFactory;
-    client.lcdClient.cosmwasm = await cosmwasmClient.createRPCQueryClient({
+    client.rpcClient.cosmwasm = await cosmwasmClient.createRPCQueryClient({
       rpcEndpoint: rpc,
     });
   }
-  if (!client.lcdClient.ibc) {
+  if (!client.rpcClient.ibc) {
     const ibcClient = ibc.ClientFactory;
-    client.lcdClient.ibc = await ibcClient.createRPCQueryClient({
+    client.rpcClient.ibc = await ibcClient.createRPCQueryClient({
+      rpcEndpoint: rpc,
+    });
+  }
+  if (!client.rpcClient.cosmos) {
+    const cosmosClient = cosmos.ClientFactory;
+    client.rpcClient.cosmos = await cosmosClient.createRPCQueryClient({
       rpcEndpoint: rpc,
     });
   }

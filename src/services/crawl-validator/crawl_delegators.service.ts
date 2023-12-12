@@ -66,7 +66,7 @@ export default class CrawlDelegatorsService extends BullableService {
       countTotal: true,
     };
     const validatorDelegationInfo =
-      await this._lcdClient.aura.cosmos.staking.v1beta1.validatorDelegations({
+      await this._lcdClient.cosmos.cosmos.staking.v1beta1.validatorDelegations({
         validatorAddr: _payload.address,
         pagination,
       });

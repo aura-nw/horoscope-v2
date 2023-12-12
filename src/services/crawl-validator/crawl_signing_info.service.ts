@@ -49,7 +49,7 @@ export default class CrawlSigningInfoService extends BullableService {
 
     if (foundValidators.length > 0) {
       const paramSlashing =
-        await this._lcdClient.aura.cosmos.slashing.v1beta1.params();
+        await this._lcdClient.cosmos.cosmos.slashing.v1beta1.params();
 
       let resultCallApi;
       let done = false;
@@ -59,7 +59,7 @@ export default class CrawlSigningInfoService extends BullableService {
 
       while (!done) {
         resultCallApi =
-          await this._lcdClient.aura.cosmos.slashing.v1beta1.signingInfos({
+          await this._lcdClient.cosmos.cosmos.slashing.v1beta1.signingInfos({
             pagination,
           });
 
