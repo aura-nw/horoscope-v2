@@ -42,20 +42,6 @@ export async function up(knex: Knex): Promise<void> {
       .raw('ALTER TABLE transaction_partition RENAME TO transaction;')
       .transacting(trx);
 
-    // Drop fk on old table and create again fk point to new transaction partitioned table
-    await knex
-      .raw(
-        `
-        ALTER TABLE transaction_message DROP CONSTRAINT transaction_message_tx_id_foreign;
-        ALTER TABLE event DROP CONSTRAINT event_partition_transaction_foreign;
-        ALTER TABLE event_attribute DROP CONSTRAINT event_attribute_partition_tx_id_foreign;
-        ALTER TABLE vote DROP CONSTRAINT vote_tx_id_foreign;
-        ALTER TABLE power_event DROP CONSTRAINT power_event_tx_id_foreign;
-        ALTER TABLE feegrant_history DROP CONSTRAINT feegrant_history_tx_id_foreign;
-        ALTER TABLE feegrant DROP CONSTRAINT feegrant_init_tx_id_foreign;
-      `
-      )
-      .transacting(trx);
     // add old table transaction into transaction partitioned
     await knex
       .raw(
@@ -82,22 +68,6 @@ export async function up(knex: Knex): Promise<void> {
         )
         .transacting(trx);
     }
-    await knex.raw(
-      `set statement_timeout to ${config.migrationTransactionToPartition.statementTimeout}`
-    );
-    await knex
-      .raw(
-        `
-        ALTER TABLE transaction_message ADD CONSTRAINT transaction_message_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-        ALTER TABLE event ADD CONSTRAINT event_partition_transaction_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-        ALTER TABLE event_attribute ADD CONSTRAINT event_attribute_partition_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-        ALTER TABLE vote ADD CONSTRAINT vote_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-        ALTER TABLE power_event ADD CONSTRAINT power_event_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-        ALTER TABLE feegrant_history ADD CONSTRAINT feegrant_history_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-        ALTER TABLE feegrant ADD CONSTRAINT feegrant_init_tx_id_foreign FOREIGN KEY (init_tx_id) REFERENCES transaction(id);
-      `
-      )
-      .transacting(trx);
   });
 }
 
@@ -119,32 +89,5 @@ export async function down(knex: Knex): Promise<void> {
       )
       .transacting(trx);
     await knex.schema.dropTableIfExists('transaction_partition');
-
-    await knex
-      .raw(
-        `
-        ALTER TABLE transaction_message DROP CONSTRAINT transaction_message_tx_id_foreign;
-        ALTER TABLE event DROP CONSTRAINT event_partition_transaction_foreign;
-        ALTER TABLE event_attribute DROP CONSTRAINT event_attribute_partition_tx_id_foreign;
-        ALTER TABLE vote DROP CONSTRAINT vote_tx_id_foreign;
-        ALTER TABLE power_event DROP CONSTRAINT power_event_tx_id_foreign;
-        ALTER TABLE feegrant_history DROP CONSTRAINT feegrant_history_tx_id_foreign;
-        ALTER TABLE feegrant DROP CONSTRAINT feegrant_init_tx_id_foreign;
-      `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
-        ALTER TABLE transaction_message ADD CONSTRAINT transaction_message_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-        ALTER TABLE event ADD CONSTRAINT event_partition_transaction_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-        ALTER TABLE event_attribute ADD CONSTRAINT event_attribute_partition_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-        ALTER TABLE vote ADD CONSTRAINT vote_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-        ALTER TABLE power_event ADD CONSTRAINT power_event_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-        ALTER TABLE feegrant_history ADD CONSTRAINT feegrant_history_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-        ALTER TABLE feegrant ADD CONSTRAINT feegrant_init_tx_id_foreign FOREIGN KEY (init_tx_id) REFERENCES transaction(id);
-      `
-      )
-      .transacting(trx);
   });
 }
