@@ -1,17 +1,17 @@
-import { auranw, cosmwasm, ibc } from '@aura-nw/aurajs';
+import { aura, cosmwasm, ibc } from '@aura-nw/aurajs';
 import { IAuraJSClientFactory } from '../types/interfaces';
 import network from '../../../network.json' assert { type: 'json' };
 import config from '../../../config.json' assert { type: 'json' };
 
 export default class AuraJsClient {
   public lcdClient: IAuraJSClientFactory = {
-    auranw: null,
+    aura: null,
     cosmwasm: null,
     ibc: null,
   };
 
   public rpcClient: IAuraJSClientFactory = {
-    auranw: null,
+    aura: null,
     cosmwasm: null,
     ibc: null,
   };
@@ -23,9 +23,9 @@ export async function getLcdClient() {
   const lcd =
     network.find((net: any) => net.chainId === config.chainId)?.LCD[0] || '';
 
-  if (!client.lcdClient.auranw) {
-    const auranwClient = auranw.ClientFactory;
-    client.lcdClient.auranw = await auranwClient.createLCDClient({
+  if (!client.lcdClient.aura) {
+    const auraClient = aura.ClientFactory;
+    client.lcdClient.aura = await auraClient.createLCDClient({
       restEndpoint: lcd,
     });
   }
@@ -48,9 +48,9 @@ export async function getRpcClient() {
   const rpc =
     network.find((net: any) => net.chainId === config.chainId)?.RPC[0] || '';
 
-  if (!client.rpcClient.auranw) {
-    const auranwClient = auranw.ClientFactory;
-    client.rpcClient.auranw = await auranwClient.createRPCQueryClient({
+  if (!client.rpcClient.aura) {
+    const auraClient = aura.ClientFactory;
+    client.rpcClient.aura = await auraClient.createRPCQueryClient({
       rpcEndpoint: rpc,
     });
   }

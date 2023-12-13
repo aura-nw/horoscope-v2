@@ -1,7 +1,7 @@
 import Long from 'long';
 
 export interface IAuraJSClientFactory {
-  auranw: any;
+  aura: any;
   cosmwasm: any;
   ibc: any;
 }
