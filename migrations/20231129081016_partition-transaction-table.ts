@@ -82,6 +82,9 @@ export async function up(knex: Knex): Promise<void> {
         )
         .transacting(trx);
     }
+    await knex.raw(
+      `set statement_timeout to ${config.migrationTransactionToPartition.statementTimeout}`
+    );
     await knex
       .raw(
         `
