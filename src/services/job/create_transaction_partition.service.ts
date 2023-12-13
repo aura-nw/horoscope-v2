@@ -36,9 +36,7 @@ export default class CreateTransactionPartitionJob extends BullableService {
     )
       return null;
 
-    /**
-     * @description Calculate current partition step then add 1 step for feature partition creation
-     */
+    // Calculate current partition step then add 1 step for feature partition creation
     const stepMultiple =
       Math.floor(
         BigNumber(latestTransaction.id)
@@ -46,21 +44,14 @@ export default class CreateTransactionPartitionJob extends BullableService {
           .toNumber()
       ) + 1;
 
-    /**
-     * @description Build partition name
-     */
-    const minTransactionIdForNewPartition = BigNumber(
+    // Build partition name
+    const fromTxId = BigNumber(
       config.migrationTransactionToPartition.step
     ).multipliedBy(stepMultiple);
-    const maxTransactionIdForNewPartition =
-      minTransactionIdForNewPartition.plus(
-        config.migrationTransactionToPartition.step
-      );
-    const partitionName = `transaction_partition_${minTransactionIdForNewPartition.toString()}_${maxTransactionIdForNewPartition.toString()}`;
+    const toTxId = fromTxId.plus(config.migrationTransactionToPartition.step);
+    const partitionName = `transaction_partition_${fromTxId.toString()}_${toTxId.toString()}`;
 
-    /**
-     * @description Check partition exist or not
-     */
+    // Check partition exist or not
     const existPartition = await knex.raw(`
       SELECT
         parent.relname AS parent,
@@ -74,8 +65,8 @@ export default class CreateTransactionPartitionJob extends BullableService {
     if (existPartition.rows.length > 0) return null;
 
     return {
-      fromTransactionId: minTransactionIdForNewPartition.toString(),
-      toTransactionId: maxTransactionIdForNewPartition.toString(),
+      fromTransactionId: fromTxId.toString(),
+      toTransactionId: toTxId.toString(),
       partitionName,
     };
   }

@@ -3,9 +3,7 @@ import config from '../config.json' assert { type: 'json' };
 
 export async function up(knex: Knex): Promise<void> {
   await knex.transaction(async (trx) => {
-    /**
-     * @description: Create event table with config support partition on block height column
-     */
+    // Create event table with config support partition on block height column
     await knex.raw(`
       CREATE TABLE transaction_partition
       (
@@ -34,9 +32,7 @@ export async function up(knex: Knex): Promise<void> {
         ON transaction_partition (timestamp);
     `);
 
-    /**
-     * @description: Update new table name(event_partition) to event name
-     */
+    // Update new table name(event_partition) to event name
     await knex
       .raw(
         'ALTER TABLE transaction RENAME TO transaction_partition_0_100000000;'
@@ -46,126 +42,34 @@ export async function up(knex: Knex): Promise<void> {
       .raw('ALTER TABLE transaction_partition RENAME TO transaction;')
       .transacting(trx);
 
-    /**
-     * @description: Drop fk on old table and create again fk point to new transaction partitioned table
-     */
+    // Drop fk on old table and create again fk point to new transaction partitioned table
     await knex
       .raw(
         `
-        ALTER TABLE transaction_message
-        DROP CONSTRAINT transaction_message_tx_id_foreign;
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
-        ALTER TABLE transaction_message
-        ADD CONSTRAINT transaction_message_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
+        ALTER TABLE transaction_message DROP CONSTRAINT transaction_message_tx_id_foreign;
         ALTER TABLE event DROP CONSTRAINT event_partition_transaction_foreign;
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
-        ALTER TABLE event ADD CONSTRAINT event_partition_transaction_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
         ALTER TABLE event_attribute DROP CONSTRAINT event_attribute_partition_tx_id_foreign;
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
-        ALTER TABLE event_attribute ADD CONSTRAINT event_attribute_partition_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
-        ALTER TABLE event_attribute ADD CONSTRAINT event_attribute_partition_event_id_foreign FOREIGN KEY (event_id) REFERENCES event(id);
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
-        ALTER TABLE smart_contract_event ADD CONSTRAINT smart_contract_event_event_id_foreign FOREIGN KEY (event_id) REFERENCES event(id);
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
         ALTER TABLE vote DROP CONSTRAINT vote_tx_id_foreign;
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
-        ALTER TABLE vote ADD CONSTRAINT vote_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
         ALTER TABLE power_event DROP CONSTRAINT power_event_tx_id_foreign;
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
-        ALTER TABLE power_event ADD CONSTRAINT power_event_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
         ALTER TABLE feegrant_history DROP CONSTRAINT feegrant_history_tx_id_foreign;
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
-        ALTER TABLE feegrant_history ADD CONSTRAINT feegrant_history_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
         ALTER TABLE feegrant DROP CONSTRAINT feegrant_init_tx_id_foreign;
-    `
+      `
       )
       .transacting(trx);
     await knex
       .raw(
         `
+        ALTER TABLE transaction_message ADD CONSTRAINT transaction_message_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+        ALTER TABLE event ADD CONSTRAINT event_partition_transaction_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+        ALTER TABLE event_attribute ADD CONSTRAINT event_attribute_partition_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+        ALTER TABLE vote ADD CONSTRAINT vote_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+        ALTER TABLE power_event ADD CONSTRAINT power_event_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+        ALTER TABLE feegrant_history ADD CONSTRAINT feegrant_history_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
         ALTER TABLE feegrant ADD CONSTRAINT feegrant_init_tx_id_foreign FOREIGN KEY (init_tx_id) REFERENCES transaction(id);
-    `
+      `
       )
       .transacting(trx);
-    /**
-     * @description add old table transaction into transaction partitioned
-     */
+    // add old table transaction into transaction partitioned
     await knex
       .raw(
         `ALTER TABLE transaction ATTACH PARTITION transaction_partition_0_100000000 FOR VALUES FROM (0) TO (100000000)`
@@ -212,104 +116,31 @@ export async function down(knex: Knex): Promise<void> {
       )
       .transacting(trx);
     await knex.schema.dropTableIfExists('transaction_partition');
+
     await knex
       .raw(
         `
-        ALTER TABLE transaction_message
-        DROP CONSTRAINT transaction_message_tx_id_foreign;
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
-        ALTER TABLE transaction_message
-        ADD CONSTRAINT transaction_message_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
+        ALTER TABLE transaction_message DROP CONSTRAINT transaction_message_tx_id_foreign;
         ALTER TABLE event DROP CONSTRAINT event_partition_transaction_foreign;
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
-        ALTER TABLE event ADD CONSTRAINT event_partition_transaction_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
         ALTER TABLE event_attribute DROP CONSTRAINT event_attribute_partition_tx_id_foreign;
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
-        ALTER TABLE event_attribute ADD CONSTRAINT event_attribute_partition_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
         ALTER TABLE vote DROP CONSTRAINT vote_tx_id_foreign;
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
-        ALTER TABLE vote ADD CONSTRAINT vote_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
         ALTER TABLE power_event DROP CONSTRAINT power_event_tx_id_foreign;
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
-        ALTER TABLE power_event ADD CONSTRAINT power_event_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
         ALTER TABLE feegrant_history DROP CONSTRAINT feegrant_history_tx_id_foreign;
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
-        ALTER TABLE feegrant_history ADD CONSTRAINT feegrant_history_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
         ALTER TABLE feegrant DROP CONSTRAINT feegrant_init_tx_id_foreign;
-    `
+      `
       )
       .transacting(trx);
     await knex
       .raw(
         `
+        ALTER TABLE transaction_message ADD CONSTRAINT transaction_message_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+        ALTER TABLE event ADD CONSTRAINT event_partition_transaction_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+        ALTER TABLE event_attribute ADD CONSTRAINT event_attribute_partition_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+        ALTER TABLE vote ADD CONSTRAINT vote_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+        ALTER TABLE power_event ADD CONSTRAINT power_event_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
+        ALTER TABLE feegrant_history ADD CONSTRAINT feegrant_history_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
         ALTER TABLE feegrant ADD CONSTRAINT feegrant_init_tx_id_foreign FOREIGN KEY (init_tx_id) REFERENCES transaction(id);
-    `
+      `
       )
       .transacting(trx);
   });
