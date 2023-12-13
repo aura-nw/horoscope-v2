@@ -88,7 +88,6 @@
     "pg-hstore": "^2.3.4",
     "redisuri": "^1.1.2",
     "reflect-metadata": "^0.1.13",
-    "resilient": "^0.4.0",
     "semver": "^7.5.4",
     "stream-chain": "^2.2.5",
     "stream-json": "^1.7.5",
