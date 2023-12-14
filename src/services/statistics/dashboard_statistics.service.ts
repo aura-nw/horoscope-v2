@@ -109,10 +109,10 @@ export default class DashboardStatisticsService extends BullableService {
     ]);
 
     const [communityPool, inflation, distribution, supply] = await Promise.all([
-      this._lcdClient.auranw.cosmos.distribution.v1beta1.communityPool(),
-      this._lcdClient.auranw.cosmos.mint.v1beta1.inflation(),
-      this._lcdClient.auranw.cosmos.distribution.v1beta1.params(),
-      this._lcdClient.auranw.cosmos.bank.v1beta1.supplyOf({
+      this._lcdClient.aura.cosmos.distribution.v1beta1.communityPool(),
+      this._lcdClient.aura.cosmos.mint.v1beta1.inflation(),
+      this._lcdClient.aura.cosmos.distribution.v1beta1.params(),
+      this._lcdClient.aura.cosmos.bank.v1beta1.supplyOf({
         denom: config.networkDenom,
       }),
     ]);
