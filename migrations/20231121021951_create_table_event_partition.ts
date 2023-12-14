@@ -110,6 +110,14 @@ export async function up(knex: Knex): Promise<void> {
     `
       )
       .transacting(trx);
+    await knex
+      .raw(
+        `
+      ALTER TABLE event_attribute DROP CONSTRAINT event_attribute_partition_event_id_foreign;
+      ALTER TABLE event_attribute ADD CONSTRAINT event_attribute_partition_event_id_foreign FOREIGN KEY (event_id) REFERENCES event(id);
+    `
+      )
+      .transacting(trx);
   });
 }
 
