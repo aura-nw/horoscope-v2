@@ -157,19 +157,20 @@
     "timeCrawImage": "0 0 * * *",
     "milliSecondDelayRetry": 300000
   },
-  "migrationTransactionToPartition": {
-    "startBlock": 41000000,
-    "endBlock": 45000000,
-    "step": 1000000,
-    "limitRecordGet": 10000,
-    "chunkSizeInsert": 1000
-  },
   "migrationEventToPartition": {
     "startId": 0,
     "endId": 1000000000,
     "step": 200000000,
     "limitRecordGet": 10000,
     "chunkSizeInsert": 1000
+  },
+  "migrationTransactionToPartition": {
+    "startId": 100000000,
+    "endId": 200000000,
+    "step": 100000000,
+    "limitRecordGet": 10000,
+    "chunkSizeInsert": 1000,
+    "statementTimeout": 600000
   },
   "migrationEventAttributeToPartition": {
     "startBlock": 0,
@@ -187,6 +188,10 @@
   "jobCheckNeedCreateEventPartition": {
     "millisecondCrawl": 10000,
     "templateTable": "event"
+  },
+  "jobCheckNeedCreateTransactionPartition": {
+    "millisecondCrawl": 10000,
+    "templateTable": "transaction"
   },
   "httpBatchRequest": {
     "dispatchMilisecond": 1000,

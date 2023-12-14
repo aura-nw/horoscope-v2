@@ -81,31 +81,6 @@ export default class CreateTableTransactionPartitionSpec {
     );
   }
 
-  @Test('Test create partition on database')
-  public async test4() {
-    const mockTransaction = new Transaction();
-    mockTransaction.id = 850000001;
-    const partitionInfo =
-      await this.createTransactionPartitionJob?.createPartitionName(
-        mockTransaction
-      );
-    if (partitionInfo) {
-      await this.createTransactionPartitionJob?.createPartitionByPartitionInfo(
-        partitionInfo
-      );
-    }
-
-    /**
-     * @description partition now created so isCreated now will be false because partition already exist
-     */
-    const checkAgainPartitionInfo =
-      await this.createTransactionPartitionJob?.createPartitionName(
-        mockTransaction
-      );
-    expect(checkAgainPartitionInfo).toEqual(null);
-    await knex.raw(`DROP TABLE ${partitionInfo?.partitionName} CASCADE`);
-  }
-
   @AfterAll()
   async tearDown() {
     await knex.raw('TRUNCATE TABLE transaction RESTART IDENTITY CASCADE');

@@ -1483,6 +1483,16 @@
     "@cosmjs/math" "^0.31.3"
     "@cosmjs/utils" "^0.31.3"
 
+"@cosmjs/amino@0.28.13":
+  "integrity" "sha512-IHnH2zGwaY69qT4mVAavr/pfzx6YE+ud1NHJbvVePlbGiz68CXTi5LHR+K0lrKB5mQ7E+ZErWz2mw5U/x+V1wQ=="
+  "resolved" "https://registry.npmjs.org/@cosmjs/amino/-/amino-0.28.13.tgz"
+  "version" "0.28.13"
+  dependencies:
+    "@cosmjs/crypto" "0.28.13"
+    "@cosmjs/encoding" "0.28.13"
+    "@cosmjs/math" "0.28.13"
+    "@cosmjs/utils" "0.28.13"
+
 "@cosmjs/cosmwasm-stargate@^0.30.0":
   "integrity" "sha512-W/6SLUCJAJGBN+sJLXouLZikVgmqDd9LCdlMzQaxczcCHTWeJAmRvOiZGSZaSy3shw/JN1qc6g6PKpvTVgj10A=="
   "resolved" "https://registry.npmjs.org/@cosmjs/cosmwasm-stargate/-/cosmwasm-stargate-0.30.1.tgz"
@@ -1539,6 +1549,19 @@
     "elliptic" "^6.5.4"
     "libsodium-wrappers-sumo" "^0.7.11"
 
+"@cosmjs/crypto@0.28.13":
+  "integrity" "sha512-ynKfM0q/tMBQMHJby6ad8lR3gkgBKaelQhIsCZTjClsnuC7oYT9y3ThSZCUWr7Pa9h0J8ahU2YV2oFWFVWJQzQ=="
+  "resolved" "https://registry.npmjs.org/@cosmjs/crypto/-/crypto-0.28.13.tgz"
+  "version" "0.28.13"
+  dependencies:
+    "@cosmjs/encoding" "0.28.13"
+    "@cosmjs/math" "0.28.13"
+    "@cosmjs/utils" "0.28.13"
+    "@noble/hashes" "^1"
+    "bn.js" "^5.2.0"
+    "elliptic" "^6.5.3"
+    "libsodium-wrappers" "^0.7.6"
+
 "@cosmjs/encoding@^0.29.4", "@cosmjs/encoding@^0.29.5":
   "integrity" "sha512-G4rGl/Jg4dMCw5u6PEZHZcoHnUBlukZODHbm/wcL4Uu91fkn5jVo5cXXZcvs4VCkArVGrEj/52eUgTZCmOBGWQ=="
   "resolved" "https://registry.npmjs.org/@cosmjs/encoding/-/encoding-0.29.5.tgz"
@@ -1561,6 +1584,15 @@
   "integrity" "sha512-6IRtG0fiVYwyP7n+8e54uTx2pLYijO48V3t9TLiROERm5aUAIzIlz6Wp0NYaI5he9nh1lcEGJ1lkquVKFw3sUg=="
   "resolved" "https://registry.npmjs.org/@cosmjs/encoding/-/encoding-0.31.3.tgz"
   "version" "0.31.3"
+  dependencies:
+    "base64-js" "^1.3.0"
+    "bech32" "^1.1.4"
+    "readonly-date" "^1.0.0"
+
+"@cosmjs/encoding@0.28.13":
+  "integrity" "sha512-jtXbAYtV77rLHxoIrjGFsvgGjeTKttuHRv6cvuy3toCZzY7JzTclKH5O2g36IIE4lXwD9xwuhGJ2aa6A3dhNkA=="
+  "resolved" "https://registry.npmjs.org/@cosmjs/encoding/-/encoding-0.28.13.tgz"
+  "version" "0.28.13"
   dependencies:
     "base64-js" "^1.3.0"
     "bech32" "^1.1.4"
@@ -1590,6 +1622,14 @@
     "@cosmjs/stream" "^0.31.3"
     "xstream" "^11.14.0"
 
+"@cosmjs/json-rpc@0.28.13":
+  "integrity" "sha512-fInSvg7x9P6p+GWqet+TMhrMTM3OWWdLJOGS5w2ryubMjgpR1rLiAx77MdTNkArW+/6sUwku0sN4veM4ENQu6A=="
+  "resolved" "https://registry.npmjs.org/@cosmjs/json-rpc/-/json-rpc-0.28.13.tgz"
+  "version" "0.28.13"
+  dependencies:
+    "@cosmjs/stream" "0.28.13"
+    "xstream" "^11.14.0"
+
 "@cosmjs/math@^0.29.4", "@cosmjs/math@^0.29.5":
   "integrity" "sha512-2GjKcv+A9f86MAWYLUkjhw1/WpRl2R1BTb3m9qPG7lzMA7ioYff9jY5SPCfafKdxM4TIQGxXQlYGewQL16O68Q=="
   "resolved" "https://registry.npmjs.org/@cosmjs/math/-/math-0.29.5.tgz"
@@ -1608,6 +1648,13 @@
   "integrity" "sha512-kZ2C6glA5HDb9hLz1WrftAjqdTBb3fWQsRR+Us2HsjAYdeE6M3VdXMsYCP5M3yiihal1WDwAY2U7HmfJw7Uh4A=="
   "resolved" "https://registry.npmjs.org/@cosmjs/math/-/math-0.31.3.tgz"
   "version" "0.31.3"
+  dependencies:
+    "bn.js" "^5.2.0"
+
+"@cosmjs/math@0.28.13":
+  "integrity" "sha512-PDpL8W/kbyeWi0mQ2OruyqE8ZUAdxPs1xCbDX3WXJwy2oU+X2UTbkuweJHVpS9CIqmZulBoWQAmlf6t6zr1N/g=="
+  "resolved" "https://registry.npmjs.org/@cosmjs/math/-/math-0.28.13.tgz"
+  "version" "0.28.13"
   dependencies:
     "bn.js" "^5.2.0"
 
@@ -1663,6 +1710,19 @@
     "cosmjs-types" "^0.8.0"
     "long" "^4.0.0"
 
+"@cosmjs/proto-signing@0.28.13":
+  "integrity" "sha512-nSl/2ZLsUJYz3Ad0RY3ihZUgRHIow2OnYqKsESMu+3RA/jTi9bDYhiBu8mNMHI0xrEJry918B2CyI56pOUHdPQ=="
+  "resolved" "https://registry.npmjs.org/@cosmjs/proto-signing/-/proto-signing-0.28.13.tgz"
+  "version" "0.28.13"
+  dependencies:
+    "@cosmjs/amino" "0.28.13"
+    "@cosmjs/crypto" "0.28.13"
+    "@cosmjs/encoding" "0.28.13"
+    "@cosmjs/math" "0.28.13"
+    "@cosmjs/utils" "0.28.13"
+    "cosmjs-types" "^0.4.0"
+    "long" "^4.0.0"
+
 "@cosmjs/socket@^0.29.5":
   "integrity" "sha512-5VYDupIWbIXq3ftPV1LkS5Ya/T7Ol/AzWVhNxZ79hPe/mBfv1bGau/LqIYOm2zxGlgm9hBHOTmWGqNYDwr9LNQ=="
   "resolved" "https://registry.npmjs.org/@cosmjs/socket/-/socket-0.29.5.tgz"
@@ -1691,6 +1751,34 @@
     "@cosmjs/stream" "^0.31.3"
     "isomorphic-ws" "^4.0.1"
     "ws" "^7"
+    "xstream" "^11.14.0"
+
+"@cosmjs/socket@0.28.13":
+  "integrity" "sha512-lavwGxQ5VdeltyhpFtwCRVfxeWjH5D5mmN7jgx9nuCf3XSFbTcOYxrk2pQ4usenu1Q1KZdL4Yl5RCNrJuHD9Ug=="
+  "resolved" "https://registry.npmjs.org/@cosmjs/socket/-/socket-0.28.13.tgz"
+  "version" "0.28.13"
+  dependencies:
+    "@cosmjs/stream" "0.28.13"
+    "isomorphic-ws" "^4.0.1"
+    "ws" "^7"
+    "xstream" "^11.14.0"
+
+"@cosmjs/stargate@^0.29.5":
+  "integrity" "sha512-hjEv8UUlJruLrYGJcUZXM/CziaINOKwfVm2BoSdUnNTMxGvY/jC1ABHKeZUYt9oXHxEJ1n9+pDqzbKc8pT0nBw=="
+  "resolved" "https://registry.npmjs.org/@cosmjs/stargate/-/stargate-0.29.5.tgz"
+  "version" "0.29.5"
+  dependencies:
+    "@confio/ics23" "^0.6.8"
+    "@cosmjs/amino" "^0.29.5"
+    "@cosmjs/encoding" "^0.29.5"
+    "@cosmjs/math" "^0.29.5"
+    "@cosmjs/proto-signing" "^0.29.5"
+    "@cosmjs/stream" "^0.29.5"
+    "@cosmjs/tendermint-rpc" "^0.29.5"
+    "@cosmjs/utils" "^0.29.5"
+    "cosmjs-types" "^0.5.2"
+    "long" "^4.0.0"
+    "protobufjs" "~6.11.3"
     "xstream" "^11.14.0"
 
 "@cosmjs/stargate@^0.30.1":
@@ -1725,6 +1813,24 @@
     "@cosmjs/tendermint-rpc" "^0.31.3"
     "@cosmjs/utils" "^0.31.3"
     "cosmjs-types" "^0.8.0"
+    "long" "^4.0.0"
+    "protobufjs" "~6.11.3"
+    "xstream" "^11.14.0"
+
+"@cosmjs/stargate@0.28.13":
+  "integrity" "sha512-dVBMazDz8/eActHsRcZjDHHptOBMqvibj5CFgEtZBp22gP6ASzoAUXTlkSVk5FBf4sfuUHoff6st134/+PGMAg=="
+  "resolved" "https://registry.npmjs.org/@cosmjs/stargate/-/stargate-0.28.13.tgz"
+  "version" "0.28.13"
+  dependencies:
+    "@confio/ics23" "^0.6.8"
+    "@cosmjs/amino" "0.28.13"
+    "@cosmjs/encoding" "0.28.13"
+    "@cosmjs/math" "0.28.13"
+    "@cosmjs/proto-signing" "0.28.13"
+    "@cosmjs/stream" "0.28.13"
+    "@cosmjs/tendermint-rpc" "0.28.13"
+    "@cosmjs/utils" "0.28.13"
+    "cosmjs-types" "^0.4.0"
     "long" "^4.0.0"
     "protobufjs" "~6.11.3"
     "xstream" "^11.14.0"
@@ -1768,7 +1874,30 @@
   dependencies:
     "xstream" "^11.14.0"
 
+"@cosmjs/stream@0.28.13":
+  "integrity" "sha512-AnjtfwT8NwPPkd3lhZhjOlOzT0Kn9bgEu2IPOZjQ1nmG2bplsr6TJmnwn0dJxHT7UGtex17h6whKB5N4wU37Wg=="
+  "resolved" "https://registry.npmjs.org/@cosmjs/stream/-/stream-0.28.13.tgz"
+  "version" "0.28.13"
+  dependencies:
+    "xstream" "^11.14.0"
+
 "@cosmjs/tendermint-rpc@^0.29.4":
+  "integrity" "sha512-ar80twieuAxsy0x2za/aO3kBr2DFPAXDmk2ikDbmkda+qqfXgl35l9CVAAjKRqd9d+cRvbQyb5M4wy6XQpEV6w=="
+  "resolved" "https://registry.npmjs.org/@cosmjs/tendermint-rpc/-/tendermint-rpc-0.29.5.tgz"
+  "version" "0.29.5"
+  dependencies:
+    "@cosmjs/crypto" "^0.29.5"
+    "@cosmjs/encoding" "^0.29.5"
+    "@cosmjs/json-rpc" "^0.29.5"
+    "@cosmjs/math" "^0.29.5"
+    "@cosmjs/socket" "^0.29.5"
+    "@cosmjs/stream" "^0.29.5"
+    "@cosmjs/utils" "^0.29.5"
+    "axios" "^0.21.2"
+    "readonly-date" "^1.0.0"
+    "xstream" "^11.14.0"
+
+"@cosmjs/tendermint-rpc@^0.29.5":
   "integrity" "sha512-ar80twieuAxsy0x2za/aO3kBr2DFPAXDmk2ikDbmkda+qqfXgl35l9CVAAjKRqd9d+cRvbQyb5M4wy6XQpEV6w=="
   "resolved" "https://registry.npmjs.org/@cosmjs/tendermint-rpc/-/tendermint-rpc-0.29.5.tgz"
   "version" "0.29.5"
@@ -1816,6 +1945,22 @@
     "readonly-date" "^1.0.0"
     "xstream" "^11.14.0"
 
+"@cosmjs/tendermint-rpc@0.28.13":
+  "integrity" "sha512-GB+ZmfuJIGQm0hsRtLYjeR3lOxF7Z6XyCBR0cX5AAYOZzSEBJjevPgUHD6tLn8zIhvzxaW3/VKnMB+WmlxdH4w=="
+  "resolved" "https://registry.npmjs.org/@cosmjs/tendermint-rpc/-/tendermint-rpc-0.28.13.tgz"
+  "version" "0.28.13"
+  dependencies:
+    "@cosmjs/crypto" "0.28.13"
+    "@cosmjs/encoding" "0.28.13"
+    "@cosmjs/json-rpc" "0.28.13"
+    "@cosmjs/math" "0.28.13"
+    "@cosmjs/socket" "0.28.13"
+    "@cosmjs/stream" "0.28.13"
+    "@cosmjs/utils" "0.28.13"
+    "axios" "^0.21.2"
+    "readonly-date" "^1.0.0"
+    "xstream" "^11.14.0"
+
 "@cosmjs/utils@^0.29.4", "@cosmjs/utils@^0.29.5":
   "integrity" "sha512-m7h+RXDUxOzEOGt4P+3OVPX7PuakZT3GBmaM/Y2u+abN3xZkziykD/NvedYFvvCCdQo714XcGl33bwifS9FZPQ=="
   "resolved" "https://registry.npmjs.org/@cosmjs/utils/-/utils-0.29.5.tgz"
@@ -1830,6 +1975,11 @@
   "integrity" "sha512-VBhAgzrrYdIe0O5IbKRqwszbQa7ZyQLx9nEQuHQ3HUplQW7P44COG/ye2n6AzCudtqxmwdX7nyX8ta1J07GoqA=="
   "resolved" "https://registry.npmjs.org/@cosmjs/utils/-/utils-0.31.3.tgz"
   "version" "0.31.3"
+
+"@cosmjs/utils@0.28.13":
+  "integrity" "sha512-dVeMBiyg+46x7XBZEfJK8yTihphbCFpjVYmLJVqmTsHfJwymQ65cpyW/C+V/LgWARGK8hWQ/aX9HM5Ao8QmMSg=="
+  "resolved" "https://registry.npmjs.org/@cosmjs/utils/-/utils-0.28.13.tgz"
+  "version" "0.28.13"
 
 "@cosmology/lcd@^0.13.0":
   "integrity" "sha512-GghifXtTH5eHY4qVP15uSDCSJk17mo18VpnaA3WvkXGtONXA/9qbyei1OQp46hiTHv4XoHGeqIU2eTqROD+now=="
@@ -1940,6 +2090,21 @@
   "integrity" "sha512-+KpH+QxZU7O4675t3mnkQKcZZg56u+K/Ct2K+N2AZYNVK8kyeo/bI18tI8aPm3tvNNRyTWfj6s5tnGNlcbQRsA=="
   "resolved" "https://registry.npmjs.org/@fastify/busboy/-/busboy-2.1.0.tgz"
   "version" "2.1.0"
+
+"@horoscope-v2/sei-js-proto@3.1.3":
+  "integrity" "sha512-xQ9qkL1uA1d13ecQOQK4bVmTNRaKvEF1M+7guPaDwR/RKE1rGEiF4tphivBzhrTuWCdeugSe+JYaeuKDAigu1Q=="
+  "resolved" "https://registry.npmjs.org/@horoscope-v2/sei-js-proto/-/sei-js-proto-3.1.3.tgz"
+  "version" "3.1.3"
+  dependencies:
+    "@babel/runtime" "^7.18.9"
+    "@cosmjs/amino" "^0.29.5"
+    "@cosmjs/encoding" "^0.29.5"
+    "@cosmjs/proto-signing" "^0.29.5"
+    "@cosmjs/stargate" "^0.29.5"
+    "@cosmjs/tendermint-rpc" "^0.29.5"
+    "@osmonauts/helpers" "^0.6.0"
+    "@osmonauts/lcd" "^0.8.0"
+    "protobufjs" "^6.11.2"
 
 "@humanwhocodes/config-array@^0.11.10":
   "integrity" "sha512-KVVjQmNUepDVGXNuoRRdmmEjruj0KfiGSbS8LVc12LMsWDQzRXJ0qdhN8L8uUigKpfEHRhlaQFY0ib1tnUbNeQ=="
@@ -2397,10 +2562,32 @@
     "case" "1.6.3"
     "dotty" "0.1.2"
 
+"@osmonauts/helpers@^0.6.0":
+  "integrity" "sha512-l62tWR/0W4R+5wRvMeRK0zlaJ8WZhULKsQAZ7kNzggL0pbndIAV+0BJ/jEBbNletoeGtuV8rpi6Wo+w+RmtZGw=="
+  "resolved" "https://registry.npmjs.org/@osmonauts/helpers/-/helpers-0.6.0.tgz"
+  "version" "0.6.0"
+  dependencies:
+    "@babel/runtime" "^7.18.9"
+    "@cosmjs/amino" "0.28.13"
+    "@cosmjs/crypto" "0.28.13"
+    "@cosmjs/proto-signing" "0.28.13"
+    "@cosmjs/stargate" "0.28.13"
+    "cosmjs-types" "0.5.1"
+    "long" "^5.2.0"
+    "protobufjs" "^6.11.3"
+
 "@osmonauts/lcd@^0.10.0":
   "integrity" "sha512-PzmXk9x9MHyLn2fUztpAqWqvDmMiEJaQv/JcAoAOE8VdHrD9Hf/KWnE1RZtamuS2ngQRqvQPD0xotCGXW7eTxA=="
   "resolved" "https://registry.npmjs.org/@osmonauts/lcd/-/lcd-0.10.0.tgz"
   "version" "0.10.0"
+  dependencies:
+    "@babel/runtime" "^7.19.0"
+    "axios" "0.27.2"
+
+"@osmonauts/lcd@^0.8.0":
+  "integrity" "sha512-k7m2gAVnXc0H4m/eTq4z/8A6hFrr3MPS9wnLV4Xu9/K/WYltCnp2PpiObZm+feZUPK/svES6hxIQeO1bODLx8g=="
+  "resolved" "https://registry.npmjs.org/@osmonauts/lcd/-/lcd-0.8.0.tgz"
+  "version" "0.8.0"
   dependencies:
     "@babel/runtime" "^7.19.0"
     "axios" "0.27.2"
@@ -2579,6 +2766,21 @@
     "@seald-io/binary-search-tree" "^1.0.2"
     "localforage" "^1.9.0"
     "util" "^0.12.4"
+
+"@sei-js/proto@3.0.2":
+  "integrity" "sha512-5ITJrbRd3IyKof70y37JmJlnMIaowYY4p+uDz5IKgIVktY2RKeCpthnk/dIStQlCpZKY1Te/4dx2nfPFP8QH/g=="
+  "resolved" "https://registry.npmjs.org/@sei-js/proto/-/proto-3.0.2.tgz"
+  "version" "3.0.2"
+  dependencies:
+    "@babel/runtime" "^7.18.9"
+    "@cosmjs/amino" "^0.29.5"
+    "@cosmjs/encoding" "^0.29.5"
+    "@cosmjs/proto-signing" "^0.29.5"
+    "@cosmjs/stargate" "^0.29.5"
+    "@cosmjs/tendermint-rpc" "^0.29.5"
+    "@osmonauts/helpers" "^0.6.0"
+    "@osmonauts/lcd" "^0.8.0"
+    "protobufjs" "^6.11.2"
 
 "@sinclair/typebox@^0.24.1":
   "integrity" "sha512-1P1OROm/rdubP5aFDSZQILU0vrLCJ4fvHt6EoqHEM+2D/G5MK3bIaymUKLit8Js9gbns5UyJnkP/TZROLw4tUA=="
@@ -3882,6 +4084,14 @@
     "parse-json" "^5.0.0"
     "path-type" "^4.0.0"
 
+"cosmjs-types@^0.4.0":
+  "integrity" "sha512-I7E/cHkIgoJzMNQdFF0YVqPlaTqrqKHrskuSTIqlEyxfB5Lf3WKCajSXVK2yHOfOFfSux/RxEdpMzw/eO4DIog=="
+  "resolved" "https://registry.npmjs.org/cosmjs-types/-/cosmjs-types-0.4.1.tgz"
+  "version" "0.4.1"
+  dependencies:
+    "long" "^4.0.0"
+    "protobufjs" "~6.11.2"
+
 "cosmjs-types@^0.5.2":
   "integrity" "sha512-zxCtIJj8v3Di7s39uN4LNcN3HIE1z0B9Z0SPE8ZNQR0oSzsuSe1ACgxoFkvhkS7WBasCAFcglS11G2hyfd5tPg=="
   "resolved" "https://registry.npmjs.org/cosmjs-types/-/cosmjs-types-0.5.2.tgz"
@@ -3910,6 +4120,14 @@
   "integrity" "sha512-Q2Mj95Fl0PYMWEhA2LuGEIhipF7mQwd9gTQ85DdP9jjjopeoGaDxvmPa5nakNzsq7FnO1DMTatXTAx6bxMH7Lg=="
   "resolved" "https://registry.npmjs.org/cosmjs-types/-/cosmjs-types-0.8.0.tgz"
   "version" "0.8.0"
+  dependencies:
+    "long" "^4.0.0"
+    "protobufjs" "~6.11.2"
+
+"cosmjs-types@0.5.1":
+  "integrity" "sha512-NcC58xUIVLlKdIimWWQAmSlmCjiMrJnuHf4i3LiD8PCextfHR0fT3V5/WlXZZreyMgdmh6ML1zPUfGTbbo3Z5g=="
+  "resolved" "https://registry.npmjs.org/cosmjs-types/-/cosmjs-types-0.5.1.tgz"
+  "version" "0.5.1"
   dependencies:
     "long" "^4.0.0"
     "protobufjs" "~6.11.2"
@@ -4152,7 +4370,7 @@
   "resolved" "https://registry.npmjs.org/electron-to-chromium/-/electron-to-chromium-1.4.580.tgz"
   "version" "1.4.580"
 
-"elliptic@^6.5.4":
+"elliptic@^6.5.3", "elliptic@^6.5.4":
   "integrity" "sha512-iLhC6ULemrljPZb+QutR5TQGB+pdW6KGD5RSegS+8sorOZT+rdQFbsQFJgvN3eRqNALqJer4oQ16YvJHlU8hzQ=="
   "resolved" "https://registry.npmjs.org/elliptic/-/elliptic-6.5.4.tgz"
   "version" "6.5.4"
@@ -7497,7 +7715,7 @@
     "kleur" "^3.0.3"
     "sisteransi" "^1.0.5"
 
-"protobufjs@^6.0.0 || ^7.0.0", "protobufjs@^6.11.2", "protobufjs@^6.8.8", "protobufjs@~6.11.2", "protobufjs@~6.11.3":
+"protobufjs@^6.0.0 || ^7.0.0", "protobufjs@^6.11.2", "protobufjs@^6.11.3", "protobufjs@^6.8.8", "protobufjs@~6.11.2", "protobufjs@~6.11.3":
   "integrity" "sha512-5kQWPaJHi1WoCpjTGszzQ32PG2F4+wRY6BmAT4Vfw56Q2FZ4YZzK20xUYQH4YkfehY1e6QSICrJquM6xXZNcrw=="
   "resolved" "https://registry.npmjs.org/protobufjs/-/protobufjs-6.11.4.tgz"
   "version" "6.11.4"
