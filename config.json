@@ -168,7 +168,8 @@
     "endId": 200000000,
     "step": 100000000,
     "limitRecordGet": 10000,
-    "chunkSizeInsert": 1000
+    "chunkSizeInsert": 1000,
+    "statementTimeout": 600000
   },
   "migrationEventAttributeToPartition": {
     "startBlock": 0,
