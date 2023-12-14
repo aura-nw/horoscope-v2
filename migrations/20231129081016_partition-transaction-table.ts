@@ -2,6 +2,9 @@ import { Knex } from 'knex';
 import config from '../config.json' assert { type: 'json' };
 
 export async function up(knex: Knex): Promise<void> {
+  await knex.raw(
+    `set statement_timeout to ${config.migrationTransactionToPartition.statementTimeout}`
+  );
   await knex.transaction(async (trx) => {
     // Create event table with config support partition on block height column
     await knex.raw(`
