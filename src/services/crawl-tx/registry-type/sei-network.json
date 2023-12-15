@@ -1,5 +1,7 @@
 [
   "/seiprotocol.seichain.oracle.MsgAggregateExchangeRateVote",
+  "/seiprotocol.seichain.oracle.MsgDelegateFeedConsent",
+  "/cosmos.crypto.ed25519.PubKey",
   "/cosmos.gov.v1beta1.MsgSubmitProposal",
   "/cosmos.upgrade.v1beta1.SoftwareUpgradeProposal",
   "/cosmos.upgrade.v1beta1.CancelSoftwareUpgradeProposal",
