@@ -15,6 +15,24 @@ array_relationships:
         remote_table:
           name: coin_transfer
           schema: public
+  - name: cw20_activities
+    using:
+      manual_configuration:
+        column_mapping:
+          hash: tx_hash
+        insertion_order: null
+        remote_table:
+          name: cw20_activity
+          schema: public
+  - name: cw721_activities
+    using:
+      manual_configuration:
+        column_mapping:
+          hash: tx_hash
+        insertion_order: null
+        remote_table:
+          name: cw721_activity
+          schema: public
   - name: event_attribute_backups
     using:
       foreign_key_constraint_on:
