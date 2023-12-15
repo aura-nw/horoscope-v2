@@ -2,6 +2,9 @@ import { Knex } from 'knex';
 import config from '../config.json' assert { type: 'json' };
 
 export async function up(knex: Knex): Promise<void> {
+  await knex.raw(`
+    SET CONSTRAINTS ALL DEFERRED;
+  `);
   await knex.raw(
     `set statement_timeout to ${config.migrationTransactionToPartition.statementTimeout}`
   );
@@ -99,6 +102,9 @@ export async function up(knex: Knex): Promise<void> {
       )
       .transacting(trx);
   });
+  await knex.raw(`
+    SET CONSTRAINTS ALL IMMEDIATE;
+  `);
 }
 
 export async function down(knex: Knex): Promise<void> {
