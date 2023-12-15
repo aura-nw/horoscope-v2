@@ -143,6 +143,7 @@ export default class TestCw721MissingContractService {
   @AfterEach()
   async afterEach() {
     jest.resetAllMocks();
+    jest.restoreAllMocks();
   }
 
   @Test('Test HandleRangeBlockMissingContract')
