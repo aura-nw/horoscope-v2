@@ -118,6 +118,9 @@ export default class CrawlIbcIcs20Test {
       expect(result?.channel_id).toEqual(ibcMessage.src_channel_id);
       expect(result?.finish_time).toBeNull();
       expect(result?.start_time).toEqual(new Date(this.transaction.timestamp));
+      expect(result?.denom_hash).toEqual(
+        'ibc/898B4A8A32A059AF228F4ACFEB2F0C25C059070BCD2C6B9C960F2E096D793769'
+      );
     });
   }
 
@@ -249,6 +252,9 @@ export default class CrawlIbcIcs20Test {
       expect(result?.channel_id).toEqual(ibcMessage.dst_channel_id);
       expect(result?.start_time).toBeNull();
       expect(result?.finish_time).toEqual(new Date(this.transaction.timestamp));
+      expect(result?.denom_hash).toEqual(
+        'ibc/596FF10B6630F449E5A24110978EC57DDB83CA487C0B26A7E401FE873D6E550B'
+      );
       await trx.rollback();
     });
   }
@@ -350,6 +356,9 @@ export default class CrawlIbcIcs20Test {
       expect(result?.channel_id).toEqual(ibcMessage.dst_channel_id);
       expect(result?.start_time).toBeNull();
       expect(result?.finish_time).toEqual(new Date(this.transaction.timestamp));
+      expect(result?.denom_hash).toEqual(
+        'ibc/898B4A8A32A059AF228F4ACFEB2F0C25C059070BCD2C6B9C960F2E096D793769'
+      );
       await trx.rollback();
     });
   }
