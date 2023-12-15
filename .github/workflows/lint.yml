@@ -12,7 +12,6 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '16.14'
-          registry-url: https://npm.pkg.github.com/aura-nw
       - name: Cache node modules
         id: cache-npm
         uses: actions/cache@v3
