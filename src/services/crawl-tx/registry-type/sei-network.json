@@ -1,4 +1,8 @@
 [
+  "/seiprotocol.seichain.tokenfactory.MsgSetDenomMetadata",
+  "/seiprotocol.seichain.tokenfactory.MsgBurn",
+  "/seiprotocol.seichain.tokenfactory.MsgMint",
+  "/seiprotocol.seichain.tokenfactory.MsgCreateDenom",
   "/seiprotocol.seichain.oracle.MsgAggregateExchangeRateVote",
   "/seiprotocol.seichain.oracle.MsgDelegateFeedConsent",
   "/cosmos.crypto.ed25519.PubKey",
