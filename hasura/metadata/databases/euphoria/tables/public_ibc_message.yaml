@@ -2,6 +2,15 @@ table:
   name: ibc_message
   schema: public
 object_relationships:
+  - name: transaction
+    using:
+      manual_configuration:
+        column_mapping:
+          tx_hash: hash
+        insertion_order: null
+        remote_table:
+          name: transaction
+          schema: public
   - name: transaction_message
     using:
       foreign_key_constraint_on: transaction_message_id

@@ -2,12 +2,14 @@ table:
   name: ibc_message
   schema: public
 object_relationships:
-  - name: ibc_ics20
+  - name: transaction
     using:
-      foreign_key_constraint_on:
-        column: ibc_message_id
-        table:
-          name: ibc_ics20
+      manual_configuration:
+        column_mapping:
+          tx_hash: hash
+        insertion_order: null
+        remote_table:
+          name: transaction
           schema: public
   - name: transaction_message
     using:
