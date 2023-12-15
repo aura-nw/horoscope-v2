@@ -9,3 +9,15 @@ array_relationships:
         table:
           name: ibc_connection
           schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - client_id
+        - client_type
+        - counterparty_chain_id
+        - id
+        - client_state
+        - consensus_state
+      filter: {}
+      limit: 100

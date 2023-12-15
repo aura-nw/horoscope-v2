@@ -5,3 +5,27 @@ object_relationships:
   - name: ibc_connection
     using:
       foreign_key_constraint_on: ibc_connection_id
+array_relationships:
+  - name: ibc_ics20s
+    using:
+      manual_configuration:
+        column_mapping:
+          channel_id: channel_id
+        insertion_order: null
+        remote_table:
+          name: ibc_ics20
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - channel_id
+        - counterparty_channel_id
+        - counterparty_port_id
+        - port_id
+        - state
+        - ibc_connection_id
+        - id
+      filter: {}
+      limit: 100
+      allow_aggregations: true
