@@ -84,19 +84,6 @@ export async function up(knex: Knex): Promise<void> {
         )
         .transacting(trx);
     }
-    await knex
-      .raw(
-        `
-        ALTER TABLE transaction_message ADD CONSTRAINT transaction_message_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-        ALTER TABLE event ADD CONSTRAINT event_partition_transaction_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-        ALTER TABLE event_attribute ADD CONSTRAINT event_attribute_partition_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-        ALTER TABLE vote ADD CONSTRAINT vote_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-        ALTER TABLE power_event ADD CONSTRAINT power_event_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-        ALTER TABLE feegrant_history ADD CONSTRAINT feegrant_history_tx_id_foreign FOREIGN KEY (tx_id) REFERENCES transaction(id);
-        ALTER TABLE feegrant ADD CONSTRAINT feegrant_init_tx_id_foreign FOREIGN KEY (init_tx_id) REFERENCES transaction(id);
-      `
-      )
-      .transacting(trx);
   });
 }
 

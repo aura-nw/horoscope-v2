@@ -411,6 +411,7 @@ export default class AssetIndexerTest {
   @AfterEach()
   async afterEach() {
     jest.resetAllMocks();
+    jest.restoreAllMocks();
   }
 
   @Test('test getContractActivities function')
