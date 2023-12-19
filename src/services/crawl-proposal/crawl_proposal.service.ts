@@ -143,10 +143,15 @@ export default class CrawlProposalService extends BullableService {
                 }
 
                 listProposals.push(proposalEntity);
-              } catch (error) {
-                this.logger.error(`Error get proposal ${proposalId}`);
-                this.logger.debug(error);
-                throw error;
+              } catch (error: any) {
+                // check if this is no data found with this proposal_id
+                if (error.response?.data?.code === 5) {
+                  this.logger.warn(`Proposal ${proposalId} not found onchain`);
+                } else {
+                  this.logger.error(`Error get proposal ${proposalId}`);
+                  this.logger.debug(error);
+                  throw error;
+                }
               }
             })
           );
