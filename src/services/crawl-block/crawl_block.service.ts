@@ -21,6 +21,7 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
 import SeiRegistry from '../crawl-tx/sei.registry';
+import AuraRegistry from '../crawl-tx/aura.registry';
 
 @Service({
   name: SERVICE.V1.CrawlBlock.key,
@@ -33,7 +34,7 @@ export default class CrawlBlockService extends BullableService {
 
   private _lcdClient!: IAuraJSClientFactory;
 
-  private _registry!: SeiRegistry;
+  private _registry!: SeiRegistry | AuraRegistry;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -267,7 +268,7 @@ export default class CrawlBlockService extends BullableService {
     return super._start();
   }
 
-  public setRegistry(registry: SeiRegistry) {
+  public setRegistry(registry: SeiRegistry | AuraRegistry) {
     this._registry = registry;
   }
 }

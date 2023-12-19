@@ -42,7 +42,7 @@ export default class HandleTxVoteServiceTest {
     this.crawlTxService?.getQueueManager().stopAll();
     this.handleAuthzTxServive?.getQueueManager().stopAll();
     await Promise.all([
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE block, transaction RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE vote RESTART IDENTITY CASCADE'),
     ]);
@@ -249,7 +249,7 @@ export default class HandleTxVoteServiceTest {
     this.crawlTxService?.getQueueManager().stopAll();
     this.handleAuthzTxServive?.getQueueManager().stopAll();
     await Promise.all([
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE block, transaction RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE vote RESTART IDENTITY CASCADE'),
       this.handleVoteTxService?._stop(),

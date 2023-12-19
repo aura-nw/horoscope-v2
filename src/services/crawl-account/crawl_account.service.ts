@@ -40,6 +40,7 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import { Account, AccountVesting } from '../../models';
 import SeiRegistry from '../crawl-tx/sei.registry';
+import AuraRegistry from '../crawl-tx/aura.registry';
 import Utils from '../../common/utils/utils';
 
 @Service({
@@ -530,7 +531,11 @@ export default class CrawlAccountService extends BullableService {
   }
 
   public async _start() {
-    this.registry = new SeiRegistry(this.logger);
+    if (process.env.NODE_ENV === 'test') {
+      this.registry = new AuraRegistry(this.logger);
+    } else {
+      this.registry = new SeiRegistry(this.logger);
+    }
     this.registry.addTypes([
       ...Object.values(AccountType),
       ...Object.values(PubkeyType),
@@ -552,5 +557,9 @@ export default class CrawlAccountService extends BullableService {
     );
 
     return super._start();
+  }
+
+  public setRegistry(registry: SeiRegistry | AuraRegistry) {
+    this._registry = registry;
   }
 }

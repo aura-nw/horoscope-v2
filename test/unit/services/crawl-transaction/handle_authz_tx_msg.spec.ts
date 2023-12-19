@@ -31,7 +31,7 @@ export default class HandleAuthzTxMsgTest {
 
     await Promise.all([
       knex.raw('TRUNCATE TABLE transaction_message RESTART IDENTITY CASCADE'),
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE block, transaction RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
     ]);
 
@@ -99,7 +99,7 @@ export default class HandleAuthzTxMsgTest {
     this.crawlTxService?.getQueueManager().stopAll();
     await Promise.all([
       knex.raw('TRUNCATE TABLE transaction_message RESTART IDENTITY CASCADE'),
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE block, transaction RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
       this.handleAuthzTxServive?._stop(),
       this.crawlTxService?._stop(),

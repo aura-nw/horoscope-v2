@@ -90,7 +90,7 @@ export default class CrawlValidatorTest {
     await Promise.all([
       Validator.query().delete(true),
       BlockCheckpoint.query().delete(true),
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE block, transaction RESTART IDENTITY CASCADE'),
     ]);
     await Block.query().insert(this.blocks);
     await Transaction.query().insertGraph(this.txInsert);
@@ -102,7 +102,7 @@ export default class CrawlValidatorTest {
     await Promise.all([
       Validator.query().delete(true),
       BlockCheckpoint.query().delete(true),
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE block, transaction RESTART IDENTITY CASCADE'),
     ]);
     await this.broker.stop();
   }

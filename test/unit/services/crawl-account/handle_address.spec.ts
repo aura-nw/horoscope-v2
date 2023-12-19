@@ -141,7 +141,7 @@ export default class HandleAddressTest {
     await Promise.all([
       Account.query().delete(true),
       BlockCheckpoint.query().delete(true),
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE block, transaction RESTART IDENTITY CASCADE'),
     ]);
     await Block.query().insert(this.blocks);
     await Transaction.query().insertGraph(this.txInsert);
@@ -153,7 +153,7 @@ export default class HandleAddressTest {
     await Promise.all([
       Account.query().delete(true),
       BlockCheckpoint.query().delete(true),
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE block, transaction RESTART IDENTITY CASCADE'),
     ]);
     await this.broker.stop();
   }

@@ -21,6 +21,7 @@ import CrawlAccountService from '../../../../src/services/crawl-account/crawl_ac
 import config from '../../../../config.json' assert { type: 'json' };
 import network from '../../../../network.json' assert { type: 'json' };
 import knex from '../../../../src/common/utils/db_connection';
+import AuraRegistry from '../../../../src/services/crawl-tx/aura.registry';
 
 @Describe('Test crawl_account service')
 export default class CrawlAccountTest {
@@ -77,6 +78,9 @@ export default class CrawlAccountTest {
       CrawlAccountService
     ) as CrawlAccountService;
     this.crawlAccountService.getQueueManager().stopAll();
+    const auraRegistry = new AuraRegistry(this.crawlAccountService.logger);
+    auraRegistry.setCosmosSdkVersionByString('v0.45.7');
+    this.crawlAccountService.setRegistry(auraRegistry);
     await knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE');
     await Account.query().insert(this.accounts);
   }

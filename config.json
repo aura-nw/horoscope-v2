@@ -1,5 +1,5 @@
 {
-  "chainId": "sei-main-net",
+  "chainId": "aura-testnet",
   "networkPrefixAddress": "aura",
   "consensusPrefixAddress": "valcons",
   "validatorPrefixAddress": "valoper",
@@ -228,10 +228,6 @@
   },
   "ibcStatistic": {
     "timeRefreshIbcRelayerStats": "2 * * * *"
-  },
-  "jobReassignMsgIndexToEvent": {
-    "millisecondCrawl": 1000,
-    "blocksPerCall": 100
   },
   "servicesManager": {
     "healthCheckLimit": 100
