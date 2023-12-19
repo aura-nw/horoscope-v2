@@ -110,7 +110,11 @@ export default class CoinTransferService extends BullableService {
         if (
           event.attributes.length !== 3 &&
           tx.messages[event.tx_msg_index].type !==
-            '/cosmos.bank.v1beta1.MsgMultiSend'
+            '/cosmos.bank.v1beta1.MsgMultiSend' &&
+          !(
+            event.attributes.length === 4 &&
+            event.attributes.map((attr) => attr.key).includes('authz_msg_index')
+          )
         ) {
           this.logger.error(
             'Coin transfer detected in unsupported message type',
@@ -138,7 +142,13 @@ export default class CoinTransferService extends BullableService {
          *    then the event will be an array of attributes: recipient1, amount1, recipient2, amount2, ...
          *    sender is the coin_spent.spender
          */
-        if (event.attributes.length === 3) {
+        if (
+          event.attributes.length === 3 ||
+          (event.attributes.length === 4 &&
+            event.attributes
+              .map((attr) => attr.key)
+              .includes('authz_msg_index'))
+        ) {
           const rawAmount = event.attributes.find(
             (attr) => attr.key === 'amount'
           )?.value;
