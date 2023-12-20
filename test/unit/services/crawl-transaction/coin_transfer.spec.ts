@@ -7,7 +7,7 @@ import CoinTransferService from '../../../../src/services/crawl-tx/coin_transfer
 import CrawlTxService from '../../../../src/services/crawl-tx/crawl_tx.service';
 import single_tx_coin_transfer from './single_tx_coin_transfer.json' assert { type: 'json' };
 import multiple_tx_coin_transfer from './multiple_tx_coin_transfer.json' assert { type: 'json' };
-import AuraRegistry from '../../../../src/services/crawl-tx/aura.registry';
+import ChainRegistry from '../../../../src/services/crawl-tx/chain.registry';
 
 @Describe('Test coin transfer')
 export default class CoinTransferSpec {
@@ -69,12 +69,14 @@ export default class CoinTransferSpec {
     this.crawlTxService?.getQueueManager().stopAll();
     await Promise.all([
       knex.raw('TRUNCATE TABLE coin_transfer RESTART IDENTITY CASCADE'),
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw(
+        'TRUNCATE TABLE block, transaction, event, event_attribute RESTART IDENTITY CASCADE'
+      ),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
     ]);
-    const auraRegistry = new AuraRegistry(this.crawlTxService.logger);
-    auraRegistry.setCosmosSdkVersionByString('v0.45.7');
-    this.crawlTxService.setRegistry(auraRegistry);
+    const chainRegistry = new ChainRegistry(this.crawlTxService.logger);
+    chainRegistry.setCosmosSdkVersionByString('v0.45.7');
+    this.crawlTxService.setRegistry(chainRegistry);
   }
 
   @Test('Test single coin transfer')
@@ -179,7 +181,9 @@ export default class CoinTransferSpec {
     this.coinTransferService?.getQueueManager().stopAll();
     await Promise.all([
       knex.raw('TRUNCATE TABLE coin_transfer RESTART IDENTITY CASCADE'),
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw(
+        'TRUNCATE TABLE block, transaction, event, event_attribute RESTART IDENTITY CASCADE'
+      ),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
       this.crawlTxService?._stop(),
       this.coinTransferService?._stop(),

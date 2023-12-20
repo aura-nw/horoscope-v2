@@ -226,10 +226,6 @@
     "blocksPerCall": 100,
     "port": "transfer"
   },
-  "jobReassignMsgIndexToEvent": {
-    "millisecondCrawl": 1000,
-    "blocksPerCall": 100
-  },
   "servicesManager": {
     "healthCheckLimit": 100
   },

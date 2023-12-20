@@ -22,7 +22,7 @@ import { Block, BlockCheckpoint, Event, Transaction } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
-import SeiRegistry from './sei.registry';
+import ChainRegistry from './chain.registry';
 
 @Service({
   name: SERVICE.V1.CrawlTransaction.key,
@@ -31,7 +31,7 @@ import SeiRegistry from './sei.registry';
 export default class CrawlTxService extends BullableService {
   private _httpBatchClient: HttpBatchClient;
 
-  public _registry!: SeiRegistry;
+  public _registry!: ChainRegistry;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -632,7 +632,7 @@ export default class CrawlTxService extends BullableService {
   }
 
   public async _start() {
-    this._registry = new SeiRegistry(this.logger);
+    this._registry = new ChainRegistry(this.logger);
 
     const lcdClient = await getLcdClient();
     // set version cosmos sdk to registry
@@ -660,7 +660,7 @@ export default class CrawlTxService extends BullableService {
     return super._start();
   }
 
-  public setRegistry(registry: SeiRegistry) {
+  public setRegistry(registry: ChainRegistry) {
     this._registry = registry;
   }
 }

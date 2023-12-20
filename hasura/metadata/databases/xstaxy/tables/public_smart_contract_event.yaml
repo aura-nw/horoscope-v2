@@ -49,3 +49,4 @@ select_permissions:
         - updated_at
       filter: {}
       limit: 100
+      allow_aggregations: true

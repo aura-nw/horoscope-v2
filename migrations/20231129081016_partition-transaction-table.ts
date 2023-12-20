@@ -58,6 +58,18 @@ export async function up(knex: Knex): Promise<void> {
       `
       )
       .transacting(trx);
+
+    // update seq
+    const oldSeqTransaction = await knex.raw(
+      `SELECT last_value FROM transaction_id_seq;`
+    );
+    const oldSeqValue = oldSeqTransaction.rows[0].last_value;
+    await knex
+      .raw(
+        `ALTER SEQUENCE transaction_partition_id_seq RESTART WITH ${oldSeqValue};`
+      )
+      .transacting(trx);
+
     // add old table transaction into transaction partitioned
     await knex
       .raw(
