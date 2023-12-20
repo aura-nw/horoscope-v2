@@ -13,7 +13,6 @@ import {
   BULL_JOB_NAME,
   getHttpBatchClient,
   getLcdClient,
-  getRegistryByConfigChainId,
   IAuraJSClientFactory,
   SERVICE,
 } from '../../common';
@@ -21,8 +20,7 @@ import { Block, BlockCheckpoint, Event } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
-import AuraRegistry from '../crawl-tx/aura.registry';
-import SeiRegistry from '../crawl-tx/sei.registry';
+import ChainRegistry from '../crawl-tx/chain.registry';
 
 @Service({
   name: SERVICE.V1.CrawlBlock.key,
@@ -35,12 +33,12 @@ export default class CrawlBlockService extends BullableService {
 
   private _lcdClient!: IAuraJSClientFactory;
 
-  private _registry!: AuraRegistry | SeiRegistry;
+  private _registry!: ChainRegistry;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
     this._httpBatchClient = getHttpBatchClient();
-    this._registry = getRegistryByConfigChainId(this.logger);
+    this._registry = new ChainRegistry(this.logger);
   }
 
   @QueueHandler({
@@ -269,7 +267,7 @@ export default class CrawlBlockService extends BullableService {
     return super._start();
   }
 
-  public setRegistry(registry: SeiRegistry | AuraRegistry) {
+  public setRegistry(registry: ChainRegistry) {
     this._registry = registry;
   }
 }
