@@ -105,10 +105,10 @@ export default class CW721Activity extends BaseModel {
   ) {
     return SmartContractEvent.query()
       .withGraphFetched('attributes(selectAttribute)')
-      .joinRelated('[message, tx, smart_contract.code]')
+      .joinRelated('[event.transaction, smart_contract.code]')
       .where('smart_contract:code.type', 'CW721')
-      .where('tx.height', '>', startBlock)
-      .andWhere('tx.height', '<=', endBlock)
+      .where('event.block_height', '>', startBlock)
+      .andWhere('event.block_height', '<=', endBlock)
       .modify((builder) => {
         if (smartContractId) {
           builder.andWhere('smart_contract.id', smartContractId);
@@ -124,8 +124,8 @@ export default class CW721Activity extends BaseModel {
         'smart_contract.address as contractAddress',
         'smart_contract_event.action',
         'smart_contract_event.id as smart_contract_event_id',
-        'tx.hash',
-        'tx.height'
+        'event:transaction.hash',
+        'event:transaction.height'
       )
       .orderBy('smart_contract_event.id');
   }
