@@ -35,6 +35,7 @@ import {
   SERVICE,
   ABCI_QUERY_PATH,
   PubkeyType,
+  getRegistryByConfigChainId,
 } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
@@ -531,11 +532,7 @@ export default class CrawlAccountService extends BullableService {
   }
 
   public async _start() {
-    if (process.env.NODE_ENV === 'test') {
-      this.registry = new AuraRegistry(this.logger);
-    } else {
-      this.registry = new SeiRegistry(this.logger);
-    }
+    this.registry = getRegistryByConfigChainId(this.logger);
     this.registry.addTypes([
       ...Object.values(AccountType),
       ...Object.values(PubkeyType),

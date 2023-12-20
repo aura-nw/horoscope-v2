@@ -48,7 +48,7 @@
     "moleculerNamespace": "namespace-cosmoshub"
   },
   {
-    "chainId": "sei-main-net",
+    "chainId": "atlantic-2",
     "RPC": ["https://sei-rpc.polkachu.com"],
     "LCD": ["https://sei-api.polkachu.com/"],
     "databaseName": "sei_main_net",

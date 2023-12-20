@@ -16,6 +16,7 @@ import {
   BULL_JOB_NAME,
   getHttpBatchClient,
   getLcdClient,
+  getRegistryByConfigChainId,
   SERVICE,
 } from '../../common';
 import { Block, BlockCheckpoint, Event, Transaction } from '../../models';
@@ -633,7 +634,7 @@ export default class CrawlTxService extends BullableService {
   }
 
   public async _start() {
-    this._registry = new SeiRegistry(this.logger);
+    this._registry = getRegistryByConfigChainId(this.logger);
 
     const lcdClient = await getLcdClient();
     // set version cosmos sdk to registry

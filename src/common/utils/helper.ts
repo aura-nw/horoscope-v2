@@ -1,10 +1,30 @@
+import { LoggerInstance } from 'moleculer';
+// eslint-disable-next-line import/no-cycle
+import AuraRegistry from '../../services/crawl-tx/aura.registry';
+import SeiRegistry from '../../services/crawl-tx/sei.registry';
 // import { TimeoutError } from '@cosmjs/stargate';
-
 // const utils_1 = require('@cosmjs/utils');
+import config from '../../../config.json' assert { type: 'json' };
 
 export function sleep(ms: number) {
   // eslint-disable-next-line no-promise-executor-return
   return new Promise((r) => setTimeout(r, ms));
+}
+
+export function getRegistryByConfigChainId(
+  logger: LoggerInstance
+): SeiRegistry | AuraRegistry {
+  switch (config.chainId) {
+    case 'euphoria-2':
+    case 'serenity-testnet-001':
+    case 'aura-testnet-2':
+    case 'xstaxy-1':
+      return new AuraRegistry(logger);
+    case 'atlantic-2':
+      return new SeiRegistry(logger);
+    default:
+      return new AuraRegistry(logger);
+  }
 }
 
 // export function pollForTx(

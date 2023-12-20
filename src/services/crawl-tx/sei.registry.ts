@@ -9,6 +9,7 @@ import { SemVer } from 'semver';
 import { ibc, cosmos, seiprotocol } from '@horoscope-v2/sei-js-proto';
 import * as process from 'process';
 import txRegistryType from './registry-type/sei-network.json' assert { type: 'json' };
+// eslint-disable-next-line import/no-cycle
 import { MSG_TYPE } from '../../common';
 import Utils from '../../common/utils/utils';
 
