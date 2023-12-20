@@ -222,10 +222,10 @@ export default class Cw20Service extends BullableService {
   ) {
     return SmartContractEvent.query()
       .withGraphFetched('[message, attributes(selectAttribute)]')
-      .joinRelated('[tx, smart_contract.code]')
+      .joinRelated('[event.transaction, smart_contract.code]')
       .where('smart_contract:code.type', 'CW20')
-      .where('tx.height', '>', startBlock)
-      .andWhere('tx.height', '<=', endBlock)
+      .where('event.block_height', '>', startBlock)
+      .andWhere('event.block_height', '<=', endBlock)
       .modify((builder) => {
         if (smartContractId) {
           builder.andWhere('smart_contract.id', smartContractId);
@@ -243,8 +243,8 @@ export default class Cw20Service extends BullableService {
         'smart_contract_event.event_id',
         'smart_contract.id as smart_contract_id',
         'smart_contract_event.id as smart_contract_event_id',
-        'tx.hash',
-        'tx.height'
+        'event:transaction.hash',
+        'event:transaction.height'
       )
       .orderBy('smart_contract_event.id', 'asc');
   }
