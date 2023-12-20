@@ -9,7 +9,6 @@ import {
   Validator,
   Event,
   EventAttribute,
-  Transaction,
   BlockCheckpoint,
 } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -46,112 +45,111 @@ export default class HandleStakeEventService extends BullableService {
     this.logger.info(`startHeight: ${startHeight}, endHeight: ${endHeight}`);
     if (startHeight >= endHeight) return;
 
-    const stakeTxs: any[] = [];
-    const resultTx = await Transaction.query()
-      .joinRelated('events.[attributes]')
-      .select(
-        'transaction.id',
-        'transaction.timestamp',
-        'transaction.height',
-        'events.id as event_id',
-        'events.type',
-        'events:attributes.key',
-        'events:attributes.value',
-        'events:attributes.index'
-      )
-      .whereIn('events.type', this.eventStakes)
-      .andWhere('transaction.height', '>', startHeight)
-      .andWhere('transaction.height', '<=', endHeight)
-      .andWhere('transaction.code', 0);
-
-    if (resultTx.length > 0) stakeTxs.push(...resultTx);
+    const resultEvents = await Event.query()
+      .select('event.id as event_id', 'event.type', 'event.block_height')
+      .withGraphFetched('transaction')
+      .modifyGraph('transaction', (builder) => {
+        builder.select('id', 'timestamp');
+      })
+      .withGraphFetched('attributes')
+      .modifyGraph('attributes', (builder) => {
+        builder.select('key', 'value', 'index').orderBy('index');
+      })
+      .whereIn('event.type', this.eventStakes)
+      .andWhere('event.block_height', '>', startHeight)
+      .andWhere('event.block_height', '<=', endHeight);
 
     const validators: Validator[] = await Validator.query();
     const validatorKeys = _.keyBy(validators, 'operator_address');
 
     const powerEvents: PowerEvent[] = [];
-    stakeTxs
-      .filter(
-        (event) =>
-          this.eventStakes.includes(event.type) &&
-          (event.key === EventAttribute.ATTRIBUTE_KEY.VALIDATOR ||
-            event.key === EventAttribute.ATTRIBUTE_KEY.SOURCE_VALIDATOR)
-      )
-      .forEach((stakeEvent) => {
-        try {
-          const stakeEvents = stakeTxs.filter(
-            (tx) => tx.event_id === stakeEvent.event_id
+    resultEvents.forEach((stakeEvent) => {
+      try {
+        let validatorSrcId;
+        let validatorDstId;
+        let amount;
+        let amountRaw;
+        const firstValidator = stakeEvent.attributes.find(
+          (attr: any) =>
+            attr.key === EventAttribute.ATTRIBUTE_KEY.VALIDATOR ||
+            attr.key === EventAttribute.ATTRIBUTE_KEY.SOURCE_VALIDATOR
+        );
+        if (!firstValidator) {
+          this.logger.warn(
+            `stake event ${stakeEvent.id} doesn't have first validator`
           );
-
-          let validatorSrcId;
-          let validatorDstId;
-          let amount;
-          switch (stakeEvent.type) {
-            case PowerEvent.TYPES.DELEGATE:
-              validatorDstId = validatorKeys[stakeEvent.value].id;
-              break;
-            case PowerEvent.TYPES.REDELEGATE:
-              validatorSrcId = validatorKeys[stakeEvent.value].id;
-              validatorDstId =
-                validatorKeys[
-                  stakeEvents.find(
-                    (event) =>
-                      event.key ===
-                        EventAttribute.ATTRIBUTE_KEY.DESTINATION_VALIDATOR &&
-                      event.index === stakeEvent.index + 1
-                  ).value
-                ].id;
-              amount = parseCoins(
-                stakeEvents.find(
-                  (event) =>
-                    event.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT &&
-                    event.index === stakeEvent.index + 2
-                ).value
-              )[0].amount;
-              break;
-            case PowerEvent.TYPES.UNBOND:
-              validatorSrcId = validatorKeys[stakeEvent.value].id;
-              break;
-            case PowerEvent.TYPES.CREATE_VALIDATOR:
-              validatorDstId = validatorKeys[stakeEvent.value].id;
-              amount = parseCoins(
-                stakeEvents.find(
-                  (event) =>
-                    event.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT &&
-                    event.index === stakeEvent.index + 1
-                ).value
-              )[0].amount;
-              break;
-            default:
-              break;
-          }
-
-          const powerEvent: PowerEvent = PowerEvent.fromJson({
-            tx_id: stakeEvent.id,
-            height: stakeEvent.height,
-            type: stakeEvent.type,
-            validator_src_id: validatorSrcId,
-            validator_dst_id: validatorDstId,
-            amount:
-              amount ??
-              parseCoins(
-                stakeEvents.find(
-                  (event) =>
-                    event.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT &&
-                    event.index === stakeEvent.index + 1
-                ).value
-              )[0].amount,
-            time: stakeEvent.timestamp.toISOString(),
-          });
-
-          powerEvents.push(powerEvent);
-        } catch (error) {
-          this.logger.error(
-            `Error create power event: ${JSON.stringify(stakeEvent)}`
-          );
-          this.logger.error(error);
+          return;
         }
-      });
+        const destValidator = stakeEvent.attributes.find(
+          (attr: any) =>
+            attr.key === EventAttribute.ATTRIBUTE_KEY.DESTINATION_VALIDATOR
+        );
+        switch (stakeEvent.type) {
+          case PowerEvent.TYPES.DELEGATE: {
+            validatorDstId = validatorKeys[firstValidator.value].id;
+            break;
+          }
+          case PowerEvent.TYPES.REDELEGATE:
+            validatorSrcId = validatorKeys[firstValidator.value].id;
+            if (!destValidator) {
+              this.logger.warn(
+                `stake event ${stakeEvent.id} doesn't have destination validator`
+              );
+              return;
+            }
+            validatorDstId = validatorKeys[destValidator.value].id;
+            amountRaw = stakeEvent.attributes.find(
+              (attr: any) =>
+                attr.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT &&
+                attr.index === firstValidator.index + 2
+            );
+            amount = amountRaw?.value
+              ? parseCoins(amountRaw?.value)[0].amount
+              : '0';
+            break;
+          case PowerEvent.TYPES.UNBOND:
+            validatorSrcId = validatorKeys[firstValidator.value].id;
+            break;
+          case PowerEvent.TYPES.CREATE_VALIDATOR:
+            validatorDstId = validatorKeys[firstValidator.value].id;
+            amountRaw = stakeEvent.attributes.find(
+              (attr: any) =>
+                attr.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT &&
+                attr.index === firstValidator.index + 1
+            );
+            amount = amountRaw?.value
+              ? parseCoins(amountRaw?.value)[0].amount
+              : '0';
+            break;
+          default:
+            break;
+        }
+        amountRaw = stakeEvent.attributes.find(
+          (attr: any) =>
+            attr.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT &&
+            attr.index === firstValidator.index + 1
+        );
+        if (amountRaw) {
+          amount = amount ?? parseCoins(amountRaw?.value)[0].amount;
+        }
+        const powerEvent: PowerEvent = PowerEvent.fromJson({
+          tx_id: stakeEvent.transaction.id,
+          height: stakeEvent.block_height,
+          type: stakeEvent.type,
+          validator_src_id: validatorSrcId,
+          validator_dst_id: validatorDstId,
+          amount,
+          time: stakeEvent.transaction.timestamp.toISOString(),
+        });
+
+        powerEvents.push(powerEvent);
+      } catch (error) {
+        this.logger.error(
+          `Error create power event: ${JSON.stringify(stakeEvent)}`
+        );
+        this.logger.error(error);
+      }
+    });
 
     await knex.transaction(async (trx) => {
       if (powerEvents.length > 0)
