@@ -8,6 +8,7 @@ import { LoggerInstance } from 'moleculer';
 import _ from 'lodash';
 import { SemVer } from 'semver';
 import txRegistryType from './registry-type/aura-network.json' assert { type: 'json' };
+// eslint-disable-next-line import/no-cycle
 import { MSG_TYPE } from '../../common';
 import Utils from '../../common/utils/utils';
 
