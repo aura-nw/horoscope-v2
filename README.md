@@ -68,10 +68,10 @@ npm run dev
 [Config list network](network.json) to config list network with LCD, RPC, database  
 [Config chain](config.json) to setup job crawl and select chain id to crawl
 
-## YARN scripts
+## Scripts
 
-- `yarn dev`: Start development mode (load all services locally with hot-reload & REPL)
-- `yarn build`: Build .dist folder to start production mode
-- `yarn start`: Start production mode (set `SERVICES` env variable to load certain services)
-- `yarn lint`: Run ESLint
-- `yarn test`: Run jest
+- `npm run dev`: Start development mode (load all services locally with hot-reload & REPL)
+- `npm run build`: Build .dist folder to start production mode
+- `npm run start`: Start production mode (set `SERVICES` env variable to load certain services)
+- `npm run lint`: Run ESLint
+- `npm run test`: Run jest
