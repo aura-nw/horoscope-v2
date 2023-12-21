@@ -14,8 +14,24 @@ object_relationships:
           schema: public
   - name: transaction
     using:
-      foreign_key_constraint_on: tx_id
+      manual_configuration:
+        column_mapping:
+          tx_id: id
+        insertion_order: null
+        remote_table:
+          name: transaction
+          schema: public
 array_relationships:
+  - name: events
+    using:
+      manual_configuration:
+        column_mapping:
+          index: tx_msg_index
+          tx_id: tx_id
+        insertion_order: null
+        remote_table:
+          name: event
+          schema: public
   - name: ibc_messages
     using:
       foreign_key_constraint_on:

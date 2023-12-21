@@ -1,24 +1,15 @@
 table:
-  name: event_attribute
+  name: coin_transfer
   schema: public
 object_relationships:
-  - name: block
+  - name: message
     using:
       manual_configuration:
         column_mapping:
-          block_height: height
+          tx_msg_id: id
         insertion_order: null
         remote_table:
-          name: block
-          schema: public
-  - name: event
-    using:
-      manual_configuration:
-        column_mapping:
-          event_id: id
-        insertion_order: null
-        remote_table:
-          name: event
+          name: transaction_message
           schema: public
   - name: transaction
     using:
@@ -33,12 +24,16 @@ select_permissions:
   - role: internal_service
     permission:
       columns:
-        - composite_key
-        - key
+        - id
         - block_height
-        - event_id
-        - index
         - tx_id
-        - value
+        - tx_msg_id
+        - from
+        - to
+        - amount
+        - denom
+        - timestamp
+        - created_at
       filter: {}
       limit: 100
+      allow_aggregations: true

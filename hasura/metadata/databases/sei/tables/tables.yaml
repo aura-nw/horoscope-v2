@@ -1,3 +1,5 @@
+- '!include m_view_ibc_relayer_statistic.yaml'
+- '!include view_ibc_channel_detail_statistic.yaml'
 - '!include public_account.yaml'
 - '!include public_account_statistics.yaml'
 - '!include public_account_vesting.yaml'
@@ -24,6 +26,7 @@
 - '!include public_ibc_channel.yaml'
 - '!include public_ibc_client.yaml'
 - '!include public_ibc_connection.yaml'
+- '!include public_ibc_ics20.yaml'
 - '!include public_ibc_message.yaml'
 - '!include public_knex_migrations.yaml'
 - '!include public_knex_migrations_lock.yaml'
@@ -39,3 +42,4 @@
 - '!include public_view_count_holder_cw721.yaml'
 - '!include public_view_event_attribute_value_index.yaml'
 - '!include public_vote.yaml'
+- '!include public_coin_transfer.yaml'
