@@ -1,6 +1,6 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
-import AuraRegistry from '../../../../src/services/crawl-tx/aura.registry';
+import ChainRegistry from '../../../../src/services/crawl-tx/chain.registry';
 import CrawlTxService from '../../../../src/services/crawl-tx/crawl_tx.service';
 import CrawlBlockService from '../../../../src/services/crawl-block/crawl_block.service';
 import { Block, Event } from '../../../../src/models';
@@ -872,9 +872,9 @@ export default class CrawlBlockTest {
       CrawlTxService
     ) as CrawlTxService;
 
-    const auraRegistry = new AuraRegistry(this.crawlTxService.logger);
-    auraRegistry.setCosmosSdkVersionByString('v0.45.7');
-    this.crawlBlockService.setRegistry(auraRegistry);
+    const chainRegistry = new ChainRegistry(this.crawlTxService.logger);
+    chainRegistry.setCosmosSdkVersionByString('v0.45.7');
+    this.crawlBlockService.setRegistry(chainRegistry);
 
     this.crawlBlockService.getQueueManager().stopAll();
     this.crawlTxService.getQueueManager().stopAll();
