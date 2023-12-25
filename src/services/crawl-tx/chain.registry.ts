@@ -2,16 +2,23 @@
 import { Registry, TsProtoGeneratedType } from '@cosmjs/proto-signing';
 import { defaultRegistryTypes as defaultStargateTypes } from '@cosmjs/stargate';
 import { wasmTypes } from '@cosmjs/cosmwasm-stargate/build/modules';
-import { ibc, cosmos, aura } from '@aura-nw/aurajs';
 import { toBase64, fromUtf8, fromBase64, toUtf8 } from '@cosmjs/encoding';
 import { LoggerInstance } from 'moleculer';
 import _ from 'lodash';
 import { SemVer } from 'semver';
-import txRegistryType from './registry-type/aura-network.json' assert { type: 'json' };
-import { MSG_TYPE } from '../../common';
+import { ibc as auraIbc, cosmos as auraCosmos, aura } from '@aura-nw/aurajs';
+import {
+  ibc as seiIbc,
+  cosmos as seiCosmos,
+  seiprotocol,
+} from '@horoscope-v2/sei-js-proto';
+import seiTxRegistryType from './registry-type/sei-network.json' assert { type: 'json' };
+import auraTxRegistryType from './registry-type/aura-network.json' assert { type: 'json' };
+import { chainIdConfigOnServer, MSG_TYPE } from '../../common';
 import Utils from '../../common/utils/utils';
+import config from '../../../config.json' assert { type: 'json' };
 
-export default class AuraRegistry {
+export default class ChainRegistry {
   public registry!: Registry;
 
   private _logger: LoggerInstance;
@@ -20,35 +27,48 @@ export default class AuraRegistry {
 
   public ibc: any;
 
+  public seiprotocol: any;
+
   public aura: any;
 
-  public cosmosSdkVersion: SemVer = new SemVer('v0.45.17');
+  public cosmosSdkVersion: SemVer = new SemVer('v0.45.10');
 
   public decodeAttribute: any;
 
   public encodeAttribute: any;
 
+  public txRegistryType: any;
+
   constructor(logger: LoggerInstance) {
     this._logger = logger;
-    this.cosmos = cosmos;
-    this.ibc = ibc;
-    this.aura = aura;
-    this.setDefaultRegistry();
-  }
+    switch (config.chainId) {
+      case chainIdConfigOnServer.Atlantic2:
+        this.cosmos = seiCosmos;
+        this.ibc = seiIbc;
+        this.seiprotocol = seiprotocol;
+        this.txRegistryType = seiTxRegistryType;
+        break;
+      case chainIdConfigOnServer.Euphoria:
+      case chainIdConfigOnServer.SerenityTestnet001:
+      case chainIdConfigOnServer.AuraTestnet2:
+      case chainIdConfigOnServer.Xstaxy1:
+      default:
+        this.cosmos = auraCosmos;
+        this.ibc = auraIbc;
+        this.aura = aura;
+        this.txRegistryType = auraTxRegistryType;
+        break;
+    }
 
-  // set default registry to decode msg
-  public setDefaultRegistry() {
-    const missingTypes = txRegistryType;
-
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const registry = new Registry([
+    // set default registry to decode msg
+    this.registry = new Registry([
       ...defaultStargateTypes,
       ...wasmTypes,
-      ...missingTypes.map((type) => [type, _.get(this, type.slice(1))]),
+      ...this.txRegistryType.map((type: string) => [
+        type,
+        _.get(this, type.slice(1)),
+      ]),
     ]);
-
-    this.registry = registry;
   }
 
   public decodeMsg(msg: any): any {

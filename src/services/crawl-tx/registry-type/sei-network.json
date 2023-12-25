@@ -1,0 +1,30 @@
+[
+  "/seiprotocol.seichain.tokenfactory.MsgSetDenomMetadata",
+  "/seiprotocol.seichain.tokenfactory.MsgBurn",
+  "/seiprotocol.seichain.tokenfactory.MsgMint",
+  "/seiprotocol.seichain.tokenfactory.MsgCreateDenom",
+  "/seiprotocol.seichain.oracle.MsgAggregateExchangeRateVote",
+  "/seiprotocol.seichain.oracle.MsgDelegateFeedConsent",
+  "/cosmos.crypto.ed25519.PubKey",
+  "/cosmos.gov.v1beta1.MsgSubmitProposal",
+  "/cosmos.upgrade.v1beta1.SoftwareUpgradeProposal",
+  "/cosmos.upgrade.v1beta1.CancelSoftwareUpgradeProposal",
+  "/cosmos.distribution.v1beta1.CommunityPoolSpendProposal",
+  "/cosmos.distribution.v1beta1.CommunityPoolSpendProposalWithDeposit",
+  "/cosmos.params.v1beta1.ParameterChangeProposal",
+  "/ibc.core.client.v1.UpgradeProposal",
+  "/ibc.core.client.v1.ClientUpdateProposal",
+  "/cosmos.params.v1beta1.ParameterChangeProposal",
+
+  "/cosmos.feegrant.v1beta1.BasicAllowance",
+  "/cosmos.feegrant.v1beta1.PeriodicAllowance",
+  "/cosmos.feegrant.v1beta1.AllowedContractAllowance",
+  "/cosmos.feegrant.v1beta1.AllowedMsgAllowance",
+  "/cosmos.vesting.v1beta1.MsgCreatePeriodicVestingAccount",
+
+  "/ibc.lightclients.tendermint.v1.Header",
+  "/ibc.lightclients.tendermint.v1.ClientState",
+  "/ibc.lightclients.tendermint.v1.ConsensusState",
+
+  "/cosmos.slashing.v1beta1.MsgUnjail"
+]
