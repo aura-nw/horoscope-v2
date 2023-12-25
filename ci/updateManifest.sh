@@ -22,6 +22,10 @@ elif [ ${GITHUB_REF_NAME} = "staging" ]
 then
   echo 'This is staging branch'
   cd ${REPO_MANIFEST_ENV_STAGING}
+elif [ ${GITHUB_REF_NAME} = "sei-atlantic-release" ]
+then
+  echo 'This is dev sei branch'
+  cd ${REPO_MANIFEST_ENV_DEV_SEI}
 else
   exit
 fi
