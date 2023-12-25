@@ -31,7 +31,7 @@ export default class ChainRegistry {
 
   public aura: any;
 
-  public cosmosSdkVersion: SemVer = new SemVer('v0.45.10');
+  public cosmosSdkVersion: SemVer = new SemVer('v0.45.17');
 
   public decodeAttribute: any;
 
