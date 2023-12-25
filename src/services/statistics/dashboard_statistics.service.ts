@@ -3,7 +3,6 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import { DecCoinSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/base/v1beta1/coin';
-import BigNumber from 'bignumber.js';
 import {
   BlockCheckpoint,
   Transaction,
@@ -108,10 +107,8 @@ export default class DashboardStatisticsService extends BullableService {
       Validator.query(),
     ]);
 
-    const [communityPool, inflation, distribution, supply] = await Promise.all([
+    const [communityPool, supply] = await Promise.all([
       this._lcdClient.aura.cosmos.distribution.v1beta1.communityPool(),
-      this._lcdClient.aura.cosmos.mint.v1beta1.inflation(),
-      this._lcdClient.aura.cosmos.distribution.v1beta1.params(),
       this._lcdClient.aura.cosmos.bank.v1beta1.supplyOf({
         denom: config.networkDenom,
       }),
@@ -140,17 +137,9 @@ export default class DashboardStatisticsService extends BullableService {
         (val) => val.status === Validator.STATUS.UNBONDED
       ).length,
       bonded_tokens: bondedTokens.toString(),
-      inflation: inflation.inflation,
+      inflation: 0,
       total_aura: totalAura,
-      staking_apr: Number(
-        BigNumber(inflation.inflation)
-          .multipliedBy(
-            BigNumber(1 - Number(distribution.params.community_tax))
-          )
-          .multipliedBy(BigNumber(totalAura))
-          .dividedBy(BigNumber(bondedTokens.toString()))
-          .multipliedBy(100)
-      ),
+      staking_apr: 0,
     };
 
     await this.broker.cacher?.set(
