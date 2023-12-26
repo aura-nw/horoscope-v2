@@ -12,7 +12,7 @@ import {
 } from '../../models';
 import {
   BULL_JOB_NAME,
-  IAuraJSClientFactory,
+  IProviderJSClientFactory,
   REDIS_KEY,
   SERVICE,
   getLcdClient,
@@ -25,7 +25,7 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
   version: 1,
 })
 export default class DashboardStatisticsService extends BullableService {
-  private _lcdClient!: IAuraJSClientFactory;
+  private _lcdClient!: IProviderJSClientFactory;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -108,8 +108,8 @@ export default class DashboardStatisticsService extends BullableService {
     ]);
 
     const [communityPool, supply] = await Promise.all([
-      this._lcdClient.aura.cosmos.distribution.v1beta1.communityPool(),
-      this._lcdClient.aura.cosmos.bank.v1beta1.supplyOf({
+      this._lcdClient.provider.cosmos.distribution.v1beta1.communityPool(),
+      this._lcdClient.provider.cosmos.bank.v1beta1.supplyOf({
         denom: config.networkDenom,
       }),
     ]);

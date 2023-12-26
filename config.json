@@ -27,7 +27,7 @@
     "millisecondCrawl": 5000,
     "numberOfBlockPerCall": 100,
     "startBlock": 4860000,
-    "saveRawLog": false
+    "saveRawLog": true
   },
   "handleCoinTransfer": {
     "key": "handleCoinTransfer",
