@@ -90,31 +90,53 @@ export default class CrawlTxService extends BullableService {
       .orderBy('height', 'asc');
     this.logger.debug(blocks);
     const promises: any[] = [];
-    const filterBlocks = blocks.filter((block) => block.txs.length > 0);
-    filterBlocks.forEach((block) => {
-      this.logger.info('crawl tx by height: ', block.height);
-
-      const totalPages = Math.ceil(
-        block.txs.length / config.handleTransaction.txsPerCall
+    const blocksInfoQuery: any[] = [];
+    let blocksInfo: { height: number; total: number; time: Date }[] = [];
+    const getBlockInfo = async (block: Block) => {
+      const blockInfo = await this._httpBatchClient.execute(
+        createJsonRpcRequest('tx_search', {
+          query: `tx.height=${block.height}`,
+          page: 1,
+          per_page: 1,
+        })
       );
-      [...Array(totalPages)].forEach((e, i) => {
-        const pageIndex = (i + 1).toString();
-        promises.push(
-          this._httpBatchClient.execute(
-            createJsonRpcRequest('tx_search', {
-              query: `tx.height=${block.height}`,
-              page: pageIndex,
-              per_page: config.handleTransaction.txsPerCall.toString(),
-            })
-          )
+      return {
+        height: block.height,
+        total: Number(blockInfo.result.total_count),
+        time: block.time,
+      };
+    };
+    blocks.forEach((block) => {
+      blocksInfoQuery.push(getBlockInfo(block));
+    });
+    blocksInfo = await Promise.all(blocksInfoQuery);
+
+    blocksInfo.forEach((block) => {
+      if (block.total > 0) {
+        this.logger.info('crawl tx by height: ', block.height);
+
+        const totalPages = Math.ceil(
+          block.total / config.handleTransaction.txsPerCall
         );
-      });
+        [...Array(totalPages)].forEach((e, i) => {
+          const pageIndex = (i + 1).toString();
+          promises.push(
+            this._httpBatchClient.execute(
+              createJsonRpcRequest('tx_search', {
+                query: `tx.height=${block.height}`,
+                page: pageIndex,
+                per_page: config.handleTransaction.txsPerCall.toString(),
+              })
+            )
+          );
+        });
+      }
     });
     const resultPromises: JsonRpcSuccessResponse[] = await Promise.all(
       promises
     );
 
-    const listRawTx: any[] = filterBlocks.map((block) => {
+    const listRawTx: any[] = blocksInfo.map((block) => {
       const listTxs: any[] = [];
       resultPromises
         .filter(
@@ -126,7 +148,7 @@ export default class CrawlTxService extends BullableService {
       return {
         listTx: {
           txs: listTxs,
-          total_count: block.txs.length,
+          total_count: block.total,
         },
         height: block.height,
         timestamp: block.time,
