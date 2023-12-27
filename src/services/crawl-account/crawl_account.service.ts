@@ -1,3 +1,5 @@
+/* eslint-disable no-restricted-syntax */
+/* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-param-reassign */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable no-await-in-loop */
@@ -41,6 +43,7 @@ import config from '../../../config.json' assert { type: 'json' };
 import { Account, AccountVesting } from '../../models';
 import AuraRegistry from '../crawl-tx/aura.registry';
 import Utils from '../../common/utils/utils';
+import { AccountBalance } from '../../models/account_balance';
 
 @Service({
   name: SERVICE.V1.CrawlAccountService.key,
@@ -236,12 +239,13 @@ export default class CrawlAccountService extends BullableService {
   public async handleJobAccountBalances(
     _payload: IAddressesParam
   ): Promise<void> {
+    const { addresses } = _payload;
     this._lcdClient = await getLcdClient();
 
-    if (_payload.addresses.length > 0) {
+    if (addresses.length > 0) {
       const batchQueries: any[] = [];
 
-      _payload.addresses.forEach((address) => {
+      addresses.forEach((address) => {
         const request: QueryAllBalancesRequest = {
           address,
           pagination: {
@@ -275,7 +279,7 @@ export default class CrawlAccountService extends BullableService {
       );
 
       const accounts = accountBalances.map((acc, index) => ({
-        address: _payload.addresses[index],
+        address: addresses[index],
         balances: acc.balances,
       }));
 
@@ -294,8 +298,45 @@ export default class CrawlAccountService extends BullableService {
           })
           .where({ address: account.address })
       );
+
+      // Create account_balance
+      const listAccountBalance: {
+        account_id?: number;
+        denom: string;
+        amount: string;
+        base_denom: string;
+      }[] = [];
+      const accountsWithBaseDenom: any = accounts;
+      const addressesWithIds = await Account.query()
+        .select('id', 'address')
+        .whereIn('address', addresses);
+
+      for (const account of accountsWithBaseDenom) {
+        const account_id = addressesWithIds.find(
+          (addressWithId) => addressWithId.address === account.address
+        )?.id;
+        if (Array.isArray(account.balances))
+          for (const balance of account.balances) {
+            listAccountBalance.push({
+              account_id,
+              denom: balance.denom,
+              amount: balance.amount,
+              base_denom: balance.base_denom,
+            });
+          }
+      }
+
       try {
-        await Promise.all(patchQueries);
+        await knex.transaction(async (trx) => {
+          if (listAccountBalance.length > 0)
+            await AccountBalance.query()
+              .insert(listAccountBalance)
+              .onConflict(['account_id', 'denom'])
+              .merge()
+              .transacting(trx);
+
+          await Promise.all(patchQueries);
+        });
       } catch (error) {
         this.logger.error(
           `Error update account balance: ${_payload.addresses}`
