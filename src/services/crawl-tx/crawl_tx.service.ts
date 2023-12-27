@@ -8,7 +8,6 @@ import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { decodeTxRaw } from '@cosmjs/proto-signing';
 import { toBase64, fromBase64 } from '@cosmjs/encoding';
-import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { Knex } from 'knex';
 import { Queue } from 'bullmq';
 import { GetNodeInfoResponseSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/base/tendermint/v1beta1/query';
@@ -90,71 +89,76 @@ export default class CrawlTxService extends BullableService {
       .orderBy('height', 'asc');
     this.logger.debug(blocks);
     const promises: any[] = [];
-    const blocksInfoQuery: any[] = [];
-    let blocksInfo: { height: number; total: number; time: Date }[] = [];
-    const getBlockInfo = async (block: Block) => {
+    let blocksInfo: any[] = [];
+
+    const getBlockInfo = async (
+      height: number,
+      timestamp: Date,
+      page: string,
+      perPage: string
+    ) => {
       const blockInfo = await this._httpBatchClient.execute(
         createJsonRpcRequest('tx_search', {
-          query: `tx.height=${block.height}`,
-          page: 1,
-          per_page: 1,
+          query: `tx.height=${height}`,
+          page,
+          per_page: perPage,
         })
       );
       return {
-        height: block.height,
-        total: Number(blockInfo.result.total_count),
-        time: block.time,
+        txs: blockInfo.result.txs,
+        tx_count: Number(blockInfo.result.total_count),
+        height,
+        timestamp,
       };
     };
-    blocks.forEach((block) => {
-      blocksInfoQuery.push(getBlockInfo(block));
-    });
-    blocksInfo = await Promise.all(blocksInfoQuery);
 
+    blocksInfo = await Promise.all(
+      blocks.map((block) => getBlockInfo(block.height, block.time, '1', '1'))
+    );
     blocksInfo.forEach((block) => {
-      if (block.total > 0) {
+      if (block.tx_count > 0) {
         this.logger.info('crawl tx by height: ', block.height);
-
         const totalPages = Math.ceil(
-          block.total / config.handleTransaction.txsPerCall
+          block.tx_count / config.handleTransaction.txsPerCall
         );
+
         [...Array(totalPages)].forEach((e, i) => {
           const pageIndex = (i + 1).toString();
           promises.push(
-            this._httpBatchClient.execute(
-              createJsonRpcRequest('tx_search', {
-                query: `tx.height=${block.height}`,
-                page: pageIndex,
-                per_page: config.handleTransaction.txsPerCall.toString(),
-              })
+            getBlockInfo(
+              block.height,
+              block.timestamp,
+              pageIndex,
+              config.handleTransaction.txsPerCall.toString()
             )
           );
         });
       }
     });
-    const resultPromises: JsonRpcSuccessResponse[] = await Promise.all(
-      promises
-    );
+    const resultPromises: any[] = await Promise.all(promises);
 
-    const listRawTx: any[] = blocksInfo.map((block) => {
-      const listTxs: any[] = [];
-      resultPromises
-        .filter(
-          (result) => result.result.txs[0].height === block.height.toString()
-        )
-        .forEach((resultPromise) => {
-          listTxs.push(...resultPromise.result.txs);
+    const listRawTxs: any[] = [];
+    blocksInfo.forEach((block) => {
+      if (block.tx_count > 0) {
+        const listTxs: any[] = [];
+        resultPromises
+          .filter(
+            (result) => result.height.toString() === block.height.toString()
+          )
+          .forEach((resultPromise) => {
+            listTxs.push(...resultPromise.txs);
+          });
+        listRawTxs.push({
+          listTx: {
+            txs: listTxs,
+            total_count: block.tx_count,
+          },
+          height: block.height,
+          timestamp: block.timestamp,
         });
-      return {
-        listTx: {
-          txs: listTxs,
-          total_count: block.total,
-        },
-        height: block.height,
-        timestamp: block.time,
-      };
+      }
     });
-    return listRawTx;
+    return listRawTxs;
   }
 
   // decode list raw tx
