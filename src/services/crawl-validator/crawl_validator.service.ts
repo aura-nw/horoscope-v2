@@ -22,7 +22,7 @@ import {
   BULL_JOB_NAME,
   getHttpBatchClient,
   getLcdClient,
-  IAuraJSClientFactory,
+  IProviderJSClientFactory,
   IPagination,
   SERVICE,
 } from '../../common';
@@ -33,7 +33,7 @@ import { BlockCheckpoint, EventAttribute } from '../../models';
   version: 1,
 })
 export default class CrawlValidatorService extends BullableService {
-  private _lcdClient!: IAuraJSClientFactory;
+  private _lcdClient!: IProviderJSClientFactory;
 
   private _httpBatchClient: HttpBatchClient;
 
@@ -112,7 +112,7 @@ export default class CrawlValidatorService extends BullableService {
 
     while (!done) {
       resultCallApi =
-        await this._lcdClient.aura.cosmos.staking.v1beta1.validators({
+        await this._lcdClient.provider.cosmos.staking.v1beta1.validators({
           pagination,
         });
 
@@ -196,7 +196,7 @@ export default class CrawlValidatorService extends BullableService {
   private async loadCustomInfo(validators: Validator[]): Promise<Validator[]> {
     const batchQueries: any[] = [];
 
-    const pool = await this._lcdClient.aura.cosmos.staking.v1beta1.pool();
+    const pool = await this._lcdClient.provider.cosmos.staking.v1beta1.pool();
 
     validators.forEach((validator: Validator) => {
       const request: QueryDelegationRequest = {

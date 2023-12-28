@@ -88,29 +88,77 @@ export default class CrawlTxService extends BullableService {
       .andWhere('height', '<=', endBlock)
       .orderBy('height', 'asc');
     this.logger.debug(blocks);
+    const promises: any[] = [];
+    let blocksInfo: any[] = [];
 
-    const mapBlockTime: Map<number, string> = new Map();
-    const handleResult = async (blockHeight: number) => {
-      const result = await this._httpBatchClient.execute(
+    const getBlockInfo = async (
+      height: number,
+      timestamp: Date,
+      page: string,
+      perPage: string
+    ) => {
+      const blockInfo = await this._httpBatchClient.execute(
         createJsonRpcRequest('tx_search', {
-          query: `tx.height=${blockHeight}`,
+          query: `tx.height=${height}`,
+          page,
+          per_page: perPage,
         })
       );
       return {
-        listTx: result.result,
-        height: blockHeight,
-        timestamp: mapBlockTime[blockHeight],
+        txs: blockInfo.result.txs,
+        tx_count: Number(blockInfo.result.total_count),
+        height,
+        timestamp,
       };
     };
-    const handleResultParallel: any[] = [];
-    blocks
-      // .filter((block) => block.txs?.length > 0)
-      .forEach((block) => {
+
+    blocksInfo = await Promise.all(
+      blocks.map((block) => getBlockInfo(block.height, block.time, '1', '1'))
+    );
+    blocksInfo.forEach((block) => {
+      if (block.tx_count > 0) {
         this.logger.info('crawl tx by height: ', block.height);
-        mapBlockTime[block.height] = block.time;
-        handleResultParallel.push(handleResult(block.height));
-      });
-    return Promise.all(handleResultParallel);
+        const totalPages = Math.ceil(
+          block.tx_count / config.handleTransaction.txsPerCall
+        );
+
+        [...Array(totalPages)].forEach((e, i) => {
+          const pageIndex = (i + 1).toString();
+          promises.push(
+            getBlockInfo(
+              block.height,
+              block.timestamp,
+              pageIndex,
+              config.handleTransaction.txsPerCall.toString()
+            )
+          );
+        });
+      }
+    });
+    const resultPromises: any[] = await Promise.all(promises);
+
+    const listRawTxs: any[] = [];
+    blocksInfo.forEach((block) => {
+      if (block.tx_count > 0) {
+        const listTxs: any[] = [];
+        resultPromises
+          .filter(
+            (result) => result.height.toString() === block.height.toString()
+          )
+          .forEach((resultPromise) => {
+            listTxs.push(...resultPromise.txs);
+          });
+        listRawTxs.push({
+          listTx: {
+            txs: listTxs,
+            total_count: block.tx_count,
+          },
+          height: block.height,
+          timestamp: block.timestamp,
+        });
+      }
+    });
+    return listRawTxs;
   }
 
   // decode list raw tx
@@ -637,7 +685,7 @@ export default class CrawlTxService extends BullableService {
     const lcdClient = await getLcdClient();
     // set version cosmos sdk to registry
     const nodeInfo: GetNodeInfoResponseSDKType =
-      await lcdClient.aura.cosmos.base.tendermint.v1beta1.getNodeInfo();
+      await lcdClient.provider.cosmos.base.tendermint.v1beta1.getNodeInfo();
     const cosmosSdkVersion = nodeInfo.application_version?.cosmos_sdk_version;
     if (cosmosSdkVersion) {
       this._registry.setCosmosSdkVersionByString(cosmosSdkVersion);

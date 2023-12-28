@@ -55,7 +55,7 @@
     "@cosmjs/utils": "^0.29.5",
     "@osmonauts/lcd": "^0.10.0",
     "@ourparentcenter/moleculer-decorators-extended": "^1.1.1",
-    "@horoscope-v2/sei-js-proto": "3.1.5",
+    "@horoscope-v2/sei-js-proto": "3.1.7",
     "@tendermint/amino-js": "^0.6.2",
     "@types/parse-uri": "^1.0.0",
     "ajv-formats": "^2.1.1",
