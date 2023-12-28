@@ -5,6 +5,7 @@ import CrawlTxService from '../../../../src/services/crawl-tx/crawl_tx.service';
 import CrawlBlockService from '../../../../src/services/crawl-block/crawl_block.service';
 import { Block, Event } from '../../../../src/models';
 import knex from '../../../../src/common/utils/db_connection';
+import { getProviderRegistry } from '../../../../src/services/crawl-tx/provider.registry';
 
 @Describe('Test crawl block service')
 export default class CrawlBlockTest {
@@ -872,7 +873,11 @@ export default class CrawlBlockTest {
       CrawlTxService
     ) as CrawlTxService;
 
-    const chainRegistry = new ChainRegistry(this.crawlTxService.logger);
+    const providerRegistry = await getProviderRegistry();
+    const chainRegistry = new ChainRegistry(
+      this.crawlTxService.logger,
+      providerRegistry
+    );
     chainRegistry.setCosmosSdkVersionByString('v0.45.7');
     this.crawlBlockService.setRegistry(chainRegistry);
 
