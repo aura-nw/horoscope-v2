@@ -14,6 +14,7 @@ import knex from '../../../../src/common/utils/db_connection';
 import tx_fixture from './tx.fixture.json' assert { type: 'json' };
 import tx_fixture_authz from './tx_authz.fixture.json' assert { type: 'json' };
 import ChainRegistry from '../../../../src/services/crawl-tx/chain.registry';
+import { getProviderRegistry } from '../../../../src/services/crawl-tx/provider.registry';
 
 @Describe('Test crawl transaction service')
 export default class CrawlTransactionTest {
@@ -33,7 +34,11 @@ export default class CrawlTransactionTest {
       ),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
     ]);
-    const chainRegistry = new ChainRegistry(this.crawlTxService.logger);
+    const providerRegistry = await getProviderRegistry();
+    const chainRegistry = new ChainRegistry(
+      this.crawlTxService.logger,
+      providerRegistry
+    );
     chainRegistry.setCosmosSdkVersionByString('v0.45.7');
     this.crawlTxService.setRegistry(chainRegistry);
   }
