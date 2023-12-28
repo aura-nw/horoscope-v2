@@ -9,6 +9,7 @@ import single_tx_coin_transfer from './single_tx_coin_transfer.json' assert { ty
 import multiple_tx_coin_transfer from './multiple_tx_coin_transfer.json' assert { type: 'json' };
 import authz_tx_coin_transfer from './authz_tx_coin_transfer.json' assert { type: 'json' };
 import ChainRegistry from '../../../../src/services/crawl-tx/chain.registry';
+import { getProviderRegistry } from '../../../../src/services/crawl-tx/provider.registry';
 
 @Describe('Test coin transfer')
 export default class CoinTransferSpec {
@@ -75,7 +76,11 @@ export default class CoinTransferSpec {
       ),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
     ]);
-    const chainRegistry = new ChainRegistry(this.crawlTxService.logger);
+    const providerRegistry = await getProviderRegistry();
+    const chainRegistry = new ChainRegistry(
+      this.crawlTxService.logger,
+      providerRegistry
+    );
     chainRegistry.setCosmosSdkVersionByString('v0.45.7');
     this.crawlTxService.setRegistry(chainRegistry);
   }
@@ -178,7 +183,11 @@ export default class CoinTransferSpec {
 
   @Test('Test authz coin transfer')
   public async testAuthzCoinTransfer() {
-    const chainRegistry = new ChainRegistry(this.broker.logger);
+    const providerRegistry = await getProviderRegistry();
+    const chainRegistry = new ChainRegistry(
+      this.broker.logger,
+      providerRegistry
+    );
     chainRegistry.setCosmosSdkVersionByString('v0.47.9');
     this.crawlTxService?.setRegistry(chainRegistry);
     const amounts = [

@@ -29,6 +29,7 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
 import ChainRegistry from './chain.registry';
+import { getProviderRegistry } from './provider.registry';
 
 @Service({
   name: SERVICE.V1.CrawlTransaction.key,
@@ -661,7 +662,8 @@ export default class CrawlTxService extends BullableService {
   }
 
   public async _start() {
-    this._registry = new ChainRegistry(this.logger);
+    const providerRegistry = await getProviderRegistry();
+    this._registry = new ChainRegistry(this.logger, providerRegistry);
 
     const lcdClient = await getLcdClient();
     // set version cosmos sdk to registry

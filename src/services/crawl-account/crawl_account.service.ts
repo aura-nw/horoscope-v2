@@ -41,6 +41,7 @@ import config from '../../../config.json' assert { type: 'json' };
 import { Account, AccountVesting } from '../../models';
 import ChainRegistry from '../crawl-tx/chain.registry';
 import Utils from '../../common/utils/utils';
+import { getProviderRegistry } from '../crawl-tx/provider.registry';
 
 @Service({
   name: SERVICE.V1.CrawlAccountService.key,
@@ -530,7 +531,8 @@ export default class CrawlAccountService extends BullableService {
   }
 
   public async _start() {
-    this.registry = new ChainRegistry(this.logger);
+    const providerRegistry = await getProviderRegistry();
+    this.registry = new ChainRegistry(this.logger, providerRegistry);
     this.registry.addTypes([
       ...Object.values(AccountType),
       ...Object.values(PubkeyType),
