@@ -18,6 +18,7 @@ const config: { [key: string]: Knex.Config } = {
       user: Config.POSTGRES_USER,
       password: Config.POSTGRES_PASSWORD,
       port: Config.POSTGRES_PORT,
+      statement_timeout: Config.POSTGRES_STATEMENT_TIMEOUT,
     },
     pool: {
       min: 1,
@@ -35,6 +36,7 @@ const config: { [key: string]: Knex.Config } = {
       user: Config.POSTGRES_USER,
       password: Config.POSTGRES_PASSWORD,
       port: Config.POSTGRES_PORT,
+      statement_timeout: Config.POSTGRES_STATEMENT_TIMEOUT,
     },
   },
   production: {
@@ -49,6 +51,7 @@ const config: { [key: string]: Knex.Config } = {
       user: Config.POSTGRES_USER,
       password: Config.POSTGRES_PASSWORD,
       port: Config.POSTGRES_PORT,
+      statement_timeout: Config.POSTGRES_STATEMENT_TIMEOUT,
     },
     pool: {
       min: 1,
