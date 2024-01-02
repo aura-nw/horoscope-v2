@@ -304,7 +304,7 @@ export default class CrawlAccountService extends BullableService {
         const account_id = addressesWithIds.find(
           (addressWithId) => addressWithId.address === account.address
         )?.id;
-        if (Array.isArray(account.balances))
+        if (Array.isArray(account.balances) && account_id)
           for (const balance of account.balances) {
             listAccountBalance.push({
               account_id,
