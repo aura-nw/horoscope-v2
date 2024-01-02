@@ -1,0 +1,41 @@
+table:
+  name: ibc_message
+  schema: public
+object_relationships:
+  - name: ibc_ics20
+    using:
+      foreign_key_constraint_on:
+        column: ibc_message_id
+        table:
+          name: ibc_ics20
+          schema: public
+  - name: transaction
+    using:
+      manual_configuration:
+        column_mapping:
+          tx_hash: hash
+        insertion_order: null
+        remote_table:
+          name: transaction
+          schema: public
+  - name: transaction_message
+    using:
+      foreign_key_constraint_on: transaction_message_id
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - dst_channel_id
+        - dst_port_id
+        - sequence_key
+        - src_channel_id
+        - src_port_id
+        - type
+        - id
+        - sequence
+        - transaction_message_id
+        - data
+        - tx_hash
+      filter: {}
+      limit: 100
+      allow_aggregations: true

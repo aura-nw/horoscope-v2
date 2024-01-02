@@ -1,0 +1,24 @@
+table:
+  name: ibc_client
+  schema: public
+array_relationships:
+  - name: ibc_connections
+    using:
+      foreign_key_constraint_on:
+        column: ibc_client_id
+        table:
+          name: ibc_connection
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - id
+        - client_id
+        - counterparty_chain_id
+        - client_state
+        - consensus_state
+        - client_type
+      filter: {}
+      limit: 100
+      allow_aggregations: true
