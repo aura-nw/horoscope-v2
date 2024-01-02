@@ -865,7 +865,7 @@ export default class CrawlBlockTest {
 
   @BeforeAll()
   async initSuite() {
-    this.broker.start();
+    await this.broker.start();
     this.crawlBlockService = this.broker.createService(
       CrawlBlockService
     ) as CrawlBlockService;
