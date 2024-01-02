@@ -57,9 +57,9 @@
   customization:
     naming_convention: hasura-default
     root_fields:
-      namespace: nois
+      namespace: pacific
     type_names:
-      prefix: nois_
+      prefix: pacific_
   tables: '!include pacific/tables/tables.yaml'
 - name: serenity
   kind: postgres
