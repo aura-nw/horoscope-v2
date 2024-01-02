@@ -1,7 +1,7 @@
-import seiTxRegistryType from 'src/services/crawl-tx/registry-type/sei-network.json';
-import auraTxRegistryType from 'src/services/crawl-tx/registry-type/aura-network.json';
+import seiTxRegistryType from './registry-type/sei-network.json' assert { type: 'json' };
+import auraTxRegistryType from './registry-type/aura-network.json' assert { type: 'json' };
 import { chainIdConfigOnServer } from '../../common';
-import config from '../../../config.json';
+import config from '../../../config.json' assert { type: 'json' };
 
 export interface IProviderRegistry {
   cosmos: any;
