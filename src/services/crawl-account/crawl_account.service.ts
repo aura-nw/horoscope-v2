@@ -290,15 +290,6 @@ export default class CrawlAccountService extends BullableService {
           }
         })
       );
-
-      const patchQueries = accounts.map((account) =>
-        Account.query()
-          .patch({
-            balances: account.balances,
-          })
-          .where({ address: account.address })
-      );
-
       // Create account_balance
       const listAccountBalance: {
         account_id?: number;
@@ -306,12 +297,10 @@ export default class CrawlAccountService extends BullableService {
         amount: string;
         base_denom: string;
       }[] = [];
-      const accountsWithBaseDenom: any = accounts;
       const addressesWithIds = await Account.query()
         .select('id', 'address')
         .whereIn('address', addresses);
-
-      for (const account of accountsWithBaseDenom) {
+      for (const account of accounts) {
         const account_id = addressesWithIds.find(
           (addressWithId) => addressWithId.address === account.address
         )?.id;
@@ -321,6 +310,8 @@ export default class CrawlAccountService extends BullableService {
               account_id,
               denom: balance.denom,
               amount: balance.amount,
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
               base_denom: balance.base_denom,
             });
           }
@@ -334,7 +325,14 @@ export default class CrawlAccountService extends BullableService {
               .onConflict(['account_id', 'denom'])
               .merge()
               .transacting(trx);
-
+          const patchQueries = accounts.map((account) =>
+            Account.query()
+              .patch({
+                balances: account.balances,
+              })
+              .where({ address: account.address })
+              .transacting(trx)
+          );
           await Promise.all(patchQueries);
         });
       } catch (error) {
