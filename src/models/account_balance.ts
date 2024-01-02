@@ -16,7 +16,7 @@ export class AccountBalance extends BaseModel {
 
   created_at!: Date;
 
-  updated_at!: Date;
+  last_updated_height!: number;
 
   static get tableName() {
     return 'account_balance';
@@ -45,9 +45,5 @@ export class AccountBalance extends BaseModel {
         },
       },
     };
-  }
-
-  $beforeUpDate() {
-    this.updated_at = new Date();
   }
 }

@@ -10,7 +10,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('base_denom').nullable();
     table.unique(['account_id', 'denom']);
     table.timestamp('created_at').defaultTo(knex.raw('now()'));
-    table.timestamp('updated_at').defaultTo(knex.raw('now()'));
+    table.integer('last_updated_height');
   });
 }
 

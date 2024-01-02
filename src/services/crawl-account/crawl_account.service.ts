@@ -1,5 +1,4 @@
 /* eslint-disable no-restricted-syntax */
-/* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-param-reassign */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable no-await-in-loop */
@@ -44,6 +43,10 @@ import { Account, AccountVesting } from '../../models';
 import AuraRegistry from '../crawl-tx/aura.registry';
 import Utils from '../../common/utils/utils';
 import { AccountBalance } from '../../models/account_balance';
+
+interface IAccountBalances extends QueryAllBalancesResponse {
+  last_updated_height: number;
+}
 
 @Service({
   name: SERVICE.V1.CrawlAccountService.key,
@@ -272,15 +275,17 @@ export default class CrawlAccountService extends BullableService {
       });
 
       const result: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
-      const accountBalances: QueryAllBalancesResponse[] = result.map((res) =>
-        cosmos.bank.v1beta1.QueryAllBalancesResponse.decode(
+      const accountBalances: IAccountBalances[] = result.map((res) => ({
+        ...cosmos.bank.v1beta1.QueryAllBalancesResponse.decode(
           fromBase64(res.result.response.value)
-        )
-      );
+        ),
+        last_updated_height: parseInt(res.result.response.height, 10),
+      }));
 
       const accounts = accountBalances.map((acc, index) => ({
         address: addresses[index],
         balances: acc.balances,
+        last_updated_height: acc.last_updated_height,
       }));
 
       await Promise.all(
@@ -296,23 +301,25 @@ export default class CrawlAccountService extends BullableService {
         denom: string;
         amount: string;
         base_denom: string;
+        last_updated_height: number;
       }[] = [];
       const addressesWithIds = await Account.query()
         .select('id', 'address')
         .whereIn('address', addresses);
       for (const account of accounts) {
-        const account_id = addressesWithIds.find(
+        const accountId = addressesWithIds.find(
           (addressWithId) => addressWithId.address === account.address
         )?.id;
-        if (Array.isArray(account.balances) && account_id)
+        if (Array.isArray(account.balances) && accountId)
           for (const balance of account.balances) {
             listAccountBalance.push({
-              account_id,
+              account_id: accountId,
               denom: balance.denom,
               amount: balance.amount,
               // eslint-disable-next-line @typescript-eslint/ban-ts-comment
               // @ts-ignore
               base_denom: balance.base_denom,
+              last_updated_height: account.last_updated_height,
             });
           }
       }
@@ -325,15 +332,19 @@ export default class CrawlAccountService extends BullableService {
               .onConflict(['account_id', 'denom'])
               .merge()
               .transacting(trx);
-          const patchQueries = accounts.map((account) =>
-            Account.query()
-              .patch({
-                balances: account.balances,
-              })
-              .where({ address: account.address })
-              .transacting(trx)
-          );
-          await Promise.all(patchQueries);
+          const stringListUpdates = accounts
+            .map(
+              (account) =>
+                `('${account.address}', '${JSON.stringify(
+                  account.balances
+                )}'::jsonb)`
+            )
+            .join(',');
+          await knex
+            .raw(
+              `UPDATE account SET balances = temp.balances from (VALUES ${stringListUpdates}) as temp(address, balances) where temp.address = account.address`
+            )
+            .transacting(trx);
         });
       } catch (error) {
         this.logger.error(
