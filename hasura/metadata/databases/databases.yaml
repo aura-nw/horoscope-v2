@@ -51,7 +51,7 @@
   configuration:
     connection_info:
       database_url:
-        from_env: DATABASE_URL_PACIFIC
+        from_env: DATABASE_URL_SEI
       isolation_level: read-committed
       use_prepared_statements: false
   customization:
