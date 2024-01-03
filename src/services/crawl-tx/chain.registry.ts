@@ -43,6 +43,7 @@ export default class ChainRegistry {
     this._logger = logger;
     switch (config.chainId) {
       case chainIdConfigOnServer.Atlantic2:
+      case chainIdConfigOnServer.Pacific1:
         this.cosmos = seiCosmos;
         this.ibc = seiIbc;
         this.seiprotocol = seiprotocol;
