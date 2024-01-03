@@ -9,7 +9,7 @@ import config from '../../../config.json' assert { type: 'json' };
 import {
   BULL_JOB_NAME,
   getLcdClient,
-  IAuraJSClientFactory,
+  IProviderJSClientFactory,
   IPagination,
   SERVICE,
 } from '../../common';
@@ -21,7 +21,7 @@ import knex from '../../common/utils/db_connection';
   version: 1,
 })
 export default class CrawlSigningInfoService extends BullableService {
-  private _lcdClient!: IAuraJSClientFactory;
+  private _lcdClient!: IProviderJSClientFactory;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -49,7 +49,7 @@ export default class CrawlSigningInfoService extends BullableService {
 
     if (foundValidators.length > 0) {
       const paramSlashing =
-        await this._lcdClient.aura.cosmos.slashing.v1beta1.params();
+        await this._lcdClient.provider.cosmos.slashing.v1beta1.params();
 
       let resultCallApi;
       let done = false;
@@ -59,7 +59,7 @@ export default class CrawlSigningInfoService extends BullableService {
 
       while (!done) {
         resultCallApi =
-          await this._lcdClient.aura.cosmos.slashing.v1beta1.signingInfos({
+          await this._lcdClient.provider.cosmos.slashing.v1beta1.signingInfos({
             pagination,
           });
 

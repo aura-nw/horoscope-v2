@@ -28,7 +28,7 @@ import {
   BULL_JOB_NAME,
   getHttpBatchClient,
   getLcdClient,
-  IAuraJSClientFactory,
+  IProviderJSClientFactory,
   ICoin,
   IAddressesParam,
   REDIS_KEY,
@@ -48,7 +48,7 @@ import { getProviderRegistry } from '../../common/utils/provider.registry';
   version: 1,
 })
 export default class CrawlAccountService extends BullableService {
-  private _lcdClient!: IAuraJSClientFactory;
+  private _lcdClient!: IProviderJSClientFactory;
 
   private _httpBatchClient: HttpBatchClient;
 
