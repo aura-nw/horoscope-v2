@@ -36,10 +36,10 @@ import {
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import { Account, AccountVesting } from '../../models';
-import ChainRegistry from '../crawl-tx/chain.registry';
+import ChainRegistry from '../../common/utils/chain.registry';
 import Utils from '../../common/utils/utils';
 import { AccountBalance } from '../../models/account_balance';
-import { getProviderRegistry } from '../crawl-tx/provider.registry';
+import { getProviderRegistry } from '../../common/utils/provider.registry';
 
 interface IAccountBalances extends QueryAllBalancesResponse {
   last_updated_height: number;

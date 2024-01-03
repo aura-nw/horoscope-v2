@@ -1,11 +1,11 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
-import ChainRegistry from '../../../../src/services/crawl-tx/chain.registry';
+import ChainRegistry from '../../../../src/common/utils/chain.registry';
 import CrawlTxService from '../../../../src/services/crawl-tx/crawl_tx.service';
 import CrawlBlockService from '../../../../src/services/crawl-block/crawl_block.service';
 import { Block, Event } from '../../../../src/models';
 import knex from '../../../../src/common/utils/db_connection';
-import { getProviderRegistry } from '../../../../src/services/crawl-tx/provider.registry';
+import { getProviderRegistry } from '../../../../src/common/utils/provider.registry';
 
 @Describe('Test crawl block service')
 export default class CrawlBlockTest {
