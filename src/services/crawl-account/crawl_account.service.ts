@@ -1,4 +1,3 @@
-/* eslint-disable no-param-reassign */
 import {
   Action,
   Service,
@@ -288,6 +287,7 @@ export default class CrawlAccountService extends BullableService {
       await Promise.all(
         accounts.map(async (account) => {
           if (account.balances.length > 1) {
+            // eslint-disable-next-line no-param-reassign
             account.balances = await this.handleIbcDenom(account.balances);
           }
         })
@@ -409,6 +409,7 @@ export default class CrawlAccountService extends BullableService {
       await Promise.all(
         accounts.map(async (account) => {
           if (account.spendable_balances.length > 1)
+            // eslint-disable-next-line no-param-reassign
             account.spendable_balances = await this.handleIbcDenom(
               account.spendable_balances
             );
