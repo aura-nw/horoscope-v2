@@ -6,7 +6,7 @@ import config from '../../../config.json' assert { type: 'json' };
 import {
   BULL_JOB_NAME,
   getLcdClient,
-  IAuraJSClientFactory,
+  IProviderJSClientFactory,
   IValidatorDelegators,
   SERVICE,
 } from '../../common';
@@ -17,7 +17,7 @@ import { BlockCheckpoint, Validator } from '../../models';
   version: 1,
 })
 export default class CrawlDelegatorsService extends BullableService {
-  private _lcdClient!: IAuraJSClientFactory;
+  private _lcdClient!: IProviderJSClientFactory;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -66,10 +66,12 @@ export default class CrawlDelegatorsService extends BullableService {
       countTotal: true,
     };
     const validatorDelegationInfo =
-      await this._lcdClient.aura.cosmos.staking.v1beta1.validatorDelegations({
-        validatorAddr: _payload.address,
-        pagination,
-      });
+      await this._lcdClient.provider.cosmos.staking.v1beta1.validatorDelegations(
+        {
+          validatorAddr: _payload.address,
+          pagination,
+        }
+      );
 
     const totalDelegator = Number(validatorDelegationInfo.pagination.total);
     const latestBlock: BlockCheckpoint | undefined =
