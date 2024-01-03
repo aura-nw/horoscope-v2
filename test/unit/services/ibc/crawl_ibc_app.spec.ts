@@ -57,7 +57,7 @@ export default class CrawlIbcTest {
   async initSuite() {
     this.crawlIbcAppSerivce.getQueueManager().stopAll();
     await knex.raw(
-      'TRUNCATE TABLE block, transaction, ibc_message RESTART IDENTITY CASCADE'
+      'TRUNCATE TABLE block, block_signature, transaction, event, event_attribute, ibc_message RESTART IDENTITY CASCADE'
     );
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.transaction);
