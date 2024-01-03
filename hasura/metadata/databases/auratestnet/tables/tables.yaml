@@ -43,3 +43,4 @@
 - '!include public_view_event_attribute_value_index.yaml'
 - '!include public_vote.yaml'
 - '!include public_coin_transfer.yaml'
+- '!include account_balance.yaml'
