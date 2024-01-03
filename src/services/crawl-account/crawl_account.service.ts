@@ -39,9 +39,9 @@ import {
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import { Account, AccountVesting } from '../../models';
-import ChainRegistry from '../crawl-tx/chain.registry';
+import ChainRegistry from '../../common/utils/chain.registry';
 import Utils from '../../common/utils/utils';
-import { getProviderRegistry } from '../crawl-tx/provider.registry';
+import { getProviderRegistry } from '../../common/utils/provider.registry';
 
 @Service({
   name: SERVICE.V1.CrawlAccountService.key,
