@@ -8,8 +8,8 @@ import CrawlTxService from '../../../../src/services/crawl-tx/crawl_tx.service';
 import single_tx_coin_transfer from './single_tx_coin_transfer.json' assert { type: 'json' };
 import multiple_tx_coin_transfer from './multiple_tx_coin_transfer.json' assert { type: 'json' };
 import authz_tx_coin_transfer from './authz_tx_coin_transfer.json' assert { type: 'json' };
-import ChainRegistry from '../../../../src/services/crawl-tx/chain.registry';
-import { getProviderRegistry } from '../../../../src/services/crawl-tx/provider.registry';
+import ChainRegistry from '../../../../src/common/utils/chain.registry';
+import { getProviderRegistry } from '../../../../src/common/utils/provider.registry';
 
 @Describe('Test coin transfer')
 export default class CoinTransferSpec {

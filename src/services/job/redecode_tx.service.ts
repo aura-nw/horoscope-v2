@@ -10,10 +10,10 @@ import { Transaction, TransactionMessage } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
-import ChainRegistry from '../crawl-tx/chain.registry';
+import ChainRegistry from '../../common/utils/chain.registry';
 import Utils from '../../common/utils/utils';
 import knex from '../../common/utils/db_connection';
-import { getProviderRegistry } from '../crawl-tx/provider.registry';
+import { getProviderRegistry } from '../../common/utils/provider.registry';
 
 @Service({
   name: SERVICE.V1.JobService.ReDecodeTx.key,

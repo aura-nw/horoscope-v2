@@ -5,8 +5,8 @@ import { toBase64, fromUtf8, fromBase64, toUtf8 } from '@cosmjs/encoding';
 import { LoggerInstance } from 'moleculer';
 import _ from 'lodash';
 import { SemVer } from 'semver';
-import { MSG_TYPE } from '../../common';
-import Utils from '../../common/utils/utils';
+import { MSG_TYPE } from '../index';
+import Utils from './utils';
 import { IProviderRegistry } from './provider.registry';
 
 export default class ChainRegistry {
