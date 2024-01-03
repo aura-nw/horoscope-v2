@@ -8,8 +8,6 @@ import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { decodeTxRaw } from '@cosmjs/proto-signing';
 import { toBase64, fromBase64 } from '@cosmjs/encoding';
-import _ from 'lodash';
-import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { Knex } from 'knex';
 import { Queue } from 'bullmq';
 import { GetNodeInfoResponseSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/base/tendermint/v1beta1/query';
@@ -92,49 +90,76 @@ export default class CrawlTxService extends BullableService {
       .orderBy('height', 'asc');
     this.logger.debug(blocks);
     const promises: any[] = [];
-    const filterBlocks = blocks.filter((block) => block.txs.length > 0);
-    filterBlocks.forEach((block) => {
-      this.logger.info('crawl tx by height: ', block.height);
+    let blocksInfo: any[] = [];
 
-      const totalPages = Math.ceil(
-        block.txs.length / config.handleTransaction.txsPerCall
+    const getBlockInfo = async (
+      height: number,
+      timestamp: Date,
+      page: string,
+      perPage: string
+    ) => {
+      const blockInfo = await this._httpBatchClient.execute(
+        createJsonRpcRequest('tx_search', {
+          query: `tx.height=${height}`,
+          page,
+          per_page: perPage,
+        })
       );
-      [...Array(totalPages)].forEach((e, i) => {
-        const pageIndex = (i + 1).toString();
-        promises.push(
-          this._httpBatchClient.execute(
-            createJsonRpcRequest('tx_search', {
-              query: `tx.height=${block.height}`,
-              page: pageIndex,
-              per_page: config.handleTransaction.txsPerCall.toString(),
-            })
-          )
-        );
-      });
-    });
-    const resultPromises: JsonRpcSuccessResponse[] = await Promise.all(
-      promises
-    );
-
-    const listRawTx: any[] = filterBlocks.map((block) => {
-      const listTxs: any[] = [];
-      resultPromises
-        .filter(
-          (result) => result.result.txs[0].height === block.height.toString()
-        )
-        .forEach((resultPromise) => {
-          listTxs.push(...resultPromise.result.txs);
-        });
       return {
-        listTx: {
-          txs: listTxs,
-          total_count: block.txs.length,
-        },
-        height: block.height,
-        timestamp: block.time,
+        txs: blockInfo.result.txs,
+        tx_count: Number(blockInfo.result.total_count),
+        height,
+        timestamp,
       };
+    };
+
+    blocksInfo = await Promise.all(
+      blocks.map((block) => getBlockInfo(block.height, block.time, '1', '1'))
+    );
+    blocksInfo.forEach((block) => {
+      if (block.tx_count > 0) {
+        this.logger.info('crawl tx by height: ', block.height);
+        const totalPages = Math.ceil(
+          block.tx_count / config.handleTransaction.txsPerCall
+        );
+
+        [...Array(totalPages)].forEach((e, i) => {
+          const pageIndex = (i + 1).toString();
+          promises.push(
+            getBlockInfo(
+              block.height,
+              block.timestamp,
+              pageIndex,
+              config.handleTransaction.txsPerCall.toString()
+            )
+          );
+        });
+      }
     });
-    return listRawTx;
+    const resultPromises: any[] = await Promise.all(promises);
+
+    const listRawTxs: any[] = [];
+    blocksInfo.forEach((block) => {
+      if (block.tx_count > 0) {
+        const listTxs: any[] = [];
+        resultPromises
+          .filter(
+            (result) => result.height.toString() === block.height.toString()
+          )
+          .forEach((resultPromise) => {
+            listTxs.push(...resultPromise.txs);
+          });
+        listRawTxs.push({
+          listTx: {
+            txs: listTxs,
+            total_count: block.tx_count,
+          },
+          height: block.height,
+          timestamp: block.timestamp,
+        });
+      }
+    });
+    return listRawTxs;
   }
 
   // decode list raw tx
@@ -662,7 +687,7 @@ export default class CrawlTxService extends BullableService {
     const lcdClient = await getLcdClient();
     // set version cosmos sdk to registry
     const nodeInfo: GetNodeInfoResponseSDKType =
-      await lcdClient.aura.cosmos.base.tendermint.v1beta1.getNodeInfo();
+      await lcdClient.provider.cosmos.base.tendermint.v1beta1.getNodeInfo();
     const cosmosSdkVersion = nodeInfo.application_version?.cosmos_sdk_version;
     if (cosmosSdkVersion) {
       this._registry.setCosmosSdkVersionByString(cosmosSdkVersion);

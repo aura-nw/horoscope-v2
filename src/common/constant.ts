@@ -10,6 +10,7 @@ export const chainIdConfigOnServer = {
   AuraTestnet2: 'aura-testnet-2',
   Xstaxy1: 'xstaxy-1',
   Atlantic2: 'atlantic-2',
+  Pacific1: 'pacific-1',
 };
 
 export const REDIS_KEY = {
