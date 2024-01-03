@@ -5,6 +5,7 @@ Horoscope v2 is a next version of Horoscope, that is an indexing service for Cos
 Currently, it supports network built by Cosmos SDK v0.45.1 or later. Supporting network:
 
 - [Aura Network](https://github.com/aura-nw/aura)
+- [Sei](https://github.com/sei-protocol/sei-chain)
 
 > **Looking for Horoscope v1? The Horoscope v1 repository has been archived [`Horoscope v1`](https://github.com/aura-nw/Horoscope)**.
 
@@ -75,3 +76,7 @@ npm run dev
 - `npm run start`: Start production mode (set `SERVICES` env variable to load certain services)
 - `npm run lint`: Run ESLint
 - `npm run test`: Run jest
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contribute or add a new network (example with Sei Network).
