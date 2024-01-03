@@ -13,7 +13,7 @@ export class CoinTransfer extends BaseModel {
 
   to!: string;
 
-  amount!: number;
+  amount!: string;
 
   denom!: string;
 
@@ -46,7 +46,7 @@ export class CoinTransfer extends BaseModel {
         tx_msg_id: { type: 'number' },
         from: { type: 'string', default: null },
         to: { type: 'string' },
-        amount: { type: 'number' },
+        amount: { type: 'string' },
         denom: { type: 'string' },
         timestamp: { type: 'string', format: 'date-time' },
       },
