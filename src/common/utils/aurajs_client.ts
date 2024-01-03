@@ -41,6 +41,7 @@ export function getProviderFactory(): {
 } {
   switch (config.chainId) {
     case chainIdConfigOnServer.Atlantic2:
+    case chainIdConfigOnServer.Pacific1:
       return {
         providerClient: seiprotocol.ClientFactory,
         cosmwasmClient: seiCosmwasm.ClientFactory,
