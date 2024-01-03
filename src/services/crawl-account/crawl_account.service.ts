@@ -1,7 +1,4 @@
-/* eslint-disable no-restricted-syntax */
 /* eslint-disable no-param-reassign */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-/* eslint-disable no-await-in-loop */
 import {
   Action,
   Service,
@@ -306,12 +303,12 @@ export default class CrawlAccountService extends BullableService {
       const addressesWithIds = await Account.query()
         .select('id', 'address')
         .whereIn('address', addresses);
-      for (const account of accounts) {
+      accounts.forEach((account) => {
         const accountId = addressesWithIds.find(
           (addressWithId) => addressWithId.address === account.address
         )?.id;
         if (Array.isArray(account.balances) && accountId)
-          for (const balance of account.balances) {
+          account.balances.forEach((balance) => {
             listAccountBalance.push({
               account_id: accountId,
               denom: balance.denom,
@@ -321,8 +318,8 @@ export default class CrawlAccountService extends BullableService {
               base_denom: balance.base_denom,
               last_updated_height: account.last_updated_height,
             });
-          }
-      }
+          });
+      });
 
       try {
         await knex.transaction(async (trx) => {
@@ -545,6 +542,7 @@ export default class CrawlAccountService extends BullableService {
     let page = 0;
     let done = false;
     while (!done) {
+      /* eslint-disable-next-line no-await-in-loop */
       const result = await Account.query()
         .joinRelated('vesting')
         .where((builder) =>
