@@ -227,10 +227,6 @@
   "ibcStatistic": {
     "timeRefreshIbcRelayerStats": "2 * * * *"
   },
-  "jobReassignMsgIndexToEvent": {
-    "millisecondCrawl": 1000,
-    "blocksPerCall": 100
-  },
   "servicesManager": {
     "healthCheckLimit": 100
   },

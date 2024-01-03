@@ -8,7 +8,8 @@ import CrawlTxService from '../../../../src/services/crawl-tx/crawl_tx.service';
 import single_tx_coin_transfer from './single_tx_coin_transfer.json' assert { type: 'json' };
 import multiple_tx_coin_transfer from './multiple_tx_coin_transfer.json' assert { type: 'json' };
 import authz_tx_coin_transfer from './authz_tx_coin_transfer.json' assert { type: 'json' };
-import AuraRegistry from '../../../../src/services/crawl-tx/aura.registry';
+import ChainRegistry from '../../../../src/common/utils/chain.registry';
+import { getProviderRegistry } from '../../../../src/common/utils/provider.registry';
 
 @Describe('Test coin transfer')
 export default class CoinTransferSpec {
@@ -73,9 +74,13 @@ export default class CoinTransferSpec {
       knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
     ]);
-    const auraRegistry = new AuraRegistry(this.crawlTxService.logger);
-    auraRegistry.setCosmosSdkVersionByString('v0.45.7');
-    this.crawlTxService.setRegistry(auraRegistry);
+    const providerRegistry = await getProviderRegistry();
+    const chainRegistry = new ChainRegistry(
+      this.crawlTxService.logger,
+      providerRegistry
+    );
+    chainRegistry.setCosmosSdkVersionByString('v0.45.7');
+    this.crawlTxService.setRegistry(chainRegistry);
   }
 
   @Test('Test single coin transfer')
@@ -176,9 +181,13 @@ export default class CoinTransferSpec {
 
   @Test('Test authz coin transfer')
   public async testAuthzCoinTransfer() {
-    const auraRegistry = new AuraRegistry(this.broker.logger);
-    auraRegistry.setCosmosSdkVersionByString('v0.47.9');
-    this.crawlTxService?.setRegistry(auraRegistry);
+    const providerRegistry = await getProviderRegistry();
+    const chainRegistry = new ChainRegistry(
+      this.broker.logger,
+      providerRegistry
+    );
+    chainRegistry.setCosmosSdkVersionByString('v0.47.9');
+    this.crawlTxService?.setRegistry(chainRegistry);
     const amounts = [
       '43',
       '3656',
