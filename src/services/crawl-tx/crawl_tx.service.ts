@@ -37,7 +37,7 @@ import ChainRegistry from './chain.registry';
 export default class CrawlTxService extends BullableService {
   private _httpBatchClient: HttpBatchClient;
 
-  public _registry!: ChainRegistry;
+  private _registry!: ChainRegistry;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
