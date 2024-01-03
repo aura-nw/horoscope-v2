@@ -43,7 +43,7 @@ export default class HandleTxVoteServiceTest {
     this.handleAuthzTxServive?.getQueueManager().stopAll();
     await Promise.all([
       knex.raw(
-        'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+        'TRUNCATE TABLE block, block_signature, transaction, event, event_attribute RESTART IDENTITY CASCADE'
       ),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE vote RESTART IDENTITY CASCADE'),
@@ -252,7 +252,7 @@ export default class HandleTxVoteServiceTest {
     this.handleAuthzTxServive?.getQueueManager().stopAll();
     await Promise.all([
       knex.raw(
-        'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+        'TRUNCATE TABLE block, block_signature, transaction, event, event_attribute RESTART IDENTITY CASCADE'
       ),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE vote RESTART IDENTITY CASCADE'),

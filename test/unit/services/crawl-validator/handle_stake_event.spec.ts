@@ -294,7 +294,7 @@ export default class HandleStakeEventTest {
       BlockCheckpoint.query().delete(true),
       knex.raw('TRUNCATE TABLE validator RESTART IDENTITY CASCADE'),
       knex.raw(
-        'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+        'TRUNCATE TABLE block, block_signature, transaction, event, event_attribute RESTART IDENTITY CASCADE'
       ),
       knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE'),
     ]);
@@ -311,7 +311,7 @@ export default class HandleStakeEventTest {
       BlockCheckpoint.query().delete(true),
       knex.raw('TRUNCATE TABLE validator RESTART IDENTITY CASCADE'),
       knex.raw(
-        'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+        'TRUNCATE TABLE block, block_signature, transaction, event, event_attribute RESTART IDENTITY CASCADE'
       ),
       knex.raw('TRUNCATE TABLE account RESTART IDENTITY CASCADE'),
     ]);

@@ -91,7 +91,7 @@ export default class CrawlValidatorTest {
       Validator.query().delete(true),
       BlockCheckpoint.query().delete(true),
       knex.raw(
-        'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+        'TRUNCATE TABLE block, block_signature, transaction, event, event_attribute RESTART IDENTITY CASCADE'
       ),
     ]);
     await Block.query().insert(this.blocks);
@@ -105,7 +105,7 @@ export default class CrawlValidatorTest {
       Validator.query().delete(true),
       BlockCheckpoint.query().delete(true),
       knex.raw(
-        'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+        'TRUNCATE TABLE block, block_signature, transaction, event, event_attribute RESTART IDENTITY CASCADE'
       ),
     ]);
     await this.broker.stop();
