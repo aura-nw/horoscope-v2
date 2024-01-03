@@ -1,0 +1,150 @@
+table:
+  name: transaction
+  schema: public
+object_relationships:
+  - name: block
+    using:
+      manual_configuration:
+        column_mapping:
+          height: height
+        insertion_order: null
+        remote_table:
+          name: block
+          schema: public
+array_relationships:
+  - name: coin_transfers
+    using:
+      manual_configuration:
+        column_mapping:
+          id: tx_id
+        insertion_order: null
+        remote_table:
+          name: coin_transfer
+          schema: public
+  - name: cw20_activities
+    using:
+      manual_configuration:
+        column_mapping:
+          hash: tx_hash
+        insertion_order: null
+        remote_table:
+          name: cw20_activity
+          schema: public
+  - name: cw721_activities
+    using:
+      manual_configuration:
+        column_mapping:
+          hash: tx_hash
+        insertion_order: null
+        remote_table:
+          name: cw721_activity
+          schema: public
+  - name: event_attribute_index
+    using:
+      manual_configuration:
+        column_mapping:
+          id: tx_id
+        insertion_order: null
+        remote_table:
+          name: view_event_attribute_value_index
+          schema: public
+  - name: event_attributes
+    using:
+      manual_configuration:
+        column_mapping:
+          id: tx_id
+        insertion_order: null
+        remote_table:
+          name: event_attribute
+          schema: public
+  - name: events
+    using:
+      manual_configuration:
+        column_mapping:
+          id: tx_id
+        insertion_order: null
+        remote_table:
+          name: event
+          schema: public
+  - name: feegrant_histories
+    using:
+      manual_configuration:
+        column_mapping:
+          id: tx_id
+        insertion_order: null
+        remote_table:
+          name: feegrant_history
+          schema: public
+  - name: feegrants
+    using:
+      manual_configuration:
+        column_mapping:
+          id: init_tx_id
+        insertion_order: null
+        remote_table:
+          name: feegrant
+          schema: public
+  - name: power_events
+    using:
+      manual_configuration:
+        column_mapping:
+          id: tx_id
+        insertion_order: null
+        remote_table:
+          name: power_event
+          schema: public
+  - name: transaction_messages
+    using:
+      manual_configuration:
+        column_mapping:
+          id: tx_id
+        insertion_order: null
+        remote_table:
+          name: transaction_message
+          schema: public
+  - name: votes
+    using:
+      manual_configuration:
+        column_mapping:
+          id: tx_id
+        insertion_order: null
+        remote_table:
+          name: vote
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - code
+        - codespace
+        - data
+        - fee
+        - gas_limit
+        - gas_used
+        - gas_wanted
+        - hash
+        - height
+        - id
+        - index
+        - memo
+        - timestamp
+      filter: {}
+      limit: 100
+  - role: public
+    permission:
+      columns:
+        - code
+        - codespace
+        - data
+        - fee
+        - gas_limit
+        - gas_used
+        - gas_wanted
+        - hash
+        - height
+        - id
+        - index
+        - memo
+        - timestamp
+      filter: {}
+      limit: 100

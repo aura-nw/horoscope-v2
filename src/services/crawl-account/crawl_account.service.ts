@@ -36,9 +36,10 @@ import {
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import { Account, AccountVesting } from '../../models';
-import AuraRegistry from '../crawl-tx/aura.registry';
+import ChainRegistry from '../../common/utils/chain.registry';
 import Utils from '../../common/utils/utils';
 import { AccountBalance } from '../../models/account_balance';
+import { getProviderRegistry } from '../../common/utils/provider.registry';
 
 interface IAccountBalances extends QueryAllBalancesResponse {
   last_updated_height: number;
@@ -579,7 +580,8 @@ export default class CrawlAccountService extends BullableService {
   }
 
   public async _start() {
-    this.registry = new AuraRegistry(this.logger);
+    const providerRegistry = await getProviderRegistry();
+    this.registry = new ChainRegistry(this.logger, providerRegistry);
     this.registry.addTypes([
       ...Object.values(AccountType),
       ...Object.values(PubkeyType),
