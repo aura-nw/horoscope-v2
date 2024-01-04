@@ -883,7 +883,9 @@ export default class CrawlBlockTest {
 
     this.crawlBlockService.getQueueManager().stopAll();
     this.crawlTxService.getQueueManager().stopAll();
-    await knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE');
+    await knex.raw(
+      'TRUNCATE TABLE block, block_signature, transaction, event, event_attribute RESTART IDENTITY CASCADE'
+    );
   }
 
   @Test('Parse block and insert to DB')
@@ -907,7 +909,9 @@ export default class CrawlBlockTest {
     this.crawlBlockService?.getQueueManager().stopAll();
     this.crawlTxService?.getQueueManager().stopAll();
     await Promise.all([
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw(
+        'TRUNCATE TABLE block, block_signature, transaction, event, event_attribute RESTART IDENTITY CASCADE'
+      ),
       this.crawlBlockService?._stop(),
       this.crawlTxService?._stop(),
     ]);
