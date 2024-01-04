@@ -156,6 +156,11 @@
     "timeCrawImage": "0 0 * * *",
     "milliSecondDelayRetry": 300000
   },
+  "migrationBlockToPartition": {
+    "startId": 100000000,
+    "endId": 200000000,
+    "step": 100000000
+  },
   "migrationEventToPartition": {
     "startId": 0,
     "endId": 1000000000,
@@ -183,6 +188,10 @@
     "step": 10000,
     "millisecondCrawl": 10000,
     "templateTable": "event_attribute"
+  },
+  "jobCheckNeedCreateBlockPartition": {
+    "millisecondCrawl": 10000,
+    "templateTable": "block"
   },
   "jobCheckNeedCreateEventPartition": {
     "millisecondCrawl": 10000,
