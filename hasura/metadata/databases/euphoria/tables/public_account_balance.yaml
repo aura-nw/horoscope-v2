@@ -18,3 +18,4 @@ select_permissions:
         - last_updated_height
       filter: {}
       limit: 100
+      allow_aggregations: true
