@@ -82,6 +82,8 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_EVENT_PARTITION: 'job:create-event-partition',
   JOB_CREATE_TRANSACTION_PARTITION: 'job:create-transaction-partition',
   JOB_CREATE_BLOCK_PARTITION: 'job:create-block-partition',
+  JOB_CREATE_TRANSACTION_MESSAGE_PARTITION:
+    'job:create-transaction-message-partition',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
   CRAWL_DAILY_STATISTICS: 'crawl:daily-statistics',
   CRAWL_ACCOUNT_STATISTICS: 'crawl:account-statistics',
@@ -283,6 +285,10 @@ export const SERVICE = {
       CreateEventAttrPartition: {
         key: 'CreateEventAttrPartition',
         path: 'v1.CreateEventAttrPartition',
+      },
+      CreateTransactionMessagePartition: {
+        key: 'CreateTransactionMessagePartition',
+        path: 'v1.CreateTransactionMessagePartition',
       },
       ReDecodeTx: {
         key: 'ReDecodeTx',
