@@ -255,5 +255,11 @@
       "indexNamePattern": "%(tx_id|block_height)%",
       "milisecondInterval": 60000
     }
+  },
+  "jobCreateConstraintInTransactionPartition": {
+    "jobRepeatCheckNeedCreateConstraint": {
+      "millisecondRepeatJob": 600000
+    },
+    "statementTimeout": 600000
   }
 }
