@@ -35,6 +35,7 @@ export default class Cw20 {
     time: '2023-01-12T01:53:57.216Z',
     proposer_address: 'auraomd;cvpio3j4eg',
     data: {},
+    tx_count: 1,
   });
 
   codeId = {
