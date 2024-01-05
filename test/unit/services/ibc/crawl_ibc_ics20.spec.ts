@@ -58,6 +58,23 @@ export default class CrawlIbcIcs20Test {
           '@type': '/cosmwasm.wasm.v1.MsgExecuteContract',
           funds: [],
           sender: 'aura1uh24g2lc8hvvkaaf7awz25lrh5fptthu2dhq0n',
+          acknowledgement: {
+            result: 'AQ==',
+          },
+        },
+      },
+      {
+        index: 1,
+        type: '/cosmwasm.wasm.v1.MsgExecuteContract',
+        sender: 'aura1uh24g2lc8hvvkaaf7awz25lrh5fptthu2dhq0n',
+        content: {
+          msg: '{"add_mint_phase":{"phase_data":{"start_time":"1679976124941000000","end_time":"1679982024941000000","max_supply":2000,"max_nfts_per_address":20,"price":{"amount":"10","denom":"ueaura"},"is_public":false},"token_id": "test"}}',
+          '@type': '/cosmwasm.wasm.v1.MsgExecuteContract',
+          funds: [],
+          sender: 'aura1uh24g2lc8hvvkaaf7awz25lrh5fptthu2dhq0n',
+          acknowledgement: {
+            error: 'abc',
+          },
         },
       },
     ],
@@ -358,7 +375,7 @@ export default class CrawlIbcIcs20Test {
   async testHandleIcs20AckError() {
     await knex.transaction(async (trx) => {
       const ibcMessage = IbcMessage.fromJson({
-        transaction_message_id: 1,
+        transaction_message_id: 2,
         src_channel_id: 'aaa',
         src_port_id: PORT,
         dst_channel_id: 'cccc',
