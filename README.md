@@ -115,21 +115,23 @@ Create an environment file `.env` from the example file `.env.example`:
 cp .env.example .env
 ```
 
-Start development mode:
+Start development mode
 ```bash
 npm run dev
 ```
 
 ## Configuration
 
-[Config Moleculer](.env.sample), refer [docs](https://moleculer.services/docs/0.14/configuration.html) to get detail configurations  
-[Config list network](network.json) to config list network with LCD, RPC, database  
-[Config chain](config.json) to setup job crawl and select chain id to crawl
+[Config Moleculer](.env.sample), refer [docs](https://moleculer.services/docs/0.14/configuration.html) to get detail configurations.
+[Config network](network.json) to config networks with LCD, RPC, database.
+[Config chain](config.json) to setup crawling jobs and the crawling chain information.
 
-## Scripts
+## Adding a new chain
 
-- `npm run dev`: Start development mode (load all services locally with hot-reload & REPL)
-- `npm run build`: Build .dist folder to start production mode
-- `npm run start`: Start production mode (set `SERVICES` env variable to load certain services)
-- `npm run lint`: Run ESLint
-- `npm run test`: Run jest
+Setting up Horoscope for a new chain is straight-forward:
+- Add the chain to the `network.json` file
+- Configure the crawling jobs and chain information in the `config.json` file
+- Add the chain to the Hasura metadata (see [Hasura](#hasura) section). For more information about Hasura and how to use Hasura CLI, see the [Hasura documentation](https://hasura.io/docs/latest/graphql/core/index.html). You can remove other chains from the metadata if you don't need them.
+- If the chain has custom messages, you may need to add a new message decoder (see [Message Decoders](#message-decoders) section).
+- Start crawling your chain :fireworks:
+
