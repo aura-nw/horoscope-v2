@@ -196,6 +196,7 @@ export default class CrawlBlockService extends BullableService {
               time: block?.block?.header?.time,
               proposer_address: block?.block?.header?.proposer_address,
               data: config.crawlBlock.saveRawLog ? block : null,
+              tx_count: block?.block?.data?.txs?.length ?? 0,
             }),
             signatures: block?.block?.last_commit?.signatures.map(
               (signature: CommitSigSDKType) => ({

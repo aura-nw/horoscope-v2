@@ -79,17 +79,12 @@ export default class CrawlTxService extends BullableService {
     endBlock: number
   ): Promise<{ listTx: any; height: number; timestamp: string }[]> {
     const blocks: any[] = await Block.query()
-      .select(
-        'height',
-        'time',
-        knex.raw("\"data\" #>ARRAY['block', 'data', 'txs'] AS txs")
-      )
+      .select('height', 'time', 'tx_count')
       .where('height', '>', startBlock)
       .andWhere('height', '<=', endBlock)
       .orderBy('height', 'asc');
     this.logger.debug(blocks);
     const promises: any[] = [];
-    let blocksInfo: any[] = [];
 
     const getBlockInfo = async (
       height: number,
@@ -112,10 +107,7 @@ export default class CrawlTxService extends BullableService {
       };
     };
 
-    blocksInfo = await Promise.all(
-      blocks.map((block) => getBlockInfo(block.height, block.time, '1', '1'))
-    );
-    blocksInfo.forEach((block) => {
+    blocks.forEach((block) => {
       if (block.tx_count > 0) {
         this.logger.info('crawl tx by height: ', block.height);
         const totalPages = Math.ceil(
@@ -138,7 +130,7 @@ export default class CrawlTxService extends BullableService {
     const resultPromises: any[] = await Promise.all(promises);
 
     const listRawTxs: any[] = [];
-    blocksInfo.forEach((block) => {
+    blocks.forEach((block) => {
       if (block.tx_count > 0) {
         const listTxs: any[] = [];
         resultPromises
@@ -154,7 +146,7 @@ export default class CrawlTxService extends BullableService {
             total_count: block.tx_count,
           },
           height: block.height,
-          timestamp: block.timestamp,
+          timestamp: block.time,
         });
       }
     });
@@ -305,23 +297,6 @@ export default class CrawlTxService extends BullableService {
           this.logger.warn(error);
         }
 
-        // scan list transfer.recipient and wasm.recipient
-        const listAddressReceiver: any[][] = [[]];
-        tx.tx_response?.logs?.forEach((log: any, index: number) => {
-          log.events?.forEach((event: any) => {
-            if (event.type === 'transfer' || event.type === 'wasm') {
-              event.attributes.forEach((attribute: any) => {
-                if (attribute.key === 'recipient') {
-                  listAddressReceiver[index]?.push({
-                    address: attribute.value,
-                    reason: `${event.type}.${attribute.key}`,
-                  });
-                }
-              });
-            }
-          });
-        });
-
         // set index to event
         this.setMsgIndexToEvent(tx);
 
@@ -370,7 +345,6 @@ export default class CrawlTxService extends BullableService {
             index,
             type: message['@type'],
             content: message,
-            receivers: listAddressReceiver[index],
           })),
         };
         listTxModel.push(txInsert);
