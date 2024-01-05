@@ -202,15 +202,8 @@ export default class CrawlIBCIcs20Service extends BullableService {
     if (ics20Acks.length > 0) {
       // update success ack status for origin send ics20
       const acksSuccess = ics20Acks.filter((ack) => {
-        const ackEvents = ack.message.events;
-        if (ackEvents.length !== 2) {
-          throw Error(`Ack ibc hasn't emmitted enough events: ${ack.id}`);
-        }
-        const [success] = ackEvents[1].getAttributesFrom([
-          EventAttribute.ATTRIBUTE_KEY.SUCCESS,
-        ]);
-
-        return success !== undefined;
+        const ackContent = ack.message.content;
+        return 'result' in ackContent.acknowledgement;
       });
       await this.updateOriginSendStatus(
         acksSuccess,
@@ -219,14 +212,8 @@ export default class CrawlIBCIcs20Service extends BullableService {
       );
       // update error ack status for origin send ics20
       const acksError = ics20Acks.filter((ack) => {
-        const ackEvents = ack.message.events;
-        if (ackEvents.length !== 2) {
-          throw Error(`Ack ibc hasn't emmitted enough events: ${ack.id}`);
-        }
-        const [success] = ackEvents[1].getAttributesFrom([
-          EventAttribute.ATTRIBUTE_KEY.SUCCESS,
-        ]);
-        return success === undefined;
+        const ackContent = ack.message.content;
+        return 'error' in ackContent.acknowledgement;
       });
       await this.updateOriginSendStatus(
         acksError,
@@ -294,8 +281,10 @@ export default class CrawlIBCIcs20Service extends BullableService {
         'sequence_key'
       );
       msgs.forEach((msg) => {
-        ibcIcs20sKeyBy[msg.sequence_key].finish_time = msg.timestamp;
-        ibcIcs20sKeyBy[msg.sequence_key].status = type;
+        if (ibcIcs20sKeyBy[msg.sequence_key]) {
+          ibcIcs20sKeyBy[msg.sequence_key].finish_time = msg.timestamp;
+          ibcIcs20sKeyBy[msg.sequence_key].status = type;
+        }
       });
       await IbcIcs20.query()
         .transacting(trx)
