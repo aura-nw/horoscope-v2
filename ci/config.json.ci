@@ -273,5 +273,5 @@
       "millisecondRepeatJob": 600000
     },
     "statementTimeout": 600000
-  },
+  }
 }
