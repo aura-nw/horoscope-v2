@@ -244,5 +244,11 @@
   "jobUpdateSenderInTxMessages": {
     "millisecondCrawl": 1000,
     "blocksPerCall": 1000
+  },
+  "jobCreateConstraintInTransactionPartition": {
+    "jobRepeatCheckNeedCreateConstraint": {
+      "millisecondRepeatJob": 600000
+    },
+    "statementTimeout": 600000
   }
 }
