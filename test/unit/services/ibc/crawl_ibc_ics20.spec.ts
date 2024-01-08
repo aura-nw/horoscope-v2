@@ -58,23 +58,6 @@ export default class CrawlIbcIcs20Test {
           '@type': '/cosmwasm.wasm.v1.MsgExecuteContract',
           funds: [],
           sender: 'aura1uh24g2lc8hvvkaaf7awz25lrh5fptthu2dhq0n',
-          acknowledgement: {
-            result: 'AQ==',
-          },
-        },
-      },
-      {
-        index: 1,
-        type: '/cosmwasm.wasm.v1.MsgExecuteContract',
-        sender: 'aura1uh24g2lc8hvvkaaf7awz25lrh5fptthu2dhq0n',
-        content: {
-          msg: '{"add_mint_phase":{"phase_data":{"start_time":"1679976124941000000","end_time":"1679982024941000000","max_supply":2000,"max_nfts_per_address":20,"price":{"amount":"10","denom":"ueaura"},"is_public":false},"token_id": "test"}}',
-          '@type': '/cosmwasm.wasm.v1.MsgExecuteContract',
-          funds: [],
-          sender: 'aura1uh24g2lc8hvvkaaf7awz25lrh5fptthu2dhq0n',
-          acknowledgement: {
-            error: 'abc',
-          },
         },
       },
     ],
@@ -375,7 +358,7 @@ export default class CrawlIbcIcs20Test {
   async testHandleIcs20AckError() {
     await knex.transaction(async (trx) => {
       const ibcMessage = IbcMessage.fromJson({
-        transaction_message_id: 2,
+        transaction_message_id: 1,
         src_channel_id: 'aaa',
         src_port_id: PORT,
         dst_channel_id: 'cccc',
@@ -661,6 +644,88 @@ export default class CrawlIbcIcs20Test {
         .first()
         .transacting(trx);
       expect(originSend?.status).toEqual(IbcIcs20.STATUS_TYPE.TIMEOUT);
+      expect(originSend?.finish_time).toEqual(
+        new Date(this.transaction.timestamp)
+      );
+      await trx.rollback();
+    });
+  }
+
+  @Test('test sei ack')
+  async testSeiAck() {
+    await knex.transaction(async (trx) => {
+      const seiBlock = Block.fromJson({
+        height: 40000,
+        hash: '8401997745BDD354C8F11CE4A4137237194099E664CD8F83A5FBA9041C43XYZD',
+        time: '2023-01-12T01:53:57.216Z',
+        proposer_address: 'auraomd;cvpio3j4eg',
+        data: {},
+      });
+      const seiAckTx = {
+        ...Transaction.fromJson({
+          height: seiBlock.height,
+          hash: 'A45B0DE950F563553A81360D4782F6EC451F6BEF7AC50E2459D1997FA168997P',
+          codespace: '',
+          code: 0,
+          gas_used: '123035',
+          gas_wanted: '141106',
+          gas_limit: '141106',
+          fee: 353,
+          timestamp: '2023-01-12T01:53:57.000Z',
+          index: 0,
+          data: {
+            tx_response: {
+              logs: [],
+            },
+          },
+        }),
+        messages: [
+          {
+            index: 1,
+            type: '/cosmwasm.wasm.v1.MsgExecuteContract',
+            sender: 'aura1uh24g2lc8hvvkaaf7awz25lrh5fptthu2dhq0n',
+            content: {
+              msg: '{"add_mint_phase":{"phase_data":{"start_time":"1679976124941000000","end_time":"1679982024941000000","max_supply":2000,"max_nfts_per_address":20,"price":{"amount":"10","denom":"ueaura"},"is_public":false},"token_id": "test"}}',
+              '@type': '/cosmwasm.wasm.v1.MsgExecuteContract',
+              funds: [],
+              sender: 'aura1uh24g2lc8hvvkaaf7awz25lrh5fptthu2dhq0n',
+              acknowledgement: {
+                error: 'AQ==',
+              },
+            },
+          },
+        ],
+      };
+      await Block.query().insert(seiBlock).transacting(trx);
+      await Transaction.query().insertGraph(seiAckTx).transacting(trx);
+      const ibcMessage = IbcMessage.fromJson({
+        transaction_message_id: 2,
+        src_channel_id: 'aaa',
+        src_port_id: PORT,
+        dst_channel_id: 'cccc',
+        dst_port_id: 'dddd',
+        type: IbcMessage.EVENT_TYPE.ACKNOWLEDGE_PACKET,
+        sequence: 256,
+        sequence_key: 'hcc',
+        data: {
+          amount: '10000',
+          denom: 'uatom',
+          receiver:
+            '{"autopilot":{"stakeibc":{"stride_address":"stride1e8288j8swfy7rwkyx0h3lz82fe58vz2medxndl","action":"LiquidStake"},"receiver":"stride1e8288j8swfy7rwkyx0h3lz82fe58vz2medxndl"}}',
+          sender: 'cosmos1e8288j8swfy7rwkyx0h3lz82fe58vz2m6xx0en',
+        },
+      });
+      await IbcMessage.query().insert(ibcMessage).transacting(trx);
+      await this.crawlIbcIcs20Serivce.handleIcs20Ack(
+        seiBlock.height - 1,
+        seiBlock.height,
+        trx
+      );
+      const originSend = await IbcIcs20.query()
+        .where('type', IbcMessage.EVENT_TYPE.SEND_PACKET)
+        .first()
+        .transacting(trx);
+      expect(originSend?.status).toEqual(IbcIcs20.STATUS_TYPE.ACK_ERROR);
       expect(originSend?.finish_time).toEqual(
         new Date(this.transaction.timestamp)
       );
