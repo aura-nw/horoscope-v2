@@ -1,6 +1,6 @@
 # Horoscope v2
 
-Horoscope v2 is the next version of Horoscope, an indexing service for Cosmos-based blockchains. 
+Horoscope v2 is the next version of Horoscope, an indexing service for Cosmos-based blockchains.
 It can crawl all blocks and transaction, decode them to readable data, and index them into a Postgres database.
 Based on the indexed data, Horoscope offers a GraphQL API that enables users to efficiently search and retrieve data from the blockchain.
 
@@ -18,6 +18,7 @@ All services are small Node applications written in Typescript, built with [Mole
 The crawler servires utilize [Bull](https://github.com/OptimalBits/bull) for efficient queue management of crawling jobs.
 
 An overview of the architecture is shown below:
+
 ```mermaid
 graph LR
 
@@ -76,6 +77,7 @@ blockchain --> crawl-cosmwasm
 cw721 --> s3
 cw721 --> ipfs
 ```
+
 The API Gateway service is the only service that is exposed to the public.
 All services are stateless and can be scaled horizontally. Crawling jobs are queued in Redis and processed by the crawler services.
 The current state of crawling jobs is stored in the database and can be queried via the GraphQL API.
@@ -83,6 +85,7 @@ The current state of crawling jobs is stored in the database and can be queried 
 ## Services
 
 An incomplete list of services is shown below:
+
 - [**crawl-account**](./docs/services/crawl-account/crawl-account.md): get account auth and its balances
 - [**crawl-block**](./docs/services/crawl-block/crawl-block.md): get block from network and insert to DB
 - [**crawl-transaction**](./docs/services/crawl-transaction/crawl-tx.md): get transaction in a block and decode to readable
@@ -116,6 +119,7 @@ cp .env.example .env
 ```
 
 Start development mode
+
 ```bash
 npm run dev
 ```
@@ -129,9 +133,9 @@ npm run dev
 ## Adding a new chain
 
 Setting up Horoscope for a new chain is straight-forward:
+
 - Add the chain to the `network.json` file
 - Configure the crawling jobs and chain information in the `config.json` file
 - Add the chain to the Hasura metadata (see [Hasura](#hasura) section). For more information about Hasura and how to use Hasura CLI, see the [Hasura documentation](https://hasura.io/docs/latest/graphql/core/index.html). You can remove other chains from the metadata if you don't need them.
 - If the chain has custom messages, you may need to add a new message decoder (see [Message Decoders](#message-decoders) section).
 - Start crawling your chain :fireworks:
-
