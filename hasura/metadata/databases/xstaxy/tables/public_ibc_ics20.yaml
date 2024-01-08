@@ -1,0 +1,36 @@
+table:
+  name: ibc_ics20
+  schema: public
+object_relationships:
+  - name: ibc_channel
+    using:
+      manual_configuration:
+        column_mapping:
+          channel_id: channel_id
+        insertion_order: null
+        remote_table:
+          name: ibc_channel
+          schema: public
+  - name: ibc_message
+    using:
+      foreign_key_constraint_on: ibc_message_id
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - id
+        - ibc_message_id
+        - sender
+        - receiver
+        - amount
+        - denom
+        - status
+        - channel_id
+        - sequence_key
+        - type
+        - memo
+        - start_time
+        - finish_time
+      filter: {}
+      limit: 100
+      allow_aggregations: true
