@@ -682,13 +682,35 @@ export default class CrawlIbcIcs20Test {
         messages: [
           {
             index: 1,
-            type: '/cosmwasm.wasm.v1.MsgExecuteContract',
-            sender: 'aura1uh24g2lc8hvvkaaf7awz25lrh5fptthu2dhq0n',
+            sender: '',
+            type: '/ibc.core.channel.v1.MsgAcknowledgement',
             content: {
-              msg: '{"add_mint_phase":{"phase_data":{"start_time":"1679976124941000000","end_time":"1679982024941000000","max_supply":2000,"max_nfts_per_address":20,"price":{"amount":"10","denom":"ueaura"},"is_public":false},"token_id": "test"}}',
-              '@type': '/cosmwasm.wasm.v1.MsgExecuteContract',
-              funds: [],
-              sender: 'aura1uh24g2lc8hvvkaaf7awz25lrh5fptthu2dhq0n',
+              '@type': '/ibc.core.channel.v1.MsgAcknowledgement',
+              packet: {
+                data: {
+                  denom: 'usei',
+                  amount: '1000000',
+                  sender: 'sei1uqqm8mxd945dl6l94rmcajq84feeuv8wauj9rw',
+                  receiver: 'cosmos1uqqm8mxd945dl6l94rmcajq84feeuv8wssrn90',
+                },
+                sequence: '574',
+                source_port: 'transfer',
+                source_channel: 'channel-1',
+                timeout_height: {
+                  revision_height: '18544467',
+                  revision_number: '4',
+                },
+                destination_port: 'transfer',
+                timeout_timestamp: '0',
+                destination_channel: 'channel-584',
+              },
+              signer: 'sei1ym3rcer9p0cehj380tdp2qfpa6ksvtcf6jhj8g',
+              proof_acked:
+                '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',
+              proof_height: {
+                revision_height: '18544320',
+                revision_number: '4',
+              },
               acknowledgement: {
                 error: 'AQ==',
               },
