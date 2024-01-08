@@ -47,6 +47,7 @@ export const BULL_JOB_NAME = {
   HANDLE_STAKE_EVENT: 'handle:stake-event',
   CRAWL_BLOCK: 'crawl:block',
   HANDLE_TRANSACTION: 'handle:transaction',
+  CRAWL_TRANSACTION: 'crawl:transaction',
   HANDLE_COIN_TRANSFER: 'handle:coin_transfer',
   HANDLE_CW721_TRANSACTION: 'handle:cw721-tx',
   REFRESH_CW721_STATS: 'refresh:cw721-stats',
