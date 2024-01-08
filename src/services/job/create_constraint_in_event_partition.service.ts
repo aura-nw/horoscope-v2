@@ -17,6 +17,12 @@ export default class CreateConstraintInEventPartitionJob extends BullableService
     super(broker);
   }
 
+  public createConstraintEventStatus = {
+    currentPartitionEmpty: 'currentPartitionEmpty',
+    currentPartitionDoneOrInserting: 'currentPartitionDoneOrInserting',
+    constraintUpdated: 'constraintUpdated',
+  };
+
   public insertionStatus = {
     empty: 'empty',
     done: 'done',
@@ -46,9 +52,9 @@ export default class CreateConstraintInEventPartitionJob extends BullableService
       `set statement_timeout to ${config.jobCreateConstraintInEventPartition.statementTimeout}`
     );
     const boundariesResult = await knex.raw(`
-        SELECT
-            min(tx_id) min_tx_id, max(tx_id) max_tx_id, min(block_height) min_height, max(block_height) max_height
-        FROM ${partitionName}`);
+      SELECT
+        min(tx_id) min_tx_id, max(tx_id) max_tx_id, min(block_height) min_height, max(block_height) max_height
+      FROM ${partitionName}`);
 
     return {
       min_tx_id: boundariesResult.rows[0].min_tx_id,
@@ -88,13 +94,13 @@ export default class CreateConstraintInEventPartitionJob extends BullableService
    */
   public async getCurrentConstrainInfo(partitionName: string): Promise<string> {
     const constraintResult = await knex.raw(`
-        SELECT
-            connamespace::regnamespace "schema",
-            conrelid::regclass "table",
-            conname "constraint",
-            pg_get_constraintdef(oid) "definition"
-        FROM pg_constraint
-        WHERE conrelid = '${partitionName}'::regclass and conname like 'event_constraint%'
+      SELECT
+        connamespace::regnamespace "schema",
+        conrelid::regclass "table",
+        conname "constraint",
+        pg_get_constraintdef(oid) "definition"
+      FROM pg_constraint
+      WHERE conrelid = '${partitionName}'::regclass and conname like 'event_ct%'
     `);
     const result = constraintResult.rows.map(
       (constraint: { constraint: string }) => constraint.constraint
@@ -136,10 +142,12 @@ export default class CreateConstraintInEventPartitionJob extends BullableService
       };
     }
 
-    // Naming like constraintName_status, so pop() will get current status of constraint
-    const constraintStatus = currentConstraintName.split('_').pop();
-    // Current done and having full constraint so do nothing
-    if (constraintStatus === this.insertionStatus.done) return null;
+    if (currentConstraintName) {
+      // Naming like constraintName_status, so pop() will get current status of constraint
+      const constraintStatus = currentConstraintName.split('_').pop();
+      // Current done and having full constraint so do nothing
+      if (constraintStatus === this.insertionStatus.done) return null;
+    }
 
     return {
       createConstraint: {
@@ -157,20 +165,20 @@ export default class CreateConstraintInEventPartitionJob extends BullableService
    */
   public async getEventPartitionInfo(): Promise<
     {
-      partitionName: string;
+      name: string;
       fromId: string;
       toId: string;
     }[]
   > {
     const partitionTable = await knex.raw(`
-        SELECT
-            parent.relname AS parent,
-            child.relname AS child,
-            pg_get_expr(child.relpartbound, child.oid) AS bounds
-        FROM pg_inherits
-            JOIN pg_class parent ON pg_inherits.inhparent = parent.oid
-            JOIN pg_class child ON pg_inherits.inhrelid   = child.oid
-        WHERE parent.relname = 'event';
+      SELECT
+        parent.relname AS parent,
+        child.relname AS child,
+        pg_get_expr(child.relpartbound, child.oid) AS bounds
+      FROM pg_inherits
+             JOIN pg_class parent ON pg_inherits.inhparent = parent.oid
+             JOIN pg_class child ON pg_inherits.inhrelid   = child.oid
+      WHERE parent.relname = 'event';
     `);
     return partitionTable.rows.map((partition: any) => {
       const partitionBounds = partition.bounds;
@@ -194,10 +202,10 @@ export default class CreateConstraintInEventPartitionJob extends BullableService
     let checkConstraint: string;
 
     if (toTxId === null) {
-      constraintName = `event_constraint_${this.insertionStatus.inserting}`;
+      constraintName = `event_ct_${partitionName}_${this.insertionStatus.inserting}`;
       checkConstraint = `(tx_id >= ${fromTxId} AND block_height >= ${fromHeight})`;
     } else {
-      constraintName = `event_constraint_${this.insertionStatus.done}`;
+      constraintName = `event_ct_${partitionName}_${this.insertionStatus.done}`;
       checkConstraint = `(tx_id >= ${fromTxId} AND tx_id <= ${toTxId} AND block_height >= ${fromHeight} AND block_height <= ${toHeight})`;
     }
 
@@ -213,16 +221,16 @@ export default class CreateConstraintInEventPartitionJob extends BullableService
       await knex
         .raw(
           `
-        ALTER TABLE ${partitionName}
-        ADD CONSTRAINT ${constraintName} check ${checkConstraint} not valid
-      `
+            ALTER TABLE ${partitionName}
+              ADD CONSTRAINT ${constraintName} check ${checkConstraint} not valid
+          `
         )
         .transacting(trx);
       await knex
         .raw(
           `
-        ALTER TABLE ${partitionName} validate constraint ${constraintName}
-      `
+            ALTER TABLE ${partitionName} validate constraint ${constraintName}
+          `
         )
         .transacting(trx);
       this.logger.info(`Constraint created with name ${constraintName}`);
@@ -237,7 +245,7 @@ export default class CreateConstraintInEventPartitionJob extends BullableService
     name: string;
     fromId: string;
     toId: string;
-  }): Promise<void> {
+  }): Promise<string> {
     const partitionInsertionStatus = await this.getPartitionInsertionInfo(
       _payload.name,
       _payload.toId
@@ -247,7 +255,7 @@ export default class CreateConstraintInEventPartitionJob extends BullableService
         "Current partition is empty, so don't need to create constraint",
         _payload.name
       );
-      return;
+      return this.createConstraintEventStatus.currentPartitionEmpty;
     }
 
     const currentConstraint = await this.getCurrentConstrainInfo(_payload.name);
@@ -262,7 +270,7 @@ export default class CreateConstraintInEventPartitionJob extends BullableService
         "Current partition is not done and already having constraint or already having full constraint, so don't need to create constraint",
         _payload.name
       );
-      return;
+      return this.createConstraintEventStatus.currentPartitionDoneOrInserting;
     }
 
     await this.createConstraint(
@@ -273,6 +281,7 @@ export default class CreateConstraintInEventPartitionJob extends BullableService
       prepareConstraintCreation.createConstraint.toHeight,
       prepareConstraintCreation.dropConstraint
     );
+    return this.createConstraintEventStatus.constraintUpdated;
   }
 
   @QueueHandler({
@@ -281,20 +290,22 @@ export default class CreateConstraintInEventPartitionJob extends BullableService
   })
   public async createConstraintInEventPartition() {
     const listPartition = await this.getEventPartitionInfo();
-    listPartition.forEach((partition: any) => {
-      this.createJob(
-        BULL_JOB_NAME.JOB_CREATE_EVENT_CONSTRAIN,
-        BULL_JOB_NAME.JOB_CREATE_EVENT_CONSTRAIN,
-        partition,
-        {
-          jobId: partition.name,
-          removeOnComplete: true,
-          removeOnFail: {
-            count: 3,
-          },
-        }
-      );
-    });
+    listPartition.forEach(
+      (partition: { name: string; fromId: string; toId: string }) => {
+        this.createJob(
+          BULL_JOB_NAME.JOB_CREATE_EVENT_CONSTRAIN,
+          BULL_JOB_NAME.JOB_CREATE_EVENT_CONSTRAIN,
+          partition,
+          {
+            jobId: partition.name,
+            removeOnComplete: true,
+            removeOnFail: {
+              count: 3,
+            },
+          }
+        );
+      }
+    );
   }
 
   public async _start(): Promise<void> {
