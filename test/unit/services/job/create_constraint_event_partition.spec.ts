@@ -2,23 +2,13 @@ import { BeforeEach, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import knex from '../../../../src/common/utils/db_connection';
 import CreateConstraintInEventPartitionJob from '../../../../src/services/job/create_constraint_in_event_partition.service';
-import { Event } from '../../../../src/models';
+import { insertFakeEventWithInputId } from '../../mock-data/event.mock';
 
 @Describe('Test create constraint for event partition')
 export default class CreateEventConstraintPartitionSpec {
   broker = new ServiceBroker({ logger: false });
 
   createConstraintInEventPartitionJob?: CreateConstraintInEventPartitionJob;
-
-  private async insertFakeEventWithInputId(desiredId: number): Promise<void> {
-    const newEvent = new Event();
-    newEvent.id = desiredId.toString();
-    newEvent.tx_id = 1;
-    newEvent.type = 'transfer';
-    newEvent.block_height = 1;
-    newEvent.source = '1';
-    await Event.query().insert(newEvent);
-  }
 
   private async isConstraintNameExist(
     partitionName: string,
@@ -62,7 +52,7 @@ export default class CreateEventConstraintPartitionSpec {
     );
 
     // After insert one tx, now we expect constraint created
-    await this.insertFakeEventWithInputId(Number(partitions[0].fromId) + 1);
+    await insertFakeEventWithInputId(Number(partitions[0].fromId) + 1, 1, 1);
     const constraintUpdated =
       await this.createConstraintInEventPartitionJob?.createEventConstraint(
         partitions[0]
@@ -81,7 +71,7 @@ export default class CreateEventConstraintPartitionSpec {
     expect(isInsertingConstraintExist).toEqual(true);
 
     // After insert next tx, because id now not reach to max id of partition, and we already have constraint created before, so now status will be still inserting or done
-    await this.insertFakeEventWithInputId(Number(partitions[0].fromId) + 10);
+    await insertFakeEventWithInputId(Number(partitions[0].fromId) + 10, 1, 1);
     const stillInsertingOrDont =
       await this.createConstraintInEventPartitionJob?.createEventConstraint(
         partitions[0]
@@ -92,7 +82,7 @@ export default class CreateEventConstraintPartitionSpec {
     );
 
     // After insert tx with id reach to max id of partition, now partition is ready for create full constraint, constraint now will be updated
-    await this.insertFakeEventWithInputId(Number(partitions[0].toId) - 1);
+    await insertFakeEventWithInputId(Number(partitions[0].toId) - 1, 1, 1);
     const constraintCreatedDone =
       await this.createConstraintInEventPartitionJob?.createEventConstraint(
         partitions[0]

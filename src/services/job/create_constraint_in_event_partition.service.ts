@@ -122,15 +122,25 @@ export default class CreateConstraintInEventPartitionJob extends BullableService
   ): Promise<{ createConstraint: any; dropConstraint: any } | null> {
     // Don't need to create constraint because current partition is empty
     if (insertionStatus === this.insertionStatus.empty) return null;
+    // Current inserting and having constraint so do nothing
+    if (
+      insertionStatus === this.insertionStatus.inserting &&
+      currentConstraintName
+    )
+      return null;
+    // Already has done constraint
+    if (currentConstraintName) {
+      // Naming like constraintName_status, so pop() will get current status of constraint
+      const constraintStatus = currentConstraintName.split('_').pop();
+      // Current done and having full constraint so do nothing
+      if (constraintStatus === this.insertionStatus.done) return null;
+    }
 
     const maxMinTxIdAndBlockHeight = await this.getMaxMinTxIdAndBlhByPartition(
       partitionName
     );
 
     if (insertionStatus === this.insertionStatus.inserting) {
-      // Current inserting and having constraint so do nothing
-      if (currentConstraintName) return null;
-
       return {
         createConstraint: {
           fromTxId: maxMinTxIdAndBlockHeight.min_tx_id,
@@ -140,13 +150,6 @@ export default class CreateConstraintInEventPartitionJob extends BullableService
         },
         dropConstraint: null,
       };
-    }
-
-    if (currentConstraintName) {
-      // Naming like constraintName_status, so pop() will get current status of constraint
-      const constraintStatus = currentConstraintName.split('_').pop();
-      // Current done and having full constraint so do nothing
-      if (constraintStatus === this.insertionStatus.done) return null;
     }
 
     return {

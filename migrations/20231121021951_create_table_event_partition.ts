@@ -26,7 +26,7 @@ export async function up(knex: Knex): Promise<void> {
 
     // Change table name if no data exist on event
     const isExistEventData = await knex.raw(`SELECT * FROM event LIMIT 1`);
-    if (isExistEventData.rows.length === 0) {
+    if (isExistEventData.rows.length === 0 && process.env.NODE_ENV !== 'test') {
       await knex
         .raw('ALTER TABLE event RENAME TO event_backup;')
         .transacting(trx);
