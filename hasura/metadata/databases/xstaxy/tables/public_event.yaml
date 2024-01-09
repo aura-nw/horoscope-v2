@@ -5,6 +5,16 @@ object_relationships:
   - name: block
     using:
       foreign_key_constraint_on: block_height
+  - name: message
+    using:
+      manual_configuration:
+        column_mapping:
+          tx_id: tx_id
+          tx_msg_index: index
+        insertion_order: null
+        remote_table:
+          name: transaction_message
+          schema: public
   - name: transaction
     using:
       foreign_key_constraint_on: tx_id
@@ -41,16 +51,20 @@ array_relationships:
           schema: public
   - name: event_attributes
     using:
-      foreign_key_constraint_on:
-        column: event_id
-        table:
+      manual_configuration:
+        column_mapping:
+          id: event_id
+        insertion_order: null
+        remote_table:
           name: event_attribute
           schema: public
   - name: smart_contract_events
     using:
-      foreign_key_constraint_on:
-        column: event_id
-        table:
+      manual_configuration:
+        column_mapping:
+          id: event_id
+        insertion_order: null
+        remote_table:
           name: smart_contract_event
           schema: public
 select_permissions:

@@ -11,7 +11,13 @@ object_relationships:
           schema: public
   - name: event
     using:
-      foreign_key_constraint_on: event_id
+      manual_configuration:
+        column_mapping:
+          event_id: id
+        insertion_order: null
+        remote_table:
+          name: event
+          schema: public
   - name: smart_contract
     using:
       foreign_key_constraint_on: smart_contract_id
