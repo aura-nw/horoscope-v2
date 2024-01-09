@@ -18,12 +18,12 @@ export default class MigrateDataEventTableJob extends BullableService {
 
   // Create and attach partition for event partition table
   public async createPartitionForEventPartition(
-    startId: string,
-    endId: string
+    startId: number,
+    endId: number
   ): Promise<void> {
     const partitionValueRange = config.migrationEventToPartition.step;
-    let fromValue = Number(startId);
-    const endValue = Number(endId) + partitionValueRange;
+    let fromValue = startId;
+    const endValue = endId + partitionValueRange;
     for (fromValue; fromValue < endValue; fromValue += partitionValueRange) {
       const toValue = fromValue + partitionValueRange;
       const partitionName = `event_partition_${fromValue}_${toValue}`;
@@ -48,10 +48,10 @@ export default class MigrateDataEventTableJob extends BullableService {
 
   // Copy data from old table to new
   public async migrateDataFromEventToEventPartition(
-    startId: string
+    startId: number
   ): Promise<void> {
     let done = false;
-    let currentIdMigrated = Number(startId) - 1;
+    let currentIdMigrated = startId;
     while (!done) {
       this.logger.info(`Latest id migrated: ${currentIdMigrated}`);
       const events = await Event.query()
@@ -108,23 +108,19 @@ export default class MigrateDataEventTableJob extends BullableService {
     jobName: BULL_JOB_NAME.JOB_MIGRATE_DATA_EVENT_TABLE,
   })
   public async migrateEventPartition(): Promise<void> {
-    const startEventIdMigrate = await Event.query()
-      .orderBy('id', 'ASC')
-      .limit(1);
     const currentLatestEventId = await Event.query()
       .orderBy('id', 'DESC')
       .limit(1);
 
-    if (!startEventIdMigrate || !currentLatestEventId) {
+    if (!currentLatestEventId) {
       this.logger.info('Error start job migrate event data', {
-        startEventIdMigrate,
         currentLatestEventId,
       });
       return;
     }
 
-    const startId = startEventIdMigrate[0].id;
-    const endId = currentLatestEventId[0].id;
+    const { startId } = config.migrationEventToPartition;
+    const endId = Number(currentLatestEventId[0].id);
 
     // Create partition for event_partition
     await this.createPartitionForEventPartition(startId, endId);
