@@ -63,6 +63,7 @@ export const BULL_JOB_NAME = {
   JOB_CHECK_NEED_CREATE_EVENT_ATTR_PARTITION:
     'job:check-need-create-event-attr-partition',
   JOB_CREATE_EVENT_ATTR_PARTITION: 'job:create-event-attr-partition',
+  JOB_CREATE_EVENT_PARTITION: 'job:create-event-partition',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
   CRAWL_DAILY_STATISTICS: 'crawl:daily-statistics',
   CRAWL_ACCOUNT_STATISTICS: 'crawl:account-statistics',
@@ -87,6 +88,10 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_CONSTRAINT_IN_ATTR_PARTITION:
     'job:create-constraint-in-attr-partition',
   JOB_CHECK_NEED_CREATE_CONSTRAINT: 'job:check-need-create-constraint',
+  JOB_CHECK_EVENT_CONSTRAINT: 'job:check-need-create-event-constraint',
+  JOB_CREATE_EVENT_CONSTRAIN: 'job:create-event-constraint',
+  JOB_MIGRATE_DATA_EVENT_TABLE: 'job:migrate-data-event-table',
+  CP_MIGRATE_DATA_EVENT_TABLE: 'cp:migrate-data-event-table',
 };
 
 export const SERVICE = {
@@ -239,6 +244,10 @@ export const SERVICE = {
       },
     },
     JobService: {
+      CreateEventPartition: {
+        key: 'CreateEventPartition',
+        path: 'v1.CreateEventPartition',
+      },
       CreateEventAttrPartition: {
         key: 'CreateEventAttrPartition',
         path: 'v1.CreateEventAttrPartition',
@@ -270,6 +279,10 @@ export const SERVICE = {
       CreateConstraintInAttrPartition: {
         key: 'CreateConstraintInAttrPartition',
         path: 'v1.CreateConstraintInAttrPartition',
+      },
+      CreateConstraintInEventPartition: {
+        key: 'CreateConstraintInEventPartition',
+        path: 'v1.CreateConstraintInEventPartition',
       },
     },
     CrawlIBCTaoService: {
