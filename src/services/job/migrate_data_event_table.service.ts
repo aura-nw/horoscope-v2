@@ -5,7 +5,7 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
 import knex from '../../common/utils/db_connection';
 import config from '../../../config.json' assert { type: 'json' };
-import { Event } from '../../models';
+import { BlockCheckpoint, Event } from '../../models';
 
 @Service({
   name: SERVICE.V1.JobService.CreateConstraintInEventPartition.key,
@@ -19,8 +19,10 @@ export default class MigrateDataEventTableJob extends BullableService {
   // Create and attach partition for event partition table
   public async createPartitionForEventPartition(
     startId: number,
-    endId: number
+    endId: number,
+    isPartitionAlreadyCreated: boolean
   ): Promise<void> {
+    if (isPartitionAlreadyCreated) return;
     const partitionValueRange = config.migrationEventToPartition.step;
     let fromValue = startId;
     const endValue = endId + partitionValueRange;
@@ -64,12 +66,24 @@ export default class MigrateDataEventTableJob extends BullableService {
         break;
       }
 
-      await knex.batchInsert(
-        'event_partition',
-        events,
-        config.migrationEventToPartition.chunkSizeInsert
-      );
+      const trx = await knex.transaction();
       currentIdMigrated = Number(events[events.length - 1].id);
+
+      try {
+        await trx.batchInsert(
+          'event_partition',
+          events,
+          config.migrationEventToPartition.chunkSizeInsert
+        );
+        await trx
+          .table('block_checkpoint')
+          .update({ height: currentIdMigrated })
+          .where('job_name', BULL_JOB_NAME.JOB_MIGRATE_DATA_EVENT_TABLE);
+        await trx.commit();
+      } catch (error) {
+        await trx.rollback();
+        this.logger.error(error);
+      }
     }
   }
 
@@ -108,6 +122,22 @@ export default class MigrateDataEventTableJob extends BullableService {
     jobName: BULL_JOB_NAME.JOB_MIGRATE_DATA_EVENT_TABLE,
   })
   public async migrateEventPartition(): Promise<void> {
+    // Checkpoint job
+    const blockCheckpointMigrate = await BlockCheckpoint.query()
+      .where('job_name', BULL_JOB_NAME.JOB_MIGRATE_DATA_EVENT_TABLE)
+      .first();
+    let currentCheckPointJob: BlockCheckpoint;
+
+    if (!blockCheckpointMigrate) {
+      const newBlockCheckPoint = new BlockCheckpoint();
+      newBlockCheckPoint.height = config.migrationEventToPartition.startId;
+      newBlockCheckPoint.job_name = BULL_JOB_NAME.JOB_MIGRATE_DATA_EVENT_TABLE;
+      await BlockCheckpoint.query().insert(newBlockCheckPoint);
+      currentCheckPointJob = newBlockCheckPoint;
+    } else {
+      currentCheckPointJob = blockCheckpointMigrate;
+    }
+
     const currentLatestEventId = await Event.query()
       .orderBy('id', 'DESC')
       .limit(1);
@@ -119,11 +149,15 @@ export default class MigrateDataEventTableJob extends BullableService {
       return;
     }
 
-    const { startId } = config.migrationEventToPartition;
+    const startId = currentCheckPointJob.height;
     const endId = Number(currentLatestEventId[0].id);
 
     // Create partition for event_partition
-    await this.createPartitionForEventPartition(startId, endId);
+    await this.createPartitionForEventPartition(
+      startId,
+      endId,
+      !!blockCheckpointMigrate
+    );
     // Copy data from old table to new
     await this.migrateDataFromEventToEventPartition(startId);
     // Switch name table and drop related foreign key
