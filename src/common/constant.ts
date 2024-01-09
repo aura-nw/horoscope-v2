@@ -91,6 +91,7 @@ export const BULL_JOB_NAME = {
   JOB_CHECK_EVENT_CONSTRAINT: 'job:check-need-create-event-constraint',
   JOB_CREATE_EVENT_CONSTRAIN: 'job:create-event-constraint',
   JOB_MIGRATE_DATA_EVENT_TABLE: 'job:migrate-data-event-table',
+  CP_MIGRATE_DATA_EVENT_TABLE: 'cp:migrate-data-event-table',
 };
 
 export const SERVICE = {

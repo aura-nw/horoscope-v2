@@ -78,7 +78,7 @@ export default class MigrateDataEventTableJob extends BullableService {
         await trx
           .table('block_checkpoint')
           .update({ height: currentIdMigrated })
-          .where('job_name', BULL_JOB_NAME.JOB_MIGRATE_DATA_EVENT_TABLE);
+          .where('job_name', BULL_JOB_NAME.CP_MIGRATE_DATA_EVENT_TABLE);
         await trx.commit();
       } catch (error) {
         await trx.rollback();
@@ -124,14 +124,14 @@ export default class MigrateDataEventTableJob extends BullableService {
   public async migrateEventPartition(): Promise<void> {
     // Checkpoint job
     const blockCheckpointMigrate = await BlockCheckpoint.query()
-      .where('job_name', BULL_JOB_NAME.JOB_MIGRATE_DATA_EVENT_TABLE)
+      .where('job_name', BULL_JOB_NAME.CP_MIGRATE_DATA_EVENT_TABLE)
       .first();
     let currentCheckPointJob: BlockCheckpoint;
 
     if (!blockCheckpointMigrate) {
       const newBlockCheckPoint = new BlockCheckpoint();
       newBlockCheckPoint.height = config.migrationEventToPartition.startId;
-      newBlockCheckPoint.job_name = BULL_JOB_NAME.JOB_MIGRATE_DATA_EVENT_TABLE;
+      newBlockCheckPoint.job_name = BULL_JOB_NAME.CP_MIGRATE_DATA_EVENT_TABLE;
       await BlockCheckpoint.query().insert(newBlockCheckPoint);
       currentCheckPointJob = newBlockCheckPoint;
     } else {
