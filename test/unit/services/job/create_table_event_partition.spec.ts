@@ -1,4 +1,10 @@
-import { AfterAll, BeforeEach, Describe, Test } from '@jest-decorated/core';
+import {
+  AfterAll,
+  BeforeAll,
+  BeforeEach,
+  Describe,
+  Test,
+} from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import knex from '../../../../src/common/utils/db_connection';
 import CreateEventPartitionJob from '../../../../src/services/job/create_event_partition.service';
@@ -10,6 +16,12 @@ export default class CreateTableEventPartitionSpec {
   broker = new ServiceBroker({ logger: false });
 
   createEventPartitionJob?: CreateEventPartitionJob;
+
+  @BeforeAll()
+  async renameEvent(): Promise<void> {
+    await knex.raw('ALTER TABLE event RENAME TO event_backup');
+    await knex.raw('ALTER TABLE event_partition RENAME TO event');
+  }
 
   @BeforeEach()
   async initSuite() {
@@ -100,5 +112,7 @@ export default class CreateTableEventPartitionSpec {
   @AfterAll()
   async tearDown() {
     await knex.raw('TRUNCATE TABLE event RESTART IDENTITY CASCADE');
+    await knex.raw('ALTER TABLE event RENAME TO event_partition');
+    await knex.raw('ALTER TABLE event_backup RENAME TO event');
   }
 }
