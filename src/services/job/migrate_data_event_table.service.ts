@@ -161,7 +161,7 @@ export default class MigrateDataEventTableJob extends BullableService {
     // Copy data from old table to new
     await this.migrateDataFromEventToEventPartition(startId);
     // Switch name table and drop related foreign key
-    await this.switchEventPartitionToEvent();
+    // await this.switchEventPartitionToEvent();
   }
 
   public async _start(): Promise<void> {
