@@ -32,7 +32,7 @@ export default class MigrateDateEventTableSpec {
   @Test('Test create partition and migrate data from event to event partition')
   public async test1() {
     await knex.raw(
-      'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+      'TRUNCATE TABLE block, transaction, event, block_checkpoint RESTART IDENTITY CASCADE'
     );
     await insertFakeBlockWithHeight(1);
     await insertFakeTxWithInputId(1, 1);
@@ -61,7 +61,7 @@ export default class MigrateDateEventTableSpec {
     const oldEvents = await getAllEvent();
     expect(oldEvents.length).toEqual(2);
     await knex.raw(
-      'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+      'TRUNCATE TABLE block, transaction, event, block_checkpoint RESTART IDENTITY CASCADE'
     );
   }
 }
