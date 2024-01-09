@@ -1,0 +1,33 @@
+table:
+  name: view_ibc_channel_detail_statistic
+  schema: public
+object_relationships:
+  - name: block
+    using:
+      foreign_key_constraint_on: block_height
+  - name: message
+    using:
+      manual_configuration:
+        column_mapping:
+          tx_id: tx_id
+          tx_msg_index: index
+        insertion_order: null
+        remote_table:
+          name: transaction_message
+          schema: public
+  - name: transaction
+    using:
+      foreign_key_constraint_on: tx_id
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - channel_id
+        - counterparty_channel_id
+        - denom
+        - type
+        - total_messages
+        - amount
+      filter: {}
+      limit: 100
+      allow_aggregations: true

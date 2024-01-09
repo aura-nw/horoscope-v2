@@ -1,0 +1,14 @@
+table:
+  name: daily_statistics
+  schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - daily_active_addresses
+        - daily_txs
+        - unique_addresses
+        - id
+        - date
+      filter: {}
+      limit: 365

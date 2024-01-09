@@ -1,0 +1,38 @@
+table:
+  name: coin_transfer
+  schema: public
+object_relationships:
+  - name: message
+    using:
+      manual_configuration:
+        column_mapping:
+          tx_msg_id: id
+        insertion_order: null
+        remote_table:
+          name: transaction_message
+          schema: public
+  - name: transaction
+    using:
+      manual_configuration:
+        column_mapping:
+          tx_id: id
+        insertion_order: null
+        remote_table:
+          name: transaction
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - id
+        - block_height
+        - tx_id
+        - tx_msg_id
+        - from
+        - to
+        - amount
+        - denom
+        - timestamp
+        - created_at
+      filter: {}
+      limit: 100

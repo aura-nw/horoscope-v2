@@ -1,0 +1,26 @@
+table:
+  name: ibc_connection
+  schema: public
+object_relationships:
+  - name: ibc_client
+    using:
+      foreign_key_constraint_on: ibc_client_id
+array_relationships:
+  - name: ibc_channels
+    using:
+      foreign_key_constraint_on:
+        column: ibc_connection_id
+        table:
+          name: ibc_channel
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - connection_id
+        - counterparty_client_id
+        - counterparty_connection_id
+        - ibc_client_id
+        - id
+      filter: {}
+      limit: 100

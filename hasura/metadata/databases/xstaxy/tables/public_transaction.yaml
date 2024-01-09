@@ -1,0 +1,133 @@
+table:
+  name: transaction
+  schema: public
+object_relationships:
+  - name: block
+    using:
+      foreign_key_constraint_on: height
+array_relationships:
+  - name: coin_transfers
+    using:
+      manual_configuration:
+        column_mapping:
+          id: tx_id
+        insertion_order: null
+        remote_table:
+          name: coin_transfer
+          schema: public
+  - name: cw20_activities
+    using:
+      manual_configuration:
+        column_mapping:
+          hash: tx_hash
+        insertion_order: null
+        remote_table:
+          name: cw20_activity
+          schema: public
+  - name: cw721_activities
+    using:
+      manual_configuration:
+        column_mapping:
+          hash: tx_hash
+        insertion_order: null
+        remote_table:
+          name: cw721_activity
+          schema: public
+  - name: event_attribute_backups
+    using:
+      foreign_key_constraint_on:
+        column: tx_id
+        table:
+          name: event_attribute_backup
+          schema: public
+  - name: event_attribute_index
+    using:
+      manual_configuration:
+        column_mapping:
+          id: tx_id
+        insertion_order: null
+        remote_table:
+          name: view_event_attribute_value_index
+          schema: public
+  - name: event_attribute_partition_0_1000000s
+    using:
+      foreign_key_constraint_on:
+        column: tx_id
+        table:
+          name: event_attribute_partition_0_1000000
+          schema: public
+  - name: event_attribute_partition_1000000_2000000s
+    using:
+      foreign_key_constraint_on:
+        column: tx_id
+        table:
+          name: event_attribute_partition_1000000_2000000
+          schema: public
+  - name: event_attributes
+    using:
+      foreign_key_constraint_on:
+        column: tx_id
+        table:
+          name: event_attribute
+          schema: public
+  - name: events
+    using:
+      foreign_key_constraint_on:
+        column: tx_id
+        table:
+          name: event
+          schema: public
+  - name: feegrant_histories
+    using:
+      foreign_key_constraint_on:
+        column: tx_id
+        table:
+          name: feegrant_history
+          schema: public
+  - name: feegrants
+    using:
+      foreign_key_constraint_on:
+        column: init_tx_id
+        table:
+          name: feegrant
+          schema: public
+  - name: power_events
+    using:
+      foreign_key_constraint_on:
+        column: tx_id
+        table:
+          name: power_event
+          schema: public
+  - name: transaction_messages
+    using:
+      foreign_key_constraint_on:
+        column: tx_id
+        table:
+          name: transaction_message
+          schema: public
+  - name: votes
+    using:
+      foreign_key_constraint_on:
+        column: tx_id
+        table:
+          name: vote
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - gas_limit
+        - gas_used
+        - gas_wanted
+        - codespace
+        - hash
+        - code
+        - height
+        - id
+        - index
+        - data
+        - fee
+        - memo
+        - timestamp
+      filter: {}
+      limit: 100
