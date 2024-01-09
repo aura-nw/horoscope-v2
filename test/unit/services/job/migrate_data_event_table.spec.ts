@@ -51,7 +51,9 @@ export default class MigrateDateEventTableSpec {
     expect(events.length).toEqual(2);
 
     // Return back to previous state before run this test
-    const dropPartition = listEventPartition?.map((partition) => knex.raw(`DROP TABLE ${partition.name}`));
+    const dropPartition = listEventPartition?.map((partition) =>
+      knex.raw(`DROP TABLE ${partition.name}`)
+    );
     await Promise.any(dropPartition ?? []);
     await knex.raw('ALTER TABLE event rename to event_partition');
     await knex.raw('ALTER TABLE event_backup RENAME TO event');
