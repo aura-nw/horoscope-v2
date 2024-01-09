@@ -187,6 +187,12 @@
     "millisecondCrawl": 10000,
     "templateTable": "event"
   },
+  "jobCreateConstraintInEventPartition": {
+    "jobRepeatCheckNeedCreateConstraint": {
+      "millisecondRepeatJob": 600000
+    },
+    "statementTimeout": 600000
+  },
   "httpBatchRequest": {
     "dispatchMilisecond": 1000,
     "batchSizeLimit": 10
