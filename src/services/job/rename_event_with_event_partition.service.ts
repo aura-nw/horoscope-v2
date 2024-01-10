@@ -1,6 +1,7 @@
 /* eslint-disable no-await-in-loop */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
+import { Queue } from 'bullmq';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
 import knex from '../../common/utils/db_connection';
@@ -76,6 +77,10 @@ export default class RenameEventWithEventPartitionJob extends BullableService {
 
     await this.switchEventPartitionToEvent();
     this.logger.info('Successfully switch table event');
+    const jobQueue = new Queue(BULL_JOB_NAME.JOB_RENAME_EVENT_PARTITION);
+    await jobQueue.removeRepeatable(BULL_JOB_NAME.JOB_RENAME_EVENT_PARTITION, {
+      every: config.jobRenameEventTable.millisecondRepeat,
+    });
   }
 
   public async _start(): Promise<void> {
