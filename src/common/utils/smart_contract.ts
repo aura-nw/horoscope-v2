@@ -25,7 +25,7 @@ export async function getContractActivities(
   const contractActivities: IContractMsgInfo[] = [];
   const wasmEvents = await Event.query()
     .alias('event')
-    .withGraphFetched('[attributes(selectAttribute)]')
+    .withGraphFetched('[attributes(selectAttribute), transaction]')
     .modifiers({
       selectAttribute(builder) {
         builder.select('event_id', 'index', 'key', 'value').orderBy([
