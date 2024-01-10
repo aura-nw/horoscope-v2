@@ -1,9 +1,12 @@
-/* eslint-disable no-await-in-loop */
+import Redis from 'ioredis';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import { Queue } from 'bullmq';
-import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { BULL_JOB_NAME, SERVICE } from '../../common';
+import BullableService, {
+  QueueHandler,
+  DEFAULT_PREFIX,
+} from '../../base/bullable.service';
+import { BULL_JOB_NAME, SERVICE, Config } from '../../common';
 import knex from '../../common/utils/db_connection';
 import { BlockCheckpoint, Event } from '../../models';
 import config from '../../../config.json' assert { type: 'json' };
@@ -40,10 +43,23 @@ export default class RenameEventWithEventPartitionJob extends BullableService {
         `SELECT setval('event_partition_id_seq', ${lastEventId}, true);`
       );
       await trx.commit();
+      this.logger.info('Successfully switch table event');
     } catch (error) {
       trx.rollback();
       this.logger.error(error);
     }
+  }
+
+  private async removeRepeatJob(): Promise<void> {
+    const redisClient = new Redis(Config.QUEUE_JOB_REDIS);
+    const jobQueue = new Queue(BULL_JOB_NAME.JOB_RENAME_EVENT_PARTITION, {
+      prefix: DEFAULT_PREFIX,
+      connection: redisClient,
+    });
+    await jobQueue.removeRepeatable(BULL_JOB_NAME.JOB_RENAME_EVENT_PARTITION, {
+      every: config.jobRenameEventTable.millisecondRepeat,
+    });
+    this.logger.info('Successfully stop repeatable job');
   }
 
   @QueueHandler({
@@ -76,11 +92,7 @@ export default class RenameEventWithEventPartitionJob extends BullableService {
     }
 
     await this.switchEventPartitionToEvent();
-    this.logger.info('Successfully switch table event');
-    const jobQueue = new Queue(BULL_JOB_NAME.JOB_RENAME_EVENT_PARTITION);
-    await jobQueue.removeRepeatable(BULL_JOB_NAME.JOB_RENAME_EVENT_PARTITION, {
-      every: config.jobRenameEventTable.millisecondRepeat,
-    });
+    await this.removeRepeatJob();
   }
 
   public async _start(): Promise<void> {
