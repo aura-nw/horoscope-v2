@@ -2,6 +2,7 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { Knex } from 'knex';
 import { ServiceBroker } from 'moleculer';
 import _ from 'lodash';
+import { createHash } from 'crypto';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
@@ -88,6 +89,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
           sequence_key: msg.sequence_key,
           type: msg.type,
           start_time: msg.timestamp,
+          denom_hash: this.hashDenom(msg.data.denom),
         })
       );
       await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
@@ -169,6 +171,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
           type: msg.type,
           memo,
           finish_time: msg.timestamp,
+          denom_hash: this.hashDenom(denom),
         });
       });
       await IbcIcs20.query().insert(ibcIcs20s).transacting(trx);
@@ -303,6 +306,12 @@ export default class CrawlIBCIcs20Service extends BullableService {
         .onConflict('id')
         .merge();
     }
+  }
+
+  hashDenom(denom: string) {
+    return (
+      `ibc/${  createHash('sha256').update(denom).digest('hex').toUpperCase()}`
+    );
   }
 
   async _start(): Promise<void> {
