@@ -179,6 +179,9 @@
     "millisecondCrawl": 10000,
     "templateTable": "event"
   },
+  "jobRenameEventTable": {
+    "millisecondRepeat": 10000
+  },
   "httpBatchRequest": {
     "dispatchMilisecond": 1000,
     "batchSizeLimit": 10
