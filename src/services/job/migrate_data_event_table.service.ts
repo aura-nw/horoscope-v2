@@ -8,7 +8,7 @@ import config from '../../../config.json' assert { type: 'json' };
 import { BlockCheckpoint, Event } from '../../models';
 
 @Service({
-  name: SERVICE.V1.JobService.CreateConstraintInEventPartition.key,
+  name: SERVICE.V1.JobService.MigrateDataEventTable.key,
   version: 1,
 })
 export default class MigrateDataEventTableJob extends BullableService {
