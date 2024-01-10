@@ -22,6 +22,8 @@ export class SmartContractEvent extends BaseModel {
 
   index!: number;
 
+  tx_id!: number;
+
   static get tableName() {
     return 'smart_contract_event';
   }
@@ -33,6 +35,7 @@ export class SmartContractEvent extends BaseModel {
         smart_contract_id: { type: 'number' },
         event_id: { type: 'number' },
         index: { type: 'number' },
+        tx_id: { type: 'number' },
       },
     };
   }
