@@ -30,8 +30,9 @@
     "saveRawLog": false
   },
   "crawlTransaction": {
+    "key": "crawlTransaction",
     "millisecondCrawl": 1000,
-    "numberOfBlockPerCall": 100,
+    "blocksPerCall": 100,
     "chunkSize": 1000
   },
   "handleCoinTransfer": {

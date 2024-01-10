@@ -18,13 +18,7 @@ import {
   getLcdClient,
   SERVICE,
 } from '../../common';
-import {
-  Block,
-  BlockCheckpoint,
-  Event,
-  Transaction,
-  TransactionMessage,
-} from '../../models';
+import { Block, BlockCheckpoint, Event, Transaction } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
@@ -53,7 +47,7 @@ export default class CrawlTxService extends BullableService {
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.CRAWL_TRANSACTION,
         [BULL_JOB_NAME.CRAWL_BLOCK],
-        config.handleTransaction.key
+        config.crawlTransaction.key
       );
 
     this.logger.info(
@@ -411,6 +405,22 @@ export default class CrawlTxService extends BullableService {
       listTx.forEach((tx: any) => {
         this.logger.debug(tx, timestamp);
 
+        let sender = '';
+        try {
+          sender = this._registry.decodeAttribute(
+            this._findAttribute(
+              tx.tx_response.events,
+              'message',
+              this._registry.encodeAttribute('sender')
+            )
+          );
+        } catch (error) {
+          this.logger.warn(
+            'txhash not has sender event: ',
+            tx.tx_response.txhash
+          );
+        }
+
         const txInsert = {
           ...Transaction.fromJson({
             index: tx.tx_response.index,
@@ -426,17 +436,21 @@ export default class CrawlTxService extends BullableService {
             data: config.handleTransaction.saveRawLog ? tx : null,
             memo: tx.tx.body.memo,
           }),
+          messages: tx.tx.body.messages.map((message: any, index: any) => ({
+            sender,
+            index,
+            type: message['@type'],
+            content: message,
+          })),
         };
         listTxModel.push(txInsert);
       });
     });
 
     if (listTxModel.length) {
-      const resultInsert = await transactionDB.batchInsert(
-        Transaction.tableName,
-        listTxModel,
-        config.crawlTransaction.chunkSize
-      );
+      const resultInsert = await Transaction.query()
+        .insertGraph(listTxModel)
+        .transacting(transactionDB);
       this.logger.debug('result insert tx', resultInsert);
     }
   }
@@ -448,25 +462,8 @@ export default class CrawlTxService extends BullableService {
   ) {
     this.logger.debug(listDecodedTx);
     const listEventModel: any[] = [];
-    const listMsgModel: any[] = [];
     listDecodedTx.forEach((tx) => {
       const rawLogTx = tx.data;
-      let sender = '';
-      try {
-        sender = this._registry.decodeAttribute(
-          this._findAttribute(
-            rawLogTx.tx_response.events,
-            'message',
-            this._registry.encodeAttribute('sender')
-          )
-        );
-      } catch (error) {
-        this.logger.debug(
-          'txhash not has sender event: ',
-          rawLogTx.tx_response.txhash
-        );
-        // this.logger.warn(error);
-      }
 
       // set index to event
       this.setMsgIndexToEvent(rawLogTx);
@@ -495,16 +492,7 @@ export default class CrawlTxService extends BullableService {
           block_height: tx.height,
           source: Event.SOURCE.TX_EVENT,
         })) ?? [];
-      const msgInsert =
-        rawLogTx.tx.body.messages.map((message: any, index: any) => ({
-          tx_id: tx.id,
-          sender,
-          index,
-          type: message['@type'],
-          content: message,
-        })) ?? [];
       listEventModel.push(...eventInsert);
-      listMsgModel.push(...msgInsert);
     });
 
     if (listEventModel.length) {
@@ -512,12 +500,6 @@ export default class CrawlTxService extends BullableService {
         .insertGraph(listEventModel, { allowRefs: true })
         .transacting(transactionDB);
       this.logger.debug('result insert events:', resultInsertEvents);
-    }
-    if (listMsgModel.length) {
-      const resultInsertMsgs = await TransactionMessage.query()
-        .insert(listMsgModel)
-        .transacting(transactionDB);
-      this.logger.debug('result insert messages:', resultInsertMsgs);
     }
   }
 
