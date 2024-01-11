@@ -298,5 +298,15 @@
     "key": "jobUpdateTxCountInBlock",
     "millisecondCrawl": 1000,
     "blocksPerCall": 100
+  },
+  "uploadBlockRawLogToS3": {
+    "key": "uploadBlockRawLogToS3",
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 100
+  },
+  "uploadTransactionRawLogToS3": {
+    "key": "uploadTransactionRawLogToS3",
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 100
   }
 }

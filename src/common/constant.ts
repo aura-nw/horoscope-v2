@@ -121,6 +121,7 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_TRANSACTION_MESSAGE_CONSTRAINT:
     'job:create-transaction-message-constraint',
   JOB_UPDATE_TX_COUNT_IN_BLOCK: 'job:update-tx-count-in-block',
+  UPLOAD_BLOCK_RAW_LOG_TO_S3: 'job:upload-block-raw-log-to-s3',
 };
 
 export const SERVICE = {
@@ -405,6 +406,10 @@ export const SERVICE = {
         key: 'getData',
         path: 'v1.HoroscopeHandlerService.getData',
       },
+    },
+    UploadBlockRawLogToS3: {
+      key: 'UploadBlockRawLogToS3',
+      path: 'v1.UploadBlockRawLogToS3',
     },
   },
 };
