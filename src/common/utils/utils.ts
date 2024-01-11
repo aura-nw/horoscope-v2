@@ -1,6 +1,7 @@
 import { fromBech32 } from '@cosmjs/encoding';
 import _ from 'lodash';
 import { SemVer } from 'semver';
+import AWS from 'aws-sdk';
 
 export default class Utils {
   public static isValidAddress(address: string, length = -1) {
@@ -214,5 +215,52 @@ export default class Utils {
   public static compareVersion(version1: string, version2: string) {
     const semver = new SemVer(version1);
     return semver.compare(version2);
+  }
+
+  public static async uploadDataToS3(
+    id: string,
+    s3Client: AWS.S3,
+    fileName: string,
+    contentType: string,
+    data: Buffer,
+    bucketName: string,
+    s3Gateway: string,
+    overwrite = false
+  ) {
+    const foundS3Object = await s3Client
+      .headObject({
+        Bucket: bucketName,
+        Key: fileName,
+      })
+      .promise()
+      .catch((err) => {
+        if (err.name === 'NotFound') {
+          return null;
+        }
+        console.error(err);
+        return err;
+      });
+    if (foundS3Object && !overwrite) {
+      return;
+    }
+
+    // eslint-disable-next-line consistent-return
+    return s3Client
+      .upload({
+        Key: fileName,
+        Body: data,
+        Bucket: bucketName,
+        ContentType: contentType,
+      })
+      .promise()
+      .then(
+        (response: { Location: string; Key: string }) => ({
+          key: s3Gateway ? s3Gateway + response.Key : response.Key,
+          id,
+        }),
+        (err: string) => {
+          throw new Error(err);
+        }
+      );
   }
 }

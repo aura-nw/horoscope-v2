@@ -107,6 +107,7 @@ export const BULL_JOB_NAME = {
   JOB_CHECK_NEED_CREATE_CONSTRAINT: 'job:check-need-create-constraint',
   JOB_CHECK_EVENT_CONSTRAINT: 'job:check-need-create-event-constraint',
   JOB_CREATE_EVENT_CONSTRAIN: 'job:create-event-constraint',
+  UPLOAD_BLOCK_RAW_LOG_TO_S3: 'job:upload-block-raw-log-to-s3',
 };
 
 export const SERVICE = {
@@ -371,6 +372,10 @@ export const SERVICE = {
         key: 'getData',
         path: 'v1.HoroscopeHandlerService.getData',
       },
+    },
+    UploadBlockRawLogToS3: {
+      key: 'UploadBlockRawLogToS3',
+      path: 'v1.UploadBlockRawLogToS3',
     },
   },
 };
