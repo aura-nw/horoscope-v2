@@ -73,6 +73,7 @@ export default class RenameEventWithEventPartitionJob extends BullableService {
       WHERE inhparent = 'event'::regclass;
     `);
     if (eventPartitionCount.rows[0].partition_count > 0) {
+      await this.removeRepeatJob();
       this.logger.info('Event already partitioned');
       return;
     }
