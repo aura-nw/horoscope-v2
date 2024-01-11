@@ -112,6 +112,7 @@ export const BULL_JOB_NAME = {
   JOB_RENAME_EVENT_PARTITION: 'job:rename-event-partition',
   CP_MIGRATE_DATA_EVENT_TABLE: 'cp:migrate-data-event-table',
   JOB_CREATE_TRANSACTION_CONSTRAINT: 'job:create-transaction-constraint',
+  UPLOAD_BLOCK_RAW_LOG_TO_S3: 'job:upload-block-raw-log-to-s3',
 };
 
 export const SERVICE = {
@@ -384,6 +385,10 @@ export const SERVICE = {
         key: 'getData',
         path: 'v1.HoroscopeHandlerService.getData',
       },
+    },
+    UploadBlockRawLogToS3: {
+      key: 'UploadBlockRawLogToS3',
+      path: 'v1.UploadBlockRawLogToS3',
     },
   },
 };
