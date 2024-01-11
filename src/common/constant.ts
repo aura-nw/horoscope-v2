@@ -91,6 +91,7 @@ export const BULL_JOB_NAME = {
   JOB_CHECK_EVENT_CONSTRAINT: 'job:check-need-create-event-constraint',
   JOB_CREATE_EVENT_CONSTRAIN: 'job:create-event-constraint',
   JOB_MIGRATE_DATA_EVENT_TABLE: 'job:migrate-data-event-table',
+  JOB_RENAME_EVENT_PARTITION: 'job:rename-event-partition',
   CP_MIGRATE_DATA_EVENT_TABLE: 'cp:migrate-data-event-table',
 };
 
@@ -283,6 +284,14 @@ export const SERVICE = {
       CreateConstraintInEventPartition: {
         key: 'CreateConstraintInEventPartition',
         path: 'v1.CreateConstraintInEventPartition',
+      },
+      MigrateDataEventTable: {
+        key: 'MigrateDataEventTable',
+        path: 'v1.MigrateDataEventTable',
+      },
+      RenameEventPartitionToEvent: {
+        key: 'RenameEventPartitionToEvent',
+        path: 'v1.RenameEventPartitionToEvent',
       },
     },
     CrawlIBCTaoService: {
