@@ -86,6 +86,7 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_CONSTRAINT_IN_ATTR_PARTITION:
     'job:create-constraint-in-attr-partition',
   JOB_CHECK_NEED_CREATE_CONSTRAINT: 'job:check-need-create-constraint',
+  UPLOAD_BLOCK_RAW_LOG_TO_S3: 'job:upload-block-raw-log-to-s3',
 };
 
 export const SERVICE = {
@@ -322,6 +323,10 @@ export const SERVICE = {
         key: 'HealthCheck',
         path: 'v1.ServicesManager.HealthCheck',
       },
+    },
+    UploadBlockRawLogToS3: {
+      key: 'UploadBlockRawLogToS3',
+      path: 'v1.UploadBlockRawLogToS3',
     },
   },
 };
