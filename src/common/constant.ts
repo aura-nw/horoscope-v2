@@ -121,6 +121,7 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_TRANSACTION_MESSAGE_CONSTRAINT:
     'job:create-transaction-message-constraint',
   JOB_UPDATE_TX_COUNT_IN_BLOCK: 'job:update-tx-count-in-block',
+  JOB_UPDATE_ASSETS: 'job:update-assets',
 };
 
 export const SERVICE = {
@@ -344,6 +345,10 @@ export const SERVICE = {
       UpdateTxCountInBlock: {
         key: 'UpdateTxCountInBlock',
         path: 'v1.UpdateTxCountInBlock',
+      },
+      UpdateAssets: {
+        key: 'UpdateAssets',
+        path: 'v1.UpdateAssets',
       },
     },
     CrawlIBCTaoService: {
