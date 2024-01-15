@@ -1,0 +1,2857 @@
+{
+  "txs": [
+    {
+      "hash": "453D8C381F361CF649AB79AA6BEF513642E3A4833564555D38BBA52B98C9B465",
+      "height": "3936688",
+      "index": 0,
+      "tx_result": {
+        "code": 0,
+        "data": "EkkKJS9jb3Ntb3MuYXV0aHoudjFiZXRhMS5Nc2dFeGVjUmVzcG9uc2USIAoACgAKAAoACgAKAAoACgAKAAoACgAKAAoACgAKAAoA",
+        "log": "[{\"msg_index\":0,\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/cosmos.authz.v1beta1.MsgExec\"},{\"key\":\"sender\",\"value\":\"aura194ytn50yhh67rdha8akhs7c6zulnz4n2jp7pw6\"},{\"key\":\"module\",\"value\":\"authz\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"43uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"0\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1q93xkwtfv7nut0eqjjws377wkjk97265zsxlx6\"},{\"key\":\"amount\",\"value\":\"43uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"0\"}]},{\"type\":\"transfer\",\"attributes\":[{\"key\":\"recipient\",\"value\":\"aura1q93xkwtfv7nut0eqjjws377wkjk97265zsxlx6\"},{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"43uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"0\"}]},{\"type\":\"message\",\"attributes\":[{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"authz_msg_index\",\"value\":\"0\"}]},{\"type\":\"withdraw_rewards\",\"attributes\":[{\"key\":\"amount\",\"value\":\"43uaura\"},{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"delegator\",\"value\":\"aura1q93xkwtfv7nut0eqjjws377wkjk97265zsxlx6\"},{\"key\":\"authz_msg_index\",\"value\":\"0\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1q93xkwtfv7nut0eqjjws377wkjk97265zsxlx6\"},{\"key\":\"amount\",\"value\":\"40uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"0\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw\"},{\"key\":\"amount\",\"value\":\"40uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"0\"}]},{\"type\":\"delegate\",\"attributes\":[{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"amount\",\"value\":\"40uaura\"},{\"key\":\"new_shares\",\"value\":\"40.000000000000000000\"},{\"key\":\"authz_msg_index\",\"value\":\"0\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"3656uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"1\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1fwtkqe4yp652svrj5lzdu9lnykysh947msc4xq\"},{\"key\":\"amount\",\"value\":\"3656uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"1\"}]},{\"type\":\"transfer\",\"attributes\":[{\"key\":\"recipient\",\"value\":\"aura1fwtkqe4yp652svrj5lzdu9lnykysh947msc4xq\"},{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"3656uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"1\"}]},{\"type\":\"message\",\"attributes\":[{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"authz_msg_index\",\"value\":\"1\"}]},{\"type\":\"withdraw_rewards\",\"attributes\":[{\"key\":\"amount\",\"value\":\"3656uaura\"},{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"delegator\",\"value\":\"aura1fwtkqe4yp652svrj5lzdu9lnykysh947msc4xq\"},{\"key\":\"authz_msg_index\",\"value\":\"1\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1fwtkqe4yp652svrj5lzdu9lnykysh947msc4xq\"},{\"key\":\"amount\",\"value\":\"3459uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"1\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw\"},{\"key\":\"amount\",\"value\":\"3459uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"1\"}]},{\"type\":\"delegate\",\"attributes\":[{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"amount\",\"value\":\"3459uaura\"},{\"key\":\"new_shares\",\"value\":\"3459.000000000000000000\"},{\"key\":\"authz_msg_index\",\"value\":\"1\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"1234uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"2\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura12d5gtpxfqtwk79nkajmrzqsvap6944y9d43vl8\"},{\"key\":\"amount\",\"value\":\"1234uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"2\"}]},{\"type\":\"transfer\",\"attributes\":[{\"key\":\"recipient\",\"value\":\"aura12d5gtpxfqtwk79nkajmrzqsvap6944y9d43vl8\"},{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"1234uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"2\"}]},{\"type\":\"message\",\"attributes\":[{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"authz_msg_index\",\"value\":\"2\"}]},{\"type\":\"withdraw_rewards\",\"attributes\":[{\"key\":\"amount\",\"value\":\"1234uaura\"},{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"delegator\",\"value\":\"aura12d5gtpxfqtwk79nkajmrzqsvap6944y9d43vl8\"},{\"key\":\"authz_msg_index\",\"value\":\"2\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura12d5gtpxfqtwk79nkajmrzqsvap6944y9d43vl8\"},{\"key\":\"amount\",\"value\":\"1168uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"2\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw\"},{\"key\":\"amount\",\"value\":\"1168uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"2\"}]},{\"type\":\"delegate\",\"attributes\":[{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"amount\",\"value\":\"1168uaura\"},{\"key\":\"new_shares\",\"value\":\"1168.000000000000000000\"},{\"key\":\"authz_msg_index\",\"value\":\"2\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"12uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"3\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1vhvn7zkv592jjlnhjk28crgdsal25wnq6zddty\"},{\"key\":\"amount\",\"value\":\"12uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"3\"}]},{\"type\":\"transfer\",\"attributes\":[{\"key\":\"recipient\",\"value\":\"aura1vhvn7zkv592jjlnhjk28crgdsal25wnq6zddty\"},{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"12uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"3\"}]},{\"type\":\"message\",\"attributes\":[{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"authz_msg_index\",\"value\":\"3\"}]},{\"type\":\"withdraw_rewards\",\"attributes\":[{\"key\":\"amount\",\"value\":\"12uaura\"},{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"delegator\",\"value\":\"aura1vhvn7zkv592jjlnhjk28crgdsal25wnq6zddty\"},{\"key\":\"authz_msg_index\",\"value\":\"3\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1vhvn7zkv592jjlnhjk28crgdsal25wnq6zddty\"},{\"key\":\"amount\",\"value\":\"11uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"3\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw\"},{\"key\":\"amount\",\"value\":\"11uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"3\"}]},{\"type\":\"delegate\",\"attributes\":[{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"amount\",\"value\":\"11uaura\"},{\"key\":\"new_shares\",\"value\":\"11.000000000000000000\"},{\"key\":\"authz_msg_index\",\"value\":\"3\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"8310uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"4\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1yj20gu7yr9nhlq3xrg7lseuzpxnlj9qqfuw3jm\"},{\"key\":\"amount\",\"value\":\"8310uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"4\"}]},{\"type\":\"transfer\",\"attributes\":[{\"key\":\"recipient\",\"value\":\"aura1yj20gu7yr9nhlq3xrg7lseuzpxnlj9qqfuw3jm\"},{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"8310uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"4\"}]},{\"type\":\"message\",\"attributes\":[{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"authz_msg_index\",\"value\":\"4\"}]},{\"type\":\"withdraw_rewards\",\"attributes\":[{\"key\":\"amount\",\"value\":\"8310uaura\"},{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"delegator\",\"value\":\"aura1yj20gu7yr9nhlq3xrg7lseuzpxnlj9qqfuw3jm\"},{\"key\":\"authz_msg_index\",\"value\":\"4\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1yj20gu7yr9nhlq3xrg7lseuzpxnlj9qqfuw3jm\"},{\"key\":\"amount\",\"value\":\"7861uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"4\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw\"},{\"key\":\"amount\",\"value\":\"7861uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"4\"}]},{\"type\":\"delegate\",\"attributes\":[{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"amount\",\"value\":\"7861uaura\"},{\"key\":\"new_shares\",\"value\":\"7861.000000000000000000\"},{\"key\":\"authz_msg_index\",\"value\":\"4\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"1uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"5\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1f3qxww8pnx0xrea7e03ffxnlau0fk5ufs3v0zj\"},{\"key\":\"amount\",\"value\":\"1uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"5\"}]},{\"type\":\"transfer\",\"attributes\":[{\"key\":\"recipient\",\"value\":\"aura1f3qxww8pnx0xrea7e03ffxnlau0fk5ufs3v0zj\"},{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"1uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"5\"}]},{\"type\":\"message\",\"attributes\":[{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"authz_msg_index\",\"value\":\"5\"}]},{\"type\":\"withdraw_rewards\",\"attributes\":[{\"key\":\"amount\",\"value\":\"1uaura\"},{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"delegator\",\"value\":\"aura1f3qxww8pnx0xrea7e03ffxnlau0fk5ufs3v0zj\"},{\"key\":\"authz_msg_index\",\"value\":\"5\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1f3qxww8pnx0xrea7e03ffxnlau0fk5ufs3v0zj\"},{\"key\":\"amount\",\"value\":\"1uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"5\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw\"},{\"key\":\"amount\",\"value\":\"1uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"5\"}]},{\"type\":\"delegate\",\"attributes\":[{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"amount\",\"value\":\"1uaura\"},{\"key\":\"new_shares\",\"value\":\"1.000000000000000000\"},{\"key\":\"authz_msg_index\",\"value\":\"5\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"5108uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"6\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1rqll2d4wyylvl03ht6mhglswj46gkcr3ksvkm7\"},{\"key\":\"amount\",\"value\":\"5108uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"6\"}]},{\"type\":\"transfer\",\"attributes\":[{\"key\":\"recipient\",\"value\":\"aura1rqll2d4wyylvl03ht6mhglswj46gkcr3ksvkm7\"},{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"5108uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"6\"}]},{\"type\":\"message\",\"attributes\":[{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"authz_msg_index\",\"value\":\"6\"}]},{\"type\":\"withdraw_rewards\",\"attributes\":[{\"key\":\"amount\",\"value\":\"5108uaura\"},{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"delegator\",\"value\":\"aura1rqll2d4wyylvl03ht6mhglswj46gkcr3ksvkm7\"},{\"key\":\"authz_msg_index\",\"value\":\"6\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1rqll2d4wyylvl03ht6mhglswj46gkcr3ksvkm7\"},{\"key\":\"amount\",\"value\":\"4832uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"6\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw\"},{\"key\":\"amount\",\"value\":\"4832uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"6\"}]},{\"type\":\"delegate\",\"attributes\":[{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"amount\",\"value\":\"4832uaura\"},{\"key\":\"new_shares\",\"value\":\"4832.000000000000000000\"},{\"key\":\"authz_msg_index\",\"value\":\"6\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"1234uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"7\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1q85eskmkjejtahw8zyvfsu44swvjumj5szrcya\"},{\"key\":\"amount\",\"value\":\"1234uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"7\"}]},{\"type\":\"transfer\",\"attributes\":[{\"key\":\"recipient\",\"value\":\"aura1q85eskmkjejtahw8zyvfsu44swvjumj5szrcya\"},{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"1234uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"7\"}]},{\"type\":\"message\",\"attributes\":[{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"authz_msg_index\",\"value\":\"7\"}]},{\"type\":\"withdraw_rewards\",\"attributes\":[{\"key\":\"amount\",\"value\":\"1234uaura\"},{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"delegator\",\"value\":\"aura1q85eskmkjejtahw8zyvfsu44swvjumj5szrcya\"},{\"key\":\"authz_msg_index\",\"value\":\"7\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1q85eskmkjejtahw8zyvfsu44swvjumj5szrcya\"},{\"key\":\"amount\",\"value\":\"1168uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"7\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw\"},{\"key\":\"amount\",\"value\":\"1168uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"7\"}]},{\"type\":\"delegate\",\"attributes\":[{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"amount\",\"value\":\"1168uaura\"},{\"key\":\"new_shares\",\"value\":\"1168.000000000000000000\"},{\"key\":\"authz_msg_index\",\"value\":\"7\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"3950uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"8\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1xk6nnn0gen9n9fduz0t3twyzt8c2uzedy2545a\"},{\"key\":\"amount\",\"value\":\"3950uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"8\"}]},{\"type\":\"transfer\",\"attributes\":[{\"key\":\"recipient\",\"value\":\"aura1xk6nnn0gen9n9fduz0t3twyzt8c2uzedy2545a\"},{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"3950uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"8\"}]},{\"type\":\"message\",\"attributes\":[{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"authz_msg_index\",\"value\":\"8\"}]},{\"type\":\"withdraw_rewards\",\"attributes\":[{\"key\":\"amount\",\"value\":\"3950uaura\"},{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"delegator\",\"value\":\"aura1xk6nnn0gen9n9fduz0t3twyzt8c2uzedy2545a\"},{\"key\":\"authz_msg_index\",\"value\":\"8\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1xk6nnn0gen9n9fduz0t3twyzt8c2uzedy2545a\"},{\"key\":\"amount\",\"value\":\"3736uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"8\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw\"},{\"key\":\"amount\",\"value\":\"3736uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"8\"}]},{\"type\":\"delegate\",\"attributes\":[{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"amount\",\"value\":\"3736uaura\"},{\"key\":\"new_shares\",\"value\":\"3736.000000000000000000\"},{\"key\":\"authz_msg_index\",\"value\":\"8\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"5948uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"9\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura162x2llsxzxmavtyuxjesceewmy4wvrp79ndcrw\"},{\"key\":\"amount\",\"value\":\"5948uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"9\"}]},{\"type\":\"transfer\",\"attributes\":[{\"key\":\"recipient\",\"value\":\"aura162x2llsxzxmavtyuxjesceewmy4wvrp79ndcrw\"},{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"5948uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"9\"}]},{\"type\":\"message\",\"attributes\":[{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"authz_msg_index\",\"value\":\"9\"}]},{\"type\":\"withdraw_rewards\",\"attributes\":[{\"key\":\"amount\",\"value\":\"5948uaura\"},{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"delegator\",\"value\":\"aura162x2llsxzxmavtyuxjesceewmy4wvrp79ndcrw\"},{\"key\":\"authz_msg_index\",\"value\":\"9\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura162x2llsxzxmavtyuxjesceewmy4wvrp79ndcrw\"},{\"key\":\"amount\",\"value\":\"5627uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"9\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw\"},{\"key\":\"amount\",\"value\":\"5627uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"9\"}]},{\"type\":\"delegate\",\"attributes\":[{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"amount\",\"value\":\"5627uaura\"},{\"key\":\"new_shares\",\"value\":\"5627.000000000000000000\"},{\"key\":\"authz_msg_index\",\"value\":\"9\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"1236uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"10\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1e354r77wuw0zuy9kjy0ah5dss80jhcq28hue2p\"},{\"key\":\"amount\",\"value\":\"1236uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"10\"}]},{\"type\":\"transfer\",\"attributes\":[{\"key\":\"recipient\",\"value\":\"aura1e354r77wuw0zuy9kjy0ah5dss80jhcq28hue2p\"},{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"1236uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"10\"}]},{\"type\":\"message\",\"attributes\":[{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"authz_msg_index\",\"value\":\"10\"}]},{\"type\":\"withdraw_rewards\",\"attributes\":[{\"key\":\"amount\",\"value\":\"1236uaura\"},{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"delegator\",\"value\":\"aura1e354r77wuw0zuy9kjy0ah5dss80jhcq28hue2p\"},{\"key\":\"authz_msg_index\",\"value\":\"10\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1e354r77wuw0zuy9kjy0ah5dss80jhcq28hue2p\"},{\"key\":\"amount\",\"value\":\"1169uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"10\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw\"},{\"key\":\"amount\",\"value\":\"1169uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"10\"}]},{\"type\":\"delegate\",\"attributes\":[{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"amount\",\"value\":\"1169uaura\"},{\"key\":\"new_shares\",\"value\":\"1169.000000000000000000\"},{\"key\":\"authz_msg_index\",\"value\":\"10\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"218uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"11\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1ujv2gmfwrwzj504ntggqld0q5euafp76vgx5lj\"},{\"key\":\"amount\",\"value\":\"218uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"11\"}]},{\"type\":\"transfer\",\"attributes\":[{\"key\":\"recipient\",\"value\":\"aura1ujv2gmfwrwzj504ntggqld0q5euafp76vgx5lj\"},{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"218uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"11\"}]},{\"type\":\"message\",\"attributes\":[{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"authz_msg_index\",\"value\":\"11\"}]},{\"type\":\"withdraw_rewards\",\"attributes\":[{\"key\":\"amount\",\"value\":\"218uaura\"},{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"delegator\",\"value\":\"aura1ujv2gmfwrwzj504ntggqld0q5euafp76vgx5lj\"},{\"key\":\"authz_msg_index\",\"value\":\"11\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1ujv2gmfwrwzj504ntggqld0q5euafp76vgx5lj\"},{\"key\":\"amount\",\"value\":\"206uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"11\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw\"},{\"key\":\"amount\",\"value\":\"206uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"11\"}]},{\"type\":\"delegate\",\"attributes\":[{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"amount\",\"value\":\"206uaura\"},{\"key\":\"new_shares\",\"value\":\"206.000000000000000000\"},{\"key\":\"authz_msg_index\",\"value\":\"11\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"299uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"12\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1j6kwc05lw0p8e08ce3r5z5qlygjzu0aq095scc\"},{\"key\":\"amount\",\"value\":\"299uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"12\"}]},{\"type\":\"transfer\",\"attributes\":[{\"key\":\"recipient\",\"value\":\"aura1j6kwc05lw0p8e08ce3r5z5qlygjzu0aq095scc\"},{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"299uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"12\"}]},{\"type\":\"message\",\"attributes\":[{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"authz_msg_index\",\"value\":\"12\"}]},{\"type\":\"withdraw_rewards\",\"attributes\":[{\"key\":\"amount\",\"value\":\"299uaura\"},{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"delegator\",\"value\":\"aura1j6kwc05lw0p8e08ce3r5z5qlygjzu0aq095scc\"},{\"key\":\"authz_msg_index\",\"value\":\"12\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1j6kwc05lw0p8e08ce3r5z5qlygjzu0aq095scc\"},{\"key\":\"amount\",\"value\":\"283uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"12\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw\"},{\"key\":\"amount\",\"value\":\"283uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"12\"}]},{\"type\":\"delegate\",\"attributes\":[{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"amount\",\"value\":\"283uaura\"},{\"key\":\"new_shares\",\"value\":\"283.000000000000000000\"},{\"key\":\"authz_msg_index\",\"value\":\"12\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"7650uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"13\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1a6x0znjhztz73tq07gjvzt9ru99866jm665w9p\"},{\"key\":\"amount\",\"value\":\"7650uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"13\"}]},{\"type\":\"transfer\",\"attributes\":[{\"key\":\"recipient\",\"value\":\"aura1a6x0znjhztz73tq07gjvzt9ru99866jm665w9p\"},{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"7650uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"13\"}]},{\"type\":\"message\",\"attributes\":[{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"authz_msg_index\",\"value\":\"13\"}]},{\"type\":\"withdraw_rewards\",\"attributes\":[{\"key\":\"amount\",\"value\":\"7650uaura\"},{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"delegator\",\"value\":\"aura1a6x0znjhztz73tq07gjvzt9ru99866jm665w9p\"},{\"key\":\"authz_msg_index\",\"value\":\"13\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1a6x0znjhztz73tq07gjvzt9ru99866jm665w9p\"},{\"key\":\"amount\",\"value\":\"7236uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"13\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw\"},{\"key\":\"amount\",\"value\":\"7236uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"13\"}]},{\"type\":\"delegate\",\"attributes\":[{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"amount\",\"value\":\"7236uaura\"},{\"key\":\"new_shares\",\"value\":\"7236.000000000000000000\"},{\"key\":\"authz_msg_index\",\"value\":\"13\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"148uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"14\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1efq5q4uzn583nh5mauzc5cmgms53w9l6vs5dxz\"},{\"key\":\"amount\",\"value\":\"148uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"14\"}]},{\"type\":\"transfer\",\"attributes\":[{\"key\":\"recipient\",\"value\":\"aura1efq5q4uzn583nh5mauzc5cmgms53w9l6vs5dxz\"},{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"148uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"14\"}]},{\"type\":\"message\",\"attributes\":[{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"authz_msg_index\",\"value\":\"14\"}]},{\"type\":\"withdraw_rewards\",\"attributes\":[{\"key\":\"amount\",\"value\":\"148uaura\"},{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"delegator\",\"value\":\"aura1efq5q4uzn583nh5mauzc5cmgms53w9l6vs5dxz\"},{\"key\":\"authz_msg_index\",\"value\":\"14\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1efq5q4uzn583nh5mauzc5cmgms53w9l6vs5dxz\"},{\"key\":\"amount\",\"value\":\"140uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"14\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw\"},{\"key\":\"amount\",\"value\":\"140uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"14\"}]},{\"type\":\"delegate\",\"attributes\":[{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"amount\",\"value\":\"140uaura\"},{\"key\":\"new_shares\",\"value\":\"140.000000000000000000\"},{\"key\":\"authz_msg_index\",\"value\":\"14\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"36483uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"15\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1nqhugyn20xwrm7y5rcw5lq4sg0qculvrjgsthm\"},{\"key\":\"amount\",\"value\":\"36483uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"15\"}]},{\"type\":\"transfer\",\"attributes\":[{\"key\":\"recipient\",\"value\":\"aura1nqhugyn20xwrm7y5rcw5lq4sg0qculvrjgsthm\"},{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"amount\",\"value\":\"36483uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"15\"}]},{\"type\":\"message\",\"attributes\":[{\"key\":\"sender\",\"value\":\"aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx\"},{\"key\":\"authz_msg_index\",\"value\":\"15\"}]},{\"type\":\"withdraw_rewards\",\"attributes\":[{\"key\":\"amount\",\"value\":\"36483uaura\"},{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"delegator\",\"value\":\"aura1nqhugyn20xwrm7y5rcw5lq4sg0qculvrjgsthm\"},{\"key\":\"authz_msg_index\",\"value\":\"15\"}]},{\"type\":\"coin_spent\",\"attributes\":[{\"key\":\"spender\",\"value\":\"aura1nqhugyn20xwrm7y5rcw5lq4sg0qculvrjgsthm\"},{\"key\":\"amount\",\"value\":\"34511uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"15\"}]},{\"type\":\"coin_received\",\"attributes\":[{\"key\":\"receiver\",\"value\":\"aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw\"},{\"key\":\"amount\",\"value\":\"34511uaura\"},{\"key\":\"authz_msg_index\",\"value\":\"15\"}]},{\"type\":\"delegate\",\"attributes\":[{\"key\":\"validator\",\"value\":\"auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf\"},{\"key\":\"amount\",\"value\":\"34511uaura\"},{\"key\":\"new_shares\",\"value\":\"34511.000000000000000000\"},{\"key\":\"authz_msg_index\",\"value\":\"15\"}]}]}]",
+        "info": "",
+        "gas_wanted": "2418753",
+        "gas_used": "2200383",
+        "events": [
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura194ytn50yhh67rdha8akhs7c6zulnz4n2jp7pw6",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1210uaura",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura17xpfvakm2amg962yls6f84z3kell8c5lt05zfy",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1210uaura",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "transfer",
+            "attributes": [
+              {
+                "key": "recipient",
+                "value": "aura17xpfvakm2amg962yls6f84z3kell8c5lt05zfy",
+                "index": true
+              },
+              {
+                "key": "sender",
+                "value": "aura194ytn50yhh67rdha8akhs7c6zulnz4n2jp7pw6",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1210uaura",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "sender",
+                "value": "aura194ytn50yhh67rdha8akhs7c6zulnz4n2jp7pw6",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "tx",
+            "attributes": [
+              {
+                "key": "fee",
+                "value": "1210uaura",
+                "index": true
+              },
+              {
+                "key": "fee_payer",
+                "value": "aura194ytn50yhh67rdha8akhs7c6zulnz4n2jp7pw6",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "tx",
+            "attributes": [
+              {
+                "key": "acc_seq",
+                "value": "aura194ytn50yhh67rdha8akhs7c6zulnz4n2jp7pw6/51719",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "tx",
+            "attributes": [
+              {
+                "key": "signature",
+                "value": "audzgw8T8g9rDlmCp7Puy+OY4TPgwvjQrjdawZ+YgUwlIzXgoCI5rx857Up4cII6XaBjAE/SMW100+PwDn5ZmQ==",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "action",
+                "value": "/cosmos.authz.v1beta1.MsgExec",
+                "index": true
+              },
+              {
+                "key": "sender",
+                "value": "aura194ytn50yhh67rdha8akhs7c6zulnz4n2jp7pw6",
+                "index": true
+              },
+              {
+                "key": "module",
+                "value": "authz",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "43uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "0",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1q93xkwtfv7nut0eqjjws377wkjk97265zsxlx6",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "43uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "0",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "transfer",
+            "attributes": [
+              {
+                "key": "recipient",
+                "value": "aura1q93xkwtfv7nut0eqjjws377wkjk97265zsxlx6",
+                "index": true
+              },
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "43uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "0",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "0",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "withdraw_rewards",
+            "attributes": [
+              {
+                "key": "amount",
+                "value": "43uaura",
+                "index": true
+              },
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "delegator",
+                "value": "aura1q93xkwtfv7nut0eqjjws377wkjk97265zsxlx6",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "0",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1q93xkwtfv7nut0eqjjws377wkjk97265zsxlx6",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "40uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "0",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "40uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "0",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "delegate",
+            "attributes": [
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "40uaura",
+                "index": true
+              },
+              {
+                "key": "new_shares",
+                "value": "40.000000000000000000",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "0",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "3656uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "1",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1fwtkqe4yp652svrj5lzdu9lnykysh947msc4xq",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "3656uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "1",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "transfer",
+            "attributes": [
+              {
+                "key": "recipient",
+                "value": "aura1fwtkqe4yp652svrj5lzdu9lnykysh947msc4xq",
+                "index": true
+              },
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "3656uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "1",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "1",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "withdraw_rewards",
+            "attributes": [
+              {
+                "key": "amount",
+                "value": "3656uaura",
+                "index": true
+              },
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "delegator",
+                "value": "aura1fwtkqe4yp652svrj5lzdu9lnykysh947msc4xq",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "1",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1fwtkqe4yp652svrj5lzdu9lnykysh947msc4xq",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "3459uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "1",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "3459uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "1",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "delegate",
+            "attributes": [
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "3459uaura",
+                "index": true
+              },
+              {
+                "key": "new_shares",
+                "value": "3459.000000000000000000",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "1",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1234uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "2",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura12d5gtpxfqtwk79nkajmrzqsvap6944y9d43vl8",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1234uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "2",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "transfer",
+            "attributes": [
+              {
+                "key": "recipient",
+                "value": "aura12d5gtpxfqtwk79nkajmrzqsvap6944y9d43vl8",
+                "index": true
+              },
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1234uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "2",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "2",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "withdraw_rewards",
+            "attributes": [
+              {
+                "key": "amount",
+                "value": "1234uaura",
+                "index": true
+              },
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "delegator",
+                "value": "aura12d5gtpxfqtwk79nkajmrzqsvap6944y9d43vl8",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "2",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura12d5gtpxfqtwk79nkajmrzqsvap6944y9d43vl8",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1168uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "2",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1168uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "2",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "delegate",
+            "attributes": [
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1168uaura",
+                "index": true
+              },
+              {
+                "key": "new_shares",
+                "value": "1168.000000000000000000",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "2",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "12uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "3",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1vhvn7zkv592jjlnhjk28crgdsal25wnq6zddty",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "12uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "3",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "transfer",
+            "attributes": [
+              {
+                "key": "recipient",
+                "value": "aura1vhvn7zkv592jjlnhjk28crgdsal25wnq6zddty",
+                "index": true
+              },
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "12uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "3",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "3",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "withdraw_rewards",
+            "attributes": [
+              {
+                "key": "amount",
+                "value": "12uaura",
+                "index": true
+              },
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "delegator",
+                "value": "aura1vhvn7zkv592jjlnhjk28crgdsal25wnq6zddty",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "3",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1vhvn7zkv592jjlnhjk28crgdsal25wnq6zddty",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "11uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "3",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "11uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "3",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "delegate",
+            "attributes": [
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "11uaura",
+                "index": true
+              },
+              {
+                "key": "new_shares",
+                "value": "11.000000000000000000",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "3",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "8310uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "4",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1yj20gu7yr9nhlq3xrg7lseuzpxnlj9qqfuw3jm",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "8310uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "4",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "transfer",
+            "attributes": [
+              {
+                "key": "recipient",
+                "value": "aura1yj20gu7yr9nhlq3xrg7lseuzpxnlj9qqfuw3jm",
+                "index": true
+              },
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "8310uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "4",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "4",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "withdraw_rewards",
+            "attributes": [
+              {
+                "key": "amount",
+                "value": "8310uaura",
+                "index": true
+              },
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "delegator",
+                "value": "aura1yj20gu7yr9nhlq3xrg7lseuzpxnlj9qqfuw3jm",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "4",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1yj20gu7yr9nhlq3xrg7lseuzpxnlj9qqfuw3jm",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "7861uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "4",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "7861uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "4",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "delegate",
+            "attributes": [
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "7861uaura",
+                "index": true
+              },
+              {
+                "key": "new_shares",
+                "value": "7861.000000000000000000",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "4",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "5",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1f3qxww8pnx0xrea7e03ffxnlau0fk5ufs3v0zj",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "5",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "transfer",
+            "attributes": [
+              {
+                "key": "recipient",
+                "value": "aura1f3qxww8pnx0xrea7e03ffxnlau0fk5ufs3v0zj",
+                "index": true
+              },
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "5",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "5",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "withdraw_rewards",
+            "attributes": [
+              {
+                "key": "amount",
+                "value": "1uaura",
+                "index": true
+              },
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "delegator",
+                "value": "aura1f3qxww8pnx0xrea7e03ffxnlau0fk5ufs3v0zj",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "5",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1f3qxww8pnx0xrea7e03ffxnlau0fk5ufs3v0zj",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "5",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "5",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "delegate",
+            "attributes": [
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1uaura",
+                "index": true
+              },
+              {
+                "key": "new_shares",
+                "value": "1.000000000000000000",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "5",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "5108uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "6",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1rqll2d4wyylvl03ht6mhglswj46gkcr3ksvkm7",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "5108uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "6",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "transfer",
+            "attributes": [
+              {
+                "key": "recipient",
+                "value": "aura1rqll2d4wyylvl03ht6mhglswj46gkcr3ksvkm7",
+                "index": true
+              },
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "5108uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "6",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "6",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "withdraw_rewards",
+            "attributes": [
+              {
+                "key": "amount",
+                "value": "5108uaura",
+                "index": true
+              },
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "delegator",
+                "value": "aura1rqll2d4wyylvl03ht6mhglswj46gkcr3ksvkm7",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "6",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1rqll2d4wyylvl03ht6mhglswj46gkcr3ksvkm7",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "4832uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "6",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "4832uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "6",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "delegate",
+            "attributes": [
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "4832uaura",
+                "index": true
+              },
+              {
+                "key": "new_shares",
+                "value": "4832.000000000000000000",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "6",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1234uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "7",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1q85eskmkjejtahw8zyvfsu44swvjumj5szrcya",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1234uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "7",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "transfer",
+            "attributes": [
+              {
+                "key": "recipient",
+                "value": "aura1q85eskmkjejtahw8zyvfsu44swvjumj5szrcya",
+                "index": true
+              },
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1234uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "7",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "7",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "withdraw_rewards",
+            "attributes": [
+              {
+                "key": "amount",
+                "value": "1234uaura",
+                "index": true
+              },
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "delegator",
+                "value": "aura1q85eskmkjejtahw8zyvfsu44swvjumj5szrcya",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "7",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1q85eskmkjejtahw8zyvfsu44swvjumj5szrcya",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1168uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "7",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1168uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "7",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "delegate",
+            "attributes": [
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1168uaura",
+                "index": true
+              },
+              {
+                "key": "new_shares",
+                "value": "1168.000000000000000000",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "7",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "3950uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "8",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1xk6nnn0gen9n9fduz0t3twyzt8c2uzedy2545a",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "3950uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "8",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "transfer",
+            "attributes": [
+              {
+                "key": "recipient",
+                "value": "aura1xk6nnn0gen9n9fduz0t3twyzt8c2uzedy2545a",
+                "index": true
+              },
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "3950uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "8",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "8",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "withdraw_rewards",
+            "attributes": [
+              {
+                "key": "amount",
+                "value": "3950uaura",
+                "index": true
+              },
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "delegator",
+                "value": "aura1xk6nnn0gen9n9fduz0t3twyzt8c2uzedy2545a",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "8",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1xk6nnn0gen9n9fduz0t3twyzt8c2uzedy2545a",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "3736uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "8",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "3736uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "8",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "delegate",
+            "attributes": [
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "3736uaura",
+                "index": true
+              },
+              {
+                "key": "new_shares",
+                "value": "3736.000000000000000000",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "8",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "5948uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "9",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura162x2llsxzxmavtyuxjesceewmy4wvrp79ndcrw",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "5948uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "9",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "transfer",
+            "attributes": [
+              {
+                "key": "recipient",
+                "value": "aura162x2llsxzxmavtyuxjesceewmy4wvrp79ndcrw",
+                "index": true
+              },
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "5948uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "9",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "9",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "withdraw_rewards",
+            "attributes": [
+              {
+                "key": "amount",
+                "value": "5948uaura",
+                "index": true
+              },
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "delegator",
+                "value": "aura162x2llsxzxmavtyuxjesceewmy4wvrp79ndcrw",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "9",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura162x2llsxzxmavtyuxjesceewmy4wvrp79ndcrw",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "5627uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "9",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "5627uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "9",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "delegate",
+            "attributes": [
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "5627uaura",
+                "index": true
+              },
+              {
+                "key": "new_shares",
+                "value": "5627.000000000000000000",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "9",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1236uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "10",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1e354r77wuw0zuy9kjy0ah5dss80jhcq28hue2p",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1236uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "10",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "transfer",
+            "attributes": [
+              {
+                "key": "recipient",
+                "value": "aura1e354r77wuw0zuy9kjy0ah5dss80jhcq28hue2p",
+                "index": true
+              },
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1236uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "10",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "10",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "withdraw_rewards",
+            "attributes": [
+              {
+                "key": "amount",
+                "value": "1236uaura",
+                "index": true
+              },
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "delegator",
+                "value": "aura1e354r77wuw0zuy9kjy0ah5dss80jhcq28hue2p",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "10",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1e354r77wuw0zuy9kjy0ah5dss80jhcq28hue2p",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1169uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "10",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1169uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "10",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "delegate",
+            "attributes": [
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1169uaura",
+                "index": true
+              },
+              {
+                "key": "new_shares",
+                "value": "1169.000000000000000000",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "10",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "218uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "11",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1ujv2gmfwrwzj504ntggqld0q5euafp76vgx5lj",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "218uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "11",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "transfer",
+            "attributes": [
+              {
+                "key": "recipient",
+                "value": "aura1ujv2gmfwrwzj504ntggqld0q5euafp76vgx5lj",
+                "index": true
+              },
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "218uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "11",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "11",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "withdraw_rewards",
+            "attributes": [
+              {
+                "key": "amount",
+                "value": "218uaura",
+                "index": true
+              },
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "delegator",
+                "value": "aura1ujv2gmfwrwzj504ntggqld0q5euafp76vgx5lj",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "11",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1ujv2gmfwrwzj504ntggqld0q5euafp76vgx5lj",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "206uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "11",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "206uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "11",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "delegate",
+            "attributes": [
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "206uaura",
+                "index": true
+              },
+              {
+                "key": "new_shares",
+                "value": "206.000000000000000000",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "11",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "299uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "12",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1j6kwc05lw0p8e08ce3r5z5qlygjzu0aq095scc",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "299uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "12",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "transfer",
+            "attributes": [
+              {
+                "key": "recipient",
+                "value": "aura1j6kwc05lw0p8e08ce3r5z5qlygjzu0aq095scc",
+                "index": true
+              },
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "299uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "12",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "12",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "withdraw_rewards",
+            "attributes": [
+              {
+                "key": "amount",
+                "value": "299uaura",
+                "index": true
+              },
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "delegator",
+                "value": "aura1j6kwc05lw0p8e08ce3r5z5qlygjzu0aq095scc",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "12",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1j6kwc05lw0p8e08ce3r5z5qlygjzu0aq095scc",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "283uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "12",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "283uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "12",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "delegate",
+            "attributes": [
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "283uaura",
+                "index": true
+              },
+              {
+                "key": "new_shares",
+                "value": "283.000000000000000000",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "12",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "7650uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "13",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1a6x0znjhztz73tq07gjvzt9ru99866jm665w9p",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "7650uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "13",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "transfer",
+            "attributes": [
+              {
+                "key": "recipient",
+                "value": "aura1a6x0znjhztz73tq07gjvzt9ru99866jm665w9p",
+                "index": true
+              },
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "7650uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "13",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "13",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "withdraw_rewards",
+            "attributes": [
+              {
+                "key": "amount",
+                "value": "7650uaura",
+                "index": true
+              },
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "delegator",
+                "value": "aura1a6x0znjhztz73tq07gjvzt9ru99866jm665w9p",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "13",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1a6x0znjhztz73tq07gjvzt9ru99866jm665w9p",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "7236uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "13",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "7236uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "13",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "delegate",
+            "attributes": [
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "7236uaura",
+                "index": true
+              },
+              {
+                "key": "new_shares",
+                "value": "7236.000000000000000000",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "13",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "148uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "14",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1efq5q4uzn583nh5mauzc5cmgms53w9l6vs5dxz",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "148uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "14",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "transfer",
+            "attributes": [
+              {
+                "key": "recipient",
+                "value": "aura1efq5q4uzn583nh5mauzc5cmgms53w9l6vs5dxz",
+                "index": true
+              },
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "148uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "14",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "14",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "withdraw_rewards",
+            "attributes": [
+              {
+                "key": "amount",
+                "value": "148uaura",
+                "index": true
+              },
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "delegator",
+                "value": "aura1efq5q4uzn583nh5mauzc5cmgms53w9l6vs5dxz",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "14",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1efq5q4uzn583nh5mauzc5cmgms53w9l6vs5dxz",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "140uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "14",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "140uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "14",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "delegate",
+            "attributes": [
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "140uaura",
+                "index": true
+              },
+              {
+                "key": "new_shares",
+                "value": "140.000000000000000000",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "14",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "36483uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "15",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1nqhugyn20xwrm7y5rcw5lq4sg0qculvrjgsthm",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "36483uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "15",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "transfer",
+            "attributes": [
+              {
+                "key": "recipient",
+                "value": "aura1nqhugyn20xwrm7y5rcw5lq4sg0qculvrjgsthm",
+                "index": true
+              },
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "36483uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "15",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "sender",
+                "value": "aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "15",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "withdraw_rewards",
+            "attributes": [
+              {
+                "key": "amount",
+                "value": "36483uaura",
+                "index": true
+              },
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "delegator",
+                "value": "aura1nqhugyn20xwrm7y5rcw5lq4sg0qculvrjgsthm",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "15",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1nqhugyn20xwrm7y5rcw5lq4sg0qculvrjgsthm",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "34511uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "15",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura1fl48vsnmsdzcv85q5d2q4z5ajdha8yu3wd7dmw",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "34511uaura",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "15",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "delegate",
+            "attributes": [
+              {
+                "key": "validator",
+                "value": "auravaloper1z8qlzq3ag2mzccg4xr2n805swr5rl3ugdh3euf",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "34511uaura",
+                "index": true
+              },
+              {
+                "key": "new_shares",
+                "value": "34511.000000000000000000",
+                "index": true
+              },
+              {
+                "key": "authz_msg_index",
+                "value": "15",
+                "index": true
+              }
+            ]
+          }
+        ],
+        "codespace": ""
+      },
+      "tx": "CpkUCuYTCh0vY29zbW9zLmF1dGh6LnYxYmV0YTEuTXNnRXhlYxLEEworYXVyYTE5NHl0bjUweWhoNjdyZGhhOGFraHM3YzZ6dWxuejRuMmpwN3B3NhKVAQojL2Nvc21vcy5zdGFraW5nLnYxYmV0YTEuTXNnRGVsZWdhdGUSbgorYXVyYTFxOTN4a3d0ZnY3bnV0MGVxamp3czM3N3drams5NzI2NXpzeGx4NhIyYXVyYXZhbG9wZXIxejhxbHpxM2FnMm16Y2NnNHhyMm44MDVzd3I1cmwzdWdkaDNldWYaCwoFdWF1cmESAjQwEpcBCiMvY29zbW9zLnN0YWtpbmcudjFiZXRhMS5Nc2dEZWxlZ2F0ZRJwCithdXJhMWZ3dGtxZTR5cDY1MnN2cmo1bHpkdTlsbnlreXNoOTQ3bXNjNHhxEjJhdXJhdmFsb3BlcjF6OHFsenEzYWcybXpjY2c0eHIybjgwNXN3cjVybDN1Z2RoM2V1ZhoNCgV1YXVyYRIEMzQ1ORKXAQojL2Nvc21vcy5zdGFraW5nLnYxYmV0YTEuTXNnRGVsZWdhdGUScAorYXVyYTEyZDVndHB4ZnF0d2s3OW5rYWptcnpxc3ZhcDY5NDR5OWQ0M3ZsOBIyYXVyYXZhbG9wZXIxejhxbHpxM2FnMm16Y2NnNHhyMm44MDVzd3I1cmwzdWdkaDNldWYaDQoFdWF1cmESBDExNjgSlQEKIy9jb3Ntb3Muc3Rha2luZy52MWJldGExLk1zZ0RlbGVnYXRlEm4KK2F1cmExdmh2bjd6a3Y1OTJqamxuaGprMjhjcmdkc2FsMjV3bnE2emRkdHkSMmF1cmF2YWxvcGVyMXo4cWx6cTNhZzJtemNjZzR4cjJuODA1c3dyNXJsM3VnZGgzZXVmGgsKBXVhdXJhEgIxMRKXAQojL2Nvc21vcy5zdGFraW5nLnYxYmV0YTEuTXNnRGVsZWdhdGUScAorYXVyYTF5ajIwZ3U3eXI5bmhscTN4cmc3bHNldXpweG5sajlxcWZ1dzNqbRIyYXVyYXZhbG9wZXIxejhxbHpxM2FnMm16Y2NnNHhyMm44MDVzd3I1cmwzdWdkaDNldWYaDQoFdWF1cmESBDc4NjESlAEKIy9jb3Ntb3Muc3Rha2luZy52MWJldGExLk1zZ0RlbGVnYXRlEm0KK2F1cmExZjNxeHd3OHBueDB4cmVhN2UwM2ZmeG5sYXUwZms1dWZzM3YwemoSMmF1cmF2YWxvcGVyMXo4cWx6cTNhZzJtemNjZzR4cjJuODA1c3dyNXJsM3VnZGgzZXVmGgoKBXVhdXJhEgExEpcBCiMvY29zbW9zLnN0YWtpbmcudjFiZXRhMS5Nc2dEZWxlZ2F0ZRJwCithdXJhMXJxbGwyZDR3eXlsdmwwM2h0Nm1oZ2xzd2o0NmdrY3Iza3N2a203EjJhdXJhdmFsb3BlcjF6OHFsenEzYWcybXpjY2c0eHIybjgwNXN3cjVybDN1Z2RoM2V1ZhoNCgV1YXVyYRIENDgzMhKXAQojL2Nvc21vcy5zdGFraW5nLnYxYmV0YTEuTXNnRGVsZWdhdGUScAorYXVyYTFxODVlc2tta2planRhaHc4enl2ZnN1NDRzd3ZqdW1qNXN6cmN5YRIyYXVyYXZhbG9wZXIxejhxbHpxM2FnMm16Y2NnNHhyMm44MDVzd3I1cmwzdWdkaDNldWYaDQoFdWF1cmESBDExNjgSlwEKIy9jb3Ntb3Muc3Rha2luZy52MWJldGExLk1zZ0RlbGVnYXRlEnAKK2F1cmExeGs2bm5uMGdlbjluOWZkdXowdDN0d3l6dDhjMnV6ZWR5MjU0NWESMmF1cmF2YWxvcGVyMXo4cWx6cTNhZzJtemNjZzR4cjJuODA1c3dyNXJsM3VnZGgzZXVmGg0KBXVhdXJhEgQzNzM2EpcBCiMvY29zbW9zLnN0YWtpbmcudjFiZXRhMS5Nc2dEZWxlZ2F0ZRJwCithdXJhMTYyeDJsbHN4enhtYXZ0eXV4amVzY2Vld215NHd2cnA3OW5kY3J3EjJhdXJhdmFsb3BlcjF6OHFsenEzYWcybXpjY2c0eHIybjgwNXN3cjVybDN1Z2RoM2V1ZhoNCgV1YXVyYRIENTYyNxKXAQojL2Nvc21vcy5zdGFraW5nLnYxYmV0YTEuTXNnRGVsZWdhdGUScAorYXVyYTFlMzU0cjc3d3V3MHp1eTlrankwYWg1ZHNzODBqaGNxMjhodWUycBIyYXVyYXZhbG9wZXIxejhxbHpxM2FnMm16Y2NnNHhyMm44MDVzd3I1cmwzdWdkaDNldWYaDQoFdWF1cmESBDExNjkSlgEKIy9jb3Ntb3Muc3Rha2luZy52MWJldGExLk1zZ0RlbGVnYXRlEm8KK2F1cmExdWp2MmdtZndyd3pqNTA0bnRnZ3FsZDBxNWV1YWZwNzZ2Z3g1bGoSMmF1cmF2YWxvcGVyMXo4cWx6cTNhZzJtemNjZzR4cjJuODA1c3dyNXJsM3VnZGgzZXVmGgwKBXVhdXJhEgMyMDYSlgEKIy9jb3Ntb3Muc3Rha2luZy52MWJldGExLk1zZ0RlbGVnYXRlEm8KK2F1cmExajZrd2MwNWx3MHA4ZTA4Y2UzcjV6NXFseWdqenUwYXEwOTVzY2MSMmF1cmF2YWxvcGVyMXo4cWx6cTNhZzJtemNjZzR4cjJuODA1c3dyNXJsM3VnZGgzZXVmGgwKBXVhdXJhEgMyODMSlwEKIy9jb3Ntb3Muc3Rha2luZy52MWJldGExLk1zZ0RlbGVnYXRlEnAKK2F1cmExYTZ4MHpuamh6dHo3M3RxMDdnanZ6dDlydTk5ODY2am02NjV3OXASMmF1cmF2YWxvcGVyMXo4cWx6cTNhZzJtemNjZzR4cjJuODA1c3dyNXJsM3VnZGgzZXVmGg0KBXVhdXJhEgQ3MjM2EpYBCiMvY29zbW9zLnN0YWtpbmcudjFiZXRhMS5Nc2dEZWxlZ2F0ZRJvCithdXJhMWVmcTVxNHV6bjU4M25oNW1hdXpjNWNtZ21zNTN3OWw2dnM1ZHh6EjJhdXJhdmFsb3BlcjF6OHFsenEzYWcybXpjY2c0eHIybjgwNXN3cjVybDN1Z2RoM2V1ZhoMCgV1YXVyYRIDMTQwEpgBCiMvY29zbW9zLnN0YWtpbmcudjFiZXRhMS5Nc2dEZWxlZ2F0ZRJxCithdXJhMW5xaHVneW4yMHh3cm03eTVyY3c1bHE0c2cwcWN1bHZyamdzdGhtEjJhdXJhdmFsb3BlcjF6OHFsenEzYWcybXpjY2c0eHIybjgwNXN3cjVybDN1Z2RoM2V1ZhoOCgV1YXVyYRIFMzQ1MTESLlJFU3Rha2VkIGJ5ICBBdXRvU3Rha2Ug8J+boe+4jyBTbGFzaCBQcm90ZWN0ZWQSagpSCkYKHy9jb3Ntb3MuY3J5cHRvLnNlY3AyNTZrMS5QdWJLZXkSIwohA5pdj0XXSPm4/wdyFYE4snAiwjomXME+ZjtnmsS60HXjEgQKAggBGIeUAxIUCg0KBXVhdXJhEgQxMjEwEMHQkwEaQGrnc4MPE/IPaw5Zgqez7svjmOEz4ML40K43WsGfmIFMJSM14KAiOa8fOe1KeHCCOl2gYwBP0jFtdNPj8A5+WZk="
+    }
+  ],
+  "total_count": "1"
+}
