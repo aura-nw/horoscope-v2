@@ -40,8 +40,8 @@ export class Asset extends BaseModel {
   }
 
   static TYPE = {
-    CW20_TOKEN: 'CW20 Token',
-    NATIVE: 'Native',
-    IBC_TOKEN: 'Ibc Token',
+    CW20_TOKEN: 'CW20_TOKEN',
+    NATIVE: 'NATIVE',
+    IBC_TOKEN: 'IBC_TOKEN',
   };
 }
