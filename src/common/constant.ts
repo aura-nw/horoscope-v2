@@ -107,6 +107,7 @@ export const BULL_JOB_NAME = {
   JOB_CHECK_NEED_CREATE_CONSTRAINT: 'job:check-need-create-constraint',
   JOB_CHECK_EVENT_CONSTRAINT: 'job:check-need-create-event-constraint',
   JOB_CREATE_EVENT_CONSTRAIN: 'job:create-event-constraint',
+  JOB_UPDATE_ASSETS: 'job:update-assets',
 };
 
 export const SERVICE = {
@@ -310,6 +311,10 @@ export const SERVICE = {
       CreateConstraintInEventPartition: {
         key: 'CreateConstraintInEventPartition',
         path: 'v1.CreateConstraintInEventPartition',
+      },
+      UpdateAssets: {
+        key: 'UpdateAssets',
+        path: 'v1.UpdateAssets',
       },
     },
     CrawlIBCTaoService: {

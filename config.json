@@ -270,5 +270,8 @@
       "millisecondRepeatJob": 600000
     },
     "statementTimeout": 600000
+  },
+  "jobUpdateAssets": {
+    "millisecondRepeatJob": 10000
   }
 }
