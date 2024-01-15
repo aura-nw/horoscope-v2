@@ -273,5 +273,11 @@
   },
   "jobUpdateAssets": {
     "millisecondRepeatJob": 10000
+  },
+  "jobCreateConstraintInTransactionPartition": {
+    "jobRepeatCheckNeedCreateConstraint": {
+      "millisecondRepeatJob": 600000
+    },
+    "statementTimeout": 600000
   }
 }
