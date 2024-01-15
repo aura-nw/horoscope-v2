@@ -345,6 +345,10 @@ export const SERVICE = {
         key: 'UpdateTxCountInBlock',
         path: 'v1.UpdateTxCountInBlock',
       },
+      UpdateAssets: {
+        key: 'UpdateAssets',
+        path: 'v1.UpdateAssets',
+      },
     },
     CrawlIBCTaoService: {
       key: 'CrawlIBCTaoService',
