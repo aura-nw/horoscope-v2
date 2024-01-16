@@ -28,7 +28,6 @@ select_permissions:
         - block_id_flag
         - height
         - id
-        - signature
         - timestamp
       filter: {}
       limit: 100
@@ -39,7 +38,6 @@ select_permissions:
         - block_id_flag
         - height
         - id
-        - signature
         - timestamp
       filter: {}
       limit: 100

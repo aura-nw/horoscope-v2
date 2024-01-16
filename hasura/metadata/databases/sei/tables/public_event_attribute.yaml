@@ -4,13 +4,31 @@ table:
 object_relationships:
   - name: block
     using:
-      foreign_key_constraint_on: block_height
+      manual_configuration:
+        column_mapping:
+          block_height: height
+        insertion_order: null
+        remote_table:
+          name: block
+          schema: public
   - name: event
     using:
-      foreign_key_constraint_on: event_id
+      manual_configuration:
+        column_mapping:
+          event_id: id
+        insertion_order: null
+        remote_table:
+          name: event
+          schema: public
   - name: transaction
     using:
-      foreign_key_constraint_on: tx_id
+      manual_configuration:
+        column_mapping:
+          tx_id: id
+        insertion_order: null
+        remote_table:
+          name: transaction
+          schema: public
 select_permissions:
   - role: internal_service
     permission:
