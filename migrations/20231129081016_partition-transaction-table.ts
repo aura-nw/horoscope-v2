@@ -11,7 +11,8 @@ export async function up(knex: Knex): Promise<void> {
       CREATE TABLE transaction_partition
       (
         id SERIAL PRIMARY KEY,
-        height INTEGER NOT NULL,
+        height INTEGER NOT NULL CONSTRAINT transaction_height_foreign
+            REFERENCES block,
         hash VARCHAR(255) NOT NULL,
         codespace  VARCHAR(255) NOT NULL,
         code INTEGER NOT NULL,
