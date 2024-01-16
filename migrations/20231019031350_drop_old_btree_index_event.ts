@@ -12,21 +12,16 @@ export async function up(knex: Knex): Promise<void> {
   )
     return;
 
-  await knex.raw(`
-    CREATE INDEX IF NOT EXISTS brin_idx_height_transaction
-    ON transaction USING brin (height) WITH (PAGES_PER_RANGE = 10, AUTOSUMMARIZE = true)
-  `);
-  await knex.schema.alterTable('transaction', (table) => {
-    // table.index('height', 'brin_idx_height_transaction', 'brin');
-    table.index('timestamp', 'brin_idx_timestamp_transaction', 'brin');
+  await knex.schema.alterTable('event', (table) => {
+    table.dropIndex('block_height', 'event_block_height_index');
+    table.dropIndex('tx_id', 'transaction_event_tx_id_index');
   });
 }
 
 export async function down(knex: Knex): Promise<void> {
   if (envDeploy !== environmentDeploy.development) return;
-
-  await knex.schema.alterTable('transaction', (table) => {
-    table.dropIndex('height', 'brin_idx_height_transaction');
-    table.dropIndex('timestamp', 'brin_idx_timestamp_transaction');
+  await knex.schema.alterTable('event', (table) => {
+    table.index('block_height', 'event_block_height_index', 'btree');
+    table.index('tx_id', 'transaction_event_tx_id_index', 'btree');
   });
 }
