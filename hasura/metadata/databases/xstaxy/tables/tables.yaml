@@ -7,6 +7,7 @@
 - '!include public_checkpoint.yaml'
 - '!include public_code.yaml'
 - '!include public_code_id_verification.yaml'
+- '!include public_coin_transfer.yaml'
 - '!include public_cw20_activity.yaml'
 - '!include public_cw20_contract.yaml'
 - '!include public_cw20_holder.yaml'
@@ -43,4 +44,3 @@
 - '!include public_view_count_holder_cw721.yaml'
 - '!include public_view_event_attribute_value_index.yaml'
 - '!include public_vote.yaml'
-- '!include public_coin_transfer.yaml'

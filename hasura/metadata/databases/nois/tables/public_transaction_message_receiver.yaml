@@ -1,7 +1,0 @@
-table:
-  name: transaction_message_receiver
-  schema: public
-object_relationships:
-  - name: transaction_message
-    using:
-      foreign_key_constraint_on: tx_msg_id

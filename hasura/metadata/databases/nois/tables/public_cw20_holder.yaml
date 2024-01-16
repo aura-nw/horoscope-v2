@@ -1,7 +1,0 @@
-table:
-  name: cw20_holder
-  schema: public
-object_relationships:
-  - name: cw20_contract
-    using:
-      foreign_key_constraint_on: cw20_contract_id

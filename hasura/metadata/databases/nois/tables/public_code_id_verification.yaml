@@ -1,7 +1,0 @@
-table:
-  name: code_id_verification
-  schema: public
-object_relationships:
-  - name: code
-    using:
-      foreign_key_constraint_on: code_id

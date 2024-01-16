@@ -1,7 +1,0 @@
-table:
-  name: cw721_token
-  schema: public
-object_relationships:
-  - name: cw721_contract
-    using:
-      foreign_key_constraint_on: cw721_contract_id
