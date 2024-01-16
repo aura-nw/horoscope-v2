@@ -33,8 +33,8 @@ export default class UpdateAssetsJob extends BullableService {
   })
   async jobUpdateAssets() {
     await knex.transaction(async (trx) => {
-      const coinAssets = await this.getLcdAssets();
-      const originAssets = await this.getLcdOriginAssets(coinAssets);
+      const coinAssets = await this.queryRpcAssets();
+      const originAssets = await this.queryRpcOriginAssets(coinAssets);
       const cw20Assets = await Cw20Contract.query()
         .joinRelated('smart_contract')
         .select(
@@ -81,7 +81,7 @@ export default class UpdateAssetsJob extends BullableService {
     });
   }
 
-  async getLcdAssets() {
+  async queryRpcAssets() {
     const lcdClient = await getLcdClient();
     const assets: any[] = [];
     const countTotal = parseInt(
@@ -135,7 +135,7 @@ export default class UpdateAssetsJob extends BullableService {
     return assets;
   }
 
-  async getLcdOriginAssets(
+  async queryRpcOriginAssets(
     coinAssets: {
       denom: string;
       amount: string;
