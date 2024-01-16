@@ -57,34 +57,6 @@ array_relationships:
         remote_table:
           name: event_attribute
           schema: public
-  - name: events
-    using:
-      foreign_key_constraint_on:
-        column: tx_id
-        table:
-          name: event
-          schema: public
-  - name: feegrant_histories
-    using:
-      foreign_key_constraint_on:
-        column: tx_id
-        table:
-          name: feegrant_history
-          schema: public
-  - name: feegrants
-    using:
-      foreign_key_constraint_on:
-        column: init_tx_id
-        table:
-          name: feegrant
-          schema: public
-  - name: power_events
-    using:
-      foreign_key_constraint_on:
-        column: tx_id
-        table:
-          name: power_event
-          schema: public
   - name: transaction_messages
     using:
       manual_configuration:
@@ -93,13 +65,6 @@ array_relationships:
         insertion_order: null
         remote_table:
           name: transaction_message
-          schema: public
-  - name: votes
-    using:
-      foreign_key_constraint_on:
-        column: tx_id
-        table:
-          name: vote
           schema: public
 select_permissions:
   - role: internal_service
