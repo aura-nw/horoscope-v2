@@ -4,7 +4,7 @@ export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('asset', (table) => {
     table.increments('id').primary();
     table.string('denom').unique().notNullable();
-    table.string('decimal').index();
+    table.string('decimal');
     table.string('name').index();
     table.string('type').index().notNullable();
     table.float('price');
