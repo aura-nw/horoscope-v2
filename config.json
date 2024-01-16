@@ -280,5 +280,11 @@
     "key": "uploadTransactionRawLogToS3",
     "millisecondCrawl": 1000,
     "blocksPerCall": 100
+  },
+  "jobCreateConstraintInTransactionPartition": {
+    "jobRepeatCheckNeedCreateConstraint": {
+      "millisecondRepeatJob": 600000
+    },
+    "statementTimeout": 600000
   }
 }

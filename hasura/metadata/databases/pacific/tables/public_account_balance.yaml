@@ -9,13 +9,13 @@ select_permissions:
   - role: internal_service
     permission:
       columns:
-        - id
-        - account_id
-        - denom
-        - amount
         - base_denom
+        - denom
+        - account_id
+        - id
+        - last_updated_height
+        - amount
         - created_at
-        - updated_at
       filter: {}
       limit: 100
       allow_aggregations: true
