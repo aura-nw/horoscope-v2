@@ -45,5 +45,11 @@ export class Asset extends BaseModel {
     CW20_TOKEN: 'CW20_TOKEN',
     NATIVE: 'NATIVE',
     IBC_TOKEN: 'IBC_TOKEN',
+    FACTORY_TOKEN: 'FACTORY_TOKEN',
+  };
+
+  static PREFIX = {
+    IBC: 'ibc/',
+    FACTORY: 'factory/',
   };
 }

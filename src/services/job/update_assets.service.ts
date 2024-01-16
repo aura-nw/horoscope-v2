@@ -44,17 +44,23 @@ export default class UpdateAssetsJob extends BullableService {
       );
     const assets: Asset[] = [];
     assets.push(
-      ...originAssets.map((originAsset) =>
-        Asset.fromJson({
+      ...originAssets.map((originAsset) => {
+        let type = null;
+        if (originAsset.denom.startsWith(Asset.PREFIX.IBC)) {
+          type = Asset.TYPE.IBC_TOKEN;
+        } else if (originAsset.denom.startsWith(Asset.PREFIX.FACTORY)) {
+          type = Asset.TYPE.FACTORY_TOKEN;
+        } else {
+          type = Asset.TYPE.NATIVE;
+        }
+        return Asset.fromJson({
           denom: originAsset.denom,
-          type: !originAsset.denom.startsWith('ibc/')
-            ? Asset.TYPE.NATIVE
-            : Asset.TYPE.IBC_TOKEN,
+          type,
           total_supply: originAsset.amount,
           updated_at: new Date().toISOString(),
           origin_id: originAsset.origin,
-        })
-      ),
+        });
+      }),
       ...cw20Assets.map((cw20Asset) =>
         Asset.fromJson({
           denom: cw20Asset.address,
