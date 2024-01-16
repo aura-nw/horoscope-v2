@@ -1,7 +1,7 @@
 /* eslint-disable import/no-cycle */
 import { Model } from 'objection';
 import BaseModel from './base';
-import { Cw20Contract } from './cw20_contract';
+import { IbcChannel } from './ibc_channel';
 
 export class Asset extends BaseModel {
   id!: number;
@@ -28,12 +28,12 @@ export class Asset extends BaseModel {
 
   static get relationMappings() {
     return {
-      cw20_contract: {
+      ibc_channel: {
         relation: Model.BelongsToOneRelation,
-        modelClass: Cw20Contract,
+        modelClass: IbcChannel,
         join: {
-          from: 'asset.cw20_contract_id',
-          to: 'cw20_contract.id',
+          from: 'asset.origin_id',
+          to: 'ibc_channel.channel_id',
         },
       },
     };
