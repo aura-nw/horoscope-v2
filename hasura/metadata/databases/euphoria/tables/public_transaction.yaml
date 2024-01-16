@@ -33,13 +33,6 @@ array_relationships:
         remote_table:
           name: cw721_activity
           schema: public
-  - name: event_attribute_backups
-    using:
-      foreign_key_constraint_on:
-        column: tx_id
-        table:
-          name: event_attribute_backup
-          schema: public
   - name: event_attribute_index
     using:
       manual_configuration:
@@ -48,34 +41,6 @@ array_relationships:
         insertion_order: null
         remote_table:
           name: view_event_attribute_value_index
-          schema: public
-  - name: event_attribute_partition_2000000_3000000s
-    using:
-      foreign_key_constraint_on:
-        column: tx_id
-        table:
-          name: event_attribute_partition_2000000_3000000
-          schema: public
-  - name: event_attribute_partition_3000000_4000000s
-    using:
-      foreign_key_constraint_on:
-        column: tx_id
-        table:
-          name: event_attribute_partition_3000000_4000000
-          schema: public
-  - name: event_attribute_partition_4000000_5000000s
-    using:
-      foreign_key_constraint_on:
-        column: tx_id
-        table:
-          name: event_attribute_partition_4000000_5000000
-          schema: public
-  - name: event_attribute_partition_5000000_6000000s
-    using:
-      foreign_key_constraint_on:
-        column: tx_id
-        table:
-          name: event_attribute_partition_5000000_6000000
           schema: public
   - name: event_attributes
     using:
