@@ -1,5 +1,5 @@
 /* eslint-disable import/no-cycle */
-import { Model } from 'objection';
+import Objection, { Model } from 'objection';
 import BaseModel from './base';
 import { IbcChannel } from './ibc_channel';
 
@@ -30,6 +30,8 @@ export class Asset extends BaseModel {
     return {
       ibc_channel: {
         relation: Model.BelongsToOneRelation,
+        filter: (builder: Objection.AnyQueryBuilder) =>
+          builder.where('denom', 'like', 'ibc/%'),
         modelClass: IbcChannel,
         join: {
           from: 'asset.origin_id',
