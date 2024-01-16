@@ -11,7 +11,7 @@ export async function up(knex: Knex): Promise<void> {
           hash VARCHAR(255) NOT NULL,
           time TIMESTAMP WITH TIME ZONE NOT NULL,
           proposer_address VARCHAR(255) NOT NULL,
-          data jsonb NOT NULL,
+          data jsonb,
           CONSTRAINT block_partition_hash_unique UNIQUE (height, hash)
       ) PARTITION BY RANGE(height);
 
@@ -35,9 +35,9 @@ export async function up(knex: Knex): Promise<void> {
       .raw(
         `
         ALTER TABLE block_signature DROP CONSTRAINT block_signature_height_foreign;
-        ALTER TABLE event DROP CONSTRAINT event_partition_block_foreign;
-        ALTER TABLE event_attribute DROP CONSTRAINT event_attribute_partition_block_height_foreign;
-        ALTER TABLE transaction DROP CONSTRAINT transaction_height_foreign;
+--         ALTER TABLE event DROP CONSTRAINT event_partition_block_foreign;
+--         ALTER TABLE event_attribute DROP CONSTRAINT event_attribute_partition_block_height_foreign;
+--         ALTER TABLE transaction DROP CONSTRAINT transaction_height_foreign;
       `
       )
       .transacting(trx);
