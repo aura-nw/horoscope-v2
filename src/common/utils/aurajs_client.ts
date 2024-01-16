@@ -1,21 +1,9 @@
-import {
-  ibc as seiIbc,
-  seiprotocol,
-  cosmos as seiCosmos,
-  cosmwasm as seiCosmwasm,
-} from '@horoscope-v2/sei-js-proto';
-import {
-  aura,
-  cosmos as auraCosmos,
-  cosmwasm as auraCosmwasm,
-  ibc as auraIbc,
-} from '@aura-nw/aurajs';
 import { IProviderJSClientFactory } from '../types/interfaces';
 import network from '../../../network.json' assert { type: 'json' };
 import config from '../../../config.json' assert { type: 'json' };
 import { chainIdConfigOnServer } from '../constant';
 
-export default class ProviderJsClient {
+export default class AuraJsClient {
   public lcdClient: IProviderJSClientFactory = {
     provider: null,
     cosmwasm: null,
@@ -31,45 +19,53 @@ export default class ProviderJsClient {
   };
 }
 
-const client = new ProviderJsClient();
+const client = new AuraJsClient();
 
-export function getProviderFactory(): {
+export async function getProviderFactory(): Promise<{
   providerClient: any;
   cosmwasmClient: any;
   ibcClient: any;
   cosmosClient: any;
-} {
+}> {
+  let aura;
+  let seiprotocol;
+  let ibc;
+  let cosmos;
+  let cosmwasm;
+  let provider;
+
   switch (config.chainId) {
     case chainIdConfigOnServer.Atlantic2:
     case chainIdConfigOnServer.Pacific1:
-      return {
-        providerClient: seiprotocol.ClientFactory,
-        cosmwasmClient: seiCosmwasm.ClientFactory,
-        ibcClient: seiIbc.ClientFactory,
-        cosmosClient: seiCosmos.ClientFactory,
-      };
+      ({ ibc, cosmos, cosmwasm, seiprotocol } = await import(
+        '@horoscope-v2/sei-js-proto'
+      ));
+      provider = seiprotocol;
+      break;
     case chainIdConfigOnServer.Euphoria:
     case chainIdConfigOnServer.SerenityTestnet001:
     case chainIdConfigOnServer.AuraTestnet2:
     case chainIdConfigOnServer.Xstaxy1:
     default:
-      return {
-        providerClient: aura.ClientFactory,
-        cosmwasmClient: auraCosmwasm.ClientFactory,
-        ibcClient: auraIbc.ClientFactory,
-        cosmosClient: auraCosmos.ClientFactory,
-      };
+      ({ ibc, cosmos, cosmwasm, aura } = await import('@aura-nw/aurajs'));
+      provider = aura;
+      break;
   }
+  return {
+    providerClient: provider.ClientFactory,
+    cosmwasmClient: cosmwasm.ClientFactory,
+    ibcClient: ibc.ClientFactory,
+    cosmosClient: cosmos.ClientFactory,
+  };
 }
 
 export async function getLcdClient() {
   const lcd =
     network.find((net: any) => net.chainId === config.chainId)?.LCD[0] || '';
 
-  const { providerClient, cosmwasmClient, ibcClient, cosmosClient } =
-    getProviderFactory();
-
   if (!client.lcdClient.provider) {
+    const { providerClient, cosmwasmClient, ibcClient, cosmosClient } =
+      await getProviderFactory();
     client.lcdClient.provider = await providerClient.createLCDClient({
       restEndpoint: lcd,
     });
@@ -91,10 +87,9 @@ export async function getRpcClient() {
   const rpc =
     network.find((net: any) => net.chainId === config.chainId)?.RPC[0] || '';
 
-  const { providerClient, cosmwasmClient, ibcClient, cosmosClient } =
-    getProviderFactory();
-
   if (!client.rpcClient.provider) {
+    const { providerClient, cosmwasmClient, ibcClient, cosmosClient } =
+      await getProviderFactory();
     client.rpcClient.provider = await providerClient.createRPCQueryClient({
       rpcEndpoint: rpc,
     });
@@ -104,10 +99,9 @@ export async function getRpcClient() {
     client.lcdClient.ibc = await ibcClient.createRPCQueryClient({
       rpcEndpoint: rpc,
     });
-    client.lcdClient.ibc = await cosmosClient.createRPCQueryClient({
+    client.lcdClient.cosmos = await cosmosClient.createRPCQueryClient({
       rpcEndpoint: rpc,
     });
   }
-
   return client.rpcClient;
 }
