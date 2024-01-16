@@ -10,9 +10,10 @@ import { Transaction, TransactionMessage } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
-import ChainRegistry from '../crawl-tx/chain.registry';
+import ChainRegistry from '../../common/utils/chain.registry';
 import Utils from '../../common/utils/utils';
 import knex from '../../common/utils/db_connection';
+import { getProviderRegistry } from '../../common/utils/provider.registry';
 
 @Service({
   name: SERVICE.V1.JobService.ReDecodeTx.key,
@@ -29,7 +30,8 @@ export default class JobRedecodeTx extends BullableService {
   })
   async redecodeTxByType(_payload: { type: string }) {
     this.logger.info('Job re decode tx type: ', _payload.type);
-    const registry = new ChainRegistry(this.logger);
+    const providerRegistry = await getProviderRegistry();
+    const registry = new ChainRegistry(this.logger, providerRegistry);
     let currentId = 0;
     await knex.transaction(async (trx) => {
       let done = false;

@@ -1,4 +1,3 @@
-/* eslint-disable no-param-reassign */
 import { Registry, TsProtoGeneratedType } from '@cosmjs/proto-signing';
 import { defaultRegistryTypes as defaultStargateTypes } from '@cosmjs/stargate';
 import { wasmTypes } from '@cosmjs/cosmwasm-stargate/build/modules';
@@ -6,17 +5,9 @@ import { toBase64, fromUtf8, fromBase64, toUtf8 } from '@cosmjs/encoding';
 import { LoggerInstance } from 'moleculer';
 import _ from 'lodash';
 import { SemVer } from 'semver';
-import { ibc as auraIbc, cosmos as auraCosmos, aura } from '@aura-nw/aurajs';
-import {
-  ibc as seiIbc,
-  cosmos as seiCosmos,
-  seiprotocol,
-} from '@horoscope-v2/sei-js-proto';
-import seiTxRegistryType from './registry-type/sei-network.json' assert { type: 'json' };
-import auraTxRegistryType from './registry-type/aura-network.json' assert { type: 'json' };
-import { chainIdConfigOnServer, MSG_TYPE } from '../../common';
-import Utils from '../../common/utils/utils';
-import config from '../../../config.json' assert { type: 'json' };
+import { MSG_TYPE } from '../index';
+import Utils from './utils';
+import { IProviderRegistry } from './provider.registry';
 
 export default class ChainRegistry {
   public registry!: Registry;
@@ -31,7 +22,7 @@ export default class ChainRegistry {
 
   public aura: any;
 
-  public cosmosSdkVersion: SemVer = new SemVer('v0.45.10');
+  public cosmosSdkVersion: SemVer = new SemVer('v0.45.17');
 
   public decodeAttribute: any;
 
@@ -39,27 +30,13 @@ export default class ChainRegistry {
 
   public txRegistryType: any;
 
-  constructor(logger: LoggerInstance) {
+  constructor(logger: LoggerInstance, providerRegistry: IProviderRegistry) {
     this._logger = logger;
-    switch (config.chainId) {
-      case chainIdConfigOnServer.Atlantic2:
-      case chainIdConfigOnServer.Pacific1:
-        this.cosmos = seiCosmos;
-        this.ibc = seiIbc;
-        this.seiprotocol = seiprotocol;
-        this.txRegistryType = seiTxRegistryType;
-        break;
-      case chainIdConfigOnServer.Euphoria:
-      case chainIdConfigOnServer.SerenityTestnet001:
-      case chainIdConfigOnServer.AuraTestnet2:
-      case chainIdConfigOnServer.Xstaxy1:
-      default:
-        this.cosmos = auraCosmos;
-        this.ibc = auraIbc;
-        this.aura = aura;
-        this.txRegistryType = auraTxRegistryType;
-        break;
-    }
+    this.cosmos = providerRegistry.cosmos;
+    this.ibc = providerRegistry.ibc;
+    this.txRegistryType = providerRegistry.txRegistryType;
+    this.aura = providerRegistry.aura;
+    this.seiprotocol = providerRegistry.seiprotocol;
 
     // set default registry to decode msg
     this.registry = new Registry([

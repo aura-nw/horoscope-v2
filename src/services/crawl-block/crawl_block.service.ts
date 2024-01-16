@@ -20,7 +20,8 @@ import { Block, BlockCheckpoint, Event } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
-import ChainRegistry from '../crawl-tx/chain.registry';
+import ChainRegistry from '../../common/utils/chain.registry';
+import { getProviderRegistry } from '../../common/utils/provider.registry';
 
 @Service({
   name: SERVICE.V1.CrawlBlock.key,
@@ -38,7 +39,6 @@ export default class CrawlBlockService extends BullableService {
   public constructor(public broker: ServiceBroker) {
     super(broker);
     this._httpBatchClient = getHttpBatchClient();
-    this._registry = new ChainRegistry(this.logger);
   }
 
   @QueueHandler({
@@ -250,6 +250,9 @@ export default class CrawlBlockService extends BullableService {
   }
 
   public async _start() {
+    const providerRegistry = await getProviderRegistry();
+    this._registry = new ChainRegistry(this.logger, providerRegistry);
+
     await this.waitForServices(SERVICE.V1.CrawlTransaction.name);
     this.createJob(
       `${BULL_JOB_NAME.CRAWL_BLOCK}`,
