@@ -43,4 +43,3 @@
 - '!include public_view_event_attribute_value_index.yaml'
 - '!include public_view_ibc_channel_detail_statistic.yaml'
 - '!include public_vote.yaml'
-- '!include account_balance.yaml'
