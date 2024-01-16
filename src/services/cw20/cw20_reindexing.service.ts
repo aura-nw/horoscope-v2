@@ -129,6 +129,7 @@ export default class Cw20ReindexingContract extends BullableService {
             track,
             decimal: contractInfo?.decimal,
             last_updated_height: minUpdatedHeightOwner,
+            smart_contract_address: contractAddress,
           }),
           holders: initBalances.map((e) => ({
             address: e.address,

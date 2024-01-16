@@ -96,6 +96,7 @@ export default class CW721ReindexingService extends BullableService {
         minter: contractInfo?.minter,
         name: contractInfo?.name,
         track: true,
+        smart_contract_address: contractAddress,
       })
     );
     if (currentTokensOwner.length > 0) {

@@ -41,6 +41,7 @@ select_permissions:
         - smart_contract_id
         - marketing_info
         - total_supply
+        - smart_contract_address
       filter: {}
       limit: 100
       allow_aggregations: true

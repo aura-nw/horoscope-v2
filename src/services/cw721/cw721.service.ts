@@ -163,6 +163,7 @@ export default class Cw721HandlerService extends BullableService {
           minter: contractInfo?.minter,
           name: contractInfo?.name,
           track: true,
+          smart_contract_address: cw721Contract.contract_address,
         });
       });
       await CW721Contract.query().transacting(trx).insert(instantiateContracts);
