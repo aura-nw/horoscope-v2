@@ -4,8 +4,6 @@ import BaseModel from './base';
 import { Account } from './account';
 
 export class AccountBalance extends BaseModel {
-  [relation: string]: any;
-
   account!: Account;
 
   id!: number;

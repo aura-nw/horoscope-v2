@@ -1,8 +1,9 @@
 import { fromBase64, toHex } from '@cosmjs/encoding';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
-import { ibc } from '@horoscope-v2/sei-js-proto';
+import { cosmos, ibc } from '@horoscope-v2/sei-js-proto';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+import Long from 'long';
 import { ServiceBroker } from 'moleculer';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -82,23 +83,55 @@ export default class UpdateAssetsJob extends BullableService {
 
   async getLcdAssets() {
     const lcdClient = await getLcdClient();
-    let nextKey = '';
-    const assets = [];
-    while (true) {
-      const coinAssets: any =
-        // eslint-disable-next-line no-await-in-loop
+    const assets: any[] = [];
+    const countTotal = parseInt(
+      (
         await lcdClient.cosmos.cosmos.bank.v1beta1.totalSupply({
           pagination: {
-            key: fromBase64(nextKey),
+            count_total: true,
           },
-        });
-      nextKey = coinAssets.pagination.next_key;
-
-      assets.push(...coinAssets.supply);
-      if (!nextKey) {
-        break;
-      }
+        })
+      ).pagination.total,
+      10
+    );
+    const httpBatchClient = getHttpBatchClient();
+    const batchQueries: any = [];
+    for (
+      let index = 0;
+      index < Math.ceil(countTotal / config.jobUpdateAssets.lcdRecordGet);
+      index += 1
+    ) {
+      batchQueries.push(
+        httpBatchClient.execute(
+          createJsonRpcRequest('abci_query', {
+            path: '/cosmos.bank.v1beta1.Query/TotalSupply',
+            data: toHex(
+              cosmos.bank.v1beta1.QueryTotalSupplyRequest.encode({
+                pagination: {
+                  key: new Uint8Array(),
+                  limit: Long.fromInt(config.jobUpdateAssets.lcdRecordGet),
+                  offset: Long.fromInt(
+                    index * config.jobUpdateAssets.lcdRecordGet
+                  ),
+                  countTotal: false,
+                  reverse: false,
+                },
+              }).finish()
+            ),
+          })
+        )
+      );
     }
+    const resultTotalSupply: JsonRpcSuccessResponse[] = await Promise.all(
+      batchQueries
+    );
+    resultTotalSupply.forEach((res) => {
+      assets.push(
+        ...cosmos.bank.v1beta1.QueryTotalSupplyResponse.decode(
+          fromBase64(res.result.response.value)
+        ).supply
+      );
+    });
     return assets;
   }
 
