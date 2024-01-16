@@ -14,7 +14,6 @@ import {
   getHttpBatchClient,
   getLcdClient,
 } from '../../common';
-import knex from '../../common/utils/db_connection';
 import { Cw20Contract } from '../../models';
 import { Asset } from '../../models/asset';
 
@@ -32,53 +31,45 @@ export default class UpdateAssetsJob extends BullableService {
     jobName: BULL_JOB_NAME.JOB_UPDATE_ASSETS,
   })
   async jobUpdateAssets() {
-    await knex.transaction(async (trx) => {
-      const coinAssets = await this.queryRpcAssets();
-      const originAssets = await this.queryRpcOriginAssets(coinAssets);
-      const cw20Assets = await Cw20Contract.query()
-        .joinRelated('smart_contract')
-        .select(
-          'smart_contract.address',
-          'cw20_contract.total_supply',
-          'cw20_contract.id as cw20_contract_id',
-          'cw20_contract.decimal',
-          'cw20_contract.name'
-        )
-        .transacting(trx);
-      const assets: Asset[] = [];
-      assets.push(
-        ...originAssets.map((originAsset) =>
-          Asset.fromJson({
-            denom: originAsset.denom,
-            type:
-              originAsset.denom === config.networkDenom
-                ? Asset.TYPE.NATIVE
-                : Asset.TYPE.IBC_TOKEN,
-            total_supply: originAsset.amount,
-            updated_at: new Date().toISOString(),
-            origin_id: originAsset.origin,
-          })
-        ),
-        ...cw20Assets.map((cw20Asset) =>
-          Asset.fromJson({
-            denom: cw20Asset.address,
-            type: Asset.TYPE.CW20_TOKEN,
-            decimal: cw20Asset.decimal,
-            name: cw20Asset.name,
-            total_supply: cw20Asset.total_supply,
-            origin_id: cw20Asset.cw20_contract_id,
-            updated_at: new Date().toISOString(),
-          })
-        )
+    const coinAssets = await this.queryRpcAssets();
+    const originAssets = await this.queryRpcOriginAssets(coinAssets);
+    const cw20Assets = await Cw20Contract.query()
+      .joinRelated('smart_contract')
+      .select(
+        'smart_contract.address',
+        'cw20_contract.total_supply',
+        'cw20_contract.id as cw20_contract_id',
+        'cw20_contract.decimal',
+        'cw20_contract.name'
       );
-      if (assets.length > 0) {
-        await Asset.query()
-          .insert(assets)
-          .onConflict('denom')
-          .merge()
-          .transacting(trx);
-      }
-    });
+    const assets: Asset[] = [];
+    assets.push(
+      ...originAssets.map((originAsset) =>
+        Asset.fromJson({
+          denom: originAsset.denom,
+          type: !originAsset.denom.startsWith('ibc/')
+            ? Asset.TYPE.NATIVE
+            : Asset.TYPE.IBC_TOKEN,
+          total_supply: originAsset.amount,
+          updated_at: new Date().toISOString(),
+          origin_id: originAsset.origin,
+        })
+      ),
+      ...cw20Assets.map((cw20Asset) =>
+        Asset.fromJson({
+          denom: cw20Asset.address,
+          type: Asset.TYPE.CW20_TOKEN,
+          decimal: cw20Asset.decimal,
+          name: cw20Asset.name,
+          total_supply: cw20Asset.total_supply,
+          origin_id: cw20Asset.cw20_contract_id,
+          updated_at: new Date().toISOString(),
+        })
+      )
+    );
+    if (assets.length > 0) {
+      await Asset.query().insert(assets).onConflict('denom').merge();
+    }
   }
 
   async queryRpcAssets() {
