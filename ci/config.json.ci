@@ -310,5 +310,9 @@
     "blocksPerCall": 100,
     "overwriteS3IfFound": false,
     "returnIfFound": true
+  },
+  "jobUpdateAssets": {
+    "millisecondRepeatJob": 10000,
+    "lcdRecordGet": 5
   }
 }
