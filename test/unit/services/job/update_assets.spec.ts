@@ -142,9 +142,9 @@ export default class UpdateAssetsJobTest {
       },
     ];
     await Cw20Contract.query().insert(mockCw20Tokens);
-    jest.spyOn(this.updateAssetsJob, 'getLcdAssets').mockResolvedValue([]);
+    jest.spyOn(this.updateAssetsJob, 'queryRpcAssets').mockResolvedValue([]);
     jest
-      .spyOn(this.updateAssetsJob, 'getLcdOriginAssets')
+      .spyOn(this.updateAssetsJob, 'queryRpcOriginAssets')
       .mockResolvedValue(mockAssets);
     await this.updateAssetsJob.jobUpdateAssets();
     const assets = await Asset.query();
