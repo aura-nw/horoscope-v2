@@ -241,6 +241,7 @@ export default class Utils {
         return err;
       });
     if (foundS3Object && !overwrite) {
+      console.warn(`This S3 key is found in S3: ${fileName}`);
       return;
     }
 
