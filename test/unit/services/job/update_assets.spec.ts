@@ -5,13 +5,13 @@ import {
   Describe,
   Test,
 } from '@jest-decorated/core';
-import { ServiceBroker } from 'moleculer';
 import _ from 'lodash';
+import { ServiceBroker } from 'moleculer';
+import config from '../../../../config.json' assert { type: 'json' };
 import knex from '../../../../src/common/utils/db_connection';
 import { Code, Cw20Contract } from '../../../../src/models';
-import UpdateAssetsJob from '../../../../src/services/job/update_assets.service';
 import { Asset } from '../../../../src/models/asset';
-import config from '../../../../config.json' assert { type: 'json' };
+import UpdateAssetsJob from '../../../../src/services/job/update_assets.service';
 
 @Describe('Test update assets service')
 export default class UpdateAssetsJobTest {
