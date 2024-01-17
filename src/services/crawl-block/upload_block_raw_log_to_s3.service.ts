@@ -44,15 +44,18 @@ export default class UploadBlockRawLogToS3 extends BullableService {
           Utils.uploadDataToS3(
             block.height.toString(),
             s3Client,
-            `rawlog/${config.chainId}/block/${block.height}`,
+            `rawlog/${config.chainName}/${config.chainId}/block/${block.height}`,
             'application/json',
             Buffer.from(JSON.stringify(block.data)),
             Config.BUCKET,
             Config.S3_GATEWAY,
-            false
+            config.uploadBlockRawLogToS3.overwriteS3IfFound
           )
         )
-      )
+      ).catch((err) => {
+        this.logger.error(err);
+        throw err;
+      })
     ).filter((e) => e !== undefined);
 
     const stringListUpdate = resultUploadS3.map(
