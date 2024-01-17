@@ -240,9 +240,12 @@ export default class Utils {
         console.error(err);
         return err;
       });
-    if (foundS3Object && !overwrite) {
-      console.warn(`This S3 key is found in S3: ${fileName}`);
-      return;
+    if (foundS3Object) {
+      const err = `This S3 key is found in S3: ${fileName}`;
+      console.warn(err);
+      if (!overwrite) {
+        throw new Error(err);
+      }
     }
 
     // eslint-disable-next-line consistent-return
