@@ -17,7 +17,7 @@ then
 elif [ ${GITHUB_REF_NAME} = "test-performance"]
 then
   echo 'This is test-performance branch'
-  cd ${REPO_MANIFEST_ENV_TEST_PERFORMANCE}  
+  cd ${REPO_MANIFEST_ENV_TEST_PERFORMANCE}
 elif [ ${GITHUB_REF_NAME} = "staging" ]
 then
   echo 'This is staging branch'
