@@ -5,6 +5,8 @@ import { cosmos, ibc } from '@horoscope-v2/sei-js-proto';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import Long from 'long';
 import { ServiceBroker } from 'moleculer';
+import _ from 'lodash';
+import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
@@ -129,7 +131,50 @@ export default class UpdateAssetsJob extends BullableService {
         ).supply
       );
     });
+    const coinAssetsKeyByDenom = _.keyBy(assets, 'denom');
+    const missingDenomAssets = (
+      await Asset.query()
+        .whereIn('type', [
+          Asset.TYPE.IBC_TOKEN,
+          Asset.TYPE.FACTORY_TOKEN,
+          Asset.TYPE.NATIVE,
+        ])
+        .andWhereNot('total_supply', '0')
+    ).filter((asset) => !coinAssetsKeyByDenom[asset.denom]);
+    // query missing assets by denom
+    const resultSupplyOf: JsonRpcSuccessResponse[] =
+      await this.queryRpcMissingAssetByDenom(
+        missingDenomAssets.map((e) => e.denom),
+        httpBatchClient
+      );
+    resultSupplyOf.forEach((res) => {
+      assets.push(
+        cosmos.bank.v1beta1.QuerySupplyOfResponse.decode(
+          fromBase64(res.result.response.value)
+        ).amount
+      );
+    });
     return assets;
+  }
+
+  // Query missing assets by denom
+  async queryRpcMissingAssetByDenom(
+    denoms: string[],
+    httpBatchClient: HttpBatchClient
+  ) {
+    const batchQueries: any = denoms.map((denom) =>
+      httpBatchClient.execute(
+        createJsonRpcRequest('abci_query', {
+          path: '/cosmos.bank.v1beta1.Query/SupplyOf',
+          data: toHex(
+            cosmos.bank.v1beta1.QuerySupplyOfRequest.encode({
+              denom,
+            }).finish()
+          ),
+        })
+      )
+    );
+    return Promise.all(batchQueries);
   }
 
   async queryRpcOriginAssets(
