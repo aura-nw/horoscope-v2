@@ -78,6 +78,7 @@ export default class CrawlContractEventService extends BullableService {
           action: contractEvent.action,
           event_id: contractEvent.event_id,
           index: contractEvent.index,
+          tx_id: contractEvent.tx.id,
         });
         const smartContractId =
           contractByAddress[contractEvent.contractAddress].id;
@@ -88,6 +89,7 @@ export default class CrawlContractEventService extends BullableService {
               action: contractEvent.action,
               event_id: contractEvent.event_id,
               index: contractEvent.index,
+              tx_id: contractEvent.tx.id,
             }),
             attributes: contractEvent.attributes,
           })

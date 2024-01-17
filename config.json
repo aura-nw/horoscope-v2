@@ -35,6 +35,11 @@
     "numberOfBlockPerCall": 100,
     "chunkSize": 1000
   },
+  "crawlTransaction": {
+    "millisecondCrawl": 1000,
+    "numberOfBlockPerCall": 100,
+    "chunkSize": 1000
+  },
   "handleCoinTransfer": {
     "key": "handleCoinTransfer",
     "blocksPerCall": 100,

@@ -93,6 +93,15 @@ array_relationships:
         remote_table:
           name: power_event
           schema: public
+  - name: smart_contract_events
+    using:
+      manual_configuration:
+        column_mapping:
+          id: tx_id
+        insertion_order: null
+        remote_table:
+          name: smart_contract_event
+          schema: public
   - name: transaction_messages
     using:
       manual_configuration:
