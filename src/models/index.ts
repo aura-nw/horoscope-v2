@@ -11,7 +11,6 @@ export * from './transaction';
 export * from './event';
 export * from './event_attribute';
 export * from './transaction_message';
-export * from './transaction_message_receiver';
 export * from './power_event';
 export * from './validator';
 export * from './checkpoint';
