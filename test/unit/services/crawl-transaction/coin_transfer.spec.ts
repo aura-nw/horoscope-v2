@@ -7,6 +7,7 @@ import CoinTransferService from '../../../../src/services/crawl-tx/coin_transfer
 import CrawlTxService from '../../../../src/services/crawl-tx/crawl_tx.service';
 import single_tx_coin_transfer from './single_tx_coin_transfer.json' assert { type: 'json' };
 import multiple_tx_coin_transfer from './multiple_tx_coin_transfer.json' assert { type: 'json' };
+import authz_tx_coin_transfer from './authz_tx_coin_transfer.json' assert { type: 'json' };
 import AuraRegistry from '../../../../src/services/crawl-tx/aura.registry';
 
 @Describe('Test coin transfer')
@@ -165,6 +166,82 @@ export default class CoinTransferSpec {
     );
 
     expect(coinTransfers.length).toEqual(13);
+
+    for (let i = 0; i < coinTransfers.length; i += 1) {
+      expect(coinTransfers[i].from).toEqual(senders[i]);
+      expect(coinTransfers[i].to).toEqual(receivers[i]);
+      expect(coinTransfers[i].amount).toEqual(amounts[i]);
+    }
+  }
+
+  @Test('Test authz coin transfer')
+  public async testAuthzCoinTransfer() {
+    const auraRegistry = new AuraRegistry(this.broker.logger);
+    auraRegistry.setCosmosSdkVersionByString('v0.47.9');
+    this.crawlTxService?.setRegistry(auraRegistry);
+    const amounts = [
+      '43',
+      '3656',
+      '1234',
+      '12',
+      '8310',
+      '1',
+      '5108',
+      '1234',
+      '3950',
+      '5948',
+      '1236',
+      '218',
+      '299',
+      '7650',
+      '148',
+      '36483',
+    ];
+    const senders = [
+      'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+      'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+      'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+      'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+      'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+      'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+      'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+      'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+      'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+      'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+      'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+      'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+      'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+      'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+      'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+      'aura1jv65s3grqf6v6jl3dp4t6c9t9rk99cd8ufn7tx',
+    ];
+    const receivers = [
+      'aura1q93xkwtfv7nut0eqjjws377wkjk97265zsxlx6',
+      'aura1fwtkqe4yp652svrj5lzdu9lnykysh947msc4xq',
+      'aura12d5gtpxfqtwk79nkajmrzqsvap6944y9d43vl8',
+      'aura1vhvn7zkv592jjlnhjk28crgdsal25wnq6zddty',
+      'aura1yj20gu7yr9nhlq3xrg7lseuzpxnlj9qqfuw3jm',
+      'aura1f3qxww8pnx0xrea7e03ffxnlau0fk5ufs3v0zj',
+      'aura1rqll2d4wyylvl03ht6mhglswj46gkcr3ksvkm7',
+      'aura1q85eskmkjejtahw8zyvfsu44swvjumj5szrcya',
+      'aura1xk6nnn0gen9n9fduz0t3twyzt8c2uzedy2545a',
+      'aura162x2llsxzxmavtyuxjesceewmy4wvrp79ndcrw',
+      'aura1e354r77wuw0zuy9kjy0ah5dss80jhcq28hue2p',
+      'aura1ujv2gmfwrwzj504ntggqld0q5euafp76vgx5lj',
+      'aura1j6kwc05lw0p8e08ce3r5z5qlygjzu0aq095scc',
+      'aura1a6x0znjhztz73tq07gjvzt9ru99866jm665w9p',
+      'aura1efq5q4uzn583nh5mauzc5cmgms53w9l6vs5dxz',
+      'aura1nqhugyn20xwrm7y5rcw5lq4sg0qculvrjgsthm',
+    ];
+    const txHeight = 3936688;
+    await this.insertDataForTest(3936688, authz_tx_coin_transfer);
+    await this.coinTransferService?.jobHandleTxCoinTransfer();
+    // Validate
+    const coinTransfers = await CoinTransfer.query().where(
+      'block_height',
+      txHeight
+    );
+    expect(coinTransfers.length).toEqual(16);
 
     for (let i = 0; i < coinTransfers.length; i += 1) {
       expect(coinTransfers[i].from).toEqual(senders[i]);
