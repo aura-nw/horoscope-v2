@@ -1,8 +1,30 @@
 import { Knex } from 'knex';
 import config from '../config.json' assert { type: 'json' };
+import { environmentDeploy } from '../src/common';
+const envDeploy = process.env.NODE_ENV;
 
 export async function up(knex: Knex): Promise<void> {
   await knex.transaction(async (trx) => {
+    const createTxIdIndex =
+      envDeploy === environmentDeploy.development
+        ? `
+        CREATE INDEX event_partition_tx_id_brin_idx
+        ON event USING BRIN (tx_id) WITH (PAGES_PER_RANGE = 10, AUTOSUMMARIZE = true);
+      `
+        : `
+        CREATE INDEX event_partition_tx_id_btree_idx
+        ON event USING BTREE (tx_id ASC NULLS LAST);
+      `;
+    const createBlockHeightIndex =
+      envDeploy === environmentDeploy.development
+        ? `
+        CREATE INDEX event_partition_block_height_brin_idx
+        ON event USING BRIN (block_height) WITH (PAGES_PER_RANGE = 10, AUTOSUMMARIZE = true);
+      `
+        : `
+        CREATE INDEX event_partition_block_height_btree_idx
+        ON event USING BTREE (block_height ASC NULLS LAST);
+      `;
     /**
      * @description: Create event table with config support partition on id column
      */
@@ -83,6 +105,23 @@ export async function up(knex: Knex): Promise<void> {
         .transacting(trx);
       startId = events[events.length - 1].id;
     }
+    await knex
+      .raw(
+        `
+        ALTER TABLE event_attribute
+        DROP CONSTRAINT IF EXISTS event_attribute_partition_event_id_foreign cascade;
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+        ALTER TABLE smart_contract_event
+        DROP CONSTRAINT IF EXISTS smart_contract_event_event_id_foreign cascade;
+    `
+      )
+      .transacting(trx);
+
     const currentEventIdSeq = await knex.raw(`
       SELECT last_value FROM transaction_event_id_seq;
     `);
@@ -94,30 +133,8 @@ export async function up(knex: Knex): Promise<void> {
     `
       )
       .transacting(trx);
-    await knex
-      .raw(
-        `
-      CREATE INDEX event_partition_tx_id_btree_idx
-      ON event USING BTREE (tx_id ASC NULLS LAST);
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
-      CREATE INDEX event_partition_block_height_btree_idx
-      ON event USING BTREE (block_height ASC NULLS LAST);
-    `
-      )
-      .transacting(trx);
-    await knex
-      .raw(
-        `
-      ALTER TABLE event_attribute DROP CONSTRAINT event_attribute_partition_event_id_foreign;
-      ALTER TABLE event_attribute ADD CONSTRAINT event_attribute_partition_event_id_foreign FOREIGN KEY (event_id) REFERENCES event(id);
-    `
-      )
-      .transacting(trx);
+    await knex.raw(createTxIdIndex).transacting(trx);
+    await knex.raw(createBlockHeightIndex).transacting(trx);
   });
 }
 
@@ -130,5 +147,23 @@ export async function down(knex: Knex): Promise<void> {
       .raw('alter table event_backup rename to event;')
       .transacting(trx);
     await knex.schema.dropTableIfExists('event_partition');
+    await knex
+      .raw(
+        `
+      ALTER TABLE event_attribute
+      ADD CONSTRAINT event_attribute_partition_event_id_foreign
+      FOREIGN KEY (event_id) references event;
+    `
+      )
+      .transacting(trx);
+    await knex
+      .raw(
+        `
+      ALTER TABLE smart_contract_event
+      ADD CONSTRAINT smart_contract_event_event_id_foreign
+      FOREIGN KEY (event_id) references event;
+    `
+      )
+      .transacting(trx);
   });
 }
