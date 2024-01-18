@@ -114,6 +114,7 @@ export const BULL_JOB_NAME = {
   JOB_RENAME_EVENT_PARTITION: 'job:rename-event-partition',
   CP_MIGRATE_DATA_EVENT_TABLE: 'cp:migrate-data-event-table',
   JOB_CREATE_TRANSACTION_CONSTRAINT: 'job:create-transaction-constraint',
+  JOB_UPDATE_TX_COUNT_IN_BLOCK: 'job:update-tx-count-in-block',
 };
 
 export const SERVICE = {
@@ -325,6 +326,10 @@ export const SERVICE = {
       CreateConstraintInTransactionPartition: {
         key: 'CreateConstraintInTransactionPartition',
         path: 'v1.CreateConstraintInTransactionPartition',
+      },
+      UpdateTxCountInBlock: {
+        key: 'UpdateTxCountInBlock',
+        path: 'v1.UpdateTxCountInBlock',
       },
     },
     CrawlIBCTaoService: {
