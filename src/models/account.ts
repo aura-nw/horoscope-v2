@@ -3,6 +3,7 @@ import { Model } from 'objection';
 import { ICoin } from '../common';
 import { AccountVesting } from './account_vesting';
 import BaseModel from './base';
+import { AccountBalance } from './account_balance';
 
 export interface IBalance extends ICoin {
   base_denom?: string;
@@ -85,6 +86,14 @@ export class Account extends BaseModel {
         join: {
           from: 'account.id',
           to: 'account_vesting.account_id',
+        },
+      },
+      account_balances: {
+        relation: Model.HasManyRelation,
+        modelClass: AccountBalance,
+        join: {
+          from: 'account.id',
+          to: 'account_balance.account_id',
         },
       },
     };
