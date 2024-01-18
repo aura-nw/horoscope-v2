@@ -1,5 +1,5 @@
-// eslint-disable-next-line import/no-cycle
 // import { TimeoutError } from '@cosmjs/stargate';
+
 // const utils_1 = require('@cosmjs/utils');
 
 export function sleep(ms: number) {
