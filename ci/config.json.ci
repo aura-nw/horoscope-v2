@@ -219,5 +219,21 @@
     "millisecondRepeatJob": 2000,
     "blocksPerCall": 100,
     "port": "transfer"
+  },
+  "jobCreateConstraintInTransactionPartition": {
+    "jobRepeatCheckNeedCreateConstraint": {
+      "millisecondRepeatJob": 600000
+    },
+    "statementTimeout": 600000
+  },
+  "jobCreateConstraintInEventPartition": {
+    "jobRepeatCheckNeedCreateConstraint": {
+      "millisecondRepeatJob": 600000
+    },
+    "statementTimeout": 600000
+  },
+  "jobUpdateTxCountInBlock": {
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 100
   }
 }
