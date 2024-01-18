@@ -95,6 +95,7 @@ export default class HandleStakeEventTest {
       {
         tx_msg_index: 0,
         type: 'delegate',
+        block_height: 3967529,
         attributes: [
           {
             key: 'validator',
@@ -119,6 +120,7 @@ export default class HandleStakeEventTest {
       {
         tx_msg_index: 0,
         type: 'message',
+        block_height: 3967529,
         attributes: [
           {
             key: 'action',
@@ -143,6 +145,7 @@ export default class HandleStakeEventTest {
       {
         tx_msg_index: 1,
         type: 'redelegate',
+        block_height: 3967529,
         attributes: [
           {
             key: 'source_validator',
@@ -173,6 +176,7 @@ export default class HandleStakeEventTest {
       {
         tx_msg_index: 1,
         type: 'message',
+        block_height: 3967529,
         attributes: [
           {
             key: 'action',
