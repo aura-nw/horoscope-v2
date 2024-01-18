@@ -61,6 +61,7 @@
     type_names:
       prefix: pacific_
   tables: '!include pacific/tables/tables.yaml'
+  functions: '!include pacific/functions/functions.yaml'
 - name: serenity
   kind: postgres
   configuration:
