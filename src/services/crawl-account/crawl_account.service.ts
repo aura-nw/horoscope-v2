@@ -604,4 +604,8 @@ export default class CrawlAccountService extends BullableService {
 
     return super._start();
   }
+
+  public setRegistry(registry: ChainRegistry) {
+    this._registry = registry;
+  }
 }

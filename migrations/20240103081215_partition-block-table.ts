@@ -11,7 +11,7 @@ export async function up(knex: Knex): Promise<void> {
           hash VARCHAR(255) NOT NULL,
           time TIMESTAMP WITH TIME ZONE NOT NULL,
           proposer_address VARCHAR(255) NOT NULL,
-          data jsonb NOT NULL,
+          data jsonb,
           CONSTRAINT block_partition_hash_unique UNIQUE (height, hash)
       ) PARTITION BY RANGE(height);
 
@@ -24,7 +24,10 @@ export async function up(knex: Knex): Promise<void> {
 
     // Update new table name(event_partition) to event name
     await knex
-      .raw('ALTER TABLE block RENAME TO block_partition_0_100000000;')
+      .raw(`
+        ALTER TABLE block ALTER COLUMN data DROP NOT NULL;
+        ALTER TABLE block RENAME TO block_partition_0_100000000;
+        `)
       .transacting(trx);
     await knex
       .raw('ALTER TABLE block_partition RENAME TO block;')

@@ -153,7 +153,7 @@ export default class CrawlTxService extends BullableService {
 
     blocks.forEach((block) => {
       if (block.tx_count > 0) {
-        this.logger.info('crawl tx by height: ', block.height);
+        this.logger.debug('crawl tx by height: ', block.height);
         const totalPages = Math.ceil(
           block.tx_count / config.handleTransaction.txsPerCall
         );
@@ -523,7 +523,7 @@ export default class CrawlTxService extends BullableService {
   }
 
   private checkMappingEventToLog(tx: any) {
-    this.logger.info('checking mapping log in tx :', tx.tx_response.txhash);
+    this.logger.debug('checking mapping log in tx :', tx.tx_response.txhash);
     let flattenLog: string[] = [];
     let flattenEventEncoded: string[] = [];
 
@@ -571,7 +571,7 @@ export default class CrawlTxService extends BullableService {
   public setMsgIndexToEvent(tx: any) {
     // if this is failed tx, then no need to set index msg
     if (!tx.tx_response.logs) {
-      this.logger.info('Failed tx, no need to set index msg');
+      this.logger.debug('Failed tx, no need to set index msg');
       return;
     }
     // count total attribute for each message, countAttributeInEvent[i] = x mean message i has x attributes
