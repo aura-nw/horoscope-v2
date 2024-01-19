@@ -1,1 +1,3 @@
+- '!include public_transaction_join_group_coin_transfer.yaml'
 - '!include public_transaction_join_group_smart_contract_event.yaml'
+- '!include public_transaction_join_group_transaction_message.yaml'

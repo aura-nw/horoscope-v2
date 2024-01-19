@@ -1,0 +1,3 @@
+function:
+  name: transaction_join_group_transaction_message
+  schema: public
