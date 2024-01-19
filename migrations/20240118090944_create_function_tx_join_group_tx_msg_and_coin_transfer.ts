@@ -2,33 +2,89 @@ import { Knex } from 'knex';
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.raw(
-    `CREATE OR REPLACE FUNCTION public.transaction_join_group_transaction_message(
-    sender character varying, limitvalue integer)
+    `CREATE OR REPLACE function transaction_join_group_transaction_message(
+      senderAddress character varying, 
+      typesIn character varying[], 
+      typesNotIn character varying[],
+      limitValue int)  
     RETURNS SETOF transaction
-    LANGUAGE sql
+    LANGUAGE plpgsql  
     STABLE PARALLEL SAFE
-    AS $function$
-            select transaction.* from transaction right join (
-              select tx_id as txid from transaction_message
-              where sender = sender
-              group by tx_id order by tx_id
-              limit limitValue
-            ) a on a.txid = transaction.id
-        $function$`
-  );
-  await knex.schema.raw(
-    `CREATE OR REPLACE FUNCTION public.transaction_join_group_coin_transfer(fromAddress character varying, toAddress character varying, limitValue integer)
-    RETURNS SETOF transaction
-    LANGUAGE sql
-    STABLE PARALLEL SAFE
-    AS $function$
-          select transaction.* from transaction right join (
-            select tx_id as txid from coin_transfer
-            where coin_transfer.from = fromAddress or coin_transfer.to = toAddress
+    AS  
+    $$  
+    begin
+      if typesIn is null then 
+        if typesNotIn is null then
+          return query (select transaction.* from transaction right join (
+            select tx_id as txid from transaction_message
+            where transaction_message.sender = senderAddress
             group by tx_id order by tx_id
             limit limitValue
+              ) a on a.txid = transaction.id);
+        end if;
+        return query (select transaction.* from transaction right join (
+          select tx_id as txid from transaction_message
+          where transaction_message.sender = senderAddress
+          and type <> ALL(typesNotIn)
+          group by tx_id order by tx_id
+          limit limitValue
+        ) a on a.txid = transaction.id);
+      else
+        return query (select transaction.* from transaction right join (
+          select tx_id as txid from transaction_message
+          where transaction_message.sender = senderAddress
+          and type = ANY(typesIn)
+          group by tx_id order by tx_id
+          limit limitValue
+        ) a on a.txid = transaction.id);
+      end if;
+    end;
+    $$;  `
+  );
+  await knex.schema.raw(
+    `CREATE OR REPLACE FUNCTION transaction_join_group_coin_transfer(
+      addressFromTo character varying, 
+      typesIn character varying[], 
+      typesNotIn character varying[],
+      limitValue integer)
+    RETURNS SETOF transaction
+    LANGUAGE plpgsql
+    STABLE PARALLEL SAFE
+    AS $$
+    begin
+      if typesIn is null then
+        if typesNotIn is null then
+          return query (
+            select transaction.* from transaction right join (
+            select coin_transfer.tx_id as txid from coin_transfer
+            join transaction_message on transaction_message.tx_id = coin_transfer.tx_id
+            where (coin_transfer.from = addressFromTo or coin_transfer.to = addressFromTo)
+            group by coin_transfer.tx_id order by coin_transfer.tx_id limit limitValue
+            ) a on a.txid = transaction.id
+          );
+        end if;
+        return query (
+          select transaction.* from transaction right join (
+          select coin_transfer.tx_id as txid from coin_transfer
+          join transaction_message on transaction_message.tx_id = coin_transfer.tx_id
+          where (coin_transfer.from = addressFromTo or coin_transfer.to = addressFromTo)
+          and type <> ALL(typesNotIn)
+          group by coin_transfer.tx_id order by coin_transfer.tx_id limit limitValue
           ) a on a.txid = transaction.id
-      $function$`
+        ); 
+      else
+        return query (
+          select transaction.* from transaction right join (
+          select coin_transfer.tx_id as txid from coin_transfer
+          join transaction_message on transaction_message.tx_id = coin_transfer.tx_id
+          where (coin_transfer.from = addressFromTo or coin_transfer.to = addressFromTo)
+          and type = ANY(typesIn)
+          group by coin_transfer.tx_id order by coin_transfer.tx_id limit limitValue
+          ) a on a.txid = transaction.id
+        );
+      end if;
+    end;
+    $$;`
   );
 }
 
