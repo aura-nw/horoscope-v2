@@ -87,41 +87,20 @@ export default class MigrateDataEventTableJob extends BullableService {
     }
   }
 
-  public async switchEventPartitionToEvent(): Promise<void> {
-    await knex.transaction(async (trx) => {
-      // Drop FK related
-      await knex
-        .raw(
-          `
-          ALTER TABLE event_attribute DROP CONSTRAINT IF EXISTS event_attribute_partition_event_id_foreign cascade;
-          ALTER TABLE smart_contract_event DROP CONSTRAINT IF EXISTS smart_contract_event_event_id_foreign cascade;
-        `
-        )
-        .transacting(trx);
-
-      // Switch two table
-      await knex
-        .raw('ALTER TABLE event RENAME TO event_backup;')
-        .transacting(trx);
-      await knex
-        .raw('ALTER TABLE event_partition RENAME TO event;')
-        .transacting(trx);
-
-      const currentEventIdSeq = await knex.raw(
-        'SELECT last_value FROM transaction_event_id_seq;'
-      );
-      const lastEventId = currentEventIdSeq.rows[0].last_value;
-      await knex
-        .raw(`SELECT setval('event_partition_id_seq', ${lastEventId}, true);`)
-        .transacting(trx);
-    });
-  }
-
   @QueueHandler({
     queueName: BULL_JOB_NAME.JOB_MIGRATE_DATA_EVENT_TABLE,
     jobName: BULL_JOB_NAME.JOB_MIGRATE_DATA_EVENT_TABLE,
   })
   public async migrateEventPartition(): Promise<void> {
+    const eventPartitionCount = await knex.raw(`
+      SELECT count(*) AS partition_count
+      FROM pg_catalog.pg_inherits
+      WHERE inhparent = 'event'::regclass;
+    `);
+    if (eventPartitionCount.rows[0].partition_count > 0) {
+      this.logger.info('Event already partitioned');
+      return;
+    }
     // Checkpoint job
     const blockCheckpointMigrate = await BlockCheckpoint.query()
       .where('job_name', BULL_JOB_NAME.CP_MIGRATE_DATA_EVENT_TABLE)
@@ -160,8 +139,6 @@ export default class MigrateDataEventTableJob extends BullableService {
     );
     // Copy data from old table to new
     await this.migrateDataFromEventToEventPartition(startId);
-    // Switch name table and drop related foreign key
-    // await this.switchEventPartitionToEvent();
   }
 
   public async _start(): Promise<void> {
