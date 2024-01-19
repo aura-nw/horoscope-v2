@@ -103,7 +103,10 @@ export default class DashboardStatisticsService extends BullableService {
     this._lcdClient = await getLcdClient();
 
     const [totalBlocks, totalTxs, totalValidators] = await Promise.all([
-      BlockCheckpoint.query().findOne('job_name', BULL_JOB_NAME.CRAWL_BLOCK),
+      BlockCheckpoint.query().findOne(
+        'job_name',
+        BULL_JOB_NAME.HANDLE_TRANSACTION
+      ),
       this.statisticTotalTransaction(),
       Validator.query(),
     ]);
