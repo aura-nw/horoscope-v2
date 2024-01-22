@@ -105,8 +105,8 @@ export default class HandleFeegrantHistoryService extends BullableService {
         Event.EVENT_TYPE.SET_FEEGRANT,
         Event.EVENT_TYPE.REVOKE_FEEGRANT,
       ])
-      .andWhere('transaction.height', '>', startBlock)
-      .andWhere('transaction.height', '<=', endBlock);
+      .andWhere('event.block_height', '>', startBlock)
+      .andWhere('event.block_height', '<=', endBlock);
 
     feegrantEvents.forEach((feegrantEvent) => {
       if (feegrantEvent.type === Event.EVENT_TYPE.USE_FEEGRANT) {
