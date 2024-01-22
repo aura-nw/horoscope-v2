@@ -38,7 +38,7 @@ export async function up(knex: Knex): Promise<void> {
     await knex
       .raw(
         `
-        ALTER TABLE transaction_message DROP CONSTRAINT IF EXISTS transaction_message_tx_id_foreign;
+        ALTER TABLE transaction DROP CONSTRAINT IF EXISTS transaction_height_foreign;
         ALTER TABLE transaction RENAME TO transaction_partition_0_100000000;
       `
       )
