@@ -11,8 +11,7 @@ export async function up(knex: Knex): Promise<void> {
       CREATE TABLE transaction_partition
       (
         id SERIAL PRIMARY KEY,
-        height INTEGER NOT NULL CONSTRAINT transaction_height_foreign
-            REFERENCES block,
+        height INTEGER NOT NULL,
         hash VARCHAR(255) NOT NULL,
         codespace  VARCHAR(255) NOT NULL,
         code INTEGER NOT NULL,
@@ -38,7 +37,10 @@ export async function up(knex: Knex): Promise<void> {
     // Update new table name(event_partition) to event name
     await knex
       .raw(
-        'ALTER TABLE transaction RENAME TO transaction_partition_0_100000000;'
+        `
+        ALTER TABLE transaction_message DROP CONSTRAINT IF EXISTS transaction_message_tx_id_foreign;
+        ALTER TABLE transaction RENAME TO transaction_partition_0_100000000;
+      `
       )
       .transacting(trx);
     await knex
@@ -49,13 +51,13 @@ export async function up(knex: Knex): Promise<void> {
     await knex
       .raw(
         `
-        ALTER TABLE transaction_message DROP CONSTRAINT transaction_message_tx_id_foreign;
-        ALTER TABLE event DROP CONSTRAINT event_partition_transaction_foreign;
-        ALTER TABLE event_attribute DROP CONSTRAINT event_attribute_partition_tx_id_foreign;
-        ALTER TABLE vote DROP CONSTRAINT vote_tx_id_foreign;
-        ALTER TABLE power_event DROP CONSTRAINT power_event_tx_id_foreign;
-        ALTER TABLE feegrant_history DROP CONSTRAINT feegrant_history_tx_id_foreign;
-        ALTER TABLE feegrant DROP CONSTRAINT feegrant_init_tx_id_foreign;
+        ALTER TABLE transaction_message DROP CONSTRAINT IF EXISTS transaction_message_tx_id_foreign;
+        ALTER TABLE event DROP CONSTRAINT IF EXISTS event_partition_transaction_foreign;
+        ALTER TABLE event_attribute DROP CONSTRAINT IF EXISTS event_attribute_partition_tx_id_foreign;
+        ALTER TABLE vote DROP CONSTRAINT IF EXISTS vote_tx_id_foreign;
+        ALTER TABLE power_event DROP CONSTRAINT IF EXISTS power_event_tx_id_foreign;
+        ALTER TABLE feegrant_history DROP CONSTRAINT IF EXISTS feegrant_history_tx_id_foreign;
+        ALTER TABLE feegrant DROP CONSTRAINT IF EXISTS feegrant_init_tx_id_foreign;
       `
       )
       .transacting(trx);

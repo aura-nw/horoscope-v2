@@ -70,7 +70,9 @@ export default class CoinTransferSpec {
     this.crawlTxService?.getQueueManager().stopAll();
     await Promise.all([
       knex.raw('TRUNCATE TABLE coin_transfer RESTART IDENTITY CASCADE'),
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw(
+        'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+      ),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
     ]);
     const auraRegistry = new AuraRegistry(this.crawlTxService.logger);
@@ -256,7 +258,9 @@ export default class CoinTransferSpec {
     this.coinTransferService?.getQueueManager().stopAll();
     await Promise.all([
       knex.raw('TRUNCATE TABLE coin_transfer RESTART IDENTITY CASCADE'),
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw(
+        'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+      ),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
       this.crawlTxService?._stop(),
       this.coinTransferService?._stop(),

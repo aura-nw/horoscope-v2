@@ -144,7 +144,9 @@ export default class CrawlSmartContractTest {
     ) as CrawlSmartContractService;
     this.crawlSmartContractService.getQueueManager().stopAll();
     await Promise.all([
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw(
+        'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+      ),
       knex.raw('TRUNCATE TABLE code RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
     ]);
@@ -158,7 +160,9 @@ export default class CrawlSmartContractTest {
   @AfterAll()
   async tearDown() {
     await Promise.all([
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw(
+        'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+      ),
       knex.raw('TRUNCATE TABLE code RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
     ]);
