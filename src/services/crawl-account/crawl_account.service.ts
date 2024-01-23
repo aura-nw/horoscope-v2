@@ -300,29 +300,30 @@ export default class CrawlAccountService extends BullableService {
         base_denom: string;
         last_updated_height: number;
       }[] = [];
-      const addressesWithIds = await Account.query()
-        .select('id', 'address')
-        .whereIn('address', addresses);
-      accounts.forEach((account) => {
-        const accountId = addressesWithIds.find(
-          (addressWithId) => addressWithId.address === account.address
-        )?.id;
-        if (Array.isArray(account.balances) && accountId)
-          account.balances.forEach((balance) => {
-            listAccountBalance.push({
-              account_id: accountId,
-              denom: balance.denom,
-              amount: balance.amount,
-              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-              // @ts-ignore
-              base_denom: balance.base_denom,
-              last_updated_height: account.last_updated_height,
+      await knex.transaction(async (trx) => {
+        const addressesWithIds = await Account.query()
+          .select('id', 'address')
+          .forUpdate()
+          .whereIn('address', addresses)
+          .transacting(trx);
+        accounts.forEach((account) => {
+          const accountId = addressesWithIds.find(
+            (addressWithId) => addressWithId.address === account.address
+          )?.id;
+          if (Array.isArray(account.balances) && accountId)
+            account.balances.forEach((balance) => {
+              listAccountBalance.push({
+                account_id: accountId,
+                denom: balance.denom,
+                amount: balance.amount,
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                base_denom: balance.base_denom,
+                last_updated_height: account.last_updated_height,
+              });
             });
-          });
-      });
-
-      try {
-        await knex.transaction(async (trx) => {
+        });
+        try {
           if (listAccountBalance.length > 0)
             await AccountBalance.query()
               .insert(listAccountBalance)
@@ -342,13 +343,13 @@ export default class CrawlAccountService extends BullableService {
               `UPDATE account SET balances = temp.balances from (VALUES ${stringListUpdates}) as temp(address, balances) where temp.address = account.address`
             )
             .transacting(trx);
-        });
-      } catch (error) {
-        this.logger.error(
-          `Error update account balance: ${_payload.addresses}`
-        );
-        this.logger.error(error);
-      }
+        } catch (error) {
+          this.logger.error(
+            `Error update account balance: ${_payload.addresses}`
+          );
+          this.logger.error(error);
+        }
+      });
     }
   }
 
