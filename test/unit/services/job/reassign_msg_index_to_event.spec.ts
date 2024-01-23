@@ -31,7 +31,9 @@ export default class CrawlTransactionTest {
 
     this.crawlTxService.setRegistry(auraRegistry);
     await Promise.all([
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw(
+        'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+      ),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
     ]);
   }
@@ -895,7 +897,9 @@ export default class CrawlTransactionTest {
   @AfterEach()
   async tearDown() {
     await Promise.all([
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw(
+        'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+      ),
     ]);
   }
 }

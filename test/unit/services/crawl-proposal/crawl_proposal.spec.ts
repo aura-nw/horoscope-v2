@@ -260,7 +260,9 @@ export default class CrawlProposalTest {
     this.crawlTallyProposalService.getQueueManager().stopAll();
     await Promise.all([
       BlockCheckpoint.query().delete(true),
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw(
+        'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+      ),
       knex.raw('TRUNCATE TABLE proposal RESTART IDENTITY CASCADE'),
     ]);
     await Block.query().insert(this.blocks);
@@ -272,7 +274,9 @@ export default class CrawlProposalTest {
   async tearDown() {
     await Promise.all([
       BlockCheckpoint.query().delete(true),
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw(
+        'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+      ),
       knex.raw('TRUNCATE TABLE proposal RESTART IDENTITY CASCADE'),
     ]);
     await this.broker.stop();
