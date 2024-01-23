@@ -1,6 +1,3 @@
-/* eslint-disable no-param-reassign */
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-/* eslint-disable no-await-in-loop */
 import {
   Action,
   Service,
@@ -41,6 +38,11 @@ import config from '../../../config.json' assert { type: 'json' };
 import { Account, AccountVesting } from '../../models';
 import AuraRegistry from '../crawl-tx/aura.registry';
 import Utils from '../../common/utils/utils';
+import { AccountBalance } from '../../models/account_balance';
+
+interface IAccountBalances extends QueryAllBalancesResponse {
+  last_updated_height: number;
+}
 
 @Service({
   name: SERVICE.V1.CrawlAccountService.key,
@@ -236,12 +238,13 @@ export default class CrawlAccountService extends BullableService {
   public async handleJobAccountBalances(
     _payload: IAddressesParam
   ): Promise<void> {
+    const { addresses } = _payload;
     this._lcdClient = await getLcdClient();
 
-    if (_payload.addresses.length > 0) {
+    if (addresses.length > 0) {
       const batchQueries: any[] = [];
 
-      _payload.addresses.forEach((address) => {
+      addresses.forEach((address) => {
         const request: QueryAllBalancesRequest = {
           address,
           pagination: {
@@ -268,34 +271,78 @@ export default class CrawlAccountService extends BullableService {
       });
 
       const result: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
-      const accountBalances: QueryAllBalancesResponse[] = result.map((res) =>
-        cosmos.bank.v1beta1.QueryAllBalancesResponse.decode(
+      const accountBalances: IAccountBalances[] = result.map((res) => ({
+        ...cosmos.bank.v1beta1.QueryAllBalancesResponse.decode(
           fromBase64(res.result.response.value)
-        )
-      );
+        ),
+        last_updated_height: parseInt(res.result.response.height, 10),
+      }));
 
       const accounts = accountBalances.map((acc, index) => ({
-        address: _payload.addresses[index],
+        address: addresses[index],
         balances: acc.balances,
+        last_updated_height: acc.last_updated_height,
       }));
 
       await Promise.all(
         accounts.map(async (account) => {
           if (account.balances.length > 1) {
+            // eslint-disable-next-line no-param-reassign
             account.balances = await this.handleIbcDenom(account.balances);
           }
         })
       );
+      // Create account_balance
+      const listAccountBalance: {
+        account_id?: number;
+        denom: string;
+        amount: string;
+        base_denom: string;
+        last_updated_height: number;
+      }[] = [];
+      const addressesWithIds = await Account.query()
+        .select('id', 'address')
+        .whereIn('address', addresses);
+      accounts.forEach((account) => {
+        const accountId = addressesWithIds.find(
+          (addressWithId) => addressWithId.address === account.address
+        )?.id;
+        if (Array.isArray(account.balances) && accountId)
+          account.balances.forEach((balance) => {
+            listAccountBalance.push({
+              account_id: accountId,
+              denom: balance.denom,
+              amount: balance.amount,
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              base_denom: balance.base_denom,
+              last_updated_height: account.last_updated_height,
+            });
+          });
+      });
 
-      const patchQueries = accounts.map((account) =>
-        Account.query()
-          .patch({
-            balances: account.balances,
-          })
-          .where({ address: account.address })
-      );
       try {
-        await Promise.all(patchQueries);
+        await knex.transaction(async (trx) => {
+          if (listAccountBalance.length > 0)
+            await AccountBalance.query()
+              .insert(listAccountBalance)
+              .onConflict(['account_id', 'denom'])
+              .merge()
+              .transacting(trx);
+          const stringListUpdates = accounts
+            .map(
+              (account) =>
+                `('${account.address}', '${JSON.stringify(
+                  account.balances
+                )}'::jsonb)`
+            )
+            .join(',');
+          await knex
+            .raw(
+              `UPDATE account SET balances = temp.balances from (VALUES ${stringListUpdates}) as temp(address, balances) where temp.address = account.address`
+            )
+            .transacting(trx);
+        });
       } catch (error) {
         this.logger.error(
           `Error update account balance: ${_payload.addresses}`
@@ -362,6 +409,7 @@ export default class CrawlAccountService extends BullableService {
       await Promise.all(
         accounts.map(async (account) => {
           if (account.spendable_balances.length > 1)
+            // eslint-disable-next-line no-param-reassign
             account.spendable_balances = await this.handleIbcDenom(
               account.spendable_balances
             );
@@ -495,6 +543,7 @@ export default class CrawlAccountService extends BullableService {
     let page = 0;
     let done = false;
     while (!done) {
+      /* eslint-disable-next-line no-await-in-loop */
       const result = await Account.query()
         .joinRelated('vesting')
         .where((builder) =>
