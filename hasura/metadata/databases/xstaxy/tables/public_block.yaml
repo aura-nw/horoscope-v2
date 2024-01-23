@@ -35,9 +35,11 @@ array_relationships:
           schema: public
   - name: transactions
     using:
-      foreign_key_constraint_on:
-        column: height
-        table:
+      manual_configuration:
+        column_mapping:
+          height: height
+        insertion_order: null
+        remote_table:
           name: transaction
           schema: public
 select_permissions:
