@@ -50,9 +50,11 @@ array_relationships:
           schema: public
   - name: event_attributes
     using:
-      foreign_key_constraint_on:
-        column: tx_id
-        table:
+      manual_configuration:
+        column_mapping:
+          id: tx_id
+        insertion_order: null
+        remote_table:
           name: event_attribute
           schema: public
   - name: events
