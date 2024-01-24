@@ -112,6 +112,7 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_EVENT_CONSTRAIN: 'job:create-event-constraint',
   UPLOAD_BLOCK_RAW_LOG_TO_S3: 'job:upload-block-raw-log-to-s3',
   JOB_CREATE_TRANSACTION_CONSTRAINT: 'job:create-transaction-constraint',
+  JOB_UPDATE_TX_COUNT_IN_BLOCK: 'job:update-tx-count-in-block',
 };
 
 export const SERVICE = {
@@ -319,6 +320,10 @@ export const SERVICE = {
       CreateConstraintInTransactionPartition: {
         key: 'CreateConstraintInTransactionPartition',
         path: 'v1.CreateConstraintInTransactionPartition',
+      },
+      UpdateTxCountInBlock: {
+        key: 'UpdateTxCountInBlock',
+        path: 'v1.UpdateTxCountInBlock',
       },
     },
     CrawlIBCTaoService: {

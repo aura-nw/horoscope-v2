@@ -294,5 +294,9 @@
       "millisecondRepeatJob": 600000
     },
     "statementTimeout": 600000
+  },
+  "jobUpdateTxCountInBlock": {
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 100
   }
 }
