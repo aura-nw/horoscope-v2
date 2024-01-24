@@ -261,7 +261,7 @@ export default class CrawlProposalTest {
     await Promise.all([
       BlockCheckpoint.query().delete(true),
       knex.raw(
-        'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+        'TRUNCATE TABLE block, block_signature, transaction, event, event_attribute RESTART IDENTITY CASCADE'
       ),
       knex.raw('TRUNCATE TABLE proposal RESTART IDENTITY CASCADE'),
     ]);
@@ -275,7 +275,7 @@ export default class CrawlProposalTest {
     await Promise.all([
       BlockCheckpoint.query().delete(true),
       knex.raw(
-        'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+        'TRUNCATE TABLE block, block_signature, transaction, event, event_attribute RESTART IDENTITY CASCADE'
       ),
       knex.raw('TRUNCATE TABLE proposal RESTART IDENTITY CASCADE'),
     ]);

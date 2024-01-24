@@ -4,7 +4,13 @@ table:
 object_relationships:
   - name: block
     using:
-      foreign_key_constraint_on: height
+      manual_configuration:
+        column_mapping:
+          height: height
+        insertion_order: null
+        remote_table:
+          name: block
+          schema: public
   - name: validator
     using:
       manual_configuration:
