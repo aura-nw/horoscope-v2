@@ -586,11 +586,26 @@ export default class CrawlTxService extends BullableService {
     let reachLastEventTypeTx = false;
     let countCurrentAttribute = 0;
     let currentCompareEventId = 0;
-    for (let i = 0; i < tx?.tx_response?.events?.length; i += 1) {
-      if (tx.tx_response.events[i].type === 'tx') {
+    let i = 0;
+    while (i < tx?.tx_response?.events?.length) {
+      if (['tx', 'smart_account_tx'].includes(tx.tx_response.events[i].type)) {
         reachLastEventTypeTx = true;
       }
-      if (reachLastEventTypeTx && tx.tx_response.events[i].type !== 'tx') {
+      if (
+        reachLastEventTypeTx &&
+        !['tx', 'smart_account_tx'].includes(tx.tx_response.events[i].type)
+      ) {
+        // sudo and wasm is a pair of smart_account_tx event, so need skip
+        if (
+          tx.tx_response.events[i].type === 'sudo' &&
+          i < tx.tx_response.events.length - 2 &&
+          tx.tx_response.events[i + 1].type === 'wasm'
+        ) {
+          i += 2;
+          // eslint-disable-next-line no-continue
+          continue;
+        }
+
         if (
           countCurrentAttribute < countAttributeInEvent[currentCompareEventId]
         ) {
@@ -612,6 +627,7 @@ export default class CrawlTxService extends BullableService {
           this.logger.warn('Count event in log is not equal event encoded');
         }
       }
+      i += 1;
     }
     this.checkMappingEventToLog(tx);
   }
