@@ -34,10 +34,10 @@ export async function up(knex: Knex): Promise<void> {
     await knex
       .raw(
         `
-        ALTER TABLE block_signature DROP CONSTRAINT block_signature_height_foreign;
-        ALTER TABLE event DROP CONSTRAINT event_partition_block_foreign;
-        ALTER TABLE event_attribute DROP CONSTRAINT event_attribute_partition_block_height_foreign;
-        ALTER TABLE transaction DROP CONSTRAINT transaction_height_foreign;
+        ALTER TABLE block_signature DROP CONSTRAINT IF EXISTS block_signature_height_foreign;
+        ALTER TABLE event DROP CONSTRAINT IF EXISTS event_partition_block_foreign;
+        ALTER TABLE event_attribute DROP CONSTRAINT IF EXISTS event_attribute_partition_block_height_foreign;
+        ALTER TABLE transaction DROP CONSTRAINT IF EXISTS transaction_height_foreign;
       `
       )
       .transacting(trx);
