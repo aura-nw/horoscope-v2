@@ -81,6 +81,7 @@ export default class Cw721MediaService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_CW721_TOKEN_MEDIA,
     jobName: BULL_JOB_NAME.HANDLE_CW721_TOKEN_MEDIA,
+    concurrency: config.cw721.concurrencyHandleTokenMedia,
   })
   async jobHandlerTokenMedia(_payload: { tokenMedia: ITokenMediaInfo }) {
     let { tokenMedia } = _payload;
