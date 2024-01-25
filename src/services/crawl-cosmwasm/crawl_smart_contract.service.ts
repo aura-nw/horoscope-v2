@@ -230,7 +230,14 @@ export default class CrawlSmartContractService extends BullableService {
           }
         });
       }
-
+      if ([...newContracts, ...missingVersionContracts].length > 0) {
+        const codeIds = Array.from(
+          new Set(
+            [...newContracts, ...missingVersionContracts].map((e) => e.code_id)
+          )
+        );
+        await this.handleMissingCodeIds(codeIds);
+      }
       await knex
         .transaction(async (trx) => {
           if ([...newContracts, ...missingVersionContracts].length > 0) {
@@ -333,22 +340,7 @@ export default class CrawlSmartContractService extends BullableService {
       });
 
       codeIds = Array.from(new Set(codeIds));
-      const codes: Code[] = await Code.query().whereIn('code_id', codeIds);
-      const codeKeys = _.keyBy(codes, 'code_id');
-      const missingCodeIds: IStoreCodes[] = [];
-      codeIds.forEach((codeId) => {
-        if (!codeKeys[codeId])
-          missingCodeIds.push({
-            codeId: Long.fromInt(codeId),
-            hash: '',
-            height: 0,
-          });
-      });
-      if (missingCodeIds.length > 0)
-        await this.broker.call(
-          SERVICE.V1.CrawlCodeService.CrawlMissingCode.path,
-          { codeIds: missingCodeIds }
-        );
+      await this.handleMissingCodeIds(codeIds);
 
       if (updateContractTypes.length > 0)
         await Promise.all(updateContractTypes);
@@ -364,6 +356,25 @@ export default class CrawlSmartContractService extends BullableService {
     }
 
     return instantiatedContracts;
+  }
+
+  async handleMissingCodeIds(codeIds: number[]) {
+    const codes: Code[] = await Code.query().whereIn('code_id', codeIds);
+    const codeKeys = _.keyBy(codes, 'code_id');
+    const missingCodeIds: IStoreCodes[] = [];
+    codeIds.forEach((codeId) => {
+      if (!codeKeys[codeId])
+        missingCodeIds.push({
+          codeId: Long.fromInt(codeId),
+          hash: '',
+          height: 0,
+        });
+    });
+    if (missingCodeIds.length > 0)
+      await this.broker.call(
+        SERVICE.V1.CrawlCodeService.CrawlMissingCode.path,
+        { codeIds: missingCodeIds }
+      );
   }
 
   public async _start() {
