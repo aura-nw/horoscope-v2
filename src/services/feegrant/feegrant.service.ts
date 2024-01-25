@@ -86,7 +86,7 @@ export default class HandleFeegrantHistoryService extends BullableService {
     const newFeegrants: Feegrant[] = [];
     const feegrantEvents = await Event.query()
       .alias('event')
-      .withGraphJoined(
+      .withGraphFetched(
         '[attributes(selectAttribute),transaction(selectTransaction),message(selectMessage)]'
       )
       .modifiers({
