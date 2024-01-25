@@ -31,8 +31,8 @@ export default class CreateTransactionMessagePartitionJob extends BullableServic
     if (
       !latestTransactionMessage ||
       BigNumber(latestTransactionMessage.id)
-        .mod(config.migrationTransactionToPartition.step)
-        .lt(config.migrationTransactionToPartition.step / 2)
+        .mod(config.migrationTransactionMessageToPartition.step)
+        .lt(config.migrationTransactionMessageToPartition.step / 2)
     )
       return null;
 
@@ -46,7 +46,7 @@ export default class CreateTransactionMessagePartitionJob extends BullableServic
 
     // Build partition name
     const fromTxMsgId = BigNumber(
-      config.migrationTransactionToPartition.step
+      config.migrationTransactionMessageToPartition.step
     ).multipliedBy(stepMultiple);
     const toTxMsgId = fromTxMsgId.plus(
       config.migrationTransactionMessageToPartition.step
@@ -140,11 +140,11 @@ export default class CreateTransactionMessagePartitionJob extends BullableServic
         removeOnFail: {
           count: 3,
         },
-        // repeat: {
-        //   every:
-        //     config.jobCheckNeedCreateTransactionMessagePartition
-        //       .millisecondCrawl,
-        // },
+        repeat: {
+          every:
+            config.jobCheckNeedCreateTransactionMessagePartition
+              .millisecondCrawl,
+        },
       }
     );
     return super._start();

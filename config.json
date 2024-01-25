@@ -288,6 +288,12 @@
     },
     "statementTimeout": 600000
   },
+  "jobCreateConstraintInTransactionMessagePartition": {
+    "jobRepeatCheckNeedCreateConstraint": {
+      "millisecondRepeatJob": 10000
+    },
+    "statementTimeout": 600000
+  },
   "jobUpdateTxCountInBlock": {
     "key": "jobUpdateTxCountInBlock",
     "millisecondCrawl": 1000,
