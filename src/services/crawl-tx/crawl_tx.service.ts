@@ -556,7 +556,10 @@ export default class CrawlTxService extends BullableService {
     });
     // compare 2 array
     if (flattenLog.length !== flattenEventEncoded.length) {
-      this.logger.warn('Length between 2 flatten array is not equal');
+      this.logger.warn(
+        'Length between 2 flatten array is not equal, txhash: ',
+        tx.tx_response.txhash
+      );
     }
     flattenLog = flattenLog.sort();
     flattenEventEncoded = flattenEventEncoded.sort();
@@ -564,7 +567,10 @@ export default class CrawlTxService extends BullableService {
       (item: string, index: number) => item === flattenEventEncoded[index]
     );
     if (checkResult === false) {
-      this.logger.warn('Mapping event to log is wrong');
+      this.logger.warn(
+        'Mapping event to log is wrong, txhash: ',
+        tx.tx_response.txhash
+      );
     }
   }
 
