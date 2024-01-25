@@ -2,7 +2,7 @@ import { Knex } from 'knex';
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.raw(`
-    CREATE OR REPLACE FUNCTION public.transaction_join_group_smart_contract_event(contractaddress character varying)
+    CREATE OR REPLACE FUNCTION public.transaction_join_group_smart_contract_event(contractaddress character varying, limitValue int)
     RETURNS SETOF transaction
     LANGUAGE sql
     STABLE PARALLEL SAFE
@@ -12,6 +12,7 @@ export async function up(knex: Knex): Promise<void> {
             join smart_contract on smart_contract_event.smart_contract_id = smart_contract.id
             where smart_contract.address = contractaddress
             group by tx_id order by tx_id
+            limit limitValue
           ) a on a.txid = transaction.id
     $function$`);
 }
