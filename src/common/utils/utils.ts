@@ -225,7 +225,8 @@ export default class Utils {
     data: Buffer,
     bucketName: string,
     s3Gateway: string,
-    overwrite = false
+    overwriteS3IfFound = false,
+    returnIfFound = false
   ) {
     const foundS3Object = await s3Client
       .headObject({
@@ -243,7 +244,13 @@ export default class Utils {
     if (foundS3Object) {
       const err = `This S3 key is found in S3: ${fileName}`;
       console.warn(err);
-      if (!overwrite) {
+      if (!overwriteS3IfFound) {
+        if (returnIfFound) {
+          return {
+            key: s3Gateway ? s3Gateway + fileName : fileName,
+            id,
+          };
+        }
         throw new Error(err);
       }
     }
