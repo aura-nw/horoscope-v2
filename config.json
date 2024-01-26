@@ -242,6 +242,7 @@
     "statementTimeout": 600000
   },
   "jobUpdateTxCountInBlock": {
+    "key": "jobUpdateTxCountInBlock",
     "millisecondCrawl": 1000,
     "blocksPerCall": 100
   }
