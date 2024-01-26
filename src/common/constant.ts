@@ -10,6 +10,7 @@ export const chainIdConfigOnServer = {
   AuraTestnet2: 'aura-testnet-2',
   Xstaxy1: 'xstaxy-1',
   Atlantic2: 'atlantic-2',
+  Pacific1: 'pacific-1',
 };
 
 export const REDIS_KEY = {
@@ -46,6 +47,7 @@ export const BULL_JOB_NAME = {
   HANDLE_STAKE_EVENT: 'handle:stake-event',
   CRAWL_BLOCK: 'crawl:block',
   HANDLE_TRANSACTION: 'handle:transaction',
+  CRAWL_TRANSACTION: 'crawl:transaction',
   HANDLE_COIN_TRANSFER: 'handle:coin_transfer',
   HANDLE_CW721_TRANSACTION: 'handle:cw721-tx',
   REFRESH_CW721_STATS: 'refresh:cw721-stats',
@@ -112,6 +114,7 @@ export const BULL_JOB_NAME = {
   JOB_RENAME_EVENT_PARTITION: 'job:rename-event-partition',
   CP_MIGRATE_DATA_EVENT_TABLE: 'cp:migrate-data-event-table',
   JOB_CREATE_TRANSACTION_CONSTRAINT: 'job:create-transaction-constraint',
+  JOB_UPDATE_TX_COUNT_IN_BLOCK: 'job:update-tx-count-in-block',
   UPLOAD_BLOCK_RAW_LOG_TO_S3: 'job:upload-block-raw-log-to-s3',
 };
 
@@ -324,6 +327,10 @@ export const SERVICE = {
       CreateConstraintInTransactionPartition: {
         key: 'CreateConstraintInTransactionPartition',
         path: 'v1.CreateConstraintInTransactionPartition',
+      },
+      UpdateTxCountInBlock: {
+        key: 'UpdateTxCountInBlock',
+        path: 'v1.UpdateTxCountInBlock',
       },
     },
     CrawlIBCTaoService: {

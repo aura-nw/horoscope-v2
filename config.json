@@ -28,7 +28,13 @@
   "crawlBlock": {
     "millisecondCrawl": 5000,
     "numberOfBlockPerCall": 100,
-    "startBlock": 4860000
+    "startBlock": 4860000,
+    "saveRawLog": true
+  },
+  "crawlTransaction": {
+    "millisecondCrawl": 1000,
+    "numberOfBlockPerCall": 100,
+    "chunkSize": 1000
   },
   "handleCoinTransfer": {
     "key": "handleCoinTransfer",
@@ -40,7 +46,8 @@
     "key": "handleTransaction",
     "blocksPerCall": 100,
     "millisecondCrawl": 5000,
-    "txsPerCall": 100
+    "txsPerCall": 100,
+    "saveRawLog": true
   },
   "crawlSigningInfo": {
     "millisecondCrawl": null,
@@ -269,6 +276,11 @@
       "millisecondRepeatJob": 600000
     },
     "statementTimeout": 600000
+  },
+  "jobUpdateTxCountInBlock": {
+    "key": "jobUpdateTxCountInBlock",
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 100
   },
   "uploadBlockRawLogToS3": {
     "key": "uploadBlockRawLogToS3",

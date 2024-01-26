@@ -18,7 +18,7 @@ import {
   BULL_JOB_NAME,
   getHttpBatchClient,
   getLcdClient,
-  IAuraJSClientFactory,
+  IProviderJSClientFactory,
   SERVICE,
 } from '../../common';
 import Utils from '../../common/utils/utils';
@@ -28,7 +28,7 @@ import Utils from '../../common/utils/utils';
   version: 1,
 })
 export default class CrawlTallyProposalService extends BullableService {
-  private _lcdClient!: IAuraJSClientFactory;
+  private _lcdClient!: IProviderJSClientFactory;
 
   private _httpBatchClient: HttpBatchClient;
 
@@ -88,7 +88,7 @@ export default class CrawlTallyProposalService extends BullableService {
       );
     });
 
-    const pool = await this._lcdClient.aura.cosmos.staking.v1beta1.pool();
+    const pool = await this._lcdClient.provider.cosmos.staking.v1beta1.pool();
     const result: JsonRpcSuccessResponse[] = await Promise.all(batchQueries);
     const proposalTally: QueryTallyResultResponse[] = result.map(
       (res: JsonRpcSuccessResponse) =>
