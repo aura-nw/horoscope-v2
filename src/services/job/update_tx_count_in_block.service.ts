@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
-import { Block } from '../../models';
+import { BlockCheckpoint } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
@@ -21,26 +21,31 @@ export default class UpdateTxCountInBlock extends BullableService {
     jobName: BULL_JOB_NAME.JOB_UPDATE_TX_COUNT_IN_BLOCK,
   })
   async updateTxCountInBlock() {
-    const listBlocks = await Block.query()
-      .select('height', 'data')
-      .whereNull('tx_count')
-      .limit(config.jobUpdateTxCountInBlock.blocksPerCall);
-    listBlocks.forEach(async (block) => {
-      const txCount = block.data.block.data.txs.length;
-      // eslint-disable-next-line no-param-reassign
-      block.tx_count = txCount;
-    });
-    const stringListUpdates = listBlocks
-      .map((block) => `(${block.height}, ${block.tx_count})`)
-      .join(',');
-
-    if (listBlocks.length > 0) {
-      await knex.raw(`
-        UPDATE block SET tx_count = temp.tx_count from (VALUES ${stringListUpdates}) as temp(height, tx_count) where temp.height = block.height
-      `);
-    } else {
-      this.logger.info('No block need update tx_count');
+    const [startBlock, endBlock, blockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.JOB_UPDATE_TX_COUNT_IN_BLOCK,
+        [BULL_JOB_NAME.CRAWL_BLOCK],
+        config.jobUpdateTxCountInBlock.key
+      );
+    this.logger.info(`Update tx count from block ${startBlock} to ${endBlock}`);
+    if (startBlock > endBlock) {
+      return;
     }
+
+    await knex.transaction(async (trx) => {
+      await knex.raw(
+        `UPDATE block set tx_count = jsonb_array_length( (((data->>'block')::jsonb->>'data')::jsonb->>'txs')::jsonb) where height > ${startBlock} and height <= ${endBlock} and tx_count is NULL`
+      );
+      if (blockCheckpoint) {
+        blockCheckpoint.height = endBlock;
+        await BlockCheckpoint.query()
+          .insert(blockCheckpoint)
+          .onConflict('job_name')
+          .merge()
+          .returning('id')
+          .transacting(trx);
+      }
+    });
   }
 
   async _start(): Promise<void> {
