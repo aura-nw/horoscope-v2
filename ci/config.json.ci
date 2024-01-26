@@ -1,5 +1,6 @@
 {
   "chainId": "aura-testnet-2",
+  "chainName": "aura",
   "networkPrefixAddress": "aura",
   "consensusPrefixAddress": "valcons",
   "validatorPrefixAddress": "valoper",
@@ -274,6 +275,19 @@
     "statementTimeout": 600000
   },
   "jobUpdateTxCountInBlock": {
+    "key": "jobUpdateTxCountInBlock",
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 100
+  },
+  "uploadBlockRawLogToS3": {
+    "key": "uploadBlockRawLogToS3",
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 100,
+    "overwriteS3IfFound": false,
+    "returnIfFound": true
+  },
+  "uploadTransactionRawLogToS3": {
+    "key": "uploadTransactionRawLogToS3",
     "millisecondCrawl": 1000,
     "blocksPerCall": 100
   }
