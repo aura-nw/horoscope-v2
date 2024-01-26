@@ -62,10 +62,11 @@ select_permissions:
   - role: public
     permission:
       columns:
-        - height
-        - hash
-        - time
-        - proposer_address
         - data
+        - hash
+        - height
+        - proposer_address
+        - time
+        - tx_count
       filter: {}
       limit: 100
