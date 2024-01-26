@@ -49,7 +49,8 @@ export default class UploadBlockRawLogToS3 extends BullableService {
             Buffer.from(JSON.stringify(block.data)),
             Config.BUCKET,
             Config.S3_GATEWAY,
-            config.uploadBlockRawLogToS3.overwriteS3IfFound
+            config.uploadBlockRawLogToS3.overwriteS3IfFound,
+            config.uploadBlockRawLogToS3.returnIfFound
           )
         )
       ).catch((err) => {
