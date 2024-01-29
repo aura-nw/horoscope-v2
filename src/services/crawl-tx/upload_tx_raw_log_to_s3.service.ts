@@ -49,7 +49,8 @@ export default class UploadTxRawLogToS3 extends BullableService {
             Buffer.from(JSON.stringify(tx.data)),
             Config.BUCKET,
             Config.S3_GATEWAY,
-            config.uploadTransactionRawLogToS3.overwriteS3IfFound
+            config.uploadTransactionRawLogToS3.overwriteS3IfFound,
+            config.uploadTransactionRawLogToS3.returnIfFound
           )
         )
       ).catch((err) => {
@@ -67,9 +68,11 @@ export default class UploadTxRawLogToS3 extends BullableService {
 
     await knex.transaction(async (trx) => {
       if (resultUploadS3.length > 0) {
-        await knex.raw(
-          `UPDATE transaction SET data = temp.data from (VALUES ${stringListUpdate}) as temp(id, data) where temp.id = transaction.id`
-        );
+        await knex
+          .raw(
+            `UPDATE transaction SET data = temp.data from (VALUES ${stringListUpdate}) as temp(id, data) where temp.id = transaction.id`
+          )
+          .transacting(trx);
       }
 
       updateBlockCheckpoint.height = endBlock;
