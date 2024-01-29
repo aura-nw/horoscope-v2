@@ -70,5 +70,6 @@ select_permissions:
         - height
         - data
         - time
+        - tx_count
       filter: {}
       limit: 100
