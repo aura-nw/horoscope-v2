@@ -11,14 +11,6 @@ object_relationships:
         remote_table:
           name: transaction
           schema: public
-array_relationships:
-  - name: transaction_message_receivers
-    using:
-      foreign_key_constraint_on:
-        column: tx_msg_id
-        table:
-          name: transaction_message_receiver
-          schema: public
 select_permissions:
   - role: internal_service
     permission:
