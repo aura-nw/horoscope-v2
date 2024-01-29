@@ -1,17 +1,15 @@
-/* eslint-disable no-param-reassign */
 import { Registry, TsProtoGeneratedType } from '@cosmjs/proto-signing';
 import { defaultRegistryTypes as defaultStargateTypes } from '@cosmjs/stargate';
 import { wasmTypes } from '@cosmjs/cosmwasm-stargate/build/modules';
-import { ibc, cosmos, aura } from '@aura-nw/aurajs';
 import { toBase64, fromUtf8, fromBase64, toUtf8 } from '@cosmjs/encoding';
 import { LoggerInstance } from 'moleculer';
 import _ from 'lodash';
 import { SemVer } from 'semver';
-import txRegistryType from './registry-type/aura-network.json' assert { type: 'json' };
-import { MSG_TYPE } from '../../common';
-import Utils from '../../common/utils/utils';
+import { MSG_TYPE } from '../index';
+import Utils from './utils';
+import { IProviderRegistry } from './provider.registry';
 
-export default class AuraRegistry {
+export default class ChainRegistry {
   public registry!: Registry;
 
   private _logger: LoggerInstance;
@@ -19,6 +17,8 @@ export default class AuraRegistry {
   public cosmos: any;
 
   public ibc: any;
+
+  public seiprotocol: any;
 
   public aura: any;
 
@@ -28,27 +28,25 @@ export default class AuraRegistry {
 
   public encodeAttribute: any;
 
-  constructor(logger: LoggerInstance) {
+  public txRegistryType: any;
+
+  constructor(logger: LoggerInstance, providerRegistry: IProviderRegistry) {
     this._logger = logger;
-    this.cosmos = cosmos;
-    this.ibc = ibc;
-    this.aura = aura;
-    this.setDefaultRegistry();
-  }
+    this.cosmos = providerRegistry.cosmos;
+    this.ibc = providerRegistry.ibc;
+    this.txRegistryType = providerRegistry.txRegistryType;
+    this.aura = providerRegistry.aura;
+    this.seiprotocol = providerRegistry.seiprotocol;
 
-  // set default registry to decode msg
-  public setDefaultRegistry() {
-    const missingTypes = txRegistryType;
-
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const registry = new Registry([
+    // set default registry to decode msg
+    this.registry = new Registry([
       ...defaultStargateTypes,
       ...wasmTypes,
-      ...missingTypes.map((type) => [type, _.get(this, type.slice(1))]),
+      ...this.txRegistryType.map((type: string) => [
+        type,
+        _.get(this, type.slice(1)),
+      ]),
     ]);
-
-    this.registry = registry;
   }
 
   public decodeMsg(msg: any): any {
