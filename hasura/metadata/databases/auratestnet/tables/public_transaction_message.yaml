@@ -24,17 +24,12 @@ array_relationships:
           schema: public
   - name: ibc_messages
     using:
-      foreign_key_constraint_on:
-        column: transaction_message_id
-        table:
+      manual_configuration:
+        column_mapping:
+          id: transaction_message_id
+        insertion_order: null
+        remote_table:
           name: ibc_message
-          schema: public
-  - name: transaction_message_receivers
-    using:
-      foreign_key_constraint_on:
-        column: tx_msg_id
-        table:
-          name: transaction_message_receiver
           schema: public
 computed_fields:
   - name: smart_contract
