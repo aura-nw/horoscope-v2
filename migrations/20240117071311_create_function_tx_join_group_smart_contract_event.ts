@@ -11,7 +11,7 @@ export async function up(knex: Knex): Promise<void> {
             select tx_id as txid from smart_contract_event
             join smart_contract on smart_contract_event.smart_contract_id = smart_contract.id
             where smart_contract.address = contractaddress
-            group by tx_id order by tx_id
+            group by tx_id order by tx_id desc
             limit limitValue
           ) a on a.txid = transaction.id
     $function$`);
