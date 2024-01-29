@@ -1,9 +1,10 @@
 import Long from 'long';
 
-export interface IAuraJSClientFactory {
-  aura: any;
+export interface IProviderJSClientFactory {
+  provider: any;
   cosmwasm: any;
   ibc: any;
+  cosmos: any;
 }
 
 export interface INetworkInfo {

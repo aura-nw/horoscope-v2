@@ -13,7 +13,7 @@ import {
   BULL_JOB_NAME,
   getHttpBatchClient,
   getLcdClient,
-  IAuraJSClientFactory,
+  IProviderJSClientFactory,
   SERVICE,
 } from '../../common';
 import { Block, BlockCheckpoint, Event } from '../../models';
@@ -32,7 +32,7 @@ export default class CrawlBlockService extends BullableService {
 
   private _httpBatchClient: HttpBatchClient;
 
-  private _lcdClient!: IAuraJSClientFactory;
+  private _lcdClient!: IProviderJSClientFactory;
 
   private _registry!: ChainRegistry;
 
@@ -56,7 +56,7 @@ export default class CrawlBlockService extends BullableService {
 
     // set version cosmos sdk to registry
     const nodeInfo: GetNodeInfoResponseSDKType =
-      await this._lcdClient.aura.cosmos.base.tendermint.v1beta1.getNodeInfo();
+      await this._lcdClient.provider.cosmos.base.tendermint.v1beta1.getNodeInfo();
     const cosmosSdkVersion = nodeInfo.application_version?.cosmos_sdk_version;
     if (cosmosSdkVersion) {
       this._registry.setCosmosSdkVersionByString(cosmosSdkVersion);
@@ -81,7 +81,7 @@ export default class CrawlBlockService extends BullableService {
   async handleJobCrawlBlock() {
     // Get latest block in network
     const responseGetLatestBlock: GetLatestBlockResponseSDKType =
-      await this._lcdClient.aura.cosmos.base.tendermint.v1beta1.getLatestBlock();
+      await this._lcdClient.provider.cosmos.base.tendermint.v1beta1.getLatestBlock();
     const latestBlockNetwork = parseInt(
       responseGetLatestBlock.block?.header?.height
         ? responseGetLatestBlock.block?.header?.height.toString()
@@ -195,7 +195,8 @@ export default class CrawlBlockService extends BullableService {
               hash: block?.block_id?.hash,
               time: block?.block?.header?.time,
               proposer_address: block?.block?.header?.proposer_address,
-              data: block,
+              data: config.crawlBlock.saveRawLog ? block : null,
+              tx_count: block?.block?.data?.txs?.length ?? 0,
             }),
             signatures: block?.block?.last_commit?.signatures.map(
               (signature: CommitSigSDKType) => ({

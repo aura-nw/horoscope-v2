@@ -17,6 +17,8 @@ export class Block extends BaseModel {
 
   data!: any;
 
+  tx_count!: number;
+
   static get tableName() {
     return 'block';
   }
@@ -38,6 +40,7 @@ export class Block extends BaseModel {
         hash: { type: 'string', minLength: 1, maxLength: 255 },
         time: { type: 'string', format: 'date-time' },
         proposer_address: { type: 'string', minLength: 1, maxLength: 255 },
+        tx_count: { type: 'number' },
       },
     };
   }

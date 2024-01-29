@@ -10,6 +10,7 @@ export const chainIdConfigOnServer = {
   AuraTestnet2: 'aura-testnet-2',
   Xstaxy1: 'xstaxy-1',
   Atlantic2: 'atlantic-2',
+  Pacific1: 'pacific-1',
 };
 
 export const REDIS_KEY = {
@@ -46,6 +47,7 @@ export const BULL_JOB_NAME = {
   HANDLE_STAKE_EVENT: 'handle:stake-event',
   CRAWL_BLOCK: 'crawl:block',
   HANDLE_TRANSACTION: 'handle:transaction',
+  CRAWL_TRANSACTION: 'crawl:transaction',
   HANDLE_COIN_TRANSFER: 'handle:coin_transfer',
   HANDLE_CW721_TRANSACTION: 'handle:cw721-tx',
   REFRESH_CW721_STATS: 'refresh:cw721-stats',
@@ -100,6 +102,15 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_CONSTRAINT_IN_ATTR_PARTITION:
     'job:create-constraint-in-attr-partition',
   JOB_CHECK_NEED_CREATE_CONSTRAINT: 'job:check-need-create-constraint',
+  JOB_CHECK_EVENT_CONSTRAINT: 'job:check-need-create-event-constraint',
+  JOB_CHECK_TRANSACTION_CONSTRAINT:
+    'job:check-need-create-transaction-constraint',
+  JOB_CREATE_EVENT_CONSTRAIN: 'job:create-event-constraint',
+  JOB_MIGRATE_DATA_EVENT_TABLE: 'job:migrate-data-event-table',
+  JOB_RENAME_EVENT_PARTITION: 'job:rename-event-partition',
+  CP_MIGRATE_DATA_EVENT_TABLE: 'cp:migrate-data-event-table',
+  JOB_CREATE_TRANSACTION_CONSTRAINT: 'job:create-transaction-constraint',
+  JOB_UPDATE_TX_COUNT_IN_BLOCK: 'job:update-tx-count-in-block',
 };
 
 export const SERVICE = {
@@ -283,6 +294,26 @@ export const SERVICE = {
       CreateConstraintInAttrPartition: {
         key: 'CreateConstraintInAttrPartition',
         path: 'v1.CreateConstraintInAttrPartition',
+      },
+      CreateConstraintInEventPartition: {
+        key: 'CreateConstraintInEventPartition',
+        path: 'v1.CreateConstraintInEventPartition',
+      },
+      MigrateDataEventTable: {
+        key: 'MigrateDataEventTable',
+        path: 'v1.MigrateDataEventTable',
+      },
+      RenameEventPartitionToEvent: {
+        key: 'RenameEventPartitionToEvent',
+        path: 'v1.RenameEventPartitionToEvent',
+      },
+      CreateConstraintInTransactionPartition: {
+        key: 'CreateConstraintInTransactionPartition',
+        path: 'v1.CreateConstraintInTransactionPartition',
+      },
+      UpdateTxCountInBlock: {
+        key: 'UpdateTxCountInBlock',
+        path: 'v1.UpdateTxCountInBlock',
       },
     },
     CrawlIBCTaoService: {
