@@ -31,12 +31,6 @@ array_relationships:
         remote_table:
           name: ibc_message
           schema: public
-computed_fields:
-  - name: smart_contract
-    definition:
-      function:
-        name: related_contract_address
-        schema: public
 select_permissions:
   - role: internal_service
     permission:
