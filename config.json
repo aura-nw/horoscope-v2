@@ -293,7 +293,8 @@
     "key": "uploadTransactionRawLogToS3",
     "millisecondCrawl": 1000,
     "blocksPerCall": 100,
-    "overwriteS3IfFound": true
+    "overwriteS3IfFound": false,
+    "returnIfFound": true
   },
   "jobCreateConstraintInTransactionPartition": {
     "jobRepeatCheckNeedCreateConstraint": {
