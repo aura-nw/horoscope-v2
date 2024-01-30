@@ -184,6 +184,11 @@ export default class CrawlTxService extends BullableService {
           .forEach((resultPromise) => {
             listTxs.push(...resultPromise.txs);
           });
+        if (listTxs.length !== block.tx_count) {
+          const error = `Error in block ${block.height}: ${listTxs.length} txs found, ${block.tx_count} txs expected`;
+          this.logger.error(error);
+          throw new Error(error);
+        }
         listRawTxs.push({
           listTx: {
             txs: listTxs,
