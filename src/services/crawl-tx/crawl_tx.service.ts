@@ -60,7 +60,7 @@ export default class CrawlTxService extends BullableService {
     this.logger.info(
       `Crawl transaction from block ${startBlock} to ${endBlock}`
     );
-    if (startBlock > endBlock) {
+    if (startBlock >= endBlock) {
       return;
     }
     const listTxRaw = await this.getListRawTx(startBlock, endBlock);
@@ -95,7 +95,7 @@ export default class CrawlTxService extends BullableService {
       `Handle transaction from block ${startBlock} to ${endBlock}`
     );
 
-    if (startBlock > endBlock) {
+    if (startBlock >= endBlock) {
       return;
     }
     const listTxRaw = await Transaction.query()
