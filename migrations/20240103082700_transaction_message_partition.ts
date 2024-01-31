@@ -24,9 +24,12 @@ export async function up(knex: Knex): Promise<void> {
       CREATE INDEX transaction_message_partition_tx_id_index ON transaction_message_partition(tx_id);
       CREATE INDEX transaction_message_partition_type_index ON transaction_message_partition(type);`
     );
+    let startId = config.migrationTransactionMessageToPartition.startId;
+    let endId = config.migrationTransactionMessageToPartition.endId;
+
     await knex.schema.renameTable(
       'transaction_message',
-      'transaction_message_partition_0_100000000'
+      `transaction_message_partition_0_${startId}`
     );
     await knex.schema.renameTable(
       'transaction_message_partition',
@@ -45,12 +48,10 @@ export async function up(knex: Knex): Promise<void> {
     // add old table transaction into transaction partitioned
     await knex
       .raw(
-        `ALTER TABLE transaction_message ATTACH PARTITION transaction_message_partition_0_100000000 FOR VALUES FROM (0) TO (100000000)`
+        `ALTER TABLE transaction_message ATTACH PARTITION transaction_message_partition_0_${startId} FOR VALUES FROM (0) TO (${startId})`
       )
       .transacting(trx);
 
-    let startId = config.migrationTransactionMessageToPartition.startId;
-    let endId = config.migrationTransactionMessageToPartition.endId;
     const step = config.migrationTransactionMessageToPartition.step;
     for (let i = startId; i < endId; i += step) {
       const partitionName = `transaction_message_partition_${i}_${i + step}`;
@@ -72,9 +73,10 @@ export async function up(knex: Knex): Promise<void> {
 
 export async function down(knex: Knex): Promise<void> {
   await knex.transaction(async (trx) => {
+    let startId = config.migrationTransactionMessageToPartition.startId;
     await knex
       .raw(
-        `ALTER TABLE transaction_message DETACH PARTITION transaction_message_partition_0_100000000;`
+        `ALTER TABLE transaction_message DETACH PARTITION transaction_message_partition_0_${startId};`
       )
       .transacting(trx);
     await knex.schema.dropTableIfExists('transaction_message_partition');
@@ -83,7 +85,7 @@ export async function down(knex: Knex): Promise<void> {
       'transaction_message_partition'
     );
     await knex.schema.renameTable(
-      'transaction_message_partition_0_100000000',
+      `transaction_message_partition_0_${startId}`,
       'transaction_message'
     );
     const oldSeqTransactionMessage = await knex.raw(
