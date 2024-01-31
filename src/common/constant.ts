@@ -79,6 +79,7 @@ export const BULL_JOB_NAME = {
   JOB_CHECK_NEED_CREATE_EVENT_ATTR_PARTITION:
     'job:check-need-create-event-attr-partition',
   JOB_CREATE_EVENT_ATTR_PARTITION: 'job:create-event-attr-partition',
+  JOB_CREATE_EVENT_PARTITION: 'job:create-event-partition',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
   CRAWL_DAILY_STATISTICS: 'crawl:daily-statistics',
   CRAWL_ACCOUNT_STATISTICS: 'crawl:account-statistics',
@@ -88,16 +89,17 @@ export const BULL_JOB_NAME = {
   REINDEX_CW721_HISTORY: 'reindex:cw721-history',
   HANDLE_MIGRATE_CONTRACT: 'handle:migrate-contract',
   JOB_REDECODE_TX: 'job:redecode-tx',
-  JOB_REASSIGN_MSG_INDEX_TO_EVENT: 'job:reassign-msg-index-to-event',
+  REINDEX_CW20_CONTRACT: 'reindex:cw20-contract',
+  REINDEX_CW20_HISTORY: 'reindex:cw20-history',
   CRAWL_IBC_TAO: 'crawl:ibc-tao',
   CRAWL_GENESIS_IBC_TAO: 'crawl:genesis-ibc-tao',
   REFRESH_IBC_RELAYER_STATISTIC: 'refresh:ibc-relayer-statistic',
+  JOB_REASSIGN_MSG_INDEX_TO_EVENT: 'job:reassign-msg-index-to-event',
   CRAWL_IBC_APP: 'crawl:ibc-app',
-  REINDEX_CW20_CONTRACT: 'reindex:cw20-contract',
-  REINDEX_CW20_HISTORY: 'reindex:cw20-history',
-  CRAWL_IBC_ICS20: 'crawl:ibc-ics20',
+  REINDEX_HISTORY_CW721_CONTRACT: 'reindex:cw721-history-contract',
   JOB_CREATE_COMPOSITE_INDEX_ATTR_PARTITION:
     'job:create-index-composite-attr-partition',
+  CRAWL_IBC_ICS20: 'crawl:ibc-ics20',
   JOB_UPDATE_SENDER_IN_TX_MESSAGES: 'job:update-sender-in-tx-messages',
   JOB_CREATE_CONSTRAINT_IN_ATTR_PARTITION:
     'job:create-constraint-in-attr-partition',
@@ -263,6 +265,10 @@ export const SERVICE = {
       },
     },
     JobService: {
+      CreateEventPartition: {
+        key: 'CreateEventPartition',
+        path: 'v1.CreateEventPartition',
+      },
       CreateEventAttrPartition: {
         key: 'CreateEventAttrPartition',
         path: 'v1.CreateEventAttrPartition',
@@ -368,6 +374,14 @@ export const SERVICE = {
         path: 'v1.ServicesManager.HealthCheck',
       },
     },
+    HoroscopeHandlerService: {
+      key: 'HoroscopeHandlerService',
+      path: 'v1.HoroscopeHandlerService',
+      getData: {
+        key: 'getData',
+        path: 'v1.HoroscopeHandlerService.getData',
+      },
+    },
   },
 };
 
@@ -377,6 +391,7 @@ export enum AccountType {
   DELAYED_VESTING = '/cosmos.vesting.v1beta1.DelayedVestingAccount',
   MODULE = '/cosmos.auth.v1beta1.ModuleAccount',
   BASE = '/cosmos.auth.v1beta1.BaseAccount',
+  SMART_ACCOUNT = '/auranw.aura.smartaccount.SmartAccount',
 }
 
 export enum PubkeyType {

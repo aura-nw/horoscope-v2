@@ -163,6 +163,13 @@
     "timeCrawlImage": "0 0 * * *",
     "milliSecondDelayRetry": 300000
   },
+  "migrationEventToPartition": {
+    "startId": 0,
+    "endId": 1000000000,
+    "step": 200000000,
+    "limitRecordGet": 10000,
+    "chunkSizeInsert": 1000
+  },
   "migrationEventAttributeToPartition": {
     "startBlock": 0,
     "endBlock": 13000000,
@@ -175,6 +182,13 @@
     "step": 10000,
     "millisecondCrawl": 10000,
     "templateTable": "event_attribute"
+  },
+  "jobRenameEventTable": {
+    "millisecondRepeat": 10000
+  },
+  "jobCheckNeedCreateEventPartition": {
+    "millisecondCrawl": 10000,
+    "templateTable": "event"
   },
   "httpBatchRequest": {
     "dispatchMilisecond": 1000,
