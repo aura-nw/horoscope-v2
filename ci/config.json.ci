@@ -187,6 +187,9 @@
     "millisecondCrawl": 10000,
     "templateTable": "event"
   },
+  "jobRenameEventTable": {
+    "millisecondRepeat": 10000
+  },
   "jobCreateConstraintInEventPartition": {
     "jobRepeatCheckNeedCreateConstraint": {
       "millisecondRepeatJob": 600000

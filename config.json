@@ -183,6 +183,9 @@
     "millisecondCrawl": 10000,
     "templateTable": "event_attribute"
   },
+  "jobRenameEventTable": {
+    "millisecondRepeat": 10000
+  },
   "jobCheckNeedCreateEventPartition": {
     "millisecondCrawl": 10000,
     "templateTable": "event"
