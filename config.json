@@ -170,6 +170,14 @@
     "limitRecordGet": 10000,
     "chunkSizeInsert": 1000
   },
+  "migrationTransactionToPartition": {
+    "startId": 100000000,
+    "endId": 200000000,
+    "step": 100000000,
+    "limitRecordGet": 10000,
+    "chunkSizeInsert": 1000,
+    "statementTimeout": 600000
+  },
   "migrationEventAttributeToPartition": {
     "startBlock": 0,
     "endBlock": 13000000,
@@ -189,6 +197,10 @@
   "jobCheckNeedCreateEventPartition": {
     "millisecondCrawl": 10000,
     "templateTable": "event"
+  },
+  "jobCheckNeedCreateTransactionPartition": {
+    "millisecondCrawl": 10000,
+    "templateTable": "transaction"
   },
   "httpBatchRequest": {
     "dispatchMilisecond": 1000,

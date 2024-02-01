@@ -29,7 +29,9 @@ export default class CrawlTransactionTest {
     ) as CrawlTxService;
     this.crawlTxService?.getQueueManager().stopAll();
     await Promise.all([
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw(
+        'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+      ),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
     ]);
     const providerRegistry = await getProviderRegistry();
@@ -547,7 +549,9 @@ export default class CrawlTransactionTest {
   async tearDown() {
     this.crawlTxService?.getQueueManager().stopAll();
     await Promise.all([
-      knex.raw('TRUNCATE TABLE block RESTART IDENTITY CASCADE'),
+      knex.raw(
+        'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+      ),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
       this.crawlTxService?._stop(),
       this.broker.stop(),
