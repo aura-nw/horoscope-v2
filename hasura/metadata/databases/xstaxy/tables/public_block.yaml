@@ -19,27 +19,6 @@ array_relationships:
         table:
           name: block_signature
           schema: public
-  - name: event_attribute_backups
-    using:
-      foreign_key_constraint_on:
-        column: block_height
-        table:
-          name: event_attribute_backup
-          schema: public
-  - name: event_attribute_partition_0_1000000s
-    using:
-      foreign_key_constraint_on:
-        column: block_height
-        table:
-          name: event_attribute_partition_0_1000000
-          schema: public
-  - name: event_attribute_partition_1000000_2000000s
-    using:
-      foreign_key_constraint_on:
-        column: block_height
-        table:
-          name: event_attribute_partition_1000000_2000000
-          schema: public
   - name: event_attributes
     using:
       foreign_key_constraint_on:
