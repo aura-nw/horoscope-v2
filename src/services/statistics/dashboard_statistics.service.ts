@@ -17,6 +17,7 @@ import {
   REDIS_KEY,
   SERVICE,
   getLcdClient,
+  chainIdConfigOnServer,
 } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -93,6 +94,49 @@ export default class DashboardStatisticsService extends BullableService {
     return totalTx;
   }
 
+  private async getStatistic(): Promise<{
+    communityPool: any;
+    inflation: any;
+    distribution: any;
+    supply: any;
+  }> {
+    let communityPool;
+    let inflation;
+    let distribution;
+    let supply;
+    switch (config.chainId) {
+      case chainIdConfigOnServer.Atlantic2:
+      case chainIdConfigOnServer.Pacific1:
+        [communityPool, supply] = await Promise.all([
+          this._lcdClient.provider.cosmos.distribution.v1beta1.communityPool(),
+          this._lcdClient.provider.cosmos.bank.v1beta1.supplyOf({
+            denom: config.networkDenom,
+          }),
+        ]);
+        break;
+      case chainIdConfigOnServer.Euphoria:
+      case chainIdConfigOnServer.SerenityTestnet001:
+      case chainIdConfigOnServer.AuraTestnet2:
+      case chainIdConfigOnServer.Xstaxy1:
+      default:
+        [communityPool, inflation, distribution, supply] = await Promise.all([
+          this._lcdClient.provider.cosmos.distribution.v1beta1.communityPool(),
+          this._lcdClient.provider.cosmos.mint.v1beta1.inflation(),
+          this._lcdClient.provider.cosmos.distribution.v1beta1.params(),
+          this._lcdClient.provider.cosmos.bank.v1beta1.supplyOf({
+            denom: config.networkDenom,
+          }),
+        ]);
+        break;
+    }
+    return {
+      communityPool,
+      supply,
+      inflation,
+      distribution,
+    };
+  }
+
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_DASHBOARD_STATISTICS,
     jobName: BULL_JOB_NAME.HANDLE_DASHBOARD_STATISTICS,
@@ -103,19 +147,16 @@ export default class DashboardStatisticsService extends BullableService {
     this._lcdClient = await getLcdClient();
 
     const [totalBlocks, totalTxs, totalValidators] = await Promise.all([
-      BlockCheckpoint.query().findOne('job_name', BULL_JOB_NAME.CRAWL_BLOCK),
+      BlockCheckpoint.query().findOne(
+        'job_name',
+        BULL_JOB_NAME.HANDLE_TRANSACTION
+      ),
       this.statisticTotalTransaction(),
       Validator.query(),
     ]);
 
-    const [communityPool, inflation, distribution, supply] = await Promise.all([
-      this._lcdClient.provider.cosmos.distribution.v1beta1.communityPool(),
-      this._lcdClient.provider.cosmos.mint.v1beta1.inflation(),
-      this._lcdClient.provider.cosmos.distribution.v1beta1.params(),
-      this._lcdClient.provider.cosmos.bank.v1beta1.supplyOf({
-        denom: config.networkDenom,
-      }),
-    ]);
+    const { communityPool, inflation, distribution, supply } =
+      await this.getStatistic();
     let bondedTokens = BigInt(0);
     totalValidators
       .filter(
@@ -140,17 +181,19 @@ export default class DashboardStatisticsService extends BullableService {
         (val) => val.status === Validator.STATUS.UNBONDED
       ).length,
       bonded_tokens: bondedTokens.toString(),
-      inflation: inflation.inflation,
+      inflation: inflation ? inflation.inflation : 0,
       total_aura: totalAura,
-      staking_apr: Number(
-        BigNumber(inflation.inflation)
-          .multipliedBy(
-            BigNumber(1 - Number(distribution.params.community_tax))
+      staking_apr: inflation
+        ? Number(
+            BigNumber(inflation.inflation)
+              .multipliedBy(
+                BigNumber(1 - Number(distribution.params.community_tax))
+              )
+              .multipliedBy(BigNumber(totalAura))
+              .dividedBy(BigNumber(bondedTokens.toString()))
+              .multipliedBy(100)
           )
-          .multipliedBy(BigNumber(totalAura))
-          .dividedBy(BigNumber(bondedTokens.toString()))
-          .multipliedBy(100)
-      ),
+        : 0,
     };
 
     await this.broker.cacher?.set(

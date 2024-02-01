@@ -46,5 +46,13 @@
     "databaseName": "local_cosmoshub",
     "redisDBNumber": 6,
     "moleculerNamespace": "namespace-cosmoshub"
+  },
+  {
+    "chainId": "atlantic-2",
+    "RPC": ["https://sei-rpc.polkachu.com"],
+    "LCD": ["https://sei-api.polkachu.com/"],
+    "databaseName": "sei_main_net",
+    "redisDBNumber": 7,
+    "moleculerNamespace": "namespace-sei-main-net"
   }
 ]

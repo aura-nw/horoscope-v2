@@ -61,21 +61,7 @@
     type_names:
       prefix: pacific_
   tables: '!include pacific/tables/tables.yaml'
-- name: sei
-  kind: postgres
-  configuration:
-    connection_info:
-      database_url:
-        from_env: DATABASE_URL_SEI
-      isolation_level: read-committed
-      use_prepared_statements: false
-  customization:
-    naming_convention: hasura-default
-    root_fields:
-      namespace: sei
-    type_names:
-      prefix: sei_
-  tables: '!include sei/tables/tables.yaml'
+  functions: '!include pacific/functions/functions.yaml'
 - name: serenity
   kind: postgres
   configuration:

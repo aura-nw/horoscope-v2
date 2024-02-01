@@ -81,6 +81,7 @@ export default class Cw721MediaService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_CW721_TOKEN_MEDIA,
     jobName: BULL_JOB_NAME.HANDLE_CW721_TOKEN_MEDIA,
+    concurrency: config.cw721.concurrencyHandleTokenMedia,
   })
   async jobHandlerTokenMedia(_payload: { tokenMedia: ITokenMediaInfo }) {
     let { tokenMedia } = _payload;
@@ -213,6 +214,8 @@ export default class Cw721MediaService extends BullableService {
           token_uri: undefined,
           extension: undefined,
         },
+        token_uri: undefined,
+        extension: undefined,
       };
       try {
         tokenInfo = JSON.parse(
@@ -230,8 +233,8 @@ export default class Cw721MediaService extends BullableService {
         token_id: tokens[index].onchainTokenId,
         cw721_token_id: tokens[index].cw721_token_id,
         onchain: {
-          token_uri: tokenInfo.info.token_uri,
-          extension: tokenInfo.info.extension,
+          token_uri: tokenInfo.token_uri ?? tokenInfo.info?.token_uri,
+          extension: tokenInfo.extension ?? tokenInfo.info?.extension,
           metadata: {},
         },
         offchain: {

@@ -52,20 +52,11 @@ select_permissions:
   - role: internal_service
     permission:
       columns:
-        - height
-        - hash
-        - time
-        - proposer_address
         - data
-      filter: {}
-      limit: 100
-  - role: public
-    permission:
-      columns:
-        - height
         - hash
-        - time
+        - height
         - proposer_address
-        - data
+        - time
+        - tx_count
       filter: {}
       limit: 100

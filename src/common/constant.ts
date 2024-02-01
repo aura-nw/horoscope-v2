@@ -47,6 +47,7 @@ export const BULL_JOB_NAME = {
   HANDLE_STAKE_EVENT: 'handle:stake-event',
   CRAWL_BLOCK: 'crawl:block',
   HANDLE_TRANSACTION: 'handle:transaction',
+  CRAWL_TRANSACTION: 'crawl:transaction',
   HANDLE_COIN_TRANSFER: 'handle:coin_transfer',
   HANDLE_CW721_TRANSACTION: 'handle:cw721-tx',
   REFRESH_CW721_STATS: 'refresh:cw721-stats',
@@ -81,6 +82,8 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_EVENT_PARTITION: 'job:create-event-partition',
   JOB_CREATE_TRANSACTION_PARTITION: 'job:create-transaction-partition',
   JOB_CREATE_BLOCK_PARTITION: 'job:create-block-partition',
+  JOB_CREATE_TRANSACTION_MESSAGE_PARTITION:
+    'job:create-transaction-message-partition',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
   CRAWL_DAILY_STATISTICS: 'crawl:daily-statistics',
   CRAWL_ACCOUNT_STATISTICS: 'crawl:account-statistics',
@@ -108,9 +111,15 @@ export const BULL_JOB_NAME = {
   JOB_CHECK_EVENT_CONSTRAINT: 'job:check-need-create-event-constraint',
   JOB_CHECK_TRANSACTION_CONSTRAINT:
     'job:check-need-create-transaction-constraint',
+  JOB_CHECK_TRANSACTION_MESSAGE_CONSTRAINT:
+    'job:check-need-create-transaction-message-constraint',
   JOB_CREATE_EVENT_CONSTRAIN: 'job:create-event-constraint',
   JOB_UPDATE_ASSETS: 'job:update-assets',
+  UPLOAD_BLOCK_RAW_LOG_TO_S3: 'job:upload-block-raw-log-to-s3',
   JOB_CREATE_TRANSACTION_CONSTRAINT: 'job:create-transaction-constraint',
+  JOB_CREATE_TRANSACTION_MESSAGE_CONSTRAINT:
+    'job:create-transaction-message-constraint',
+  JOB_UPDATE_TX_COUNT_IN_BLOCK: 'job:update-tx-count-in-block',
 };
 
 export const SERVICE = {
@@ -279,6 +288,10 @@ export const SERVICE = {
         key: 'CreateEventAttrPartition',
         path: 'v1.CreateEventAttrPartition',
       },
+      CreateTransactionMessagePartition: {
+        key: 'CreateTransactionMessagePartition',
+        path: 'v1.CreateTransactionMessagePartition',
+      },
       ReDecodeTx: {
         key: 'ReDecodeTx',
         path: 'v1.ReDecodeTx',
@@ -322,6 +335,14 @@ export const SERVICE = {
       CreateConstraintInTransactionPartition: {
         key: 'CreateConstraintInTransactionPartition',
         path: 'v1.CreateConstraintInTransactionPartition',
+      },
+      CreateConstraintInTransactionMessagePartition: {
+        key: 'CreateConstraintInTransactionMessagePartition',
+        path: 'v1.CreateConstraintInTransactionMessagePartition',
+      },
+      UpdateTxCountInBlock: {
+        key: 'UpdateTxCountInBlock',
+        path: 'v1.UpdateTxCountInBlock',
       },
     },
     CrawlIBCTaoService: {
@@ -383,6 +404,10 @@ export const SERVICE = {
         key: 'getData',
         path: 'v1.HoroscopeHandlerService.getData',
       },
+    },
+    UploadBlockRawLogToS3: {
+      key: 'UploadBlockRawLogToS3',
+      path: 'v1.UploadBlockRawLogToS3',
     },
   },
 };

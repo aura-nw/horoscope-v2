@@ -1,5 +1,6 @@
 {
   "chainId": "aura-testnet",
+  "chainName": "aura",
   "networkPrefixAddress": "aura",
   "consensusPrefixAddress": "valcons",
   "validatorPrefixAddress": "valoper",
@@ -21,13 +22,19 @@
     "timeRefreshCw721Stats": "1 * * * *",
     "reindexing": {
       "limitRecordGet": 500
-    }
+    },
+    "concurrencyHandleTokenMedia": 10
   },
   "crawlBlock": {
     "millisecondCrawl": 5000,
     "numberOfBlockPerCall": 100,
     "startBlock": 4860000,
     "saveRawLog": true
+  },
+  "crawlTransaction": {
+    "millisecondCrawl": 1000,
+    "numberOfBlockPerCall": 100,
+    "chunkSize": 1000
   },
   "handleCoinTransfer": {
     "key": "handleCoinTransfer",
@@ -184,6 +191,14 @@
     "limitRecordGet": 10000,
     "chunkSizeInsert": 1000
   },
+  "migrationTransactionMessageToPartition": {
+    "startId": 100000000,
+    "endId": 200000000,
+    "step": 100000000,
+    "limitRecordGet": 10000,
+    "chunkSizeInsert": 1000,
+    "statementTimeout": 600000
+  },
   "jobCheckNeedCreateEventAttributePartition": {
     "range": 100000,
     "step": 10000,
@@ -201,6 +216,10 @@
   "jobCheckNeedCreateBlockPartition": {
     "millisecondCrawl": 10000,
     "templateTable": "block"
+  },
+  "jobCheckNeedCreateTransactionMessagePartition": {
+    "millisecondCrawl": 10000,
+    "templateTable": "transaction_message"
   },
   "httpBatchRequest": {
     "dispatchMilisecond": 1000,
@@ -275,10 +294,32 @@
     "millisecondRepeatJob": 10000,
     "lcdRecordGet": 5
   },
+  "uploadBlockRawLogToS3": {
+    "key": "uploadBlockRawLogToS3",
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 100,
+    "overwriteS3IfFound": true
+  },
+  "uploadTransactionRawLogToS3": {
+    "key": "uploadTransactionRawLogToS3",
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 100
+  },
   "jobCreateConstraintInTransactionPartition": {
     "jobRepeatCheckNeedCreateConstraint": {
       "millisecondRepeatJob": 600000
     },
     "statementTimeout": 600000
+  },
+  "jobCreateConstraintInTransactionMessagePartition": {
+    "jobRepeatCheckNeedCreateConstraint": {
+      "millisecondRepeatJob": 10000
+    },
+    "statementTimeout": 600000
+  },
+  "jobUpdateTxCountInBlock": {
+    "key": "jobUpdateTxCountInBlock",
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 100
   }
 }

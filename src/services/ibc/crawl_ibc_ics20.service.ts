@@ -62,6 +62,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
       .andWhere('ibc_message.type', IbcMessage.EVENT_TYPE.SEND_PACKET)
       .andWhere('message:transaction.height', '>', startHeight)
       .andWhere('message:transaction.height', '<=', endHeight)
+      .andWhere('message:transaction.code', 0)
       .select(
         'message:transaction.timestamp',
         'ibc_message.sequence_key',
@@ -113,6 +114,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
       .andWhere('ibc_message.type', IbcMessage.EVENT_TYPE.RECV_PACKET)
       .andWhere('message:transaction.height', '>', startHeight)
       .andWhere('message:transaction.height', '<=', endHeight)
+      .andWhere('message:transaction.code', 0)
       .select(
         'message:transaction.timestamp',
         'ibc_message.sequence_key',
@@ -192,6 +194,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
       .andWhere('ibc_message.type', IbcMessage.EVENT_TYPE.ACKNOWLEDGE_PACKET)
       .andWhere('message:transaction.height', '>', startHeight)
       .andWhere('message:transaction.height', '<=', endHeight)
+      .andWhere('message:transaction.code', 0)
       .orderBy('message.id')
       .select(
         'message:transaction.timestamp',
@@ -204,7 +207,9 @@ export default class CrawlIBCIcs20Service extends BullableService {
       const acksSuccess = ics20Acks.filter((ack) => {
         const ackEvents = ack.message.events;
         if (ackEvents.length !== 2) {
-          throw Error(`Ack ibc hasn't emmitted enough events: ${ack.id}`);
+          this.logger.error(`Ack ibc hasn't emmitted enough events: ${ack.id}`);
+          const ackContent = ack.message.content;
+          return 'result' in ackContent.acknowledgement;
         }
         const [success] = ackEvents[1].getAttributesFrom([
           EventAttribute.ATTRIBUTE_KEY.SUCCESS,
@@ -221,7 +226,9 @@ export default class CrawlIBCIcs20Service extends BullableService {
       const acksError = ics20Acks.filter((ack) => {
         const ackEvents = ack.message.events;
         if (ackEvents.length !== 2) {
-          throw Error(`Ack ibc hasn't emmitted enough events: ${ack.id}`);
+          this.logger.error(`Ack ibc hasn't emmitted enough events: ${ack.id}`);
+          const ackContent = ack.message.content;
+          return 'error' in ackContent.acknowledgement;
         }
         const [success] = ackEvents[1].getAttributesFrom([
           EventAttribute.ATTRIBUTE_KEY.SUCCESS,
@@ -252,6 +259,7 @@ export default class CrawlIBCIcs20Service extends BullableService {
       .andWhere('ibc_message.type', IbcMessage.EVENT_TYPE.TIMEOUT_PACKET)
       .andWhere('message:transaction.height', '>', startHeight)
       .andWhere('message:transaction.height', '<=', endHeight)
+      .andWhere('message:transaction.code', 0)
       .orderBy('message.id')
       .select('message:transaction.timestamp', 'ibc_message.sequence_key')
       .transacting(trx);
@@ -294,8 +302,10 @@ export default class CrawlIBCIcs20Service extends BullableService {
         'sequence_key'
       );
       msgs.forEach((msg) => {
-        ibcIcs20sKeyBy[msg.sequence_key].finish_time = msg.timestamp;
-        ibcIcs20sKeyBy[msg.sequence_key].status = type;
+        if (ibcIcs20sKeyBy[msg.sequence_key]) {
+          ibcIcs20sKeyBy[msg.sequence_key].finish_time = msg.timestamp;
+          ibcIcs20sKeyBy[msg.sequence_key].status = type;
+        }
       });
       await IbcIcs20.query()
         .transacting(trx)

@@ -36,6 +36,7 @@ export default class Cw20 {
     time: '2023-01-12T01:53:57.216Z',
     proposer_address: 'auraomd;cvpio3j4eg',
     data: {},
+    tx_count: 1,
   });
 
   codeId = {
@@ -227,7 +228,7 @@ export default class Cw20 {
     this.cw20UpdateByContractService.getQueueManager().stopAll();
     await this.broker.start();
     await knex.raw(
-      'TRUNCATE TABLE code, cw20_contract, block, transaction, smart_contract_event, block_checkpoint RESTART IDENTITY CASCADE'
+      'TRUNCATE TABLE code, cw20_contract, block, transaction, event, event_attribute, smart_contract_event, block_checkpoint RESTART IDENTITY CASCADE'
     );
     await Block.query().insert(this.block);
     await Transaction.query().insertGraph(this.txInsert);

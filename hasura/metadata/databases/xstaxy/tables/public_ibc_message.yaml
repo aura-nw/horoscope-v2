@@ -20,7 +20,13 @@ object_relationships:
           schema: public
   - name: transaction_message
     using:
-      foreign_key_constraint_on: transaction_message_id
+      manual_configuration:
+        column_mapping:
+          transaction_message_id: id
+        insertion_order: null
+        remote_table:
+          name: transaction_message
+          schema: public
 select_permissions:
   - role: internal_service
     permission:

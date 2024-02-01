@@ -21,6 +21,15 @@ object_relationships:
   - name: smart_contract
     using:
       foreign_key_constraint_on: smart_contract_id
+  - name: transaction
+    using:
+      manual_configuration:
+        column_mapping:
+          tx_id: id
+        insertion_order: null
+        remote_table:
+          name: transaction
+          schema: public
 array_relationships:
   - name: cw20_activities
     using:
@@ -41,11 +50,12 @@ select_permissions:
     permission:
       columns:
         - action
+        - created_at
         - event_id
         - id
         - index
         - smart_contract_id
-        - created_at
+        - tx_id
         - updated_at
       filter: {}
       limit: 100
