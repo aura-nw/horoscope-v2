@@ -72,7 +72,7 @@ export default class CoinTransferSpec {
     await Promise.all([
       knex.raw('TRUNCATE TABLE coin_transfer RESTART IDENTITY CASCADE'),
       knex.raw(
-        'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+        'TRUNCATE TABLE block, block_signature, transaction, event, event_attribute RESTART IDENTITY CASCADE'
       ),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
     ]);
@@ -268,7 +268,7 @@ export default class CoinTransferSpec {
     await Promise.all([
       knex.raw('TRUNCATE TABLE coin_transfer RESTART IDENTITY CASCADE'),
       knex.raw(
-        'TRUNCATE TABLE block, transaction, event RESTART IDENTITY CASCADE'
+        'TRUNCATE TABLE block, block_signature, transaction, event, event_attribute RESTART IDENTITY CASCADE'
       ),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
       this.crawlTxService?._stop(),
