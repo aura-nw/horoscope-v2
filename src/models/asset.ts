@@ -1,5 +1,4 @@
 /* eslint-disable import/no-cycle */
-import { Model } from 'objection';
 import BaseModel from './base';
 import { IbcChannel } from './ibc_channel';
 
@@ -26,19 +25,6 @@ export class Asset extends BaseModel {
 
   static get tableName() {
     return 'asset';
-  }
-
-  static get relationMappings() {
-    return {
-      ibc_channel: {
-        relation: Model.BelongsToOneRelation,
-        modelClass: IbcChannel,
-        join: {
-          from: 'asset.origin_id',
-          to: 'ibc_channel.channel_id',
-        },
-      },
-    };
   }
 
   static TYPE = {
