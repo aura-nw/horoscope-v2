@@ -290,6 +290,10 @@
     },
     "statementTimeout": 600000
   },
+  "jobUpdateAssets": {
+    "millisecondRepeatJob": 10000,
+    "lcdRecordGet": 5
+  },
   "uploadBlockRawLogToS3": {
     "key": "uploadBlockRawLogToS3",
     "millisecondCrawl": 1000,

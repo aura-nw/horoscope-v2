@@ -298,6 +298,10 @@
     },
     "statementTimeout": 600000
   },
+  "jobUpdateAssets": {
+    "millisecondRepeatJob": 10000,
+    "lcdRecordGet": 5
+  },
   "jobCreateConstraintInTransactionMessagePartition": {
     "jobRepeatCheckNeedCreateConstraint": {
       "millisecondRepeatJob": 10000

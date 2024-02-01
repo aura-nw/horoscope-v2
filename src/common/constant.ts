@@ -114,6 +114,7 @@ export const BULL_JOB_NAME = {
   JOB_CHECK_TRANSACTION_MESSAGE_CONSTRAINT:
     'job:check-need-create-transaction-message-constraint',
   JOB_CREATE_EVENT_CONSTRAIN: 'job:create-event-constraint',
+  JOB_UPDATE_ASSETS: 'job:update-assets',
   UPLOAD_BLOCK_RAW_LOG_TO_S3: 'job:upload-block-raw-log-to-s3',
   JOB_CREATE_TRANSACTION_CONSTRAINT: 'job:create-transaction-constraint',
   JOB_CREATE_TRANSACTION_MESSAGE_CONSTRAINT:
@@ -326,6 +327,10 @@ export const SERVICE = {
       CreateConstraintInEventPartition: {
         key: 'CreateConstraintInEventPartition',
         path: 'v1.CreateConstraintInEventPartition',
+      },
+      UpdateAssets: {
+        key: 'UpdateAssets',
+        path: 'v1.UpdateAssets',
       },
       CreateConstraintInTransactionPartition: {
         key: 'CreateConstraintInTransactionPartition',
