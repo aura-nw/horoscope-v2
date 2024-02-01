@@ -12,6 +12,7 @@ export async function up(knex: Knex): Promise<void> {
           time TIMESTAMP WITH TIME ZONE NOT NULL,
           proposer_address VARCHAR(255) NOT NULL,
           data jsonb NOT NULL,
+          tx_count integer,
           CONSTRAINT block_partition_hash_unique UNIQUE (height, hash)
       ) PARTITION BY RANGE(height);
 
