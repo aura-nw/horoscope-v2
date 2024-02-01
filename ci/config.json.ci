@@ -191,6 +191,14 @@
     "limitRecordGet": 10000,
     "chunkSizeInsert": 1000
   },
+  "migrationTransactionMessageToPartition": {
+    "startId": 100000000,
+    "endId": 200000000,
+    "step": 100000000,
+    "limitRecordGet": 10000,
+    "chunkSizeInsert": 1000,
+    "statementTimeout": 600000
+  },
   "jobCheckNeedCreateEventAttributePartition": {
     "range": 100000,
     "step": 10000,
@@ -217,6 +225,10 @@
   "jobCheckNeedCreateTransactionPartition": {
     "millisecondCrawl": 10000,
     "templateTable": "transaction"
+  },
+  "jobCheckNeedCreateTransactionMessagePartition": {
+    "millisecondCrawl": 10000,
+    "templateTable": "transaction_message"
   },
   "httpBatchRequest": {
     "dispatchMilisecond": 1000,
@@ -271,6 +283,12 @@
   "jobCreateConstraintInEventPartition": {
     "jobRepeatCheckNeedCreateConstraint": {
       "millisecondRepeatJob": 600000
+    },
+    "statementTimeout": 600000
+  },
+  "jobCreateConstraintInTransactionMessagePartition": {
+    "jobRepeatCheckNeedCreateConstraint": {
+      "millisecondRepeatJob": 10000
     },
     "statementTimeout": 600000
   },
