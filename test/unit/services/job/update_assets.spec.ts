@@ -197,21 +197,27 @@ export default class UpdateAssetsJobTest {
     expect(assets.length).toEqual(updateAssets.length + mockCw20Tokens.length);
     const updatedAssetsKeyByDenom = _.keyBy(assets, 'denom');
     const updatedNativeAsset = updatedAssetsKeyByDenom[updateAssets[0].denom];
-    expect(updatedNativeAsset.origin_id).toBeNull();
-    expect(updatedNativeAsset.name).toBeNull();
-    expect(updatedNativeAsset.type).toEqual(Asset.TYPE.NATIVE);
-    expect(updatedNativeAsset.total_supply).toEqual(updateAssets[0].amount);
-    expect(updatedNativeAsset.id).toEqual(nativeAsset.id);
+    expect(updatedNativeAsset).toMatchObject({
+      origin_id: null,
+      name: null,
+      type: Asset.TYPE.NATIVE,
+      total_supply: updateAssets[0].amount,
+      id: nativeAsset.id,
+    });
     const updatedIbcAsset = updatedAssetsKeyByDenom[updateAssets[1].denom];
-    expect(updatedIbcAsset.origin_id).toEqual(updateAssets[1].origin);
-    expect(updatedIbcAsset.name).toBeNull();
-    expect(updatedIbcAsset.type).toEqual(Asset.TYPE.IBC_TOKEN);
-    expect(updatedIbcAsset.total_supply).toEqual(updateAssets[1].amount);
-    expect(updatedIbcAsset.id).toEqual(ibcAsset.id);
+    expect(updatedIbcAsset).toMatchObject({
+      origin_id: updateAssets[1].origin,
+      name: null,
+      type: Asset.TYPE.IBC_TOKEN,
+      total_supply: updateAssets[1].amount,
+      id: ibcAsset.id,
+    });
     const newIbcAsset = updatedAssetsKeyByDenom[updateAssets[2].denom];
-    expect(newIbcAsset.origin_id).toEqual(updateAssets[2].origin);
-    expect(newIbcAsset.name).toBeNull();
-    expect(newIbcAsset.type).toEqual(Asset.TYPE.IBC_TOKEN);
-    expect(newIbcAsset.total_supply).toEqual(updateAssets[2].amount);
+    expect(newIbcAsset).toMatchObject({
+      origin_id: updateAssets[2].origin,
+      name: null,
+      type: Asset.TYPE.IBC_TOKEN,
+      total_supply: updateAssets[2].amount,
+    });
   }
 }
