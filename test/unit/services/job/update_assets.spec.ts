@@ -147,7 +147,7 @@ export default class UpdateAssetsJobTest {
       .spyOn(this.updateAssetsJob, 'queryRpcOriginAssets')
       .mockResolvedValue(mockAssets);
     await this.updateAssetsJob.jobUpdateAssets();
-    const assets = await Asset.query();
+    let assets = await Asset.query();
     const cw20Tokens = await Cw20Contract.query().withGraphFetched(
       'smart_contract'
     );
@@ -170,5 +170,48 @@ export default class UpdateAssetsJobTest {
     expect(ibcAsset.name).toBeNull();
     expect(ibcAsset.type).toEqual(Asset.TYPE.IBC_TOKEN);
     expect(ibcAsset.total_supply).toEqual(mockAssets[1].amount);
+    const updateAssets = [
+      {
+        denom: config.networkDenom,
+        amount: '122313465',
+        origin: undefined,
+      },
+      {
+        denom:
+          'ibc/64846F530A4FFAF387CFC4F3F369EA9C83FC158B7F09B4573DD9A3EE8EA49F06',
+        amount: '456774',
+        origin: 'channel-2',
+      },
+      {
+        denom:
+          'ibc/ABCD6F530A4FFAF387CFC4F3F369EA9C83FC158B7F09B4573DD9A3EE8EA4XYZT',
+        amount: '456774',
+        origin: 'channel-2',
+      },
+    ];
+    jest
+      .spyOn(this.updateAssetsJob, 'queryRpcOriginAssets')
+      .mockResolvedValue(updateAssets);
+    await this.updateAssetsJob.jobUpdateAssets();
+    assets = await Asset.query();
+    expect(assets.length).toEqual(updateAssets.length + mockCw20Tokens.length);
+    const updatedAssetsKeyByDenom = _.keyBy(assets, 'denom');
+    const updatedNativeAsset = updatedAssetsKeyByDenom[updateAssets[0].denom];
+    expect(updatedNativeAsset.origin_id).toBeNull();
+    expect(updatedNativeAsset.name).toBeNull();
+    expect(updatedNativeAsset.type).toEqual(Asset.TYPE.NATIVE);
+    expect(updatedNativeAsset.total_supply).toEqual(updateAssets[0].amount);
+    expect(updatedNativeAsset.id).toEqual(nativeAsset.id);
+    const updatedIbcAsset = updatedAssetsKeyByDenom[updateAssets[1].denom];
+    expect(updatedIbcAsset.origin_id).toEqual(updateAssets[1].origin);
+    expect(updatedIbcAsset.name).toBeNull();
+    expect(updatedIbcAsset.type).toEqual(Asset.TYPE.IBC_TOKEN);
+    expect(updatedIbcAsset.total_supply).toEqual(updateAssets[1].amount);
+    expect(updatedIbcAsset.id).toEqual(ibcAsset.id);
+    const newIbcAsset = updatedAssetsKeyByDenom[updateAssets[2].denom];
+    expect(newIbcAsset.origin_id).toEqual(updateAssets[2].origin);
+    expect(newIbcAsset.name).toBeNull();
+    expect(newIbcAsset.type).toEqual(Asset.TYPE.IBC_TOKEN);
+    expect(newIbcAsset.total_supply).toEqual(updateAssets[2].amount);
   }
 }
