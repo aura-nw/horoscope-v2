@@ -198,19 +198,13 @@ export default class UpdateAssetsJobTest {
     const updatedAssetsKeyByDenom = _.keyBy(assets, 'denom');
     const updatedNativeAsset = updatedAssetsKeyByDenom[updateAssets[0].denom];
     expect(updatedNativeAsset).toMatchObject({
-      origin_id: null,
-      name: null,
-      type: Asset.TYPE.NATIVE,
+      ..._.omit(nativeAsset, 'updated_at'),
       total_supply: updateAssets[0].amount,
-      id: nativeAsset.id,
     });
     const updatedIbcAsset = updatedAssetsKeyByDenom[updateAssets[1].denom];
     expect(updatedIbcAsset).toMatchObject({
-      origin_id: updateAssets[1].origin,
-      name: null,
-      type: Asset.TYPE.IBC_TOKEN,
+      ..._.omit(ibcAsset, 'updated_at'),
       total_supply: updateAssets[1].amount,
-      id: ibcAsset.id,
     });
     const newIbcAsset = updatedAssetsKeyByDenom[updateAssets[2].denom];
     expect(newIbcAsset).toMatchObject({
