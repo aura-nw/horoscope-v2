@@ -147,7 +147,7 @@ export default class UpdateAssetsJobTest {
       .spyOn(this.updateAssetsJob, 'queryRpcOriginAssets')
       .mockResolvedValue(mockAssets);
     await this.updateAssetsJob.jobUpdateAssets();
-    const assets = await Asset.query();
+    let assets = await Asset.query();
     const cw20Tokens = await Cw20Contract.query().withGraphFetched(
       'smart_contract'
     );
@@ -170,5 +170,48 @@ export default class UpdateAssetsJobTest {
     expect(ibcAsset.name).toBeNull();
     expect(ibcAsset.type).toEqual(Asset.TYPE.IBC_TOKEN);
     expect(ibcAsset.total_supply).toEqual(mockAssets[1].amount);
+    const updateAssets = [
+      {
+        denom: config.networkDenom,
+        amount: '122313465',
+        origin: undefined,
+      },
+      {
+        denom:
+          'ibc/64846F530A4FFAF387CFC4F3F369EA9C83FC158B7F09B4573DD9A3EE8EA49F06',
+        amount: '456774',
+        origin: 'channel-2',
+      },
+      {
+        denom:
+          'ibc/ABCD6F530A4FFAF387CFC4F3F369EA9C83FC158B7F09B4573DD9A3EE8EA4XYZT',
+        amount: '456774',
+        origin: 'channel-2',
+      },
+    ];
+    jest
+      .spyOn(this.updateAssetsJob, 'queryRpcOriginAssets')
+      .mockResolvedValue(updateAssets);
+    await this.updateAssetsJob.jobUpdateAssets();
+    assets = await Asset.query();
+    expect(assets.length).toEqual(updateAssets.length + mockCw20Tokens.length);
+    const updatedAssetsKeyByDenom = _.keyBy(assets, 'denom');
+    const updatedNativeAsset = updatedAssetsKeyByDenom[updateAssets[0].denom];
+    expect(updatedNativeAsset).toMatchObject({
+      ..._.omit(nativeAsset, 'updated_at'),
+      total_supply: updateAssets[0].amount,
+    });
+    const updatedIbcAsset = updatedAssetsKeyByDenom[updateAssets[1].denom];
+    expect(updatedIbcAsset).toMatchObject({
+      ..._.omit(ibcAsset, 'updated_at'),
+      total_supply: updateAssets[1].amount,
+    });
+    const newIbcAsset = updatedAssetsKeyByDenom[updateAssets[2].denom];
+    expect(newIbcAsset).toMatchObject({
+      origin_id: updateAssets[2].origin,
+      name: null,
+      type: Asset.TYPE.IBC_TOKEN,
+      total_supply: updateAssets[2].amount,
+    });
   }
 }
