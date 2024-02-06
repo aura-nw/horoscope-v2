@@ -19,5 +19,5 @@ export async function up(knex: Knex): Promise<void> {
 
 export async function down(knex: Knex): Promise<void> {
   await knex.schema.raw(`
-    DROP FUNCTION IF EXISTS public.transaction_join_group_smart_contract_event(contractaddress character varying)`);
+    DROP FUNCTION IF EXISTS public.transaction_join_group_smart_contract_event(contractaddress character varying, limitValue int)`);
 }
