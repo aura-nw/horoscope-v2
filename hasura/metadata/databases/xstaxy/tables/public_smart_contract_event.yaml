@@ -47,12 +47,13 @@ select_permissions:
   - role: internal_service
     permission:
       columns:
-        - event_id
         - action
+        - created_at
+        - event_id
         - id
         - index
         - smart_contract_id
-        - created_at
+        - tx_id
         - updated_at
       filter: {}
       limit: 100
