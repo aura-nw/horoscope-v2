@@ -9,6 +9,7 @@ import { CommitSigSDKType } from '@aura-nw/aurajs/types/codegen/tendermint/types
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
+import { toBase64, toUtf8 } from '@cosmjs/encoding';
 import {
   BULL_JOB_NAME,
   getHttpBatchClient,
@@ -16,7 +17,7 @@ import {
   IProviderJSClientFactory,
   SERVICE,
 } from '../../common';
-import { Block, BlockCheckpoint, Event } from '../../models';
+import { Block, BlockCheckpoint, Event, EventAttribute } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
@@ -183,6 +184,14 @@ export default class CrawlBlockService extends BullableService {
           }
           if (block.block_result.end_block_events?.length > 0) {
             block.block_result.end_block_events.forEach((event: any) => {
+              if (event.type === Event.EVENT_TYPE.BLOCK_BLOOM) {
+                const attrBloom = event.attributes.filter(
+                  (attr: any) => attr.key === EventAttribute.ATTRIBUTE_KEY.BLOOM
+                );
+                if (attrBloom.length > 0) {
+                  attrBloom[0].value = toBase64(toUtf8(attrBloom[0].value));
+                }
+              }
               events.push({
                 ...event,
                 source: Event.SOURCE.END_BLOCK_EVENT,
