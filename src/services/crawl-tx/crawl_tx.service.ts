@@ -569,7 +569,10 @@ export default class CrawlTxService extends BullableService {
       (item: string, index: number) => item === flattenEventEncoded[index]
     );
     if (checkResult === false) {
-      this.logger.warn('Mapping event to log is wrong');
+      this.logger.warn(
+        'Mapping event to log is wrong: ',
+        tx.tx_response.txhash
+      );
     }
   }
 
