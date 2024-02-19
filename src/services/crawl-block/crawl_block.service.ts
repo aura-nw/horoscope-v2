@@ -9,7 +9,6 @@ import { CommitSigSDKType } from '@aura-nw/aurajs/types/codegen/tendermint/types
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
-import { toBase64, toUtf8 } from '@cosmjs/encoding';
 import {
   BULL_JOB_NAME,
   getHttpBatchClient,
@@ -189,7 +188,7 @@ export default class CrawlBlockService extends BullableService {
                   (attr: any) => attr.key === EventAttribute.ATTRIBUTE_KEY.BLOOM
                 );
                 if (attrBloom.length > 0) {
-                  attrBloom[0].value = toBase64(toUtf8(attrBloom[0].value));
+                  attrBloom[0].value = '';
                 }
               }
               events.push({
