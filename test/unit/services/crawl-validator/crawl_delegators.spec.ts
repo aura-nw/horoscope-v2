@@ -15,6 +15,7 @@ import {
   defaultSigningClientOptions,
 } from '../../../helper/constant';
 import knex from '../../../../src/common/utils/db_connection';
+import { sleep } from '../../../../src/common/utils/helper';
 
 @Describe('Test crawl_delegators service')
 export default class CrawlDelegatorsTest {
@@ -114,6 +115,7 @@ export default class CrawlDelegatorsTest {
       memo
     );
     assertIsDeliverTxSuccess(result);
+    await sleep(5000);
 
     const validator = await Validator.query().first();
 
@@ -122,6 +124,7 @@ export default class CrawlDelegatorsTest {
       address: validator?.operator_address ?? '',
       height: validator?.delegators_last_height ?? 0,
     });
+    await sleep(5000);
 
     const updatedValidator = await Validator.query().first();
 
