@@ -2,6 +2,7 @@
 - '!include public_account_balance.yaml'
 - '!include public_account_statistics.yaml'
 - '!include public_account_vesting.yaml'
+- '!include public_asset.yaml'
 - '!include public_block.yaml'
 - '!include public_block_checkpoint.yaml'
 - '!include public_block_signature.yaml'

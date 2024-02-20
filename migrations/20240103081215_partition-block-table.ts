@@ -24,10 +24,12 @@ export async function up(knex: Knex): Promise<void> {
 
     // Update new table name(event_partition) to event name
     await knex
-      .raw(`
+      .raw(
+        `
         ALTER TABLE block ALTER COLUMN data DROP NOT NULL;
         ALTER TABLE block RENAME TO block_partition_0_100000000;
-        `)
+        `
+      )
       .transacting(trx);
     await knex
       .raw('ALTER TABLE block_partition RENAME TO block;')
