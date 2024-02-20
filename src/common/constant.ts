@@ -119,6 +119,7 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_TRANSACTION_MESSAGE_CONSTRAINT:
     'job:create-transaction-message-constraint',
   JOB_UPDATE_TX_COUNT_IN_BLOCK: 'job:update-tx-count-in-block',
+  CHECKPOINT_UPDATE_DELEGATOR: 'job:checkpoint_update_delegator',
 };
 
 export const SERVICE = {
@@ -434,6 +435,7 @@ export const MSG_TYPE = {
   MSG_DELEGATE: '/cosmos.staking.v1beta1.MsgDelegate',
   MSG_REDELEGATE: '/cosmos.staking.v1beta1.MsgBeginRedelegate',
   MSG_UNDELEGATE: '/cosmos.staking.v1beta1.MsgUndelegate',
+  MSG_CANCEL_UNDELEGATE: '/cosmos.staking.v1beta1.MsgCancelUnbondingDelegation',
   MSG_CREATE_VALIDATOR: '/cosmos.staking.v1beta1.MsgCreateValidator',
   MSG_SUBMIT_PROPOSAL: '/cosmos.gov.v1beta1.MsgSubmitProposal',
   MSG_SUBMIT_PROPOSAL_V1: '/cosmos.gov.v1.MsgSubmitProposal',

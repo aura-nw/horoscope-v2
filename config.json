@@ -1,5 +1,5 @@
 {
-  "chainId": "aura-testnet",
+  "chainId": "xstaxy-1",
   "chainName": "aura",
   "networkPrefixAddress": "aura",
   "consensusPrefixAddress": "valcons",
@@ -115,8 +115,9 @@
     "millisecondCrawl": 5000
   },
   "crawlDelegators": {
-    "millisecondCrawl": 3600000,
-    "queryPageLimit": 100
+    "millisecondCrawl": 10000,
+    "queryPageLimit": 100,
+    "txMsgPageLimit": 100
   },
   "cw20": {
     "blocksPerCall": 100,
