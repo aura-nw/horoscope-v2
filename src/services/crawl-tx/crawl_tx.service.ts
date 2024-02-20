@@ -319,94 +319,6 @@ export default class CrawlTxService extends BullableService {
     return listDecodedTx;
   }
 
-  // insert list decoded tx and related table (event, event_attribute, message, message_received)
-  async insertDecodedTxAndRelated(
-    listDecodedTx: { listTx: any; height: number; timestamp: string }[],
-    transactionDB: Knex.Transaction
-  ) {
-    this.logger.debug(listDecodedTx);
-    const listTxModel: any[] = [];
-    listDecodedTx.forEach((payloadBlock) => {
-      const { listTx, height, timestamp } = payloadBlock;
-      listTx.forEach((tx: any, indexTx: number) => {
-        this.logger.debug(tx, timestamp);
-        let sender = '';
-        try {
-          sender = this._registry.decodeAttribute(
-            this._findAttribute(
-              tx.tx_response.events,
-              'message',
-              this._registry.encodeAttribute('sender')
-            )
-          );
-        } catch (error) {
-          this.logger.warn(
-            'txhash not has sender event: ',
-            tx.tx_response.txhash
-          );
-          this.logger.warn(error);
-        }
-
-        // set index to event
-        this.setMsgIndexToEvent(tx);
-
-        const txInsert = {
-          '#id': `transaction-${height}-${indexTx}`,
-          ...Transaction.fromJson({
-            index: tx.tx_response.index,
-            height: parseInt(tx.tx_response.height, 10),
-            hash: tx.tx_response.txhash,
-            codespace: tx.tx_response.codespace ?? '',
-            code: parseInt(tx.tx_response.code ?? '0', 10),
-            gas_used: tx.tx_response.gas_used?.toString() ?? '0',
-            gas_wanted: tx.tx_response.gas_wanted?.toString() ?? '0',
-            gas_limit: tx.tx.auth_info.fee.gas_limit?.toString() ?? '0',
-            fee: JSON.stringify(tx.tx.auth_info.fee.amount),
-            timestamp,
-            data: config.handleTransaction.saveRawLog ? tx : null,
-            memo: tx.tx.body.memo,
-          }),
-          events: tx.tx_response.events?.map((event: any) => ({
-            tx_msg_index: event.msg_index ?? undefined,
-            type: event.type,
-            attributes: event.attributes.map(
-              (attribute: any, index: number) => ({
-                tx_id: `#ref{transaction-${height}-${indexTx}.id}`,
-                block_height: parseInt(tx.tx_response.height, 10),
-                index,
-                composite_key: attribute?.key
-                  ? `${event.type}.${this._registry.decodeAttribute(
-                      attribute?.key
-                    )}`
-                  : null,
-                key: attribute?.key
-                  ? this._registry.decodeAttribute(attribute?.key)
-                  : null,
-                value: attribute?.value
-                  ? this._registry.decodeAttribute(attribute?.value)
-                  : null,
-              })
-            ),
-            block_height: height,
-            source: Event.SOURCE.TX_EVENT,
-          })),
-          messages: tx.tx.body.messages.map((message: any, index: any) => ({
-            sender,
-            index,
-            type: message['@type'],
-            content: message,
-          })),
-        };
-        listTxModel.push(txInsert);
-      });
-    });
-
-    const resultInsertGraph = await Transaction.query()
-      .insertGraph(listTxModel, { allowRefs: true })
-      .transacting(transactionDB);
-    this.logger.debug('result insert tx', resultInsertGraph);
-  }
-
   async insertTxDecoded(
     listTxDecoded: { listTx: any; height: number; timestamp: string }[],
     transactionDB: Knex.Transaction
@@ -599,11 +511,11 @@ export default class CrawlTxService extends BullableService {
       returnEvents.push(tx.tx_response.events[i]);
     }
     // get messages log and append to list event
-    tx.tx_response.logs.forEach((log: any) => {
+    tx.tx_response.logs.forEach((log: any, index: number) => {
       log.events.forEach((event: any) => {
         returnEvents.push({
           ...event,
-          msg_index: log.msg_index,
+          msg_index: index,
         });
       });
     });
