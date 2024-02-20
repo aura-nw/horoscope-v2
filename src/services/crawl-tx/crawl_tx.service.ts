@@ -11,6 +11,7 @@ import { toBase64, fromBase64 } from '@cosmjs/encoding';
 import { Knex } from 'knex';
 import { Queue } from 'bullmq';
 import { GetNodeInfoResponseSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/base/tendermint/v1beta1/query';
+import _ from 'lodash';
 import Utils from '../../common/utils/utils';
 import {
   BULL_JOB_NAME,
@@ -474,11 +475,11 @@ export default class CrawlTxService extends BullableService {
         // this.logger.warn(error);
       }
 
-      // set index to event
-      this.setMsgIndexToEvent(rawLogTx);
+      // create list event with msg index
+      const listEventWithMsgIndex = this.createListEventWithMsgIndex(rawLogTx);
 
       const eventInsert =
-        rawLogTx.tx_response.events?.map((event: any) => ({
+        listEventWithMsgIndex?.map((event: any) => ({
           tx_id: tx.id,
           tx_msg_index: event.msg_index ?? undefined,
           type: event.type,
@@ -561,7 +562,10 @@ export default class CrawlTxService extends BullableService {
     });
     // compare 2 array
     if (flattenLog.length !== flattenEventEncoded.length) {
-      this.logger.warn('Length between 2 flatten array is not equal');
+      this.logger.warn(
+        'Length between 2 flatten array is not equal',
+        tx.tx_response.txhash
+      );
     }
     flattenLog = flattenLog.sort();
     flattenEventEncoded = flattenEventEncoded.sort();
@@ -569,56 +573,47 @@ export default class CrawlTxService extends BullableService {
       (item: string, index: number) => item === flattenEventEncoded[index]
     );
     if (checkResult === false) {
-      this.logger.warn('Mapping event to log is wrong');
+      this.logger.warn(
+        'Mapping event to log is wrong: ',
+        tx.tx_response.txhash
+      );
     }
   }
 
-  public setMsgIndexToEvent(tx: any) {
+  public createListEventWithMsgIndex(tx: any): any[] {
+    const returnEvents: any[] = [];
     // if this is failed tx, then no need to set index msg
     if (!tx.tx_response.logs) {
       this.logger.debug('Failed tx, no need to set index msg');
-      return;
+      return [];
     }
-    // count total attribute for each message, countAttributeInEvent[i] = x mean message i has x attributes
-    const countAttributeInEvent: number[] = tx?.tx_response?.logs?.map(
-      (log: any) =>
-        log.events.reduce(
-          (acc: number, curr: any) => acc + curr.attributes.length,
-          0
-        )
-    );
-
     let reachLastEventTypeTx = false;
-    let countCurrentAttribute = 0;
-    let currentCompareEventId = 0;
+    // get all tx log
     for (let i = 0; i < tx?.tx_response?.events?.length; i += 1) {
       if (tx.tx_response.events[i].type === 'tx') {
         reachLastEventTypeTx = true;
       }
       if (reachLastEventTypeTx && tx.tx_response.events[i].type !== 'tx') {
-        if (
-          countCurrentAttribute < countAttributeInEvent[currentCompareEventId]
-        ) {
-          countCurrentAttribute += tx.tx_response.events[i].attributes.length;
-          // eslint-disable-next-line no-param-reassign
-          tx.tx_response.events[i].msg_index = currentCompareEventId;
-        }
-
-        // after count, check if count is equal countAttributeInEvent[currentCompareEventId] or not
-        if (
-          countCurrentAttribute === countAttributeInEvent[currentCompareEventId]
-        ) {
-          // if true, count success, then next currentCompareEventId and reset count = 0
-          currentCompareEventId += 1;
-          countCurrentAttribute = 0;
-        } else if (
-          countCurrentAttribute > countAttributeInEvent[currentCompareEventId]
-        ) {
-          this.logger.warn('Count event in log is not equal event encoded');
-        }
+        break;
       }
+      returnEvents.push(tx.tx_response.events[i]);
     }
-    this.checkMappingEventToLog(tx);
+    // get messages log and append to list event
+    tx.tx_response.logs.forEach((log: any) => {
+      log.events.forEach((event: any) => {
+        returnEvents.push({
+          ...event,
+          msg_index: log.msg_index,
+        });
+      });
+    });
+
+    // check mapping event log ok
+    const cloneTx = _.clone(tx);
+    cloneTx.tx_response.events = returnEvents;
+    this.checkMappingEventToLog(cloneTx);
+
+    return returnEvents;
   }
 
   private _findAttribute(
