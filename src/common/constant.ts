@@ -456,6 +456,7 @@ export const MSG_TYPE = {
   MSG_DELEGATE: '/cosmos.staking.v1beta1.MsgDelegate',
   MSG_REDELEGATE: '/cosmos.staking.v1beta1.MsgBeginRedelegate',
   MSG_UNDELEGATE: '/cosmos.staking.v1beta1.MsgUndelegate',
+  MSG_CANCEL_UNDELEGATE: '/cosmos.staking.v1beta1.MsgCancelUnbondingDelegation',
   MSG_CREATE_VALIDATOR: '/cosmos.staking.v1beta1.MsgCreateValidator',
   MSG_SUBMIT_PROPOSAL: '/cosmos.gov.v1beta1.MsgSubmitProposal',
   MSG_SUBMIT_PROPOSAL_V1: '/cosmos.gov.v1.MsgSubmitProposal',
