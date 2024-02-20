@@ -38,7 +38,10 @@ export default class CrawlDelegatorsService extends BullableService {
   // @description: Old logic for delete and crawl latest delegators from RPC, used for api
   // =================================================OLD LOGIC=========================================================
   /**
-   * @description: Delete all and crawl again delegator
+   * @description: Delete all and crawl again delegator, so all delegator will be crawled from RPC instead of from
+   * transaction_message table, so you need to stop CRAWL_DELEGATORS job and wait until this update complete, this job
+   * will update checkpoint of CRAWL_DELEGATORS job, set it to latest transaction_message, then you can start CRAWL_DELEGATORS
+   * again
    */
   public async updateAllValidator(): Promise<void> {
     await Delegator.query().delete(true).where('id', '>', 0);
@@ -63,6 +66,16 @@ export default class CrawlDelegatorsService extends BullableService {
       )
     );
     await Promise.all(jobCrawlDelegators);
+    const latestTransactionMessage = await TransactionMessage.query()
+      .orderBy('id', 'DESC')
+      .limit(1);
+    await BlockCheckpoint.query()
+      .update({
+        height: latestTransactionMessage[0].id,
+      })
+      .where({
+        job_name: BULL_JOB_NAME.CHECKPOINT_UPDATE_DELEGATOR,
+      });
   }
 
   @QueueHandler({
@@ -188,7 +201,10 @@ export default class CrawlDelegatorsService extends BullableService {
       delegateTxMsg.content.validator_address
     );
 
-    if (!validator) return;
+    if (!validator) {
+      this.logger.info('No validator found!');
+      return;
+    }
 
     const delegator = await Delegator.query().findOne({
       delegator_address: delegateTxMsg.content.delegator_address,
@@ -236,7 +252,10 @@ export default class CrawlDelegatorsService extends BullableService {
       reDelegateTxMsg.content.validator_dst_address
     );
 
-    if (!validatorSrc || !validatorDst) return;
+    if (!validatorSrc || !validatorDst) {
+      this.logger.info('No validator found!');
+      return;
+    }
 
     const delegatorSrc = await Delegator.query().findOne({
       delegator_address: reDelegateTxMsg.content.delegator_address,
@@ -303,7 +322,10 @@ export default class CrawlDelegatorsService extends BullableService {
       unDelegateTxMsg.content.validator_address
     );
 
-    if (!validator) return;
+    if (!validator) {
+      this.logger.info('No validator found!');
+      return;
+    }
 
     const delegator = await Delegator.query().findOne({
       delegator_address: unDelegateTxMsg.content.delegator_address,
@@ -380,7 +402,6 @@ export default class CrawlDelegatorsService extends BullableService {
           default:
             break;
         }
-        this.logger.info(msg.id, 'msg.id');
         await trx(BlockCheckpoint.tableName)
           .update({
             height: msg.id,
