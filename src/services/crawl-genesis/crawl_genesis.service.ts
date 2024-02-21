@@ -41,6 +41,7 @@ import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
 import { ALLOWANCE_TYPE, FEEGRANT_STATUS } from '../feegrant/feegrant.service';
 
+const {fromGenesis} = config.crawlGenesis;
 @Service({
   name: SERVICE.V1.CrawlGenesisService.key,
   version: 1,
@@ -80,45 +81,51 @@ export default class CrawlGenesisService extends BullableService {
       return;
     }
 
-    if (!fs.existsSync('genesis.json')) fs.appendFileSync('genesis.json', '');
-    try {
-      const genesis = await this._httpBatchClient.execute(
-        createJsonRpcRequest('genesis')
-      );
+    if (fromGenesis) {
+      if (!fs.existsSync('genesis.json')) fs.appendFileSync('genesis.json', '');
+      try {
+        const genesis = await this._httpBatchClient.execute(
+          createJsonRpcRequest('genesis')
+        );
 
-      fs.appendFileSync('genesis.json', JSON.stringify(genesis.result.genesis));
-    } catch (error: any) {
-      if (JSON.parse(error.message).code !== -32603) {
-        this.logger.error(error);
-        return;
-      }
+        fs.appendFileSync(
+          'genesis.json',
+          JSON.stringify(genesis.result.genesis)
+        );
+      } catch (error: any) {
+        if (JSON.parse(error.message).code !== -32603) {
+          this.logger.error(error);
+          return;
+        }
 
-      let index = 0;
-      let done = false;
-      while (!done) {
-        try {
-          this.logger.info(`Query genesis_chunked at page ${index}`);
-          const resultChunk = await this._httpBatchClient.execute(
-            createJsonRpcRequest('genesis_chunked', {
-              chunk: index.toString(),
-            })
-          );
+        let index = 0;
+        let done = false;
+        while (!done) {
+          try {
+            this.logger.info(`Query genesis_chunked at page ${index}`);
+            const resultChunk = await this._httpBatchClient.execute(
+              createJsonRpcRequest('genesis_chunked', {
+                chunk: index.toString(),
+              })
+            );
 
-          fs.appendFileSync(
-            'genesis.json',
-            fromUtf8(fromBase64(resultChunk.result.data))
-          );
-          index += 1;
-        } catch (err) {
-          if (JSON.parse(error.message).code !== -32603) {
-            this.logger.error(error);
-            return;
+            fs.appendFileSync(
+              'genesis.json',
+              fromUtf8(fromBase64(resultChunk.result.data))
+            );
+            index += 1;
+          } catch (err) {
+            if (JSON.parse(error.message).code !== -32603) {
+              this.logger.error(error);
+              return;
+            }
+
+            done = true;
           }
-
-          done = true;
         }
       }
-    }
+    } else if (!fs.existsSync('state.json'))
+        throw new Error('Not found state json file');
 
     // fs.renameSync('genesis.txt', 'genesis.json');
 
@@ -885,8 +892,9 @@ export default class CrawlGenesisService extends BullableService {
     data: string,
     filter?: (data: any) => void
   ): Promise<any> {
+    const file = fromGenesis ? 'genesis.json' : 'state.json';
     const pipeline = Chain.chain([
-      fs.createReadStream('genesis.json'),
+      fs.createReadStream(file),
       Pick.withParser({ filter: data }),
       StreamArr.streamArray(),
     ]);
