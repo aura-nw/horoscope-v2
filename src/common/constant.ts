@@ -116,6 +116,7 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_EVENT_CONSTRAIN: 'job:create-event-constraint',
   JOB_UPDATE_ASSETS: 'job:update-assets',
   UPLOAD_BLOCK_RAW_LOG_TO_S3: 'job:upload-block-raw-log-to-s3',
+  UPLOAD_TX_RAW_LOG_TO_S3: 'job:upload-tx-raw-log-to-s3',
   JOB_CREATE_TRANSACTION_CONSTRAINT: 'job:create-transaction-constraint',
   JOB_CREATE_TRANSACTION_MESSAGE_CONSTRAINT:
     'job:create-transaction-message-constraint',
@@ -408,6 +409,10 @@ export const SERVICE = {
     UploadBlockRawLogToS3: {
       key: 'UploadBlockRawLogToS3',
       path: 'v1.UploadBlockRawLogToS3',
+    },
+    UploadTxRawLogToS3: {
+      key: 'UploadTxRawLogToS3',
+      path: 'v1.UploadTxRawLogToS3',
     },
   },
 };
