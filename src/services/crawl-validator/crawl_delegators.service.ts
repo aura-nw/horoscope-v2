@@ -167,7 +167,7 @@ export default class CrawlDelegatorsService extends BullableService {
 
   // =================================================END OLD LOGIC=========================================================
 
-  private async getCheckpointUpdateDelegator(): Promise<BlockCheckpoint> {
+  public async getCheckpointUpdateDelegator(): Promise<BlockCheckpoint> {
     let checkpointDelegator = await BlockCheckpoint.query().findOne({
       job_name: BULL_JOB_NAME.CHECKPOINT_UPDATE_DELEGATOR,
     });
@@ -183,7 +183,7 @@ export default class CrawlDelegatorsService extends BullableService {
 
       checkpointDelegator = BlockCheckpoint.fromJson({
         job_name: BULL_JOB_NAME.CHECKPOINT_UPDATE_DELEGATOR,
-        height: oldestTransactionMessage[0].id,
+        height: oldestTransactionMessage[0].id - 1,
       });
 
       await BlockCheckpoint.query().insert(checkpointDelegator);
@@ -282,6 +282,13 @@ export default class CrawlDelegatorsService extends BullableService {
         await trx(Delegator.tableName).delete().where({
           id: delegatorSrc.id,
         });
+        await trx(Validator.tableName)
+          .update({
+            delegators_count: validatorSrc.delegators_count - 1,
+          })
+          .where({
+            id: validatorSrc.id,
+          });
       }
     }
 
@@ -364,7 +371,7 @@ export default class CrawlDelegatorsService extends BullableService {
     queueName: BULL_JOB_NAME.CRAWL_DELEGATORS,
     jobName: BULL_JOB_NAME.CRAWL_DELEGATORS,
   })
-  public async handleJob(_payload: object): Promise<void> {
+  public async handleJob(): Promise<void> {
     const checkpointDelegator = await this.getCheckpointUpdateDelegator();
     const txMsg = await TransactionMessage.query()
       .where('id', '>', checkpointDelegator.height)
