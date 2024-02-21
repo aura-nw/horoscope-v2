@@ -3,7 +3,7 @@ name: CI
 on:
   workflow_dispatch:
   push:
-    branches: [develop, staging]
+    branches: [develop, staging, evmos]
 jobs:
   lint:
     uses: ./.github/workflows/lint.yml
@@ -79,6 +79,7 @@ jobs:
           echo REPO_MANIFEST_BRANCH=master >> $GITHUB_ENV
           echo REPO_MANIFEST_ENV_DEV=./clusters/k8s-dev/horoscope-v2/horoscope-crawl-auratestnet >> $GITHUB_ENV
           echo REPO_MANIFEST_ENV_STAGING=./clusters/k8s-testnet-euphoria/horoscope-v2/horoscope-crawl-euphoria >> $GITHUB_ENV
+          echo REPO_MANIFEST_ENV_EVMOS=./clusters/k8s-dev/horoscope-v2/horoscope-crawl-evmos-testnet >> $GITHUB_ENV
           echo REPO_MANIFEST_ENV_MAIN=./clusters/k8s-prod/horoscope-v2/horoscope-crawl-xstaxy >> $GITHUB_ENV
           echo REPO_MANIFEST_TAG_IMAGE=image_erascope >> $GITHUB_ENV
       - name: Update manifest
