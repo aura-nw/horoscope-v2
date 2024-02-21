@@ -5,8 +5,14 @@ import {
   SigningStargateClient,
   assertIsDeliverTxSuccess,
 } from '@cosmjs/stargate';
-import { BULL_JOB_NAME } from '../../../../src/common';
-import { BlockCheckpoint, Validator } from '../../../../src/models';
+import BigNumber from 'bignumber.js';
+import { BULL_JOB_NAME, MSG_TYPE } from '../../../../src/common';
+import {
+  BlockCheckpoint,
+  Delegator,
+  TransactionMessage,
+  Validator,
+} from '../../../../src/models';
 import CrawlDelegatorsService from '../../../../src/services/crawl-validator/crawl_delegators.service';
 import config from '../../../../config.json' assert { type: 'json' };
 import network from '../../../../network.json' assert { type: 'json' };
@@ -84,7 +90,7 @@ export default class CrawlDelegatorsTest {
   @AfterAll()
   async tearDown() {
     await Promise.all([
-      knex.raw('TRUNCATE TABLE validator RESTART IDENTITY CASCADE'),
+      knex.raw('TRUNCATE TABLE validator, delegator RESTART IDENTITY CASCADE'),
       knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
     ]);
     await this.broker.stop();
@@ -131,21 +137,6 @@ export default class CrawlDelegatorsTest {
     expect(updatedValidator?.delegators_count).toEqual(2);
     expect(updatedValidator?.delegators_last_height).toEqual(3967500);
 
-    // expect(
-    //   _.omit(
-    //     delegators.find(
-    //       (del) =>
-    //         del.delegator_address ===
-    //         'aura1phaxpevm5wecex2jyaqty2a4v02qj7qmvkxyqk'
-    //     ),
-    //     ['id']
-    //   )
-    // ).toEqual({
-    //   validator_id: updatedValidator?.id,
-    //   delegator_address: 'aura1phaxpevm5wecex2jyaqty2a4v02qj7qmvkxyqk',
-    //   amount: '100000000',
-    // });
-
     result = await client.undelegateTokens(
       'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
       'auravaloper1phaxpevm5wecex2jyaqty2a4v02qj7qmhyhvcg',
@@ -156,80 +147,318 @@ export default class CrawlDelegatorsTest {
     assertIsDeliverTxSuccess(result);
   }
 
-  // @Test('Remove not exist validator delegators success')
-  // public async testRemoveValidatorDelegators() {
-  //   const amount = coins(2000000, 'uaura');
-  //   const memo = 'test undelegate and remove not exist validator delegators';
-  //
-  //   const wallet = await DirectSecp256k1HdWallet.fromMnemonic(
-  //     'notice oak worry limit wrap speak medal online prefer cluster roof addict wrist behave treat actual wasp year salad speed social layer crew genius',
-  //     {
-  //       prefix: 'aura',
-  //     }
-  //   );
-  //   const client = await SigningStargateClient.connectWithSigner(
-  //     network.find((net) => net.chainId === config.chainId)?.RPC[0] ?? '',
-  //     wallet,
-  //     defaultSigningClientOptions
-  //   );
-  //
-  //   let result = await client.delegateTokens(
-  //     'aura1cyyzpxplxdzkeea7kwsydadg87357qnaysj0zm',
-  //     'auravaloper1phaxpevm5wecex2jyaqty2a4v02qj7qmhyhvcg',
-  //     amount[0],
-  //     defaultSendFee,
-  //     memo
-  //   );
-  //   assertIsDeliverTxSuccess(result);
-  //
-  //   const validator = await Validator.query().first();
-  //
-  //   await this.crawlDelegatorsService?.handleJobCrawlValidatorDelegators({
-  //     id: validator?.id ?? 1,
-  //     address: validator?.operator_address ?? '',
-  //     height: validator?.delegators_last_height ?? 0,
-  //   });
-  //
-  //   const delegators = await Delegator.query();
-  //
-  //   expect(
-  //     _.omit(
-  //       delegators.find(
-  //         (del) =>
-  //           del.delegator_address ===
-  //           'aura1cyyzpxplxdzkeea7kwsydadg87357qnaysj0zm'
-  //       ),
-  //       ['id']
-  //     )
-  //   ).toEqual({
-  //     validator_id: validator?.id,
-  //     delegator_address: 'aura1cyyzpxplxdzkeea7kwsydadg87357qnaysj0zm',
-  //     amount: '2000000',
-  //   });
-  //
-  //   result = await client.undelegateTokens(
-  //     'aura1cyyzpxplxdzkeea7kwsydadg87357qnaysj0zm',
-  //     'auravaloper1phaxpevm5wecex2jyaqty2a4v02qj7qmhyhvcg',
-  //     amount[0],
-  //     defaultSendFee,
-  //     memo
-  //   );
-  //   assertIsDeliverTxSuccess(result);
-  //
-  //   await this.crawlDelegatorsService?.handleJobCrawlValidatorDelegators({
-  //     id: validator?.id ?? 1,
-  //     address: validator?.operator_address ?? '',
-  //     height: validator?.delegators_last_height ?? 0,
-  //   });
-  //
-  //   const updateDelegators = await Delegator.query();
-  //
-  //   expect(
-  //     updateDelegators.find(
-  //       (del) =>
-  //         del.delegator_address ===
-  //         'aura1cyyzpxplxdzkeea7kwsydadg87357qnaysj0zm'
-  //     )
-  //   ).toBeUndefined();
-  // }
+  // ==================================NEW LOGIC CRAWL FROM transaction_message TABLE===================================
+  private mockDelegatorAddress = 'mock_delegator_address';
+
+  private async insertFakeTxMsg(
+    msgType: string,
+    sender: string,
+    amount: string,
+    validator: string
+  ): Promise<TransactionMessage> {
+    const txMsg = TransactionMessage.fromJson({
+      tx_id: 1,
+      index: 0,
+      type: msgType,
+      sender,
+      content: {
+        '@type': msgType,
+        amount: {
+          denom: 'uaura',
+          amount,
+        },
+        delegator_address: sender,
+        validator_address: validator,
+      },
+    });
+    return TransactionMessage.query().insert(txMsg);
+  }
+
+  @Test('Test transaction message delegate type')
+  public async test1(): Promise<void> {
+    await knex.raw(`
+      TRUNCATE TABLE validator, delegator, transaction_message, block_checkpoint RESTART IDENTITY CASCADE;
+    `);
+    const mockDelegateAmount = '100000000';
+    await Validator.query().insert(this.validator);
+    await this.insertFakeTxMsg(
+      MSG_TYPE.MSG_DELEGATE,
+      this.mockDelegatorAddress,
+      mockDelegateAmount,
+      this.validator.operator_address
+    );
+    await this.crawlDelegatorsService?.getCheckpointUpdateDelegator();
+    await this.crawlDelegatorsService?.handleJob();
+
+    const validator = await Validator.query().findOne(
+      'operator_address',
+      this.validator.operator_address
+    );
+    const delegator = await Delegator.query().findOne({
+      validator_id: validator?.id,
+      delegator_address: this.mockDelegatorAddress,
+    });
+
+    expect(delegator?.amount).toBe(mockDelegateAmount);
+    expect(validator?.delegators_count).toBe(1);
+  }
+
+  @Test('Test delegate and then delegate more')
+  public async test2(): Promise<void> {
+    await knex.raw(`
+      TRUNCATE TABLE validator, delegator, transaction_message, block_checkpoint RESTART IDENTITY CASCADE;
+    `);
+    const mockDelegateAmount = '100000000';
+    await Validator.query().insert(this.validator);
+    await this.insertFakeTxMsg(
+      MSG_TYPE.MSG_DELEGATE,
+      this.mockDelegatorAddress,
+      mockDelegateAmount,
+      this.validator.operator_address
+    );
+    await this.insertFakeTxMsg(
+      MSG_TYPE.MSG_DELEGATE,
+      this.mockDelegatorAddress,
+      mockDelegateAmount,
+      this.validator.operator_address
+    );
+    await this.crawlDelegatorsService?.getCheckpointUpdateDelegator();
+    await this.crawlDelegatorsService?.handleJob();
+
+    const validator = await Validator.query().findOne(
+      'operator_address',
+      this.validator.operator_address
+    );
+    const delegator = await Delegator.query().findOne({
+      validator_id: validator?.id,
+      delegator_address: this.mockDelegatorAddress,
+    });
+
+    expect(delegator?.amount).toBe(
+      BigNumber(mockDelegateAmount).times(2).toString()
+    );
+    expect(validator?.delegators_count).toBe(1);
+  }
+
+  @Test('Test delegate, then delegate more, and then un delegate a half')
+  public async test3(): Promise<void> {
+    await knex.raw(`
+      TRUNCATE TABLE validator, delegator, transaction_message, block_checkpoint RESTART IDENTITY CASCADE;
+    `);
+    const mockDelegateAmount = '100000000';
+    await Validator.query().insert(this.validator);
+    await this.insertFakeTxMsg(
+      MSG_TYPE.MSG_DELEGATE,
+      this.mockDelegatorAddress,
+      mockDelegateAmount,
+      this.validator.operator_address
+    );
+    await this.insertFakeTxMsg(
+      MSG_TYPE.MSG_DELEGATE,
+      this.mockDelegatorAddress,
+      mockDelegateAmount,
+      this.validator.operator_address
+    );
+    await this.insertFakeTxMsg(
+      MSG_TYPE.MSG_UNDELEGATE,
+      this.mockDelegatorAddress,
+      mockDelegateAmount,
+      this.validator.operator_address
+    );
+    await this.crawlDelegatorsService?.getCheckpointUpdateDelegator();
+    await this.crawlDelegatorsService?.handleJob();
+
+    const validator = await Validator.query().findOne(
+      'operator_address',
+      this.validator.operator_address
+    );
+    const delegator = await Delegator.query().findOne({
+      validator_id: validator?.id,
+      delegator_address: this.mockDelegatorAddress,
+    });
+
+    expect(delegator?.amount).toBe(mockDelegateAmount);
+    expect(validator?.delegators_count).toBe(1);
+  }
+
+  @Test('Test delegate, and then un delegate all')
+  public async test4(): Promise<void> {
+    await knex.raw(`
+      TRUNCATE TABLE validator, delegator, transaction_message, block_checkpoint RESTART IDENTITY CASCADE;
+    `);
+    const mockDelegateAmount = '100000000';
+    await Validator.query().insert(this.validator);
+    await this.insertFakeTxMsg(
+      MSG_TYPE.MSG_DELEGATE,
+      this.mockDelegatorAddress,
+      mockDelegateAmount,
+      this.validator.operator_address
+    );
+    await this.insertFakeTxMsg(
+      MSG_TYPE.MSG_UNDELEGATE,
+      this.mockDelegatorAddress,
+      mockDelegateAmount,
+      this.validator.operator_address
+    );
+    await this.crawlDelegatorsService?.getCheckpointUpdateDelegator();
+    await this.crawlDelegatorsService?.handleJob();
+
+    const validator = await Validator.query().findOne(
+      'operator_address',
+      this.validator.operator_address
+    );
+    const delegator = await Delegator.query().findOne({
+      validator_id: validator?.id,
+      delegator_address: this.mockDelegatorAddress,
+    });
+
+    expect(delegator).toBeUndefined();
+    expect(validator?.delegators_count).toBe(0);
+  }
+
+  @Test('Test delegate, then un delegate and final cancel un delegate')
+  public async test5(): Promise<void> {
+    await knex.raw(`
+      TRUNCATE TABLE validator, delegator, transaction_message, block_checkpoint RESTART IDENTITY CASCADE;
+    `);
+    const mockDelegateAmount = '100000000';
+    await Validator.query().insert(this.validator);
+    await this.insertFakeTxMsg(
+      MSG_TYPE.MSG_DELEGATE,
+      this.mockDelegatorAddress,
+      mockDelegateAmount,
+      this.validator.operator_address
+    );
+    await this.insertFakeTxMsg(
+      MSG_TYPE.MSG_UNDELEGATE,
+      this.mockDelegatorAddress,
+      mockDelegateAmount,
+      this.validator.operator_address
+    );
+    await this.insertFakeTxMsg(
+      MSG_TYPE.MSG_CANCEL_UNDELEGATE,
+      this.mockDelegatorAddress,
+      mockDelegateAmount,
+      this.validator.operator_address
+    );
+    await this.crawlDelegatorsService?.getCheckpointUpdateDelegator();
+    await this.crawlDelegatorsService?.handleJob();
+
+    const validator = await Validator.query().findOne(
+      'operator_address',
+      this.validator.operator_address
+    );
+    const delegator = await Delegator.query().findOne({
+      validator_id: validator?.id,
+      delegator_address: this.mockDelegatorAddress,
+    });
+
+    expect(delegator?.amount).toBe(mockDelegateAmount);
+    expect(validator?.delegators_count).toBe(1);
+  }
+
+  @Test('Test two delegate')
+  public async test6(): Promise<void> {
+    await knex.raw(`
+      TRUNCATE TABLE validator, delegator, transaction_message, block_checkpoint RESTART IDENTITY CASCADE;
+    `);
+    const mockDelegateAmount = '100000000';
+    await Validator.query().insert(this.validator);
+    await this.insertFakeTxMsg(
+      MSG_TYPE.MSG_DELEGATE,
+      `${this.mockDelegatorAddress}_1`,
+      mockDelegateAmount,
+      this.validator.operator_address
+    );
+    await this.insertFakeTxMsg(
+      MSG_TYPE.MSG_DELEGATE,
+      `${this.mockDelegatorAddress}_2`,
+      mockDelegateAmount,
+      this.validator.operator_address
+    );
+    await this.crawlDelegatorsService?.getCheckpointUpdateDelegator();
+    await this.crawlDelegatorsService?.handleJob();
+
+    const validator = await Validator.query().findOne(
+      'operator_address',
+      this.validator.operator_address
+    );
+    const delegator1 = await Delegator.query().findOne({
+      validator_id: validator?.id,
+      delegator_address: `${this.mockDelegatorAddress}_1`,
+    });
+    const delegator2 = await Delegator.query().findOne({
+      validator_id: validator?.id,
+      delegator_address: `${this.mockDelegatorAddress}_2`,
+    });
+
+    expect(delegator1?.amount).toBe(mockDelegateAmount);
+    expect(delegator2?.amount).toBe(mockDelegateAmount);
+    expect(validator?.delegators_count).toBe(2);
+  }
+
+  @Test('Test re delegate')
+  public async test7(): Promise<void> {
+    await knex.raw(`
+      TRUNCATE TABLE validator, delegator, transaction_message, block_checkpoint RESTART IDENTITY CASCADE;
+    `);
+    const mockDelegateAmount = '100000000';
+    await Validator.query().insert(this.validator);
+    const newValidator = JSON.parse(JSON.stringify(this.validator));
+    newValidator.id = 2;
+    newValidator.operator_address = `${newValidator.operator_address}_2`;
+    newValidator.account_address = `${newValidator.account_address}_2`;
+    newValidator.consensus_address = `${newValidator.consensus_address}_2`;
+    newValidator.consensus_hex_address = `${newValidator.consensus_hex_address}_2`;
+    await Validator.query().insert(newValidator);
+    await this.insertFakeTxMsg(
+      MSG_TYPE.MSG_DELEGATE,
+      this.mockDelegatorAddress,
+      mockDelegateAmount,
+      this.validator.operator_address
+    );
+
+    const txMsg = TransactionMessage.fromJson({
+      tx_id: 1,
+      index: 0,
+      type: MSG_TYPE.MSG_REDELEGATE,
+      sender: this.mockDelegatorAddress,
+      content: {
+        '@type': MSG_TYPE.MSG_REDELEGATE,
+        amount: {
+          denom: 'uaura',
+          amount: mockDelegateAmount,
+        },
+        delegator_address: this.mockDelegatorAddress,
+        validator_dst_address: newValidator.operator_address,
+        validator_src_address: this.validator.operator_address,
+      },
+    });
+    await TransactionMessage.query().insert(txMsg);
+
+    await this.crawlDelegatorsService?.getCheckpointUpdateDelegator();
+    await this.crawlDelegatorsService?.handleJob();
+
+    const validatorSrc = await Validator.query().findOne(
+      'operator_address',
+      this.validator.operator_address
+    );
+    const validatorDst = await Validator.query().findOne(
+      'operator_address',
+      newValidator.operator_address
+    );
+    const delegatorSrc = await Delegator.query().findOne({
+      validator_id: validatorSrc?.id,
+      delegator_address: this.mockDelegatorAddress,
+    });
+    const delegatorDst = await Delegator.query().findOne({
+      validator_id: validatorDst?.id,
+      delegator_address: this.mockDelegatorAddress,
+    });
+
+    expect(delegatorSrc).toBeUndefined();
+    expect(delegatorDst?.amount).toBe(mockDelegateAmount);
+    expect(validatorSrc?.delegators_count).toBe(0);
+    expect(validatorDst?.delegators_count).toBe(1);
+  }
 }
