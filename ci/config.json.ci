@@ -120,7 +120,7 @@
     "codesPerBatch": 5000,
     "smartContractsPerBatch": 5000,
     "feeGrantsPerBatch": 5000,
-    "fromGenesis": true
+    "stateFile": false
   },
   "handleVoteTx": {
     "key": "handleVoteTx",
