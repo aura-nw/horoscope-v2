@@ -41,7 +41,7 @@ import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
 import { ALLOWANCE_TYPE, FEEGRANT_STATUS } from '../feegrant/feegrant.service';
 
-const {fromGenesis} = config.crawlGenesis;
+const { stateFile } = config.crawlGenesis;
 @Service({
   name: SERVICE.V1.CrawlGenesisService.key,
   version: 1,
@@ -81,7 +81,7 @@ export default class CrawlGenesisService extends BullableService {
       return;
     }
 
-    if (fromGenesis) {
+    if (!stateFile) {
       if (!fs.existsSync('genesis.json')) fs.appendFileSync('genesis.json', '');
       try {
         const genesis = await this._httpBatchClient.execute(
@@ -125,7 +125,7 @@ export default class CrawlGenesisService extends BullableService {
         }
       }
     } else if (!fs.existsSync('state.json'))
-        throw new Error('Not found state json file');
+      throw new Error('Not found state json file');
 
     // fs.renameSync('genesis.txt', 'genesis.json');
 
@@ -892,7 +892,7 @@ export default class CrawlGenesisService extends BullableService {
     data: string,
     filter?: (data: any) => void
   ): Promise<any> {
-    const file = fromGenesis ? 'genesis.json' : 'state.json';
+    const file = stateFile ? 'state.json' : 'genesis.json';
     const pipeline = Chain.chain([
       fs.createReadStream(file),
       Pick.withParser({ filter: data }),
