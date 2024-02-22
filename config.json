@@ -114,7 +114,7 @@
     "codesPerBatch": 5000,
     "smartContractsPerBatch": 5000,
     "feeGrantsPerBatch": 5000,
-    "stateFile": "https://s3-sgn10.fptcloud.com/punkga-dev/sei-49630285.json"
+    "stateFile": ""
   },
   "handleVoteTx": {
     "key": "handleVoteTx",
