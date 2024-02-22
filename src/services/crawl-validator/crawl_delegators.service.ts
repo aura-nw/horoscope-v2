@@ -19,6 +19,7 @@ import {
 import {
   BlockCheckpoint,
   Delegator,
+  Transaction,
   TransactionMessage,
   Validator,
 } from '../../models';
@@ -372,9 +373,22 @@ export default class CrawlDelegatorsService extends BullableService {
     jobName: BULL_JOB_NAME.CRAWL_DELEGATORS,
   })
   public async handleJob(): Promise<void> {
+    // Job will run after crawl validator job
+    const latestBlockCrawlValidator = await BlockCheckpoint.query().findOne(
+      'job_name',
+      BULL_JOB_NAME.CRAWL_VALIDATOR
+    );
+    if (!latestBlockCrawlValidator) return;
+    const oldestTransactionByHeight = await Transaction.query()
+      .where('height', '=', latestBlockCrawlValidator.height)
+      .orderBy('id', 'ASC')
+      .limit(1);
+    if (oldestTransactionByHeight.length === 0) return;
+
     const checkpointDelegator = await this.getCheckpointUpdateDelegator();
     const txMsg = await TransactionMessage.query()
       .where('id', '>', checkpointDelegator.height)
+      .andWhere('tx_id', '<', oldestTransactionByHeight[0].id)
       .whereIn('type', [
         MSG_TYPE.MSG_DELEGATE,
         MSG_TYPE.MSG_REDELEGATE,
