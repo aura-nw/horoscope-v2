@@ -1,44 +1,47 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-await-in-loop */
-import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { ServiceBroker } from 'moleculer';
+import { ibc } from '@aura-nw/aurajs';
+import { QueryDenomTraceRequest } from '@aura-nw/aurajs/types/codegen/ibc/applications/transfer/v1/query';
+import { fromBase64, fromUtf8, toHex } from '@cosmjs/encoding';
+import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
-import { fromBase64, fromUtf8, toHex } from '@cosmjs/encoding';
+import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+import axios from 'axios';
 import fs from 'fs';
 import _ from 'lodash';
+import { ServiceBroker } from 'moleculer';
+import { Stream } from 'stream';
 import Chain from 'stream-chain';
 import Pick from 'stream-json/filters/Pick';
 import StreamArr from 'stream-json/streamers/StreamArray';
-import { QueryDenomTraceRequest } from '@aura-nw/aurajs/types/codegen/ibc/applications/transfer/v1/query';
-import { ibc } from '@aura-nw/aurajs';
-import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
-import Utils from '../../common/utils/utils';
-import {
-  Account,
-  BlockCheckpoint,
-  Code,
-  Proposal,
-  SmartContract,
-  Validator,
-  Feegrant,
-  IbcClient,
-  IbcConnection,
-  IbcChannel,
-} from '../../models';
+import { promisify } from 'util';
+import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
   ABCI_QUERY_PATH,
   AccountType,
   BULL_JOB_NAME,
-  getHttpBatchClient,
   ICoin,
   MSG_TYPE,
   REDIS_KEY,
   SERVICE,
+  getHttpBatchClient,
 } from '../../common';
-import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
+import Utils from '../../common/utils/utils';
+import {
+  Account,
+  BlockCheckpoint,
+  Code,
+  Feegrant,
+  IbcChannel,
+  IbcClient,
+  IbcConnection,
+  Proposal,
+  SmartContract,
+  Validator,
+} from '../../models';
 import { ALLOWANCE_TYPE, FEEGRANT_STATUS } from '../feegrant/feegrant.service';
 
 const { stateFile } = config.crawlGenesis;
@@ -82,48 +85,7 @@ export default class CrawlGenesisService extends BullableService {
     }
 
     if (!stateFile) {
-      if (!fs.existsSync('genesis.json')) fs.appendFileSync('genesis.json', '');
-      try {
-        const genesis = await this._httpBatchClient.execute(
-          createJsonRpcRequest('genesis')
-        );
-
-        fs.appendFileSync(
-          'genesis.json',
-          JSON.stringify(genesis.result.genesis)
-        );
-      } catch (error: any) {
-        if (JSON.parse(error.message).code !== -32603) {
-          this.logger.error(error);
-          return;
-        }
-
-        let index = 0;
-        let done = false;
-        while (!done) {
-          try {
-            this.logger.info(`Query genesis_chunked at page ${index}`);
-            const resultChunk = await this._httpBatchClient.execute(
-              createJsonRpcRequest('genesis_chunked', {
-                chunk: index.toString(),
-              })
-            );
-
-            fs.appendFileSync(
-              'genesis.json',
-              fromUtf8(fromBase64(resultChunk.result.data))
-            );
-            index += 1;
-          } catch (err) {
-            if (JSON.parse(error.message).code !== -32603) {
-              this.logger.error(error);
-              return;
-            }
-
-            done = true;
-          }
-        }
-      }
+      await this.getGenesisFile();
     } else if (!fs.existsSync('state.json'))
       throw new Error('Not found state json file');
 
@@ -161,6 +123,59 @@ export default class CrawlGenesisService extends BullableService {
         );
       }
     });
+  }
+
+  async getGenesisFile() {
+    if (!fs.existsSync('genesis.json')) fs.appendFileSync('genesis.json', '');
+    try {
+      const genesis = await this._httpBatchClient.execute(
+        createJsonRpcRequest('genesis')
+      );
+
+      fs.appendFileSync('genesis.json', JSON.stringify(genesis.result.genesis));
+    } catch (error: any) {
+      if (JSON.parse(error.message).code !== -32603) {
+        this.logger.error(error);
+        return;
+      }
+
+      let index = 0;
+      let done = false;
+      while (!done) {
+        try {
+          this.logger.info(`Query genesis_chunked at page ${index}`);
+          const resultChunk = await this._httpBatchClient.execute(
+            createJsonRpcRequest('genesis_chunked', {
+              chunk: index.toString(),
+            })
+          );
+
+          fs.appendFileSync(
+            'genesis.json',
+            fromUtf8(fromBase64(resultChunk.result.data))
+          );
+          index += 1;
+        } catch (err) {
+          if (JSON.parse(error.message).code !== -32603) {
+            this.logger.error(error);
+            return;
+          }
+
+          done = true;
+        }
+      }
+    }
+  }
+
+  async getStateFile() {
+    const writer = fs.createWriteStream('genesis.json');
+    const response = await axios({
+      url: stateFile,
+      method: 'GET',
+      responseType: 'stream',
+    });
+    response.data.pipe(writer);
+    return promisify(Stream.Stream.finished)(writer);
   }
 
   @QueueHandler({
@@ -892,9 +907,8 @@ export default class CrawlGenesisService extends BullableService {
     data: string,
     filter?: (data: any) => void
   ): Promise<any> {
-    const file = stateFile ? 'state.json' : 'genesis.json';
     const pipeline = Chain.chain([
-      fs.createReadStream(file),
+      fs.createReadStream('genesis.json'),
       Pick.withParser({ filter: data }),
       StreamArr.streamArray(),
     ]);
