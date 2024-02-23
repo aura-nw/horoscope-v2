@@ -166,7 +166,9 @@ export default class Cw721MediaService extends BullableService {
             { tokenMedia },
             {
               removeOnComplete: true,
-              removeOnFail: false,
+              removeOnFail: {
+                count: 3,
+              },
               jobId: `${tokenMedia.address}_${tokenMedia.token_id}`,
             }
           )
