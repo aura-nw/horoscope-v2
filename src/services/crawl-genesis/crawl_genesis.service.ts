@@ -86,8 +86,9 @@ export default class CrawlGenesisService extends BullableService {
 
     if (!stateFile) {
       await this.getGenesisFile();
-    } else if (!fs.existsSync('state.json'))
-      throw new Error('Not found state json file');
+    } else {
+      await this.getStateFile();
+    }
 
     // fs.renameSync('genesis.txt', 'genesis.json');
 
