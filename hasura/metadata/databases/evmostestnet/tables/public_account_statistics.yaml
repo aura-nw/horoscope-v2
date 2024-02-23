@@ -1,0 +1,17 @@
+table:
+  name: account_statistics
+  schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - id
+        - address
+        - amount_sent
+        - amount_received
+        - tx_sent
+        - gas_used
+        - date
+      filter: {}
+      limit: 100
+      allow_aggregations: true

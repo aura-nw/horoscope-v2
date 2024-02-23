@@ -46,6 +46,21 @@
     type_names:
       prefix: euphoria_
   tables: '!include euphoria/tables/tables.yaml'
+- name: evmostestnet
+  kind: postgres
+  configuration:
+    connection_info:
+      database_url:
+        from_env: DATABASE_URL_EVMOS_TESTNET
+      isolation_level: read-committed
+      use_prepared_statements: false
+  customization:
+    naming_convention: hasura-default
+    root_fields:
+      namespace: evmostestnet
+    type_names:
+      prefix: evmostestnet_
+  tables: '!include evmostestnet/tables/tables.yaml'
 - name: pacific
   kind: postgres
   configuration:

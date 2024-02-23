@@ -1,0 +1,61 @@
+table:
+  name: smart_contract_event
+  schema: public
+object_relationships:
+  - name: cw721_activity
+    using:
+      foreign_key_constraint_on:
+        column: smart_contract_event_id
+        table:
+          name: cw721_activity
+          schema: public
+  - name: event
+    using:
+      manual_configuration:
+        column_mapping:
+          event_id: id
+        insertion_order: null
+        remote_table:
+          name: event
+          schema: public
+  - name: smart_contract
+    using:
+      foreign_key_constraint_on: smart_contract_id
+  - name: transaction
+    using:
+      manual_configuration:
+        column_mapping:
+          tx_id: id
+        insertion_order: null
+        remote_table:
+          name: transaction
+          schema: public
+array_relationships:
+  - name: cw20_activities
+    using:
+      foreign_key_constraint_on:
+        column: smart_contract_event_id
+        table:
+          name: cw20_activity
+          schema: public
+  - name: smart_contract_event_attributes
+    using:
+      foreign_key_constraint_on:
+        column: smart_contract_event_id
+        table:
+          name: smart_contract_event_attribute
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - action
+        - created_at
+        - event_id
+        - id
+        - index
+        - smart_contract_id
+        - tx_id
+        - updated_at
+      filter: {}
+      limit: 100
