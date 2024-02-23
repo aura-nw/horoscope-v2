@@ -38,7 +38,7 @@ export async function getProviderFactory(): Promise<{
     case chainIdConfigOnServer.Atlantic2:
     case chainIdConfigOnServer.Pacific1:
       ({ ibc, cosmos, cosmwasm, seiprotocol } = await import(
-        '@horoscope-v2/sei-js-proto'
+        '@horoscope/sei-js-proto'
       ));
       provider = seiprotocol;
       break;
