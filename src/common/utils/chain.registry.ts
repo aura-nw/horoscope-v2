@@ -18,9 +18,13 @@ export default class ChainRegistry {
 
   public ibc: any;
 
+  public ethermint: any;
+
   public seiprotocol: any;
 
   public aura: any;
+
+  public evmos: any;
 
   public cosmosSdkVersion: SemVer = new SemVer('v0.45.17');
 
@@ -37,6 +41,8 @@ export default class ChainRegistry {
     this.txRegistryType = providerRegistry.txRegistryType;
     this.aura = providerRegistry.aura;
     this.seiprotocol = providerRegistry.seiprotocol;
+    this.evmos = providerRegistry.evmos;
+    this.ethermint = providerRegistry.ethermint;
 
     // set default registry to decode msg
     this.registry = new Registry([
@@ -66,6 +72,7 @@ export default class ChainRegistry {
         result.value = formattedValue;
         this._logger.error('This typeUrl is not supported');
         this._logger.error(msg.typeUrl);
+        throw Error('okok');
       } else {
         // Utils.isBase64();
         const decoded: any = msgType.toJSON(
