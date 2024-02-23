@@ -137,7 +137,7 @@ export default class Cw721MediaService extends BullableService {
       .where('media_info', null)
       .andWhere('burned', false)
       .andWhere('id', '>', idTokenCheckpoint)
-      .orderBy('id')
+      .orderBy('id', 'ASC')
       .limit(config.cw721.mediaPerBatch)
       .select(
         'contract:smart_contract.address as contract_address',
