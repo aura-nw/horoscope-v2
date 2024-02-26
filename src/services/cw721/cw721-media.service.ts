@@ -146,8 +146,8 @@ export default class Cw721MediaService extends BullableService {
       );
     if (tokensUnprocess.length > 0) {
       this.logger.info(
-        `from id (token) ${tokensUnprocess[0].id} to id (token) ${
-          tokensUnprocess[tokensUnprocess.length - 1].id
+        `from id (token) ${tokensUnprocess[0].cw721_token_id} to id (token) ${
+          tokensUnprocess[tokensUnprocess.length - 1].cw721_token_id
         }`
       );
       // get token_uri and extension
