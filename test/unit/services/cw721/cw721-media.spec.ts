@@ -1,4 +1,10 @@
-import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
+import {
+  AfterAll,
+  AfterEach,
+  BeforeAll,
+  Describe,
+  Test,
+} from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { BULL_JOB_NAME, Config } from '../../../../src/common';
 import Cw721MediaService from '../../../../src/services/cw721/cw721-media.service';
@@ -103,6 +109,12 @@ export default class TestCw721MediaService {
     await Code.query().insertGraph(this.codeId);
     await CW721Contract.query().insertGraph(this.mockInitContract);
     await CW721Contract.query().insertGraph(this.mockInitContract_2);
+  }
+
+  @AfterEach()
+  async afterEach() {
+    jest.resetAllMocks();
+    jest.restoreAllMocks();
   }
 
   @AfterAll()
