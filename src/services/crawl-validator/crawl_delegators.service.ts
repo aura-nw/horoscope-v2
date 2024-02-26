@@ -36,15 +36,17 @@ export default class CrawlDelegatorsService extends BullableService {
     super(broker);
   }
 
-  // @description: Old logic for delete and crawl latest delegators from RPC, used for api
-  // =================================================OLD LOGIC=========================================================
   /**
-   * @description: Delete all and crawl again delegator, so all delegator will be crawled from RPC instead of from
+   * @description: Sync all delegator of validator
+   * @note: Delete all and crawl again delegator, so all delegator will be crawled from RPC instead of from
    * transaction_message table, so you need to stop CRAWL_DELEGATORS job and wait until this update complete, this job
    * will update checkpoint of CRAWL_DELEGATORS job, set it to latest transaction_message, then you can start CRAWL_DELEGATORS
    * again
    */
   public async updateAllValidator(): Promise<void> {
+    await knex.raw(
+      `TRUNCATE TABLE ${Delegator.tableName} RESTART IDENTITY CASCADE`
+    );
     await Delegator.query().delete(true).where('id', '>', 0);
     const validators: Validator[] = await Validator.query();
     const jobCrawlDelegators = validators.map((validator) =>
