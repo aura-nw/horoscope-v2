@@ -29,8 +29,9 @@ export async function getProviderRegistry(): Promise<IProviderRegistry> {
       txRegistryType = seiTxRegistryType;
       break;
     case chainIdConfigOnServer.Evmos90004:
-      ({ ethermint, cosmos, evmos } = await import('@horoscope/evmos-proto'));
-      ({ ibc } = await import('@aura-nw/aurajs'));
+      ({ ethermint, cosmos, evmos, ibc } = await import(
+        '@horoscope/evmos-proto'
+      ));
       txRegistryType = evmosTxRegistryType;
       break;
     case chainIdConfigOnServer.Euphoria:
