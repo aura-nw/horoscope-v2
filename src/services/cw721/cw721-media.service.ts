@@ -136,8 +136,8 @@ export default class Cw721MediaService extends BullableService {
       .withGraphJoined('contract.smart_contract')
       .where('media_info', null)
       .andWhere('burned', false)
-      .andWhere('id', '>', idTokenCheckpoint)
-      .orderBy('id', 'ASC')
+      .andWhere('cw721_token.id', '>', idTokenCheckpoint)
+      .orderBy('cw721_token.id', 'ASC')
       .limit(config.cw721.mediaPerBatch)
       .select(
         'contract:smart_contract.address as contract_address',
@@ -146,8 +146,8 @@ export default class Cw721MediaService extends BullableService {
       );
     if (tokensUnprocess.length > 0) {
       this.logger.info(
-        `from id (token) ${tokensUnprocess[0].id} to id (token) ${
-          tokensUnprocess[tokensUnprocess.length - 1].id
+        `from id (token) ${tokensUnprocess[0].cw721_token_id} to id (token) ${
+          tokensUnprocess[tokensUnprocess.length - 1].cw721_token_id
         }`
       );
       // get token_uri and extension
@@ -174,10 +174,13 @@ export default class Cw721MediaService extends BullableService {
           )
         )
       );
-      await BlockCheckpoint.query().insert({
-        job_name: BULL_JOB_NAME.FILTER_TOKEN_MEDIA_UNPROCESS,
-        height: tokensUnprocess[tokensUnprocess.length - 1].id,
-      });
+      await BlockCheckpoint.query()
+        .insert({
+          job_name: BULL_JOB_NAME.FILTER_TOKEN_MEDIA_UNPROCESS,
+          height: tokensUnprocess[tokensUnprocess.length - 1].cw721_token_id,
+        })
+        .onConflict(['job_name'])
+        .merge();
     }
   }
 
