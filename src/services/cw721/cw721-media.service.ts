@@ -174,10 +174,13 @@ export default class Cw721MediaService extends BullableService {
           )
         )
       );
-      await BlockCheckpoint.query().insert({
-        job_name: BULL_JOB_NAME.FILTER_TOKEN_MEDIA_UNPROCESS,
-        height: tokensUnprocess[tokensUnprocess.length - 1].id,
-      });
+      await BlockCheckpoint.query()
+        .insert({
+          job_name: BULL_JOB_NAME.FILTER_TOKEN_MEDIA_UNPROCESS,
+          height: tokensUnprocess[tokensUnprocess.length - 1].cw721_token_id,
+        })
+        .onConflict(['job_name'])
+        .merge();
     }
   }
 
