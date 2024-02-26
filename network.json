@@ -8,6 +8,14 @@
     "moleculerNamespace": "namespace-xstaxy"
   },
   {
+    "chainId": "evmos_9000-4",
+    "RPC": ["https://evmos-testnet-rpc.polkachu.com/"],
+    "LCD": ["https://evmos-testnet-api.polkachu.com/"],
+    "databaseName": "horoscope_dev_evmos_testnet",
+    "redisDBNumber": 25,
+    "moleculerNamespace": "erascope-dev-evmos-testnet"
+  },
+  {
     "chainId": "euphoria-2",
     "RPC": ["https://rpc.euphoria.aura.network"],
     "LCD": ["https://lcd.euphoria.aura.network"],
