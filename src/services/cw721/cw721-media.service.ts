@@ -27,6 +27,7 @@ import {
 } from '../../common';
 import { S3Service } from '../../common/utils/s3';
 import CW721Token from '../../models/cw721_token';
+import { BlockCheckpoint } from '../../models';
 
 const {
   NODE_ENV,
@@ -125,12 +126,18 @@ export default class Cw721MediaService extends BullableService {
     jobName: BULL_JOB_NAME.FILTER_TOKEN_MEDIA_UNPROCESS,
   })
   async jobHandlerFilter(): Promise<void> {
+    // get id token checkpoint
+    const tokenCheckpoint = await BlockCheckpoint.query().findOne({
+      job_name: BULL_JOB_NAME.FILTER_TOKEN_MEDIA_UNPROCESS,
+    });
+    const idTokenCheckpoint = tokenCheckpoint ? tokenCheckpoint.height : 0;
     const tokensUnprocess = await CW721Token.query()
       .alias('cw721_token')
       .withGraphJoined('contract.smart_contract')
       .where('media_info', null)
       .andWhere('burned', false)
-      .orderBy('id')
+      .andWhere('id', '>', idTokenCheckpoint)
+      .orderBy('id', 'ASC')
       .limit(config.cw721.mediaPerBatch)
       .select(
         'contract:smart_contract.address as contract_address',
@@ -138,6 +145,11 @@ export default class Cw721MediaService extends BullableService {
         'cw721_token.id as cw721_token_id'
       );
     if (tokensUnprocess.length > 0) {
+      this.logger.info(
+        `from id (token) ${tokensUnprocess[0].id} to id (token) ${
+          tokensUnprocess[tokensUnprocess.length - 1].id
+        }`
+      );
       // get token_uri and extension
       const tokensMediaInfo = await this.getTokensMediaInfo(
         tokensUnprocess.map((token) => ({
@@ -162,6 +174,10 @@ export default class Cw721MediaService extends BullableService {
           )
         )
       );
+      await BlockCheckpoint.query().insert({
+        job_name: BULL_JOB_NAME.FILTER_TOKEN_MEDIA_UNPROCESS,
+        height: tokensUnprocess[tokensUnprocess.length - 1].id,
+      });
     }
   }
 
