@@ -72,7 +72,6 @@ export default class ChainRegistry {
         result.value = formattedValue;
         this._logger.error('This typeUrl is not supported');
         this._logger.error(msg.typeUrl);
-        throw Error('okok');
       } else {
         // Utils.isBase64();
         const decoded: any = msgType.toJSON(
