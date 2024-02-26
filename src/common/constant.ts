@@ -11,6 +11,7 @@ export const chainIdConfigOnServer = {
   Xstaxy1: 'xstaxy-1',
   Atlantic2: 'atlantic-2',
   Pacific1: 'pacific-1',
+  Evmos90004: 'evmos_9000-4',
 };
 
 export const REDIS_KEY = {
