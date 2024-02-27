@@ -271,6 +271,10 @@ export const SERVICE = {
         key: 'reindexing',
         path: 'v1.Cw721ReindexingService.reindexing',
       },
+      ReindexingTokens: {
+        key: 'reindexingTokens',
+        path: 'v1.Cw721ReindexingService.reindexingTokens',
+      },
     },
     JobService: {
       CreateBlockPartition: {
