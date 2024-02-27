@@ -4,7 +4,12 @@ import { BULL_JOB_NAME } from '../../../../src/common';
 import HandleTxVoteService from '../../../../src/services/handle-vote/handle_vote_tx.service';
 import CrawlTxService from '../../../../src/services/crawl-tx/crawl_tx.service';
 import knex from '../../../../src/common/utils/db_connection';
-import { Block, BlockCheckpoint, Vote } from '../../../../src/models';
+import {
+  Block,
+  BlockCheckpoint,
+  Transaction,
+  Vote,
+} from '../../../../src/models';
 import tx_fixture_vote from './tx_vote.fixture.json' assert { type: 'json' };
 import tx_fixture_multi_vote from './tx_multi_vote.fixture.json' assert { type: 'json' };
 import tx_fixture_vote_authz from './tx_vote_authz.fixture.json' assert { type: 'json' };
@@ -43,10 +48,8 @@ export default class HandleTxVoteServiceTest {
     this.handleAuthzTxServive?.getQueueManager().stopAll();
     await Promise.all([
       knex.raw(
-        'TRUNCATE TABLE block, block_signature, transaction, event, event_attribute RESTART IDENTITY CASCADE'
+        'TRUNCATE TABLE block, block_signature, transaction, transaction_message, event, event_attribute, vote, block_checkpoint RESTART IDENTITY CASCADE'
       ),
-      knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
-      knex.raw('TRUNCATE TABLE vote RESTART IDENTITY CASCADE'),
     ]);
   }
 
@@ -82,10 +85,14 @@ export default class HandleTxVoteServiceTest {
     ]);
     if (listdecodedTx)
       await knex.transaction(async (trx) => {
-        await this.crawlTxService?.insertDecodedTxAndRelated(
-          listdecodedTx,
-          trx
-        );
+        await this.crawlTxService?.insertTxDecoded(listdecodedTx, trx);
+        const listTxRaw = await Transaction.query()
+          .where('height', '>', 4279259)
+          .andWhere('height', '<=', 4279260)
+          .orderBy('height', 'asc')
+          .orderBy('index', 'asc')
+          .transacting(trx);
+        await this.crawlTxService?.insertRelatedTx(listTxRaw, trx);
       });
     await this.handleVoteTxService?.handleVote();
     const vote = await Vote.query()
@@ -130,10 +137,14 @@ export default class HandleTxVoteServiceTest {
     ]);
     if (listdecodedTx)
       await knex.transaction(async (trx) => {
-        await this.crawlTxService?.insertDecodedTxAndRelated(
-          listdecodedTx,
-          trx
-        );
+        await this.crawlTxService?.insertTxDecoded(listdecodedTx, trx);
+        const listTxRaw = await Transaction.query()
+          .where('height', '>', 4279349)
+          .andWhere('height', '<=', 4279350)
+          .orderBy('height', 'asc')
+          .orderBy('index', 'asc')
+          .transacting(trx);
+        await this.crawlTxService?.insertRelatedTx(listTxRaw, trx);
       });
     await this.handleAuthzTxServive?.handleJob();
     await this.handleVoteTxService?.handleVote();
@@ -188,10 +199,14 @@ export default class HandleTxVoteServiceTest {
     ]);
     if (listdecodedTx)
       await knex.transaction(async (trx) => {
-        await this.crawlTxService?.insertDecodedTxAndRelated(
-          listdecodedTx,
-          trx
-        );
+        await this.crawlTxService?.insertTxDecoded(listdecodedTx, trx);
+        const listTxRaw = await Transaction.query()
+          .where('height', '>', 6794607)
+          .andWhere('height', '<=', 6794619)
+          .orderBy('height', 'asc')
+          .orderBy('index', 'asc')
+          .transacting(trx);
+        await this.crawlTxService?.insertRelatedTx(listTxRaw, trx);
       });
     await this.handleVoteTxService?.handleVote();
     const vote = await Vote.query()
@@ -232,10 +247,14 @@ export default class HandleTxVoteServiceTest {
     ]);
     if (listdecodedTx)
       await knex.transaction(async (trx) => {
-        await this.crawlTxService?.insertDecodedTxAndRelated(
-          listdecodedTx,
-          trx
-        );
+        await this.crawlTxService?.insertTxDecoded(listdecodedTx, trx);
+        const listTxRaw = await Transaction.query()
+          .where('height', '>', 4279259)
+          .andWhere('height', '<=', 4279260)
+          .orderBy('height', 'asc')
+          .orderBy('index', 'asc')
+          .transacting(trx);
+        await this.crawlTxService?.insertRelatedTx(listTxRaw, trx);
       });
     await this.handleVoteTxService?.handleVote();
     const vote = await Vote.query()
@@ -252,10 +271,8 @@ export default class HandleTxVoteServiceTest {
     this.handleAuthzTxServive?.getQueueManager().stopAll();
     await Promise.all([
       knex.raw(
-        'TRUNCATE TABLE block, block_signature, transaction, event, event_attribute RESTART IDENTITY CASCADE'
+        'TRUNCATE TABLE block, block_signature, transaction, event, event_attribute, vote, block_checkpoint RESTART IDENTITY CASCADE'
       ),
-      knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
-      knex.raw('TRUNCATE TABLE vote RESTART IDENTITY CASCADE'),
       this.handleVoteTxService?._stop(),
       this.crawlTxService?._stop(),
       this.handleAuthzTxServive?._stop(),

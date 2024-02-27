@@ -64,10 +64,14 @@ export default class CrawlTransactionTest {
     ]);
     if (listdecodedTx)
       await knex.transaction(async (trx) => {
-        await this.crawlTxService?.insertDecodedTxAndRelated(
-          listdecodedTx,
-          trx
-        );
+        await this.crawlTxService?.insertTxDecoded(listdecodedTx, trx);
+        const listTxRaw = await Transaction.query()
+          .where('height', '>', 423135)
+          .andWhere('height', '<=', 423136)
+          .orderBy('height', 'asc')
+          .orderBy('index', 'asc')
+          .transacting(trx);
+        await this.crawlTxService?.insertRelatedTx(listTxRaw, trx);
       });
 
     const tx = await Transaction.query().findOne(
@@ -124,10 +128,14 @@ export default class CrawlTransactionTest {
     ]);
     if (listdecodedTx)
       await knex.transaction(async (trx) => {
-        await this.crawlTxService?.insertDecodedTxAndRelated(
-          listdecodedTx,
-          trx
-        );
+        await this.crawlTxService?.insertTxDecoded(listdecodedTx, trx);
+        const listTxRaw = await Transaction.query()
+          .where('height', '>', 452048)
+          .andWhere('height', '<=', 452049)
+          .orderBy('height', 'asc')
+          .orderBy('index', 'asc')
+          .transacting(trx);
+        await this.crawlTxService?.insertRelatedTx(listTxRaw, trx);
       });
     const tx = await Transaction.query().findOne(
       'hash',
@@ -550,9 +558,8 @@ export default class CrawlTransactionTest {
     this.crawlTxService?.getQueueManager().stopAll();
     await Promise.all([
       knex.raw(
-        'TRUNCATE TABLE block, block_signature, transaction, event, event_attribute RESTART IDENTITY CASCADE'
+        'TRUNCATE TABLE block, block_signature, transaction, transaction_message, event, event_attribute, block_checkpoint RESTART IDENTITY CASCADE'
       ),
-      knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
       this.crawlTxService?._stop(),
       this.broker.stop(),
     ]);
