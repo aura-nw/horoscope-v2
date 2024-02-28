@@ -500,12 +500,16 @@ export default class CrawlTxService extends BullableService {
       return [];
     }
     let reachLastEventTypeTx = false;
-    // get all tx log
+    // last event type in event field which belongs to tx event
+    const listTxEventType = config.handleTransaction.lastEventsTypeTx;
     for (let i = 0; i < tx?.tx_response?.events?.length; i += 1) {
-      if (tx.tx_response.events[i].type === 'tx') {
+      if (listTxEventType.includes(tx.tx_response.events[i].type)) {
         reachLastEventTypeTx = true;
       }
-      if (reachLastEventTypeTx && tx.tx_response.events[i].type !== 'tx') {
+      if (
+        reachLastEventTypeTx &&
+        !listTxEventType.includes(tx.tx_response.events[i].type)
+      ) {
         break;
       }
       returnEvents.push(tx.tx_response.events[i]);
