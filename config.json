@@ -28,7 +28,7 @@
   "crawlBlock": {
     "millisecondCrawl": 5000,
     "numberOfBlockPerCall": 100,
-    "startBlock": 21318600,
+    "startBlock": 4860000,
     "saveRawLog": true
   },
   "crawlTransaction": {
@@ -44,7 +44,7 @@
   },
   "handleTransaction": {
     "key": "handleTransaction",
-    "blocksPerCall": 50,
+    "blocksPerCall": 100,
     "millisecondCrawl": 5000,
     "txsPerCall": 100,
     "saveRawLog": true,
