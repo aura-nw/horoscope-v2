@@ -84,6 +84,7 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_EVENT_PARTITION: 'job:create-event-partition',
   JOB_CREATE_TRANSACTION_PARTITION: 'job:create-transaction-partition',
   JOB_CREATE_BLOCK_PARTITION: 'job:create-block-partition',
+  JOB_CREATE_EVM_EVENT_PARTITION: 'job:create-evm-event-partition',
   JOB_CREATE_TRANSACTION_MESSAGE_PARTITION:
     'job:create-transaction-message-partition',
   JOB_CREATE_EVM_TRANSACTION_PARTITION: 'job:create-evm-transaction-partition',
@@ -114,6 +115,7 @@ export const BULL_JOB_NAME = {
   JOB_CHECK_EVENT_CONSTRAINT: 'job:check-need-create-event-constraint',
   JOB_CHECK_TRANSACTION_CONSTRAINT:
     'job:check-need-create-transaction-constraint',
+  JOB_CHECK_EVM_EVENT_CONSTRAINT: 'job:check-need-create-evm-event-constraint',
   JOB_CHECK_TRANSACTION_MESSAGE_CONSTRAINT:
     'job:check-need-create-transaction-message-constraint',
   JOB_CHECK_EVM_TRANSACTION_CONSTRAINT:
@@ -123,6 +125,7 @@ export const BULL_JOB_NAME = {
   UPLOAD_BLOCK_RAW_LOG_TO_S3: 'job:upload-block-raw-log-to-s3',
   UPLOAD_TX_RAW_LOG_TO_S3: 'job:upload-tx-raw-log-to-s3',
   JOB_CREATE_TRANSACTION_CONSTRAINT: 'job:create-transaction-constraint',
+  JOB_CREATE_EVM_EVENT_CONSTRAINT: 'job:create-evm-event-constraint',
   JOB_CREATE_TRANSACTION_MESSAGE_CONSTRAINT:
     'job:create-transaction-message-constraint',
   JOB_CREATE_EVM_TRANSACTION_CONSTRAINT:
@@ -285,6 +288,10 @@ export const SERVICE = {
         key: 'CrawlEvmEvent',
         path: 'v1.CrawlEvmEvent',
       },
+      CreateEvmEventPartition: {
+        key: 'CreateEvmEventPartition',
+        path: 'v1.CreateEvmEventPartition',
+      },
       CreateBlockPartition: {
         key: 'CreateBlockPartition',
         path: 'v1.CreateBlockPartition',
@@ -352,6 +359,10 @@ export const SERVICE = {
       CreateConstraintInTransactionPartition: {
         key: 'CreateConstraintInTransactionPartition',
         path: 'v1.CreateConstraintInTransactionPartition',
+      },
+      CreateConstraintInEvmEventPartition: {
+        key: 'CreateConstraintInEvmEventPartition',
+        path: 'v1.CreateConstraintInEvmEventPartition',
       },
       CreateConstraintInTransactionMessagePartition: {
         key: 'CreateConstraintInTransactionMessagePartition',

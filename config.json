@@ -180,6 +180,11 @@
     "chunkSizeInsert": 1000,
     "statementTimeout": 600000
   },
+  "migrationEvmEventToPartition": {
+    "startId": 0,
+    "endId": 100000000,
+    "step": 100000000
+  },
   "migrationBlockToPartition": {
     "startId": 100000000,
     "endId": 200000000,
@@ -217,6 +222,10 @@
   "jobCheckNeedCreateTransactionPartition": {
     "millisecondCrawl": 10000,
     "templateTable": "transaction"
+  },
+  "jobCheckNeedCreateEvmEventPartition": {
+    "millisecondCrawl": 10000,
+    "templateTable": "evm_event"
   },
   "jobCheckNeedCreateBlockPartition": {
     "millisecondCrawl": 10000,
@@ -312,6 +321,12 @@
     "blocksPerCall": 100,
     "overwriteS3IfFound": false,
     "returnIfFound": true
+  },
+  "jobCreateConstraintInEvmEventPartition": {
+    "jobRepeatCheckNeedCreateConstraint": {
+      "millisecondRepeatJob": 600000
+    },
+    "statementTimeout": 600000
   },
   "jobCreateConstraintInTransactionPartition": {
     "jobRepeatCheckNeedCreateConstraint": {

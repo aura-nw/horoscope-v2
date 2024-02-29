@@ -2,7 +2,12 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
-import { BlockCheckpoint, EventAttribute, EvmEvent } from '../../models';
+import {
+  BlockCheckpoint,
+  EventAttribute,
+  EvmEvent,
+  EVMTransaction,
+} from '../../models';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
 
@@ -23,7 +28,7 @@ export default class CrawlEvmEventJob extends BullableService {
     const [startBlock, endBlock, jobCheckpointUpdate] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.JOB_CRAWL_EVM_EVENT,
-        [BULL_JOB_NAME.CRAWL_TRANSACTION],
+        [BULL_JOB_NAME.HANDLE_TRANSACTION_EVM],
         'jobCrawlEvmEvent'
       );
 
@@ -49,11 +54,20 @@ export default class CrawlEvmEventJob extends BullableService {
       return;
     }
 
+    const evmTransactions = await EVMTransaction.query()
+      .where('height', '>', startBlock)
+      .andWhere('height', '<=', endBlock)
+      .select(['id', 'tx_id']);
+    const mappingEvmTxId = {};
+    evmTransactions.forEach((evmTransaction) => {
+      mappingEvmTxId[evmTransaction.tx_id] = evmTransaction.id;
+    });
+
     const evmEvents: EvmEvent[] = evmEventAttr.map((evmEvent) => {
       jobCheckpointUpdate.height = evmEvent.block_height;
       const valueParse = JSON.parse(evmEvent.value);
       return EvmEvent.fromJson({
-        evm_tx_id: 1,
+        evm_tx_id: mappingEvmTxId[evmEvent.tx_id],
         tx_id: evmEvent.tx_id,
         address: valueParse.address,
         topics: { ...valueParse.topics },
