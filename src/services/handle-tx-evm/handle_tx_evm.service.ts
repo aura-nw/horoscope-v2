@@ -1,6 +1,7 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import _ from 'lodash';
+import Utils from '../../common/utils/utils';
 import {
   BlockCheckpoint,
   EVMTransaction,
@@ -65,25 +66,12 @@ export default class HandleTransactionEVMService extends BullableService {
             size: content.size,
             from: content.from,
             to: content.data?.to,
-            gas:
-              content.data?.gas == null ? null : BigInt(content.data?.gas ?? 0),
-            gas_fee_cap:
-              content.data?.gas_fee_cap == null
-                ? null
-                : BigInt(content.data?.gas_fee_cap ?? 0),
-            gas_tip_cap:
-              content.data?.gas_tip_cap == null
-                ? null
-                : BigInt(content.data?.gas_tip_cap ?? 0),
+            gas: Utils.getBigIntIfNotNull(content.data?.gas),
+            gas_fee_cap: Utils.getBigIntIfNotNull(content.data?.gas_fee_cap),
+            gas_tip_cap: Utils.getBigIntIfNotNull(content.data?.gas_tip_cap),
             data: content.data?.data,
-            nonce:
-              content.data?.nonce == null
-                ? null
-                : BigInt(content.data?.nonce ?? 0),
-            value:
-              content.data?.value == null
-                ? null
-                : BigInt(content.data?.value ?? 0),
+            nonce: Utils.getBigIntIfNotNull(content.data?.nonce),
+            value: Utils.getBigIntIfNotNull(content.data?.value),
           })
         );
       });
