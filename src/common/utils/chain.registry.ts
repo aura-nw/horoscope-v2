@@ -165,7 +165,12 @@ export default class ChainRegistry {
         if (!input) {
           return input;
         }
-        return fromUtf8(fromBase64(input));
+        try {
+          return fromUtf8(fromBase64(input));
+        } catch (error) {
+          this._logger.error(error);
+          return input;
+        }
       };
       this.encodeAttribute = (input: string) => toBase64(toUtf8(input));
     } else {
