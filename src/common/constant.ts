@@ -79,6 +79,7 @@ export const BULL_JOB_NAME = {
   RETRY_CRAWL_VALIDATOR_IMG: 'retry:crawl-validator-img',
   JOB_CHECK_NEED_CREATE_EVENT_ATTR_PARTITION:
     'job:check-need-create-event-attr-partition',
+  JOB_CRAWL_EVM_EVENT: 'job:crawl-evm-event',
   JOB_CREATE_EVENT_ATTR_PARTITION: 'job:create-event-attr-partition',
   JOB_CREATE_EVENT_PARTITION: 'job:create-event-partition',
   JOB_CREATE_TRANSACTION_PARTITION: 'job:create-transaction-partition',
@@ -274,6 +275,10 @@ export const SERVICE = {
       },
     },
     JobService: {
+      CrawlEvmEvent: {
+        key: 'CrawlEvmEvent',
+        path: 'v1.CrawlEvmEvent',
+      },
       CreateBlockPartition: {
         key: 'CreateBlockPartition',
         path: 'v1.CreateBlockPartition',

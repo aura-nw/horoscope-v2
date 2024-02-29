@@ -1,5 +1,5 @@
 {
-  "chainId": "aura-testnet",
+  "chainId": "evmos_9000-4",
   "chainName": "aura",
   "networkPrefixAddress": "aura",
   "consensusPrefixAddress": "valcons",
@@ -28,7 +28,7 @@
   "crawlBlock": {
     "millisecondCrawl": 5000,
     "numberOfBlockPerCall": 100,
-    "startBlock": 4860000,
+    "startBlock": 21318600,
     "saveRawLog": true
   },
   "crawlTransaction": {
@@ -44,7 +44,7 @@
   },
   "handleTransaction": {
     "key": "handleTransaction",
-    "blocksPerCall": 100,
+    "blocksPerCall": 50,
     "millisecondCrawl": 5000,
     "txsPerCall": 100,
     "saveRawLog": true
@@ -204,6 +204,10 @@
     "step": 10000,
     "millisecondCrawl": 10000,
     "templateTable": "event_attribute"
+  },
+  "jobCrawlEvmEvent": {
+    "millisecondCrawl": 5000,
+    "blocksPerCall": 50
   },
   "jobCheckNeedCreateEventPartition": {
     "millisecondCrawl": 10000,
