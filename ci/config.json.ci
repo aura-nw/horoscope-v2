@@ -47,7 +47,8 @@
     "blocksPerCall": 100,
     "millisecondCrawl": 5000,
     "txsPerCall": 100,
-    "saveRawLog": true
+    "saveRawLog": true,
+    "lastEventsTypeTx": ["tx", "ethereum_tx"]
   },
   "crawlSigningInfo": {
     "millisecondCrawl": null,
