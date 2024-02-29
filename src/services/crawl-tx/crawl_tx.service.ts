@@ -395,22 +395,24 @@ export default class CrawlTxService extends BullableService {
           tx_id: tx.id,
           tx_msg_index: event.msg_index ?? undefined,
           type: event.type,
-          attributes: event.attributes.map((attribute: any, index: number) => ({
-            tx_id: tx.id,
-            block_height: tx.height,
-            index,
-            composite_key: attribute?.key
-              ? `${event.type}.${this._registry.decodeAttribute(
-                  attribute?.key
-                )}`
-              : null,
-            key: attribute?.key
-              ? this._registry.decodeAttribute(attribute?.key)
-              : null,
-            value: attribute?.value
-              ? this._registry.decodeAttribute(attribute?.value)
-              : null,
-          })),
+          attributes: event.attributes?.map(
+            (attribute: any, index: number) => ({
+              tx_id: tx.id,
+              block_height: tx.height,
+              index,
+              composite_key: attribute?.key
+                ? `${event.type}.${this._registry.decodeAttribute(
+                    attribute?.key
+                  )}`
+                : null,
+              key: attribute?.key
+                ? this._registry.decodeAttribute(attribute?.key)
+                : null,
+              value: attribute?.value
+                ? this._registry.decodeAttribute(attribute?.value)
+                : null,
+            })
+          ),
           block_height: tx.height,
           source: Event.SOURCE.TX_EVENT,
         })) ?? [];
@@ -458,7 +460,7 @@ export default class CrawlTxService extends BullableService {
     });
 
     tx?.tx_response?.events?.forEach((event: any) => {
-      event.attributes.forEach((attr: any) => {
+      event.attributes?.forEach((attr: any) => {
         if (event.msg_index !== undefined) {
           const key = attr.key
             ? this._registry.decodeAttribute(attr.key)
