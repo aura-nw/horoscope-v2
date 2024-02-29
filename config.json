@@ -1,5 +1,5 @@
 {
-  "chainId": "evmos_9000-4",
+  "chainId": "aura-testnet",
   "chainName": "aura",
   "networkPrefixAddress": "aura",
   "consensusPrefixAddress": "valcons",
