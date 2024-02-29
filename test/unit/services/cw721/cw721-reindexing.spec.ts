@@ -6,6 +6,7 @@ import {
   Test,
 } from '@jest-decorated/core';
 import { Errors, ServiceBroker } from 'moleculer';
+import _ from 'lodash';
 import { BULL_JOB_NAME, SERVICE } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
 import { BlockCheckpoint, Code, EventAttribute } from '../../../../src/models';
@@ -350,6 +351,32 @@ export default class TestCw721MissingContractService {
         cw721_token_id: tokens[index].id,
       });
     });
+  }
+
+  @Test('Test ReindexingTokensService function')
+  public async testReindexingTokensService() {
+    const tokens = await CW721Token.query()
+      .whereIn('token_id', [
+        this.cw721Contract.tokens[0].token_id,
+        this.cw721Contract.tokens[1].token_id,
+      ])
+      .orderBy('id');
+    await this.broker.call(
+      SERVICE.V1.CW721ReindexingService.ReindexingTokens.path,
+      {
+        ids: tokens.map((token) => token.id),
+      }
+    );
+    const newToken = await CW721Token.query().whereIn(
+      'token_id',
+      tokens.map((token) => token.token_id)
+    );
+    expect(newToken).toMatchObject(
+      tokens.map((token) => ({
+          ..._.omit(token, 'id'),
+          media_info: null,
+        }))
+    );
   }
 
   @Test('Test ReindexingService function')

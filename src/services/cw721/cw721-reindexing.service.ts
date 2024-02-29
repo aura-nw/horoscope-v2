@@ -17,6 +17,7 @@ import CW721ContractStats from '../../models/cw721_stats';
 import CW721Token from '../../models/cw721_token';
 import CW721Activity from '../../models/cw721_tx';
 import { ICw721ReindexingHistoryParams } from './cw721.service';
+import knex from '../../common/utils/db_connection';
 
 export interface IAddressParam {
   contractAddresses: string[];
@@ -27,6 +28,10 @@ interface ICw721ReindexingServiceParams {
   contractAddress: string;
   smartContractId: number;
   type: string;
+}
+
+interface ICw721ReindexingTokensParams {
+  ids: number[];
 }
 
 export const REINDEX_TYPE = {
@@ -210,6 +215,37 @@ export default class CW721ReindexingService extends BullableService {
         return acc;
       }, [])
     );
+  }
+
+  @Action({
+    name: SERVICE.V1.CW721ReindexingService.ReindexingTokens.key,
+    params: {
+      ids: {
+        type: 'array',
+        items: 'number',
+        optional: false,
+      },
+    },
+  })
+  public async reindexCw721Tokens(
+    ctx: Context<ICw721ReindexingTokensParams>
+  ): Promise<void> {
+    const { ids } = ctx.params;
+    await knex.transaction(async (trx) => {
+      const tokens = await CW721Token.query()
+        .delete()
+        .whereIn('id', ids)
+        .returning('*')
+        .transacting(trx);
+      if (tokens.length > 0) {
+        const newTokens = tokens.map((token) => CW721Token.fromJson({
+            ...token,
+            id: undefined,
+            media_info: null,
+          }));
+        await CW721Token.query().insert(newTokens).transacting(trx);
+      }
+    });
   }
 
   async _start(): Promise<void> {
