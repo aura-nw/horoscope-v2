@@ -85,6 +85,7 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_BLOCK_PARTITION: 'job:create-block-partition',
   JOB_CREATE_TRANSACTION_MESSAGE_PARTITION:
     'job:create-transaction-message-partition',
+  JOB_CREATE_EVM_TRANSACTION_PARTITION: 'job:create-evm-transaction-partition',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
   CRAWL_DAILY_STATISTICS: 'crawl:daily-statistics',
   CRAWL_ACCOUNT_STATISTICS: 'crawl:account-statistics',
@@ -114,6 +115,8 @@ export const BULL_JOB_NAME = {
     'job:check-need-create-transaction-constraint',
   JOB_CHECK_TRANSACTION_MESSAGE_CONSTRAINT:
     'job:check-need-create-transaction-message-constraint',
+  JOB_CHECK_EVM_TRANSACTION_CONSTRAINT:
+    'job:check-need-create-evm-transaction-constraint',
   JOB_CREATE_EVENT_CONSTRAIN: 'job:create-event-constraint',
   JOB_UPDATE_ASSETS: 'job:update-assets',
   UPLOAD_BLOCK_RAW_LOG_TO_S3: 'job:upload-block-raw-log-to-s3',
@@ -121,7 +124,10 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_TRANSACTION_CONSTRAINT: 'job:create-transaction-constraint',
   JOB_CREATE_TRANSACTION_MESSAGE_CONSTRAINT:
     'job:create-transaction-message-constraint',
+  JOB_CREATE_EVM_TRANSACTION_CONSTRAINT:
+    'job:create-evm-transaction-constraint',
   JOB_UPDATE_TX_COUNT_IN_BLOCK: 'job:update-tx-count-in-block',
+  HANDLE_TRANSACTION_EVM: 'handle:transaction-evm',
 };
 
 export const SERVICE = {
@@ -294,6 +300,10 @@ export const SERVICE = {
         key: 'CreateTransactionMessagePartition',
         path: 'v1.CreateTransactionMessagePartition',
       },
+      CreateEVMTransactionPartition: {
+        key: 'CreateEVMTransactionPartition',
+        path: 'v1.CreateEVMTransactionPartition',
+      },
       ReDecodeTx: {
         key: 'ReDecodeTx',
         path: 'v1.ReDecodeTx',
@@ -341,6 +351,10 @@ export const SERVICE = {
       CreateConstraintInTransactionMessagePartition: {
         key: 'CreateConstraintInTransactionMessagePartition',
         path: 'v1.CreateConstraintInTransactionMessagePartition',
+      },
+      CreateConstraintInEVMTransactionPartition: {
+        key: 'CreateConstraintInEVMTransactionPartition',
+        path: 'v1.CreateConstraintInEVMTransactionPartition',
       },
       UpdateTxCountInBlock: {
         key: 'UpdateTxCountInBlock',
@@ -415,6 +429,10 @@ export const SERVICE = {
       key: 'UploadTxRawLogToS3',
       path: 'v1.UploadTxRawLogToS3',
     },
+    HandleTransactionEVM: {
+      key: 'HandleTransactionEVM',
+      path: 'v1.HandleTransactionEVM',
+    },
   },
 };
 
@@ -456,6 +474,7 @@ export const MSG_TYPE = {
   MSG_FEEGRANT_GRANT: '/cosmos.feegrant.v1beta1.MsgGrantAllowance',
   MSG_FEEGRANT_REVOKE: '/cosmos.feegrant.v1beta1.MsgRevokeAllowance',
   MSG_CONSENSUS_UPDATE_PARAM: '/cosmos.consensus.v1.MsgUpdateParams',
+  MSG_ETHEREUM_TX: '/ethermint.evm.v1.MsgEthereumTx',
 };
 
 export const ABCI_QUERY_PATH = {
