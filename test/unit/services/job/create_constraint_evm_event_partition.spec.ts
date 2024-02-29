@@ -85,7 +85,7 @@ export default class CreateConstraintEvmEventPartitionSpec {
     );
 
     // Verify constraint created
-    const expectedInsertingConstraintName = `tx_ct_${partitions[0].name}_${this.createConstraintInEvmEventPartitionJob?.insertionStatus.inserting}`;
+    const expectedInsertingConstraintName = `evm_event_ct_${partitions[0].name}_${this.createConstraintInEvmEventPartitionJob?.insertionStatus.inserting}`;
     const isInsertingConstraintExist = await this.isConstraintNameExist(
       partitions[0].name,
       expectedInsertingConstraintName
@@ -115,7 +115,7 @@ export default class CreateConstraintEvmEventPartitionSpec {
     );
 
     // Verify constraint created
-    const expectedDoneConstraintName = `tx_ct_${partitions[0].name}_${this.createConstraintInEvmEventPartitionJob?.insertionStatus.done}`;
+    const expectedDoneConstraintName = `evm_event_ct_${partitions[0].name}_${this.createConstraintInEvmEventPartitionJob?.insertionStatus.done}`;
     const isDoneConstraintExist = await this.isConstraintNameExist(
       partitions[0].name,
       expectedDoneConstraintName
