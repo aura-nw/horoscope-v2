@@ -51,7 +51,8 @@ export default class HandleTransactionEVMService extends BullableService {
       .where('height', '>', startBlock)
       .andWhere('height', '<=', endBlock)
       .andWhere('type', MSG_TYPE.MSG_ETHEREUM_TX)
-      .orderBy('height', 'asc');
+      .orderBy('height', 'asc')
+      .orderBy('transaction.id', 'asc');
     if (txMsgs.length > 0) {
       txMsgs.forEach((txMsg) => {
         const { content } = txMsg;
@@ -64,12 +65,25 @@ export default class HandleTransactionEVMService extends BullableService {
             size: content.size,
             from: content.from,
             to: content.data?.to,
-            gas: BigInt(content.data?.gas ?? 0),
-            gas_fee_cap: BigInt(content.data?.gas_fee_cap ?? 0),
-            gas_tip_cap: BigInt(content.data?.gas_tip_cap ?? 0),
+            gas:
+              content.data?.gas == null ? null : BigInt(content.data?.gas ?? 0),
+            gas_fee_cap:
+              content.data?.gas_fee_cap == null
+                ? null
+                : BigInt(content.data?.gas_fee_cap ?? 0),
+            gas_tip_cap:
+              content.data?.gas_tip_cap == null
+                ? null
+                : BigInt(content.data?.gas_tip_cap ?? 0),
             data: content.data?.data,
-            nonce: BigInt(content.data?.nonce ?? 0),
-            value: BigInt(content.data?.value ?? 0),
+            nonce:
+              content.data?.nonce == null
+                ? null
+                : BigInt(content.data?.nonce ?? 0),
+            value:
+              content.data?.value == null
+                ? null
+                : BigInt(content.data?.value ?? 0),
           })
         );
       });
