@@ -31,8 +31,8 @@ export default class CreateEVMTransactionPartitionJob extends BullableService {
     if (
       !latestEVMTransaction ||
       BigNumber(latestEVMTransaction.id)
-        .mod(config.migrationEVMTransactionToPartition.step)
-        .lt(config.migrationEVMTransactionToPartition.step / 2)
+        .mod(config.createEVMTransactionPartition.step)
+        .lt(config.createEVMTransactionPartition.step / 2)
     )
       return null;
 
@@ -40,16 +40,16 @@ export default class CreateEVMTransactionPartitionJob extends BullableService {
     const stepMultiple =
       Math.floor(
         BigNumber(latestEVMTransaction.id)
-          .div(config.migrationEVMTransactionToPartition.step)
+          .div(config.createEVMTransactionPartition.step)
           .toNumber()
       ) + 1;
 
     // Build partition name
     const fromEVMTxId = BigNumber(
-      config.migrationEVMTransactionToPartition.step
+      config.createEVMTransactionPartition.step
     ).multipliedBy(stepMultiple);
     const toEVMTxId = fromEVMTxId.plus(
-      config.migrationEVMTransactionToPartition.step
+      config.createEVMTransactionPartition.step
     );
     const partitionName = `evm_transaction_partition_${fromEVMTxId.toString()}_${toEVMTxId.toString()}`;
 

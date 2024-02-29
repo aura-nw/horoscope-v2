@@ -25,8 +25,8 @@ export async function up(knex: Knex): Promise<void> {
     CREATE INDEX evm_transaction_tx_msg_id_index ON evm_transaction(tx_msg_id);
     CREATE INDEX evm_transaction_tx_id_index ON evm_transaction(tx_id);`
   );
-  let endId = config.migrationEVMTransactionToPartition.endId;
-  let step = config.migrationEVMTransactionToPartition.step;
+  let endId = config.createEVMTransactionPartition.endId;
+  let step = config.createEVMTransactionPartition.step;
   for (let i = 0; i < endId; i += step) {
     const partitionName = `evm_transaction_partition_${i}_${i + step}`;
     await knex.raw(

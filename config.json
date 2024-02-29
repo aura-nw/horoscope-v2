@@ -331,8 +331,7 @@
     "millisecondCrawl": 1000,
     "chunkSize": 1000
   },
-  "migrationEVMTransactionToPartition": {
-    "startId": 100000000,
+  "createEVMTransactionPartition": {
     "endId": 200000000,
     "step": 100000000,
     "limitRecordGet": 10000,
