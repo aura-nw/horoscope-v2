@@ -205,7 +205,7 @@ export class Validator extends BaseModel {
       consensus_pubkey: consensusPubkey,
       jailed: validator.jailed,
       status: validator.status,
-      tokens: Number.parseInt(validator.tokens, 10),
+      tokens: validator.tokens,
       delegator_shares: Number.parseInt(validator.delegator_shares, 10),
       description: validator.description,
       unbonding_height: Number.parseInt(validator.unbonding_height, 10),

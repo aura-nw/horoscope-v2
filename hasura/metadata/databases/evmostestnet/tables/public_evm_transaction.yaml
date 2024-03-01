@@ -1,0 +1,23 @@
+table:
+  name: evm_transaction
+  schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - id
+        - hash
+        - height
+        - from
+        - to
+        - size
+        - value
+        - gas
+        - gas_fee_cap
+        - gas_tip_cap
+        - nonce
+        - data
+        - tx_id
+        - tx_msg_id
+      filter: {}
+      limit: 100
