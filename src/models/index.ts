@@ -32,3 +32,4 @@ export * from './ibc_message';
 export * from './ibc_ics20';
 export * from './statistic';
 export * from './evm_transaction';
+export * from './evm_event';
