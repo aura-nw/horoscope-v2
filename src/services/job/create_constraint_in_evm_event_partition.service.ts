@@ -200,10 +200,10 @@ export default class CreateConstraintInEvmEventPartitionJob extends BullableServ
 
     if (toHeight === null) {
       constraintName = `evm_event_ct_${partitionName}_${this.insertionStatus.inserting}`;
-      checkConstraint = `(height >= ${fromHeight})`;
+      checkConstraint = `(block_height >= ${fromHeight})`;
     } else {
       constraintName = `evm_event_ct_${partitionName}_${this.insertionStatus.done}`;
-      checkConstraint = `(height >= ${fromHeight} AND height <= ${toHeight})`;
+      checkConstraint = `(block_height >= ${fromHeight} AND block_height <= ${toHeight})`;
     }
 
     await knex.transaction(async (trx) => {

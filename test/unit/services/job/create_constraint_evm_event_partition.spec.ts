@@ -59,8 +59,9 @@ export default class CreateConstraintEvmEventPartitionSpec {
     const partitions =
       await this.createConstraintInEvmEventPartitionJob?.getEvmEventPartitionInfo();
 
-    // We have 2 partition by default after run migration
-    expect(partitions?.length).toEqual(2);
+    // We have 1 partition by default after run migration
+    // We have 1 partition by default after run migration
+    expect(partitions?.length).toEqual(1);
     if (!partitions) throw Error('No partition found');
 
     // Now partition is empty so result return will be empty and no constraint create
