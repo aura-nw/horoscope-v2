@@ -9,7 +9,13 @@ export class EvmEvent extends BaseModel {
 
   address!: string;
 
-  topics!: JSON;
+  topic0!: string;
+
+  topic1!: string;
+
+  topic2!: string;
+
+  topic3!: string;
 
   block_height!: number;
 
@@ -30,7 +36,6 @@ export class EvmEvent extends BaseModel {
         'evm_tx_id',
         'tx_id',
         'address',
-        'topics',
         'block_height',
         'tx_hash',
         'block_hash',

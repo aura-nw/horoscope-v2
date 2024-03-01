@@ -12,7 +12,10 @@ export async function up(knex: Knex): Promise<void> {
         tx_id        INTEGER NOT NULL,
         evm_tx_id    INTEGER NOT NULL,
         address      VARCHAR(255),
-        topics       JSON,
+        topic0       VARCHAR(66),
+        topic1       VARCHAR(66),
+        topic2       VARCHAR(66),
+        topic3       VARCHAR(66),
         block_height INTEGER,
         tx_hash      VARCHAR(255),
         tx_index     INTEGER,
@@ -23,6 +26,10 @@ export async function up(knex: Knex): Promise<void> {
     CREATE INDEX evm_event_evm_tx_id_index ON evm_event("evm_tx_id");
     CREATE INDEX evm_block_height_index ON evm_event("block_height");
     CREATE INDEX evm_block_tx_hash_index ON evm_event("tx_hash");
+    CREATE INDEX evm_block_topic0_index ON evm_event("topic0") WHERE topic0 IS NOT NULL;
+    CREATE INDEX evm_block_topic1_index ON evm_event("topic1") WHERE topic1 IS NOT NULL;
+    CREATE INDEX evm_block_topic2_index ON evm_event("topic2") WHERE topic2 IS NOT NULL;
+    CREATE INDEX evm_block_topic3_index ON evm_event("topic3") WHERE topic3 IS NOT NULL;
     CREATE TABLE ${initPartitionName}
       (LIKE ${config.jobCheckNeedCreateEvmEventPartition.templateTable} INCLUDING ALL EXCLUDING CONSTRAINTS);
     ALTER TABLE ${EvmEvent.tableName} ATTACH PARTITION ${initPartitionName}
