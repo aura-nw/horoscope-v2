@@ -39,6 +39,7 @@ import { bullBoardMixin } from '../../mixins/bullBoard/bullBoard.mixin';
           'v2.statistics.syncPrevDateStatsByChainId',
           'v1.job.composite-index-to-attribute-partition',
           'v1.job.redecode-tx',
+          'v1.job.update-delegator-validator',
         ],
       },
       {

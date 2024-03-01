@@ -80,4 +80,31 @@ export default class JobService extends BaseService {
       }
     );
   }
+
+  @Post('/update-delegator-validator', {
+    name: 'update-delegator-validator',
+    params: {
+      chainid: {
+        type: 'string',
+        optional: false,
+        enum: networks.map((network) => network.chainId),
+      },
+    },
+  })
+  async updateDelegatorValidator(
+    ctx: Context<{ chainid: string; type: string }, Record<string, unknown>>
+  ) {
+    const selectedChain = networks.find(
+      (network) => network.chainId === ctx.params.chainid
+    );
+    this.logger.info(
+      `${SERVICE.V1.CrawlDelegatorsService.updateAllValidator.path}@${selectedChain?.moleculerNamespace}`
+    );
+    return this.broker.call(
+      `${SERVICE.V1.CrawlDelegatorsService.updateAllValidator.path}@${selectedChain?.moleculerNamespace}`,
+      {
+        type: ctx.params.type,
+      }
+    );
+  }
 }

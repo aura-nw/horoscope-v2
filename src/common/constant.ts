@@ -235,6 +235,10 @@ export const SERVICE = {
     CrawlDelegatorsService: {
       key: 'CrawlDelegatorsService',
       name: 'v1.CrawlDelegatorsService',
+      updateAllValidator: {
+        key: 'updateAllValidator',
+        path: 'v1.CrawlDelegatorsService.updateAllValidator',
+      },
     },
     Cw20: {
       key: 'Cw20Service',
