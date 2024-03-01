@@ -122,6 +122,7 @@ export const BULL_JOB_NAME = {
     'job:create-transaction-message-constraint',
   JOB_UPDATE_TX_COUNT_IN_BLOCK: 'job:update-tx-count-in-block',
   UPLOAD_BLOCK_RAW_LOG_TO_S3: 'job:upload-block-raw-log-to-s3',
+  UPLOAD_TX_RAW_LOG_TO_S3: 'job:upload-tx-raw-log-to-s3',
 };
 
 export const SERVICE = {
@@ -410,6 +411,10 @@ export const SERVICE = {
     UploadBlockRawLogToS3: {
       key: 'UploadBlockRawLogToS3',
       path: 'v1.UploadBlockRawLogToS3',
+    },
+    UploadTxRawLogToS3: {
+      key: 'UploadTxRawLogToS3',
+      path: 'v1.UploadTxRawLogToS3',
     },
   },
 };
