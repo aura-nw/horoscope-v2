@@ -1,5 +1,8 @@
 /* eslint-disable no-await-in-loop */
-import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+import {
+  Action,
+  Service,
+} from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import Long from 'long';
 import { fromBase64 } from '@cosmjs/encoding';
@@ -43,6 +46,9 @@ export default class CrawlDelegatorsService extends BullableService {
    * will update checkpoint of CRAWL_DELEGATORS job, set it to latest transaction_message, then you can start CRAWL_DELEGATORS
    * again
    */
+  @Action({
+    name: SERVICE.V1.CrawlDelegatorsService.updateAllValidator.key,
+  })
   public async updateAllValidator(): Promise<void> {
     await knex.raw(
       `TRUNCATE TABLE ${Delegator.tableName} RESTART IDENTITY CASCADE`
