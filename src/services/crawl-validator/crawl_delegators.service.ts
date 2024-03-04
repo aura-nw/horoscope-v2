@@ -3,21 +3,26 @@ import {
   Action,
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
+import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
+import { cosmos } from '@aura-nw/aurajs';
 import { ServiceBroker } from 'moleculer';
 import Long from 'long';
-import { fromBase64 } from '@cosmjs/encoding';
+import {fromBase64, toHex} from '@cosmjs/encoding';
 import { Knex } from 'knex';
 import BigNumber from 'bignumber.js';
+import {createJsonRpcRequest} from '@cosmjs/tendermint-rpc/build/jsonrpc';
+import {QueryValidatorDelegationsResponse} from '@aura-nw/aurajs/types/codegen/cosmos/staking/v1beta1/query';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import {
   BULL_JOB_NAME,
   getLcdClient,
+  getHttpBatchClient,
   IProviderJSClientFactory,
   IPagination,
   IValidatorDelegators,
   SERVICE,
-  MSG_TYPE,
+  MSG_TYPE, ABCI_QUERY_PATH,
 } from '../../common';
 import {
   BlockCheckpoint,
@@ -34,6 +39,8 @@ import knex from '../../common/utils/db_connection';
 })
 export default class CrawlDelegatorsService extends BullableService {
   private _lcdClient!: IProviderJSClientFactory;
+
+  private _httpBatchClient!: HttpBatchClient;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -448,7 +455,70 @@ export default class CrawlDelegatorsService extends BullableService {
     this.logger.info('Update validator delegators');
   }
 
+  public async getValidatorDelegations(
+    validatorOperatorAddress: string,
+    validatorId: number,
+    height: number
+  ): Promise<Delegator[]> {
+    this._httpBatchClient = getHttpBatchClient();
+    const delegators: Delegator[] = [];
+    const request = {
+      validatorAddr: validatorOperatorAddress,
+      pagination: {
+        key: new Uint8Array(),
+        limit: Long.fromInt(10),
+        offset: Long.fromInt(0),
+        countTotal: true,
+        reverse: false,
+      },
+    };
+
+    while (1) {
+      const data = toHex(
+        cosmos.staking.v1beta1.QueryValidatorDelegationsRequest.encode(request).finish()
+      );
+      const resultCallApi = await this._httpBatchClient.execute(
+        createJsonRpcRequest('abci_query', {
+          path: ABCI_QUERY_PATH.VALIDATOR_DELEGATIONS,
+          data,
+          height: height.toString(),
+        })
+      );
+      const delegations: (QueryValidatorDelegationsResponse | null) = resultCallApi.result.response.code === 0
+        ? cosmos.staking.v1beta1.QueryValidatorDelegationsResponse.decode(
+          fromBase64(resultCallApi.result.response.value)
+        )
+        : null;
+      console.log(delegations);
+
+      if (!delegations) break;
+
+      delegations?.delegationResponses.forEach((delegation) => {
+        delegators.push(Delegator.fromJson({
+          validator_id: validatorId,
+          delegator_address: delegation.delegation.delegatorAddress,
+          amount: delegation.balance.amount,
+        }));
+      });
+
+      if (
+        delegations.pagination?.nextKey &&
+        delegations.pagination?.nextKey.length > 0
+      ) request.pagination.key = delegations.pagination.nextKey;
+      else break;
+    }
+
+    return delegators ?? [];
+  }
+
   public async _start() {
+    const a = await this.getValidatorDelegations(
+      'auravaloper15pzl0s6ym85qx4yeq29rflp702wtx3dntle05a',
+      69,
+      5238142
+    );
+    console.log(a, 'aaaaaaaaaaaa');
+    if (1) return;
     this.createJob(
       BULL_JOB_NAME.CRAWL_DELEGATORS,
       BULL_JOB_NAME.CRAWL_DELEGATORS,
