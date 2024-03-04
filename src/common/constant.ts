@@ -469,6 +469,7 @@ export const ABCI_QUERY_PATH = {
   ACCOUNT_AUTH: '/cosmos.auth.v1beta1.Query/Account',
   DENOM_TRACE: '/ibc.applications.transfer.v1.Query/DenomTrace',
   VALIDATOR_DELEGATION: '/cosmos.staking.v1beta1.Query/Delegation',
+  VALIDATOR_DELEGATIONS: '/cosmos.staking.v1beta1.Query/ValidatorDelegations',
   PROPOSAL: '/cosmos.gov.v1beta1.Query/Proposal',
   TALLY_RESULT: '/cosmos.gov.v1beta1.Query/TallyResult',
   CODE: '/cosmwasm.wasm.v1.Query/Code',
