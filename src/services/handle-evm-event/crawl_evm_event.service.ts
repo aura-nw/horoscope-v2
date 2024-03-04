@@ -43,8 +43,8 @@ export default class CrawlEvmEventJob extends BullableService {
       .andWhere('key', 'txLog')
       .orderBy('event_id', 'ASC');
 
+    jobCheckpointUpdate.height = endBlock;
     if (evmEventAttr.length === 0) {
-      jobCheckpointUpdate.height = endBlock;
       await BlockCheckpoint.query()
         .insert(jobCheckpointUpdate)
         .onConflict('job_name')
@@ -65,7 +65,6 @@ export default class CrawlEvmEventJob extends BullableService {
     });
 
     const evmEvents: EvmEvent[] = evmEventAttr.map((evmEvent) => {
-      jobCheckpointUpdate.height = evmEvent.block_height;
       const valueParse = JSON.parse(evmEvent.value);
       return EvmEvent.fromJson({
         evm_tx_id: mappingEvmTxId[evmEvent.tx_id],
