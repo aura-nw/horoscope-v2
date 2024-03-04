@@ -23,6 +23,7 @@ export default class CrawlEvmEventJob extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.JOB_CRAWL_EVM_EVENT,
     jobName: BULL_JOB_NAME.JOB_CRAWL_EVM_EVENT,
+    concurrency: config.jobCrawlEvmEvent.concurrencyHandle,
   })
   async crawlEvmEventHandler(): Promise<void> {
     const [startBlock, endBlock, jobCheckpointUpdate] =
@@ -82,7 +83,11 @@ export default class CrawlEvmEventJob extends BullableService {
     });
 
     await knex.transaction(async (trx) => {
-      await EvmEvent.query().insert(evmEvents).transacting(trx);
+      await trx.batchInsert(
+        EvmEvent.tableName,
+        evmEvents,
+        config.jobCrawlEvmEvent.chunkSize
+      );
       await BlockCheckpoint.query()
         .transacting(trx)
         .insert(jobCheckpointUpdate)
@@ -92,11 +97,16 @@ export default class CrawlEvmEventJob extends BullableService {
   }
 
   public async _start(): Promise<void> {
+    const blockCheckPoint = await BlockCheckpoint.query()
+      .findOne({ job_name: BULL_JOB_NAME.JOB_CRAWL_EVM_EVENT })
+      .limit(1);
+    const currentHeight = blockCheckPoint ? blockCheckPoint.height : 0;
     this.createJob(
       BULL_JOB_NAME.JOB_CRAWL_EVM_EVENT,
       BULL_JOB_NAME.JOB_CRAWL_EVM_EVENT,
       {},
       {
+        jobId: currentHeight.toString(),
         removeOnComplete: true,
         removeOnFail: {
           count: 3,

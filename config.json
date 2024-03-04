@@ -213,7 +213,9 @@
   },
   "jobCrawlEvmEvent": {
     "millisecondCrawl": 5000,
-    "blocksPerCall": 50
+    "blocksPerCall": 50,
+    "chunkSize": 1000,
+    "concurrencyHandle": 1
   },
   "jobCheckNeedCreateEvmEventPartition": {
     "millisecondCrawl": 10000,
