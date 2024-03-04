@@ -96,16 +96,12 @@ export default class CrawlEvmEventJob extends BullableService {
   }
 
   public async _start(): Promise<void> {
-    const blockCheckPoint = await BlockCheckpoint.query()
-      .findOne({ job_name: BULL_JOB_NAME.JOB_CRAWL_EVM_EVENT })
-      .limit(1);
-    const currentHeight = blockCheckPoint ? blockCheckPoint.height : 0;
     this.createJob(
       BULL_JOB_NAME.JOB_CRAWL_EVM_EVENT,
       BULL_JOB_NAME.JOB_CRAWL_EVM_EVENT,
       {},
       {
-        jobId: currentHeight.toString(),
+        jobId: BULL_JOB_NAME.JOB_CRAWL_EVM_EVENT,
         removeOnComplete: true,
         removeOnFail: {
           count: 3,
