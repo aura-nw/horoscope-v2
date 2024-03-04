@@ -186,6 +186,11 @@
     "chunkSizeInsert": 1000,
     "statementTimeout": 600000
   },
+  "migrationEvmEventToPartition": {
+    "startId": 0,
+    "endId": 100000000,
+    "step": 100000000
+  },
   "migrationBlockToPartition": {
     "startId": 100000000,
     "endId": 200000000,
@@ -211,6 +216,16 @@
     "step": 10000,
     "millisecondCrawl": 10000,
     "templateTable": "event_attribute"
+  },
+  "jobCrawlEvmEvent": {
+    "millisecondCrawl": 5000,
+    "blocksPerCall": 50,
+    "chunkSize": 1000,
+    "concurrencyHandle": 1
+  },
+  "jobCheckNeedCreateEvmEventPartition": {
+    "millisecondCrawl": 10000,
+    "templateTable": "evm_event"
   },
   "jobCheckNeedCreateEventPartition": {
     "millisecondCrawl": 10000,
