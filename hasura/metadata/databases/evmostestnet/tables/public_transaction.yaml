@@ -53,6 +53,7 @@ array_relationships:
       manual_configuration:
         column_mapping:
           id: tx_id
+          height: block_height
         insertion_order: null
         remote_table:
           name: view_event_attribute_value_index
