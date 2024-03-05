@@ -20,9 +20,7 @@ export async function getProviderRegistry(): Promise<IProviderRegistry> {
   switch (config.chainId) {
     case chainIdConfigOnServer.Atlantic2:
     case chainIdConfigOnServer.Pacific1:
-      ({ ibc, cosmos, seiprotocol } = await import(
-        '@horoscope/sei-js-proto'
-      ));
+      ({ ibc, cosmos, seiprotocol } = await import('@horoscope/sei-js-proto'));
       txRegistryType = seiTxRegistryType;
       break;
     case chainIdConfigOnServer.Euphoria:

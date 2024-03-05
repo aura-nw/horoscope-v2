@@ -97,13 +97,27 @@ export default class CrawlDelegatorsService extends BullableService {
       .findOne('tx_id', latestTransaction.id)
       .orderBy('id', 'DESC')
       .limit(1);
-    await BlockCheckpoint.query()
-      .update({
-        height: latestTransactionMessage?.id,
-      })
-      .where({
-        job_name: BULL_JOB_NAME.CHECKPOINT_UPDATE_DELEGATOR,
-      });
+    const blockCheckPoint = await BlockCheckpoint.query().findOne(
+      'job_name',
+      BULL_JOB_NAME.CHECKPOINT_UPDATE_DELEGATOR
+    );
+
+    if (!blockCheckPoint) {
+      await BlockCheckpoint.query().insert(
+        BlockCheckpoint.fromJson({
+          job_name: BULL_JOB_NAME.CHECKPOINT_UPDATE_DELEGATOR,
+          height: latestTransactionMessage?.id,
+        })
+      );
+    } else {
+      await BlockCheckpoint.query()
+        .update({
+          height: latestTransactionMessage?.id,
+        })
+        .where({
+          job_name: BULL_JOB_NAME.CHECKPOINT_UPDATE_DELEGATOR,
+        });
+    }
   }
 
   @QueueHandler({
