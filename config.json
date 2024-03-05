@@ -300,6 +300,12 @@
     },
     "statementTimeout": 600000
   },
+  "jobCreateConstraintInEvmEventPartition": {
+    "jobRepeatCheckNeedCreateConstraint": {
+      "millisecondRepeatJob": 600000
+    },
+    "statementTimeout": 600000
+  },
   "jobCreateConstraintInEventPartition": {
     "jobRepeatCheckNeedCreateConstraint": {
       "millisecondRepeatJob": 600000
