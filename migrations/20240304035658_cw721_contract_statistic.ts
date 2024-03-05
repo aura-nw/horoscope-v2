@@ -21,16 +21,19 @@ export async function up(knex: Knex): Promise<void> {
       .where('burned', false)
       .groupBy('cw721_contract_id')
       .count();
-    let stringListUpdates = totalSupplies
-      .map(
-        (totalSuply) => `(${totalSuply.cw721_contract_id}, ${totalSuply.count})`
-      )
-      .join(',');
-    await knex
-      .raw(
-        `UPDATE cw721_contract SET total_suply = temp.total_suply from (VALUES ${stringListUpdates}) as temp(id, total_suply) where temp.id = cw721_contract.id`
-      )
-      .transacting(trx);
+    if (totalSupplies.length > 0) {
+      const stringListUpdates = totalSupplies
+        .map(
+          (totalSuply) =>
+            `(${totalSuply.cw721_contract_id}, ${totalSuply.count})`
+        )
+        .join(',');
+      await knex
+        .raw(
+          `UPDATE cw721_contract SET total_suply = temp.total_suply from (VALUES ${stringListUpdates}) as temp(id, total_suply) where temp.id = cw721_contract.id`
+        )
+        .transacting(trx);
+    }
     const noActivities = await CW721Activity.query()
       .transacting(trx)
       .select('cw721_contract_id', 'action')
@@ -43,14 +46,16 @@ export async function up(knex: Knex): Promise<void> {
       acc[curr.cw721_contract_id][curr.action] = curr.count;
       return acc;
     }, {});
-    stringListUpdates = Object.keys(results)
-      .map((key) => `(${key}, '${JSON.stringify(results[key])}'::jsonb)`)
-      .join(',');
-    await knex
-      .raw(
-        `UPDATE cw721_contract SET no_activities = temp.no_activities from (VALUES ${stringListUpdates}) as temp(id, no_activities) where temp.id = cw721_contract.id`
-      )
-      .transacting(trx);
+    if (Object.values(results).length > 0) {
+      const stringListUpdates = Object.keys(results)
+        .map((key) => `(${key}, '${JSON.stringify(results[key])}'::jsonb)`)
+        .join(',');
+      await knex
+        .raw(
+          `UPDATE cw721_contract SET no_activities = temp.no_activities from (VALUES ${stringListUpdates}) as temp(id, no_activities) where temp.id = cw721_contract.id`
+        )
+        .transacting(trx);
+    }
   });
 }
 
