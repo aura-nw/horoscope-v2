@@ -138,7 +138,9 @@ export default class CrawlDelegatorsTest {
     const updatedValidator = await Validator.query().first();
 
     expect(updatedValidator?.delegators_count).toEqual(2);
-    expect(updatedValidator?.delegators_last_height).toEqual(3967500);
+    expect(updatedValidator?.delegators_last_height).toEqual(
+      validator?.delegators_last_height ?? 0
+    );
 
     result = await client.undelegateTokens(
       'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
