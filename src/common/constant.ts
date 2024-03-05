@@ -121,6 +121,7 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_TRANSACTION_MESSAGE_CONSTRAINT:
     'job:create-transaction-message-constraint',
   JOB_UPDATE_TX_COUNT_IN_BLOCK: 'job:update-tx-count-in-block',
+  JOB_CW721_UPDATE: 'job:cw721-update',
 };
 
 export const SERVICE = {

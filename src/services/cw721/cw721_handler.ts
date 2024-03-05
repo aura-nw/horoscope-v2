@@ -65,6 +65,11 @@ export class Cw721Handler {
           token_id: tokenId,
         })
       );
+      this.trackedCw721ContractsByAddr[
+        transferMsg.contractAddress
+      ].no_activities[transferMsg.action || ''] =
+        this.trackedCw721ContractsByAddr[transferMsg.contractAddress]
+          .no_activities[transferMsg.action || ''] || 0 + 1;
       if (
         token !== undefined &&
         token.last_updated_height <= transferMsg.height
@@ -103,6 +108,11 @@ export class Cw721Handler {
           token_id: tokenId,
         })
       );
+      this.trackedCw721ContractsByAddr[mintEvent.contractAddress].no_activities[
+        mintEvent.action || ''
+      ] =
+        this.trackedCw721ContractsByAddr[mintEvent.contractAddress]
+          .no_activities[mintEvent.action || ''] || 0 + 1;
       if (
         token === undefined ||
         token.last_updated_height <= mintEvent.height
@@ -121,6 +131,9 @@ export class Cw721Handler {
             burned: false,
             id: token === undefined ? undefined : token.id,
           });
+        this.trackedCw721ContractsByAddr[
+          `${mintEvent.contractAddress}`
+        ].total_suply += 1;
       }
     }
   }
@@ -150,9 +163,18 @@ export class Cw721Handler {
           token_id: tokenId,
         })
       );
+      this.trackedCw721ContractsByAddr[burnMsg.contractAddress].no_activities[
+        burnMsg.action || ''
+      ] =
+        this.trackedCw721ContractsByAddr[burnMsg.contractAddress].no_activities[
+          burnMsg.action || ''
+        ] || 0 + 1;
       if (token !== undefined && token.last_updated_height <= burnMsg.height) {
         token.burned = true;
         token.last_updated_height = burnMsg.height;
+        this.trackedCw721ContractsByAddr[
+          burnMsg.contractAddress
+        ].total_suply -= 1;
       }
     }
   }
@@ -178,6 +200,12 @@ export class Cw721Handler {
           token_id: tokenId,
         })
       );
+      this.trackedCw721ContractsByAddr[msg.contractAddress].no_activities[
+        msg.action || ''
+      ] =
+        this.trackedCw721ContractsByAddr[msg.contractAddress].no_activities[
+          msg.action || ''
+        ] || 0 + 1;
     }
   }
 

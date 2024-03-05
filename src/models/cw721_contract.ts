@@ -35,6 +35,12 @@ export default class CW721Contract extends BaseModel {
 
   track?: boolean;
 
+  total_suply!: number;
+
+  no_holders!: number;
+
+  no_activities!: any;
+
   created_at?: Date;
 
   updated_at?: Date;

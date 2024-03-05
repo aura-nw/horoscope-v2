@@ -85,6 +85,20 @@ export default class Cw721HandlerService extends BullableService {
           },
         }
       );
+      await this.createJob(
+        BULL_JOB_NAME.JOB_CW721_UPDATE,
+        BULL_JOB_NAME.JOB_CW721_UPDATE,
+        {},
+        {
+          removeOnComplete: true,
+          removeOnFail: {
+            count: 3,
+          },
+          repeat: {
+            every: config.cw721.jobCw721Update.millisecondRepeatJob,
+          },
+        }
+      );
     }
     return super._start();
   }
@@ -116,11 +130,10 @@ export default class Cw721HandlerService extends BullableService {
           trx
         );
         // handle all cw721 execute messages
-        const { tokens, cw721Activities } = await this.handleCw721MsgExec(
-          listContractMsg,
-          trx
-        );
+        const { tokens, cw721Activities, cw721Contracts } =
+          await this.handleCw721MsgExec(listContractMsg, trx);
         await this.updateTokenAndActivities(tokens, cw721Activities, trx);
+        await this.updateCw721Contract(cw721Contracts, trx);
       }
       updateBlockCheckpoint.height = endBlock;
       await BlockCheckpoint.query()
@@ -212,6 +225,7 @@ export default class Cw721HandlerService extends BullableService {
     return {
       tokens: Object.values(cw721Handler.tokensKeyBy),
       cw721Activities: cw721Handler.cw721Activities,
+      cw721Contracts: Object.values(cw721Handler.trackedCw721ContractsByAddr),
     };
   }
 
@@ -241,6 +255,46 @@ export default class Cw721HandlerService extends BullableService {
         .transacting(trx)
         .insert(cw721Activities.map((e) => _.omit(e, 'token_id')));
     }
+  }
+
+  async updateCw721Contract(
+    cw721Contracts: CW721Contract[],
+    trx: Knex.Transaction
+  ) {
+    const stringListUpdates = cw721Contracts
+      .map(
+        (cw721Contract) =>
+          `(${cw721Contract.id} ,${
+            cw721Contract.total_suply
+          }, '${JSON.stringify(cw721Contract.no_activities)}'::jsonb)`
+      )
+      .join(',');
+    await knex
+      .raw(
+        `UPDATE cw721_contract SET total_suply = temp.total_suply, no_activities = temp.no_activities from (VALUES ${stringListUpdates}) as temp(id, total_suply, no_activities) where temp.id = cw721_contract.id`
+      )
+      .transacting(trx);
+  }
+
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.JOB_CW721_UPDATE,
+    jobName: BULL_JOB_NAME.JOB_CW721_UPDATE,
+  })
+  async jobCw721Update() {
+    await knex.raw(
+      `set statement_timeout to ${config.cw721.jobCw721Update.statementTimeout}`
+    );
+    const noHolders = await CW721Token.query()
+      .where('burned', false)
+      .select('cw721_contract_id')
+      .groupBy('cw721_contract_id')
+      .countDistinct('owner');
+    const stringListUpdates = noHolders
+      .map((noHolder) => `(${noHolder.cw721_contract_id}, ${noHolder.count})`)
+      .join(',');
+    await knex.raw(
+      `UPDATE cw721_contract SET no_holders = temp.no_holders from (VALUES ${stringListUpdates}) as temp(id, no_holders) where temp.id = cw721_contract.id`
+    );
   }
 
   @QueueHandler({
@@ -373,11 +427,10 @@ export default class Cw721HandlerService extends BullableService {
     );
     await knex.transaction(async (trx) => {
       // handle all cw721 execute messages
-      const { cw721Activities, tokens } = await this.handleCw721MsgExec(
-        missingHistories,
-        trx
-      );
+      const { cw721Activities, tokens, cw721Contracts } =
+        await this.handleCw721MsgExec(missingHistories, trx);
       await this.updateTokenAndActivities(tokens, cw721Activities, trx);
+      await this.updateCw721Contract(cw721Contracts, trx);
     });
   }
 }
