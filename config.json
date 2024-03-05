@@ -24,7 +24,7 @@
       "limitRecordGet": 500
     },
     "concurrencyHandleTokenMedia": 10,
-    "jobCw721Update":{
+    "jobCw721Update": {
       "statementTimeout": 600000,
       "millisecondRepeatJob": 600000
     }
