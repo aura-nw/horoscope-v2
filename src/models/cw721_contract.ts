@@ -255,6 +255,11 @@ export default class CW721Contract extends BaseModel {
       .withGraphJoined('smart_contract')
       .whereIn('smart_contract.address', addresses)
       .andWhere('track', true)
-      .select('smart_contract.address as address', 'cw721_contract.id as id');
+      .select(
+        'smart_contract.address as address',
+        'cw721_contract.id as id',
+        'cw721_contract.no_activities',
+        'cw721_contract.total_suply'
+      );
   }
 }
