@@ -138,7 +138,7 @@ export default class CrawlDelegatorsService extends BullableService {
 
     await knex.transaction(async (trx) => {
       await trx.batchInsert(Delegator.tableName, delegators, 100);
-      Validator.query()
+      await Validator.query()
         .patch({
           delegators_count: delegators.length,
           delegators_last_height: _payload.height,
