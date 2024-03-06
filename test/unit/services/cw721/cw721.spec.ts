@@ -753,6 +753,16 @@ export default class AssetIndexerTest {
         ];
       expect(token.owner).toEqual(recipient);
       expect(token.last_updated_height).toEqual(mockContractTransferMsg.height);
+      expect(
+        cw721Handler.trackedCw721ContractsByAddr[
+          mockContractTransferMsg.contractAddress
+        ].total_suply
+      ).toEqual(0);
+      expect(
+        cw721Handler.trackedCw721ContractsByAddr[
+          mockContractTransferMsg.contractAddress
+        ].no_activities
+      ).toMatchObject({ transfer_nft: 1 });
       this.testActivity(cw721Handler.cw721Activities[0], {
         sender,
         from: this.mockInitContract.tokens[0].owner,
@@ -839,6 +849,14 @@ export default class AssetIndexerTest {
       expect(token.owner).toEqual(owner);
       expect(token.token_id).toEqual(tokenId);
       expect(token.last_updated_height).toEqual(msg.height);
+      expect(
+        cw721Handler.trackedCw721ContractsByAddr[msg.contractAddress]
+          .total_suply
+      ).toEqual(1);
+      expect(
+        cw721Handler.trackedCw721ContractsByAddr[msg.contractAddress]
+          .no_activities
+      ).toMatchObject({ mint: 1 });
       this.testActivity(cw721Handler.cw721Activities[0], {
         sender: minter,
         from: null,
@@ -919,6 +937,14 @@ export default class AssetIndexerTest {
       expect(token.token_id).toEqual(tokenId);
       expect(token.last_updated_height).toEqual(msg.height);
       expect(token.burned).toEqual(true);
+      expect(
+        cw721Handler.trackedCw721ContractsByAddr[msg.contractAddress]
+          .total_suply
+      ).toEqual(-1);
+      expect(
+        cw721Handler.trackedCw721ContractsByAddr[msg.contractAddress]
+          .no_activities
+      ).toMatchObject({ burn: 1 });
       this.testActivity(cw721Handler.cw721Activities[0], {
         sender,
         from: this.mockInitContract.tokens[0].owner,
@@ -996,6 +1022,14 @@ export default class AssetIndexerTest {
           )}`
         ];
       expect(token.burned).toEqual(false);
+      expect(
+        cw721Handler.trackedCw721ContractsByAddr[msg.contractAddress]
+          .total_suply
+      ).toEqual(0);
+      expect(
+        cw721Handler.trackedCw721ContractsByAddr[msg.contractAddress]
+          .no_activities
+      ).toMatchObject({ [msg.action || '']: 1 });
       this.testActivity(cw721Handler.cw721Activities[0], {
         sender,
         from: undefined,
@@ -1805,6 +1839,27 @@ export default class AssetIndexerTest {
       );
       expect(results.length).toEqual(0);
       expect(cw721Activities.length).toEqual(0);
+      await trx.rollback();
+    });
+  }
+
+  @Test('test updateCw721Contract')
+  async testUpdateCw721Contract() {
+    const contract = await CW721Contract.query().first().throwIfNotFound();
+    contract.total_suply = 123;
+    contract.no_activities = {
+      mint: 15,
+      burn: 20,
+      '': 200,
+    };
+    await knex.transaction(async (trx) => {
+      await this.cw721HandlerService.updateCw721Contract([contract], trx);
+      const result = await CW721Contract.query()
+        .transacting(trx)
+        .where('id', contract.id)
+        .first();
+      expect(result?.total_suply).toEqual(contract.total_suply);
+      expect(result?.no_activities).toMatchObject(contract.no_activities);
       await trx.rollback();
     });
   }
