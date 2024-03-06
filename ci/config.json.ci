@@ -120,7 +120,8 @@
   },
   "crawlDelegators": {
     "millisecondCrawl": 3600000,
-    "queryPageLimit": 100
+    "queryPageLimit": 100,
+    "txMsgPageLimit": 100
   },
   "crawlContractEvent": {
     "key": "crawlContractEvent",

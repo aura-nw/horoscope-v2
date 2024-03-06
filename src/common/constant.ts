@@ -122,6 +122,7 @@ export const BULL_JOB_NAME = {
     'job:create-transaction-message-constraint',
   JOB_UPDATE_TX_COUNT_IN_BLOCK: 'job:update-tx-count-in-block',
   JOB_CW721_UPDATE: 'job:cw721-update',
+  CHECKPOINT_UPDATE_DELEGATOR: 'job:checkpoint_update_delegator',
 };
 
 export const SERVICE = {
@@ -235,6 +236,10 @@ export const SERVICE = {
     CrawlDelegatorsService: {
       key: 'CrawlDelegatorsService',
       name: 'v1.CrawlDelegatorsService',
+      updateAllValidator: {
+        key: 'updateAllValidator',
+        path: 'v1.CrawlDelegatorsService.updateAllValidator',
+      },
     },
     Cw20: {
       key: 'Cw20Service',
@@ -445,6 +450,7 @@ export const MSG_TYPE = {
   MSG_DELEGATE: '/cosmos.staking.v1beta1.MsgDelegate',
   MSG_REDELEGATE: '/cosmos.staking.v1beta1.MsgBeginRedelegate',
   MSG_UNDELEGATE: '/cosmos.staking.v1beta1.MsgUndelegate',
+  MSG_CANCEL_UNDELEGATE: '/cosmos.staking.v1beta1.MsgCancelUnbondingDelegation',
   MSG_CREATE_VALIDATOR: '/cosmos.staking.v1beta1.MsgCreateValidator',
   MSG_SUBMIT_PROPOSAL: '/cosmos.gov.v1beta1.MsgSubmitProposal',
   MSG_SUBMIT_PROPOSAL_V1: '/cosmos.gov.v1.MsgSubmitProposal',
@@ -464,6 +470,7 @@ export const ABCI_QUERY_PATH = {
   ACCOUNT_AUTH: '/cosmos.auth.v1beta1.Query/Account',
   DENOM_TRACE: '/ibc.applications.transfer.v1.Query/DenomTrace',
   VALIDATOR_DELEGATION: '/cosmos.staking.v1beta1.Query/Delegation',
+  VALIDATOR_DELEGATIONS: '/cosmos.staking.v1beta1.Query/ValidatorDelegations',
   PROPOSAL: '/cosmos.gov.v1beta1.Query/Proposal',
   TALLY_RESULT: '/cosmos.gov.v1beta1.Query/TallyResult',
   CODE: '/cosmwasm.wasm.v1.Query/Code',
