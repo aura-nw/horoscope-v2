@@ -64,6 +64,34 @@ export default class CreateConstraintInEvmEventPartitionJob extends BullableServ
   }
 
   /**
+   * @description get max min tx_id and max min evm_tx_id in partition of evm_event table
+   * @param partitionName
+   */
+  public async getMaxMinTxIdAndEvmTxIdByPartition(
+    partitionName: string
+  ): Promise<{
+    min_tx_id: number;
+    max_tx_id: number;
+    min_evm_tx_id: number;
+    max_evm_tx_id: number;
+  }> {
+    await knex.raw(
+      `set statement_timeout to ${config.jobCreateConstraintInEvmEventPartition.statementTimeout}`
+    );
+    const boundariesResult = await knex.raw(`
+        SELECT
+            min(tx_id) min_tx_id, max(tx_id) max_tx_id, min(evm_tx_id) min_evm_tx_id, max(evm_tx_id) max_evm_tx_id
+        FROM ${partitionName}`);
+
+    return {
+      min_tx_id: boundariesResult.rows[0].min_tx_id,
+      max_tx_id: boundariesResult.rows[0].max_tx_id,
+      min_evm_tx_id: boundariesResult.rows[0].min_evm_tx_id,
+      max_evm_tx_id: boundariesResult.rows[0].max_evm_tx_id,
+    };
+  }
+
+  /**
    * @description Check partition insertion is done or inserting or empty
    * @param partitionName
    * @param toId
@@ -195,15 +223,33 @@ export default class CreateConstraintInEvmEventPartitionJob extends BullableServ
     toHeight: number | null,
     currentConstraintName: string | null
   ): Promise<void> {
-    let constraintName: string;
-    let checkConstraint: string;
+    let constraintBlockName: string;
+    let constraintTxIdName: string;
+    let constraintEvmTxIdName: string;
+    let checkConstraintBlock: string;
+    let checkConstraintTxId: string;
+    let checkConstraintEvmTxId: string;
+
+    const maxMinTxIdAndEvmTxId = await this.getMaxMinTxIdAndEvmTxIdByPartition(
+      partitionName
+    );
 
     if (toHeight === null) {
-      constraintName = `evm_event_ct_${partitionName}_${this.insertionStatus.inserting}`;
-      checkConstraint = `(block_height >= ${fromHeight})`;
+      constraintBlockName = `evm_event_ct_${partitionName}_${this.insertionStatus.inserting}`;
+      constraintTxIdName = `evm_event_c1_${partitionName}_${this.insertionStatus.inserting}`;
+      constraintEvmTxIdName = `evm_event_c2_${partitionName}_${this.insertionStatus.inserting}`;
+
+      checkConstraintBlock = `(block_height >= ${fromHeight})`;
+      checkConstraintTxId = `(tx_id >= ${maxMinTxIdAndEvmTxId.min_tx_id})`;
+      checkConstraintEvmTxId = `(evm_tx_id >= ${maxMinTxIdAndEvmTxId.min_evm_tx_id})`;
     } else {
-      constraintName = `evm_event_ct_${partitionName}_${this.insertionStatus.done}`;
-      checkConstraint = `(block_height >= ${fromHeight} AND block_height <= ${toHeight})`;
+      constraintBlockName = `evm_event_ct_${partitionName}_${this.insertionStatus.done}`;
+      constraintTxIdName = `evm_event_c1_${partitionName}_${this.insertionStatus.done}`;
+      constraintEvmTxIdName = `evm_event_c2_${partitionName}_${this.insertionStatus.done}`;
+
+      checkConstraintBlock = `(block_height >= ${fromHeight} AND block_height <= ${toHeight})`;
+      checkConstraintTxId = `(tx_id >= ${maxMinTxIdAndEvmTxId.min_tx_id} AND tx_id <= ${maxMinTxIdAndEvmTxId.max_tx_id})`;
+      checkConstraintEvmTxId = `(evm_tx_id >= ${maxMinTxIdAndEvmTxId.min_evm_tx_id} AND evm_tx_id <= ${maxMinTxIdAndEvmTxId.max_evm_tx_id})`;
     }
 
     await knex.transaction(async (trx) => {
@@ -211,26 +257,36 @@ export default class CreateConstraintInEvmEventPartitionJob extends BullableServ
         this.logger.info(`DROP constraint ${currentConstraintName}`);
         await knex
           .raw(
-            `ALTER TABLE ${partitionName} DROP CONSTRAINT ${currentConstraintName}`
+            `
+          ALTER TABLE ${partitionName} DROP CONSTRAINT ${currentConstraintName};
+          ALTER TABLE ${partitionName} DROP CONSTRAINT evm_event_c1_${partitionName}_${this.insertionStatus.inserting};
+          ALTER TABLE ${partitionName} DROP CONSTRAINT evm_event_c2_${partitionName}_${this.insertionStatus.inserting};
+        `
           )
           .transacting(trx);
       }
+
       await knex
         .raw(
           `
-        ALTER TABLE ${partitionName}
-        ADD CONSTRAINT ${constraintName} check ${checkConstraint} not valid
+        ALTER TABLE ${partitionName} ADD CONSTRAINT ${constraintBlockName} check ${checkConstraintBlock} not valid;
+        ALTER TABLE ${partitionName} ADD CONSTRAINT ${constraintTxIdName} check ${checkConstraintTxId} not valid;
+        ALTER TABLE ${partitionName} ADD CONSTRAINT ${constraintEvmTxIdName} check ${checkConstraintEvmTxId} not valid;
       `
         )
         .transacting(trx);
+
       await knex
         .raw(
           `
-        ALTER TABLE ${partitionName} validate constraint ${constraintName}
+        ALTER TABLE ${partitionName} validate constraint ${constraintBlockName};
+        ALTER TABLE ${partitionName} validate constraint ${constraintTxIdName};
+        ALTER TABLE ${partitionName} validate constraint ${constraintEvmTxIdName};
       `
         )
         .transacting(trx);
-      this.logger.info(`Constraint created with name ${constraintName}`);
+
+      this.logger.info(`Constraint created with name ${constraintBlockName}`);
     });
   }
 
