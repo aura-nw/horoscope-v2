@@ -89,10 +89,14 @@ export default class JobService extends BaseService {
         optional: false,
         enum: networks.map((network) => network.chainId),
       },
+      height: {
+        type: 'number',
+        optional: false,
+      },
     },
   })
   async updateDelegatorValidator(
-    ctx: Context<{ chainid: string; type: string }, Record<string, unknown>>
+    ctx: Context<{ chainid: string; height: number }, Record<string, unknown>>
   ) {
     const selectedChain = networks.find(
       (network) => network.chainId === ctx.params.chainid
@@ -103,7 +107,7 @@ export default class JobService extends BaseService {
     return this.broker.call(
       `${SERVICE.V1.CrawlDelegatorsService.updateAllValidator.path}@${selectedChain?.moleculerNamespace}`,
       {
-        type: ctx.params.type,
+        height: ctx.params.height,
       }
     );
   }
