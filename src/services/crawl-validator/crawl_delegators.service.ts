@@ -5,7 +5,7 @@ import {
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { cosmos } from '@aura-nw/aurajs';
-import { ServiceBroker } from 'moleculer';
+import { ServiceBroker, Context } from 'moleculer';
 import Long from 'long';
 import { fromBase64, toHex } from '@cosmjs/encoding';
 import { Knex } from 'knex';
@@ -16,9 +16,7 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import {
   BULL_JOB_NAME,
-  getLcdClient,
   getHttpBatchClient,
-  IProviderJSClientFactory,
   IValidatorDelegators,
   SERVICE,
   MSG_TYPE,
@@ -39,8 +37,6 @@ import { getProviderRegistry } from '../../common/utils/provider.registry';
   version: 1,
 })
 export default class CrawlDelegatorsService extends BullableService {
-  private _lcdClient!: IProviderJSClientFactory;
-
   private _httpBatchClient!: HttpBatchClient;
 
   public constructor(public broker: ServiceBroker) {
@@ -57,16 +53,18 @@ export default class CrawlDelegatorsService extends BullableService {
   @Action({
     name: SERVICE.V1.CrawlDelegatorsService.updateAllValidator.key,
   })
-  public async updateAllValidator(): Promise<void> {
+  public async updateAllValidator(
+    _payload: Context<{ height: number }>
+  ): Promise<void> {
     await knex.raw(
       `TRUNCATE TABLE ${Delegator.tableName} RESTART IDENTITY CASCADE`
     );
 
-    const latestTransaction = await Transaction.query()
-      .first()
+    const latestTransactionByHeight = await Transaction.query()
+      .findOne('height', _payload.params.height)
       .orderBy('id', 'DESC')
       .limit(1);
-    if (!latestTransaction) {
+    if (!latestTransactionByHeight) {
       this.logger.info('No transaction found. Waiting for transaction crawled');
       return;
     }
@@ -79,7 +77,7 @@ export default class CrawlDelegatorsService extends BullableService {
         {
           id: validator.id,
           address: validator.operator_address,
-          height: latestTransaction?.height,
+          height: _payload.params.height,
         },
         {
           removeOnComplete: true,
@@ -94,7 +92,7 @@ export default class CrawlDelegatorsService extends BullableService {
     await Promise.all(jobCrawlDelegators);
 
     const latestTransactionMessage = await TransactionMessage.query()
-      .findOne('tx_id', latestTransaction.id)
+      .findOne('tx_id', latestTransactionByHeight.id)
       .orderBy('id', 'DESC')
       .limit(1);
     const blockCheckPoint = await BlockCheckpoint.query().findOne(
@@ -128,7 +126,6 @@ export default class CrawlDelegatorsService extends BullableService {
     _payload: IValidatorDelegators
   ): Promise<void> {
     this.logger.info(`Update delegator for validator ${_payload.address}`);
-    this._lcdClient = await getLcdClient();
 
     const delegators: Delegator[] = await this.getValidatorDelegations(
       _payload.address,
