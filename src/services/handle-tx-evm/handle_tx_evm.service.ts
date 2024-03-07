@@ -64,7 +64,7 @@ export default class HandleTransactionEVMService extends BullableService {
             tx_msg_id: txMsg.tx_msg_id,
             hash: content.hash,
             size: content.size,
-            from: content.from ?? txMsg.sender,
+            from: content.from ? content.from : txMsg.sender,
             to: content.data?.to,
             gas: Utils.getBigIntIfNotNull(content.data?.gas),
             gas_fee_cap: Utils.getBigIntIfNotNull(content.data?.gas_fee_cap),
