@@ -81,6 +81,7 @@ export const BULL_JOB_NAME = {
     'job:check-need-create-event-attr-partition',
   JOB_CRAWL_EVM_EVENT: 'job:crawl-evm-event',
   JOB_CREATE_EVENT_ATTR_PARTITION: 'job:create-event-attr-partition',
+  JOB_CREATE_EVM_EVENT_PARTITION: 'job:create-evm-event-partition',
   JOB_CREATE_EVENT_PARTITION: 'job:create-event-partition',
   JOB_CREATE_TRANSACTION_PARTITION: 'job:create-transaction-partition',
   JOB_CREATE_BLOCK_PARTITION: 'job:create-block-partition',
@@ -110,6 +111,8 @@ export const BULL_JOB_NAME = {
   JOB_SUMMARIZE_BRIN_INDEX_IN_TABLE: 'job:summarize-brin-index-in-table',
   JOB_CREATE_CONSTRAINT_IN_ATTR_PARTITION:
     'job:create-constraint-in-attr-partition',
+  JOB_CHECK_EVM_EVENT_CONSTRAINT: 'job:check-need-create-evm-event-constraint',
+  JOB_CREATE_EVM_EVENT_CONSTRAINT: 'job:create-evm-event-constraint',
   JOB_CHECK_NEED_CREATE_CONSTRAINT: 'job:check-need-create-constraint',
   JOB_CHECK_EVENT_CONSTRAINT: 'job:check-need-create-event-constraint',
   JOB_CHECK_TRANSACTION_CONSTRAINT:
@@ -290,6 +293,14 @@ export const SERVICE = {
       CrawlEvmEvent: {
         key: 'CrawlEvmEvent',
         path: 'v1.CrawlEvmEvent',
+      },
+      CreateEvmEventPartition: {
+        key: 'CreateEvmEventPartition',
+        path: 'v1.CreateEvmEventPartition',
+      },
+      CreateConstraintInEvmEventPartition: {
+        key: 'CreateConstraintInEvmEventPartition',
+        path: 'v1.CreateConstraintInEvmEventPartition',
       },
       CreateBlockPartition: {
         key: 'CreateBlockPartition',
