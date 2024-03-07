@@ -315,6 +315,7 @@
     "returnIfFound": true
   },
   "jobUpdateAssets": {
-    "millisecondRepeatJob": 10000
+    "millisecondRepeatJob": 10000,
+    "lcdRecordGet": 5
   }
 }
