@@ -1,5 +1,6 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
+import _ from 'lodash';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
 import {
@@ -59,10 +60,7 @@ export default class CrawlEvmEventJob extends BullableService {
       .where('height', '>', startBlock)
       .andWhere('height', '<=', endBlock)
       .select(['id', 'tx_id']);
-    const mappingEvmTxId = {};
-    evmTransactions.forEach((evmTransaction) => {
-      mappingEvmTxId[evmTransaction.tx_id] = evmTransaction.id;
-    });
+    const mappingEvmTxId = _.mapValues(_.keyBy(evmTransactions, 'tx_id'), 'id');
 
     const evmEvents: EvmEvent[] = evmEventAttr.map((evmEvent) => {
       const valueParse = JSON.parse(evmEvent.value);
