@@ -13,6 +13,10 @@ export class EVMContractVerification extends BaseModel {
 
   abi!: any;
 
+  created_at!: Date;
+
+  updated_at!: Date;
+
   static get tableName() {
     return 'evm_contract_verification';
   }
@@ -43,5 +47,14 @@ export class EVMContractVerification extends BaseModel {
       FAIL: 'FAIL',
       SUCCESS: 'SUCCESS',
     };
+  }
+
+  $beforeInsert() {
+    this.created_at = new Date();
+    this.updated_at = this.created_at;
+  }
+
+  $beforeUpdate() {
+    this.updated_at = new Date();
   }
 }
