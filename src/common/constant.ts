@@ -132,6 +132,7 @@ export const BULL_JOB_NAME = {
     'job:create-evm-transaction-constraint',
   JOB_UPDATE_TX_COUNT_IN_BLOCK: 'job:update-tx-count-in-block',
   HANDLE_TRANSACTION_EVM: 'handle:transaction-evm',
+  CRAWL_SMART_CONTRACT_EVM: 'crawl:smart-contract-evm',
 };
 
 export const SERVICE = {
@@ -449,6 +450,10 @@ export const SERVICE = {
       key: 'HandleTransactionEVM',
       path: 'v1.HandleTransactionEVM',
     },
+    CrawlSmartContractEVM: {
+      key: 'CrawlSmartContractEVM',
+      path: 'v1.CrawlSmartContractEVM',
+    },
   },
 };
 
@@ -505,4 +510,9 @@ export const ABCI_QUERY_PATH = {
   RAW_CONTRACT_STATE: '/cosmwasm.wasm.v1.Query/RawContractState',
   CONTRACT_INFO: '/cosmwasm.wasm.v1.Query/ContractInfo',
   GET_TXS_EVENT: '/cosmos.tx.v1beta1.Service/GetTxsEvent',
+};
+
+export const EVM_CONTRACT_METHOD_HEX_PREFIX = {
+  // https://ethereum.stackexchange.com/questions/124906/how-to-tell-if-a-transaction-is-contract-creation
+  CREATE_CONTRACT: '60806040',
 };
