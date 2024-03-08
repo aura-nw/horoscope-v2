@@ -132,6 +132,7 @@ export const BULL_JOB_NAME = {
     'job:create-evm-transaction-constraint',
   JOB_UPDATE_TX_COUNT_IN_BLOCK: 'job:update-tx-count-in-block',
   HANDLE_TRANSACTION_EVM: 'handle:transaction-evm',
+  CRAWL_SMART_CONTRACT_EVM: 'crawl:smart-contract-evm',
 };
 
 export const SERVICE = {
@@ -448,6 +449,10 @@ export const SERVICE = {
     HandleTransactionEVM: {
       key: 'HandleTransactionEVM',
       path: 'v1.HandleTransactionEVM',
+    },
+    CrawlSmartContractEVM: {
+      key: 'CrawlSmartContractEVM',
+      path: 'v1.CrawlSmartContractEVM',
     },
   },
 };

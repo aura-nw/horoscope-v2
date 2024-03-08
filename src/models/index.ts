@@ -33,3 +33,4 @@ export * from './ibc_ics20';
 export * from './statistic';
 export * from './evm_transaction';
 export * from './evm_event';
+export * from './evm_smart_contract';
