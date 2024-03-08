@@ -23,6 +23,7 @@
 - '!include public_event.yaml'
 - '!include public_event_attribute.yaml'
 - '!include public_evm_event.yaml'
+- '!include public_evm_smart_contract.yaml'
 - '!include public_evm_transaction.yaml'
 - '!include public_feegrant.yaml'
 - '!include public_feegrant_history.yaml'
