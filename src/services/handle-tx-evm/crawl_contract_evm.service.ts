@@ -8,7 +8,7 @@ import { BULL_JOB_NAME, SERVICE } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
-import { EVM_CONTRACT_METHOD_HEX_PREFIX } from './constants';
+import { EVM_CONTRACT_METHOD_HEX_PREFIX } from './constant';
 
 @Service({
   name: SERVICE.V1.CrawlSmartContractEVM.key,
