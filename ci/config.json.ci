@@ -377,5 +377,10 @@
       "millisecondRepeatJob": 10000
     },
     "statementTimeout": 600000
+  },
+  "crawlSmartContractEVM": {
+    "key": "crawlSmartContractEVM",
+    "blocksPerCall": 10000,
+    "millisecondCrawl": 1000
   }
 }

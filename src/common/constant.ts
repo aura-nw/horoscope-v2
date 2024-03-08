@@ -134,6 +134,7 @@ export const BULL_JOB_NAME = {
   JOB_CW721_UPDATE: 'job:cw721-update',
   CHECKPOINT_UPDATE_DELEGATOR: 'job:checkpoint_update_delegator',
   HANDLE_TRANSACTION_EVM: 'handle:transaction-evm',
+  CRAWL_SMART_CONTRACT_EVM: 'crawl:smart-contract-evm',
 };
 
 export const SERVICE = {
@@ -454,6 +455,10 @@ export const SERVICE = {
     HandleTransactionEVM: {
       key: 'HandleTransactionEVM',
       path: 'v1.HandleTransactionEVM',
+    },
+    CrawlSmartContractEVM: {
+      key: 'CrawlSmartContractEVM',
+      path: 'v1.CrawlSmartContractEVM',
     },
   },
 };

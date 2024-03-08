@@ -1,6 +1,7 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import _ from 'lodash';
+import { fromBase64, toHex } from '@cosmjs/encoding';
 import Utils from '../../common/utils/utils';
 import {
   BlockCheckpoint,
@@ -69,7 +70,9 @@ export default class HandleTransactionEVMService extends BullableService {
             gas: Utils.getBigIntIfNotNull(content.data?.gas),
             gas_fee_cap: Utils.getBigIntIfNotNull(content.data?.gas_fee_cap),
             gas_tip_cap: Utils.getBigIntIfNotNull(content.data?.gas_tip_cap),
-            data: content.data?.data,
+            data: content.data?.data
+              ? toHex(fromBase64(content.data?.data))
+              : null,
             nonce: Utils.getBigIntIfNotNull(content.data?.nonce),
             value: Utils.getBigIntIfNotNull(content.data?.value),
           })

@@ -13,7 +13,9 @@
     "LCD": ["https://evmos-testnet-api.polkachu.com/"],
     "databaseName": "horoscope_dev_evmos_testnet",
     "redisDBNumber": 25,
-    "moleculerNamespace": "erascope-dev-evmos-testnet"
+    "moleculerNamespace": "erascope-dev-evmos-testnet",
+    "EVMJSONRPC": ["https://evmos-testnet.lava.build"],
+    "EVMchainId": 9000
   },
   {
     "chainId": "euphoria-2",

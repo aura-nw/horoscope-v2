@@ -1,4 +1,6 @@
+import { Model } from 'objection';
 import BaseModel from './base';
+import { EVMTransaction } from './evm_transaction';
 
 export class EvmEvent extends BaseModel {
   id!: number;
@@ -50,6 +52,19 @@ export class EvmEvent extends BaseModel {
         tx_hash: { type: 'string' },
         block_hash: { type: 'string' },
         tx_index: { type: 'number' },
+      },
+    };
+  }
+
+  static get relationMappings() {
+    return {
+      evm_transaction: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: EVMTransaction,
+        join: {
+          from: 'evm_event.evm_tx_id',
+          to: 'evm_transaction.id',
+        },
       },
     };
   }
