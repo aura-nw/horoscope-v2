@@ -4,6 +4,7 @@ import config from '../config.json' assert { type: 'json' };
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.alterTable('account', (table) => {
     table.string('evm_address').unique().index();
+    table.string('code_hash').index();
   });
   let done = false;
   let startId = 0;
@@ -37,5 +38,6 @@ export async function up(knex: Knex): Promise<void> {
 export async function down(knex: Knex): Promise<void> {
   await knex.schema.alterTable('account', (table) => {
     table.dropColumn('evm_address');
+    table.dropColumn('code_hash');
   });
 }
