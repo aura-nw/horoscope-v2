@@ -511,8 +511,3 @@ export const ABCI_QUERY_PATH = {
   CONTRACT_INFO: '/cosmwasm.wasm.v1.Query/ContractInfo',
   GET_TXS_EVENT: '/cosmos.tx.v1beta1.Service/GetTxsEvent',
 };
-
-export const EVM_CONTRACT_METHOD_HEX_PREFIX = {
-  // https://ethereum.stackexchange.com/questions/124906/how-to-tell-if-a-transaction-is-contract-creation
-  CREATE_CONTRACT: '60806040',
-};

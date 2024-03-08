@@ -2,17 +2,13 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import _ from 'lodash';
 import { ethers } from 'ethers';
-import { fromBase64, toHex } from '@cosmjs/encoding';
 import EtherJsClient from '../../common/utils/etherjs_client';
 import { BlockCheckpoint, EVMSmartContract, EvmEvent } from '../../models';
-import {
-  BULL_JOB_NAME,
-  EVM_CONTRACT_METHOD_HEX_PREFIX,
-  SERVICE,
-} from '../../common';
+import { BULL_JOB_NAME, SERVICE } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
+import { EVM_CONTRACT_METHOD_HEX_PREFIX } from './constants';
 
 @Service({
   name: SERVICE.V1.CrawlSmartContractEVM.key,
@@ -62,7 +58,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
           let createdHeight;
           let createdHash;
           if (evmEvent.evm_transaction.data) {
-            const data = toHex(fromBase64(evmEvent.evm_transaction.data));
+            const { data } = evmEvent.evm_transaction;
             if (
               data.startsWith(EVM_CONTRACT_METHOD_HEX_PREFIX.CREATE_CONTRACT)
             ) {
