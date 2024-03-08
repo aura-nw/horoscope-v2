@@ -15,6 +15,7 @@ object_relationships:
     using:
       manual_configuration:
         column_mapping:
+          height: height
           id: tx_id
         insertion_order: null
         remote_table:
@@ -52,8 +53,8 @@ array_relationships:
     using:
       manual_configuration:
         column_mapping:
-          id: tx_id
           height: block_height
+          id: tx_id
         insertion_order: null
         remote_table:
           name: view_event_attribute_value_index
