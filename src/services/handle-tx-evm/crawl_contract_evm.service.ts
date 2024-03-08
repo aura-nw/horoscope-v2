@@ -46,9 +46,23 @@ export default class CrawlSmartContractEVMService extends BullableService {
       .orderBy('id', 'ASC')
       .orderBy('block_height', 'ASC');
     const evmContracts: EVMSmartContract[] = [];
+
+    const evmContractsInDB: EVMSmartContract[] = await EVMSmartContract.query()
+      .select('address')
+      .whereIn(
+        'address',
+        evmEvents.map((evmEvent) => evmEvent.address)
+      );
+    const evmContractsWithAddress: any = [];
+    evmContractsInDB.forEach((evmContract) => {
+      evmContractsWithAddress[evmContract.address] = evmContract;
+    });
     await Promise.all(
       evmEvents.map(async (evmEvent: any) => {
         const { address } = evmEvent;
+        if (evmContractsWithAddress[address]) {
+          return;
+        }
         const code = await this.etherJsClient.getCode(address);
 
         // check if this address has code -> is smart contract
