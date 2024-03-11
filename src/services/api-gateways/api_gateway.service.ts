@@ -13,6 +13,7 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 
 import BaseService from '../../base/base.service';
 import { bullBoardMixin } from '../../mixins/bullBoard/bullBoard.mixin';
+import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
   mixins: [ApiGateway, bullBoardMixin()],
@@ -47,6 +48,26 @@ import { bullBoardMixin } from '../../mixins/bullBoard/bullBoard.mixin';
         autoAliases: true,
         mappingPolicy: 'restrict',
         whitelist: ['v1.horoscope-handler.getDataByChainId'],
+      },
+      {
+        path: '/verify-contract',
+        mappingPolicy: true,
+        aliases: {
+          'POST /v1/evm/file': {
+            bodyParsers: {
+              json: false,
+              urlencoded: false,
+            },
+            busboyConfig: {
+              limits: {
+                files: config.jobVerifyContractEVM.configUploadFile.files,
+                fileSize: config.jobVerifyContractEVM.configUploadFile.fileSize,
+              },
+            },
+            type: 'multipart',
+            action: 'v1.verify-contract-evm.create-request',
+          },
+        },
       },
     ],
     // empty cors object will have moleculer to generate handler for preflight request and CORS header which allow all origin

@@ -382,5 +382,14 @@
     "key": "crawlSmartContractEVM",
     "blocksPerCall": 10000,
     "millisecondCrawl": 1000
+  },
+  "jobVerifyContractEVM": {
+    "configUploadFile": {
+      "files": 1,
+      "fileSize": 10000000
+    },
+    "millisecondCrawl": 1000,
+    "recordsPerCall": 100,
+    "solcRepo": null
   }
 }
