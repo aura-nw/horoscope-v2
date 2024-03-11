@@ -3,7 +3,11 @@ import { ServiceBroker } from 'moleculer';
 import _ from 'lodash';
 import { ethers } from 'ethers';
 import EtherJsClient from '../../common/utils/etherjs_client';
-import { BlockCheckpoint, EVMSmartContract, EvmEvent } from '../../models';
+import {
+  BlockCheckpoint,
+  EVMSmartContract,
+  EVMTransaction,
+} from '../../models';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
@@ -39,60 +43,107 @@ export default class CrawlSmartContractEVMService extends BullableService {
       return;
     }
 
-    const evmEvents = await EvmEvent.query()
-      .withGraphFetched('evm_transaction')
-      .where('block_height', '>', startBlock)
-      .andWhere('block_height', '<=', endBlock)
-      .orderBy('id', 'ASC')
-      .orderBy('block_height', 'ASC');
+    const evmTxs = await EVMTransaction.query()
+      .leftJoin('evm_event as evm_events', function () {
+        this.on('evm_transaction.id', '=', 'evm_events.evm_tx_id').andOn(
+          'evm_transaction.height',
+          '=',
+          'evm_events.block_height'
+        );
+      })
+      .select(
+        'evm_transaction.height',
+        'evm_transaction.hash',
+        'evm_transaction.from',
+        'evm_transaction.to',
+        'evm_transaction.contract_address',
+        'evm_transaction.data',
+        knex.raw('ARRAY_AGG(evm_events.address) as event_address')
+      )
+      .where('evm_transaction.height', '>', startBlock)
+      .andWhere('evm_transaction.height', '<=', endBlock)
+      .groupBy('evm_transaction.id')
+      .orderBy('evm_transaction.id', 'ASC')
+      .orderBy('evm_transaction.height', 'ASC');
+
+    let addresses: string[] = [];
+    const addressesWithTx: any = [];
+    evmTxs.forEach((evmTx: any) => {
+      let currentAddresses: string[] = [];
+      ['from', 'to', 'contract_address'].forEach((key) => {
+        if (evmTx[key] && evmTx[key].startsWith('0x')) {
+          currentAddresses.push(evmTx[key]);
+        }
+      });
+
+      if (evmTx.event_address.length > 0 && evmTx.event_address[0] != null) {
+        currentAddresses.push(...evmTx.event_address);
+      }
+      currentAddresses = _.uniq(currentAddresses);
+      addresses.push(...currentAddresses);
+      addressesWithTx[evmTx.hash] = currentAddresses;
+    });
+
+    addresses = _.uniq(addresses);
+
     const evmContracts: EVMSmartContract[] = [];
 
     const evmContractsInDB: EVMSmartContract[] = await EVMSmartContract.query()
       .select('address')
-      .whereIn(
-        'address',
-        _.uniq(evmEvents.map((evmEvent) => evmEvent.address))
-      );
+      .whereIn('address', addresses);
+
     const evmContractsWithAddress: any = [];
     evmContractsInDB.forEach((evmContract) => {
       evmContractsWithAddress[evmContract.address] = evmContract;
     });
+
     await Promise.all(
-      evmEvents.map(async (evmEvent: any) => {
-        const { address } = evmEvent;
-        if (evmContractsWithAddress[address]) {
+      evmTxs.map(async (evmTx) => {
+        const currentAddresses = addressesWithTx[evmTx.hash];
+
+        const notFoundAddresses = currentAddresses.filter(
+          (address: string) => !evmContractsInDB[address]
+        );
+
+        if (notFoundAddresses.length === 0) {
           return;
         }
-        const code = await this.etherJsClient.getCode(address);
 
-        // check if this address has code -> is smart contract
-        if (code !== '0x') {
-          // check if this event belongs to smart contract creation tx
-          let creator;
-          let createdHeight;
-          let createdHash;
-          if (evmEvent.evm_transaction.data) {
-            const { data } = evmEvent.evm_transaction;
-            if (
-              data.startsWith(EVM_CONTRACT_METHOD_HEX_PREFIX.CREATE_CONTRACT)
-            ) {
-              creator = evmEvent.evm_transaction.from;
-              createdHeight = evmEvent.block_height;
-              createdHash = evmEvent.evm_transaction.hash;
+        await Promise.all(
+          notFoundAddresses.map(async (address: string) => {
+            const code = await this.etherJsClient.getCode(address);
+
+            // check if this address has code -> is smart contract
+            if (code !== '0x') {
+              // check if this event belongs to smart contract creation tx
+              let creator;
+              let createdHeight;
+              let createdHash;
+              if (evmTx.data) {
+                const { data } = evmTx;
+                if (
+                  data.startsWith(
+                    EVM_CONTRACT_METHOD_HEX_PREFIX.CREATE_CONTRACT
+                  )
+                ) {
+                  creator = evmTx.from;
+                  createdHeight = evmTx.height;
+                  createdHash = evmTx.hash;
+                }
+              }
+              evmContracts.push(
+                EVMSmartContract.fromJson({
+                  address,
+                  creator,
+                  created_hash: createdHash,
+                  created_height: createdHeight,
+                })
+              );
             }
-          }
-          evmContracts.push(
-            EVMSmartContract.fromJson({
-              address,
-              creator,
-              created_hash: createdHash,
-              created_height: createdHeight,
-            })
-          );
-        }
+          })
+        );
       })
     );
-    // }
 
     await knex.transaction(async (trx) => {
       if (evmContracts.length > 0) {
