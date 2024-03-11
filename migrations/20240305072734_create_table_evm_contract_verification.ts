@@ -8,6 +8,7 @@ export async function up(knex: Knex): Promise<void> {
     table.binary('files');
     table.string('status');
     table.jsonb('abi');
+    table.string('code_hash').index();
     table.dateTime('created_at').index();
     table.dateTime('updated_at').index();
   });

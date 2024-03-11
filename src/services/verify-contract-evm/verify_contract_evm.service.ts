@@ -17,7 +17,7 @@ import pkg, {
   verifyDeployed,
   unzipFiles,
 } from '@ethereum-sourcify/lib-sourcify';
-import { id as keccak256str } from 'ethers';
+import { id as keccak256str, keccak256 } from 'ethers';
 import { createHash } from 'crypto';
 import { lt } from 'semver';
 import { BlockCheckpoint, EVMContractVerification } from '../../models';
@@ -62,6 +62,7 @@ export default class VerifyContractEVM extends BullableService {
       const listPromise = [];
       for (let i = 0; i < listRequestVerify.length; i += 1) {
         const requestVerify = listRequestVerify[i];
+        let codeHash;
         try {
           if (this.isZip(requestVerify.files)) {
             const files = [
@@ -100,11 +101,13 @@ export default class VerifyContractEVM extends BullableService {
               const { abi } = metadata.output;
               this.logger.info(matchResult);
               this.logger.info(abi);
+              codeHash = keccak256(recompiled.runtimeBytecode);
               if (matchResult.runtimeMatch === 'perfect') {
                 listPromise.push(
                   EVMContractVerification.query()
                     .patch({
                       abi: JSON.stringify(abi),
+                      code_hash: codeHash,
                       status:
                         EVMContractVerification.VERIFICATION_STATUS.SUCCESS,
                     })
@@ -123,6 +126,7 @@ export default class VerifyContractEVM extends BullableService {
           listPromise.push(
             EVMContractVerification.query()
               .patch({
+                code_hash: codeHash,
                 status: EVMContractVerification.VERIFICATION_STATUS.FAIL,
               })
               .where({ id: requestVerify.id })

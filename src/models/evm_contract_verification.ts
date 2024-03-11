@@ -13,6 +13,8 @@ export class EVMContractVerification extends BaseModel {
 
   abi!: any;
 
+  code_hash!: string;
+
   created_at!: Date;
 
   updated_at!: Date;
