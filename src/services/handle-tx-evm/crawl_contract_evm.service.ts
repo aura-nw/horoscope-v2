@@ -51,7 +51,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
       .select('address')
       .whereIn(
         'address',
-        evmEvents.map((evmEvent) => evmEvent.address)
+        _.uniq(evmEvents.map((evmEvent) => evmEvent.address))
       );
     const evmContractsWithAddress: any = [];
     evmContractsInDB.forEach((evmContract) => {
