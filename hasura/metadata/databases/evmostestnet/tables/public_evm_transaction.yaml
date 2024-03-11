@@ -1,6 +1,27 @@
 table:
   name: evm_transaction
   schema: public
+object_relationships:
+  - name: transaction
+    using:
+      manual_configuration:
+        column_mapping:
+          height: height
+          tx_id: id
+        insertion_order: null
+        remote_table:
+          name: transaction
+          schema: public
+array_relationships:
+  - name: evm_events
+    using:
+      manual_configuration:
+        column_mapping:
+          id: evm_tx_id
+        insertion_order: null
+        remote_table:
+          name: evm_event
+          schema: public
 select_permissions:
   - role: internal_service
     permission:

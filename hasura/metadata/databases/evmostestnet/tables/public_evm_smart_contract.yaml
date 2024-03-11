@@ -1,0 +1,18 @@
+table:
+  name: evm_smart_contract
+  schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - id
+        - created_at
+        - updated_at
+        - address
+        - creator
+        - created_height
+        - created_hash
+        - type
+      filter: {}
+      limit: 100
+      allow_aggregations: true
