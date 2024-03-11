@@ -123,6 +123,7 @@ export const BULL_JOB_NAME = {
   JOB_UPDATE_TX_COUNT_IN_BLOCK: 'job:update-tx-count-in-block',
   UPLOAD_BLOCK_RAW_LOG_TO_S3: 'job:upload-block-raw-log-to-s3',
   UPLOAD_TX_RAW_LOG_TO_S3: 'job:upload-tx-raw-log-to-s3',
+  JOB_UPDATE_ASSETS: 'job:update-assets',
 };
 
 export const SERVICE = {
@@ -346,6 +347,10 @@ export const SERVICE = {
       UpdateTxCountInBlock: {
         key: 'UpdateTxCountInBlock',
         path: 'v1.UpdateTxCountInBlock',
+      },
+      UpdateAssets: {
+        key: 'UpdateAssets',
+        path: 'v1.UpdateAssets',
       },
     },
     CrawlIBCTaoService: {
