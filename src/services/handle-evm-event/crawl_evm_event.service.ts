@@ -67,7 +67,7 @@ export default class CrawlEvmEventJob extends BullableService {
       return EvmEvent.fromJson({
         evm_tx_id: mappingEvmTxId[evmEvent.tx_id],
         tx_id: evmEvent.tx_id,
-        address: valueParse.address,
+        address: valueParse.address.toLowerCase(),
         topic0: valueParse?.topics[0],
         topic1: valueParse?.topics[1],
         topic2: valueParse?.topics[2],
