@@ -1,0 +1,18 @@
+table:
+  name: asset
+  schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - id
+        - denom
+        - decimal
+        - name
+        - type
+        - price
+        - total_supply
+        - origin_id
+        - updated_at
+      filter: {}
+      limit: 100
