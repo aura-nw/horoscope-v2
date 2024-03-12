@@ -12,6 +12,15 @@ object_relationships:
         remote_table:
           name: transaction
           schema: public
+  - name: transaction_message
+    using:
+      manual_configuration:
+        column_mapping:
+          tx_msg_id: id
+        insertion_order: null
+        remote_table:
+          name: transaction_message
+          schema: public
 array_relationships:
   - name: evm_events
     using:
