@@ -5,6 +5,7 @@ import {
 } from '@ethereum-sourcify/lib-sourcify';
 import { LoggerInstance } from 'moleculer';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { exec, spawnSync } from 'child_process';
 import semver from 'semver';
@@ -12,7 +13,6 @@ import { Worker, WorkerOptions } from 'worker_threads';
 import config from '../../../config.json' assert { type: 'json' };
 
 const HOST_SOLC_REPO = ' https://binaries.soliditylang.org/';
-
 export class SolidityCompiler implements ISolidityCompiler {
   private _logger: LoggerInstance;
 
@@ -71,8 +71,10 @@ export class SolidityCompiler implements ISolidityCompiler {
         // Run Worker for solc versions < 0.4.0 for clean compiler context. See https://github.com/ethereum/sourcify/issues/1099
         if (semver.lt(coercedVersion, '0.4.0')) {
           compiled = await new Promise((resolve, reject) => {
+            const filename = fileURLToPath(import.meta.url);
+            const dirname = path.dirname(filename);
             const worker = this.importWorker(
-              path.resolve(__dirname, './compilerWorker.ts'),
+              path.resolve(dirname, './solidity_compiler.ts'),
               {
                 workerData: { version, inputStringified },
               }
