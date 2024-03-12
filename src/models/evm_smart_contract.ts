@@ -17,6 +17,8 @@ export class EVMSmartContract extends BaseModel {
 
   type!: string;
 
+  code_hash!: string;
+
   static get tableName() {
     return 'evm_smart_contract';
   }

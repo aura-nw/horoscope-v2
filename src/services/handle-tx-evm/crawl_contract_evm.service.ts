@@ -1,7 +1,7 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import _ from 'lodash';
-import { ethers } from 'ethers';
+import { ethers, keccak256 } from 'ethers';
 import EtherJsClient from '../../common/utils/etherjs_client';
 import {
   BlockCheckpoint,
@@ -44,25 +44,23 @@ export default class CrawlSmartContractEVMService extends BullableService {
     }
 
     const evmTxs = await EVMTransaction.query()
-      .leftJoin('evm_event as evm_events', function () {
-        this.on('evm_transaction.id', '=', 'evm_events.evm_tx_id').andOn(
-          'evm_transaction.height',
-          '=',
-          'evm_events.block_height'
-        );
-      })
       .select(
         'evm_transaction.height',
         'evm_transaction.hash',
         'evm_transaction.from',
         'evm_transaction.to',
         'evm_transaction.contract_address',
-        'evm_transaction.data',
-        knex.raw('ARRAY_AGG(evm_events.address) as event_address')
+        'evm_transaction.data'
       )
+      .withGraphFetched('evm_events')
+      .modifyGraph('evm_events', (builder) => {
+        builder
+          .select(knex.raw('ARRAY_AGG(address) as event_address'))
+          .groupBy('evm_tx_id')
+          .orderBy('evm_tx_id');
+      })
       .where('evm_transaction.height', '>', startBlock)
       .andWhere('evm_transaction.height', '<=', endBlock)
-      .groupBy('evm_transaction.id')
       .orderBy('evm_transaction.id', 'ASC')
       .orderBy('evm_transaction.height', 'ASC');
 
@@ -76,8 +74,11 @@ export default class CrawlSmartContractEVMService extends BullableService {
         }
       });
 
-      if (evmTx.event_address.length > 0 && evmTx.event_address[0] != null) {
-        currentAddresses.push(...evmTx.event_address);
+      if (
+        evmTx.evm_events.length > 0 &&
+        evmTx.evm_events[0].event_address.length > 0
+      ) {
+        currentAddresses.push(...evmTx.evm_events[0].event_address);
       }
       currentAddresses = _.uniq(currentAddresses);
       addresses.push(...currentAddresses);
@@ -119,6 +120,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
               let creator;
               let createdHeight;
               let createdHash;
+              const codeHash = keccak256(code);
               if (evmTx.data) {
                 const { data } = evmTx;
                 if (
@@ -137,6 +139,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
                   creator,
                   created_hash: createdHash,
                   created_height: createdHeight,
+                  code_hash: codeHash,
                 })
               );
             }
