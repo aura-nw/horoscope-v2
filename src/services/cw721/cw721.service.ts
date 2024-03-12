@@ -261,19 +261,21 @@ export default class Cw721HandlerService extends BullableService {
     cw721Contracts: CW721Contract[],
     trx: Knex.Transaction
   ) {
-    const stringListUpdates = cw721Contracts
-      .map(
-        (cw721Contract) =>
-          `(${cw721Contract.id} ,${
-            cw721Contract.total_suply
-          }, '${JSON.stringify(cw721Contract.no_activities)}'::jsonb)`
-      )
-      .join(',');
-    await knex
-      .raw(
-        `UPDATE cw721_contract SET total_suply = temp.total_suply, no_activities = temp.no_activities from (VALUES ${stringListUpdates}) as temp(id, total_suply, no_activities) where temp.id = cw721_contract.id`
-      )
-      .transacting(trx);
+    if (cw721Contracts.length > 0) {
+      const stringListUpdates = cw721Contracts
+        .map(
+          (cw721Contract) =>
+            `(${cw721Contract.id} ,${
+              cw721Contract.total_suply
+            }, '${JSON.stringify(cw721Contract.no_activities)}'::jsonb)`
+        )
+        .join(',');
+      await knex
+        .raw(
+          `UPDATE cw721_contract SET total_suply = temp.total_suply, no_activities = temp.no_activities from (VALUES ${stringListUpdates}) as temp(id, total_suply, no_activities) where temp.id = cw721_contract.id`
+        )
+        .transacting(trx);
+    }
   }
 
   @QueueHandler({
@@ -281,20 +283,48 @@ export default class Cw721HandlerService extends BullableService {
     jobName: BULL_JOB_NAME.JOB_CW721_UPDATE,
   })
   async jobCw721Update() {
+    // get id token checkpoint
+    const actCheckpoint = await BlockCheckpoint.query().findOne({
+      job_name: BULL_JOB_NAME.JOB_CW721_UPDATE,
+    });
+    const idActCheckpoint = actCheckpoint ? actCheckpoint.height : 0;
+    const newActDistinctByContract = await CW721Activity.query()
+      .where('id', '>', idActCheckpoint)
+      .groupBy('cw721_contract_id')
+      .select('cw721_contract_id')
+      .max('id as maxId');
     await knex.raw(
       `set statement_timeout to ${config.cw721.jobCw721Update.statementTimeout}`
     );
     const noHolders = await CW721Token.query()
       .where('burned', false)
+      .whereIn(
+        'cw721_contract_id',
+        newActDistinctByContract.map((e) => e.cw721_contract_id)
+      )
       .select('cw721_contract_id')
       .groupBy('cw721_contract_id')
       .countDistinct('owner');
     const stringListUpdates = noHolders
       .map((noHolder) => `(${noHolder.cw721_contract_id}, ${noHolder.count})`)
       .join(',');
-    await knex.raw(
-      `UPDATE cw721_contract SET no_holders = temp.no_holders from (VALUES ${stringListUpdates}) as temp(id, no_holders) where temp.id = cw721_contract.id`
-    );
+    await knex.transaction(async (trx) => {
+      await knex
+        .raw(
+          `UPDATE cw721_contract SET no_holders = temp.no_holders from (VALUES ${stringListUpdates}) as temp(id, no_holders) where temp.id = cw721_contract.id`
+        )
+        .transacting(trx);
+      if (newActDistinctByContract.length > 0) {
+        await BlockCheckpoint.query()
+          .transacting(trx)
+          .insert({
+            job_name: BULL_JOB_NAME.JOB_CW721_UPDATE,
+            height: Math.max(...newActDistinctByContract.map((e) => e.maxId)),
+          })
+          .onConflict(['job_name'])
+          .merge();
+      }
+    });
   }
 
   @QueueHandler({
@@ -365,7 +395,8 @@ export default class Cw721HandlerService extends BullableService {
     );
     if (events.length > 0) {
       await knex.transaction(async (trx) => {
-        const { cw721Activities } = await this.handleCw721MsgExec(events, trx);
+        const { cw721Activities, cw721Contracts } =
+          await this.handleCw721MsgExec(events, trx);
         if (cw721Activities.length > 0) {
           const tokensKeyById = _.keyBy(
             await CW721Token.query()
@@ -383,6 +414,14 @@ export default class Cw721HandlerService extends BullableService {
           await CW721Activity.query()
             .transacting(trx)
             .insert(cw721Activities.map((e) => _.omit(e, 'token_id')));
+          if (cw721Contracts[0]) {
+            await CW721Contract.query()
+              .transacting(trx)
+              .patch({
+                no_activities: cw721Contracts[0].no_activities,
+              })
+              .where('contract_id', smartContractId);
+          }
         }
       });
       await this.createJob(

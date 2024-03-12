@@ -41,6 +41,7 @@ export default class AssetIndexerTest {
       symbol: 'symbol',
       minter: 'minter',
       name: '',
+      no_activities: { mint: 3, burn: 2, transfer_nft: 5, instantiate: 1 },
       track: true,
     }),
     tokens: [
@@ -762,7 +763,9 @@ export default class AssetIndexerTest {
         cw721Handler.trackedCw721ContractsByAddr[
           mockContractTransferMsg.contractAddress
         ].no_activities
-      ).toMatchObject({ transfer_nft: 1 });
+      ).toMatchObject({
+        transfer_nft: this.mockInitContract.no_activities.transfer_nft + 1,
+      });
       this.testActivity(cw721Handler.cw721Activities[0], {
         sender,
         from: this.mockInitContract.tokens[0].owner,
@@ -856,7 +859,7 @@ export default class AssetIndexerTest {
       expect(
         cw721Handler.trackedCw721ContractsByAddr[msg.contractAddress]
           .no_activities
-      ).toMatchObject({ mint: 1 });
+      ).toMatchObject({ mint: this.mockInitContract.no_activities.mint + 1 });
       this.testActivity(cw721Handler.cw721Activities[0], {
         sender: minter,
         from: null,
@@ -944,7 +947,7 @@ export default class AssetIndexerTest {
       expect(
         cw721Handler.trackedCw721ContractsByAddr[msg.contractAddress]
           .no_activities
-      ).toMatchObject({ burn: 1 });
+      ).toMatchObject({ burn: this.mockInitContract.no_activities.burn + 1 });
       this.testActivity(cw721Handler.cw721Activities[0], {
         sender,
         from: this.mockInitContract.tokens[0].owner,
