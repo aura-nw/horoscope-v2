@@ -134,6 +134,7 @@ export const BULL_JOB_NAME = {
   HANDLE_TRANSACTION_EVM: 'handle:transaction-evm',
   HANDLE_EVM_SIGNATURE_MAPPING: 'handle:evm-signature-mapping',
   CRAWL_SMART_CONTRACT_EVM: 'crawl:smart-contract-evm',
+  VERIFY_CONTRACT_EVM: 'verify:contract-evm',
 };
 
 export const SERVICE = {
@@ -454,6 +455,14 @@ export const SERVICE = {
     CrawlSmartContractEVM: {
       key: 'CrawlSmartContractEVM',
       path: 'v1.CrawlSmartContractEVM',
+    },
+    VerifyContractEVM: {
+      key: 'VerifyContractEVM',
+      path: 'v1.VerifyContractEVM',
+      inputRequestVerify: {
+        key: 'inputRequestVerify',
+        path: 'v1.VerifyContractEVM.inputRequestVerify',
+      },
     },
     SignatureMappingEVM: {
       key: 'SignatureMappingEVM',
