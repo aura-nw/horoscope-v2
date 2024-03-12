@@ -1,5 +1,5 @@
 {
-  "chainId": "aura-testnet",
+  "chainId": "evmos_9000-4",
   "chainName": "aura",
   "networkPrefixAddress": "aura",
   "consensusPrefixAddress": "valcons",
@@ -374,5 +374,8 @@
     "key": "crawlSmartContractEVM",
     "blocksPerCall": 10000,
     "millisecondCrawl": 1000
+  },
+  "handleSignatureMappingEvm": {
+    "millisecondCrawl": 15000
   }
 }
