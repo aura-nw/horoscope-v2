@@ -467,6 +467,10 @@ export const SERVICE = {
     SignatureMappingEVM: {
       key: 'SignatureMappingEVM',
       path: 'v1.SignatureMappingEVM',
+      action: {
+        key: 'createJobMapping',
+        path: 'v1.SignatureMappingEVM.createJobMapping',
+      },
     },
   },
 };

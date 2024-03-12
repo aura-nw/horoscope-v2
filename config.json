@@ -383,8 +383,5 @@
     "millisecondCrawl": 1000,
     "recordsPerCall": 100,
     "solcRepo": null
-  },
-  "handleSignatureMappingEvm": {
-    "millisecondCrawl": 15000
   }
 }
