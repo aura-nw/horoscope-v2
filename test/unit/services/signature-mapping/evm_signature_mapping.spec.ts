@@ -2,7 +2,7 @@ import { BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import knex from '../../../../src/common/utils/db_connection';
 import { EvmSignatureMapping } from '../../../../src/models';
-import EvmSignatureMappingJob from '../../../../src/services/signature-mapping/evm_signature_mapping.service';
+import EvmSignatureMappingJob from '../../../../src/services/verify-contract-evm/evm_signature_mapping.service';
 import { abi } from './abi';
 
 @Describe('Test Evm Signature Mapping')
