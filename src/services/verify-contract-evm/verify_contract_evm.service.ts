@@ -139,6 +139,9 @@ export default class VerifyContractEVM extends BullableService {
           listPromise.push(
             EVMContractVerification.query()
               .patch({
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                files: null,
                 code_hash: codeHash,
                 status: EVMContractVerification.VERIFICATION_STATUS.FAIL,
               })
