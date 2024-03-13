@@ -385,5 +385,9 @@
     "millisecondCrawl": 1000,
     "recordsPerCall": 100,
     "solcRepo": null
+  },
+  "erc20": {
+    "limitEvmSmartContractGet": 50,
+    "millisecondRepeatJob": 5000
   }
 }

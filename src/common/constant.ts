@@ -134,6 +134,7 @@ export const BULL_JOB_NAME = {
   HANDLE_TRANSACTION_EVM: 'handle:transaction-evm',
   CRAWL_SMART_CONTRACT_EVM: 'crawl:smart-contract-evm',
   VERIFY_CONTRACT_EVM: 'verify:contract-evm',
+  HANDLE_ERC20_CONTRACT: 'handle:erc20-contract',
 };
 
 export const SERVICE = {
@@ -462,6 +463,10 @@ export const SERVICE = {
         key: 'inputRequestVerify',
         path: 'v1.VerifyContractEVM.inputRequestVerify',
       },
+    },
+    Erc20: {
+      key: 'Erc20',
+      path: 'v1.Erc20',
     },
   },
 };
