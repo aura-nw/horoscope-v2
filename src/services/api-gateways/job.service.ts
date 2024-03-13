@@ -111,4 +111,36 @@ export default class JobService extends BaseService {
       }
     );
   }
+
+  @Post('/signature-mapping', {
+    name: 'signature-mapping',
+    params: {
+      chainid: {
+        type: 'string',
+        optional: false,
+        enum: networks.map((network) => network.chainId),
+      },
+      addresses: {
+        type: 'array',
+        optional: false,
+      },
+    },
+  })
+  async syncPrevDateStatsByChainId(
+    ctx: Context<
+      { chainid: string; addresses: string[] },
+      Record<string, unknown>
+    >
+  ) {
+    const selectedChain = networks.find(
+      (network) => network.chainId === ctx.params.chainid
+    );
+
+    await this.broker.call(
+      `${SERVICE.V1.SignatureMappingEVM.action.path}@${selectedChain?.moleculerNamespace}`,
+      {
+        addresses: ctx.params.addresses,
+      }
+    );
+  }
 }

@@ -134,6 +134,7 @@ export const BULL_JOB_NAME = {
   JOB_CW721_UPDATE: 'job:cw721-update',
   CHECKPOINT_UPDATE_DELEGATOR: 'job:checkpoint_update_delegator',
   HANDLE_TRANSACTION_EVM: 'handle:transaction-evm',
+  HANDLE_EVM_SIGNATURE_MAPPING: 'handle:evm-signature-mapping',
   CRAWL_SMART_CONTRACT_EVM: 'crawl:smart-contract-evm',
   VERIFY_CONTRACT_EVM: 'verify:contract-evm',
 };
@@ -467,6 +468,14 @@ export const SERVICE = {
       inputRequestVerify: {
         key: 'inputRequestVerify',
         path: 'v1.VerifyContractEVM.inputRequestVerify',
+      },
+    },
+    SignatureMappingEVM: {
+      key: 'SignatureMappingEVM',
+      path: 'v1.SignatureMappingEVM',
+      action: {
+        key: 'createJobMapping',
+        path: 'v1.SignatureMappingEVM.createJobMapping',
       },
     },
   },
