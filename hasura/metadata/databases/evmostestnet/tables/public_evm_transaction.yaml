@@ -27,6 +27,7 @@ array_relationships:
       manual_configuration:
         column_mapping:
           id: evm_tx_id
+          height: block_height
         insertion_order: null
         remote_table:
           name: evm_event
