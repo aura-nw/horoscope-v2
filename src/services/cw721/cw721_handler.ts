@@ -185,6 +185,10 @@ export class Cw721Handler {
     this.orderedMsgs.forEach((msg) => {
       if (msg.action === CW721_ACTION.MINT) {
         this.handlerCw721Mint(msg);
+        if (this.trackedCw721ContractsByAddr[msg.contractAddress])
+          this.trackedCw721ContractsByAddr[
+            msg.contractAddress
+          ].total_suply += 1;
       } else if (
         msg.action === CW721_ACTION.TRANSFER ||
         msg.action === CW721_ACTION.SEND_NFT
@@ -192,8 +196,20 @@ export class Cw721Handler {
         this.handlerCw721Transfer(msg);
       } else if (msg.action === CW721_ACTION.BURN) {
         this.handlerCw721Burn(msg);
+        if (this.trackedCw721ContractsByAddr[msg.contractAddress])
+          this.trackedCw721ContractsByAddr[
+            msg.contractAddress
+          ].total_suply -= 1;
       } else {
         this.handleCw721Others(msg);
+      }
+      if (msg.action && this.trackedCw721ContractsByAddr[msg.contractAddress]) {
+        this.trackedCw721ContractsByAddr[msg.contractAddress].no_activities[
+          msg.action
+        ] =
+          (this.trackedCw721ContractsByAddr[msg.contractAddress].no_activities[
+            msg.action
+          ] || 0) + 1;
       }
     });
   }

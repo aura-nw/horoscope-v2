@@ -23,7 +23,11 @@
     "reindexing": {
       "limitRecordGet": 500
     },
-    "concurrencyHandleTokenMedia": 10
+    "concurrencyHandleTokenMedia": 10,
+    "jobCw721Update": {
+      "statementTimeout": 600000,
+      "millisecondRepeatJob": 600000
+    }
   },
   "crawlBlock": {
     "millisecondCrawl": 5000,
