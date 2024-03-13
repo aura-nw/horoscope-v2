@@ -57,10 +57,9 @@ export default class VerifyContractEVM extends BullableService {
     const selectedSolidityCompiler: ISolidityCompiler = new SolidityCompiler(
       this.logger
     );
-
+    const listTriggerSignatureMapping: Promise<any>[] = [];
     await knex.transaction(async (trx) => {
       const listPromise = [];
-      const listTriggerSignatureMapping = [];
       for (let i = 0; i < listRequestVerify.length; i += 1) {
         const requestVerify = listRequestVerify[i];
         let codeHash;
@@ -149,7 +148,6 @@ export default class VerifyContractEVM extends BullableService {
         }
       }
       await Promise.all(listPromise);
-      await Promise.all(listTriggerSignatureMapping);
       await BlockCheckpoint.query()
         .insert({
           job_name: BULL_JOB_NAME.VERIFY_CONTRACT_EVM,
@@ -159,6 +157,9 @@ export default class VerifyContractEVM extends BullableService {
         .merge()
         .transacting(trx);
     });
+    if (listTriggerSignatureMapping.length > 0) {
+      await Promise.all(listTriggerSignatureMapping);
+    }
   }
 
   @Action({
