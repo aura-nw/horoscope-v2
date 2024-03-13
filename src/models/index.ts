@@ -35,3 +35,4 @@ export * from './evm_transaction';
 export * from './evm_event';
 export * from './evm_smart_contract';
 export * from './evm_contract_verification';
+export * from './evm_signature_mapping';

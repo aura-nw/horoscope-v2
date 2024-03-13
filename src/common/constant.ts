@@ -132,6 +132,7 @@ export const BULL_JOB_NAME = {
     'job:create-evm-transaction-constraint',
   JOB_UPDATE_TX_COUNT_IN_BLOCK: 'job:update-tx-count-in-block',
   HANDLE_TRANSACTION_EVM: 'handle:transaction-evm',
+  HANDLE_EVM_SIGNATURE_MAPPING: 'handle:evm-signature-mapping',
   CRAWL_SMART_CONTRACT_EVM: 'crawl:smart-contract-evm',
   VERIFY_CONTRACT_EVM: 'verify:contract-evm',
   HANDLE_ERC20_CONTRACT: 'handle:erc20-contract',
@@ -467,6 +468,14 @@ export const SERVICE = {
     Erc20: {
       key: 'Erc20',
       path: 'v1.Erc20',
+    },
+    SignatureMappingEVM: {
+      key: 'SignatureMappingEVM',
+      path: 'v1.SignatureMappingEVM',
+      action: {
+        key: 'createJobMapping',
+        path: 'v1.SignatureMappingEVM.createJobMapping',
+      },
     },
   },
 };
