@@ -84,7 +84,7 @@ export default class Erc20HandlerService extends BullableService {
         method: 'eth_call',
         params: [
           {
-            data: keccak256(toUtf8Bytes(`${funcName  }()`)),
+            data: keccak256(toUtf8Bytes(`${funcName}()`)),
             to: addr,
           },
           'latest',
