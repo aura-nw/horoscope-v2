@@ -1,7 +1,7 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import _ from 'lodash';
-import { ethers, keccak256, id as keccak256Str } from 'ethers';
+import { ethers, keccak256 } from 'ethers';
 import EtherJsClient from '../../common/utils/etherjs_client';
 import {
   BlockCheckpoint,
@@ -12,12 +12,7 @@ import { BULL_JOB_NAME, SERVICE } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
-import {
-  ABI_CHECK_INTERFACE_ERC_1155,
-  ABI_CHECK_INTERFACE_ERC_20,
-  ABI_CHECK_INTERFACE_ERC_721,
-  EVM_CONTRACT_METHOD_HEX_PREFIX,
-} from './constant';
+import { EVM_CONTRACT_METHOD_HEX_PREFIX } from './constant';
 
 @Service({
   name: SERVICE.V1.CrawlSmartContractEVM.key,
@@ -25,18 +20,6 @@ import {
 })
 export default class CrawlSmartContractEVMService extends BullableService {
   etherJsClient!: ethers.AbstractProvider;
-
-  hexPrefixMethodErc20 = ABI_CHECK_INTERFACE_ERC_20.map((method) =>
-    keccak256Str(method).slice(2, 10)
-  );
-
-  hexPrefixMethodErc721 = ABI_CHECK_INTERFACE_ERC_721.map((method) =>
-    keccak256Str(method).slice(2, 10)
-  );
-
-  hexPrefixMethodErc1155 = ABI_CHECK_INTERFACE_ERC_1155.map((method) =>
-    keccak256Str(method).slice(2, 10)
-  );
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -189,13 +172,25 @@ export default class CrawlSmartContractEVMService extends BullableService {
   }
 
   detectContractTypeByCode(code: string): string | null {
-    if (this.hexPrefixMethodErc20.every((method) => code.includes(method))) {
+    if (
+      EVM_CONTRACT_METHOD_HEX_PREFIX.ABI_INTERFACE_ERC20.every((method) =>
+        code.includes(method)
+      )
+    ) {
       return EVMSmartContract.TYPES.ERC20;
     }
-    if (this.hexPrefixMethodErc721.every((method) => code.includes(method))) {
+    if (
+      EVM_CONTRACT_METHOD_HEX_PREFIX.ABI_INTERFACE_ERC721.every((method) =>
+        code.includes(method)
+      )
+    ) {
       return EVMSmartContract.TYPES.ERC721;
     }
-    if (this.hexPrefixMethodErc1155.every((method) => code.includes(method))) {
+    if (
+      EVM_CONTRACT_METHOD_HEX_PREFIX.ABI_INTERFACE_ERC1155.every((method) =>
+        code.includes(method)
+      )
+    ) {
       return EVMSmartContract.TYPES.ERC1155;
     }
     return null;
