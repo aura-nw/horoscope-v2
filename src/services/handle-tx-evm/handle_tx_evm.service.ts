@@ -12,12 +12,15 @@ import { BULL_JOB_NAME, MSG_TYPE, SERVICE } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
+import EtherJsClient from '../../common/utils/etherjs_client';
 
 @Service({
   name: SERVICE.V1.HandleTransactionEVM.key,
   version: 1,
 })
 export default class HandleTransactionEVMService extends BullableService {
+  etherJsClient!: EtherJsClient;
+
   public constructor(public broker: ServiceBroker) {
     super(broker);
   }
@@ -65,8 +68,8 @@ export default class HandleTransactionEVMService extends BullableService {
             tx_msg_id: txMsg.tx_msg_id,
             hash: content.hash,
             size: content.size,
-            from: content.from ? content.from : txMsg.sender,
-            to: content.data?.to,
+            from: content.from ? content.from.toLowerCase() : txMsg.sender,
+            to: content.data?.to ? content.data.to.toLowerCase() : null,
             gas: Utils.getBigIntIfNotNull(content.data?.gas),
             gas_fee_cap: Utils.getBigIntIfNotNull(content.data?.gas_fee_cap),
             gas_tip_cap: Utils.getBigIntIfNotNull(content.data?.gas_tip_cap),
@@ -78,6 +81,22 @@ export default class HandleTransactionEVMService extends BullableService {
           })
         );
       });
+
+      // check if tx is contract creation, then need get transaction receipt to get contract_address
+      await Promise.all(
+        evmTxs
+          .filter((evmTx) => !evmTx.to)
+          .map(async (evmTx) => {
+            const txReceipt =
+              await this.etherJsClient.etherJsClient.getTransactionReceipt(
+                evmTx.hash
+              );
+            if (txReceipt && txReceipt.contractAddress) {
+              // eslint-disable-next-line no-param-reassign
+              evmTx.contract_address = txReceipt?.contractAddress.toLowerCase();
+            }
+          })
+      );
     }
 
     await knex.transaction(async (trx) => {
@@ -104,6 +123,7 @@ export default class HandleTransactionEVMService extends BullableService {
   }
 
   public async _start(): Promise<void> {
+    this.etherJsClient = new EtherJsClient();
     this.createJob(
       BULL_JOB_NAME.HANDLE_TRANSACTION_EVM,
       BULL_JOB_NAME.HANDLE_TRANSACTION_EVM,

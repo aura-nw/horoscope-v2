@@ -1,5 +1,6 @@
 import { Model } from 'objection';
 import BaseModel from './base';
+// eslint-disable-next-line import/no-cycle
 import { EVMTransaction } from './evm_transaction';
 
 export class EvmEvent extends BaseModel {
