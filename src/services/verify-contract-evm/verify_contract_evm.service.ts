@@ -57,7 +57,7 @@ export default class VerifyContractEVM extends BullableService {
     const selectedSolidityCompiler: ISolidityCompiler = new SolidityCompiler(
       this.logger
     );
-    const listTriggerSignatureMapping: Promise<any>[] = [];
+    const listTriggerContractSignatureMapping: string[] = [];
     await knex.transaction(async (trx) => {
       const listPromise = [];
       for (let i = 0; i < listRequestVerify.length; i += 1) {
@@ -103,18 +103,8 @@ export default class VerifyContractEVM extends BullableService {
               this.logger.info(abi);
               codeHash = keccak256(recompiled.runtimeBytecode);
               if (matchResult.runtimeMatch === 'perfect') {
-                listTriggerSignatureMapping.push(
-                  this.createJob(
-                    BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
-                    BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
-                    { contract_address: requestVerify.contract_address },
-                    {
-                      removeOnComplete: true,
-                      removeOnFail: {
-                        count: 3,
-                      },
-                    }
-                  )
+                listTriggerContractSignatureMapping.push(
+                  requestVerify.contract_address
                 );
                 listPromise.push(
                   EVMContractVerification.query()
@@ -160,8 +150,20 @@ export default class VerifyContractEVM extends BullableService {
         .merge()
         .transacting(trx);
     });
-    if (listTriggerSignatureMapping.length > 0) {
-      await Promise.all(listTriggerSignatureMapping);
+    if (listTriggerContractSignatureMapping.length > 0) {
+      listTriggerContractSignatureMapping.map((contract) =>
+        this.createJob(
+          BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
+          BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
+          { contract_address: contract },
+          {
+            removeOnComplete: true,
+            removeOnFail: {
+              count: 3,
+            },
+          }
+        )
+      );
     }
   }
 
