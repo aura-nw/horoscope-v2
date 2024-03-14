@@ -21,31 +21,33 @@ export default class EvmSignatureMappingSpec {
     ) as EvmSignatureMappingJob;
   }
 
-  @Test('Test minimal human readable abi mapping with topic hash')
+  @Test('Test signature mapping Transfer event')
   public async test1() {
-    const humanReadableABI = 'Transfer(address,address,uint256)';
-    const topicExpected =
-      '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
-    const topicHashed =
-      this.evmSignatureMappingJob?.getTopicHash(humanReadableABI);
-    expect(topicHashed).toBe(topicExpected);
+    const ABI = abi.filter((e) => e.type === 'event' && e.name === 'Transfer');
+    const topicExpected = [
+      '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+    ];
+    const EVMSignatureMapping =
+      await this.evmSignatureMappingJob?.mappingContractTopic(ABI);
+
+    EVMSignatureMapping?.forEach((signatureMapping, index) => {
+      expect(signatureMapping.topic_hash).toBe(topicExpected[index]);
+    });
   }
 
-  @Test('Test full human readable abi mapping with topic hash')
+  @Test('Test signature mapping OwnershipTransferred event')
   public async test2() {
-    const humanReadableABI =
-      'Transfer (index_topic_1 address _from, index_topic_2 address _to, index_topic_3 uint256 _tokenId)';
-    const topicExpected =
-      '0x53d37e7938c45edc72a19157c2065a549b2d702fb803e2c9eb28ba387456dab5';
-    const topicHashed =
-      this.evmSignatureMappingJob?.getTopicHash(humanReadableABI);
-    expect(topicHashed).toBe(topicExpected);
-  }
+    const ABI = abi.filter(
+      (e) => e.type === 'event' && e.name === 'OwnershipTransferred'
+    );
+    const topicExpected = [
+      '0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0',
+    ];
+    const EVMSignatureMapping =
+      await this.evmSignatureMappingJob?.mappingContractTopic(ABI);
 
-  @Test('Test extract human readable signature from ABI')
-  public async test3() {
-    const signatures =
-      await this.evmSignatureMappingJob?.convertABIToHumanReadable(abi);
-    expect(signatures?.length).toBe(abi.length);
+    EVMSignatureMapping?.forEach((signatureMapping, index) => {
+      expect(signatureMapping.topic_hash).toBe(topicExpected[index]);
+    });
   }
 }

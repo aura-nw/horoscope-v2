@@ -18,27 +18,35 @@ export default class EvmSignatureMappingJob extends BullableService {
     super(broker);
   }
 
-  public async convertABIToHumanReadable(ABI: any[]): Promise<string[]> {
+  public async convertABIToHumanReadable(ABI: any[]): Promise<{
+    fullFragments: string[];
+    sigHashFragments: string[];
+  }> {
     const iface = new ethers.Interface(ABI);
-    return iface.format();
-  }
-
-  public getTopicHash(topicSignature: string): string {
-    return ethers.id(topicSignature);
+    const fullFragments = iface.format();
+    const sigHashFragments = iface.fragments.map((f) => {
+      if (f.type === 'constructor') return f.format('minimal');
+      return f.format('sighash');
+    });
+    return {
+      fullFragments,
+      sigHashFragments,
+    };
   }
 
   public async mappingContractTopic(
-    contractVerified: EVMContractVerification
-  ): Promise<void> {
-    const topics = await this.convertABIToHumanReadable(contractVerified.abi);
-    const topicsHashed: EvmSignatureMapping[] = topics.map((topic) =>
-      EvmSignatureMapping.fromJson({
-        topic_hash: this.getTopicHash(topic),
-        human_readable_topic: topic,
-      })
-    );
-    await EvmSignatureMapping.query()
-      .insert(topicsHashed)
+    ABI: any[]
+  ): Promise<EvmSignatureMapping[]> {
+    const convertedTopics = await this.convertABIToHumanReadable(ABI);
+    const signatureMappings: EvmSignatureMapping[] =
+      convertedTopics.sigHashFragments.map((topic, index) =>
+        EvmSignatureMapping.fromJson({
+          topic_hash: ethers.id(topic),
+          human_readable_topic: convertedTopics.fullFragments[index],
+        })
+      );
+    return EvmSignatureMapping.query()
+      .insert(signatureMappings)
       .onConflict('topic_hash')
       .merge();
   }
@@ -60,7 +68,7 @@ export default class EvmSignatureMappingJob extends BullableService {
       return;
     }
 
-    await this.mappingContractTopic(contractVerified);
+    await this.mappingContractTopic(contractVerified.abi);
     this.logger.info(
       `Successfully mapping for contract with address ${contractVerified.contract_address}`
     );
