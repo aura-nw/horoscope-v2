@@ -58,10 +58,13 @@ export default class Erc20HandlerService extends BullableService {
 
   async getErc20Instances(evmSmartContracts: EVMSmartContract[]) {
     const addresses = evmSmartContracts.map((e) => e.address);
-    const names = await this.getBatchInfo(addresses, 'name');
-    const totalSupplies = await this.getBatchInfo(addresses, 'totalSupply');
-    const decimals = await this.getBatchInfo(addresses, 'decimals');
-    const symbols = await this.getBatchInfo(addresses, 'symbols');
+    const names = await this.getBatchErc20Info(addresses, 'name');
+    const totalSupplies = await this.getBatchErc20Info(
+      addresses,
+      'totalSupply'
+    );
+    const decimals = await this.getBatchErc20Info(addresses, 'decimals');
+    const symbols = await this.getBatchErc20Info(addresses, 'symbols');
     return evmSmartContracts.map((e, index) =>
       Erc20Contract.fromJson({
         evm_smart_contract_id: evmSmartContracts[index],
