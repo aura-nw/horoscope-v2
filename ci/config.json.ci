@@ -391,5 +391,11 @@
     "key": "erc20",
     "blocksPerCall": 100,
     "millisecondRepeatJob": 5000
+  },
+  "erc721": {
+    "limitEvmSmartContractGet": 50,
+    "key": "erc721",
+    "blocksPerCall": 100,
+    "millisecondRepeatJob": 5000
   }
 }
