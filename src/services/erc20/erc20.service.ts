@@ -27,14 +27,16 @@ export default class Erc20HandlerService extends BullableService {
   async handleErc20Contract(): Promise<void> {
     await knex.transaction(async (trx) => {
       // get id evm smart contract checkpoint
-      const idEvmSmartContractCP =
-        (
-          await BlockCheckpoint.query().transacting(trx).findOne({
-            job_name: BULL_JOB_NAME.HANDLE_ERC20_CONTRACT,
-          })
-        )?.height || 0;
+      // get range blocks for proccessing
+      const [startBlock, endBlock, updateBlockCheckpoint] =
+        await BlockCheckpoint.getCheckpoint(
+          BULL_JOB_NAME.HANDLE_ERC20_CONTRACT,
+          [BULL_JOB_NAME.CRAWL_SMART_CONTRACT_EVM],
+          config.erc20.key
+        );
       const erc20SmartContracts = await EVMSmartContract.query()
-        .where('id', '>', idEvmSmartContractCP)
+        .where('created_height', '>', startBlock)
+        .andWhere('created_height', '<=', endBlock)
         .andWhere('type', 'ERC20')
         .limit(config.erc20.limitEvmSmartContractGet)
         .orderBy('id', 'asc');
@@ -43,14 +45,13 @@ export default class Erc20HandlerService extends BullableService {
           erc20SmartContracts
         );
         await Erc20Contract.query().transacting(trx).insert(erc20Instances);
+        updateBlockCheckpoint.height =
+          erc20SmartContracts[erc20SmartContracts.length - 1].created_height;
         await BlockCheckpoint.query()
-          .transacting(trx)
-          .insert({
-            job_name: BULL_JOB_NAME.HANDLE_ERC20_CONTRACT,
-            height: erc20SmartContracts[erc20SmartContracts.length - 1].id,
-          })
-          .onConflict(['job_name'])
-          .merge();
+          .insert(updateBlockCheckpoint)
+          .onConflict('job_name')
+          .merge()
+          .transacting(trx);
       }
     });
   }
