@@ -17,6 +17,8 @@ export class EVMSmartContract extends BaseModel {
 
   type!: string;
 
+  code_hash!: string;
+
   static get tableName() {
     return 'evm_smart_contract';
   }
@@ -38,5 +40,13 @@ export class EVMSmartContract extends BaseModel {
 
   $beforeUpdate() {
     this.updated_at = new Date();
+  }
+
+  static get TYPES() {
+    return {
+      ERC20: 'ERC20',
+      ERC721: 'ERC721',
+      ERC1155: 'ERC1155',
+    };
   }
 }

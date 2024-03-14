@@ -2,6 +2,8 @@ import { Model } from 'objection';
 import BaseModel from './base';
 import { TransactionMessage } from './transaction_message';
 import { Transaction } from './transaction';
+// eslint-disable-next-line import/no-cycle
+import { EvmEvent } from './evm_event';
 
 export class EVMTransaction extends BaseModel {
   id!: number;
@@ -31,6 +33,8 @@ export class EVMTransaction extends BaseModel {
   tx_msg_id!: number;
 
   tx_id!: number;
+
+  contract_address!: string;
 
   static get tableName() {
     return 'evm_transaction';
@@ -63,6 +67,14 @@ export class EVMTransaction extends BaseModel {
         join: {
           from: 'evm_transaction.tx_id',
           to: 'transaction.id',
+        },
+      },
+      evm_events: {
+        relation: Model.HasManyRelation,
+        modelClass: EvmEvent,
+        join: {
+          from: 'evm_transaction.id',
+          to: 'evm_event.evm_tx_id',
         },
       },
     };
