@@ -45,11 +45,10 @@ export default class EvmSignatureMappingJob extends BullableService {
           human_readable_topic: convertedTopics.fullFragments[index],
         })
       );
-    await EvmSignatureMapping.query()
+    return EvmSignatureMapping.query()
       .insert(signatureMappings)
       .onConflict('topic_hash')
       .merge();
-    return signatureMappings;
   }
 
   @QueueHandler({
