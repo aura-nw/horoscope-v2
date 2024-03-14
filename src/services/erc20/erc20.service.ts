@@ -64,7 +64,7 @@ export default class Erc20HandlerService extends BullableService {
       'totalSupply'
     );
     const decimals = await this.getBatchErc20Info(addresses, 'decimals');
-    const symbols = await this.getBatchErc20Info(addresses, 'symbols');
+    const symbols = await this.getBatchErc20Info(addresses, 'symbol');
     return evmSmartContracts.map((e, index) =>
       Erc20Contract.fromJson({
         evm_smart_contract_id: evmSmartContracts[index],
