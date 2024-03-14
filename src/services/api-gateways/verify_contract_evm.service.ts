@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { Post, Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { Context, ServiceBroker } from 'moleculer';
+import moleculer, { Context, ServiceBroker } from 'moleculer';
 // import { SERVICE } from '../../common';
 import BaseService from '../../base/base.service';
 import { SERVICE } from '../../common';
@@ -32,20 +32,27 @@ export default class VerifyContractEVM extends BaseService {
             (network) => network.chainId === ctx.meta.$multipart.chainid
           );
           if (!selectedChain) {
-            resolve(null);
-          } else {
-            const result = await this.broker.call(
-              `${SERVICE.V1.VerifyContractEVM.inputRequestVerify.path}@${selectedChain?.moleculerNamespace}`,
-              {
-                // @ts-ignore
-                contract_address: ctx.meta.$multipart.contract_address,
-                // @ts-ignore
-                files,
-                // @ts-ignore
-                creator_tx_hash: ctx.meta.$multipart.creator_tx_hash,
-              }
+            const error = new moleculer.Errors.ValidationError(
+              "The 'chainid' field is required and valid."
             );
-            resolve(result);
+            reject(error);
+          } else {
+            try {
+              const result = await this.broker.call(
+                `${SERVICE.V1.VerifyContractEVM.inputRequestVerify.path}@${selectedChain?.moleculerNamespace}`,
+                {
+                  // @ts-ignore
+                  contract_address: ctx.meta.$multipart.contract_address,
+                  // @ts-ignore
+                  files,
+                  // @ts-ignore
+                  creator_tx_hash: ctx.meta.$multipart.creator_tx_hash,
+                }
+              );
+              resolve(result);
+            } catch (error) {
+              reject(error);
+            }
           }
         })
         .on('error', (err: any) => {

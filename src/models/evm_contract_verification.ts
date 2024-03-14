@@ -19,6 +19,8 @@ export class EVMContractVerification extends BaseModel {
 
   updated_at!: Date;
 
+  compile_detail!: any;
+
   static get tableName() {
     return 'evm_contract_verification';
   }
