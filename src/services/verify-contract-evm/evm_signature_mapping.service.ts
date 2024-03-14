@@ -34,20 +34,14 @@ export default class EvmSignatureMappingJob extends BullableService {
     };
   }
 
-  public getTopicHash(topicSignature: string): string {
-    return ethers.id(topicSignature);
-  }
-
   public async mappingContractTopic(
-    contractVerified: EVMContractVerification
-  ): Promise<void> {
-    const convertedTopics = await this.convertABIToHumanReadable(
-      contractVerified.abi
-    );
+    ABI: any[]
+  ): Promise<EvmSignatureMapping[]> {
+    const convertedTopics = await this.convertABIToHumanReadable(ABI);
     const signatureMappings: EvmSignatureMapping[] =
       convertedTopics.sigHashFragments.map((topic, index) =>
         EvmSignatureMapping.fromJson({
-          topic_hash: this.getTopicHash(topic),
+          topic_hash: ethers.id(topic),
           human_readable_topic: convertedTopics.fullFragments[index],
         })
       );
@@ -55,6 +49,7 @@ export default class EvmSignatureMappingJob extends BullableService {
       .insert(signatureMappings)
       .onConflict('topic_hash')
       .merge();
+    return signatureMappings;
   }
 
   @QueueHandler({
@@ -74,7 +69,7 @@ export default class EvmSignatureMappingJob extends BullableService {
       return;
     }
 
-    await this.mappingContractTopic(contractVerified);
+    await this.mappingContractTopic(contractVerified.abi);
     this.logger.info(
       `Successfully mapping for contract with address ${contractVerified.contract_address}`
     );
