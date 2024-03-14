@@ -120,6 +120,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
               let creator;
               let createdHeight;
               let createdHash;
+              const type = this.detectContractTypeByCode(code);
               const codeHash = keccak256(code);
               if (evmTx.data) {
                 const { data } = evmTx;
@@ -137,6 +138,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
                 EVMSmartContract.fromJson({
                   address,
                   creator,
+                  type,
                   created_hash: createdHash,
                   created_height: createdHeight,
                   code_hash: codeHash,
@@ -167,6 +169,31 @@ export default class CrawlSmartContractEVMService extends BullableService {
           .transacting(trx);
       }
     });
+  }
+
+  detectContractTypeByCode(code: string): string | null {
+    if (
+      EVM_CONTRACT_METHOD_HEX_PREFIX.ABI_INTERFACE_ERC20.every((method) =>
+        code.includes(method)
+      )
+    ) {
+      return EVMSmartContract.TYPES.ERC20;
+    }
+    if (
+      EVM_CONTRACT_METHOD_HEX_PREFIX.ABI_INTERFACE_ERC721.every((method) =>
+        code.includes(method)
+      )
+    ) {
+      return EVMSmartContract.TYPES.ERC721;
+    }
+    if (
+      EVM_CONTRACT_METHOD_HEX_PREFIX.ABI_INTERFACE_ERC1155.every((method) =>
+        code.includes(method)
+      )
+    ) {
+      return EVMSmartContract.TYPES.ERC1155;
+    }
+    return null;
   }
 
   public async _start(): Promise<void> {
