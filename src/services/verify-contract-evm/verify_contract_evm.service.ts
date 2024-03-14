@@ -57,10 +57,9 @@ export default class VerifyContractEVM extends BullableService {
     const selectedSolidityCompiler: ISolidityCompiler = new SolidityCompiler(
       this.logger
     );
-
+    const listTriggerContractSignatureMapping: string[] = [];
     await knex.transaction(async (trx) => {
       const listPromise = [];
-      const listTriggerSignatureMapping = [];
       for (let i = 0; i < listRequestVerify.length; i += 1) {
         const requestVerify = listRequestVerify[i];
         let codeHash;
@@ -104,18 +103,8 @@ export default class VerifyContractEVM extends BullableService {
               this.logger.info(abi);
               codeHash = keccak256(recompiled.runtimeBytecode);
               if (matchResult.runtimeMatch === 'perfect') {
-                listTriggerSignatureMapping.push(
-                  this.createJob(
-                    BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
-                    BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
-                    { contract_address: requestVerify.contract_address },
-                    {
-                      removeOnComplete: true,
-                      removeOnFail: {
-                        count: 3,
-                      },
-                    }
-                  )
+                listTriggerContractSignatureMapping.push(
+                  requestVerify.contract_address
                 );
                 listPromise.push(
                   EVMContractVerification.query()
@@ -140,6 +129,9 @@ export default class VerifyContractEVM extends BullableService {
           listPromise.push(
             EVMContractVerification.query()
               .patch({
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                files: null,
                 code_hash: codeHash,
                 status: EVMContractVerification.VERIFICATION_STATUS.FAIL,
               })
@@ -149,7 +141,6 @@ export default class VerifyContractEVM extends BullableService {
         }
       }
       await Promise.all(listPromise);
-      await Promise.all(listTriggerSignatureMapping);
       await BlockCheckpoint.query()
         .insert({
           job_name: BULL_JOB_NAME.VERIFY_CONTRACT_EVM,
@@ -159,6 +150,21 @@ export default class VerifyContractEVM extends BullableService {
         .merge()
         .transacting(trx);
     });
+    if (listTriggerContractSignatureMapping.length > 0) {
+      listTriggerContractSignatureMapping.map((contract) =>
+        this.createJob(
+          BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
+          BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
+          { contract_address: contract },
+          {
+            removeOnComplete: true,
+            removeOnFail: {
+              count: 3,
+            },
+          }
+        )
+      );
+    }
   }
 
   @Action({
