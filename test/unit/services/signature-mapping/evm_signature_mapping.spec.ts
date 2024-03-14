@@ -46,6 +46,7 @@ export default class EvmSignatureMappingSpec {
   public async test3() {
     const signatures =
       await this.evmSignatureMappingJob?.convertABIToHumanReadable(abi);
-    expect(signatures?.length).toBe(abi.length);
+    expect(signatures?.fullFragments.length).toBe(abi.length);
+    expect(signatures?.sigHashFragments.length).toBe(abi.length);
   }
 }

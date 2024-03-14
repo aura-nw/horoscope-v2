@@ -18,9 +18,20 @@ export default class EvmSignatureMappingJob extends BullableService {
     super(broker);
   }
 
-  public async convertABIToHumanReadable(ABI: any[]): Promise<string[]> {
+  public async convertABIToHumanReadable(ABI: any[]): Promise<{
+    fullFragments: string[];
+    sigHashFragments: string[];
+  }> {
     const iface = new ethers.Interface(ABI);
-    return iface.format();
+    const fullFragments = iface.format();
+    const sigHashFragments = iface.fragments.map((f) => {
+      if (f.type === 'constructor') return f.format('minimal');
+      return f.format('sighash');
+    });
+    return {
+      fullFragments,
+      sigHashFragments,
+    };
   }
 
   public getTopicHash(topicSignature: string): string {
@@ -30,15 +41,18 @@ export default class EvmSignatureMappingJob extends BullableService {
   public async mappingContractTopic(
     contractVerified: EVMContractVerification
   ): Promise<void> {
-    const topics = await this.convertABIToHumanReadable(contractVerified.abi);
-    const topicsHashed: EvmSignatureMapping[] = topics.map((topic) =>
-      EvmSignatureMapping.fromJson({
-        topic_hash: this.getTopicHash(topic),
-        human_readable_topic: topic,
-      })
+    const convertedTopics = await this.convertABIToHumanReadable(
+      contractVerified.abi
     );
+    const signatureMappings: EvmSignatureMapping[] =
+      convertedTopics.sigHashFragments.map((topic, index) =>
+        EvmSignatureMapping.fromJson({
+          topic_hash: this.getTopicHash(topic),
+          human_readable_topic: convertedTopics.fullFragments[index],
+        })
+      );
     await EvmSignatureMapping.query()
-      .insert(topicsHashed)
+      .insert(signatureMappings)
       .onConflict('topic_hash')
       .merge();
   }
