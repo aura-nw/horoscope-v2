@@ -388,6 +388,6 @@
     "limitEvmSmartContractGet": 50,
     "key": "erc20",
     "blocksPerCall": 100,
-    "millisecondRepeatJob": 5000
+    "millisecondRepeatJob": 2000
   }
 }

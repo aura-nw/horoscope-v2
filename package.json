@@ -88,6 +88,7 @@
     "moleculer-db": "^0.8.21",
     "moleculer-web": "^0.10.5",
     "mysql": "^2.18.1",
+    "node-fetch": "^3.3.2",
     "objection": "^3.0.1",
     "parse-uri": "^1.0.7",
     "pg": "^8.8.0",
@@ -98,7 +99,8 @@
     "stream-chain": "^2.2.5",
     "stream-json": "^1.7.5",
     "underscore": "^1.13.6",
-    "util": "^0.12.4"
+    "util": "^0.12.4",
+    "viem": "^2.8.6"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.4.1",
