@@ -4,6 +4,7 @@ export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable('erc20_contract', (table) => {
     table.increments();
     table.integer('evm_smart_contract_id').notNullable().unique();
+    table.string('address').unique().notNullable();
     table.string('symbol').index();
     table.decimal('total_supply', 80, 0);
     table.string('decimal').index();
