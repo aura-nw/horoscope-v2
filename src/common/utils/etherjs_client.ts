@@ -36,8 +36,7 @@ export default class EtherJsClient {
         },
         transport: http(selectedChain.EVMJSONRPC[0]),
       });
-    } 
-      throw new Error(`EVMJSONRPC not found with chainId: ${config.chainId}`);
-    
+    }
+    throw new Error(`EVMJSONRPC not found with chainId: ${config.chainId}`);
   }
 }
