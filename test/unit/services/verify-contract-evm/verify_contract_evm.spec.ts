@@ -2,8 +2,8 @@ import { BeforeEach, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import fs from 'fs';
 import path from 'path';
-import { SolidityCompiler } from '../../../../src/services/handle-tx-evm/solidity_compiler';
-import VerifyContractEVM from '../../../../src/services/handle-tx-evm/verify_contract_evm.service';
+import { SolidityCompiler } from '../../../../src/services/evm/solidity_compiler';
+import VerifyContractEVM from '../../../../src/services/evm/verify_contract_evm.service';
 // import expectedCompileErc721 from './expected_compile_erc721.json';
 import expectedCompileStorage from './expected_compile_storage.json';
 // eslint-disable-next-line @typescript-eslint/naming-convention
