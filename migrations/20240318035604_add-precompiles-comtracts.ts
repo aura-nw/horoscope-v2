@@ -1,12 +1,12 @@
 import { Knex } from 'knex';
 import _ from 'lodash';
 import { EVMContractVerification } from '../src/models/evm_contract_verification';
-import bank from '../src/services/handle-evm-precompile/abis/bank.json' assert { type: 'json' };
-import bech32 from '../src/services/handle-evm-precompile/abis/bech32.json' assert { type: 'json' };
-import distribution from '../src/services/handle-evm-precompile/abis/distribution.json' assert { type: 'json' };
-import ics20 from '../src/services/handle-evm-precompile/abis/ics20.json' assert { type: 'json' };
-import staking from '../src/services/handle-evm-precompile/abis/staking.json' assert { type: 'json' };
-import vesting from '../src/services/handle-evm-precompile/abis/vesting.json' assert { type: 'json' };
+import bank from '../src/services/evm/precompile-abis/bank.json' assert { type: 'json' };
+import bech32 from '../src/services/evm/precompile-abis/bech32.json' assert { type: 'json' };
+import distribution from '../src/services/evm/precompile-abis/distribution.json' assert { type: 'json' };
+import ics20 from '../src/services/evm/precompile-abis/ics20.json' assert { type: 'json' };
+import staking from '../src/services/evm/precompile-abis/staking.json' assert { type: 'json' };
+import vesting from '../src/services/evm/precompile-abis/vesting.json' assert { type: 'json' };
 
 // https://github.com/evmos/evmos/tree/main/precompiles
 const precompileContracts = [
