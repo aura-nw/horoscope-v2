@@ -1,5 +1,6 @@
 /* eslint-disable */
 // fetch-polyfill.js
+// TODO: viem require node 18+ => coming soon
 import fetch, {
   Blob,
   blobFrom,
