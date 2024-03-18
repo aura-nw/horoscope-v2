@@ -45,13 +45,13 @@ export default class Erc721Service extends BullableService {
           erc721SmartContracts
         );
         await Erc721Contract.query().transacting(trx).insert(erc721Instances);
-        updateBlockCheckpoint.height = endBlock;
-        await BlockCheckpoint.query()
-          .insert(updateBlockCheckpoint)
-          .onConflict('job_name')
-          .merge()
-          .transacting(trx);
       }
+      updateBlockCheckpoint.height = endBlock;
+      await BlockCheckpoint.query()
+        .insert(updateBlockCheckpoint)
+        .onConflict('job_name')
+        .merge()
+        .transacting(trx);
     });
   }
 
