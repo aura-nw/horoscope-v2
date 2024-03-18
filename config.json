@@ -385,7 +385,6 @@
     "solcRepo": null
   },
   "erc20": {
-    "limitEvmSmartContractGet": 50,
     "key": "erc20",
     "blocksPerCall": 100,
     "millisecondRepeatJob": 2000
