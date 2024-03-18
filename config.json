@@ -388,5 +388,10 @@
     "key": "erc20",
     "blocksPerCall": 100,
     "millisecondRepeatJob": 2000
+  },
+  "erc721": {
+    "key": "erc721",
+    "blocksPerCall": 100,
+    "millisecondRepeatJob": 2000
   }
 }
