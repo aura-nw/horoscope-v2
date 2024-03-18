@@ -21,16 +21,26 @@ export default class EvmSignatureMappingJob extends BullableService {
   public async convertABIToHumanReadable(ABI: any[]): Promise<{
     fullFragments: string[];
     sigHashFragments: string[];
+    fragmentTypes: string[];
   }> {
+    const sigHashFragments: string[] = [];
+    const fragmentTypes: string[] = [];
     const iface = new ethers.Interface(ABI);
     const fullFragments = iface.format();
-    const sigHashFragments = iface.fragments.map((f) => {
-      if (f.type === 'constructor') return f.format('minimal');
-      return f.format('sighash');
+
+    iface.fragments.forEach((f) => {
+      fragmentTypes.push(f.type);
+      if (f.type === 'constructor') {
+        sigHashFragments.push(f.format('minimal'));
+      } else {
+        sigHashFragments.push(f.format('sighash'));
+      }
     });
+
     return {
       fullFragments,
       sigHashFragments,
+      fragmentTypes,
     };
   }
 
@@ -39,12 +49,18 @@ export default class EvmSignatureMappingJob extends BullableService {
   ): Promise<EvmSignatureMapping[]> {
     const convertedTopics = await this.convertABIToHumanReadable(ABI);
     const signatureMappings: EvmSignatureMapping[] =
-      convertedTopics.sigHashFragments.map((topic, index) =>
-        EvmSignatureMapping.fromJson({
-          topic_hash: ethers.id(topic),
+      convertedTopics.sigHashFragments.map((topic, index) => {
+        const topicHash = ethers.id(topic);
+        const minimalTopicHash =
+          convertedTopics.fragmentTypes[index] === 'function'
+            ? topicHash.slice(2, 10)
+            : null; // Get first 8 characters except '0x'
+        return EvmSignatureMapping.fromJson({
+          topic_hash: topicHash,
           human_readable_topic: convertedTopics.fullFragments[index],
-        })
-      );
+          minimal_topic_hash: minimalTopicHash,
+        });
+      });
     return EvmSignatureMapping.query()
       .insert(signatureMappings)
       .onConflict('topic_hash')
