@@ -54,10 +54,6 @@ export class Erc20Contract extends BaseModel {
     };
   }
 
-  static EVENT_PRINT = {
-    TRANSFER: 'Transfer(address,address,uint256)',
-  };
-
   static ABI = [
     {
       constant: true,
