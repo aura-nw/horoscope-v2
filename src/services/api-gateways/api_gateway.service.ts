@@ -40,6 +40,7 @@ import config from '../../../config.json' assert { type: 'json' };
           'v2.statistics.syncPrevDateStatsByChainId',
           'v1.job.composite-index-to-attribute-partition',
           'v1.job.redecode-tx',
+          'v1.job.signature-mapping',
         ],
       },
       {
