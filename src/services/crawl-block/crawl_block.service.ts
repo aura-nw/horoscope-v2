@@ -94,7 +94,7 @@ export default class CrawlBlockService extends BullableService {
     // crawl block from startBlock to endBlock
     const startBlock = this._currentBlock + 1;
 
-    let endBlock = startBlock + config.crawlBlock.numberOfBlockPerCall - 1;
+    let endBlock = startBlock + config.crawlBlock.blocksPerCall - 1;
     if (endBlock > latestBlockNetwork) {
       endBlock = latestBlockNetwork;
     }
