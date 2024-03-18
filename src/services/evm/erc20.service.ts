@@ -38,7 +38,7 @@ export default class Erc20Service extends BullableService {
       const erc20SmartContracts = await EVMSmartContract.query()
         .where('created_height', '>', startBlock)
         .andWhere('created_height', '<=', endBlock)
-        .andWhere('type', 'ERC20')
+        .andWhere('type', EVMSmartContract.TYPES.ERC20)
         .orderBy('id', 'asc');
       if (erc20SmartContracts.length > 0) {
         const erc20Instances = await this.getErc20Instances(
