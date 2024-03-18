@@ -45,13 +45,13 @@ export default class Erc20Service extends BullableService {
           erc20SmartContracts
         );
         await Erc20Contract.query().transacting(trx).insert(erc20Instances);
-        updateBlockCheckpoint.height = endBlock;
-        await BlockCheckpoint.query()
-          .insert(updateBlockCheckpoint)
-          .onConflict('job_name')
-          .merge()
-          .transacting(trx);
       }
+      updateBlockCheckpoint.height = endBlock;
+      await BlockCheckpoint.query()
+        .insert(updateBlockCheckpoint)
+        .onConflict('job_name')
+        .merge()
+        .transacting(trx);
     });
   }
 
