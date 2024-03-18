@@ -1,6 +1,6 @@
 /* eslint-disable */
 // fetch-polyfill.js
-// TODO: viem require node 18+ => coming soon
+// TODO: required by viem: https://viem.sh/docs/compatibility will be removed after upgrading node to v18
 import fetch, {
   Blob,
   blobFrom,
