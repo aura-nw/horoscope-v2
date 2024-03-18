@@ -31,13 +31,14 @@
   },
   "crawlBlock": {
     "millisecondCrawl": 5000,
-    "numberOfBlockPerCall": 100,
+    "blocksPerCall": 100,
     "startBlock": 4860000,
     "saveRawLog": true
   },
   "crawlTransaction": {
+    "key": "crawlTransaction",
     "millisecondCrawl": 5000,
-    "numberOfBlockPerCall": 100,
+    "blocksPerCall": 100,
     "chunkSize": 1000
   },
   "handleCoinTransfer": {
