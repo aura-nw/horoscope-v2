@@ -231,6 +231,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
     return resultReturn;
   }
 
+  // Detect proxy contract by standard function implement, for example ERC897 will have implementation() function
   public async detectProxyContractByMethod(
     contractAddress: string,
     byteCodeFunction: EIPProxyContractByteCodeInterface
@@ -240,14 +241,23 @@ export default class CrawlSmartContractEVMService extends BullableService {
       data: byteCodeFunction
     });
 
+    if (result === '0x') throw Error('Not proxy contract!');
     console.log(result, 'result');
   }
 
   public async isContractProxy(contractAddress: string): Promise<DetectEVMProxyContract | null> {
-    const byteCode = await this.etherJsClient.getCode(contractAddress);
+    const byteCode = await this.etherJsClient.getCode('0x7ecfcbdeb6f195030b9bf2ecc402f6d5433d116d');
     let result: DetectEVMProxyContract | null;
 
-    await this.detectProxyContractByMethod(contractAddress, EIPProxyContractByteCodeInterface.EIP_1167_BEACON_METHOD_IMPLEMENT);
+    const b = ethers.id('implementation(address proxy)');
+    console.log(b, 'bbbbbbbbbbbbbbb');
+    const a =  byteCode.includes('0x1cd0ff41e38f749ebd6fc8524eccb3dce6faefcf7e806e70f15329b3c690d78f');
+    console.log(a, 'aaaaaaaaaaaaaaaaaaaaaaaaaaa');
+
+    await this.detectProxyContractByMethod(
+      '0x7ecfcbdeb6f195030b9bf2ecc402f6d5433d116d',
+      EIPProxyContractByteCodeInterface.EIP_1167_BEACON_METHOD_IMPLEMENT
+    );
     if (1) return null;
 
     try {
