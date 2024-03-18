@@ -1,0 +1,18 @@
+table:
+  name: erc20_contract
+  schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - id
+        - evm_smart_contract_id
+        - address
+        - symbol
+        - total_supply
+        - decimal
+        - name
+        - track
+        - last_updated_height
+      filter: {}
+      limit: 100

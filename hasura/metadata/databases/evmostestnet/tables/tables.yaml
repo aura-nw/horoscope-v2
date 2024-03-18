@@ -20,6 +20,7 @@
 - '!include public_cw721_token.yaml'
 - '!include public_daily_statistics.yaml'
 - '!include public_delegator.yaml'
+- '!include public_erc20_contract.yaml'
 - '!include public_event.yaml'
 - '!include public_event_attribute.yaml'
 - '!include public_evm_contract_verification.yaml'
