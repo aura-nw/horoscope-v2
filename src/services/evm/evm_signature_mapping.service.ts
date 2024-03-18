@@ -51,14 +51,14 @@ export default class EvmSignatureMappingJob extends BullableService {
     const signatureMappings: EvmSignatureMapping[] =
       convertedTopics.sigHashFragments.map((topic, index) => {
         const topicHash = ethers.id(topic);
-        const minimalTopicHash =
+        const functionId =
           convertedTopics.fragmentTypes[index] === 'function'
             ? topicHash.slice(2, 10)
             : null; // Get first 8 characters except '0x'
         return EvmSignatureMapping.fromJson({
           topic_hash: topicHash,
           human_readable_topic: convertedTopics.fullFragments[index],
-          minimal_topic_hash: minimalTopicHash,
+          function_id: functionId,
         });
       });
     return EvmSignatureMapping.query()
