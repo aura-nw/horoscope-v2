@@ -1,5 +1,14 @@
 [
   {
+    "chainId": "ether",
+    "RPC": ["https://eth-pokt.nodies.app"],
+    "LCD": ["https://eth-pokt.nodies.app"],
+    "databaseName": "horoscope_dev_evmos_testnet",
+    "EVMJSONRPC": ["https://eth-pokt.nodies.app"],
+    "redisDBNumber": 25,
+    "moleculerNamespace": "erascope-dev-evmos-testnet"
+  },
+  {
     "chainId": "xstaxy-1",
     "RPC": ["https://rpc.aura.network"],
     "LCD": ["https://lcd.aura.network"],
