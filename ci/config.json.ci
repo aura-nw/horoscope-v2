@@ -391,5 +391,10 @@
     "millisecondCrawl": 1000,
     "recordsPerCall": 100,
     "solcRepo": null
+  },
+  "erc20": {
+    "key": "erc20",
+    "blocksPerCall": 100,
+    "millisecondRepeatJob": 5000
   }
 }
