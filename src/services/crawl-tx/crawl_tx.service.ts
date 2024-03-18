@@ -54,7 +54,7 @@ export default class CrawlTxService extends BullableService {
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.CRAWL_TRANSACTION,
         [BULL_JOB_NAME.CRAWL_BLOCK],
-        config.handleTransaction.key
+        config.crawlTransaction.key
       );
 
     this.logger.info(
