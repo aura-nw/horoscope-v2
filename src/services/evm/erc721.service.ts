@@ -25,7 +25,7 @@ export default class Erc721Service extends BullableService {
     queueName: BULL_JOB_NAME.HANDLE_ERC721_CONTRACT,
     jobName: BULL_JOB_NAME.HANDLE_ERC721_CONTRACT,
   })
-  async handleErc20Contract(): Promise<void> {
+  async handleErc721Contract(): Promise<void> {
     await knex.transaction(async (trx) => {
       // get id evm smart contract checkpoint
       // get range blocks for proccessing
