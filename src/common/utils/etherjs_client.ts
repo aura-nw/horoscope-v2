@@ -23,14 +23,14 @@ export default class EtherJsClient {
     const selectedChain = networks.find(
       (network) => network.chainId === config.chainId
     );
-    if (selectedChain?.EVMJSONRPC) {
-      return createPublicClient({
-        batch: {
-          multicall: true,
-        },
-        transport: http(selectedChain.EVMJSONRPC[0]),
-      });
+    if (!selectedChain?.EVMJSONRPC) {
+      throw new Error(`EVMJSONRPC not found with chainId: ${config.chainId}`);
     }
-    throw new Error(`EVMJSONRPC not found with chainId: ${config.chainId}`);
+    return createPublicClient({
+      batch: {
+        multicall: true,
+      },
+      transport: http(selectedChain.EVMJSONRPC[0]),
+    });
   }
 }
