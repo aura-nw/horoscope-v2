@@ -90,6 +90,11 @@ export default class VerifyContractEVM extends BullableService {
             // verify this contracts
             for (let j = 0; j < contracts.length; j += 1) {
               const contract = contracts[j];
+              if (!contract.compilerVersion) {
+                contract.compilerVersion = requestVerify.compiler_version;
+                contract.metadata.compiler.version =
+                  requestVerify.compiler_version;
+              }
               await this.checkAndFetchMissing(contract);
               compileDetail = {
                 missing: contract.missing,
@@ -136,6 +141,7 @@ export default class VerifyContractEVM extends BullableService {
                       abi: JSON.stringify(abi),
                       code_hash: codeHash,
                       compile_detail: JSON.stringify(compileDetails),
+                      compiler_version: contract.compilerVersion,
                       status:
                         EVMContractVerification.VERIFICATION_STATUS.SUCCESS,
                     })
@@ -217,6 +223,10 @@ export default class VerifyContractEVM extends BullableService {
         type: 'array',
         items: 'number',
       },
+      compiler_version: {
+        type: 'string',
+        optional: true,
+      },
     },
   })
   public async actionCreateJob(
@@ -225,12 +235,14 @@ export default class VerifyContractEVM extends BullableService {
       creator_tx_hash: string | null;
       url: string | null;
       files: any;
+      compiler_version: string | null;
     }>
   ) {
     const requestVerify = EVMContractVerification.fromJson({
       contract_address: ctx.params.contract_address,
       files: Buffer.from(ctx.params.files),
       creator_tx_hash: ctx.params.creator_tx_hash,
+      compiler_version: ctx.params.compiler_version,
       status: EVMContractVerification.VERIFICATION_STATUS.PENDING,
     });
     const response = await EVMContractVerification.query().insert(

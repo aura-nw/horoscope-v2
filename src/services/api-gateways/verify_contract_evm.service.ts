@@ -47,6 +47,8 @@ export default class VerifyContractEVM extends BaseService {
                   files,
                   // @ts-ignore
                   creator_tx_hash: ctx.meta.$multipart.creator_tx_hash,
+                  // @ts-ignore
+                  compiler_version: ctx.meta.$multipart.compiler_version,
                 }
               );
               resolve(result);

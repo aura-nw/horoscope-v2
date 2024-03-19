@@ -21,6 +21,8 @@ export class EVMContractVerification extends BaseModel {
 
   compile_detail!: any;
 
+  compiler_version!: string;
+
   static get tableName() {
     return 'evm_contract_verification';
   }
