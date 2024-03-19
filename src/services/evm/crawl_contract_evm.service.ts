@@ -103,7 +103,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
         const currentAddresses = addressesWithTx[evmTx.hash];
 
         const notFoundAddresses = currentAddresses.filter(
-          (address: string) => !evmContractsInDB[address]
+          (address: string) => !evmContractsWithAddress[address]
         );
 
         if (notFoundAddresses.length === 0) {
@@ -152,11 +152,11 @@ export default class CrawlSmartContractEVMService extends BullableService {
 
     await knex.transaction(async (trx) => {
       if (evmContracts.length > 0) {
-        await EVMSmartContract.query()
-          .insert(evmContracts)
-          .onConflict('address')
-          .ignore()
-          .transacting(trx);
+        const newEvmContracts: EVMSmartContract[] = _.uniqBy(
+          evmContracts,
+          'address'
+        );
+        await EVMSmartContract.query().insert(newEvmContracts).transacting(trx);
       }
       if (blockCheckpoint) {
         blockCheckpoint.height = endBlock;
