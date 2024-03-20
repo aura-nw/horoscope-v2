@@ -301,6 +301,10 @@ export default class CrawlAccountService extends BullableService {
         base_denom: string;
         last_updated_height: number;
       }[] = [];
+      const resetBalanceList: {
+        account_id: number;
+        last_updated_height: number;
+      }[] = [];
       await knex.transaction(async (trx) => {
         const addressesWithIds = await Account.query()
           .select('id', 'address')
@@ -311,6 +315,12 @@ export default class CrawlAccountService extends BullableService {
           const accountId = addressesWithIds.find(
             (addressWithId) => addressWithId.address === account.address
           )?.id;
+          if (accountId) {
+            resetBalanceList.push({
+              account_id: accountId,
+              last_updated_height: account.last_updated_height,
+            });
+          }
           if (Array.isArray(account.balances) && accountId)
             account.balances.forEach((balance) => {
               listAccountBalance.push({
@@ -325,6 +335,14 @@ export default class CrawlAccountService extends BullableService {
             });
         });
         try {
+          const stringListUpdatesReset = resetBalanceList
+            .map((e) => `(${e.account_id}, ${e.last_updated_height})`)
+            .join(',');
+          await knex
+            .raw(
+              `UPDATE account_balance SET amount = 0, last_updated_height=temp.last_updated_height from (VALUES ${stringListUpdatesReset}) as temp(account_id, last_updated_height) where temp.account_id = account_balance.account_id`
+            )
+            .transacting(trx);
           if (listAccountBalance.length > 0)
             await AccountBalance.query()
               .insert(listAccountBalance)
