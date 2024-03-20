@@ -1,6 +1,16 @@
 table:
   name: evm_smart_contract
   schema: public
+object_relationships:
+  - name: erc20_contract
+    using:
+      manual_configuration:
+        column_mapping:
+          id: evm_smart_contract_id
+        insertion_order: null
+        remote_table:
+          name: erc20_contract
+          schema: public
 array_relationships:
   - name: evm_contract_verifications
     using:
@@ -15,14 +25,15 @@ select_permissions:
   - role: internal_service
     permission:
       columns:
-        - id
-        - created_at
-        - updated_at
         - address
-        - creator
-        - created_height
+        - code_hash
+        - created_at
         - created_hash
+        - created_height
+        - creator
+        - id
         - type
+        - updated_at
       filter: {}
       limit: 100
       allow_aggregations: true

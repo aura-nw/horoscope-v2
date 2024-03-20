@@ -26,8 +26,8 @@ array_relationships:
     using:
       manual_configuration:
         column_mapping:
-          id: evm_tx_id
           height: block_height
+          id: evm_tx_id
         insertion_order: null
         remote_table:
           name: evm_event
@@ -36,19 +36,20 @@ select_permissions:
   - role: internal_service
     permission:
       columns:
-        - id
-        - hash
-        - height
+        - contract_address
+        - data
         - from
-        - to
-        - size
-        - value
         - gas
         - gas_fee_cap
         - gas_tip_cap
+        - hash
+        - height
+        - id
         - nonce
-        - data
+        - size
+        - to
         - tx_id
         - tx_msg_id
+        - value
       filter: {}
       limit: 100

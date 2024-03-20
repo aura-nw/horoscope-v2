@@ -1,6 +1,16 @@
 table:
   name: erc20_contract
   schema: public
+object_relationships:
+  - name: evm_smart_contract
+    using:
+      manual_configuration:
+        column_mapping:
+          evm_smart_contract_id: id
+        insertion_order: null
+        remote_table:
+          name: evm_smart_contract
+          schema: public
 select_permissions:
   - role: internal_service
     permission:
