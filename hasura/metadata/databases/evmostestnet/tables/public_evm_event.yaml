@@ -15,17 +15,18 @@ select_permissions:
   - role: internal_service
     permission:
       columns:
-        - id
-        - tx_id
-        - evm_tx_id
         - address
+        - block_hash
+        - block_height
+        - data
+        - evm_tx_id
+        - id
         - topic0
         - topic1
         - topic2
         - topic3
-        - block_height
         - tx_hash
+        - tx_id
         - tx_index
-        - block_hash
       filter: {}
       limit: 100
