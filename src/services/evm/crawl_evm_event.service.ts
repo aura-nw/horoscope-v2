@@ -72,6 +72,7 @@ export default class CrawlEvmEventJob extends BullableService {
         topic1: valueParse?.topics[1],
         topic2: valueParse?.topics[2],
         topic3: valueParse?.topics[3],
+        data: valueParse?.data,
         block_height: evmEvent.block_height,
         tx_hash: valueParse.transactionHash,
         block_hash: valueParse.blockHash,
