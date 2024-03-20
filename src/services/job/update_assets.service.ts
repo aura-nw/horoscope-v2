@@ -18,6 +18,7 @@ import {
 } from '../../common';
 import { Cw20Contract } from '../../models';
 import { Asset } from '../../models/asset';
+import { Erc20Contract } from '../../models/erc20_contract';
 
 @Service({
   name: SERVICE.V1.JobService.UpdateAssets.key,
@@ -44,6 +45,7 @@ export default class UpdateAssetsJob extends BullableService {
         'cw20_contract.decimal',
         'cw20_contract.name'
       );
+    const erc20Assets = await Erc20Contract.query();
     const assets: Asset[] = [];
     assets.push(
       ...originAssets.map((originAsset) => {
@@ -71,6 +73,17 @@ export default class UpdateAssetsJob extends BullableService {
           name: cw20Asset.name,
           total_supply: cw20Asset.total_supply,
           origin_id: cw20Asset.cw20_contract_id,
+          updated_at: new Date().toISOString(),
+        })
+      ),
+      ...erc20Assets.map((erc20Asset) =>
+        Asset.fromJson({
+          denom: erc20Asset.address,
+          type: Asset.TYPE.ERC20_TOKEN,
+          decimal: erc20Asset.decimals,
+          name: erc20Asset.name,
+          total_supply: erc20Asset.total_supply,
+          origin_id: erc20Asset.evm_smart_contract_id,
           updated_at: new Date().toISOString(),
         })
       )
