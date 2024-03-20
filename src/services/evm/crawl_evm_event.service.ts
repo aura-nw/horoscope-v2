@@ -1,3 +1,4 @@
+import { fromBase64 } from '@cosmjs/encoding';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import _ from 'lodash';
@@ -72,7 +73,7 @@ export default class CrawlEvmEventJob extends BullableService {
         topic1: valueParse?.topics[1],
         topic2: valueParse?.topics[2],
         topic3: valueParse?.topics[3],
-        data: valueParse?.data,
+        data: valueParse?.data ? fromBase64(valueParse?.data) : null,
         block_height: evmEvent.block_height,
         tx_hash: valueParse.transactionHash,
         block_hash: valueParse.blockHash,
