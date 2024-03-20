@@ -20,6 +20,8 @@ export class EvmEvent extends BaseModel {
 
   topic3!: string;
 
+  data!: Buffer;
+
   block_height!: number;
 
   tx_hash!: string;
