@@ -12,7 +12,15 @@ import { BULL_JOB_NAME, SERVICE } from '../../common';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
-import { EVM_CONTRACT_METHOD_HEX_PREFIX } from './constant';
+import {
+  DetectEVMProxyContract,
+  EIPProxyContractSupportByteCode,
+  EVM_CONTRACT_METHOD_HEX_PREFIX,
+  EVM_DEFAULT_SLOT_BYTE_CODE_LENGTH,
+  EVM_PREFIX,
+  NULL_BYTE_CODE,
+  ZERO_ADDRESS,
+} from './constant';
 
 @Service({
   name: SERVICE.V1.CrawlSmartContractEVM.key,
@@ -194,6 +202,80 @@ export default class CrawlSmartContractEVMService extends BullableService {
       return EVMSmartContract.TYPES.ERC1155;
     }
     return null;
+  }
+
+  public async detectProxyContractByByteCode(
+    contractAddress: string,
+    byteCode: string,
+    byteCodeSlot: EIPProxyContractSupportByteCode
+  ): Promise<DetectEVMProxyContract> {
+    const resultReturn: DetectEVMProxyContract = {
+      logicContractAddress: '',
+      EIP: '',
+    };
+    const result = byteCode.includes(byteCodeSlot);
+
+    if (!result) throw Error('Not proxy contract!');
+
+    const storageSlotValue = await this.etherJsClient.getStorage(
+      contractAddress,
+      `${EVM_PREFIX}${byteCodeSlot}`,
+      'latest'
+    );
+
+    if (storageSlotValue === '0x' || storageSlotValue === NULL_BYTE_CODE)
+      throw Error('Invalid contract address!');
+
+    const logicAddress =
+      storageSlotValue.length === EVM_DEFAULT_SLOT_BYTE_CODE_LENGTH
+        ? `${EVM_PREFIX}${storageSlotValue.slice(-40)}`
+        : storageSlotValue;
+
+    if (logicAddress === ZERO_ADDRESS) throw Error('Zero contract detected!');
+
+    resultReturn.logicContractAddress = logicAddress;
+    resultReturn.EIP = _.findKey(
+      EIPProxyContractSupportByteCode,
+      (val) => val === byteCodeSlot
+    );
+    return resultReturn;
+  }
+
+  // Detect contract is proxy contract or not
+  public async isContractProxy(
+    contractAddress: string
+  ): Promise<DetectEVMProxyContract | null> {
+    const byteCode = await this.etherJsClient.getCode(contractAddress);
+    let result: DetectEVMProxyContract | null;
+
+    try {
+      result = await Promise.any([
+        this.detectProxyContractByByteCode(
+          contractAddress,
+          byteCode,
+          EIPProxyContractSupportByteCode.EIP_1967_LOGIC_SLOT
+        ),
+        this.detectProxyContractByByteCode(
+          contractAddress,
+          byteCode,
+          EIPProxyContractSupportByteCode.EIP_1967_BEACON_SLOT
+        ),
+        this.detectProxyContractByByteCode(
+          contractAddress,
+          byteCode,
+          EIPProxyContractSupportByteCode.EIP_1822_LOGIC_SLOT
+        ),
+        this.detectProxyContractByByteCode(
+          contractAddress,
+          byteCode,
+          EIPProxyContractSupportByteCode.OPEN_ZEPPELIN_IMPLEMENTATION_SLOT
+        ),
+      ]);
+    } catch (error) {
+      result = null;
+    }
+
+    return result;
   }
 
   public async _start(): Promise<void> {
