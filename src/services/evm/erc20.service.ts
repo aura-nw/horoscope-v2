@@ -126,10 +126,10 @@ export default class Erc20Service extends BullableService {
     const batchReqs: any[] = [];
     contracts.forEach((e) => {
       batchReqs.push(
-        e.read.name(),
-        e.read.symbol(),
-        e.read.decimals(),
-        e.read.totalSupply()
+        e.read.name().catch(() => Promise.resolve(undefined)),
+        e.read.symbol().catch(() => Promise.resolve(undefined)),
+        e.read.decimals().catch(() => Promise.resolve(undefined)),
+        e.read.totalSupply().catch(() => Promise.resolve(undefined))
       );
     });
     const results = await Promise.all(batchReqs);
@@ -138,7 +138,7 @@ export default class Erc20Service extends BullableService {
       name: results[4 * index],
       symbol: results[4 * index + 1],
       decimals: results[4 * index + 2],
-      totalSupply: results[4 * index + 3].toString(),
+      totalSupply: results[4 * index + 3]?.toString(),
     }));
   }
 
