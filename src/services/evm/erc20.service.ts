@@ -81,6 +81,8 @@ export default class Erc20Service extends BullableService {
       erc20Events.forEach((e) => {
         if (e.topic0 === ERC20_EVENT_TOPIC0.TRANSFER) {
           erc20Activities.push(Erc20Handler.buildTransferActivity(e));
+        } else if (e.topic0 === ERC20_EVENT_TOPIC0.APPROVAL) {
+          erc20Activities.push(Erc20Handler.buildAprovalActivity(e));
         }
       });
       if (erc20Activities.length > 0) {

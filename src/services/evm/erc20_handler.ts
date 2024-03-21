@@ -2,13 +2,27 @@ import { toBase64 } from '@cosmjs/encoding';
 import { decodeAbiParameters, keccak256, toHex } from 'viem';
 import { Erc20Activity, EvmEvent } from '../../models';
 
-const ABI_TRANSFER_PARAMS = {
+export const ABI_TRANSFER_PARAMS = {
   FROM: {
     name: 'from',
     type: 'address',
   },
   TO: {
     name: 'to',
+    type: 'address',
+  },
+  VALUE: {
+    name: 'value',
+    type: 'uint256',
+  },
+};
+export const ABI_APPROVAL_PARAMS = {
+  OWNER: {
+    name: 'owner',
+    type: 'address',
+  },
+  SPENDER: {
+    name: 'spender',
     type: 'address',
   },
   VALUE: {
@@ -44,6 +58,34 @@ export class Erc20Handler {
       amount,
       from,
       to,
+      height: e.block_height,
+      tx_hash: e.tx_hash,
+    });
+  }
+
+  static buildAprovalActivity(e: EvmEvent) {
+    const owner = decodeAbiParameters(
+      [ABI_APPROVAL_PARAMS.OWNER],
+      e.topic1 as `0x${string}`
+    )[0];
+    const spender = decodeAbiParameters(
+      [ABI_TRANSFER_PARAMS.TO],
+      e.topic2 as `0x${string}`
+    )[0];
+    const amount = (
+      decodeAbiParameters(
+        [ABI_TRANSFER_PARAMS.VALUE],
+        toHex(toBase64(e.data)) as `0x${string}`
+      )[0] as bigint
+    ).toString();
+    return Erc20Activity.fromJson({
+      evm_event_id: e.id,
+      sender: e.sender,
+      action: 'aproval',
+      erc20_contract_address: e.address,
+      amount,
+      from: owner,
+      to: spender,
       height: e.block_height,
       tx_hash: e.tx_hash,
     });
