@@ -1,4 +1,4 @@
-import { fromBase64, toBase64 } from '@cosmjs/encoding';
+import { fromBase64 } from '@cosmjs/encoding';
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { decodeAbiParameters, toHex } from 'viem';
@@ -57,7 +57,7 @@ export default class Erc20HandlerTest {
       amount: (
         decodeAbiParameters(
           [ABI_TRANSFER_PARAMS.VALUE],
-          toHex(toBase64(evmEvent.data)) as `0x${string}`
+          toHex(evmEvent.data) as `0x${string}`
         )[0] as bigint
       ).toString(),
       from: decodeAbiParameters(
@@ -107,7 +107,7 @@ export default class Erc20HandlerTest {
       amount: (
         decodeAbiParameters(
           [ABI_APPROVAL_PARAMS.VALUE],
-          toHex(toBase64(evmEvent.data)) as `0x${string}`
+          toHex(evmEvent.data) as `0x${string}`
         )[0] as bigint
       ).toString(),
       from: decodeAbiParameters(
