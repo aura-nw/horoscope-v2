@@ -1,4 +1,3 @@
-import { toBase64 } from '@cosmjs/encoding';
 import { decodeAbiParameters, keccak256, toHex } from 'viem';
 import { Erc20Activity, EvmEvent } from '../../models';
 
@@ -47,7 +46,7 @@ export class Erc20Handler {
     const amount = (
       decodeAbiParameters(
         [ABI_TRANSFER_PARAMS.VALUE],
-        toHex(toBase64(e.data)) as `0x${string}`
+        toHex(e.data) as `0x${string}`
       )[0] as bigint
     ).toString();
     return Erc20Activity.fromJson({
@@ -75,7 +74,7 @@ export class Erc20Handler {
     const amount = (
       decodeAbiParameters(
         [ABI_TRANSFER_PARAMS.VALUE],
-        toHex(toBase64(e.data)) as `0x${string}`
+        toHex(e.data) as `0x${string}`
       )[0] as bigint
     ).toString();
     return Erc20Activity.fromJson({
