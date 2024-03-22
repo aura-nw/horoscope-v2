@@ -86,7 +86,13 @@ export default class Erc20Service extends BullableService {
         }
       });
       if (erc20Activities.length > 0) {
-        await Erc20Activity.query().insert(erc20Activities).transacting(trx);
+        await knex
+          .batchInsert(
+            'erc20_activity',
+            erc20Activities,
+            config.erc20.chunkSizeInsert
+          )
+          .transacting(trx);
       }
       updateBlockCheckpoint.height = endBlock;
       await BlockCheckpoint.query()

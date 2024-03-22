@@ -388,6 +388,7 @@
   "erc20": {
     "key": "erc20",
     "blocksPerCall": 100,
-    "millisecondRepeatJob": 2000
+    "millisecondRepeatJob": 2000,
+    "chunkSizeInsert": 1000
   }
 }
