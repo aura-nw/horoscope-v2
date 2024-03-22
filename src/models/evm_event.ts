@@ -2,9 +2,12 @@ import { Model } from 'objection';
 import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
 import { EVMTransaction } from './evm_transaction';
+import { EVMSmartContract } from './evm_smart_contract';
 
 export class EvmEvent extends BaseModel {
   id!: number;
+
+  [relation: string]: any;
 
   tx_id!: number;
 
@@ -67,6 +70,14 @@ export class EvmEvent extends BaseModel {
         join: {
           from: 'evm_event.evm_tx_id',
           to: 'evm_transaction.id',
+        },
+      },
+      evm_smart_contract: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: EVMSmartContract,
+        join: {
+          from: 'evm_event.address',
+          to: 'evm_smart_contract.address',
         },
       },
     };

@@ -138,6 +138,7 @@ export const BULL_JOB_NAME = {
   CRAWL_SMART_CONTRACT_EVM: 'crawl:smart-contract-evm',
   VERIFY_CONTRACT_EVM: 'verify:contract-evm',
   HANDLE_ERC20_CONTRACT: 'handle:erc20-contract',
+  HANDLE_ERC20_ACTIVITY: 'handle:erc20-activity',
 };
 
 export const SERVICE = {
