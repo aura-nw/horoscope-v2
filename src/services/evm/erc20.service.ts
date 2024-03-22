@@ -7,8 +7,10 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../../common';
 import knex from '../../common/utils/db_connection';
 import EtherJsClient from '../../common/utils/etherjs_client';
-import { BlockCheckpoint, EVMSmartContract } from '../../models';
+import { BlockCheckpoint, EVMSmartContract, EvmEvent } from '../../models';
+import { Erc20Activity } from '../../models/erc20_activity';
 import { Erc20Contract } from '../../models/erc20_contract';
+import { ERC20_EVENT_TOPIC0, Erc20Handler } from './erc20_handler';
 
 @Service({
   name: SERVICE.V1.Erc20.key,
@@ -45,6 +47,59 @@ export default class Erc20Service extends BullableService {
           erc20SmartContracts
         );
         await Erc20Contract.query().transacting(trx).insert(erc20Instances);
+      }
+      updateBlockCheckpoint.height = endBlock;
+      await BlockCheckpoint.query()
+        .insert(updateBlockCheckpoint)
+        .onConflict('job_name')
+        .merge()
+        .transacting(trx);
+    });
+  }
+
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY,
+    jobName: BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY,
+  })
+  async handleErc20Activity(): Promise<void> {
+    await knex.transaction(async (trx) => {
+      const [startBlock, endBlock, updateBlockCheckpoint] =
+        await BlockCheckpoint.getCheckpoint(
+          BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY,
+          [BULL_JOB_NAME.HANDLE_ERC20_CONTRACT],
+          config.erc20.key
+        );
+      // TODO: handle track erc20 contract only
+      const erc20Events = await EvmEvent.query()
+        .transacting(trx)
+        .joinRelated('[evm_smart_contract,evm_transaction]')
+        .where('evm_event.block_height', '>', startBlock)
+        .andWhere('evm_event.block_height', '<=', endBlock)
+        .andWhere('evm_smart_contract.type', EVMSmartContract.TYPES.ERC20)
+        .orderBy('evm_event.id', 'asc')
+        .select('evm_event.*', 'evm_transaction.from as sender');
+      const erc20Activities: Erc20Activity[] = [];
+      erc20Events.forEach((e) => {
+        if (e.topic0 === ERC20_EVENT_TOPIC0.TRANSFER) {
+          const activity = Erc20Handler.buildTransferActivity(e);
+          if (activity) {
+            erc20Activities.push(activity);
+          }
+        } else if (e.topic0 === ERC20_EVENT_TOPIC0.APPROVAL) {
+          const activity = Erc20Handler.buildApprovalActivity(e);
+          if (activity) {
+            erc20Activities.push(activity);
+          }
+        }
+      });
+      if (erc20Activities.length > 0) {
+        await knex
+          .batchInsert(
+            'erc20_activity',
+            erc20Activities,
+            config.erc20.chunkSizeInsert
+          )
+          .transacting(trx);
       }
       updateBlockCheckpoint.height = endBlock;
       await BlockCheckpoint.query()
@@ -106,6 +161,20 @@ export default class Erc20Service extends BullableService {
     await this.createJob(
       BULL_JOB_NAME.HANDLE_ERC20_CONTRACT,
       BULL_JOB_NAME.HANDLE_ERC20_CONTRACT,
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        repeat: {
+          every: config.erc20.millisecondRepeatJob,
+        },
+      }
+    );
+    await this.createJob(
+      BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY,
+      BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY,
       {},
       {
         removeOnComplete: true,
