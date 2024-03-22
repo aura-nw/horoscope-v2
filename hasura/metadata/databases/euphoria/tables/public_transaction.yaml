@@ -25,7 +25,7 @@ array_relationships:
     using:
       manual_configuration:
         column_mapping:
-          hash: tx_hash
+          id: tx_id
         insertion_order: null
         remote_table:
           name: cw20_activity
