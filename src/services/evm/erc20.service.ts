@@ -69,6 +69,7 @@ export default class Erc20Service extends BullableService {
           [BULL_JOB_NAME.HANDLE_ERC20_CONTRACT],
           config.erc20.key
         );
+      // TODO: handle track erc20 contract only
       const erc20Events = await EvmEvent.query()
         .transacting(trx)
         .joinRelated('[evm_smart_contract,evm_transaction]')
@@ -80,9 +81,15 @@ export default class Erc20Service extends BullableService {
       const erc20Activities: Erc20Activity[] = [];
       erc20Events.forEach((e) => {
         if (e.topic0 === ERC20_EVENT_TOPIC0.TRANSFER) {
-          erc20Activities.push(Erc20Handler.buildTransferActivity(e));
+          const activity = Erc20Handler.buildTransferActivity(e);
+          if (activity) {
+            erc20Activities.push(activity);
+          }
         } else if (e.topic0 === ERC20_EVENT_TOPIC0.APPROVAL) {
-          erc20Activities.push(Erc20Handler.buildAprovalActivity(e));
+          const activity = Erc20Handler.buildApprovalActivity(e);
+          if (activity) {
+            erc20Activities.push(activity);
+          }
         }
       });
       if (erc20Activities.length > 0) {

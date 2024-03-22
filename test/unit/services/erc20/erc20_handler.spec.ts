@@ -73,8 +73,8 @@ export default class Erc20HandlerTest {
     });
   }
 
-  @Test('test build erc20 aproval activity')
-  async testBuildErc20AprovalActivity() {
+  @Test('test build erc20 approval activity')
+  async testBuildErc20ApprovalActivity() {
     const evmEvent = {
       id: 881548,
       tx_id: 9381778,
@@ -96,7 +96,7 @@ export default class Erc20HandlerTest {
       data: fromBase64('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='),
       sender: 'evmos1u47fy86l8uaz4t0f533d4dctpjuhmm2dh3ezg0',
     };
-    const result = Erc20Handler.buildAprovalActivity(
+    const result = Erc20Handler.buildApprovalActivity(
       EvmEvent.fromJson(evmEvent)
     );
     const [from, to, amount] = decodeAbiParameters(
@@ -112,7 +112,7 @@ export default class Erc20HandlerTest {
     expect(result).toMatchObject({
       evm_event_id: evmEvent.id,
       sender: evmEvent.sender,
-      action: ERC20_ACTION.APROVAL,
+      action: ERC20_ACTION.APPROVAL,
       erc20_contract_address: evmEvent.address,
       amount: amount.toString(),
       from,

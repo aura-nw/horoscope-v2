@@ -3,7 +3,7 @@ import { Erc20Activity, EvmEvent } from '../../models';
 
 export const ERC20_ACTION = {
   TRANSFER: 'transfer',
-  APROVAL: 'aproval',
+  APPROVAL: 'approval',
 };
 export const ABI_TRANSFER_PARAMS = {
   FROM: {
@@ -39,46 +39,54 @@ export const ERC20_EVENT_TOPIC0 = {
 };
 export class Erc20Handler {
   static buildTransferActivity(e: EvmEvent) {
-    const [from, to, amount] = decodeAbiParameters(
-      [
-        ABI_TRANSFER_PARAMS.FROM,
-        ABI_TRANSFER_PARAMS.TO,
-        ABI_TRANSFER_PARAMS.VALUE,
-      ],
-      (e.topic1 + e.topic2.slice(2) + toHex(e.data).slice(2)) as `0x${string}`
-    ) as [string, string, bigint];
-    return Erc20Activity.fromJson({
-      evm_event_id: e.id,
-      sender: e.sender,
-      action: ERC20_ACTION.TRANSFER,
-      erc20_contract_address: e.address,
-      amount: amount.toString(),
-      from,
-      to,
-      height: e.block_height,
-      tx_hash: e.tx_hash,
-    });
+    try {
+      const [from, to, amount] = decodeAbiParameters(
+        [
+          ABI_TRANSFER_PARAMS.FROM,
+          ABI_TRANSFER_PARAMS.TO,
+          ABI_TRANSFER_PARAMS.VALUE,
+        ],
+        (e.topic1 + e.topic2.slice(2) + toHex(e.data).slice(2)) as `0x${string}`
+      ) as [string, string, bigint];
+      return Erc20Activity.fromJson({
+        evm_event_id: e.id,
+        sender: e.sender,
+        action: ERC20_ACTION.TRANSFER,
+        erc20_contract_address: e.address,
+        amount: amount.toString(),
+        from,
+        to,
+        height: e.block_height,
+        tx_hash: e.tx_hash,
+      });
+    } catch {
+      return undefined;
+    }
   }
 
-  static buildAprovalActivity(e: EvmEvent) {
-    const [from, to, amount] = decodeAbiParameters(
-      [
-        ABI_APPROVAL_PARAMS.OWNER,
-        ABI_APPROVAL_PARAMS.SPENDER,
-        ABI_APPROVAL_PARAMS.VALUE,
-      ],
-      (e.topic1 + e.topic2.slice(2) + toHex(e.data).slice(2)) as `0x${string}`
-    ) as [string, string, bigint];
-    return Erc20Activity.fromJson({
-      evm_event_id: e.id,
-      sender: e.sender,
-      action: ERC20_ACTION.APROVAL,
-      erc20_contract_address: e.address,
-      amount: amount.toString(),
-      from,
-      to,
-      height: e.block_height,
-      tx_hash: e.tx_hash,
-    });
+  static buildApprovalActivity(e: EvmEvent) {
+    try {
+      const [from, to, amount] = decodeAbiParameters(
+        [
+          ABI_APPROVAL_PARAMS.OWNER,
+          ABI_APPROVAL_PARAMS.SPENDER,
+          ABI_APPROVAL_PARAMS.VALUE,
+        ],
+        (e.topic1 + e.topic2.slice(2) + toHex(e.data).slice(2)) as `0x${string}`
+      ) as [string, string, bigint];
+      return Erc20Activity.fromJson({
+        evm_event_id: e.id,
+        sender: e.sender,
+        action: ERC20_ACTION.APPROVAL,
+        erc20_contract_address: e.address,
+        amount: amount.toString(),
+        from,
+        to,
+        height: e.block_height,
+        tx_hash: e.tx_hash,
+      });
+    } catch {
+      return undefined;
+    }
   }
 }
