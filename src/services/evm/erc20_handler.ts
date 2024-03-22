@@ -1,6 +1,10 @@
 import { decodeAbiParameters, keccak256, toHex } from 'viem';
 import { Erc20Activity, EvmEvent } from '../../models';
 
+export const ERC20_ACTION = {
+  TRANSFER: 'transfer',
+  APROVAL: 'aproval',
+};
 export const ABI_TRANSFER_PARAMS = {
   FROM: {
     name: 'from',
@@ -35,26 +39,20 @@ export const ERC20_EVENT_TOPIC0 = {
 };
 export class Erc20Handler {
   static buildTransferActivity(e: EvmEvent) {
-    const from = decodeAbiParameters(
-      [ABI_TRANSFER_PARAMS.FROM],
-      e.topic1 as `0x${string}`
-    )[0];
-    const to = decodeAbiParameters(
-      [ABI_TRANSFER_PARAMS.TO],
-      e.topic2 as `0x${string}`
-    )[0];
-    const amount = (
-      decodeAbiParameters(
-        [ABI_TRANSFER_PARAMS.VALUE],
-        toHex(e.data) as `0x${string}`
-      )[0] as bigint
-    ).toString();
+    const [from, to, amount] = decodeAbiParameters(
+      [
+        ABI_TRANSFER_PARAMS.FROM,
+        ABI_TRANSFER_PARAMS.TO,
+        ABI_TRANSFER_PARAMS.VALUE,
+      ],
+      (e.topic1 + e.topic2.slice(2) + toHex(e.data).slice(2)) as `0x${string}`
+    ) as [string, string, bigint];
     return Erc20Activity.fromJson({
       evm_event_id: e.id,
       sender: e.sender,
-      action: 'transfer',
+      action: ERC20_ACTION.TRANSFER,
       erc20_contract_address: e.address,
-      amount,
+      amount: amount.toString(),
       from,
       to,
       height: e.block_height,
@@ -63,28 +61,22 @@ export class Erc20Handler {
   }
 
   static buildAprovalActivity(e: EvmEvent) {
-    const owner = decodeAbiParameters(
-      [ABI_APPROVAL_PARAMS.OWNER],
-      e.topic1 as `0x${string}`
-    )[0];
-    const spender = decodeAbiParameters(
-      [ABI_TRANSFER_PARAMS.TO],
-      e.topic2 as `0x${string}`
-    )[0];
-    const amount = (
-      decodeAbiParameters(
-        [ABI_TRANSFER_PARAMS.VALUE],
-        toHex(e.data) as `0x${string}`
-      )[0] as bigint
-    ).toString();
+    const [from, to, amount] = decodeAbiParameters(
+      [
+        ABI_APPROVAL_PARAMS.OWNER,
+        ABI_APPROVAL_PARAMS.SPENDER,
+        ABI_APPROVAL_PARAMS.VALUE,
+      ],
+      (e.topic1 + e.topic2.slice(2) + toHex(e.data).slice(2)) as `0x${string}`
+    ) as [string, string, bigint];
     return Erc20Activity.fromJson({
       evm_event_id: e.id,
       sender: e.sender,
-      action: 'aproval',
+      action: ERC20_ACTION.APROVAL,
       erc20_contract_address: e.address,
-      amount,
-      from: owner,
-      to: spender,
+      amount: amount.toString(),
+      from,
+      to,
       height: e.block_height,
       tx_hash: e.tx_hash,
     });

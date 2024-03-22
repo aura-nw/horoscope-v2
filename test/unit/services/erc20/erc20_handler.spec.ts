@@ -6,6 +6,7 @@ import { EvmEvent } from '../../../../src/models';
 import {
   ABI_APPROVAL_PARAMS,
   ABI_TRANSFER_PARAMS,
+  ERC20_ACTION,
   Erc20Handler,
 } from '../../../../src/services/evm/erc20_handler';
 
@@ -46,28 +47,27 @@ export default class Erc20HandlerTest {
       data: fromBase64('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADVdLhb6wpEI='),
       sender: 'evmos1fwgemqt4mw39m0mn8e7ulyjpafl9r9pmzyv3hv',
     };
+    const [from, to, amount] = decodeAbiParameters(
+      [
+        ABI_TRANSFER_PARAMS.FROM,
+        ABI_TRANSFER_PARAMS.TO,
+        ABI_TRANSFER_PARAMS.VALUE,
+      ],
+      (evmEvent.topic1 +
+        evmEvent.topic2.slice(2) +
+        toHex(evmEvent.data).slice(2)) as `0x${string}`
+    ) as [string, string, bigint];
     const result = Erc20Handler.buildTransferActivity(
       EvmEvent.fromJson(evmEvent)
     );
     expect(result).toMatchObject({
       evm_event_id: evmEvent.id,
       sender: evmEvent.sender,
-      action: 'transfer',
+      action: ERC20_ACTION.TRANSFER,
       erc20_contract_address: evmEvent.address,
-      amount: (
-        decodeAbiParameters(
-          [ABI_TRANSFER_PARAMS.VALUE],
-          toHex(evmEvent.data) as `0x${string}`
-        )[0] as bigint
-      ).toString(),
-      from: decodeAbiParameters(
-        [ABI_TRANSFER_PARAMS.FROM],
-        evmEvent.topic1 as `0x${string}`
-      )[0],
-      to: decodeAbiParameters(
-        [ABI_TRANSFER_PARAMS.TO],
-        evmEvent.topic2 as `0x${string}`
-      )[0],
+      amount: amount.toString(),
+      from,
+      to,
       height: evmEvent.block_height,
       tx_hash: evmEvent.tx_hash,
     });
@@ -99,25 +99,24 @@ export default class Erc20HandlerTest {
     const result = Erc20Handler.buildAprovalActivity(
       EvmEvent.fromJson(evmEvent)
     );
+    const [from, to, amount] = decodeAbiParameters(
+      [
+        ABI_APPROVAL_PARAMS.OWNER,
+        ABI_APPROVAL_PARAMS.SPENDER,
+        ABI_APPROVAL_PARAMS.VALUE,
+      ],
+      (evmEvent.topic1 +
+        evmEvent.topic2.slice(2) +
+        toHex(evmEvent.data).slice(2)) as `0x${string}`
+    ) as [string, string, bigint];
     expect(result).toMatchObject({
       evm_event_id: evmEvent.id,
       sender: evmEvent.sender,
-      action: 'aproval',
+      action: ERC20_ACTION.APROVAL,
       erc20_contract_address: evmEvent.address,
-      amount: (
-        decodeAbiParameters(
-          [ABI_APPROVAL_PARAMS.VALUE],
-          toHex(evmEvent.data) as `0x${string}`
-        )[0] as bigint
-      ).toString(),
-      from: decodeAbiParameters(
-        [ABI_APPROVAL_PARAMS.OWNER],
-        evmEvent.topic1 as `0x${string}`
-      )[0],
-      to: decodeAbiParameters(
-        [ABI_APPROVAL_PARAMS.SPENDER],
-        evmEvent.topic2 as `0x${string}`
-      )[0],
+      amount: amount.toString(),
+      from,
+      to,
       height: evmEvent.block_height,
       tx_hash: evmEvent.tx_hash,
     });
