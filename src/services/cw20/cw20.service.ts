@@ -207,6 +207,7 @@ export default class Cw20Service extends BullableService {
           ),
           height: event.height,
           tx_hash: event.hash,
+          tx_id: event.tx_id,
         })
       );
     if (newHistories.length > 0) {
