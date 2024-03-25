@@ -18,5 +18,5 @@ select_permissions:
         - media_info
         - created_at
       filter: {}
-      limit: 100
+      limit: 2000
       allow_aggregations: true
