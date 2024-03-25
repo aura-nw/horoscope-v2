@@ -1,0 +1,32 @@
+table:
+  name: erc20_activity
+  schema: public
+object_relationships:
+  - name: erc20_contract
+    using:
+      foreign_key_constraint_on: erc20_contract_address
+  - name: evm_transaction
+    using:
+      manual_configuration:
+        column_mapping:
+          tx_hash: hash
+        insertion_order: null
+        remote_table:
+          name: evm_transaction
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - action
+        - erc20_contract_address
+        - from
+        - sender
+        - to
+        - tx_hash
+        - evm_event_id
+        - height
+        - id
+        - amount
+      filter: {}
+      limit: 100
