@@ -298,5 +298,9 @@
     "key": "jobUpdateTxCountInBlock",
     "millisecondCrawl": 1000,
     "blocksPerCall": 100
+  },
+  "jobUpdateAssets": {
+    "millisecondRepeatJob": 10000,
+    "lcdRecordGet": 5
   }
 }
