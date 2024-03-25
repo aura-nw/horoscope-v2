@@ -110,5 +110,6 @@ export class Event extends BaseModel {
     CHANNEL_CLOSE_INIT: 'channel_close_init',
     CHANNEL_CLOSE_CONFIRM: 'channel_close_confirm',
     CHANNEL_CLOSE: 'channel_close',
+    BLOCK_BLOOM: 'block_bloom',
   };
 }

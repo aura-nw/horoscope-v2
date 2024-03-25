@@ -534,7 +534,7 @@ export default class CrawlTxService extends BullableService {
 
     tx?.tx_response?.logs?.forEach((log: any, index: number) => {
       log.events.forEach((event: any) => {
-        event.attributes.forEach((attr: any) => {
+        event.attributes?.forEach((attr: any) => {
           if (attr.value === undefined) {
             flattenLog.push(`${index}-${event.type}-${attr.key}-null`);
           } else {
@@ -569,7 +569,10 @@ export default class CrawlTxService extends BullableService {
       (item: string, index: number) => item === flattenEventEncoded[index]
     );
     if (checkResult === false) {
-      this.logger.warn('Mapping event to log is wrong');
+      this.logger.warn(
+        'Mapping event to log is wrong: ',
+        tx.tx_response.txhash
+      );
     }
   }
 
@@ -583,7 +586,8 @@ export default class CrawlTxService extends BullableService {
     const countAttributeInEvent: number[] = tx?.tx_response?.logs?.map(
       (log: any) =>
         log.events.reduce(
-          (acc: number, curr: any) => acc + curr.attributes.length,
+          (acc: number, curr: any) =>
+            acc + (curr.attributes ? curr.attributes.length : 0),
           0
         )
     );
