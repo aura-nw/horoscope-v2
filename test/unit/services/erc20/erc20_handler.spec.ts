@@ -66,8 +66,8 @@ export default class Erc20HandlerTest {
       action: ERC20_ACTION.TRANSFER,
       erc20_contract_address: evmEvent.address,
       amount: amount.toString(),
-      from,
-      to,
+      from: from.toLowerCase(),
+      to: to.toLowerCase(),
       height: evmEvent.block_height,
       tx_hash: evmEvent.tx_hash,
     });
@@ -115,8 +115,8 @@ export default class Erc20HandlerTest {
       action: ERC20_ACTION.APPROVAL,
       erc20_contract_address: evmEvent.address,
       amount: amount.toString(),
-      from,
-      to,
+      from: from.toLowerCase(),
+      to: to.toLowerCase(),
       height: evmEvent.block_height,
       tx_hash: evmEvent.tx_hash,
     });
