@@ -11,7 +11,7 @@ export class EvmProxyHistory extends BaseModel {
 
   tx_hash!: number;
 
-  height_of_change!: number;
+  block_height!: number;
 
   last_updated_height!: number;
 

@@ -7,7 +7,7 @@ export async function up(knex: Knex): Promise<void> {
     table.string('implementation_contract').index();
     table.string('admin');
     table.string('tx_hash').index().notNullable();
-    table.integer('height_of_change');
+    table.integer('block_height');
     table.integer('last_updated_height');
     table.timestamp('created_at').defaultTo(knex.fn.now());
     table.timestamp('updated_at').defaultTo(knex.fn.now());
