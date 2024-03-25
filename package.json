@@ -54,6 +54,7 @@
     "@cosmjs/tendermint-rpc": "^0.30.0",
     "@cosmjs/utils": "^0.29.5",
     "@ethereum-sourcify/lib-sourcify": "^1.7.1",
+    "@evmos/address-converter": "^0.1.9",
     "@horoscope/evmos-proto": "0.0.8",
     "@horoscope/sei-js-proto": "3.1.9",
     "@osmonauts/lcd": "^0.10.0",
