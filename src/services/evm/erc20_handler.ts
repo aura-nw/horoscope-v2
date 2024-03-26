@@ -1,6 +1,9 @@
 import { decodeAbiParameters, keccak256, toHex } from 'viem';
+import { Dictionary } from 'lodash';
 import { Erc20Activity, EvmEvent } from '../../models';
+import { AccountBalance } from '../../models/account_balance';
 
+export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 export const ERC20_ACTION = {
   TRANSFER: 'transfer',
   APPROVAL: 'approval',
@@ -38,6 +41,28 @@ export const ERC20_EVENT_TOPIC0 = {
   APPROVAL: keccak256(toHex('Approval(address,address,uint256)')),
 };
 export class Erc20Handler {
+  // key: {accountId}_{erc20ContractAddress}
+  // value: accountBalance with account_id -> accountId, denom -> erc20ContractAddress
+  holdersKeyBy: Dictionary<AccountBalance>;
+
+  erc20Activities: Erc20Activity[];
+
+  constructor(
+    holdersKeyBy: Dictionary<AccountBalance>,
+    erc20Activities: Erc20Activity[]
+  ) {
+    this.holdersKeyBy = holdersKeyBy;
+    this.erc20Activities = erc20Activities;
+  }
+
+  process() {
+    this.erc20Activities.forEach((erc20Activity) => {
+      if (erc20Activity.action === ERC20_ACTION.TRANSFER) {
+        console.log('abc');
+      }
+    });
+  }
+
   static buildTransferActivity(e: EvmEvent) {
     try {
       const [from, to, amount] = decodeAbiParameters(
