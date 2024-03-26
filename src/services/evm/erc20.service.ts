@@ -126,23 +126,20 @@ export default class Erc20Service extends BullableService {
         .transacting(trx),
       (e) => e.address
     );
-    const missingErc20ContractsAddress: string[] = [];
-    addresses.forEach((e) => {
-      if (!erc20ContractsByAddress[e]) {
-        missingErc20ContractsAddress.push(e);
-      }
-    });
+    const missingErc20ContractsAddress: string[] = addresses.filter(
+      (addr) => !erc20ContractsByAddress[addr]
+    );
     if (missingErc20ContractsAddress.length > 0) {
       const erc20ContractsInfo = await this.getBatchErc20Info(
         missingErc20ContractsAddress as `0x${string}`[]
       );
       await Erc20Contract.query()
         .insert(
-          missingErc20ContractsAddress.map((e, index) =>
+          missingErc20ContractsAddress.map((addr, index) =>
             Erc20Contract.fromJson({
               evm_smart_contract_id:
-                eventsUniqByAddress[e].evm_smart_contract_id,
-              address: e,
+                eventsUniqByAddress[addr].evm_smart_contract_id,
+              address: addr,
               total_supply: erc20ContractsInfo[index].totalSupply,
               symbol: erc20ContractsInfo[index].symbol,
               decimal: erc20ContractsInfo[index].decimals,
