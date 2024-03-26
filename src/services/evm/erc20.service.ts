@@ -1,6 +1,8 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import { PublicClient, getContract } from 'viem';
+import { Knex } from 'knex';
+import _ from 'lodash';
 import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -77,7 +79,12 @@ export default class Erc20Service extends BullableService {
         .andWhere('evm_event.block_height', '<=', endBlock)
         .andWhere('evm_smart_contract.type', EVMSmartContract.TYPES.ERC20)
         .orderBy('evm_event.id', 'asc')
-        .select('evm_event.*', 'evm_transaction.from as sender');
+        .select(
+          'evm_event.*',
+          'evm_transaction.from as sender',
+          'evm_smart_contract.id as evm_smart_contract_id'
+        );
+      await this.handleMissingErc20Contract(erc20Events, trx);
       const erc20Activities: Erc20Activity[] = [];
       erc20Events.forEach((e) => {
         if (e.topic0 === ERC20_EVENT_TOPIC0.TRANSFER) {
@@ -108,6 +115,42 @@ export default class Erc20Service extends BullableService {
         .merge()
         .transacting(trx);
     });
+  }
+
+  async handleMissingErc20Contract(events: EvmEvent[], trx: Knex.Transaction) {
+    const eventsUniqByAddress = _.keyBy(events, (e) => e.address);
+    const addresses = Object.keys(eventsUniqByAddress);
+    const erc20ContractsByAddress = _.keyBy(
+      await Erc20Contract.query()
+        .whereIn('address', addresses)
+        .transacting(trx),
+      (e) => e.address
+    );
+    const missingErc20ContractsAddress: string[] = addresses.filter(
+      (addr) => !erc20ContractsByAddress[addr]
+    );
+    if (missingErc20ContractsAddress.length > 0) {
+      const erc20ContractsInfo = await this.getBatchErc20Info(
+        missingErc20ContractsAddress as `0x${string}`[]
+      );
+      await Erc20Contract.query()
+        .insert(
+          missingErc20ContractsAddress.map((addr, index) =>
+            Erc20Contract.fromJson({
+              evm_smart_contract_id:
+                eventsUniqByAddress[addr].evm_smart_contract_id,
+              address: addr,
+              total_supply: erc20ContractsInfo[index].totalSupply,
+              symbol: erc20ContractsInfo[index].symbol,
+              decimal: erc20ContractsInfo[index].decimals,
+              name: erc20ContractsInfo[index].name,
+              track: true,
+              last_updated_height: -1,
+            })
+          )
+        )
+        .transacting(trx);
+    }
   }
 
   async getErc20Instances(evmSmartContracts: EVMSmartContract[]) {
