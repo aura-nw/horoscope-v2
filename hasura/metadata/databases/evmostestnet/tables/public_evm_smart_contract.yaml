@@ -21,6 +21,15 @@ array_relationships:
         remote_table:
           name: evm_contract_verification
           schema: public
+  - name: evm_proxy_histories
+    using:
+      manual_configuration:
+        column_mapping:
+          address: proxy_contract
+        insertion_order: null
+        remote_table:
+          name: evm_proxy_history
+          schema: public
 select_permissions:
   - role: internal_service
     permission:
