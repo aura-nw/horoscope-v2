@@ -131,11 +131,13 @@ export default class CrawlSmartContractEVMService extends BullableService {
               const type = this.detectContractTypeByCode(code);
               const codeHash = keccak256(code);
               if (evmTx.data) {
-                const { data } = evmTx;
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                const { data, contract_address } = evmTx;
                 if (
                   data.startsWith(
                     EVM_CONTRACT_METHOD_HEX_PREFIX.CREATE_CONTRACT
-                  )
+                  ) ||
+                  contract_address
                 ) {
                   creator = evmTx.from;
                   createdHeight = evmTx.height;
