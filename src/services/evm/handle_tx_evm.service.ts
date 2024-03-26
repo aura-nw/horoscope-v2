@@ -69,7 +69,7 @@ export default class HandleTransactionEVMService extends BullableService {
           sender = convertBech32AddressToEthAddress(
             config.networkPrefixAddress,
             sender
-          );
+          ).toLowerCase();
         }
         evmTxs.push(
           EVMTransaction.fromJson({
