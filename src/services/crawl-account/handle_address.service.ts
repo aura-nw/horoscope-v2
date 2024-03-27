@@ -11,7 +11,7 @@ import Utils from '../../common/utils/utils';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, IAddressesParam, SERVICE } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
-import { convertBech32AddressToEthAddress } from '../../common/utils/address_converter';
+import { convertBech32AddressToEthAddress } from '../evm/utils';
 
 @Service({
   name: SERVICE.V1.HandleAddressService.key,

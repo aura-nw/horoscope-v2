@@ -1,5 +1,5 @@
 import { Knex } from 'knex';
-import { convertBech32AddressToEthAddress } from '../src/common/utils/address_converter';
+import { convertBech32AddressToEthAddress } from '../src/services/evm/utils';
 import config from '../config.json' assert { type: 'json' };
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.alterTable('account', (table) => {
