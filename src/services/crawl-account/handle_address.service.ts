@@ -11,6 +11,7 @@ import Utils from '../../common/utils/utils';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, IAddressesParam, SERVICE } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
+import { convertBech32AddressToEthAddress } from '../evm/utils';
 
 @Service({
   name: SERVICE.V1.HandleAddressService.key,
@@ -113,6 +114,10 @@ export default class HandleAddressService extends BullableService {
       if (!existedAccounts.includes(address)) {
         const account: Account = Account.fromJson({
           address,
+          evm_address: convertBech32AddressToEthAddress(
+            config.networkPrefixAddress,
+            address
+          ).toLowerCase(),
           balances: [],
           spendable_balances: [],
           type: null,
