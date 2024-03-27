@@ -18,6 +18,8 @@ export class AccountBalance extends BaseModel {
 
   last_updated_height!: number;
 
+  address!: string;
+
   static get tableName() {
     return 'account_balance';
   }
