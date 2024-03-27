@@ -110,6 +110,38 @@ export default class Erc20Service extends BullableService {
     });
   }
 
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.HANDLE_ERC20_BALANCE,
+    jobName: BULL_JOB_NAME.HANDLE_ERC20_BALANCE,
+  })
+  async handleErc20Balance(): Promise<void> {
+    // const [startBlock, endBlock, updateBlockCheckpoint] =
+    //   await BlockCheckpoint.getCheckpoint(
+    //     BULL_JOB_NAME.HANDLE_ERC20_BALANCE,
+    //     [BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY],
+    //     config.erc20.key
+    //   );
+    const erc20Activities = await Erc20Activity.query()
+      .leftJoin(
+        'account as from_account',
+        'erc20_activity.from',
+        'from_account.address'
+      )
+      .leftJoin(
+        'account as to_account',
+        'erc20_activity.to',
+        'to_account.address'
+      )
+      .where('erc20_activity.height', '>', 22009770)
+      .andWhere('erc20_activity.height', '<=', 22009802)
+      .select(
+        'erc20_activity.*',
+        'from_account.id as from_account_id',
+        'to_account.id as to_account_id'
+      );
+    console.log(erc20Activities);
+  }
+
   async getErc20Instances(evmSmartContracts: EVMSmartContract[]) {
     const addresses = evmSmartContracts.map((e) => e.address);
     const erc20ContractsInfo = await this.getBatchErc20Info(
@@ -184,6 +216,20 @@ export default class Erc20Service extends BullableService {
         repeat: {
           every: config.erc20.millisecondRepeatJob,
         },
+      }
+    );
+    await this.createJob(
+      BULL_JOB_NAME.HANDLE_ERC20_BALANCE,
+      BULL_JOB_NAME.HANDLE_ERC20_BALANCE,
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        // repeat: {
+        //   every: config.erc20.millisecondRepeatJob,
+        // },
       }
     );
     return super._start();
