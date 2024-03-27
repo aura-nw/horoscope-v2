@@ -117,7 +117,7 @@ export default class HandleAddressService extends BullableService {
           evm_address: convertBech32AddressToEthAddress(
             config.networkPrefixAddress,
             address
-          ).toLocaleLowerCase(),
+          ).toLowerCase(),
           balances: [],
           spendable_balances: [],
           type: null,
