@@ -22,6 +22,15 @@ object_relationships:
           name: transaction_message
           schema: public
 array_relationships:
+  - name: erc20_activities
+    using:
+      manual_configuration:
+        column_mapping:
+          hash: tx_hash
+        insertion_order: null
+        remote_table:
+          name: erc20_activity
+          schema: public
   - name: evm_events
     using:
       manual_configuration:
