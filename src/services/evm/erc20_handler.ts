@@ -79,8 +79,8 @@ export class Erc20Handler {
         action: ERC20_ACTION.TRANSFER,
         erc20_contract_address: e.address,
         amount: amount.toString(),
-        from,
-        to,
+        from: from.toLowerCase(),
+        to: to.toLowerCase(),
         height: e.block_height,
         tx_hash: e.tx_hash,
       });
@@ -105,8 +105,8 @@ export class Erc20Handler {
         action: ERC20_ACTION.APPROVAL,
         erc20_contract_address: e.address,
         amount: amount.toString(),
-        from,
-        to,
+        from: from.toLowerCase(),
+        to: to.toLowerCase(),
         height: e.block_height,
         tx_hash: e.tx_hash,
       });
