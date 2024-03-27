@@ -27,7 +27,6 @@ export async function up(knex: Knex): Promise<void> {
           ).toLowerCase()}')`
       )
       .join(',');
-    console.log(stringListUpdates);
     await knex.raw(
       `UPDATE account set evm_address = temp.evm_address from (VALUES ${stringListUpdates}) as temp(id, evm_address) where temp.id = account.id`
     );
