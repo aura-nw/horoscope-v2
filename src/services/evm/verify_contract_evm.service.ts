@@ -105,11 +105,21 @@ export default class VerifyContractEVM extends BullableService {
                 compileDetails.push(compileDetail);
                 throw Error('this contract is not verifiable');
               }
-              const matchResult = await verifyDeployed(
-                contract,
-                this._sourcifyChain,
-                requestVerify.contract_address
-              );
+              let matchResult;
+              try {
+                matchResult = await verifyDeployed(
+                  contract,
+                  this._sourcifyChain,
+                  requestVerify.contract_address
+                );
+              } catch (error) {
+                this.logger.warn(error);
+              } finally {
+                if (!matchResult) {
+                  // eslint-disable-next-line no-continue, no-unsafe-finally
+                  continue;
+                }
+              }
 
               let useEmscripten = false;
               // See https://github.com/ethereum/sourcify/issues/1159
@@ -142,6 +152,7 @@ export default class VerifyContractEVM extends BullableService {
                       code_hash: codeHash,
                       compile_detail: JSON.stringify(compileDetails),
                       compiler_version: contract.compilerVersion,
+                      contract_name: contract.name,
                       status:
                         EVMContractVerification.VERIFICATION_STATUS.SUCCESS,
                     })
