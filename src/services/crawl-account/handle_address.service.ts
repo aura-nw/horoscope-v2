@@ -24,13 +24,12 @@ export default class HandleAddressService extends BullableService {
   @Action({
     name: SERVICE.V1.HandleAddressService.CrawlNewAccountApi.key,
     params: {
-      listAddresses: 'string[]',
+      addresses: 'string[]',
+      trx: 'any',
     },
   })
   public async actionCrawlNewAccountApi(ctx: Context<IAddressesParam>) {
-    await knex.transaction(async (trx) =>
-      this.insertNewAccountAndUpdate(ctx.params.addresses, trx)
-    );
+    this.insertNewAccountAndUpdate(ctx.params.addresses, ctx.params.trx);
   }
 
   @QueueHandler({

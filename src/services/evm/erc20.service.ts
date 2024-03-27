@@ -3,6 +3,7 @@ import { ServiceBroker } from 'moleculer';
 import { PublicClient, getContract } from 'viem';
 import { Knex } from 'knex';
 import _ from 'lodash';
+import { AccountBalance } from 'src/models/account_balance';
 import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -13,6 +14,8 @@ import { BlockCheckpoint, EVMSmartContract, EvmEvent } from '../../models';
 import { Erc20Activity } from '../../models/erc20_activity';
 import { Erc20Contract } from '../../models/erc20_contract';
 import { ERC20_EVENT_TOPIC0, Erc20Handler } from './erc20_handler';
+import { ZERO_ADDRESS } from './constant';
+import { convertEthAddressToBech32Address } from './utils';
 
 @Service({
   name: SERVICE.V1.Erc20.key,
@@ -122,13 +125,89 @@ export default class Erc20Service extends BullableService {
     jobName: BULL_JOB_NAME.HANDLE_ERC20_BALANCE,
   })
   async handleErc20Balance(): Promise<void> {
-    // const [startBlock, endBlock, updateBlockCheckpoint] =
-    //   await BlockCheckpoint.getCheckpoint(
-    //     BULL_JOB_NAME.HANDLE_ERC20_BALANCE,
-    //     [BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY],
-    //     config.erc20.key
-    //   );
-    const erc20Activities = await Erc20Activity.query()
+    const [startBlock, endBlock, updateBlockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.HANDLE_ERC20_BALANCE,
+        [BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY],
+        config.erc20.key
+      );
+    await knex.transaction(async (trx) => {
+      // get Erc20 activities
+      let erc20Activities = await this.getErc20Activities(
+        startBlock,
+        endBlock,
+        trx
+      );
+      if (erc20Activities.length > 0) {
+        // get missing Account
+        const missingAccountsAddress = (
+          [
+            ...erc20Activities
+              .filter(
+                (e) => e.from && e.from !== ZERO_ADDRESS && !e.from_account_id
+              )
+              .map((e) => e.from),
+            ...erc20Activities
+              .filter((e) => e.to && e.to !== ZERO_ADDRESS && !e.to_account_id)
+              .map((e) => e.to),
+          ] as string[]
+        ).map((e) => convertEthAddressToBech32Address('evmos', e));
+        if (missingAccountsAddress.length > 0) {
+          // crawl missing Account and requery erc20Activities
+          await this.broker.call(
+            SERVICE.V1.HandleAddressService.CrawlNewAccountApi.path,
+            {
+              missingAccountsAddress,
+              trx,
+            }
+          );
+          erc20Activities = await this.getErc20Activities(
+            startBlock,
+            endBlock,
+            trx
+          );
+        }
+        const accountBalancesKeyBy = _.keyBy(
+          await AccountBalance.query()
+            .transacting(trx)
+            .joinRelated('account')
+            .whereIn(
+              'account.address',
+              erc20Activities.map((e) => e.erc20_contract_address)
+            ),
+          (o) => `${o.id}_${o.denom}`
+        );
+        // construct cw721 handler object
+        const erc20Handler = new Erc20Handler(
+          accountBalancesKeyBy,
+          erc20Activities
+        );
+        erc20Handler.process();
+        const updatedAccountBalances = Object.values(
+          erc20Handler.accountBalancesKeyBy
+        );
+        await AccountBalance.query()
+          .transacting(trx)
+          .insert(updatedAccountBalances)
+          .onConflict(['account_id', 'denom'])
+          .merge();
+      }
+      updateBlockCheckpoint.height = endBlock;
+      await BlockCheckpoint.query()
+        .insert(updateBlockCheckpoint)
+        .onConflict('job_name')
+        .merge()
+        .transacting(trx);
+    });
+  }
+
+  async getErc20Activities(
+    startBlock: number,
+    endBlock: number,
+    trx: Knex.Transaction
+  ) {
+    return Erc20Activity.query()
+      .transacting(trx)
       .leftJoin(
         'account as from_account',
         'erc20_activity.from',
@@ -139,14 +218,13 @@ export default class Erc20Service extends BullableService {
         'erc20_activity.to',
         'to_account.address'
       )
-      .where('erc20_activity.height', '>', 22009770)
-      .andWhere('erc20_activity.height', '<=', 22009802)
+      .where('erc20_activity.height', '>', startBlock)
+      .andWhere('erc20_activity.height', '<=', endBlock)
       .select(
         'erc20_activity.*',
         'from_account.id as from_account_id',
         'to_account.id as to_account_id'
       );
-    console.log(erc20Activities);
   }
 
   async handleMissingErc20Contract(events: EvmEvent[], trx: Knex.Transaction) {
@@ -270,9 +348,9 @@ export default class Erc20Service extends BullableService {
         removeOnFail: {
           count: 3,
         },
-        // repeat: {
-        //   every: config.erc20.millisecondRepeatJob,
-        // },
+        repeat: {
+          every: config.erc20.millisecondRepeatJob,
+        },
       }
     );
     return super._start();
