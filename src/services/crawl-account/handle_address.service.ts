@@ -10,6 +10,7 @@ import { BULL_JOB_NAME, SERVICE } from '../../common';
 import knex from '../../common/utils/db_connection';
 import Utils from '../../common/utils/utils';
 import { Account, BlockCheckpoint } from '../../models';
+import { convertBech32AddressToEthAddress } from '../evm/utils';
 
 @Service({
   name: SERVICE.V1.HandleAddressService.key,
@@ -116,6 +117,10 @@ export default class HandleAddressService extends BullableService {
       if (!existedAccounts.includes(address)) {
         const account: Account = Account.fromJson({
           address,
+          evm_address: convertBech32AddressToEthAddress(
+            config.networkPrefixAddress,
+            address
+          ).toLowerCase(),
           balances: [],
           spendable_balances: [],
           type: null,
