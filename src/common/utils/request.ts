@@ -1,8 +1,5 @@
-import { Knex } from 'knex';
-
 export interface IAddressesParam {
   addresses: string[];
-  trx: Knex.Transaction;
 }
 
 export interface IProposalIdParam {
