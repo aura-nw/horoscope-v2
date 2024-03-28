@@ -13,6 +13,7 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
 import EtherJsClient from '../../common/utils/etherjs_client';
+import { convertBech32AddressToEthAddress } from './utils';
 
 @Service({
   name: SERVICE.V1.HandleTransactionEVM.key,
@@ -61,6 +62,15 @@ export default class HandleTransactionEVMService extends BullableService {
     if (txMsgs.length > 0) {
       txMsgs.forEach((txMsg) => {
         const { content } = txMsg;
+        let { sender } = txMsg;
+        if (content?.from) {
+          sender = content.from.toLowerCase();
+        } else {
+          sender = convertBech32AddressToEthAddress(
+            config.networkPrefixAddress,
+            sender
+          ).toLowerCase();
+        }
         evmTxs.push(
           EVMTransaction.fromJson({
             height: txMsg.height,
@@ -68,7 +78,7 @@ export default class HandleTransactionEVMService extends BullableService {
             tx_msg_id: txMsg.tx_msg_id,
             hash: content.hash,
             size: content.size,
-            from: content.from ? content.from.toLowerCase() : txMsg.sender,
+            from: sender,
             to: content.data?.to ? content.data.to.toLowerCase() : null,
             gas: Utils.getBigIntIfNotNull(content.data?.gas),
             gas_fee_cap: Utils.getBigIntIfNotNull(content.data?.gas_fee_cap),
