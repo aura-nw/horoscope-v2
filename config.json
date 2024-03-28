@@ -359,6 +359,12 @@
     "millisecondCrawl": 1000,
     "chunkSize": 1000
   },
+  "evmCrawlInternalTx": {
+    "key": "evmCrawlInternalTx",
+    "blocksPerCall": 100,
+    "millisecondCrawl": 3000,
+    "chunkSize": 1000
+  },
   "createEVMTransactionPartition": {
     "endId": 200000000,
     "step": 100000000,
