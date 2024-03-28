@@ -88,7 +88,13 @@ export default class EvmCrawlInternalTxService extends BullableService {
 
     await knex.transaction(async (trx) => {
       blockCheckpoint.height = endBlock;
-      await EvmInternalTransaction.query().insert(internalTxSave);
+      await trx
+        .batchInsert(
+          EvmInternalTransaction.tableName,
+          internalTxSave,
+          config.evmCrawlInternalTx.chunkSize
+        )
+        .transacting(trx);
       await BlockCheckpoint.query()
         .transacting(trx)
         .insert(blockCheckpoint)
