@@ -97,6 +97,7 @@ export default class VerifyContractEVM extends BullableService {
               }
               await this.checkAndFetchMissing(contract);
               compileDetail = {
+                name: contract.name,
                 missing: contract.missing,
                 invalid: contract.invalid,
               };
@@ -112,10 +113,12 @@ export default class VerifyContractEVM extends BullableService {
                   this._sourcifyChain,
                   requestVerify.contract_address
                 );
-              } catch (error) {
+              } catch (error: any) {
+                compileDetail.error = error.message;
                 this.logger.warn(error);
               } finally {
                 if (!matchResult) {
+                  compileDetails.push(compileDetail);
                   // eslint-disable-next-line no-continue, no-unsafe-finally
                   continue;
                 }
@@ -176,6 +179,8 @@ export default class VerifyContractEVM extends BullableService {
           compileDetails.push({
             error: error.message,
           });
+        }
+        if (listPromise.length === 0) {
           listPromise.push(
             EVMContractVerification.query()
               .patch({
