@@ -138,6 +138,7 @@ export const BULL_JOB_NAME = {
   VERIFY_CONTRACT_EVM: 'verify:contract-evm',
   HANDLE_ERC20_CONTRACT: 'handle:erc20-contract',
   HANDLE_ERC20_ACTIVITY: 'handle:erc20-activity',
+  HANDLE_EVM_PROXY_HISTORY: 'handle:evm-proxy-history',
 };
 
 export const SERVICE = {
@@ -482,6 +483,10 @@ export const SERVICE = {
         key: 'createJobMapping',
         path: 'v1.SignatureMappingEVM.createJobMapping',
       },
+    },
+    CrawlEvmProxyHistory: {
+      key: 'CrawlEvmProxyHistory',
+      path: 'v1.CrawlEvmProxyHistory',
     },
   },
 };

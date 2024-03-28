@@ -47,6 +47,9 @@ export class EVMSmartContract extends BaseModel {
       ERC20: 'ERC20',
       ERC721: 'ERC721',
       ERC1155: 'ERC1155',
+      PROXY_EIP_1967: 'PROXY_EIP_1967',
+      PROXY_EIP_1822: 'PROXY_EIP_1822',
+      PROXY_OPEN_ZEPPELIN_IMPLEMENTATION: 'PROXY_OPEN_ZEPPELIN_IMPLEMENTATION',
     };
   }
 }

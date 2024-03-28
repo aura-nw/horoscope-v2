@@ -396,5 +396,10 @@
     "blocksPerCall": 100,
     "millisecondRepeatJob": 2000,
     "chunkSizeInsert": 1000
+  },
+  "crawlEvmProxyHistory": {
+    "key": "crawlEvmProxyHistory",
+    "blocksPerCall": 100,
+    "millisecondCrawl": 2000
   }
 }
