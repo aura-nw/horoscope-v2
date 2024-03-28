@@ -51,6 +51,7 @@ export default class HandleTransactionEVMService extends BullableService {
         'transaction_message.id as tx_msg_id',
         'transaction.id as tx_id',
         'transaction.height',
+        'transaction.index as tx_index',
         'transaction_message.sender',
         'transaction_message.content'
       )
@@ -88,6 +89,7 @@ export default class HandleTransactionEVMService extends BullableService {
               : null,
             nonce: Utils.getBigIntIfNotNull(content.data?.nonce),
             value: Utils.getBigIntIfNotNull(content.data?.value),
+            index: txMsg.tx_index,
           })
         );
       });
