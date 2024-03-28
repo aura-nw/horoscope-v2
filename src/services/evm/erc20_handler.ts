@@ -58,6 +58,7 @@ export class Erc20Handler {
         to: to.toLowerCase(),
         height: e.block_height,
         tx_hash: e.tx_hash,
+        evm_tx_id: e.evm_tx_id,
       });
     } catch {
       return undefined;
@@ -84,6 +85,7 @@ export class Erc20Handler {
         to: to.toLowerCase(),
         height: e.block_height,
         tx_hash: e.tx_hash,
+        evm_tx_id: e.evm_tx_id,
       });
     } catch {
       return undefined;

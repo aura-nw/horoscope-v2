@@ -29,6 +29,8 @@ export class Erc20Activity extends BaseModel {
 
   tx_hash!: string;
 
+  evm_tx_id!: number;
+
   static get tableName() {
     return 'erc20_activity';
   }
