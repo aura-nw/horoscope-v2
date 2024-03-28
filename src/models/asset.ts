@@ -32,6 +32,7 @@ export class Asset extends BaseModel {
     NATIVE: 'NATIVE',
     IBC_TOKEN: 'IBC_TOKEN',
     FACTORY_TOKEN: 'FACTORY_TOKEN',
+    ERC20_TOKEN: 'ERC20_TOKEN',
   };
 
   static PREFIX = {
