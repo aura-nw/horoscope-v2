@@ -46,6 +46,7 @@ export default class Erc20HandlerTest {
         '0x6daa455dda31eb9e09000087bee9540bee9622842d5a423baf82da5b7b534a38',
       data: fromBase64('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADVdLhb6wpEI='),
       sender: 'evmos1fwgemqt4mw39m0mn8e7ulyjpafl9r9pmzyv3hv',
+      evm_transaction_id: 10,
     };
     const [from, to, amount] = decodeAbiParameters(
       [
@@ -70,6 +71,7 @@ export default class Erc20HandlerTest {
       to: to.toLowerCase(),
       height: evmEvent.block_height,
       tx_hash: evmEvent.tx_hash,
+      evm_transaction_id: evmEvent.evm_transaction_id,
     });
   }
 
@@ -95,6 +97,7 @@ export default class Erc20HandlerTest {
         '0x692c859d6254ef6c27fc7accf1131d55351c62a1357fe261d8517e3144cfbebe',
       data: fromBase64('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='),
       sender: 'evmos1u47fy86l8uaz4t0f533d4dctpjuhmm2dh3ezg0',
+      evm_transaction_id: 5,
     };
     const result = Erc20Handler.buildApprovalActivity(
       EvmEvent.fromJson(evmEvent)
@@ -119,6 +122,7 @@ export default class Erc20HandlerTest {
       to: to.toLowerCase(),
       height: evmEvent.block_height,
       tx_hash: evmEvent.tx_hash,
+      evm_transaction_id: evmEvent.evm_transaction_id,
     });
   }
 }
