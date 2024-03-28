@@ -297,6 +297,7 @@ export default class CrawlAccountService extends BullableService {
       );
       // Create account_balance
       const listAccountBalance: {
+        address: string;
         account_id?: number;
         denom: string;
         amount: string;
@@ -316,6 +317,7 @@ export default class CrawlAccountService extends BullableService {
           if (Array.isArray(account.balances) && accountId)
             account.balances.forEach((balance) => {
               listAccountBalance.push({
+                address: account.address,
                 account_id: accountId,
                 denom: balance.denom,
                 amount: balance.amount,
