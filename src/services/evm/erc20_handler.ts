@@ -1,5 +1,7 @@
 import { decodeAbiParameters, keccak256, toHex } from 'viem';
+import { Dictionary } from 'lodash';
 import { Erc20Activity, EvmEvent } from '../../models';
+import { AccountBalance } from '../../models/account_balance';
 
 export const ERC20_ACTION = {
   TRANSFER: 'transfer',
@@ -38,6 +40,81 @@ export const ERC20_EVENT_TOPIC0 = {
   APPROVAL: keccak256(toHex('Approval(address,address,uint256)')),
 };
 export class Erc20Handler {
+  // key: {accountId}_{erc20ContractAddress}
+  // value: accountBalance with account_id -> accountId, denom -> erc20ContractAddress
+  accountBalancesKeyBy: Dictionary<AccountBalance>;
+
+  erc20Activities: Erc20Activity[];
+
+  constructor(
+    accountBalancesKeyBy: Dictionary<AccountBalance>,
+    erc20Activities: Erc20Activity[]
+  ) {
+    this.accountBalancesKeyBy = accountBalancesKeyBy;
+    this.erc20Activities = erc20Activities;
+  }
+
+  process() {
+    this.erc20Activities.forEach((erc20Activity) => {
+      if (erc20Activity.action === ERC20_ACTION.TRANSFER) {
+        this.handlerErc20Transfer(erc20Activity);
+      }
+    });
+  }
+
+  handlerErc20Transfer(erc20Activity: Erc20Activity) {
+    const [fromAccountId, toAccountId] = [
+      erc20Activity.from_account_id,
+      erc20Activity.to_account_id,
+    ];
+    // if from != ZERO_ADDRESS
+    if (fromAccountId) {
+      if (erc20Activity.amount) {
+        const accountBalance =
+          this.accountBalancesKeyBy[
+            `${fromAccountId}_${erc20Activity.erc20_contract_address}`
+          ];
+        this.accountBalancesKeyBy[
+          `${fromAccountId}_${erc20Activity.erc20_contract_address}`
+        ] = AccountBalance.fromJson({
+          denom: erc20Activity.erc20_contract_address,
+          amount: (
+            BigInt(accountBalance?.amount || 0) - BigInt(erc20Activity.amount)
+          ).toString(),
+          last_updated_height: erc20Activity.height,
+          account_id: fromAccountId,
+        });
+      } else {
+        throw new Error(
+          `handle erc20 activity ${erc20Activity.id} not found amount`
+        );
+      }
+    }
+    // if to != ZERO_ADDRESS
+    if (toAccountId) {
+      if (erc20Activity.amount) {
+        const accountBalance =
+          this.accountBalancesKeyBy[
+            `${toAccountId}_${erc20Activity.erc20_contract_address}`
+          ];
+        this.accountBalancesKeyBy[
+          `${toAccountId}_${erc20Activity.erc20_contract_address}`
+        ] = AccountBalance.fromJson({
+          denom: erc20Activity.erc20_contract_address,
+          amount: (
+            BigInt(accountBalance?.amount || 0) + BigInt(erc20Activity.amount)
+          ).toString(),
+          last_updated_height: erc20Activity.height,
+          account_id: toAccountId,
+        });
+      } else {
+        throw new Error(
+          `handle erc20 activity ${erc20Activity.id} not found amount`
+        );
+      }
+    }
+  }
+
   static buildTransferActivity(e: EvmEvent) {
     try {
       const [from, to, amount] = decodeAbiParameters(
