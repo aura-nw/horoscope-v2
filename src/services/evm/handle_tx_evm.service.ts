@@ -65,7 +65,7 @@ export default class HandleTransactionEVMService extends BullableService {
         let { sender } = txMsg;
         if (content?.from) {
           sender = content.from.toLowerCase();
-        } else {
+        } else if (sender) {
           sender = convertBech32AddressToEthAddress(
             config.networkPrefixAddress,
             sender
