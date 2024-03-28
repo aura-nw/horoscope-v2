@@ -5,13 +5,16 @@ select_permissions:
   - role: internal_service
     permission:
       columns:
-        - id
-        - contract_address
-        - creator_tx_hash
         - files
-        - status
-        - abi
         - code_hash
+        - compiler_version
+        - contract_address
+        - contract_name
+        - creator_tx_hash
+        - status
+        - id
+        - abi
+        - compile_detail
         - created_at
         - updated_at
       filter: {}
