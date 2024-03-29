@@ -19,14 +19,15 @@ select_permissions:
     permission:
       columns:
         - action
+        - amount
         - erc20_contract_address
+        - evm_event_id
+        - evm_tx_id
         - from
+        - height
+        - id
         - sender
         - to
         - tx_hash
-        - evm_event_id
-        - height
-        - id
-        - amount
       filter: {}
       limit: 100

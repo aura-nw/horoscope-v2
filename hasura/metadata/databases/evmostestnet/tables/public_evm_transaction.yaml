@@ -26,7 +26,7 @@ array_relationships:
     using:
       manual_configuration:
         column_mapping:
-          hash: tx_hash
+          id: evm_tx_id
         insertion_order: null
         remote_table:
           name: erc20_activity
