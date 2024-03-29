@@ -19,7 +19,7 @@ export class Erc20Activity extends BaseModel {
 
   erc20_contract_address!: string;
 
-  amount?: string;
+  amount!: string;
 
   from?: string;
 

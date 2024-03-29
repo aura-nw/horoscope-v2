@@ -3,7 +3,7 @@ import { ServiceBroker } from 'moleculer';
 import { PublicClient, getContract } from 'viem';
 import { Knex } from 'knex';
 import _ from 'lodash';
-import { AccountBalance } from 'src/models/account_balance';
+import { AccountBalance } from '../../models/account_balance';
 import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -131,16 +131,12 @@ export default class Erc20Service extends BullableService {
         [BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY],
         config.erc20.key
       );
-    await knex.transaction(async (trx) => {
-      // get Erc20 activities
-      let erc20Activities = await this.getErc20Activities(
-        startBlock,
-        endBlock,
-        trx
-      );
-      if (erc20Activities.length > 0) {
-        // get missing Account
-        const missingAccountsAddress = (
+    // get Erc20 activities
+    let erc20Activities = await this.getErc20Activities(startBlock, endBlock);
+    // get missing Account
+    const missingAccountsAddress = Array.from(
+      new Set(
+        (
           [
             ...erc20Activities
               .filter(
@@ -151,22 +147,23 @@ export default class Erc20Service extends BullableService {
               .filter((e) => e.to && e.to !== ZERO_ADDRESS && !e.to_account_id)
               .map((e) => e.to),
           ] as string[]
-        ).map((e) => convertEthAddressToBech32Address('evmos', e));
-        if (missingAccountsAddress.length > 0) {
-          // crawl missing Account and requery erc20Activities
-          await this.broker.call(
-            SERVICE.V1.HandleAddressService.CrawlNewAccountApi.path,
-            {
-              missingAccountsAddress,
-              trx,
-            }
-          );
-          erc20Activities = await this.getErc20Activities(
-            startBlock,
-            endBlock,
-            trx
-          );
+        ).map((e) =>
+          convertEthAddressToBech32Address(config.networkPrefixAddress, e)
+        )
+      )
+    );
+    if (missingAccountsAddress.length > 0) {
+      // crawl missing Account and requery erc20Activities
+      await this.broker.call(
+        SERVICE.V1.HandleAddressService.CrawlNewAccountApi.path,
+        {
+          addresses: missingAccountsAddress,
         }
+      );
+      erc20Activities = await this.getErc20Activities(startBlock, endBlock);
+    }
+    await knex.transaction(async (trx) => {
+      if (erc20Activities.length > 0) {
         const accountBalancesKeyBy = _.keyBy(
           await AccountBalance.query()
             .transacting(trx)
@@ -201,22 +198,17 @@ export default class Erc20Service extends BullableService {
     });
   }
 
-  async getErc20Activities(
-    startBlock: number,
-    endBlock: number,
-    trx: Knex.Transaction
-  ) {
+  async getErc20Activities(startBlock: number, endBlock: number) {
     return Erc20Activity.query()
-      .transacting(trx)
       .leftJoin(
         'account as from_account',
         'erc20_activity.from',
-        'from_account.address'
+        'from_account.evm_address'
       )
       .leftJoin(
         'account as to_account',
         'erc20_activity.to',
-        'to_account.address'
+        'to_account.evm_address'
       )
       .where('erc20_activity.height', '>', startBlock)
       .andWhere('erc20_activity.height', '<=', endBlock)

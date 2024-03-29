@@ -2,6 +2,7 @@ import { decodeAbiParameters, keccak256, toHex } from 'viem';
 import { Dictionary } from 'lodash';
 import { Erc20Activity, EvmEvent } from '../../models';
 import { AccountBalance } from '../../models/account_balance';
+import { ZERO_ADDRESS } from './constant';
 
 export const ERC20_ACTION = {
   TRANSFER: 'transfer',
@@ -63,55 +64,39 @@ export class Erc20Handler {
   }
 
   handlerErc20Transfer(erc20Activity: Erc20Activity) {
-    const [fromAccountId, toAccountId] = [
-      erc20Activity.from_account_id,
-      erc20Activity.to_account_id,
-    ];
     // if from != ZERO_ADDRESS
-    if (fromAccountId) {
-      if (erc20Activity.amount) {
-        const accountBalance =
-          this.accountBalancesKeyBy[
-            `${fromAccountId}_${erc20Activity.erc20_contract_address}`
-          ];
-        this.accountBalancesKeyBy[
-          `${fromAccountId}_${erc20Activity.erc20_contract_address}`
-        ] = AccountBalance.fromJson({
-          denom: erc20Activity.erc20_contract_address,
-          amount: (
-            BigInt(accountBalance?.amount || 0) - BigInt(erc20Activity.amount)
-          ).toString(),
-          last_updated_height: erc20Activity.height,
-          account_id: fromAccountId,
-        });
-      } else {
-        throw new Error(
-          `handle erc20 activity ${erc20Activity.id} not found amount`
-        );
-      }
+    if (erc20Activity.from !== ZERO_ADDRESS) {
+      const fromAccountId = erc20Activity.from_account_id;
+      const key = `${fromAccountId}_${erc20Activity.erc20_contract_address}`;
+      const accountBalance = this.accountBalancesKeyBy[key];
+      // calculate new balance: decrease balance of from account
+      const amount = (
+        BigInt(accountBalance?.amount || 0) - BigInt(erc20Activity.amount)
+      ).toString();
+      // update object accountBalance
+      this.accountBalancesKeyBy[key] = AccountBalance.fromJson({
+        denom: erc20Activity.erc20_contract_address,
+        amount,
+        last_updated_height: erc20Activity.height,
+        account_id: fromAccountId,
+      });
     }
     // if to != ZERO_ADDRESS
-    if (toAccountId) {
-      if (erc20Activity.amount) {
-        const accountBalance =
-          this.accountBalancesKeyBy[
-            `${toAccountId}_${erc20Activity.erc20_contract_address}`
-          ];
-        this.accountBalancesKeyBy[
-          `${toAccountId}_${erc20Activity.erc20_contract_address}`
-        ] = AccountBalance.fromJson({
-          denom: erc20Activity.erc20_contract_address,
-          amount: (
-            BigInt(accountBalance?.amount || 0) + BigInt(erc20Activity.amount)
-          ).toString(),
-          last_updated_height: erc20Activity.height,
-          account_id: toAccountId,
-        });
-      } else {
-        throw new Error(
-          `handle erc20 activity ${erc20Activity.id} not found amount`
-        );
-      }
+    if (erc20Activity.to !== ZERO_ADDRESS) {
+      const toAccountId = erc20Activity.to_account_id;
+      const key = `${toAccountId}_${erc20Activity.erc20_contract_address}`;
+      const accountBalance = this.accountBalancesKeyBy[key];
+      // calculate new balance: increase balance of to account
+      const amount = (
+        BigInt(accountBalance?.amount || 0) + BigInt(erc20Activity.amount)
+      ).toString();
+      // update object accountBalance
+      this.accountBalancesKeyBy[key] = AccountBalance.fromJson({
+        denom: erc20Activity.erc20_contract_address,
+        amount,
+        last_updated_height: erc20Activity.height,
+        account_id: toAccountId,
+      });
     }
   }
 

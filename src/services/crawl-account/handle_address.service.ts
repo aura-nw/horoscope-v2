@@ -6,7 +6,7 @@ import { Knex } from 'knex';
 import { Context, ServiceBroker } from 'moleculer';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { BULL_JOB_NAME, SERVICE } from '../../common';
+import { BULL_JOB_NAME, IAddressesParam, SERVICE } from '../../common';
 import knex from '../../common/utils/db_connection';
 import Utils from '../../common/utils/utils';
 import { Account, BlockCheckpoint } from '../../models';
@@ -25,16 +25,12 @@ export default class HandleAddressService extends BullableService {
     name: SERVICE.V1.HandleAddressService.CrawlNewAccountApi.key,
     params: {
       addresses: 'string[]',
-      trx: 'any',
     },
   })
-  public async actionCrawlNewAccountApi(
-    ctx: Context<{
-      addresses: string[];
-      trx: Knex.Transaction;
-    }>
-  ) {
-    this.insertNewAccountAndUpdate(ctx.params.addresses, ctx.params.trx);
+  public async actionCrawlNewAccountApi(ctx: Context<IAddressesParam>) {
+    await knex.transaction(async (trx) =>
+      this.insertNewAccountAndUpdate(ctx.params.addresses, trx)
+    );
   }
 
   @QueueHandler({
