@@ -123,6 +123,7 @@ export const BULL_JOB_NAME = {
     'job:check-need-create-evm-transaction-constraint',
   JOB_CREATE_EVENT_CONSTRAIN: 'job:create-event-constraint',
   JOB_UPDATE_ASSETS: 'job:update-assets',
+  JOB_UPDATE_EVM_ASSETS: 'job:update-evm-assets',
   UPLOAD_BLOCK_RAW_LOG_TO_S3: 'job:upload-block-raw-log-to-s3',
   UPLOAD_TX_RAW_LOG_TO_S3: 'job:upload-tx-raw-log-to-s3',
   JOB_CREATE_TRANSACTION_CONSTRAINT: 'job:create-transaction-constraint',
@@ -382,6 +383,10 @@ export const SERVICE = {
       UpdateTxCountInBlock: {
         key: 'UpdateTxCountInBlock',
         path: 'v1.UpdateTxCountInBlock',
+      },
+      UpdateEvmAssets: {
+        key: 'UpdateEvmAssets',
+        path: 'v1.UpdateEvmAssets',
       },
     },
     CrawlIBCTaoService: {

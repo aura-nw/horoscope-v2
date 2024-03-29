@@ -84,7 +84,8 @@ export default class Erc20Service extends BullableService {
         .select(
           'evm_event.*',
           'evm_transaction.from as sender',
-          'evm_smart_contract.id as evm_smart_contract_id'
+          'evm_smart_contract.id as evm_smart_contract_id',
+          'evm_transaction.id as evm_tx_id'
         );
       await this.handleMissingErc20Contract(erc20Events, trx);
       const erc20Activities: Erc20Activity[] = [];
