@@ -43,15 +43,15 @@ export const ERC20_EVENT_TOPIC0 = {
 export class Erc20Handler {
   // key: {accountId}_{erc20ContractAddress}
   // value: accountBalance with account_id -> accountId, denom -> erc20ContractAddress
-  accountBalancesKeyBy: Dictionary<AccountBalance>;
+  accountBalances: Dictionary<AccountBalance>;
 
   erc20Activities: Erc20Activity[];
 
   constructor(
-    accountBalancesKeyBy: Dictionary<AccountBalance>,
+    accountBalances: Dictionary<AccountBalance>,
     erc20Activities: Erc20Activity[]
   ) {
-    this.accountBalancesKeyBy = accountBalancesKeyBy;
+    this.accountBalances = accountBalances;
     this.erc20Activities = erc20Activities;
   }
 
@@ -64,34 +64,42 @@ export class Erc20Handler {
   }
 
   handlerErc20Transfer(erc20Activity: Erc20Activity) {
-    // if from != ZERO_ADDRESS
+    // update from account balance if from != ZERO_ADDRESS
     if (erc20Activity.from !== ZERO_ADDRESS) {
       const fromAccountId = erc20Activity.from_account_id;
       const key = `${fromAccountId}_${erc20Activity.erc20_contract_address}`;
-      const accountBalance = this.accountBalancesKeyBy[key];
-      // calculate new balance: decrease balance of from account
-      const amount = (
-        BigInt(accountBalance?.amount || 0) - BigInt(erc20Activity.amount)
-      ).toString();
-      // update object accountBalance
-      this.accountBalancesKeyBy[key] = AccountBalance.fromJson({
-        denom: erc20Activity.erc20_contract_address,
-        amount,
-        last_updated_height: erc20Activity.height,
-        account_id: fromAccountId,
-      });
+      const fromAccountBalance = this.accountBalances[key];
+      if (
+        !fromAccountBalance ||
+        fromAccountBalance.last_updated_height <= erc20Activity.height
+      ) {
+        // calculate new balance: decrease balance of from account
+        const amount = (
+          BigInt(fromAccountBalance?.amount || 0) - BigInt(erc20Activity.amount)
+        ).toString();
+        // update object accountBalance
+        this.accountBalances[key] = AccountBalance.fromJson({
+          denom: erc20Activity.erc20_contract_address,
+          amount,
+          last_updated_height: erc20Activity.height,
+          account_id: fromAccountId,
+        });
+      }
     }
-    // if to != ZERO_ADDRESS
-    if (erc20Activity.to !== ZERO_ADDRESS) {
-      const toAccountId = erc20Activity.to_account_id;
-      const key = `${toAccountId}_${erc20Activity.erc20_contract_address}`;
-      const accountBalance = this.accountBalancesKeyBy[key];
+    // update to account balance
+    const toAccountId = erc20Activity.to_account_id;
+    const key = `${toAccountId}_${erc20Activity.erc20_contract_address}`;
+    const toAccountBalance = this.accountBalances[key];
+    if (
+      !toAccountBalance ||
+      toAccountBalance.last_updated_height <= erc20Activity.height
+    ) {
       // calculate new balance: increase balance of to account
       const amount = (
-        BigInt(accountBalance?.amount || 0) + BigInt(erc20Activity.amount)
+        BigInt(toAccountBalance?.amount || 0) + BigInt(erc20Activity.amount)
       ).toString();
       // update object accountBalance
-      this.accountBalancesKeyBy[key] = AccountBalance.fromJson({
+      this.accountBalances[key] = AccountBalance.fromJson({
         denom: erc20Activity.erc20_contract_address,
         amount,
         last_updated_height: erc20Activity.height,

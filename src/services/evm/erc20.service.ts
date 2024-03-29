@@ -1,9 +1,8 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { ServiceBroker } from 'moleculer';
-import { PublicClient, getContract } from 'viem';
 import { Knex } from 'knex';
 import _ from 'lodash';
-import { AccountBalance } from '../../models/account_balance';
+import { ServiceBroker } from 'moleculer';
+import { PublicClient, getContract } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -11,10 +10,10 @@ import { BULL_JOB_NAME, SERVICE } from '../../common';
 import knex from '../../common/utils/db_connection';
 import EtherJsClient from '../../common/utils/etherjs_client';
 import { BlockCheckpoint, EVMSmartContract, EvmEvent } from '../../models';
+import { AccountBalance } from '../../models/account_balance';
 import { Erc20Activity } from '../../models/erc20_activity';
 import { Erc20Contract } from '../../models/erc20_contract';
 import { ERC20_EVENT_TOPIC0, Erc20Handler } from './erc20_handler';
-import { ZERO_ADDRESS } from './constant';
 import { convertEthAddressToBech32Address } from './utils';
 
 @Service({
@@ -139,13 +138,9 @@ export default class Erc20Service extends BullableService {
         (
           [
             ...erc20Activities
-              .filter(
-                (e) => e.from && e.from !== ZERO_ADDRESS && !e.from_account_id
-              )
+              .filter((e) => !e.from_account_id)
               .map((e) => e.from),
-            ...erc20Activities
-              .filter((e) => e.to && e.to !== ZERO_ADDRESS && !e.to_account_id)
-              .map((e) => e.to),
+            ...erc20Activities.filter((e) => !e.to_account_id).map((e) => e.to),
           ] as string[]
         ).map((e) =>
           convertEthAddressToBech32Address(config.networkPrefixAddress, e)
@@ -164,7 +159,7 @@ export default class Erc20Service extends BullableService {
     }
     await knex.transaction(async (trx) => {
       if (erc20Activities.length > 0) {
-        const accountBalancesKeyBy = _.keyBy(
+        const accountBalances = _.keyBy(
           await AccountBalance.query()
             .transacting(trx)
             .joinRelated('account')
@@ -175,13 +170,10 @@ export default class Erc20Service extends BullableService {
           (o) => `${o.id}_${o.denom}`
         );
         // construct cw721 handler object
-        const erc20Handler = new Erc20Handler(
-          accountBalancesKeyBy,
-          erc20Activities
-        );
+        const erc20Handler = new Erc20Handler(accountBalances, erc20Activities);
         erc20Handler.process();
         const updatedAccountBalances = Object.values(
-          erc20Handler.accountBalancesKeyBy
+          erc20Handler.accountBalances
         );
         await AccountBalance.query()
           .transacting(trx)
@@ -198,7 +190,10 @@ export default class Erc20Service extends BullableService {
     });
   }
 
-  async getErc20Activities(startBlock: number, endBlock: number) {
+  async getErc20Activities(
+    startBlock: number,
+    endBlock: number
+  ): Promise<Erc20Activity[]> {
     return Erc20Activity.query()
       .leftJoin(
         'account as from_account',

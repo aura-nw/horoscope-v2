@@ -13,17 +13,17 @@ export class Erc20Activity extends BaseModel {
 
   evm_event_id!: number;
 
-  sender?: string;
+  sender!: string;
 
-  action?: string;
+  action!: string;
 
   erc20_contract_address!: string;
 
   amount!: string;
 
-  from?: string;
+  from!: string;
 
-  to?: string;
+  to!: string;
 
   height!: number;
 
