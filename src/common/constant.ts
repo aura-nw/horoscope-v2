@@ -8,6 +8,7 @@ export const chainIdConfigOnServer = {
   Euphoria: 'euphoria-2',
   SerenityTestnet001: 'serenity-testnet-001',
   AuraTestnet2: 'aura-testnet-2',
+  AuraTestnetEVM: 'auradev_1235-3',
   Xstaxy1: 'xstaxy-1',
   Atlantic2: 'atlantic-2',
   Pacific1: 'pacific-1',
