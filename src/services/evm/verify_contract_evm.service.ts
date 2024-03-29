@@ -162,6 +162,7 @@ export default class VerifyContractEVM extends BullableService {
                     .where({ id: requestVerify.id })
                     .transacting(trx)
                 );
+                break;
               } else {
                 throw Error(matchResult.message);
               }
