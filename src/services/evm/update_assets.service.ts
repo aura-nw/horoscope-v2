@@ -27,7 +27,7 @@ export default class UpdateEvmAssetsJob extends BullableService {
         Asset.fromJson({
           denom: erc20Asset.address,
           type: Asset.TYPE.ERC20_TOKEN,
-          decimal: erc20Asset.decimals,
+          decimal: erc20Asset.decimal,
           name: erc20Asset.name,
           total_supply: erc20Asset.total_supply,
           origin_id: erc20Asset.evm_smart_contract_id,
