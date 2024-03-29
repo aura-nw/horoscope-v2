@@ -262,9 +262,13 @@ export default class VerifyContractEVM extends BullableService {
       compiler_version: ctx.params.compiler_version,
       status: EVMContractVerification.VERIFICATION_STATUS.PENDING,
     });
-    const response = await EVMContractVerification.query().insert(
+    const { id, status } = await EVMContractVerification.query().insert(
       requestVerify
     );
+    const response = {
+      id,
+      status,
+    };
     return response;
   }
 
