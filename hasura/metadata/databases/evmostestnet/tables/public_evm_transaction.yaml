@@ -54,6 +54,7 @@ select_permissions:
         - hash
         - height
         - id
+        - index
         - nonce
         - size
         - to
