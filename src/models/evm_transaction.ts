@@ -36,6 +36,8 @@ export class EVMTransaction extends BaseModel {
 
   contract_address!: string;
 
+  index!: number;
+
   static get tableName() {
     return 'evm_transaction';
   }

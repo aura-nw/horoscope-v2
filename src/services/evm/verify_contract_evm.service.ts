@@ -162,6 +162,7 @@ export default class VerifyContractEVM extends BullableService {
                     .where({ id: requestVerify.id })
                     .transacting(trx)
                 );
+                break;
               } else {
                 throw Error(matchResult.message);
               }
@@ -261,9 +262,13 @@ export default class VerifyContractEVM extends BullableService {
       compiler_version: ctx.params.compiler_version,
       status: EVMContractVerification.VERIFICATION_STATUS.PENDING,
     });
-    const response = await EVMContractVerification.query().insert(
+    const { id, status } = await EVMContractVerification.query().insert(
       requestVerify
     );
+    const response = {
+      id,
+      status,
+    };
     return response;
   }
 
