@@ -30,7 +30,7 @@ export class AccountBalance extends BaseModel {
       required: ['denom', 'amount'],
       properties: {
         denom: { type: 'string' },
-        amount: { type: 'number' },
+        amount: { type: 'string' },
         base_denom: { type: 'string' },
       },
     };
