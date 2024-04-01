@@ -1,3 +1,4 @@
+import { Model } from 'objection';
 import BaseModel from './base';
 
 export class EVMSmartContract extends BaseModel {
@@ -50,6 +51,19 @@ export class EVMSmartContract extends BaseModel {
       PROXY_EIP_1967: 'PROXY_EIP_1967',
       PROXY_EIP_1822: 'PROXY_EIP_1822',
       PROXY_OPEN_ZEPPELIN_IMPLEMENTATION: 'PROXY_OPEN_ZEPPELIN_IMPLEMENTATION',
+    };
+  }
+
+  static get relationMappings() {
+    return {
+      evm_proxy_histories: {
+        relation: Model.HasManyRelation,
+        modelClass: 'EvmProxyHistory',
+        join: {
+          from: 'evm_smart_contract.address',
+          to: 'evm_proxy_history.proxy_contract',
+        },
+      },
     };
   }
 }

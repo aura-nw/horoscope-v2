@@ -28,7 +28,7 @@ import config from '../../../config.json' assert { type: 'json' };
           'v2.statistics.getDashboardStatisticsByChainId',
           'v2.statistics.getTopAccountsByChainId',
           'v2.services-manager.*',
-          'v2.evm-proxy.detectEvmProxy',
+          'v2.evm-proxy.*',
         ],
       },
       {

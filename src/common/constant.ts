@@ -485,12 +485,12 @@ export const SERVICE = {
     },
   },
   V2: {
-    DetectEvmProxyService: {
-      key: 'DetectEvmProxyService',
-      path: 'v2.DetectEvmProxyService',
-      detectEvmProxy: {
-        key: 'detectEvmProxy',
-        path: 'v2.DetectEvmProxyService.detectEvmProxy',
+    EvmProxyService: {
+      key: 'EvmProxyService',
+      path: 'v2.EvmProxyService',
+      evmProxy: {
+        key: 'evmProxy',
+        path: 'v2.EvmProxyService.evmProxy',
       },
     },
   },

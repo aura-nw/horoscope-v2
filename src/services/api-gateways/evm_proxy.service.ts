@@ -8,13 +8,12 @@ import networks from '../../../network.json' assert { type: 'json' };
   name: 'evm-proxy',
   version: 2,
 })
-export default class DetectEvmProxy extends BaseService {
+export default class EvmProxy extends BaseService {
   public constructor(public broker: ServiceBroker) {
     super(broker);
   }
 
-  @Get('/detect-evm-proxy', {
-    name: 'detectEvmProxy',
+  @Get('/', {
     params: {
       contractAddress: {
         type: 'string',
@@ -29,7 +28,7 @@ export default class DetectEvmProxy extends BaseService {
       },
     },
   })
-  async detectEvmProxy(
+  async getImplementation(
     ctx: Context<{ chainId: string; contractAddress: string }>
   ) {
     const selectedChain = networks.find(
@@ -37,7 +36,7 @@ export default class DetectEvmProxy extends BaseService {
     );
 
     return this.broker.call(
-      `${SERVICE.V2.DetectEvmProxyService.detectEvmProxy.path}@${selectedChain?.moleculerNamespace}`,
+      `${SERVICE.V2.EvmProxyService.evmProxy.path}@${selectedChain?.moleculerNamespace}`,
       ctx.params
     );
   }
