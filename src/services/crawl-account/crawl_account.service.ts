@@ -315,13 +315,11 @@ export default class CrawlAccountService extends BullableService {
           const accountId = addressesWithIds.find(
             (addressWithId) => addressWithId.address === account.address
           )?.id;
-          if (accountId) {
+          if (Array.isArray(account.balances) && accountId) {
             resetBalanceList.push({
               account_id: accountId,
               last_updated_height: account.last_updated_height,
             });
-          }
-          if (Array.isArray(account.balances) && accountId)
             account.balances.forEach((balance) => {
               listAccountBalance.push({
                 account_id: accountId,
@@ -333,6 +331,7 @@ export default class CrawlAccountService extends BullableService {
                 last_updated_height: account.last_updated_height,
               });
             });
+          }
         });
         try {
           const stringListUpdatesReset = resetBalanceList
