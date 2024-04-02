@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
-import pkg from '@ethereum-sourcify/lib-sourcify';
 import {
   BlockCheckpoint,
   EvmInternalTransaction,
@@ -18,7 +17,11 @@ import knex from '../../common/utils/db_connection';
   version: 1,
 })
 export default class EvmCrawlInternalTxService extends BullableService {
-  private _sourcifyChain!: pkg.SourcifyChain;
+  private selectedChain: any = networks.find(
+    (network) => network.chainId === config.chainId
+  );
+
+  private EvmJsonRpc = this.selectedChain.EVMJSONRPC[0];
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -57,7 +60,7 @@ export default class EvmCrawlInternalTxService extends BullableService {
 
     const requests = evmTxs.map((evmTx) =>
       axios({
-        url: this._sourcifyChain.rpc[0].toString(),
+        url: this.EvmJsonRpc,
         method: 'POST',
         headers: {
           Accept: 'application/json',
@@ -78,11 +81,11 @@ export default class EvmCrawlInternalTxService extends BullableService {
 
     response.forEach((tracer) => {
       if (tracer.result?.calls) {
-        this.buildEvmInternalTransaction(
-          internalTxSave,
-          tracer.result.calls,
+        const internalTx = this.buildEvmInternalTransaction(
+          tracer.result,
           tracer.id
         );
+        internalTxSave.push(...internalTx);
       }
     });
 
@@ -104,63 +107,43 @@ export default class EvmCrawlInternalTxService extends BullableService {
   }
 
   public buildEvmInternalTransaction(
-    internalTxSave: EvmInternalTransaction[],
-    calls: any[],
-    tracerId: number,
-    currentTypeTraceAddress: null | string = null
-  ) {
-    let stackTraceIndex = 0;
-    calls.forEach((call) => {
-      const typeTraceAddress = currentTypeTraceAddress
-        ? `${currentTypeTraceAddress}_${stackTraceIndex}`
-        : `${call.type}_${stackTraceIndex}`;
-      internalTxSave.push(
-        EvmInternalTransaction.fromJson({
-          evm_tx_id: tracerId,
-          type_trace_address: typeTraceAddress,
-          type: call.type,
-          from: call.from,
-          to: call.to,
-          value: parseInt(call.value, 16),
-          input: call.input,
-          gas: parseInt(call.gas, 16),
-          gas_used: parseInt(call.gasUsed, 16),
-        })
-      );
-      if (call.calls) {
-        this.buildEvmInternalTransaction(
-          internalTxSave,
-          call.calls,
-          tracerId,
-          typeTraceAddress
+    tracerResult: any,
+    tracerId: number
+  ): EvmInternalTransaction[] {
+    const internalTxSave: EvmInternalTransaction[] = [];
+    const buildEvmInternalTx = (
+      calls: any[],
+      currentTypeTraceAddress: string | null,
+      parentType: string
+    ) => {
+      calls.forEach((call, stackTraceIndex) => {
+        const typeTraceAddress = currentTypeTraceAddress
+          ? `${currentTypeTraceAddress}_${parentType}[${stackTraceIndex}]`
+          : `${parentType}[${stackTraceIndex}]`;
+        internalTxSave.push(
+          EvmInternalTransaction.fromJson({
+            evm_tx_id: tracerId,
+            type_trace_address: `${typeTraceAddress}_${call.type}`,
+            type: call.type,
+            from: call.from,
+            to: call.to,
+            value: parseInt(call.value ?? 0, 16),
+            input: call.input,
+            gas: parseInt(call.gas, 16),
+            gas_used: parseInt(call.gasUsed, 16),
+          })
         );
-      }
-      stackTraceIndex += 1;
-    });
+        if (call.calls) {
+          buildEvmInternalTx(call.calls, typeTraceAddress, call.type);
+        }
+      });
+    };
+
+    buildEvmInternalTx(tracerResult.calls, null, tracerResult.type);
+    return internalTxSave;
   }
 
   public async _start(): Promise<void> {
-    const selectedChain = networks.find(
-      (network) => network.chainId === config.chainId
-    );
-    if (
-      !selectedChain ||
-      !selectedChain.EVMchainId ||
-      !selectedChain.EVMJSONRPC
-    ) {
-      this.logger.error(
-        'Cannot found chain EVM with chainId: ',
-        config.chainId
-      );
-      return;
-    }
-    this._sourcifyChain = new pkg.SourcifyChain({
-      chainId: selectedChain.EVMchainId,
-      name: config.chainName,
-      rpc: selectedChain.EVMJSONRPC,
-      supported: true,
-    });
-
     await this.createJob(
       BULL_JOB_NAME.EVM_CRAWL_INTERNAL_TX,
       BULL_JOB_NAME.EVM_CRAWL_INTERNAL_TX,
