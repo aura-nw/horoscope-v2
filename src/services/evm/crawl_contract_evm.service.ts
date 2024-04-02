@@ -13,6 +13,7 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
 import { EVM_CONTRACT_METHOD_HEX_PREFIX } from './constant';
+import { ContractHelper } from './helpers/contract_helper';
 
 @Service({
   name: SERVICE.V1.CrawlSmartContractEVM.key,
@@ -20,6 +21,8 @@ import { EVM_CONTRACT_METHOD_HEX_PREFIX } from './constant';
 })
 export default class CrawlSmartContractEVMService extends BullableService {
   etherJsClient!: ethers.AbstractProvider;
+
+  private contractHelper!: ContractHelper;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -103,7 +106,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
         const currentAddresses = addressesWithTx[evmTx.hash];
 
         const notFoundAddresses = currentAddresses.filter(
-          (address: string) => !evmContractsInDB[address]
+          (address: string) => !evmContractsWithAddress[address]
         );
 
         if (notFoundAddresses.length === 0) {
@@ -120,14 +123,23 @@ export default class CrawlSmartContractEVMService extends BullableService {
               let creator;
               let createdHeight;
               let createdHash;
-              const type = this.detectContractTypeByCode(code);
+              let type = this.detectContractTypeByCode(code);
+              const implementContractInfo =
+                await this.contractHelper.isContractProxy(address);
+
+              if (implementContractInfo) {
+                type = implementContractInfo.EIP as any;
+              }
+
               const codeHash = keccak256(code);
               if (evmTx.data) {
-                const { data } = evmTx;
+                // eslint-disable-next-line @typescript-eslint/naming-convention
+                const { data, contract_address } = evmTx;
                 if (
                   data.startsWith(
                     EVM_CONTRACT_METHOD_HEX_PREFIX.CREATE_CONTRACT
-                  )
+                  ) ||
+                  contract_address
                 ) {
                   creator = evmTx.from;
                   createdHeight = evmTx.height;
@@ -152,11 +164,11 @@ export default class CrawlSmartContractEVMService extends BullableService {
 
     await knex.transaction(async (trx) => {
       if (evmContracts.length > 0) {
-        await EVMSmartContract.query()
-          .insert(evmContracts)
-          .onConflict('address')
-          .ignore()
-          .transacting(trx);
+        const newEvmContracts: EVMSmartContract[] = _.uniqBy(
+          evmContracts,
+          'address'
+        );
+        await EVMSmartContract.query().insert(newEvmContracts).transacting(trx);
       }
       if (blockCheckpoint) {
         blockCheckpoint.height = endBlock;
@@ -198,6 +210,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
 
   public async _start(): Promise<void> {
     this.etherJsClient = new EtherJsClient().etherJsClient;
+    this.contractHelper = new ContractHelper(this.etherJsClient);
     this.createJob(
       BULL_JOB_NAME.CRAWL_SMART_CONTRACT_EVM,
       BULL_JOB_NAME.CRAWL_SMART_CONTRACT_EVM,

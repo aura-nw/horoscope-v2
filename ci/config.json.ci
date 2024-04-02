@@ -27,13 +27,14 @@
   },
   "crawlBlock": {
     "millisecondCrawl": 5000,
-    "numberOfBlockPerCall": 100,
+    "blocksPerCall": 100,
     "startBlock": 4860000,
     "saveRawLog": true
   },
   "crawlTransaction": {
+    "key": "crawlTransaction",
     "millisecondCrawl": 5000,
-    "numberOfBlockPerCall": 100,
+    "blocksPerCall": 100,
     "chunkSize": 1000
   },
   "handleCoinTransfer": {
@@ -389,7 +390,8 @@
   "erc20": {
     "key": "erc20",
     "blocksPerCall": 100,
-    "millisecondRepeatJob": 5000
+    "millisecondRepeatJob": 5000,
+    "chunkSizeInsert": 1000
   },
   "erc721": {
     "key": "erc721",

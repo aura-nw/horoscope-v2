@@ -5,6 +5,8 @@ export class EvmSignatureMapping extends BaseModel {
 
   human_readable_topic!: string;
 
+  function_id!: string;
+
   static get tableName() {
     return 'evm_signature_mapping';
   }

@@ -123,6 +123,7 @@ export const BULL_JOB_NAME = {
     'job:check-need-create-evm-transaction-constraint',
   JOB_CREATE_EVENT_CONSTRAIN: 'job:create-event-constraint',
   JOB_UPDATE_ASSETS: 'job:update-assets',
+  JOB_UPDATE_EVM_ASSETS: 'job:update-evm-assets',
   UPLOAD_BLOCK_RAW_LOG_TO_S3: 'job:upload-block-raw-log-to-s3',
   UPLOAD_TX_RAW_LOG_TO_S3: 'job:upload-tx-raw-log-to-s3',
   JOB_CREATE_TRANSACTION_CONSTRAINT: 'job:create-transaction-constraint',
@@ -137,6 +138,8 @@ export const BULL_JOB_NAME = {
   VERIFY_CONTRACT_EVM: 'verify:contract-evm',
   HANDLE_ERC20_CONTRACT: 'handle:erc20-contract',
   HANDLE_ERC721_CONTRACT: 'handle:erc721-contract',
+  HANDLE_ERC20_ACTIVITY: 'handle:erc20-activity',
+  HANDLE_EVM_PROXY_HISTORY: 'handle:evm-proxy-history',
 };
 
 export const SERVICE = {
@@ -381,6 +384,10 @@ export const SERVICE = {
         key: 'UpdateTxCountInBlock',
         path: 'v1.UpdateTxCountInBlock',
       },
+      UpdateEvmAssets: {
+        key: 'UpdateEvmAssets',
+        path: 'v1.UpdateEvmAssets',
+      },
     },
     CrawlIBCTaoService: {
       key: 'CrawlIBCTaoService',
@@ -481,6 +488,10 @@ export const SERVICE = {
         key: 'createJobMapping',
         path: 'v1.SignatureMappingEVM.createJobMapping',
       },
+    },
+    CrawlEvmProxyHistory: {
+      key: 'CrawlEvmProxyHistory',
+      path: 'v1.CrawlEvmProxyHistory',
     },
   },
 };
