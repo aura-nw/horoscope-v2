@@ -1,5 +1,6 @@
 import { Model } from 'objection';
 import BaseModel from './base';
+// eslint-disable-next-line import/no-cycle
 import { Erc20Contract } from './erc20_contract';
 import { EvmEvent } from './evm_event';
 import { EVMSmartContract } from './evm_smart_contract';
