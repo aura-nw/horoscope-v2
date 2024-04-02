@@ -1,6 +1,6 @@
+/* eslint-disable import/no-cycle */
 import { Model } from 'objection';
 import BaseModel from './base';
-// eslint-disable-next-line import/no-cycle
 import { EvmProxyHistory } from './evm_proxy_history';
 
 export class EVMSmartContract extends BaseModel {

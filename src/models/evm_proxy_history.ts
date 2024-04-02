@@ -1,3 +1,4 @@
+/* eslint-disable import/no-cycle */
 import { Model } from 'objection';
 import BaseModel from './base';
 import { EVMSmartContract } from './evm_smart_contract';
