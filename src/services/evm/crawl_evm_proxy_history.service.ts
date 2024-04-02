@@ -11,7 +11,11 @@ import {
   keccak256,
   toHex,
 } from 'viem';
-import { BULL_JOB_NAME, SERVICE } from '../../common';
+import {
+  BULL_JOB_NAME,
+  SERVICE,
+  EIPProxyContractSupportByteCode,
+} from './constant';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import {
@@ -23,7 +27,6 @@ import {
 import { ContractHelper } from './helpers/contract_helper';
 import EtherJsClient from '../../common/utils/etherjs_client';
 import knex from '../../common/utils/db_connection';
-import { EIPProxyContractSupportByteCode } from './constant';
 
 const Erc1967Events = {
   upgraded: {
