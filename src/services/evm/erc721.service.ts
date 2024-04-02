@@ -1,7 +1,6 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
-import { PublicClient, getContract } from 'viem';
-import { Erc721Contract } from '../../models/erc721_contract';
+import { getContract } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -9,14 +8,13 @@ import { BULL_JOB_NAME, SERVICE } from '../../common';
 import knex from '../../common/utils/db_connection';
 import EtherJsClient from '../../common/utils/etherjs_client';
 import { BlockCheckpoint, EVMSmartContract } from '../../models';
+import { Erc721Contract } from '../../models/erc721_contract';
 
 @Service({
   name: SERVICE.V1.Erc721.key,
   version: 1,
 })
 export default class Erc721Service extends BullableService {
-  etherJsClient!: PublicClient;
-
   public constructor(public broker: ServiceBroker) {
     super(broker);
   }
@@ -83,7 +81,10 @@ export default class Erc721Service extends BullableService {
     );
     const batchReqs: any[] = [];
     contracts.forEach((e) => {
-      batchReqs.push(e.read.name(), e.read.symbol());
+      batchReqs.push(
+        e.read.name().catch(() => Promise.resolve(undefined)),
+        e.read.symbol().catch(() => Promise.resolve(undefined))
+      );
     });
     const results = await Promise.all(batchReqs);
     return addresses.map((address, index) => ({
