@@ -78,3 +78,16 @@ export const NULL_BYTE_CODE =
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 export const EVM_PREFIX = '0x';
 export const EVM_DEFAULT_SLOT_BYTE_CODE_LENGTH = 66;
+
+export const SERVICE = {
+  V2: {
+    EvmProxyService: {
+      key: 'EvmProxyService',
+      path: 'v2.EvmProxyService',
+      evmProxy: {
+        key: 'evmProxy',
+        path: 'v2.EvmProxyService.evmProxy',
+      },
+    },
+  },
+};

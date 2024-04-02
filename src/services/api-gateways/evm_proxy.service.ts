@@ -1,8 +1,8 @@
 import { Context, ServiceBroker } from 'moleculer';
 import { Get, Service } from '@ourparentcenter/moleculer-decorators-extended';
 import BaseService from '../../base/base.service';
-import { SERVICE } from '../../common';
 import networks from '../../../network.json' assert { type: 'json' };
+import { SERVICE } from '../evm/constant';
 
 @Service({
   name: 'evm-proxy',
@@ -19,6 +19,7 @@ export default class EvmProxy extends BaseService {
         type: 'string',
         trim: true,
         required: true,
+        normalize: true,
       },
       chainId: {
         type: 'string',
@@ -37,7 +38,9 @@ export default class EvmProxy extends BaseService {
 
     return this.broker.call(
       `${SERVICE.V2.EvmProxyService.evmProxy.path}@${selectedChain?.moleculerNamespace}`,
-      ctx.params
+      {
+        contractAddress: ctx.params.contractAddress,
+      }
     );
   }
 }

@@ -5,13 +5,12 @@ import {
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker, Errors } from 'moleculer';
 import { ethers } from 'ethers';
-import { keccak256 } from 'viem';
+import _ from 'lodash';
 import BaseService from '../../base/base.service';
 import EtherJsClient from '../../common/utils/etherjs_client';
-import { SERVICE } from '../../common';
 import { ContractHelper } from './helpers/contract_helper';
 import { EvmProxyHistory, EVMSmartContract } from '../../models';
-import knex from '../../common/utils/db_connection';
+import { SERVICE } from './constant';
 
 @Service({
   name: SERVICE.V2.EvmProxyService.key,
@@ -36,73 +35,52 @@ export default class EVMProxy extends BaseService {
         type: 'string',
         trim: true,
         required: true,
-      },
-      chainId: {
-        type: 'string',
-        trim: true,
-        required: true,
+        normalize: true,
       },
     },
   })
   public async detectEvmProxy(
-    ctx: Context<{ chainId: string; contractAddress: string }>
-  ): Promise<{ proxyContract: string; implementationContract: string }> {
-    const contractAddress = ctx.params.contractAddress.toLowerCase();
+    ctx: Context<{ contractAddress: string }>
+  ): Promise<EvmProxyHistory> {
     const proxyContractRPC = await this.contractHelper.isContractProxy(
-      contractAddress
+      ctx.params.contractAddress
     );
 
     if (!proxyContractRPC) {
       throw new Errors.ValidationError('Not a proxy contract.');
     }
 
+    let result!: EvmProxyHistory;
     const proxyContract = await EVMSmartContract.query()
-      .findOne('address', contractAddress)
-      .innerJoin(
-        'evm_proxy_history',
-        'evm_smart_contract.address',
-        'evm_proxy_history.proxy_contract'
-      )
-      .where('evm_proxy_history.proxy_contract', contractAddress)
-      .andWhere(
-        'evm_proxy_history.implementation_contract',
-        proxyContractRPC.logicContractAddress as string
-      )
-      .orderBy('evm_proxy_history.updated_at', 'desc')
-      .first();
+      .findOne('address', ctx.params.contractAddress)
+      .withGraphJoined('evm_proxy_histories')
+      .orderBy('evm_proxy_histories.updated_at', 'desc');
 
     if (!proxyContract) {
-      const [lastUpdatedHeight, code] = await Promise.all([
-        this.etherJsClient.getBlockNumber(),
-        this.etherJsClient.getCode(contractAddress),
-      ]);
-      const codeHash = keccak256(code as `0x${string}`);
-
-      await knex.transaction(async (trx) => {
+      // TODO: call evm contract service to add missing proxy contract.
+    } else {
+      if (!proxyContract.type) {
         await EVMSmartContract.query()
-          .insert({
-            address: contractAddress,
-            type: proxyContractRPC.EIP,
-            code_hash: codeHash,
-          })
-          .onConflict('address')
-          .merge()
-          .transacting(trx);
+          .update({ type: proxyContractRPC.EIP })
+          .where('address', ctx.params.contractAddress);
+      }
 
-        await EvmProxyHistory.query()
-          .insert({
-            proxy_contract: contractAddress,
-            implementation_contract: proxyContractRPC.logicContractAddress,
-            last_updated_height: lastUpdatedHeight,
-            tx_hash: '',
-          })
-          .transacting(trx);
+      result = _.find(proxyContract.evm_proxy_histories, {
+        implementation_contract: proxyContractRPC.logicContractAddress,
       });
+
+      if (!result) {
+        const currentBlock = await this.etherJsClient.getBlockNumber();
+
+        result = await EvmProxyHistory.query().insert({
+          proxy_contract: ctx.params.contractAddress,
+          implementation_contract: proxyContractRPC.logicContractAddress,
+          last_updated_height: currentBlock,
+          tx_hash: '',
+        });
+      }
     }
 
-    return {
-      proxyContract: contractAddress,
-      implementationContract: proxyContractRPC.logicContractAddress as string,
-    };
+    return result;
   }
 }

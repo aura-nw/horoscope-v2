@@ -1,7 +1,11 @@
 import { Model } from 'objection';
 import BaseModel from './base';
+// eslint-disable-next-line import/no-cycle
+import { EvmProxyHistory } from './evm_proxy_history';
 
 export class EVMSmartContract extends BaseModel {
+  [relation: string]: any;
+
   id!: number;
 
   created_at!: Date;
@@ -58,7 +62,7 @@ export class EVMSmartContract extends BaseModel {
     return {
       evm_proxy_histories: {
         relation: Model.HasManyRelation,
-        modelClass: 'EvmProxyHistory',
+        modelClass: EvmProxyHistory,
         join: {
           from: 'evm_smart_contract.address',
           to: 'evm_proxy_history.proxy_contract',

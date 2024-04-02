@@ -484,16 +484,6 @@ export const SERVICE = {
       path: 'v1.CrawlEvmProxyHistory',
     },
   },
-  V2: {
-    EvmProxyService: {
-      key: 'EvmProxyService',
-      path: 'v2.EvmProxyService',
-      evmProxy: {
-        key: 'evmProxy',
-        path: 'v2.EvmProxyService.evmProxy',
-      },
-    },
-  },
 };
 
 export enum AccountType {
