@@ -19,6 +19,7 @@ import {
   QueryAccountRequest,
   QueryAccountResponse,
 } from '@aura-nw/aurajs/types/codegen/cosmos/auth/v1beta1/query';
+import _ from 'lodash';
 import knex from '../../common/utils/db_connection';
 import {
   AccountType,
@@ -301,25 +302,27 @@ export default class CrawlAccountService extends BullableService {
         base_denom: string;
         last_updated_height: number;
       }[] = [];
-      const resetBalanceList: {
-        account_id: number;
-        last_updated_height: number;
-      }[] = [];
       await knex.transaction(async (trx) => {
-        const addressesWithIds = await Account.query()
-          .select('id', 'address')
-          .forUpdate()
-          .whereIn('address', addresses)
-          .transacting(trx);
+        const addressesWithIds = _.keyBy(
+          await Account.query()
+            .select('id', 'address')
+            .forUpdate()
+            .whereIn('address', addresses)
+            .transacting(trx),
+          'address'
+        );
+        const resetBalanceList: {
+          account_id: number;
+          last_updated_height: number;
+        }[] = accounts
+          .filter((account) => addressesWithIds[account.address])
+          .map((account) => ({
+            account_id: addressesWithIds[account.address].id,
+            last_updated_height: account.last_updated_height,
+          }));
         accounts.forEach((account) => {
-          const accountId = addressesWithIds.find(
-            (addressWithId) => addressWithId.address === account.address
-          )?.id;
+          const accountId = addressesWithIds[account.address]?.id;
           if (Array.isArray(account.balances) && accountId) {
-            resetBalanceList.push({
-              account_id: accountId,
-              last_updated_height: account.last_updated_height,
-            });
             account.balances.forEach((balance) => {
               listAccountBalance.push({
                 account_id: accountId,
