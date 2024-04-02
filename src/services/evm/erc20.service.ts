@@ -6,7 +6,7 @@ import _ from 'lodash';
 import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { BULL_JOB_NAME, SERVICE } from '../../common';
+import { BULL_JOB_NAME, SERVICE } from './constant';
 import knex from '../../common/utils/db_connection';
 import EtherJsClient from '../../common/utils/etherjs_client';
 import { BlockCheckpoint, EVMSmartContract, EvmEvent } from '../../models';
