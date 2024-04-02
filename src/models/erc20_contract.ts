@@ -1,6 +1,8 @@
 import { Model } from 'objection';
 import BaseModel from './base';
 import { EVMSmartContract } from './evm_smart_contract';
+// eslint-disable-next-line import/no-cycle
+import { Erc20Activity } from './erc20_activity';
 
 export class Erc20Contract extends BaseModel {
   static softDelete = false;
@@ -49,6 +51,14 @@ export class Erc20Contract extends BaseModel {
         join: {
           to: 'evm_smart_contract.id',
           from: 'erc20_contract.evm_smart_contract_id',
+        },
+      },
+      activities: {
+        relation: Model.HasManyRelation,
+        modelClass: Erc20Activity,
+        join: {
+          to: 'erc20_activity.erc20_contract_address',
+          from: 'erc20_contract.address',
         },
       },
     };

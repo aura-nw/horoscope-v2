@@ -2,7 +2,7 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { Knex } from 'knex';
 import _ from 'lodash';
 import { ServiceBroker } from 'moleculer';
-import { PublicClient, getContract } from 'viem';
+import { getContract } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -21,8 +21,6 @@ import { convertEthAddressToBech32Address } from './utils';
   version: 1,
 })
 export default class Erc20Service extends BullableService {
-  etherJsClient!: PublicClient;
-
   public constructor(public broker: ServiceBroker) {
     super(broker);
   }
@@ -206,13 +204,20 @@ export default class Erc20Service extends BullableService {
         'erc20_activity.to',
         'to_account.evm_address'
       )
+      .leftJoin(
+        'erc20_contract as erc20_contract',
+        'erc20_activity.erc20_contract_address',
+        'erc20_contract.address'
+      )
       .where('erc20_activity.height', '>', startBlock)
       .andWhere('erc20_activity.height', '<=', endBlock)
+      .andWhere('erc20_contract.track', true)
       .select(
         'erc20_activity.*',
         'from_account.id as from_account_id',
         'to_account.id as to_account_id'
-      );
+      )
+      .orderBy('erc20_activity.id');
   }
 
   async handleMissingErc20Contract(events: EvmEvent[], trx: Knex.Transaction) {
@@ -242,7 +247,7 @@ export default class Erc20Service extends BullableService {
               symbol: erc20ContractsInfo[index].symbol,
               decimal: erc20ContractsInfo[index].decimals,
               name: erc20ContractsInfo[index].name,
-              track: true,
+              track: false,
               last_updated_height: -1,
             })
           )
