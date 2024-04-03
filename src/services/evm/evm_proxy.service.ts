@@ -33,7 +33,6 @@ export default class EVMProxy extends BaseService {
     params: {
       contractAddress: {
         type: 'string',
-        trim: true,
         required: true,
         normalize: true,
       },
@@ -50,7 +49,7 @@ export default class EVMProxy extends BaseService {
       throw new Errors.ValidationError('Not a proxy contract.');
     }
 
-    let result!: EvmProxyHistory;
+    let evmProxyHistory!: EvmProxyHistory;
     const proxyContract = await EVMSmartContract.query()
       .findOne('address', ctx.params.contractAddress)
       .withGraphJoined('evm_proxy_histories')
@@ -60,27 +59,27 @@ export default class EVMProxy extends BaseService {
       // TODO: call evm contract service to add missing proxy contract.
     } else {
       if (!proxyContract.type) {
-        await EVMSmartContract.query()
-          .update({ type: proxyContractRPC.EIP })
-          .where('address', ctx.params.contractAddress);
+        await proxyContract.$query().patch({ type: proxyContractRPC.EIP });
       }
 
-      result = _.find(proxyContract.evm_proxy_histories, {
+      evmProxyHistory = _.find(proxyContract.evm_proxy_histories, {
         implementation_contract: proxyContractRPC.logicContractAddress,
       });
 
-      if (!result) {
+      if (!evmProxyHistory) {
         const currentBlock = await this.etherJsClient.getBlockNumber();
 
-        result = await EvmProxyHistory.query().insert({
-          proxy_contract: ctx.params.contractAddress,
-          implementation_contract: proxyContractRPC.logicContractAddress,
-          last_updated_height: currentBlock,
-          tx_hash: '',
-        });
+        evmProxyHistory = await EvmProxyHistory.query()
+          .insert({
+            proxy_contract: ctx.params.contractAddress,
+            implementation_contract: proxyContractRPC.logicContractAddress,
+            last_updated_height: currentBlock,
+            tx_hash: '',
+          })
+          .returning('*');
       }
     }
 
-    return result;
+    return evmProxyHistory;
   }
 }
