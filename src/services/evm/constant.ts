@@ -148,6 +148,16 @@ export const SERVICE = {
       },
     },
   },
+  V2: {
+    EvmProxyService: {
+      key: 'EvmProxyService',
+      path: 'v2.EvmProxyService',
+      evmProxy: {
+        key: 'evmProxy',
+        path: 'v2.EvmProxyService.evmProxy',
+      },
+    },
+  },
 };
 
 export const BULL_JOB_NAME = {
