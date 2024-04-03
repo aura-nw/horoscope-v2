@@ -23,7 +23,7 @@ import { createHash } from 'crypto';
 import { lt } from 'semver';
 import { BlockCheckpoint, EVMContractVerification } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { BULL_JOB_NAME, SERVICE } from '../../common';
+import { BULL_JOB_NAME, SERVICE } from './constant';
 import config from '../../../config.json' assert { type: 'json' };
 import { SolidityCompiler } from './solidity_compiler';
 import networks from '../../../network.json' assert { type: 'json' };
