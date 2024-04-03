@@ -1,5 +1,5 @@
 import { Knex } from 'knex';
-import { EvmSignatureMapping } from '../src/models';
+import { EvmSignatureMapping } from '../../src/models';
 
 export async function up(knex: Knex): Promise<void> {
   await knex.raw(

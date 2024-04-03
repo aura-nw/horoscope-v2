@@ -1,5 +1,5 @@
 import { Knex } from 'knex';
-import config from '../config.json' assert { type: 'json' };
+import config from '../../config.json' assert { type: 'json' };
 
 export async function up(knex: Knex): Promise<void> {
   await knex.raw(
