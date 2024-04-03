@@ -6,7 +6,8 @@ import { getContract } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { BULL_JOB_NAME, SERVICE } from './constant';
+import { BULL_JOB_NAME, SERVICE as EVM_SERVICE } from './constant';
+import { SERVICE as COSMOS_SERVICE } from '../../common';
 import knex from '../../common/utils/db_connection';
 import EtherJsClient from '../../common/utils/etherjs_client';
 import { BlockCheckpoint, EVMSmartContract, EvmEvent } from '../../models';
@@ -17,7 +18,7 @@ import { ERC20_EVENT_TOPIC0, Erc20Handler } from './erc20_handler';
 import { convertEthAddressToBech32Address } from './utils';
 
 @Service({
-  name: SERVICE.V1.Erc20.key,
+  name: EVM_SERVICE.V1.Erc20.key,
   version: 1,
 })
 export default class Erc20Service extends BullableService {
@@ -149,7 +150,7 @@ export default class Erc20Service extends BullableService {
     if (missingAccountsAddress.length > 0) {
       // crawl missing Account and requery erc20Activities
       await this.broker.call(
-        SERVICE.V1.HandleAddressService.CrawlNewAccountApi.path,
+        COSMOS_SERVICE.V1.HandleAddressService.CrawlNewAccountApi.path,
         {
           addresses: missingAccountsAddress,
         }

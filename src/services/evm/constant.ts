@@ -168,6 +168,7 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_EVM_TRANSACTION_CONSTRAINT:
     'job:create-evm-transaction-constraint',
   JOB_CREATE_EVM_EVENT_PARTITION: 'job:create-evm-event-partition',
+  HANDLE_ERC20_BALANCE: 'handle:erc20-balance',
 };
 
 export const MSG_TYPE = {
