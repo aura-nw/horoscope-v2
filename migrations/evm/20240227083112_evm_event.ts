@@ -1,6 +1,6 @@
 import { Knex } from 'knex';
-import { EvmEvent } from '../src/models';
-import config from '../config.json' assert { type: 'json' };
+import { EvmEvent } from '../../src/models';
+import config from '../../config.json' assert { type: 'json' };
 
 export async function up(knex: Knex): Promise<void> {
   const initPartitionName = `${EvmEvent.tableName}_partition_${config.migrationEvmEventToPartition.startId}_${config.migrationEvmEventToPartition.endId}`;

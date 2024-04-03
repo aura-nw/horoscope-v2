@@ -78,3 +78,112 @@ export const NULL_BYTE_CODE =
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
 export const EVM_PREFIX = '0x';
 export const EVM_DEFAULT_SLOT_BYTE_CODE_LENGTH = 66;
+
+export const SERVICE = {
+  V1: {
+    HandleTransactionEVM: {
+      key: 'HandleTransactionEVM',
+      path: 'v1.HandleTransactionEVM',
+    },
+    CrawlSmartContractEVM: {
+      key: 'CrawlSmartContractEVM',
+      path: 'v1.CrawlSmartContractEVM',
+    },
+    VerifyContractEVM: {
+      key: 'VerifyContractEVM',
+      path: 'v1.VerifyContractEVM',
+      apiCreateRequestVerify: {
+        key: 'apiCreateRequest',
+        path: 'v1.VerifyContractEVM.apiCreateRequest',
+      },
+      inputRequestVerify: {
+        key: 'inputRequestVerify',
+        path: 'v1.VerifyContractEVM.inputRequestVerify',
+      },
+    },
+    Erc20: {
+      key: 'Erc20',
+      path: 'v1.Erc20',
+    },
+    Erc721: {
+      key: 'Erc721',
+      path: 'v1.Erc721',
+    },
+    SignatureMappingEVM: {
+      key: 'SignatureMappingEVM',
+      path: 'v1.SignatureMappingEVM',
+      apiCreateRequest: {
+        key: 'apiCreateSignatureMapping',
+        path: 'v1.SignatureMappingEVM.apiCreateSignatureMapping',
+      },
+      action: {
+        key: 'createJobMapping',
+        path: 'v1.SignatureMappingEVM.createJobMapping',
+      },
+    },
+    CrawlEvmProxyHistory: {
+      key: 'CrawlEvmProxyHistory',
+      path: 'v1.CrawlEvmProxyHistory',
+    },
+    JobService: {
+      CrawlEvmEvent: {
+        key: 'CrawlEvmEvent',
+        path: 'v1.CrawlEvmEvent',
+      },
+      CreateEvmEventPartition: {
+        key: 'CreateEvmEventPartition',
+        path: 'v1.CreateEvmEventPartition',
+      },
+      CreateConstraintInEvmEventPartition: {
+        key: 'CreateConstraintInEvmEventPartition',
+        path: 'v1.CreateConstraintInEvmEventPartition',
+      },
+      CreateEVMTransactionPartition: {
+        key: 'CreateEVMTransactionPartition',
+        path: 'v1.CreateEVMTransactionPartition',
+      },
+      CreateConstraintInEVMTransactionPartition: {
+        key: 'CreateConstraintInEVMTransactionPartition',
+        path: 'v1.CreateConstraintInEVMTransactionPartition',
+      },
+      UpdateEvmAssets: {
+        key: 'UpdateEvmAssets',
+        path: 'v1.UpdateEvmAssets',
+      },
+    },
+  },
+  V2: {
+    EvmProxyService: {
+      key: 'EvmProxyService',
+      path: 'v2.EvmProxyService',
+      evmProxy: {
+        key: 'evmProxy',
+        path: 'v2.EvmProxyService.evmProxy',
+      },
+    },
+  },
+};
+
+export const BULL_JOB_NAME = {
+  HANDLE_TRANSACTION_EVM: 'handle:transaction-evm',
+  HANDLE_EVM_SIGNATURE_MAPPING: 'handle:evm-signature-mapping',
+  CRAWL_SMART_CONTRACT_EVM: 'crawl:smart-contract-evm',
+  VERIFY_CONTRACT_EVM: 'verify:contract-evm',
+  HANDLE_ERC20_CONTRACT: 'handle:erc20-contract',
+  HANDLE_ERC20_ACTIVITY: 'handle:erc20-activity',
+  HANDLE_EVM_PROXY_HISTORY: 'handle:evm-proxy-history',
+  JOB_CRAWL_EVM_EVENT: 'job:crawl-evm-event',
+  JOB_CREATE_EVM_TRANSACTION_PARTITION: 'job:create-evm-transaction-partition',
+  JOB_CHECK_EVM_EVENT_CONSTRAINT: 'job:check-need-create-evm-event-constraint',
+  JOB_CREATE_EVM_EVENT_CONSTRAINT: 'job:create-evm-event-constraint',
+  JOB_CHECK_EVM_TRANSACTION_CONSTRAINT:
+    'job:check-need-create-evm-transaction-constraint',
+  JOB_UPDATE_EVM_ASSETS: 'job:update-evm-assets',
+  JOB_CREATE_EVM_TRANSACTION_CONSTRAINT:
+    'job:create-evm-transaction-constraint',
+  JOB_CREATE_EVM_EVENT_PARTITION: 'job:create-evm-event-partition',
+};
+
+export const MSG_TYPE = {
+  MSG_ETHEREUM_TX: '/ethermint.evm.v1.MsgEthereumTx',
+};

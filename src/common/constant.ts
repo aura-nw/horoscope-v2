@@ -79,15 +79,12 @@ export const BULL_JOB_NAME = {
   RETRY_CRAWL_VALIDATOR_IMG: 'retry:crawl-validator-img',
   JOB_CHECK_NEED_CREATE_EVENT_ATTR_PARTITION:
     'job:check-need-create-event-attr-partition',
-  JOB_CRAWL_EVM_EVENT: 'job:crawl-evm-event',
   JOB_CREATE_EVENT_ATTR_PARTITION: 'job:create-event-attr-partition',
-  JOB_CREATE_EVM_EVENT_PARTITION: 'job:create-evm-event-partition',
   JOB_CREATE_EVENT_PARTITION: 'job:create-event-partition',
   JOB_CREATE_TRANSACTION_PARTITION: 'job:create-transaction-partition',
   JOB_CREATE_BLOCK_PARTITION: 'job:create-block-partition',
   JOB_CREATE_TRANSACTION_MESSAGE_PARTITION:
     'job:create-transaction-message-partition',
-  JOB_CREATE_EVM_TRANSACTION_PARTITION: 'job:create-evm-transaction-partition',
   CRAWL_GENESIS_FEEGRANT: 'crawl:genesis-feegrant',
   CRAWL_DAILY_STATISTICS: 'crawl:daily-statistics',
   CRAWL_ACCOUNT_STATISTICS: 'crawl:account-statistics',
@@ -111,35 +108,20 @@ export const BULL_JOB_NAME = {
   JOB_SUMMARIZE_BRIN_INDEX_IN_TABLE: 'job:summarize-brin-index-in-table',
   JOB_CREATE_CONSTRAINT_IN_ATTR_PARTITION:
     'job:create-constraint-in-attr-partition',
-  JOB_CHECK_EVM_EVENT_CONSTRAINT: 'job:check-need-create-evm-event-constraint',
-  JOB_CREATE_EVM_EVENT_CONSTRAINT: 'job:create-evm-event-constraint',
   JOB_CHECK_NEED_CREATE_CONSTRAINT: 'job:check-need-create-constraint',
   JOB_CHECK_EVENT_CONSTRAINT: 'job:check-need-create-event-constraint',
   JOB_CHECK_TRANSACTION_CONSTRAINT:
     'job:check-need-create-transaction-constraint',
   JOB_CHECK_TRANSACTION_MESSAGE_CONSTRAINT:
     'job:check-need-create-transaction-message-constraint',
-  JOB_CHECK_EVM_TRANSACTION_CONSTRAINT:
-    'job:check-need-create-evm-transaction-constraint',
   JOB_CREATE_EVENT_CONSTRAIN: 'job:create-event-constraint',
   JOB_UPDATE_ASSETS: 'job:update-assets',
-  JOB_UPDATE_EVM_ASSETS: 'job:update-evm-assets',
   UPLOAD_BLOCK_RAW_LOG_TO_S3: 'job:upload-block-raw-log-to-s3',
   UPLOAD_TX_RAW_LOG_TO_S3: 'job:upload-tx-raw-log-to-s3',
   JOB_CREATE_TRANSACTION_CONSTRAINT: 'job:create-transaction-constraint',
   JOB_CREATE_TRANSACTION_MESSAGE_CONSTRAINT:
     'job:create-transaction-message-constraint',
-  JOB_CREATE_EVM_TRANSACTION_CONSTRAINT:
-    'job:create-evm-transaction-constraint',
   JOB_UPDATE_TX_COUNT_IN_BLOCK: 'job:update-tx-count-in-block',
-  HANDLE_TRANSACTION_EVM: 'handle:transaction-evm',
-  HANDLE_EVM_SIGNATURE_MAPPING: 'handle:evm-signature-mapping',
-  CRAWL_SMART_CONTRACT_EVM: 'crawl:smart-contract-evm',
-  VERIFY_CONTRACT_EVM: 'verify:contract-evm',
-  HANDLE_ERC20_CONTRACT: 'handle:erc20-contract',
-  HANDLE_ERC721_CONTRACT: 'handle:erc721-contract',
-  HANDLE_ERC20_ACTIVITY: 'handle:erc20-activity',
-  HANDLE_EVM_PROXY_HISTORY: 'handle:evm-proxy-history',
 };
 
 export const SERVICE = {
@@ -292,18 +274,6 @@ export const SERVICE = {
       },
     },
     JobService: {
-      CrawlEvmEvent: {
-        key: 'CrawlEvmEvent',
-        path: 'v1.CrawlEvmEvent',
-      },
-      CreateEvmEventPartition: {
-        key: 'CreateEvmEventPartition',
-        path: 'v1.CreateEvmEventPartition',
-      },
-      CreateConstraintInEvmEventPartition: {
-        key: 'CreateConstraintInEvmEventPartition',
-        path: 'v1.CreateConstraintInEvmEventPartition',
-      },
       CreateBlockPartition: {
         key: 'CreateBlockPartition',
         path: 'v1.CreateBlockPartition',
@@ -323,10 +293,6 @@ export const SERVICE = {
       CreateTransactionMessagePartition: {
         key: 'CreateTransactionMessagePartition',
         path: 'v1.CreateTransactionMessagePartition',
-      },
-      CreateEVMTransactionPartition: {
-        key: 'CreateEVMTransactionPartition',
-        path: 'v1.CreateEVMTransactionPartition',
       },
       ReDecodeTx: {
         key: 'ReDecodeTx',
@@ -376,17 +342,9 @@ export const SERVICE = {
         key: 'CreateConstraintInTransactionMessagePartition',
         path: 'v1.CreateConstraintInTransactionMessagePartition',
       },
-      CreateConstraintInEVMTransactionPartition: {
-        key: 'CreateConstraintInEVMTransactionPartition',
-        path: 'v1.CreateConstraintInEVMTransactionPartition',
-      },
       UpdateTxCountInBlock: {
         key: 'UpdateTxCountInBlock',
         path: 'v1.UpdateTxCountInBlock',
-      },
-      UpdateEvmAssets: {
-        key: 'UpdateEvmAssets',
-        path: 'v1.UpdateEvmAssets',
       },
     },
     CrawlIBCTaoService: {
@@ -456,42 +414,6 @@ export const SERVICE = {
     UploadTxRawLogToS3: {
       key: 'UploadTxRawLogToS3',
       path: 'v1.UploadTxRawLogToS3',
-    },
-    HandleTransactionEVM: {
-      key: 'HandleTransactionEVM',
-      path: 'v1.HandleTransactionEVM',
-    },
-    CrawlSmartContractEVM: {
-      key: 'CrawlSmartContractEVM',
-      path: 'v1.CrawlSmartContractEVM',
-    },
-    VerifyContractEVM: {
-      key: 'VerifyContractEVM',
-      path: 'v1.VerifyContractEVM',
-      inputRequestVerify: {
-        key: 'inputRequestVerify',
-        path: 'v1.VerifyContractEVM.inputRequestVerify',
-      },
-    },
-    Erc20: {
-      key: 'Erc20',
-      path: 'v1.Erc20',
-    },
-    Erc721: {
-      key: 'Erc721',
-      path: 'v1.Erc721',
-    },
-    SignatureMappingEVM: {
-      key: 'SignatureMappingEVM',
-      path: 'v1.SignatureMappingEVM',
-      action: {
-        key: 'createJobMapping',
-        path: 'v1.SignatureMappingEVM.createJobMapping',
-      },
-    },
-    CrawlEvmProxyHistory: {
-      key: 'CrawlEvmProxyHistory',
-      path: 'v1.CrawlEvmProxyHistory',
     },
   },
 };

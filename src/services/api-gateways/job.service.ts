@@ -1,6 +1,7 @@
 import { Post, Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
 import { SERVICE } from '../../common';
+import { SERVICE as EVM_SERVICE } from '../evm/constant';
 import BaseService from '../../base/base.service';
 import networks from '../../../network.json' assert { type: 'json' };
 
@@ -106,7 +107,7 @@ export default class JobService extends BaseService {
     );
 
     await this.broker.call(
-      `${SERVICE.V1.SignatureMappingEVM.action.path}@${selectedChain?.moleculerNamespace}`,
+      `${EVM_SERVICE.V1.SignatureMappingEVM.action.path}@${selectedChain?.moleculerNamespace}`,
       {
         addresses: ctx.params.addresses,
       }
