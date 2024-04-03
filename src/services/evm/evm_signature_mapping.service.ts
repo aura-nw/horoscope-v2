@@ -5,7 +5,8 @@ import {
 import { Context, ServiceBroker } from 'moleculer';
 import { ethers } from 'ethers';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { BULL_JOB_NAME, IAddressesParam, SERVICE } from '../../common';
+import { IAddressesParam } from '../../common';
+import { BULL_JOB_NAME, SERVICE } from './constant';
 import config from '../../../config.json' assert { type: 'json' };
 import { EVMContractVerification, EvmSignatureMapping } from '../../models';
 

@@ -2,7 +2,7 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { BULL_JOB_NAME, SERVICE } from '../../common';
+import { BULL_JOB_NAME, SERVICE } from './constant';
 import { Asset } from '../../models/asset';
 import { Erc20Contract } from '../../models/erc20_contract';
 
@@ -27,7 +27,7 @@ export default class UpdateEvmAssetsJob extends BullableService {
         Asset.fromJson({
           denom: erc20Asset.address,
           type: Asset.TYPE.ERC20_TOKEN,
-          decimal: erc20Asset.decimals,
+          decimal: erc20Asset.decimal,
           name: erc20Asset.name,
           total_supply: erc20Asset.total_supply,
           origin_id: erc20Asset.evm_smart_contract_id,

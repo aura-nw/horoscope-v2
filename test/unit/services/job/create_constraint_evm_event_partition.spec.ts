@@ -1,7 +1,7 @@
 import { BeforeEach, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import knex from '../../../../src/common/utils/db_connection';
-import CreateConstraintInEvmEventPartitionJob from '../../../../src/services/job/create_constraint_in_evm_event_partition.service';
+import CreateConstraintInEvmEventPartitionJob from '../../../../src/services/evm/job/create_constraint_in_evm_event_partition.service';
 import { EvmEvent } from '../../../../src/models';
 
 @Describe('Test create constraint for evm_event partition')
@@ -88,6 +88,8 @@ export default class CreateConstraintEvmEventPartitionSpec {
 
     // Verify constraint created
     const expectedInsertingConstraintName = `evm_event_ct_${partitions[0].name}_${this.createConstraintInEvmEventPartitionJob?.insertionStatus.inserting}`;
+    const expectedInsertingTxIdConstraintName = `evm_event_c1_${partitions[0].name}_${this.createConstraintInEvmEventPartitionJob?.insertionStatus.inserting}`;
+    const expectedInsertingEvmTxIdConstraintName = `evm_event_c2_${partitions[0].name}_${this.createConstraintInEvmEventPartitionJob?.insertionStatus.inserting}`;
     const isInsertingConstraintExist = await this.isConstraintNameExist(
       partitions[0].name,
       expectedInsertingConstraintName
@@ -117,17 +119,41 @@ export default class CreateConstraintEvmEventPartitionSpec {
     );
 
     // Verify constraint created
-    const expectedDoneConstraintName = `evm_event_ct_${partitions[0].name}_${this.createConstraintInEvmEventPartitionJob?.insertionStatus.done}`;
-    const isDoneConstraintExist = await this.isConstraintNameExist(
+    const expectedBlockConstraintName = `evm_event_ct_${partitions[0].name}_${this.createConstraintInEvmEventPartitionJob?.insertionStatus.done}`;
+    const expectedTxIdConstraintName = `evm_event_c1_${partitions[0].name}_${this.createConstraintInEvmEventPartitionJob?.insertionStatus.done}`;
+    const expectedEvmTxIdConstraintName = `evm_event_c2_${partitions[0].name}_${this.createConstraintInEvmEventPartitionJob?.insertionStatus.done}`;
+
+    const isDoneBlockConstraintExist = await this.isConstraintNameExist(
       partitions[0].name,
-      expectedDoneConstraintName
+      expectedBlockConstraintName
+    );
+    const isDoneTxIdConstraintExist = await this.isConstraintNameExist(
+      partitions[0].name,
+      expectedTxIdConstraintName
+    );
+    const isDoneEvmTxIdConstraintExist = await this.isConstraintNameExist(
+      partitions[0].name,
+      expectedEvmTxIdConstraintName
     );
     const isInsertingConstraintNotExist = await this.isConstraintNameExist(
       partitions[0].name,
       expectedInsertingConstraintName
     );
-    expect(isDoneConstraintExist).toEqual(true);
+    const isInsertingTxIdConstraintNotExist = await this.isConstraintNameExist(
+      partitions[0].name,
+      expectedInsertingTxIdConstraintName
+    );
+    const isInsertingEvmTxIdConstraintNotExist =
+      await this.isConstraintNameExist(
+        partitions[0].name,
+        expectedInsertingEvmTxIdConstraintName
+      );
+    expect(isDoneBlockConstraintExist).toEqual(true);
+    expect(isDoneTxIdConstraintExist).toEqual(true);
+    expect(isDoneEvmTxIdConstraintExist).toEqual(true);
     expect(isInsertingConstraintNotExist).toEqual(false);
+    expect(isInsertingTxIdConstraintNotExist).toEqual(false);
+    expect(isInsertingEvmTxIdConstraintNotExist).toEqual(false);
 
     const checkAgainStatus =
       await this.createConstraintInEvmEventPartitionJob?.createEvmEventConstraint(
@@ -139,7 +165,9 @@ export default class CreateConstraintEvmEventPartitionSpec {
     );
 
     await knex.raw(`
-      ALTER TABLE ${partitions[0].name} DROP CONSTRAINT ${expectedDoneConstraintName};
+      ALTER TABLE ${partitions[0].name} DROP CONSTRAINT ${expectedBlockConstraintName};
+      ALTER TABLE ${partitions[0].name} DROP CONSTRAINT ${expectedTxIdConstraintName};
+      ALTER TABLE ${partitions[0].name} DROP CONSTRAINT ${expectedEvmTxIdConstraintName};
     `);
   }
 }

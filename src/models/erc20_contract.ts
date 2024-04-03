@@ -17,7 +17,7 @@ export class Erc20Contract extends BaseModel {
 
   address!: string;
 
-  decimals?: string;
+  decimal?: string;
 
   name?: string;
 

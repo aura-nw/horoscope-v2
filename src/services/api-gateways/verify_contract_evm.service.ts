@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { Post, Service } from '@ourparentcenter/moleculer-decorators-extended';
 import moleculer, { Context, ServiceBroker } from 'moleculer';
-// import { SERVICE } from '../../common';
 import BaseService from '../../base/base.service';
-import { SERVICE } from '../../common';
+import { SERVICE } from '../evm/constant';
 import networks from '../../../network.json' assert { type: 'json' };
 
 @Service({
@@ -61,10 +60,5 @@ export default class VerifyContractEVM extends BaseService {
           reject(err);
         });
     });
-  }
-
-  async verifyContract() {
-    this.logger.info('verify contract');
-    return 'verify contract';
   }
 }
