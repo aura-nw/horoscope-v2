@@ -1,5 +1,5 @@
 import { Knex } from 'knex';
-import { Erc20Activity } from '../src/models';
+import { Erc20Activity } from '../../src/models';
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.alterTable('erc20_activity', (table) => {
