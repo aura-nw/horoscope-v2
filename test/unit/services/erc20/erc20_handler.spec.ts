@@ -70,6 +70,7 @@ export default class Erc20HandlerTest {
       to: to.toLowerCase(),
       height: evmEvent.block_height,
       tx_hash: evmEvent.tx_hash,
+      evm_tx_id: evmEvent.evm_tx_id,
     });
   }
 
@@ -119,6 +120,7 @@ export default class Erc20HandlerTest {
       to: to.toLowerCase(),
       height: evmEvent.block_height,
       tx_hash: evmEvent.tx_hash,
+      evm_tx_id: evmEvent.evm_tx_id,
     });
   }
 }

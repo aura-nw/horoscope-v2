@@ -6,7 +6,7 @@ import _ from 'lodash';
 import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { BULL_JOB_NAME, SERVICE } from '../../common';
+import { BULL_JOB_NAME, SERVICE } from './constant';
 import knex from '../../common/utils/db_connection';
 import EtherJsClient from '../../common/utils/etherjs_client';
 import { BlockCheckpoint, EVMSmartContract, EvmEvent } from '../../models';
@@ -82,7 +82,8 @@ export default class Erc20Service extends BullableService {
         .select(
           'evm_event.*',
           'evm_transaction.from as sender',
-          'evm_smart_contract.id as evm_smart_contract_id'
+          'evm_smart_contract.id as evm_smart_contract_id',
+          'evm_transaction.id as evm_tx_id'
         );
       await this.handleMissingErc20Contract(erc20Events, trx);
       const erc20Activities: Erc20Activity[] = [];

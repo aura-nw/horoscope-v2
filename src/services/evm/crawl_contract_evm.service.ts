@@ -8,11 +8,14 @@ import {
   EVMSmartContract,
   EVMTransaction,
 } from '../../models';
-import { BULL_JOB_NAME, SERVICE } from '../../common';
+import {
+  BULL_JOB_NAME,
+  SERVICE,
+  EVM_CONTRACT_METHOD_HEX_PREFIX,
+} from './constant';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
-import { EVM_CONTRACT_METHOD_HEX_PREFIX } from './constant';
 import { ContractHelper } from './helpers/contract_helper';
 
 @Service({

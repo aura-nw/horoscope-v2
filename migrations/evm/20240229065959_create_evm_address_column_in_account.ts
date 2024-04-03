@@ -1,6 +1,6 @@
 import { Knex } from 'knex';
-import { convertBech32AddressToEthAddress } from '../src/services/evm/utils';
-import config from '../config.json' assert { type: 'json' };
+import { convertBech32AddressToEthAddress } from '../../src/services/evm/utils';
+import config from '../../config.json' assert { type: 'json' };
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.alterTable('account', (table) => {
     table.string('evm_address').unique().index();

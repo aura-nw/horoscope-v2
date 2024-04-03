@@ -2,13 +2,14 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import _ from 'lodash';
 import { fromBase64, toHex } from '@cosmjs/encoding';
+import { BULL_JOB_NAME as COSMOS_BULL_JOB_NAME } from '../../common';
 import Utils from '../../common/utils/utils';
 import {
   BlockCheckpoint,
   EVMTransaction,
   TransactionMessage,
 } from '../../models';
-import { BULL_JOB_NAME, MSG_TYPE, SERVICE } from '../../common';
+import { BULL_JOB_NAME, MSG_TYPE, SERVICE } from './constant';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
@@ -34,7 +35,7 @@ export default class HandleTransactionEVMService extends BullableService {
     const [startBlock, endBlock, blockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.HANDLE_TRANSACTION_EVM,
-        [BULL_JOB_NAME.HANDLE_TRANSACTION],
+        [COSMOS_BULL_JOB_NAME.HANDLE_TRANSACTION],
         config.handleTransactionEVM.key
       );
     this.logger.info(
@@ -51,6 +52,7 @@ export default class HandleTransactionEVMService extends BullableService {
         'transaction_message.id as tx_msg_id',
         'transaction.id as tx_id',
         'transaction.height',
+        'transaction.index as tx_index',
         'transaction_message.sender',
         'transaction_message.content'
       )
@@ -65,7 +67,7 @@ export default class HandleTransactionEVMService extends BullableService {
         let { sender } = txMsg;
         if (content?.from) {
           sender = content.from.toLowerCase();
-        } else {
+        } else if (sender) {
           sender = convertBech32AddressToEthAddress(
             config.networkPrefixAddress,
             sender
@@ -88,6 +90,7 @@ export default class HandleTransactionEVMService extends BullableService {
               : null,
             nonce: Utils.getBigIntIfNotNull(content.data?.nonce),
             value: Utils.getBigIntIfNotNull(content.data?.value),
+            index: txMsg.tx_index,
           })
         );
       });

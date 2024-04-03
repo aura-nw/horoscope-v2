@@ -1,7 +1,7 @@
 import { AfterAll, BeforeEach, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import knex from '../../../../src/common/utils/db_connection';
-import CreateEvmEventPartitionJob from '../../../../src/services/job/create_evm_event_partition.service';
+import CreateEvmEventPartitionJob from '../../../../src/services/evm/job/create_evm_event_partition.service';
 import { EvmEvent } from '../../../../src/models';
 import config from '../../../../config.json' assert { type: 'json' };
 

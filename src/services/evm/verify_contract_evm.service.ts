@@ -16,13 +16,14 @@ import pkg, {
   storeByHash,
   verifyDeployed,
   unzipFiles,
+  isEmpty,
 } from '@ethereum-sourcify/lib-sourcify';
 import { id as keccak256str, keccak256 } from 'ethers';
 import { createHash } from 'crypto';
 import { lt } from 'semver';
 import { BlockCheckpoint, EVMContractVerification } from '../../models';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { BULL_JOB_NAME, SERVICE } from '../../common';
+import { BULL_JOB_NAME, SERVICE } from './constant';
 import config from '../../../config.json' assert { type: 'json' };
 import { SolidityCompiler } from './solidity_compiler';
 import networks from '../../../network.json' assert { type: 'json' };
@@ -62,9 +63,17 @@ export default class VerifyContractEVM extends BullableService {
       const listPromise = [];
       for (let i = 0; i < listRequestVerify.length; i += 1) {
         const requestVerify = listRequestVerify[i];
+        this.logger.info(
+          `Verifying request id ${requestVerify.id} with address ${requestVerify.contract_address}`
+        );
         let codeHash;
+        const compileDetails: any = [];
         try {
-          if (this.isZip(requestVerify.files)) {
+          if (
+            this.isZip(requestVerify.files) ||
+            this.isJson(requestVerify.files)
+          ) {
+            let compileDetail: any;
             const files = [
               {
                 path: requestVerify.id.toString(),
@@ -81,11 +90,39 @@ export default class VerifyContractEVM extends BullableService {
             // verify this contracts
             for (let j = 0; j < contracts.length; j += 1) {
               const contract = contracts[j];
-              const matchResult = await verifyDeployed(
-                contract,
-                this._sourcifyChain,
-                requestVerify.contract_address
-              );
+              if (!contract.compilerVersion) {
+                contract.compilerVersion = requestVerify.compiler_version;
+                contract.metadata.compiler.version =
+                  requestVerify.compiler_version;
+              }
+              await this.checkAndFetchMissing(contract);
+              compileDetail = {
+                name: contract.name,
+                missing: contract.missing,
+                invalid: contract.invalid,
+              };
+
+              if (!this.isVerifiable(contract)) {
+                compileDetails.push(compileDetail);
+                throw Error('this contract is not verifiable');
+              }
+              let matchResult;
+              try {
+                matchResult = await verifyDeployed(
+                  contract,
+                  this._sourcifyChain,
+                  requestVerify.contract_address
+                );
+              } catch (error: any) {
+                compileDetail.error = error.message;
+                this.logger.warn(error);
+              } finally {
+                if (!matchResult) {
+                  compileDetails.push(compileDetail);
+                  // eslint-disable-next-line no-continue, no-unsafe-finally
+                  continue;
+                }
+              }
 
               let useEmscripten = false;
               // See https://github.com/ethereum/sourcify/issues/1159
@@ -102,6 +139,11 @@ export default class VerifyContractEVM extends BullableService {
               this.logger.info(matchResult);
               this.logger.info(abi);
               codeHash = keccak256(recompiled.runtimeBytecode);
+
+              compileDetail.matchResult = {
+                runtimeMatch: matchResult.runtimeMatch,
+              };
+              compileDetails.push(compileDetail);
               if (matchResult.runtimeMatch === 'perfect') {
                 listTriggerContractSignatureMapping.push(
                   requestVerify.contract_address
@@ -111,27 +153,42 @@ export default class VerifyContractEVM extends BullableService {
                     .patch({
                       abi: JSON.stringify(abi),
                       code_hash: codeHash,
+                      compile_detail: JSON.stringify(compileDetails),
+                      compiler_version: contract.compilerVersion,
+                      contract_name: contract.name,
                       status:
                         EVMContractVerification.VERIFICATION_STATUS.SUCCESS,
                     })
                     .where({ id: requestVerify.id })
                     .transacting(trx)
                 );
+                break;
               } else {
                 throw Error(matchResult.message);
               }
             }
           } else {
-            throw Error('this is not zip file');
+            compileDetails.push({
+              invalid: {
+                fileType: 'invalid',
+              },
+            });
+            throw Error('this is not zip/json file');
           }
-        } catch (error) {
+        } catch (error: any) {
           this.logger.error(error);
+          compileDetails.push({
+            error: error.message,
+          });
+        }
+        if (listPromise.length === 0) {
           listPromise.push(
             EVMContractVerification.query()
               .patch({
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 files: null,
+                compile_detail: JSON.stringify(compileDetails),
                 code_hash: codeHash,
                 status: EVMContractVerification.VERIFICATION_STATUS.FAIL,
               })
@@ -169,17 +226,49 @@ export default class VerifyContractEVM extends BullableService {
 
   @Action({
     name: SERVICE.V1.VerifyContractEVM.inputRequestVerify.key,
+    params: {
+      contract_address: 'string',
+      creator_tx_hash: {
+        type: 'string',
+        optional: true,
+      },
+      url: {
+        type: 'string',
+        optional: true,
+      },
+      files: {
+        type: 'array',
+        items: 'number',
+      },
+      compiler_version: {
+        type: 'string',
+        optional: true,
+      },
+    },
   })
-  public async actionCreateJob(ctx: Context<any>) {
+  public async actionCreateJob(
+    ctx: Context<{
+      contract_address: string;
+      creator_tx_hash: string | null;
+      url: string | null;
+      files: any;
+      compiler_version: string | null;
+    }>
+  ) {
     const requestVerify = EVMContractVerification.fromJson({
       contract_address: ctx.params.contract_address,
       files: Buffer.from(ctx.params.files),
       creator_tx_hash: ctx.params.creator_tx_hash,
+      compiler_version: ctx.params.compiler_version,
       status: EVMContractVerification.VERIFICATION_STATUS.PENDING,
     });
-    const response = await EVMContractVerification.query().insert(
+    const { id, status } = await EVMContractVerification.query().insert(
       requestVerify
     );
+    const response = {
+      id,
+      status,
+    };
     return response;
   }
 
@@ -379,6 +468,15 @@ export default class VerifyContractEVM extends BullableService {
     return response;
   }
 
+  isJson(file: any): boolean {
+    try {
+      JSON.parse(file);
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
   pathContentArrayToStringMap(pathContentArr: PathContent[]) {
     const stringMapResult: StringMap = {};
     pathContentArr.forEach((elem, i) => {
@@ -456,5 +554,22 @@ export default class VerifyContractEVM extends BullableService {
     const objString = JSON.stringify(obj);
     const hash = createHash('sha1').update(objString).digest('hex');
     return hash;
+  }
+
+  async checkAndFetchMissing(contract: CheckedContract): Promise<void> {
+    if (!CheckedContract.isValid(contract)) {
+      try {
+        // Try to fetch missing files
+        await CheckedContract.fetchMissing(contract);
+      } catch (e) {
+        // There's no need to throw inside fetchMissing if we're going to do an empty catch. This would cause not being able to catch other potential errors inside the function. TODO: Don't throw inside `fetchMissing` and remove the try/catch block.
+        // Missing files are accessible from the contract.missingFiles array.
+        // No need to throw an error
+      }
+    }
+  }
+
+  isVerifiable(contract: CheckedContract) {
+    return isEmpty(contract.missing) && isEmpty(contract.invalid);
   }
 }

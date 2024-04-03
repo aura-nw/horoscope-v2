@@ -1,7 +1,7 @@
 import { BeforeEach, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import knex from '../../../../src/common/utils/db_connection';
-import CreateConstraintInEvmEventPartitionJob from '../../../../src/services/job/create_constraint_in_evm_event_partition.service';
+import CreateConstraintInEvmEventPartitionJob from '../../../../src/services/evm/job/create_constraint_in_evm_event_partition.service';
 import { EvmEvent } from '../../../../src/models';
 
 @Describe('Test create constraint for evm_event partition')
