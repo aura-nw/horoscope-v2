@@ -120,6 +120,7 @@ export class EventAttribute extends BaseModel {
     REFUND_DENOM: 'refund_denom',
     REFUND_AMOUNT: 'refund_amount',
     MEMO: 'memo',
+    BLOOM: 'bloom',
   };
 
   static ATTRIBUTE_COMPOSITE_KEY = {

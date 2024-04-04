@@ -125,6 +125,7 @@ export default class CrawlAccountService extends BullableService {
         if (auth) {
           const account: any = {};
           account.type = auth['@type'];
+          account.code_hash = auth.code_hash;
           switch (auth['@type']) {
             case AccountType.CONTINUOUS_VESTING:
             case AccountType.DELAYED_VESTING:
@@ -198,6 +199,7 @@ export default class CrawlAccountService extends BullableService {
                 pubkey: account.pubkey,
                 account_number: account.account_number,
                 sequence: account.sequence,
+                code_hash: account.code_hash,
               })
               .where({ id: account.id })
               .transacting(trx)

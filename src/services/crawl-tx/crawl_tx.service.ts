@@ -11,6 +11,7 @@ import { toBase64, fromBase64 } from '@cosmjs/encoding';
 import { Knex } from 'knex';
 import { Queue } from 'bullmq';
 import { GetNodeInfoResponseSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/base/tendermint/v1beta1/query';
+import _ from 'lodash';
 import Utils from '../../common/utils/utils';
 import {
   BULL_JOB_NAME,
@@ -318,94 +319,6 @@ export default class CrawlTxService extends BullableService {
     return listDecodedTx;
   }
 
-  // insert list decoded tx and related table (event, event_attribute, message, message_received)
-  async insertDecodedTxAndRelated(
-    listDecodedTx: { listTx: any; height: number; timestamp: string }[],
-    transactionDB: Knex.Transaction
-  ) {
-    this.logger.debug(listDecodedTx);
-    const listTxModel: any[] = [];
-    listDecodedTx.forEach((payloadBlock) => {
-      const { listTx, height, timestamp } = payloadBlock;
-      listTx.forEach((tx: any, indexTx: number) => {
-        this.logger.debug(tx, timestamp);
-        let sender = '';
-        try {
-          sender = this._registry.decodeAttribute(
-            this._findAttribute(
-              tx.tx_response.events,
-              'message',
-              this._registry.encodeAttribute('sender')
-            )
-          );
-        } catch (error) {
-          this.logger.warn(
-            'txhash not has sender event: ',
-            tx.tx_response.txhash
-          );
-          this.logger.warn(error);
-        }
-
-        // set index to event
-        this.setMsgIndexToEvent(tx);
-
-        const txInsert = {
-          '#id': `transaction-${height}-${indexTx}`,
-          ...Transaction.fromJson({
-            index: tx.tx_response.index,
-            height: parseInt(tx.tx_response.height, 10),
-            hash: tx.tx_response.txhash,
-            codespace: tx.tx_response.codespace ?? '',
-            code: parseInt(tx.tx_response.code ?? '0', 10),
-            gas_used: tx.tx_response.gas_used?.toString() ?? '0',
-            gas_wanted: tx.tx_response.gas_wanted?.toString() ?? '0',
-            gas_limit: tx.tx.auth_info.fee.gas_limit?.toString() ?? '0',
-            fee: JSON.stringify(tx.tx.auth_info.fee.amount),
-            timestamp,
-            data: config.handleTransaction.saveRawLog ? tx : null,
-            memo: tx.tx.body.memo,
-          }),
-          events: tx.tx_response.events?.map((event: any) => ({
-            tx_msg_index: event.msg_index ?? undefined,
-            type: event.type,
-            attributes: event.attributes.map(
-              (attribute: any, index: number) => ({
-                tx_id: `#ref{transaction-${height}-${indexTx}.id}`,
-                block_height: parseInt(tx.tx_response.height, 10),
-                index,
-                composite_key: attribute?.key
-                  ? `${event.type}.${this._registry.decodeAttribute(
-                      attribute?.key
-                    )}`
-                  : null,
-                key: attribute?.key
-                  ? this._registry.decodeAttribute(attribute?.key)
-                  : null,
-                value: attribute?.value
-                  ? this._registry.decodeAttribute(attribute?.value)
-                  : null,
-              })
-            ),
-            block_height: height,
-            source: Event.SOURCE.TX_EVENT,
-          })),
-          messages: tx.tx.body.messages.map((message: any, index: any) => ({
-            sender,
-            index,
-            type: message['@type'],
-            content: message,
-          })),
-        };
-        listTxModel.push(txInsert);
-      });
-    });
-
-    const resultInsertGraph = await Transaction.query()
-      .insertGraph(listTxModel, { allowRefs: true })
-      .transacting(transactionDB);
-    this.logger.debug('result insert tx', resultInsertGraph);
-  }
-
   async insertTxDecoded(
     listTxDecoded: { listTx: any; height: number; timestamp: string }[],
     transactionDB: Knex.Transaction
@@ -474,30 +387,32 @@ export default class CrawlTxService extends BullableService {
         // this.logger.warn(error);
       }
 
-      // set index to event
-      this.setMsgIndexToEvent(rawLogTx);
+      // create list event with msg index
+      const listEventWithMsgIndex = this.createListEventWithMsgIndex(rawLogTx);
 
       const eventInsert =
-        rawLogTx.tx_response.events?.map((event: any) => ({
+        listEventWithMsgIndex?.map((event: any) => ({
           tx_id: tx.id,
           tx_msg_index: event.msg_index ?? undefined,
           type: event.type,
-          attributes: event.attributes.map((attribute: any, index: number) => ({
-            tx_id: tx.id,
-            block_height: tx.height,
-            index,
-            composite_key: attribute?.key
-              ? `${event.type}.${this._registry.decodeAttribute(
-                  attribute?.key
-                )}`
-              : null,
-            key: attribute?.key
-              ? this._registry.decodeAttribute(attribute?.key)
-              : null,
-            value: attribute?.value
-              ? this._registry.decodeAttribute(attribute?.value)
-              : null,
-          })),
+          attributes: event.attributes?.map(
+            (attribute: any, index: number) => ({
+              tx_id: tx.id,
+              block_height: tx.height,
+              index,
+              composite_key: attribute?.key
+                ? `${event.type}.${this._registry.decodeAttribute(
+                    attribute?.key
+                  )}`
+                : null,
+              key: attribute?.key
+                ? this._registry.decodeAttribute(attribute?.key)
+                : null,
+              value: attribute?.value
+                ? this._registry.decodeAttribute(attribute?.value)
+                : null,
+            })
+          ),
           block_height: tx.height,
           source: Event.SOURCE.TX_EVENT,
         })) ?? [];
@@ -534,7 +449,7 @@ export default class CrawlTxService extends BullableService {
 
     tx?.tx_response?.logs?.forEach((log: any, index: number) => {
       log.events.forEach((event: any) => {
-        event.attributes.forEach((attr: any) => {
+        event.attributes?.forEach((attr: any) => {
           if (attr.value === undefined) {
             flattenLog.push(`${index}-${event.type}-${attr.key}-null`);
           } else {
@@ -545,7 +460,7 @@ export default class CrawlTxService extends BullableService {
     });
 
     tx?.tx_response?.events?.forEach((event: any) => {
-      event.attributes.forEach((attr: any) => {
+      event.attributes?.forEach((attr: any) => {
         if (event.msg_index !== undefined) {
           const key = attr.key
             ? this._registry.decodeAttribute(attr.key)
@@ -561,7 +476,10 @@ export default class CrawlTxService extends BullableService {
     });
     // compare 2 array
     if (flattenLog.length !== flattenEventEncoded.length) {
-      this.logger.warn('Length between 2 flatten array is not equal');
+      this.logger.warn(
+        'Length between 2 flatten array is not equal',
+        tx.tx_response.txhash
+      );
     }
     flattenLog = flattenLog.sort();
     flattenEventEncoded = flattenEventEncoded.sort();
@@ -569,56 +487,51 @@ export default class CrawlTxService extends BullableService {
       (item: string, index: number) => item === flattenEventEncoded[index]
     );
     if (checkResult === false) {
-      this.logger.warn('Mapping event to log is wrong');
+      this.logger.warn(
+        'Mapping event to log is wrong: ',
+        tx.tx_response.txhash
+      );
     }
   }
 
-  public setMsgIndexToEvent(tx: any) {
+  public createListEventWithMsgIndex(tx: any): any[] {
+    const returnEvents: any[] = [];
     // if this is failed tx, then no need to set index msg
     if (!tx.tx_response.logs) {
       this.logger.debug('Failed tx, no need to set index msg');
-      return;
+      return [];
     }
-    // count total attribute for each message, countAttributeInEvent[i] = x mean message i has x attributes
-    const countAttributeInEvent: number[] = tx?.tx_response?.logs?.map(
-      (log: any) =>
-        log.events.reduce(
-          (acc: number, curr: any) => acc + curr.attributes.length,
-          0
-        )
-    );
-
     let reachLastEventTypeTx = false;
-    let countCurrentAttribute = 0;
-    let currentCompareEventId = 0;
+    // last event type in event field which belongs to tx event
+    const listTxEventType = config.handleTransaction.lastEventsTypeTx;
     for (let i = 0; i < tx?.tx_response?.events?.length; i += 1) {
-      if (tx.tx_response.events[i].type === 'tx') {
+      if (listTxEventType.includes(tx.tx_response.events[i].type)) {
         reachLastEventTypeTx = true;
       }
-      if (reachLastEventTypeTx && tx.tx_response.events[i].type !== 'tx') {
-        if (
-          countCurrentAttribute < countAttributeInEvent[currentCompareEventId]
-        ) {
-          countCurrentAttribute += tx.tx_response.events[i].attributes.length;
-          // eslint-disable-next-line no-param-reassign
-          tx.tx_response.events[i].msg_index = currentCompareEventId;
-        }
-
-        // after count, check if count is equal countAttributeInEvent[currentCompareEventId] or not
-        if (
-          countCurrentAttribute === countAttributeInEvent[currentCompareEventId]
-        ) {
-          // if true, count success, then next currentCompareEventId and reset count = 0
-          currentCompareEventId += 1;
-          countCurrentAttribute = 0;
-        } else if (
-          countCurrentAttribute > countAttributeInEvent[currentCompareEventId]
-        ) {
-          this.logger.warn('Count event in log is not equal event encoded');
-        }
+      if (
+        reachLastEventTypeTx &&
+        !listTxEventType.includes(tx.tx_response.events[i].type)
+      ) {
+        break;
       }
+      returnEvents.push(tx.tx_response.events[i]);
     }
-    this.checkMappingEventToLog(tx);
+    // get messages log and append to list event
+    tx.tx_response.logs.forEach((log: any, index: number) => {
+      log.events.forEach((event: any) => {
+        returnEvents.push({
+          ...event,
+          msg_index: index,
+        });
+      });
+    });
+
+    // check mapping event log ok
+    const cloneTx = _.clone(tx);
+    cloneTx.tx_response.events = returnEvents;
+    this.checkMappingEventToLog(cloneTx);
+
+    return returnEvents;
   }
 
   private _findAttribute(
