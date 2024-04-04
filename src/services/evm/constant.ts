@@ -105,6 +105,10 @@ export const SERVICE = {
       key: 'Erc20',
       path: 'v1.Erc20',
     },
+    Erc721: {
+      key: 'Erc721',
+      path: 'v1.Erc721',
+    },
     SignatureMappingEVM: {
       key: 'SignatureMappingEVM',
       path: 'v1.SignatureMappingEVM',
@@ -174,6 +178,7 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_EVM_EVENT_CONSTRAINT: 'job:create-evm-event-constraint',
   JOB_CHECK_EVM_TRANSACTION_CONSTRAINT:
     'job:check-need-create-evm-transaction-constraint',
+  HANDLE_ERC721_CONTRACT: 'handle:erc721-contract',
   JOB_UPDATE_EVM_ASSETS: 'job:update-evm-assets',
   JOB_CREATE_EVM_TRANSACTION_CONSTRAINT:
     'job:create-evm-transaction-constraint',
