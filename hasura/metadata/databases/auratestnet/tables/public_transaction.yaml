@@ -11,6 +11,16 @@ object_relationships:
         remote_table:
           name: block
           schema: public
+  - name: evm_transaction
+    using:
+      manual_configuration:
+        column_mapping:
+          height: height
+          id: tx_id
+        insertion_order: null
+        remote_table:
+          name: evm_transaction
+          schema: public
 array_relationships:
   - name: coin_transfers
     using:
@@ -43,8 +53,8 @@ array_relationships:
     using:
       manual_configuration:
         column_mapping:
-          id: tx_id
           height: block_height
+          id: tx_id
         insertion_order: null
         remote_table:
           name: view_event_attribute_value_index

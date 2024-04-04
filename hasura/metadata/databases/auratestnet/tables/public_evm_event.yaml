@@ -1,0 +1,32 @@
+table:
+  name: evm_event
+  schema: public
+object_relationships:
+  - name: evm_signature_mapping_topic0
+    using:
+      manual_configuration:
+        column_mapping:
+          topic0: topic_hash
+        insertion_order: null
+        remote_table:
+          name: evm_signature_mapping
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - address
+        - block_hash
+        - block_height
+        - data
+        - evm_tx_id
+        - id
+        - topic0
+        - topic1
+        - topic2
+        - topic3
+        - tx_hash
+        - tx_id
+        - tx_index
+      filter: {}
+      limit: 100
