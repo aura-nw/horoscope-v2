@@ -37,11 +37,11 @@
     "chainId": "auradev_1235-3",
     "RPC": ["https://rpc.dev.aura.network"],
     "LCD": ["https://lcd.dev.aura.network"],
-    "databaseName": "local_aura_evm",
+    "databaseName": "horoscope_dev_auratestnet1",
     "redisDBNumber": 4,
     "moleculerNamespace": "namespace-auratestnet",
     "EVMJSONRPC": ["https://jsonrpc.dev.aura.network"],
-    "EVMchainId": 9000
+    "EVMchainId": 1235
   },
   {
     "chainId": "aura-testnet",
