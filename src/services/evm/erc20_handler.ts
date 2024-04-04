@@ -1,5 +1,8 @@
 import { decodeAbiParameters, keccak256, toHex } from 'viem';
+import { Dictionary } from 'lodash';
 import { Erc20Activity, EvmEvent } from '../../models';
+import { AccountBalance } from '../../models/account_balance';
+import { ZERO_ADDRESS } from './constant';
 
 export const ERC20_ACTION = {
   TRANSFER: 'transfer',
@@ -38,6 +41,73 @@ export const ERC20_EVENT_TOPIC0 = {
   APPROVAL: keccak256(toHex('Approval(address,address,uint256)')),
 };
 export class Erc20Handler {
+  // key: {accountId}_{erc20ContractAddress}
+  // value: accountBalance with account_id -> accountId, denom -> erc20ContractAddress
+  accountBalances: Dictionary<AccountBalance>;
+
+  erc20Activities: Erc20Activity[];
+
+  constructor(
+    accountBalances: Dictionary<AccountBalance>,
+    erc20Activities: Erc20Activity[]
+  ) {
+    this.accountBalances = accountBalances;
+    this.erc20Activities = erc20Activities;
+  }
+
+  process() {
+    this.erc20Activities.forEach((erc20Activity) => {
+      if (erc20Activity.action === ERC20_ACTION.TRANSFER) {
+        this.handlerErc20Transfer(erc20Activity);
+      }
+    });
+  }
+
+  handlerErc20Transfer(erc20Activity: Erc20Activity) {
+    // update from account balance if from != ZERO_ADDRESS
+    if (erc20Activity.from !== ZERO_ADDRESS) {
+      const fromAccountId = erc20Activity.from_account_id;
+      const key = `${fromAccountId}_${erc20Activity.erc20_contract_address}`;
+      const fromAccountBalance = this.accountBalances[key];
+      if (
+        !fromAccountBalance ||
+        fromAccountBalance.last_updated_height <= erc20Activity.height
+      ) {
+        // calculate new balance: decrease balance of from account
+        const amount = (
+          BigInt(fromAccountBalance?.amount || 0) - BigInt(erc20Activity.amount)
+        ).toString();
+        // update object accountBalance
+        this.accountBalances[key] = AccountBalance.fromJson({
+          denom: erc20Activity.erc20_contract_address,
+          amount,
+          last_updated_height: erc20Activity.height,
+          account_id: fromAccountId,
+        });
+      }
+    }
+    // update to account balance
+    const toAccountId = erc20Activity.to_account_id;
+    const key = `${toAccountId}_${erc20Activity.erc20_contract_address}`;
+    const toAccountBalance = this.accountBalances[key];
+    if (
+      !toAccountBalance ||
+      toAccountBalance.last_updated_height <= erc20Activity.height
+    ) {
+      // calculate new balance: increase balance of to account
+      const amount = (
+        BigInt(toAccountBalance?.amount || 0) + BigInt(erc20Activity.amount)
+      ).toString();
+      // update object accountBalance
+      this.accountBalances[key] = AccountBalance.fromJson({
+        denom: erc20Activity.erc20_contract_address,
+        amount,
+        last_updated_height: erc20Activity.height,
+        account_id: toAccountId,
+      });
+    }
+  }
+
   static buildTransferActivity(e: EvmEvent) {
     try {
       const [from, to, amount] = decodeAbiParameters(

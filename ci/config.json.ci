@@ -398,5 +398,10 @@
     "blocksPerCall": 100,
     "millisecondRepeatJob": 5000,
     "chunkSizeInsert": 1000
+  },
+  "erc721": {
+    "key": "erc721",
+    "blocksPerCall": 100,
+    "millisecondRepeatJob": 2000
   }
 }

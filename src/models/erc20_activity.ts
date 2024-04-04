@@ -1,5 +1,6 @@
 import { Model } from 'objection';
 import BaseModel from './base';
+// eslint-disable-next-line import/no-cycle
 import { Erc20Contract } from './erc20_contract';
 import { EvmEvent } from './evm_event';
 import { EVMSmartContract } from './evm_smart_contract';
@@ -13,17 +14,17 @@ export class Erc20Activity extends BaseModel {
 
   evm_event_id!: number;
 
-  sender?: string;
+  sender!: string;
 
-  action?: string;
+  action!: string;
 
   erc20_contract_address!: string;
 
-  amount?: string;
+  amount!: string;
 
-  from?: string;
+  from!: string;
 
-  to?: string;
+  to!: string;
 
   height!: number;
 
