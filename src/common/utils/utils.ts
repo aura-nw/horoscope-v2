@@ -274,4 +274,17 @@ export default class Utils {
         }
       );
   }
+
+  public static getBigIntIfNotNull(value: any) {
+    if (value === null || value === undefined) {
+      return null;
+    }
+    try {
+      const result = BigInt(value);
+      return result;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
 }

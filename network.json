@@ -8,6 +8,16 @@
     "moleculerNamespace": "namespace-xstaxy"
   },
   {
+    "chainId": "evmos_9000-4",
+    "RPC": ["https://evmos-testnet-rpc.polkachu.com/"],
+    "LCD": ["https://evmos-testnet-api.polkachu.com/"],
+    "databaseName": "horoscope_dev_evmos_testnet",
+    "redisDBNumber": 25,
+    "moleculerNamespace": "erascope-dev-evmos-testnet",
+    "EVMJSONRPC": ["https://evmos-testnet.lava.build"],
+    "EVMchainId": 9000
+  },
+  {
     "chainId": "euphoria-2",
     "RPC": ["https://rpc.euphoria.aura.network"],
     "LCD": ["https://lcd.euphoria.aura.network"],
@@ -24,12 +34,14 @@
     "moleculerNamespace": "namespace-serenity"
   },
   {
-    "chainId": "aura-testnet-2",
+    "chainId": "auradev_1235-3",
     "RPC": ["https://rpc.dev.aura.network"],
     "LCD": ["https://lcd.dev.aura.network"],
     "databaseName": "horoscope_dev_auratestnet1",
     "redisDBNumber": 4,
-    "moleculerNamespace": "namespace-auratestnet"
+    "moleculerNamespace": "namespace-auratestnet",
+    "EVMJSONRPC": ["https://jsonrpc.dev.aura.network"],
+    "EVMchainId": 1235
   },
   {
     "chainId": "aura-testnet",

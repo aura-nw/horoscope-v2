@@ -19,5 +19,12 @@
   "/ibc.lightclients.tendermint.v1.ClientState",
   "/ibc.lightclients.tendermint.v1.ConsensusState",
 
-  "/cosmos.slashing.v1beta1.MsgUnjail"
+  "/cosmos.slashing.v1beta1.MsgUnjail",
+
+  "/aura.smartaccount.v1beta1.MsgActivateAccount",
+  "/aura.smartaccount.v1beta1.MsgRecover",
+
+  "/ethermint.evm.v1.DynamicFeeTx",
+  "/ethermint.evm.v1.MsgEthereumTx",
+  "/ethermint.evm.v1.LegacyTx"
 ]

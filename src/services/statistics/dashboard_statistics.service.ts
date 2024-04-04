@@ -93,6 +93,50 @@ export default class DashboardStatisticsService extends BullableService {
     return totalTx;
   }
 
+  private async getStatistic(): Promise<{
+    communityPool: any;
+    inflation: any;
+    distribution: any;
+    supply: any;
+  }> {
+    let communityPool;
+    let inflation;
+    let distribution;
+    let supply;
+    switch (config.chainId) {
+      case chainIdConfigOnServer.Atlantic2:
+      case chainIdConfigOnServer.Pacific1:
+      case chainIdConfigOnServer.Evmos90004:
+        [communityPool, supply] = await Promise.all([
+          this._lcdClient.provider.cosmos.distribution.v1beta1.communityPool(),
+          this._lcdClient.provider.cosmos.bank.v1beta1.supplyOf({
+            denom: config.networkDenom,
+          }),
+        ]);
+        break;
+      case chainIdConfigOnServer.Euphoria:
+      case chainIdConfigOnServer.SerenityTestnet001:
+      case chainIdConfigOnServer.AuraTestnetEVM:
+      case chainIdConfigOnServer.Xstaxy1:
+      default:
+        [communityPool, inflation, distribution, supply] = await Promise.all([
+          this._lcdClient.provider.cosmos.distribution.v1beta1.communityPool(),
+          this._lcdClient.provider.cosmos.mint.v1beta1.inflation(),
+          this._lcdClient.provider.cosmos.distribution.v1beta1.params(),
+          this._lcdClient.provider.cosmos.bank.v1beta1.supplyOf({
+            denom: config.networkDenom,
+          }),
+        ]);
+        break;
+    }
+    return {
+      communityPool,
+      supply,
+      inflation,
+      distribution,
+    };
+  }
+
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_DASHBOARD_STATISTICS,
     jobName: BULL_JOB_NAME.HANDLE_DASHBOARD_STATISTICS,

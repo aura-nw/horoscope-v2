@@ -48,7 +48,8 @@
     "blocksPerCall": 100,
     "millisecondCrawl": 5000,
     "txsPerCall": 100,
-    "saveRawLog": true
+    "saveRawLog": true,
+    "lastEventsTypeTx": ["tx", "ethereum_tx"]
   },
   "crawlSigningInfo": {
     "millisecondCrawl": null,
@@ -165,6 +166,11 @@
     "timeCrawImage": "0 0 * * *",
     "milliSecondDelayRetry": 300000
   },
+  "migrationEvmEventToPartition": {
+    "startId": 0,
+    "endId": 100000000,
+    "step": 100000000
+  },
   "migrationBlockToPartition": {
     "startId": 100000000,
     "endId": 200000000,
@@ -205,6 +211,16 @@
     "step": 10000,
     "millisecondCrawl": 10000,
     "templateTable": "event_attribute"
+  },
+  "jobCrawlEvmEvent": {
+    "millisecondCrawl": 5000,
+    "blocksPerCall": 50,
+    "chunkSize": 1000,
+    "concurrencyHandle": 1
+  },
+  "jobCheckNeedCreateEvmEventPartition": {
+    "millisecondCrawl": 10000,
+    "templateTable": "evm_event"
   },
   "jobCheckNeedCreateBlockPartition": {
     "millisecondCrawl": 10000,
@@ -281,6 +297,12 @@
     },
     "statementTimeout": 600000
   },
+  "jobCreateConstraintInEvmEventPartition": {
+    "jobRepeatCheckNeedCreateConstraint": {
+      "millisecondRepeatJob": 600000
+    },
+    "statementTimeout": 600000
+  },
   "jobCreateConstraintInEventPartition": {
     "jobRepeatCheckNeedCreateConstraint": {
       "millisecondRepeatJob": 600000
@@ -315,5 +337,53 @@
   "jobUpdateAssets": {
     "millisecondRepeatJob": 10000,
     "lcdRecordGet": 5
+  },
+  "handleTransactionEVM": {
+    "key": "handleTransactionEVM",
+    "blocksPerCall": 10000,
+    "millisecondCrawl": 1000,
+    "chunkSize": 1000
+  },
+  "createEVMTransactionPartition": {
+    "endId": 200000000,
+    "step": 100000000,
+    "limitRecordGet": 10000,
+    "chunkSizeInsert": 1000,
+    "statementTimeout": 600000
+  },
+  "jobCheckNeedCreateEVMTransactionPartition": {
+    "millisecondCrawl": 10000,
+    "templateTable": "evm_transaction"
+  },
+  "jobCreateConstraintInEVMTransactionPartition": {
+    "jobRepeatCheckNeedCreateConstraint": {
+      "millisecondRepeatJob": 10000
+    },
+    "statementTimeout": 600000
+  },
+  "crawlSmartContractEVM": {
+    "key": "crawlSmartContractEVM",
+    "blocksPerCall": 10000,
+    "millisecondCrawl": 1000
+  },
+  "jobVerifyContractEVM": {
+    "configUploadFile": {
+      "files": 1,
+      "fileSize": 10000000
+    },
+    "millisecondCrawl": 1000,
+    "recordsPerCall": 100,
+    "solcRepo": null
+  },
+  "erc20": {
+    "key": "erc20",
+    "blocksPerCall": 100,
+    "millisecondRepeatJob": 5000,
+    "chunkSizeInsert": 1000
+  },
+  "erc721": {
+    "key": "erc721",
+    "blocksPerCall": 100,
+    "millisecondRepeatJob": 2000
   }
 }

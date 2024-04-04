@@ -1,6 +1,11 @@
 import { AfterAll, BeforeEach, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
-import { Block, BlockCheckpoint, CoinTransfer } from '../../../../src/models';
+import {
+  Block,
+  BlockCheckpoint,
+  CoinTransfer,
+  Transaction,
+} from '../../../../src/models';
 import { BULL_JOB_NAME } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
 import CoinTransferService from '../../../../src/services/crawl-tx/coin_transfer.service';
@@ -53,10 +58,14 @@ export default class CoinTransferSpec {
     ]);
     if (listDecodedTx)
       await knex.transaction(async (trx) => {
-        await this.crawlTxService?.insertDecodedTxAndRelated(
-          listDecodedTx,
-          trx
-        );
+        await this.crawlTxService?.insertTxDecoded(listDecodedTx, trx);
+        const listTxRaw = await Transaction.query()
+          .where('height', '>', txHeight - 1)
+          .andWhere('height', '<=', txHeight)
+          .orderBy('height', 'asc')
+          .orderBy('index', 'asc')
+          .transacting(trx);
+        await this.crawlTxService?.insertRelatedTx(listTxRaw, trx);
       });
   }
 
@@ -72,9 +81,8 @@ export default class CoinTransferSpec {
     await Promise.all([
       knex.raw('TRUNCATE TABLE coin_transfer RESTART IDENTITY CASCADE'),
       knex.raw(
-        'TRUNCATE TABLE block, block_signature, transaction, event, event_attribute RESTART IDENTITY CASCADE'
+        'TRUNCATE TABLE block, block_signature, transaction, transaction_message, event, event_attribute, block_checkpoint RESTART IDENTITY CASCADE'
       ),
-      knex.raw('TRUNCATE TABLE block_checkpoint RESTART IDENTITY CASCADE'),
     ]);
     const providerRegistry = await getProviderRegistry();
     const chainRegistry = new ChainRegistry(

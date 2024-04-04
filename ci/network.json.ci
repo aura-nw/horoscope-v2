@@ -4,6 +4,8 @@
     "RPC": ["http://localhost:26657"],
     "LCD": ["http://localhost:1317"],
     "databaseName": "horoscope_dev_auratestnet1",
-    "moleculerNamespace": "namespace-auratestnet"
+    "moleculerNamespace": "namespace-auratestnet",
+    "EVMJSONRPC": [""],
+    "EVMchainId": 0
   }
 ]
