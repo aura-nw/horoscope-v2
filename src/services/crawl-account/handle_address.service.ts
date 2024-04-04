@@ -2,15 +2,14 @@ import {
   Action,
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
-import { Context, ServiceBroker } from 'moleculer';
 import { Knex } from 'knex';
-import _ from 'lodash';
-import knex from '../../common/utils/db_connection';
-import { Account, BlockCheckpoint } from '../../models';
-import Utils from '../../common/utils/utils';
+import { Context, ServiceBroker } from 'moleculer';
+import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, IAddressesParam, SERVICE } from '../../common';
-import config from '../../../config.json' assert { type: 'json' };
+import knex from '../../common/utils/db_connection';
+import Utils from '../../common/utils/utils';
+import { Account, BlockCheckpoint } from '../../models';
 import { convertBech32AddressToEthAddress } from '../evm/utils';
 
 @Service({
@@ -25,7 +24,7 @@ export default class HandleAddressService extends BullableService {
   @Action({
     name: SERVICE.V1.HandleAddressService.CrawlNewAccountApi.key,
     params: {
-      listAddresses: 'string[]',
+      addresses: 'string[]',
     },
   })
   public async actionCrawlNewAccountApi(ctx: Context<IAddressesParam>) {

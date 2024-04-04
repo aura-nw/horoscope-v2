@@ -2,13 +2,15 @@ import { fromBase64 } from '@cosmjs/encoding';
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { decodeAbiParameters, toHex } from 'viem';
-import { EvmEvent } from '../../../../src/models';
+import { Dictionary } from 'lodash';
+import { Erc20Activity, EvmEvent } from '../../../../src/models';
 import {
   ABI_APPROVAL_PARAMS,
   ABI_TRANSFER_PARAMS,
   ERC20_ACTION,
   Erc20Handler,
 } from '../../../../src/services/evm/erc20_handler';
+import { AccountBalance } from '../../../../src/models/account_balance';
 
 @Describe('Test erc20 handler')
 export default class Erc20HandlerTest {
@@ -121,6 +123,50 @@ export default class Erc20HandlerTest {
       height: evmEvent.block_height,
       tx_hash: evmEvent.tx_hash,
       evm_tx_id: evmEvent.evm_tx_id,
+    });
+  }
+
+  @Test('test handlerErc20Transfer')
+  async testHandlerErc20Transfer() {
+    const erc20Activity = Erc20Activity.fromJson({
+      evm_event_id: 1,
+      sender: 'dafjfjj',
+      action: ERC20_ACTION.TRANSFER,
+      erc20_contract_address: 'hsdbjbfbdsfc',
+      amount: '12345222',
+      from: 'phamphong1',
+      to: 'phamphong2',
+      height: 10000,
+      tx_hash: 'fghkjghfdkjgbvkdfngkjdf',
+      evm_tx_id: 1,
+      from_account_id: 123,
+      to_account_id: 234,
+    });
+    const [fromKey, toKey] = [
+      `${erc20Activity.from_account_id}_${erc20Activity.erc20_contract_address}`,
+      `${erc20Activity.to_account_id}_${erc20Activity.erc20_contract_address}`,
+    ];
+    const accountBalances: Dictionary<AccountBalance> = {
+      [fromKey]: AccountBalance.fromJson({
+        denom: erc20Activity.erc20_contract_address,
+        amount: '998222',
+        last_updated_height: 1,
+      }),
+      [toKey]: AccountBalance.fromJson({
+        denom: erc20Activity.erc20_contract_address,
+        amount: '1111111',
+        last_updated_height: 1,
+      }),
+    };
+    const erc20Handler = new Erc20Handler(accountBalances, []);
+    erc20Handler.handlerErc20Transfer(erc20Activity);
+    expect(erc20Handler.accountBalances[fromKey]).toMatchObject({
+      denom: erc20Activity.erc20_contract_address,
+      amount: '-11347000',
+    });
+    expect(erc20Handler.accountBalances[toKey]).toMatchObject({
+      denom: erc20Activity.erc20_contract_address,
+      amount: '13456333',
     });
   }
 }
