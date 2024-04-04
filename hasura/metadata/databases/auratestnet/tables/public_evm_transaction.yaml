@@ -1,0 +1,65 @@
+table:
+  name: evm_transaction
+  schema: public
+object_relationships:
+  - name: transaction
+    using:
+      manual_configuration:
+        column_mapping:
+          height: height
+          tx_id: id
+        insertion_order: null
+        remote_table:
+          name: transaction
+          schema: public
+  - name: transaction_message
+    using:
+      manual_configuration:
+        column_mapping:
+          tx_msg_id: id
+        insertion_order: null
+        remote_table:
+          name: transaction_message
+          schema: public
+array_relationships:
+  - name: erc20_activities
+    using:
+      manual_configuration:
+        column_mapping:
+          id: evm_tx_id
+        insertion_order: null
+        remote_table:
+          name: erc20_activity
+          schema: public
+  - name: evm_events
+    using:
+      manual_configuration:
+        column_mapping:
+          height: block_height
+          id: evm_tx_id
+        insertion_order: null
+        remote_table:
+          name: evm_event
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - contract_address
+        - data
+        - from
+        - gas
+        - gas_fee_cap
+        - gas_tip_cap
+        - hash
+        - height
+        - id
+        - index
+        - nonce
+        - size
+        - to
+        - tx_id
+        - tx_msg_id
+        - value
+      filter: {}
+      limit: 100
