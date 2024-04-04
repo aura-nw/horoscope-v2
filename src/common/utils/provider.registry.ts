@@ -36,7 +36,6 @@ export async function getProviderRegistry(): Promise<IProviderRegistry> {
       break;
     case chainIdConfigOnServer.Euphoria:
     case chainIdConfigOnServer.SerenityTestnet001:
-    case chainIdConfigOnServer.AuraTestnet2:
     case chainIdConfigOnServer.AuraTestnetEVM:
     case chainIdConfigOnServer.Xstaxy1:
     default:

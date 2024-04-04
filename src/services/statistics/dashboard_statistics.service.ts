@@ -117,7 +117,7 @@ export default class DashboardStatisticsService extends BullableService {
         break;
       case chainIdConfigOnServer.Euphoria:
       case chainIdConfigOnServer.SerenityTestnet001:
-      case chainIdConfigOnServer.AuraTestnet2:
+      case chainIdConfigOnServer.AuraTestnetEVM:
       case chainIdConfigOnServer.Xstaxy1:
       default:
         [communityPool, inflation, distribution, supply] = await Promise.all([
