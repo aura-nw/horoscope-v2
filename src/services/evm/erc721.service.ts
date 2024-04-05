@@ -63,15 +63,15 @@ export default class Erc721Service extends BullableService {
     queueName: BULL_JOB_NAME.HANDLE_ERC721_ACTIVITY,
     jobName: BULL_JOB_NAME.HANDLE_ERC721_ACTIVITY,
   })
-  async handleErc20Activity(): Promise<void> {
+  async handleErc721Activity(): Promise<void> {
     await knex.transaction(async (trx) => {
       const [startBlock, endBlock, updateBlockCheckpoint] =
         await BlockCheckpoint.getCheckpoint(
           BULL_JOB_NAME.HANDLE_ERC721_ACTIVITY,
           [BULL_JOB_NAME.HANDLE_ERC721_CONTRACT],
-          config.erc20.key
+          config.erc721.key
         );
-      // TODO: handle track erc20 contract only
+      // TODO: handle track er721 contract only
       const erc721Events = await EvmEvent.query()
         .transacting(trx)
         .joinRelated('[evm_smart_contract,evm_transaction]')
@@ -94,9 +94,15 @@ export default class Erc721Service extends BullableService {
             erc721Activities.push(activity);
           }
         } else if (e.topic0 === ERC721_EVENT_TOPIC0.APPROVAL) {
-          console.log('abc');
+          const activity = Erc721Handler.buildApprovalActivity(e);
+          if (activity) {
+            erc721Activities.push(activity);
+          }
         } else if (e.topic0 === ERC721_EVENT_TOPIC0.APPROVAL_FOR_ALL) {
-          console.log('def');
+          const activity = Erc721Handler.buildApprovalForAllActivity(e);
+          if (activity) {
+            erc721Activities.push(activity);
+          }
         }
       });
       if (erc721Activities.length > 0) {
@@ -104,7 +110,7 @@ export default class Erc721Service extends BullableService {
           .batchInsert(
             'erc721_activity',
             erc721Activities,
-            config.erc20.chunkSizeInsert
+            config.erc721.chunkSizeInsert
           )
           .transacting(trx);
       }

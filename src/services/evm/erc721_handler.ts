@@ -20,6 +20,20 @@ export const ABI_TRANSFER_PARAMS = {
     type: 'uint256',
   },
 };
+export const ABI_APPROVAL_PARAMS = {
+  OWNER: {
+    name: 'owner',
+    type: 'address',
+  },
+  APPROVED: {
+    name: 'approved',
+    type: 'address',
+  },
+  TOKEN_ID: {
+    name: 'tokenId',
+    type: 'uint256',
+  },
+};
 export const ERC721_ACTION = {
   TRANSFER: 'transfer',
   APPROVAL: 'approval',
@@ -35,12 +49,61 @@ export class Erc721Handler {
           ABI_TRANSFER_PARAMS.TO,
           ABI_TRANSFER_PARAMS.TOKEN_ID,
         ],
-        (e.topic1 + e.topic2.slice(2) + toHex(e.data).slice(2)) as `0x${string}`
-      ) as [string, string, bigint];
+        (e.topic1 + e.topic2.slice(2) + e.topic3.slice(2)) as `0x${string}`
+      ) as [string, string, number];
       return Erc721Activity.fromJson({
         evm_event_id: e.id,
         sender: e.sender,
         action: ERC721_ACTION.TRANSFER,
+        erc721_contract_address: e.address,
+        from: from.toLowerCase(),
+        to: to.toLowerCase(),
+        height: e.block_height,
+        tx_hash: e.tx_hash,
+        evm_tx_id: e.evm_tx_id,
+      });
+    } catch {
+      return undefined;
+    }
+  }
+
+  static buildApprovalActivity(e: EvmEvent) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const [from, to, tokenId] = decodeAbiParameters(
+        [
+          ABI_APPROVAL_PARAMS.OWNER,
+          ABI_APPROVAL_PARAMS.APPROVED,
+          ABI_APPROVAL_PARAMS.TOKEN_ID,
+        ],
+        (e.topic1 + e.topic2.slice(2) + e.topic3.slice(2)) as `0x${string}`
+      ) as [string, string, number];
+      return Erc721Activity.fromJson({
+        evm_event_id: e.id,
+        sender: e.sender,
+        action: ERC721_ACTION.APPROVAL,
+        erc721_contract_address: e.address,
+        from: from.toLowerCase(),
+        to: to.toLowerCase(),
+        height: e.block_height,
+        tx_hash: e.tx_hash,
+        evm_tx_id: e.evm_tx_id,
+      });
+    } catch {
+      return undefined;
+    }
+  }
+
+  static buildApprovalForAllActivity(e: EvmEvent) {
+    try {
+      const [from, to] = decodeAbiParameters(
+        [ABI_APPROVAL_PARAMS.OWNER, ABI_APPROVAL_PARAMS.APPROVED],
+        (e.topic1 + e.topic2.slice(2)) as `0x${string}`
+      ) as [string, string];
+      return Erc721Activity.fromJson({
+        evm_event_id: e.id,
+        sender: e.sender,
+        action: ERC721_ACTION.APPROVAL_FOR_ALL,
         erc721_contract_address: e.address,
         from: from.toLowerCase(),
         to: to.toLowerCase(),
