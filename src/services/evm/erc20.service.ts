@@ -175,11 +175,13 @@ export default class Erc20Service extends BullableService {
         const updatedAccountBalances = Object.values(
           erc20Handler.accountBalances
         );
-        await AccountBalance.query()
-          .transacting(trx)
-          .insert(updatedAccountBalances)
-          .onConflict(['account_id', 'denom'])
-          .merge();
+        if (updatedAccountBalances.length > 0) {
+          await AccountBalance.query()
+            .transacting(trx)
+            .insert(updatedAccountBalances)
+            .onConflict(['account_id', 'denom'])
+            .merge();
+        }
       }
       updateBlockCheckpoint.height = endBlock;
       await BlockCheckpoint.query()
