@@ -1,74 +1,65 @@
 table:
-  name: evm_transaction
+  name: evm_internal_transaction
   schema: public
 object_relationships:
-  - name: transaction
+  - name: evm_transaction_id
     using:
       manual_configuration:
         column_mapping:
-          height: height
-          tx_id: id
+          evm_tx_id: id
         insertion_order: null
         remote_table:
-          name: transaction
+          name: evm_transaction
           schema: public
-  - name: transaction_message
+  - name: evm_erc20_contract_mapping_from
     using:
       manual_configuration:
         column_mapping:
-          tx_msg_id: id
+          from: address
         insertion_order: null
         remote_table:
-          name: transaction_message
+          name: erc20_contract
           schema: public
-array_relationships:
-  - name: evm_internal_transactions
+  - name: evm_erc20_contract_mapping_to
     using:
       manual_configuration:
         column_mapping:
-          id: evm_tx_id
+          to: address
         insertion_order: null
         remote_table:
-          name: evm_internal_transaction
+          name: erc20_contract
           schema: public
-  - name: erc20_activities
+  - name: evm_erc721_contract_mapping_from
     using:
       manual_configuration:
         column_mapping:
-          id: evm_tx_id
+          from: address
         insertion_order: null
         remote_table:
-          name: erc20_activity
+          name: erc721_contract
           schema: public
-  - name: evm_events
+  - name: evm_erc721_contract_mapping_to
     using:
       manual_configuration:
         column_mapping:
-          height: block_height
-          id: evm_tx_id
+          to: address
         insertion_order: null
         remote_table:
-          name: evm_event
+          name: erc721_contract
           schema: public
 select_permissions:
   - role: internal_service
     permission:
       columns:
-        - contract_address
-        - data
-        - from
-        - gas
-        - gas_fee_cap
-        - gas_tip_cap
-        - hash
-        - height
         - id
-        - index
-        - nonce
-        - size
+        - evm_tx_id
+        - type_trace_address
+        - type
+        - from
         - to
-        - tx_id
-        - tx_msg_id
         - value
+        - input
+        - gas
+        - gas_used
       filter: {}
       limit: 100

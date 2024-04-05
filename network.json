@@ -45,11 +45,12 @@
   },
   {
     "chainId": "aura-testnet",
-    "RPC": ["http://localhost:26657"],
-    "LCD": ["http://localhost:1317"],
+    "RPC": ["https://rpc.dev.aura.network"],
+    "LCD": ["https://lcd.dev.aura.network"],
     "databaseName": "horoscope_dev_auratestnet1",
     "redisDBNumber": 5,
-    "moleculerNamespace": "namespace-auratestnet"
+    "moleculerNamespace": "namespace-auratestnet",
+    "EVMJSONRPC": ["https://jsonrpc.dev.aura.network"]
   },
   {
     "chainId": "cosmoshub-4",
