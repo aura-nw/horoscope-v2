@@ -89,6 +89,10 @@ export const SERVICE = {
       key: 'CrawlSmartContractEVM',
       path: 'v1.CrawlSmartContractEVM',
     },
+    EVMCrawlInternalTx: {
+      key: 'EVMCrawlInternalTx',
+      path: 'v1.EVMCrawlInternalTx',
+    },
     VerifyContractEVM: {
       key: 'VerifyContractEVM',
       path: 'v1.VerifyContractEVM',
@@ -184,6 +188,7 @@ export const BULL_JOB_NAME = {
     'job:create-evm-transaction-constraint',
   JOB_CREATE_EVM_EVENT_PARTITION: 'job:create-evm-event-partition',
   HANDLE_ERC20_BALANCE: 'handle:erc20-balance',
+  EVM_CRAWL_INTERNAL_TX: 'crawl:crawl-internal-tx',
 };
 
 export const MSG_TYPE = {
