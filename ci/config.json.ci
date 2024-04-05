@@ -69,6 +69,12 @@
       "millisecondCrawl": 30000
     }
   },
+  "evmCrawlInternalTx": {
+    "key": "evmCrawlInternalTx",
+    "blocksPerCall": 100,
+    "millisecondCrawl": 3000,
+    "chunkSize": 1000
+  },
   "crawlProposal": {
     "key": "crawlProposal",
     "blocksPerCall": 100,
