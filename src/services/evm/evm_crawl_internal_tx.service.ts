@@ -55,6 +55,11 @@ export default class EvmCrawlInternalTxService extends BullableService {
       this.logger.info(
         `No evm transaction found from ${startBlock} to ${endBlock}`
       );
+      blockCheckpoint.height = endBlock;
+      await BlockCheckpoint.query()
+        .insert(blockCheckpoint)
+        .onConflict('job_name')
+        .merge();
       return;
     }
 

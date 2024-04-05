@@ -49,7 +49,8 @@
     "LCD": ["http://localhost:1317"],
     "databaseName": "horoscope_dev_auratestnet1",
     "redisDBNumber": 5,
-    "moleculerNamespace": "namespace-auratestnet"
+    "moleculerNamespace": "namespace-auratestnet",
+    "EVMJSONRPC": ["http://localhost:8545"]
   },
   {
     "chainId": "cosmoshub-4",
