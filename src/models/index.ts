@@ -39,3 +39,4 @@ export * from './evm_signature_mapping';
 export * from './erc20_contract';
 export * from './erc20_activity';
 export * from './evm_proxy_history';
+export * from './erc721_activity';

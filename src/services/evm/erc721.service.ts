@@ -4,11 +4,17 @@ import { getContract } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { BULL_JOB_NAME, SERVICE } from './constant';
 import knex from '../../common/utils/db_connection';
 import EtherJsClient from '../../common/utils/etherjs_client';
-import { BlockCheckpoint, EVMSmartContract } from '../../models';
+import {
+  BlockCheckpoint,
+  EVMSmartContract,
+  Erc721Activity,
+  EvmEvent,
+} from '../../models';
 import { Erc721Contract } from '../../models/erc721_contract';
+import { BULL_JOB_NAME, SERVICE } from './constant';
+import { ERC721_EVENT_TOPIC0, Erc721Handler } from './erc721_handler';
 
 @Service({
   name: SERVICE.V1.Erc721.key,
@@ -43,6 +49,64 @@ export default class Erc721Service extends BullableService {
           erc721SmartContracts
         );
         await Erc721Contract.query().transacting(trx).insert(erc721Instances);
+      }
+      updateBlockCheckpoint.height = endBlock;
+      await BlockCheckpoint.query()
+        .insert(updateBlockCheckpoint)
+        .onConflict('job_name')
+        .merge()
+        .transacting(trx);
+    });
+  }
+
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.HANDLE_ERC721_ACTIVITY,
+    jobName: BULL_JOB_NAME.HANDLE_ERC721_ACTIVITY,
+  })
+  async handleErc20Activity(): Promise<void> {
+    await knex.transaction(async (trx) => {
+      const [startBlock, endBlock, updateBlockCheckpoint] =
+        await BlockCheckpoint.getCheckpoint(
+          BULL_JOB_NAME.HANDLE_ERC721_ACTIVITY,
+          [BULL_JOB_NAME.HANDLE_ERC721_CONTRACT],
+          config.erc20.key
+        );
+      // TODO: handle track erc20 contract only
+      const erc721Events = await EvmEvent.query()
+        .transacting(trx)
+        .joinRelated('[evm_smart_contract,evm_transaction]')
+        .where('evm_event.block_height', '>', startBlock)
+        .andWhere('evm_event.block_height', '<=', endBlock)
+        .andWhere('evm_smart_contract.type', EVMSmartContract.TYPES.ERC721)
+        .orderBy('evm_event.id', 'asc')
+        .select(
+          'evm_event.*',
+          'evm_transaction.from as sender',
+          'evm_smart_contract.id as evm_smart_contract_id',
+          'evm_transaction.id as evm_tx_id'
+        );
+      await this.handleMissingErc721Contract(erc721Events, trx);
+      const erc721Activities: Erc721Activity[] = [];
+      erc721Events.forEach((e) => {
+        if (e.topic0 === ERC721_EVENT_TOPIC0.TRANSFER) {
+          const activity = Erc721Handler.buildTransferActivity(e);
+          if (activity) {
+            erc721Activities.push(activity);
+          }
+        } else if (e.topic0 === ERC721_EVENT_TOPIC0.APPROVAL) {
+          console.log('abc');
+        } else if (e.topic0 === ERC721_EVENT_TOPIC0.APPROVAL_FOR_ALL) {
+          console.log('def');
+        }
+      });
+      if (erc721Activities.length > 0) {
+        await knex
+          .batchInsert(
+            'erc721_activity',
+            erc721Activities,
+            config.erc20.chunkSizeInsert
+          )
+          .transacting(trx);
       }
       updateBlockCheckpoint.height = endBlock;
       await BlockCheckpoint.query()
@@ -98,6 +162,20 @@ export default class Erc721Service extends BullableService {
     await this.createJob(
       BULL_JOB_NAME.HANDLE_ERC721_CONTRACT,
       BULL_JOB_NAME.HANDLE_ERC721_CONTRACT,
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        repeat: {
+          every: config.erc721.millisecondRepeatJob,
+        },
+      }
+    );
+    await this.createJob(
+      BULL_JOB_NAME.HANDLE_ERC721_ACTIVITY,
+      BULL_JOB_NAME.HANDLE_ERC721_ACTIVITY,
       {},
       {
         removeOnComplete: true,
