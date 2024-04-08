@@ -1,5 +1,8 @@
+import { Dictionary } from 'lodash';
 import { decodeAbiParameters, keccak256, toHex } from 'viem';
-import { Erc721Activity, EvmEvent } from '../../models';
+import { Erc721Activity, Erc721Token, EvmEvent } from '../../models';
+import { Erc721Contract } from '../../models/erc721_contract';
+import { ZERO_ADDRESS } from './constant';
 
 export const ERC721_EVENT_TOPIC0 = {
   TRANSFER: keccak256(toHex('Transfer(address,address,uint256)')),
@@ -40,6 +43,59 @@ export const ERC721_ACTION = {
   APPROVAL_FOR_ALL: 'approval_for_all',
 };
 export class Erc721Handler {
+  // key: {contract_address}_{token_id}
+  // value: erc721 token
+  erc721Tokens: Dictionary<Erc721Token>;
+
+  erc721Activities: Erc721Activity[];
+
+  // key: contract_address
+  // value: erc721 contract
+  erc721Contracts: Dictionary<Erc721Contract>;
+
+  constructor(
+    erc721Tokens: Dictionary<Erc721Token>,
+    erc721Activities: Erc721Activity[],
+    erc721Contracts: Dictionary<Erc721Contract>
+  ) {
+    this.erc721Tokens = erc721Tokens;
+    this.erc721Activities = erc721Activities;
+    this.erc721Contracts = erc721Contracts;
+  }
+
+  process() {
+    this.erc721Activities.forEach((erc721Activity) => {
+      if (erc721Activity.action === ERC721_ACTION.TRANSFER) {
+        this.handlerErc721Transfer(erc721Activity);
+      }
+    });
+  }
+
+  handlerErc721Transfer(erc721Activity: Erc721Activity) {
+    const token =
+      this.erc721Tokens[
+        `${erc721Activity.erc721_contract_address}_${erc721Activity.token_id}`
+      ];
+    if (token) {
+      // update new owner and last updated height
+      token.owner = erc721Activity.to;
+      token.last_updated_height = erc721Activity.height;
+    } else if (erc721Activity.from === ZERO_ADDRESS) {
+      // handle instantiate
+      this.erc721Tokens[
+        `${erc721Activity.erc721_contract_address}_${erc721Activity.token_id}`
+      ] = Erc721Token.fromJson({
+        token_id: erc721Activity.token_id,
+        owner: erc721Activity.to,
+        erc721_contract_address: erc721Activity.erc721_contract_address,
+        last_updated_height: erc721Activity.height,
+        burned: false,
+      });
+    } else {
+      throw new Error('Handle erc721 tranfer error');
+    }
+  }
+
   static buildTransferActivity(e: EvmEvent) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -61,6 +117,7 @@ export class Erc721Handler {
         height: e.block_height,
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
+        token_id: tokenId.toString(),
       });
     } catch {
       return undefined;
@@ -88,6 +145,7 @@ export class Erc721Handler {
         height: e.block_height,
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
+        token_id: tokenId.toString(),
       });
     } catch {
       return undefined;

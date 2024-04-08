@@ -1,4 +1,6 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+import { Knex } from 'knex';
+import _, { Dictionary } from 'lodash';
 import { ServiceBroker } from 'moleculer';
 import { getContract } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
@@ -13,6 +15,7 @@ import {
   EvmEvent,
 } from '../../models';
 import { Erc721Contract } from '../../models/erc721_contract';
+import { Erc721Token } from '../../models/erc721_token';
 import { BULL_JOB_NAME, SERVICE } from './constant';
 import { ERC721_EVENT_TOPIC0, Erc721Handler } from './erc721_handler';
 
@@ -106,13 +109,38 @@ export default class Erc721Service extends BullableService {
         }
       });
       if (erc721Activities.length > 0) {
-        await knex
-          .batchInsert(
-            'erc721_activity',
-            erc721Activities,
-            config.erc721.chunkSizeInsert
-          )
-          .transacting(trx);
+        const erc721Contracts = _.keyBy(
+          await Erc721Contract.query()
+            .whereIn(
+              'address',
+              erc721Activities.map((e) => e.erc721_contract_address)
+            )
+            .transacting(trx),
+          'address'
+        );
+        const erc721Tokens = _.keyBy(
+          await Erc721Token.query()
+            .whereIn(
+              ['erc721_contract_address', 'token_id'],
+              erc721Activities.map((e) => [
+                e.erc721_contract_address,
+                e.token_id,
+              ])
+            )
+            .transacting(trx),
+          (o) => `${o.erc721_contract_address}_${o.token_id}`
+        );
+        const erc721Handler = new Erc721Handler(
+          erc721Tokens,
+          erc721Activities,
+          erc721Contracts
+        );
+        erc721Handler.process();
+        await this.updateErc721(
+          erc721Activities,
+          Object.values(erc721Tokens),
+          trx
+        );
       }
       updateBlockCheckpoint.height = endBlock;
       await BlockCheckpoint.query()
@@ -121,6 +149,85 @@ export default class Erc721Service extends BullableService {
         .merge()
         .transacting(trx);
     });
+  }
+
+  async handleMissingErc721Contract(events: EvmEvent[], trx: Knex.Transaction) {
+    const eventsUniqByAddress = _.keyBy(events, (e) => e.address);
+    const addresses = Object.keys(eventsUniqByAddress);
+    const erc721ContractsByAddress = _.keyBy(
+      await Erc721Contract.query()
+        .whereIn('address', addresses)
+        .transacting(trx),
+      (e) => e.address
+    );
+    const missingErc721ContractsAddress: string[] = addresses.filter(
+      (addr) => !erc721ContractsByAddress[addr]
+    );
+    if (missingErc721ContractsAddress.length > 0) {
+      const erc721ContractsInfo = await this.getBatchErc721Info(
+        missingErc721ContractsAddress as `0x${string}`[]
+      );
+      await Erc721Contract.query()
+        .insert(
+          missingErc721ContractsAddress.map((addr, index) =>
+            Erc721Contract.fromJson({
+              evm_smart_contract_id:
+                eventsUniqByAddress[addr].evm_smart_contract_id,
+              address: addr,
+              symbol: erc721ContractsInfo[index].symbol,
+              name: erc721ContractsInfo[index].name,
+              track: false,
+              last_updated_height: -1,
+            })
+          )
+        )
+        .transacting(trx);
+    }
+  }
+
+  async updateErc721(
+    erc721Activities: Erc721Activity[],
+    erc721Tokens: Erc721Token[],
+    trx: Knex.Transaction
+  ) {
+    let updatedTokens: Dictionary<Erc721Token> = {};
+    if (erc721Tokens.length > 0) {
+      updatedTokens = _.keyBy(
+        await Erc721Token.query()
+          .insert(
+            erc721Activities.map((activity) =>
+              Erc721Token.fromJson({
+                token_id: activity.token_id,
+                owner: activity.to,
+                erc721_contract_address: activity.erc721_contract_address,
+                last_updated_height: activity.height,
+                burned: false,
+              })
+            )
+          )
+          .onConflict(['token_id', 'erc721_contract_id'])
+          .merge()
+          .transacting(trx),
+        (o) => `${o.erc721_contract_id}_${o.token_id}`
+      );
+    }
+    if (erc721Activities.length > 0) {
+      erc721Activities.forEach((activity) => {
+        const token =
+          updatedTokens[
+            `${activity.erc721_contract_address}_${activity.token_id}`
+          ];
+        // eslint-disable-next-line no-param-reassign
+        activity.erc721_token_id = token.id;
+      });
+      await knex
+        .batchInsert(
+          'erc721_activity',
+          erc721Activities,
+          config.erc721.chunkSizeInsert
+        )
+        .transacting(trx);
+    }
   }
 
   async getErc721Instances(evmSmartContracts: EVMSmartContract[]) {
