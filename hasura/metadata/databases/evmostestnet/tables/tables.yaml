@@ -22,6 +22,7 @@
 - '!include public_delegator.yaml'
 - '!include public_erc20_activity.yaml'
 - '!include public_erc20_contract.yaml'
+- '!include public_erc721_contract.yaml'
 - '!include public_event.yaml'
 - '!include public_event_attribute.yaml'
 - '!include public_evm_contract_verification.yaml'
