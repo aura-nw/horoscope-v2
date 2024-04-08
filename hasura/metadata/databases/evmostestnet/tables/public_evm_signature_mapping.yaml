@@ -1,0 +1,12 @@
+table:
+  name: evm_signature_mapping
+  schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - function_id
+        - human_readable_topic
+        - topic_hash
+      filter: {}
+      limit: 100

@@ -28,6 +28,8 @@ export class Account extends BaseModel {
 
   sequence!: number;
 
+  evm_address!: string;
+
   static get tableName() {
     return 'account';
   }

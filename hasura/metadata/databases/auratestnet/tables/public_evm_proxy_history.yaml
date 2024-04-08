@@ -1,0 +1,18 @@
+table:
+  name: evm_proxy_history
+  schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - id
+        - proxy_contract
+        - implementation_contract
+        - admin
+        - tx_hash
+        - block_height
+        - last_updated_height
+        - created_at
+        - updated_at
+      filter: {}
+      limit: 100

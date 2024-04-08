@@ -44,6 +44,7 @@ array_relationships:
       manual_configuration:
         column_mapping:
           id: tx_id
+          height: block_height
         insertion_order: null
         remote_table:
           name: view_event_attribute_value_index
@@ -74,6 +75,15 @@ array_relationships:
         insertion_order: null
         remote_table:
           name: transaction_message
+          schema: public
+  - name: votes
+    using:
+      manual_configuration:
+        column_mapping:
+          id: tx_id
+        insertion_order: null
+        remote_table:
+          name: vote
           schema: public
 select_permissions:
   - role: internal_service

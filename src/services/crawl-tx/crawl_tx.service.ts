@@ -55,7 +55,7 @@ export default class CrawlTxService extends BullableService {
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.CRAWL_TRANSACTION,
         [BULL_JOB_NAME.CRAWL_BLOCK],
-        config.handleTransaction.key
+        config.crawlTransaction.key
       );
 
     this.logger.info(
@@ -395,22 +395,24 @@ export default class CrawlTxService extends BullableService {
           tx_id: tx.id,
           tx_msg_index: event.msg_index ?? undefined,
           type: event.type,
-          attributes: event.attributes.map((attribute: any, index: number) => ({
-            tx_id: tx.id,
-            block_height: tx.height,
-            index,
-            composite_key: attribute?.key
-              ? `${event.type}.${this._registry.decodeAttribute(
-                  attribute?.key
-                )}`
-              : null,
-            key: attribute?.key
-              ? this._registry.decodeAttribute(attribute?.key)
-              : null,
-            value: attribute?.value
-              ? this._registry.decodeAttribute(attribute?.value)
-              : null,
-          })),
+          attributes: event.attributes?.map(
+            (attribute: any, index: number) => ({
+              tx_id: tx.id,
+              block_height: tx.height,
+              index,
+              composite_key: attribute?.key
+                ? `${event.type}.${this._registry.decodeAttribute(
+                    attribute?.key
+                  )}`
+                : null,
+              key: attribute?.key
+                ? this._registry.decodeAttribute(attribute?.key)
+                : null,
+              value: attribute?.value
+                ? this._registry.decodeAttribute(attribute?.value)
+                : null,
+            })
+          ),
           block_height: tx.height,
           source: Event.SOURCE.TX_EVENT,
         })) ?? [];
@@ -447,7 +449,7 @@ export default class CrawlTxService extends BullableService {
 
     tx?.tx_response?.logs?.forEach((log: any, index: number) => {
       log.events.forEach((event: any) => {
-        event.attributes.forEach((attr: any) => {
+        event.attributes?.forEach((attr: any) => {
           if (attr.value === undefined) {
             flattenLog.push(`${index}-${event.type}-${attr.key}-null`);
           } else {
@@ -458,7 +460,7 @@ export default class CrawlTxService extends BullableService {
     });
 
     tx?.tx_response?.events?.forEach((event: any) => {
-      event.attributes.forEach((attr: any) => {
+      event.attributes?.forEach((attr: any) => {
         if (event.msg_index !== undefined) {
           const key = attr.key
             ? this._registry.decodeAttribute(attr.key)
@@ -500,12 +502,16 @@ export default class CrawlTxService extends BullableService {
       return [];
     }
     let reachLastEventTypeTx = false;
-    // get all tx log
+    // last event type in event field which belongs to tx event
+    const listTxEventType = config.handleTransaction.lastEventsTypeTx;
     for (let i = 0; i < tx?.tx_response?.events?.length; i += 1) {
-      if (tx.tx_response.events[i].type === 'tx') {
+      if (listTxEventType.includes(tx.tx_response.events[i].type)) {
         reachLastEventTypeTx = true;
       }
-      if (reachLastEventTypeTx && tx.tx_response.events[i].type !== 'tx') {
+      if (
+        reachLastEventTypeTx &&
+        !listTxEventType.includes(tx.tx_response.events[i].type)
+      ) {
         break;
       }
       returnEvents.push(tx.tx_response.events[i]);

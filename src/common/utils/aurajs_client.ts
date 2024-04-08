@@ -38,13 +38,13 @@ export async function getProviderFactory(): Promise<{
     case chainIdConfigOnServer.Atlantic2:
     case chainIdConfigOnServer.Pacific1:
       ({ ibc, cosmos, cosmwasm, seiprotocol } = await import(
-        '@horoscope-v2/sei-js-proto'
+        '@horoscope/sei-js-proto'
       ));
       provider = seiprotocol;
       break;
     case chainIdConfigOnServer.Euphoria:
     case chainIdConfigOnServer.SerenityTestnet001:
-    case chainIdConfigOnServer.AuraTestnet2:
+    case chainIdConfigOnServer.AuraTestnetEVM:
     case chainIdConfigOnServer.Xstaxy1:
     default:
       ({ ibc, cosmos, cosmwasm, aura } = await import('@aura-nw/aurajs'));

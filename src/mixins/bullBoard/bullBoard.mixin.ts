@@ -8,6 +8,7 @@ import { ExpressAdapter } from '@bull-board/express';
 // @ts-ignore
 import * as redisuri from 'redisuri';
 import { BULL_JOB_NAME, Config } from '../../common';
+import { BULL_JOB_NAME as EVM_BULL_JOB_NAME } from '../../services/evm/constant';
 import network from '../../../network.json' assert { type: 'json' };
 import { DEFAULT_PREFIX } from '../../base/bullable.service';
 
@@ -42,7 +43,10 @@ export const bullBoardMixin = () => ({
         use: [serverAdapter.getRouter()],
       });
 
-      const listQueues = Object.values(BULL_JOB_NAME).map(
+      const listQueues = Object.values({
+        ...BULL_JOB_NAME,
+        ...EVM_BULL_JOB_NAME,
+      }).map(
         (queueName) =>
           new BullAdapter(
             Queue(queueName, `${rootRedisURI}/${e.redisDBNumber}`, {

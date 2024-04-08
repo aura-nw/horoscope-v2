@@ -9,7 +9,7 @@ const config: { [key: string]: Knex.Config } = {
   development: {
     client: 'pg',
     migrations: {
-      directory: './migrations',
+      directory: ['./migrations', './migrations/evm'],
     },
     connection: {
       database: network.find((item) => item.chainId === configJson.chainId)
@@ -28,7 +28,7 @@ const config: { [key: string]: Knex.Config } = {
   test: {
     client: 'pg',
     migrations: {
-      directory: './migrations',
+      directory: ['./migrations', './migrations/evm'],
     },
     connection: {
       database: Config.POSTGRES_DB_TEST,
@@ -42,7 +42,7 @@ const config: { [key: string]: Knex.Config } = {
   production: {
     client: 'pg',
     migrations: {
-      directory: './migrations',
+      directory: ['./migrations', './migrations/evm'],
     },
     connection: {
       database: network.find((item) => item.chainId === configJson.chainId)

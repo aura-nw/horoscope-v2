@@ -1,0 +1,72 @@
+table:
+  name: event
+  schema: public
+object_relationships:
+  - name: block
+    using:
+      manual_configuration:
+        column_mapping:
+          block_height: height
+        insertion_order: null
+        remote_table:
+          name: block
+          schema: public
+  - name: message
+    using:
+      manual_configuration:
+        column_mapping:
+          tx_id: tx_id
+          tx_msg_index: index
+        insertion_order: null
+        remote_table:
+          name: transaction_message
+          schema: public
+  - name: transaction
+    using:
+      manual_configuration:
+        column_mapping:
+          tx_id: id
+        insertion_order: null
+        remote_table:
+          name: transaction
+          schema: public
+array_relationships:
+  - name: event_attribute_index
+    using:
+      manual_configuration:
+        column_mapping:
+          id: event_id
+        insertion_order: null
+        remote_table:
+          name: view_event_attribute_value_index
+          schema: public
+  - name: event_attributes
+    using:
+      manual_configuration:
+        column_mapping:
+          id: event_id
+        insertion_order: null
+        remote_table:
+          name: event_attribute
+          schema: public
+  - name: smart_contract_events
+    using:
+      manual_configuration:
+        column_mapping:
+          id: event_id
+        insertion_order: null
+        remote_table:
+          name: smart_contract_event
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - source
+        - type
+        - block_height
+        - id
+        - tx_id
+        - tx_msg_index
+      filter: {}
+      limit: 100

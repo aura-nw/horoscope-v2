@@ -31,6 +31,8 @@ export class Cw20Activity extends BaseModel {
 
   tx_hash!: string;
 
+  tx_id!: number;
+
   static get tableName() {
     return 'cw20_activity';
   }

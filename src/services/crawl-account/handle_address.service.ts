@@ -2,15 +2,15 @@ import {
   Action,
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
-import { Context, ServiceBroker } from 'moleculer';
 import { Knex } from 'knex';
-import _ from 'lodash';
-import knex from '../../common/utils/db_connection';
-import { Account, BlockCheckpoint } from '../../models';
-import Utils from '../../common/utils/utils';
+import { Context, ServiceBroker } from 'moleculer';
+import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, IAddressesParam, SERVICE } from '../../common';
-import config from '../../../config.json' assert { type: 'json' };
+import knex from '../../common/utils/db_connection';
+import Utils from '../../common/utils/utils';
+import { Account, BlockCheckpoint } from '../../models';
+import { convertBech32AddressToEthAddress } from '../evm/utils';
 
 @Service({
   name: SERVICE.V1.HandleAddressService.key,
@@ -24,7 +24,7 @@ export default class HandleAddressService extends BullableService {
   @Action({
     name: SERVICE.V1.HandleAddressService.CrawlNewAccountApi.key,
     params: {
-      listAddresses: 'string[]',
+      addresses: 'string[]',
     },
   })
   public async actionCrawlNewAccountApi(ctx: Context<IAddressesParam>) {
@@ -113,6 +113,10 @@ export default class HandleAddressService extends BullableService {
       if (!existedAccounts.includes(address)) {
         const account: Account = Account.fromJson({
           address,
+          evm_address: convertBech32AddressToEthAddress(
+            config.networkPrefixAddress,
+            address
+          ).toLowerCase(),
           balances: [],
           spendable_balances: [],
           type: null,

@@ -1,0 +1,62 @@
+table:
+  name: block
+  schema: public
+object_relationships:
+  - name: validator
+    using:
+      manual_configuration:
+        column_mapping:
+          proposer_address: consensus_hex_address
+        insertion_order: null
+        remote_table:
+          name: validator
+          schema: public
+array_relationships:
+  - name: block_signatures
+    using:
+      manual_configuration:
+        column_mapping:
+          height: height
+        insertion_order: null
+        remote_table:
+          name: block_signature
+          schema: public
+  - name: event_attributes
+    using:
+      manual_configuration:
+        column_mapping:
+          height: block_height
+        insertion_order: null
+        remote_table:
+          name: event_attribute
+          schema: public
+  - name: events
+    using:
+      manual_configuration:
+        column_mapping:
+          height: block_height
+        insertion_order: null
+        remote_table:
+          name: event
+          schema: public
+  - name: transactions
+    using:
+      manual_configuration:
+        column_mapping:
+          height: height
+        insertion_order: null
+        remote_table:
+          name: transaction
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - data
+        - hash
+        - height
+        - proposer_address
+        - time
+        - tx_count
+      filter: {}
+      limit: 100

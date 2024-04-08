@@ -8,9 +8,11 @@ export const chainIdConfigOnServer = {
   Euphoria: 'euphoria-2',
   SerenityTestnet001: 'serenity-testnet-001',
   AuraTestnet2: 'aura-testnet-2',
+  AuraTestnetEVM: 'auradev_1235-3',
   Xstaxy1: 'xstaxy-1',
   Atlantic2: 'atlantic-2',
   Pacific1: 'pacific-1',
+  Evmos90004: 'evmos_9000-4',
 };
 
 export const REDIS_KEY = {
@@ -121,6 +123,8 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_TRANSACTION_MESSAGE_CONSTRAINT:
     'job:create-transaction-message-constraint',
   JOB_UPDATE_TX_COUNT_IN_BLOCK: 'job:update-tx-count-in-block',
+  JOB_CW721_UPDATE: 'job:cw721-update',
+  CHECKPOINT_UPDATE_DELEGATOR: 'job:checkpoint_update_delegator',
 };
 
 export const SERVICE = {
@@ -234,6 +238,10 @@ export const SERVICE = {
     CrawlDelegatorsService: {
       key: 'CrawlDelegatorsService',
       name: 'v1.CrawlDelegatorsService',
+      updateAllValidator: {
+        key: 'updateAllValidator',
+        path: 'v1.CrawlDelegatorsService.updateAllValidator',
+      },
     },
     Cw20: {
       key: 'Cw20Service',
@@ -444,6 +452,7 @@ export const MSG_TYPE = {
   MSG_DELEGATE: '/cosmos.staking.v1beta1.MsgDelegate',
   MSG_REDELEGATE: '/cosmos.staking.v1beta1.MsgBeginRedelegate',
   MSG_UNDELEGATE: '/cosmos.staking.v1beta1.MsgUndelegate',
+  MSG_CANCEL_UNDELEGATE: '/cosmos.staking.v1beta1.MsgCancelUnbondingDelegation',
   MSG_CREATE_VALIDATOR: '/cosmos.staking.v1beta1.MsgCreateValidator',
   MSG_SUBMIT_PROPOSAL: '/cosmos.gov.v1beta1.MsgSubmitProposal',
   MSG_SUBMIT_PROPOSAL_V1: '/cosmos.gov.v1.MsgSubmitProposal',
@@ -455,6 +464,7 @@ export const MSG_TYPE = {
   MSG_FEEGRANT_GRANT: '/cosmos.feegrant.v1beta1.MsgGrantAllowance',
   MSG_FEEGRANT_REVOKE: '/cosmos.feegrant.v1beta1.MsgRevokeAllowance',
   MSG_CONSENSUS_UPDATE_PARAM: '/cosmos.consensus.v1.MsgUpdateParams',
+  MSG_ETHEREUM_TX: '/ethermint.evm.v1.MsgEthereumTx',
 };
 
 export const ABCI_QUERY_PATH = {
@@ -463,6 +473,7 @@ export const ABCI_QUERY_PATH = {
   ACCOUNT_AUTH: '/cosmos.auth.v1beta1.Query/Account',
   DENOM_TRACE: '/ibc.applications.transfer.v1.Query/DenomTrace',
   VALIDATOR_DELEGATION: '/cosmos.staking.v1beta1.Query/Delegation',
+  VALIDATOR_DELEGATIONS: '/cosmos.staking.v1beta1.Query/ValidatorDelegations',
   PROPOSAL: '/cosmos.gov.v1beta1.Query/Proposal',
   TALLY_RESULT: '/cosmos.gov.v1beta1.Query/TallyResult',
   CODE: '/cosmwasm.wasm.v1.Query/Code',

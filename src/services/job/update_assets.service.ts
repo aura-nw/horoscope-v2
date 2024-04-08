@@ -1,7 +1,7 @@
 import { fromBase64, toHex } from '@cosmjs/encoding';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
-import { cosmos, ibc } from '@horoscope-v2/sei-js-proto';
+import { cosmos, ibc } from '@horoscope/sei-js-proto';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import Long from 'long';
 import { ServiceBroker } from 'moleculer';

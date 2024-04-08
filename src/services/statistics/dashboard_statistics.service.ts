@@ -107,6 +107,7 @@ export default class DashboardStatisticsService extends BullableService {
     switch (config.chainId) {
       case chainIdConfigOnServer.Atlantic2:
       case chainIdConfigOnServer.Pacific1:
+      case chainIdConfigOnServer.Evmos90004:
         [communityPool, supply] = await Promise.all([
           this._lcdClient.provider.cosmos.distribution.v1beta1.communityPool(),
           this._lcdClient.provider.cosmos.bank.v1beta1.supplyOf({
@@ -116,7 +117,7 @@ export default class DashboardStatisticsService extends BullableService {
         break;
       case chainIdConfigOnServer.Euphoria:
       case chainIdConfigOnServer.SerenityTestnet001:
-      case chainIdConfigOnServer.AuraTestnet2:
+      case chainIdConfigOnServer.AuraTestnetEVM:
       case chainIdConfigOnServer.Xstaxy1:
       default:
         [communityPool, inflation, distribution, supply] = await Promise.all([

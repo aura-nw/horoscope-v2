@@ -1,0 +1,21 @@
+table:
+  name: evm_contract_verification
+  schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - files
+        - code_hash
+        - compiler_version
+        - contract_address
+        - contract_name
+        - creator_tx_hash
+        - status
+        - id
+        - abi
+        - compile_detail
+        - created_at
+        - updated_at
+      filter: {}
+      limit: 100

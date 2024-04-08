@@ -19,6 +19,7 @@ import {
   QueryAccountRequest,
   QueryAccountResponse,
 } from '@aura-nw/aurajs/types/codegen/cosmos/auth/v1beta1/query';
+import _ from 'lodash';
 import knex from '../../common/utils/db_connection';
 import {
   AccountType,
@@ -124,6 +125,7 @@ export default class CrawlAccountService extends BullableService {
         if (auth) {
           const account: any = {};
           account.type = auth['@type'];
+          account.code_hash = auth.code_hash;
           switch (auth['@type']) {
             case AccountType.CONTINUOUS_VESTING:
             case AccountType.DELAYED_VESTING:
@@ -197,6 +199,7 @@ export default class CrawlAccountService extends BullableService {
                 pubkey: account.pubkey,
                 account_number: account.account_number,
                 sequence: account.sequence,
+                code_hash: account.code_hash,
               })
               .where({ id: account.id })
               .transacting(trx)
@@ -302,16 +305,26 @@ export default class CrawlAccountService extends BullableService {
         last_updated_height: number;
       }[] = [];
       await knex.transaction(async (trx) => {
-        const addressesWithIds = await Account.query()
-          .select('id', 'address')
-          .forUpdate()
-          .whereIn('address', addresses)
-          .transacting(trx);
+        const addressesWithIds = _.keyBy(
+          await Account.query()
+            .select('id', 'address')
+            .forUpdate()
+            .whereIn('address', addresses)
+            .transacting(trx),
+          'address'
+        );
+        const resetBalanceList: {
+          account_id: number;
+          last_updated_height: number;
+        }[] = accounts
+          .filter((account) => addressesWithIds[account.address])
+          .map((account) => ({
+            account_id: addressesWithIds[account.address].id,
+            last_updated_height: account.last_updated_height,
+          }));
         accounts.forEach((account) => {
-          const accountId = addressesWithIds.find(
-            (addressWithId) => addressWithId.address === account.address
-          )?.id;
-          if (Array.isArray(account.balances) && accountId)
+          const accountId = addressesWithIds[account.address]?.id;
+          if (Array.isArray(account.balances) && accountId) {
             account.balances.forEach((balance) => {
               listAccountBalance.push({
                 account_id: accountId,
@@ -323,8 +336,17 @@ export default class CrawlAccountService extends BullableService {
                 last_updated_height: account.last_updated_height,
               });
             });
+          }
         });
         try {
+          const stringListUpdatesReset = resetBalanceList
+            .map((e) => `(${e.account_id}, ${e.last_updated_height})`)
+            .join(',');
+          await knex
+            .raw(
+              `UPDATE account_balance SET amount = 0, last_updated_height=temp.last_updated_height from (VALUES ${stringListUpdatesReset}) as temp(account_id, last_updated_height) where temp.account_id = account_balance.account_id`
+            )
+            .transacting(trx);
           if (listAccountBalance.length > 0)
             await AccountBalance.query()
               .insert(listAccountBalance)
