@@ -138,7 +138,7 @@ export default class Erc721Service extends BullableService {
         erc721Handler.process();
         await this.updateErc721(
           erc721Activities,
-          Object.values(erc721Tokens),
+          Object.values(erc721Handler.erc721Tokens),
           trx
         );
       }
