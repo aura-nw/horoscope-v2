@@ -194,6 +194,7 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_EVM_EVENT_PARTITION: 'job:create-evm-event-partition',
   HANDLE_ERC20_BALANCE: 'handle:erc20-balance',
   EVM_CRAWL_INTERNAL_TX: 'crawl:crawl-internal-tx',
+  HANDLE_ERC721_ACTIVITY: 'handle:erc721-activity',
 };
 
 export const MSG_TYPE = {
