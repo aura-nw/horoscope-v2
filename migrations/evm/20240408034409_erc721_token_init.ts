@@ -8,7 +8,9 @@ export async function up(knex: Knex): Promise<void> {
     table.string('erc721_contract_address').index().notNullable();
     table.integer('last_updated_height').index();
     table.unique(['token_id', 'erc721_contract_id']);
-    table.foreign('erc721_contract_id').references('erc721_contract.id');
+    table
+      .foreign('erc721_contract_address')
+      .references('erc721_contract.address');
     table.timestamp('created_at').notNullable().defaultTo(knex.raw('now()'));
   });
 }
