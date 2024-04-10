@@ -408,5 +408,8 @@
     "key": "erc721",
     "blocksPerCall": 100,
     "millisecondRepeatJob": 2000
+  },
+  "jobRefreshMViewAccountBalanceStatistic": {
+    "timeRefreshMViewAccountBalanceStatistic": "*/10 * * * *"
   }
 }

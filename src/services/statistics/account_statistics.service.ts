@@ -418,4 +418,35 @@ export default class AccountStatisticsService extends BullableService {
       top_gas_used: topGasUsed,
     };
   }
+
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.REFRESH_ACCOUNT_BALANCE_STATISTIC,
+    jobName: BULL_JOB_NAME.REFRESH_ACCOUNT_BALANCE_STATISTIC,
+  })
+  public async refreshAccountBalanceStatistic(): Promise<void> {
+    await knex.schema.refreshMaterializedView(
+      'm_view_account_balance_statistic'
+    );
+  }
+
+  public async _start(): Promise<void> {
+    this.createJob(
+      BULL_JOB_NAME.REFRESH_ACCOUNT_BALANCE_STATISTIC,
+      BULL_JOB_NAME.REFRESH_ACCOUNT_BALANCE_STATISTIC,
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        repeat: {
+          pattern:
+            config.jobRefreshMViewAccountBalanceStatistic
+              .timeRefreshMViewAccountBalanceStatistic,
+        },
+      }
+    );
+
+    return super._start();
+  }
 }
