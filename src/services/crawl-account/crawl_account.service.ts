@@ -344,7 +344,7 @@ export default class CrawlAccountService extends BullableService {
             .join(',');
           await knex
             .raw(
-              `UPDATE account_balance SET amount = 0, last_updated_height=temp.last_updated_height from (VALUES ${stringListUpdatesReset}) as temp(account_id, last_updated_height) where temp.account_id = account_balance.account_id`
+              `UPDATE account_balance SET amount = 0, last_updated_height=temp.last_updated_height from (VALUES ${stringListUpdatesReset}) as temp(account_id, last_updated_height) where temp.account_id = account_balance.account_id and account_balance.type='${AccountBalance.TYPE.NATIVE}'`
             )
             .transacting(trx);
           if (listAccountBalance.length > 0)

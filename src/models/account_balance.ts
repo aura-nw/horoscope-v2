@@ -48,4 +48,9 @@ export class AccountBalance extends BaseModel {
       },
     };
   }
+
+  static TYPE = {
+    NATIVE: 'NATIVE',
+    ERC20_TOKEN: 'ERC20_TOKEN',
+  };
 }

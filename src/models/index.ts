@@ -40,3 +40,4 @@ export * from './erc20_contract';
 export * from './erc20_activity';
 export * from './evm_proxy_history';
 export * from './evm_internal_transaction';
+export * from './account_balance';
