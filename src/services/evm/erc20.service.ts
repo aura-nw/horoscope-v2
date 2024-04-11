@@ -6,7 +6,6 @@ import { getContract } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { BULL_JOB_NAME, SERVICE as EVM_SERVICE } from './constant';
 import { SERVICE as COSMOS_SERVICE } from '../../common';
 import knex from '../../common/utils/db_connection';
 import EtherJsClient from '../../common/utils/etherjs_client';
@@ -14,6 +13,7 @@ import { BlockCheckpoint, EVMSmartContract, EvmEvent } from '../../models';
 import { AccountBalance } from '../../models/account_balance';
 import { Erc20Activity } from '../../models/erc20_activity';
 import { Erc20Contract } from '../../models/erc20_contract';
+import { BULL_JOB_NAME, SERVICE as EVM_SERVICE } from './constant';
 import { ERC20_EVENT_TOPIC0, Erc20Handler } from './erc20_handler';
 import { convertEthAddressToBech32Address } from './utils';
 
@@ -41,15 +41,27 @@ export default class Erc20Service extends BullableService {
           config.erc20.key
         );
       const erc20SmartContracts = await EVMSmartContract.query()
+        .transacting(trx)
         .where('created_height', '>', startBlock)
         .andWhere('created_height', '<=', endBlock)
         .andWhere('type', EVMSmartContract.TYPES.ERC20)
         .orderBy('id', 'asc');
+      const currentErc20Proxies = await this.getCurrentErc20Proxies(
+        erc20SmartContracts.map((e) => e.address),
+        trx
+      );
+      erc20SmartContracts.push(
+        ...currentErc20Proxies.map((e) => EVMSmartContract.fromJson(e))
+      );
       if (erc20SmartContracts.length > 0) {
         const erc20Instances = await this.getErc20Instances(
           erc20SmartContracts
         );
-        await Erc20Contract.query().transacting(trx).insert(erc20Instances);
+        await Erc20Contract.query()
+          .transacting(trx)
+          .insert(erc20Instances)
+          .onConflict(['address'])
+          .merge();
       }
       updateBlockCheckpoint.height = endBlock;
       await BlockCheckpoint.query()
@@ -58,6 +70,38 @@ export default class Erc20Service extends BullableService {
         .merge()
         .transacting(trx);
     });
+  }
+
+  async getCurrentErc20Proxies(
+    erc20ContractsAddr: string[],
+    trx: Knex.Transaction
+  ): Promise<
+    {
+      address: string;
+      implementation_contract: string;
+      created_height: number;
+      id: number;
+    }[]
+  > {
+    return (
+      await knex
+        .raw(
+          `
+      SELECT result.proxy_contract as address, result.implementation_contract, mv.max_value as created_height, evm_smart_contract.id as id
+      FROM evm_proxy_history result 
+      JOIN (
+        SELECT proxy_contract, GREATEST(COALESCE(MAX(block_height), -1), COALESCE(MAX(last_updated_height), -1)) AS max_value 
+        FROM evm_proxy_history 
+        GROUP BY proxy_contract
+      ) mv ON result.proxy_contract=mv.proxy_contract 
+      JOIN evm_smart_contract ON result.proxy_contract=evm_smart_contract.address
+      WHERE (result.block_height=mv.max_value OR result.last_updated_height=mv.max_value) AND result.implementation_contract IN ('${erc20ContractsAddr.join(
+        "','"
+      )}')
+      `
+        )
+        .transacting(trx)
+    ).rows;
   }
 
   @QueueHandler({
