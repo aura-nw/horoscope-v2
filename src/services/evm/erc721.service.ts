@@ -18,7 +18,9 @@ import {
 import { Erc721Contract } from '../../models/erc721_contract';
 import { BULL_JOB_NAME, SERVICE } from './constant';
 import { ERC721_EVENT_TOPIC0, Erc721Handler } from './erc721_handler';
+import { Config } from '../../common';
 
+const { NODE_ENV } = Config;
 @Service({
   name: SERVICE.V1.Erc721.key,
   version: 1,
@@ -78,9 +80,15 @@ export default class Erc721Service extends BullableService {
       const erc721Events = await EvmEvent.query()
         .transacting(trx)
         .joinRelated('[evm_smart_contract,evm_transaction]')
+        .leftJoin(
+          'erc721_contract',
+          'evm_event.address',
+          'erc721_contract.address'
+        )
         .where('evm_event.block_height', '>', startBlock)
         .andWhere('evm_event.block_height', '<=', endBlock)
         .andWhere('evm_smart_contract.type', EVMSmartContract.TYPES.ERC721)
+        .andWhere('erc721_contract.track', true)
         .orderBy('evm_event.id', 'asc')
         .select(
           'evm_event.*',
@@ -196,36 +204,41 @@ export default class Erc721Service extends BullableService {
   }
 
   async handleMissingErc721Contract(events: EvmEvent[], trx: Knex.Transaction) {
-    const eventsUniqByAddress = _.keyBy(events, (e) => e.address);
-    const addresses = Object.keys(eventsUniqByAddress);
-    const erc721ContractsByAddress = _.keyBy(
-      await Erc721Contract.query()
-        .whereIn('address', addresses)
-        .transacting(trx),
-      (e) => e.address
-    );
-    const missingErc721ContractsAddress: string[] = addresses.filter(
-      (addr) => !erc721ContractsByAddress[addr]
-    );
-    if (missingErc721ContractsAddress.length > 0) {
-      const erc721ContractsInfo = await this.getBatchErc721Info(
-        missingErc721ContractsAddress as `0x${string}`[]
+    try {
+      const eventsUniqByAddress = _.keyBy(events, (e) => e.address);
+      const addresses = Object.keys(eventsUniqByAddress);
+      const erc721ContractsByAddress = _.keyBy(
+        await Erc721Contract.query()
+          .whereIn('address', addresses)
+          .transacting(trx),
+        (e) => e.address
       );
-      await Erc721Contract.query()
-        .insert(
-          missingErc721ContractsAddress.map((addr, index) =>
-            Erc721Contract.fromJson({
-              evm_smart_contract_id:
-                eventsUniqByAddress[addr].evm_smart_contract_id,
-              address: addr,
-              symbol: erc721ContractsInfo[index].symbol,
-              name: erc721ContractsInfo[index].name,
-              track: false,
-              last_updated_height: -1,
-            })
+      const missingErc721ContractsAddress: string[] = addresses.filter(
+        (addr) => !erc721ContractsByAddress[addr]
+      );
+      if (missingErc721ContractsAddress.length > 0) {
+        const erc721ContractsInfo = await this.getBatchErc721Info(
+          missingErc721ContractsAddress as `0x${string}`[]
+        );
+        await Erc721Contract.query()
+          .insert(
+            missingErc721ContractsAddress.map((addr, index) =>
+              Erc721Contract.fromJson({
+                evm_smart_contract_id:
+                  eventsUniqByAddress[addr].evm_smart_contract_id,
+                address: addr,
+                symbol: erc721ContractsInfo[index].symbol,
+                name: erc721ContractsInfo[index].name,
+                track: false,
+                last_updated_height: -1,
+              })
+            )
           )
-        )
-        .transacting(trx);
+          .transacting(trx);
+      }
+    } catch (error) {
+      this.logger.error('Failed to handle missing ERC721 contracts', error);
+      throw error;
     }
   }
 
@@ -271,34 +284,36 @@ export default class Erc721Service extends BullableService {
   }
 
   public async _start(): Promise<void> {
-    await this.createJob(
-      BULL_JOB_NAME.HANDLE_ERC721_CONTRACT,
-      BULL_JOB_NAME.HANDLE_ERC721_CONTRACT,
-      {},
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-        repeat: {
-          every: config.erc721.millisecondRepeatJob,
-        },
-      }
-    );
-    await this.createJob(
-      BULL_JOB_NAME.HANDLE_ERC721_ACTIVITY,
-      BULL_JOB_NAME.HANDLE_ERC721_ACTIVITY,
-      {},
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-        // repeat: {
-        //   every: config.erc721.millisecondRepeatJob,
-        // },
-      }
-    );
+    if (NODE_ENV !== 'test') {
+      await this.createJob(
+        BULL_JOB_NAME.HANDLE_ERC721_CONTRACT,
+        BULL_JOB_NAME.HANDLE_ERC721_CONTRACT,
+        {},
+        {
+          removeOnComplete: true,
+          removeOnFail: {
+            count: 3,
+          },
+          repeat: {
+            every: config.erc721.millisecondRepeatJob,
+          },
+        }
+      );
+      await this.createJob(
+        BULL_JOB_NAME.HANDLE_ERC721_ACTIVITY,
+        BULL_JOB_NAME.HANDLE_ERC721_ACTIVITY,
+        {},
+        {
+          removeOnComplete: true,
+          removeOnFail: {
+            count: 3,
+          },
+          repeat: {
+            every: config.erc721.millisecondRepeatJob,
+          },
+        }
+      );
+    }
     return super._start();
   }
 }
