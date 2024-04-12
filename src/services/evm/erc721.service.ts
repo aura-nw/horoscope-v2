@@ -6,6 +6,7 @@ import { getContract } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
+import { Config } from '../../common';
 import knex from '../../common/utils/db_connection';
 import EtherJsClient from '../../common/utils/etherjs_client';
 import {
@@ -18,7 +19,6 @@ import {
 import { Erc721Contract } from '../../models/erc721_contract';
 import { BULL_JOB_NAME, SERVICE } from './constant';
 import { ERC721_EVENT_TOPIC0, Erc721Handler } from './erc721_handler';
-import { Config } from '../../common';
 
 const { NODE_ENV } = Config;
 @Service({
@@ -117,15 +117,6 @@ export default class Erc721Service extends BullableService {
         }
       });
       if (erc721Activities.length > 0) {
-        const erc721Contracts = _.keyBy(
-          await Erc721Contract.query()
-            .whereIn(
-              'address',
-              erc721Activities.map((e) => e.erc721_contract_address)
-            )
-            .transacting(trx),
-          'address'
-        );
         const erc721Tokens = _.keyBy(
           await Erc721Token.query()
             .whereIn(
@@ -138,11 +129,7 @@ export default class Erc721Service extends BullableService {
             .transacting(trx),
           (o) => `${o.erc721_contract_address}_${o.token_id}`
         );
-        const erc721Handler = new Erc721Handler(
-          erc721Tokens,
-          erc721Activities,
-          erc721Contracts
-        );
+        const erc721Handler = new Erc721Handler(erc721Tokens, erc721Activities);
         erc721Handler.process();
         await this.updateErc721(
           erc721Activities,
@@ -220,8 +207,9 @@ export default class Erc721Service extends BullableService {
         const erc721ContractsInfo = await this.getBatchErc721Info(
           missingErc721ContractsAddress as `0x${string}`[]
         );
-        await Erc721Contract.query()
-          .insert(
+        await knex
+          .batchInsert(
+            'erc721_contract',
             missingErc721ContractsAddress.map((addr, index) =>
               Erc721Contract.fromJson({
                 evm_smart_contract_id:
@@ -232,7 +220,8 @@ export default class Erc721Service extends BullableService {
                 track: false,
                 last_updated_height: -1,
               })
-            )
+            ),
+            config.erc721.chunkSizeInsert
           )
           .transacting(trx);
       }
