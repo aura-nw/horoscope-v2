@@ -119,7 +119,8 @@ export class Erc721Handler {
         evm_tx_id: e.evm_tx_id,
         token_id: tokenId.toString(),
       });
-    } catch {
+    } catch (e) {
+      console.log(e);
       return undefined;
     }
   }
