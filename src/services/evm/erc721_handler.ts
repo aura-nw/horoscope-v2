@@ -1,7 +1,6 @@
 import { Dictionary } from 'lodash';
 import { decodeAbiParameters, keccak256, toHex } from 'viem';
 import { Erc721Activity, Erc721Token, EvmEvent } from '../../models';
-import { Erc721Contract } from '../../models/erc721_contract';
 import { ZERO_ADDRESS } from './constant';
 
 export const ERC721_EVENT_TOPIC0 = {
@@ -49,18 +48,12 @@ export class Erc721Handler {
 
   erc721Activities: Erc721Activity[];
 
-  // key: contract_address
-  // value: erc721 contract
-  erc721Contracts: Dictionary<Erc721Contract>;
-
   constructor(
     erc721Tokens: Dictionary<Erc721Token>,
-    erc721Activities: Erc721Activity[],
-    erc721Contracts: Dictionary<Erc721Contract>
+    erc721Activities: Erc721Activity[]
   ) {
     this.erc721Tokens = erc721Tokens;
     this.erc721Activities = erc721Activities;
-    this.erc721Contracts = erc721Contracts;
   }
 
   process() {
@@ -81,7 +74,7 @@ export class Erc721Handler {
       token.owner = erc721Activity.to;
       token.last_updated_height = erc721Activity.height;
     } else if (erc721Activity.from === ZERO_ADDRESS) {
-      // handle instantiate
+      // handle mint
       this.erc721Tokens[
         `${erc721Activity.erc721_contract_address}_${erc721Activity.token_id}`
       ] = Erc721Token.fromJson({
@@ -98,7 +91,6 @@ export class Erc721Handler {
 
   static buildTransferActivity(e: EvmEvent) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const [from, to, tokenId] = decodeAbiParameters(
         [
           ABI_TRANSFER_PARAMS.FROM,
@@ -127,7 +119,6 @@ export class Erc721Handler {
 
   static buildApprovalActivity(e: EvmEvent) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const [from, to, tokenId] = decodeAbiParameters(
         [
           ABI_APPROVAL_PARAMS.OWNER,
@@ -148,7 +139,8 @@ export class Erc721Handler {
         evm_tx_id: e.evm_tx_id,
         token_id: tokenId.toString(),
       });
-    } catch {
+    } catch (e) {
+      console.log(e);
       return undefined;
     }
   }
@@ -170,7 +162,8 @@ export class Erc721Handler {
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
       });
-    } catch {
+    } catch (e) {
+      console.log(e);
       return undefined;
     }
   }
