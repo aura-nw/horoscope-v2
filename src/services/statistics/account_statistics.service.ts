@@ -424,9 +424,38 @@ export default class AccountStatisticsService extends BullableService {
     jobName: BULL_JOB_NAME.REFRESH_ACCOUNT_BALANCE_STATISTIC,
   })
   public async refreshAccountBalanceStatistic(): Promise<void> {
-    await knex.schema.refreshMaterializedView(
-      'm_view_account_balance_statistic'
-    );
+    const viewName = 'm_view_account_balance_statistic';
+    const isMViewExists = await knex('pg_matviews')
+      .select('matviewname')
+      .where({ matviewname: viewName })
+      .first();
+
+    const denom = config.networkDenom;
+
+    if (!isMViewExists) {
+      await knex.schema.raw(`
+        CREATE MATERIALIZED VIEW ${viewName} AS
+        SELECT account.address,
+              account_balance.denom,
+              Sum(delegator_sum_amount.amount)
+              + Sum(account_balance.amount) AS amount
+        FROM   account_balance
+              INNER JOIN account
+                      ON account.id = account_balance.account_id
+              INNER JOIN (SELECT delegator_address AS address,
+                                  Sum(amount)       AS amount
+                          FROM   delegator
+                          GROUP  BY address) AS delegator_sum_amount
+                      ON delegator_sum_amount.address = account.address
+        WHERE  denom = '${denom}'
+        GROUP BY account.address, account_balance.denom;
+
+        CREATE INDEX idx_materialized_view_name_address ON ${viewName}(address);
+        CREATE INDEX idx_materialized_view_name_denom ON ${viewName}(denom);
+    `);
+    } else {
+      await knex.schema.refreshMaterializedView(viewName);
+    }
   }
 
   public async _start(): Promise<void> {
