@@ -14,6 +14,8 @@ select_permissions:
     permission:
       columns:
         - address
+        - code_hash
+        - evm_address
         - type
         - account_number
         - id
