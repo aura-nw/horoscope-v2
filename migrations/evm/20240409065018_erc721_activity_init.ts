@@ -17,6 +17,7 @@ export async function up(knex: Knex): Promise<void> {
     table
       .foreign('erc721_contract_address')
       .references('erc721_contract.address');
+    table.foreign('erc721_token_id').references('erc721_token.id');
     table.foreign('evm_event_id').references('evm_event.id');
   });
 }
