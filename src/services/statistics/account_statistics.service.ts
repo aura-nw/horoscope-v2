@@ -436,7 +436,6 @@ export default class AccountStatisticsService extends BullableService {
       await knex.schema.raw(`
         CREATE MATERIALIZED VIEW ${viewName} AS
         SELECT account.address,
-              account_balance.denom,
               Sum(delegator_sum_amount.amount)
               + Sum(account_balance.amount) AS amount
         FROM   account_balance
@@ -448,10 +447,10 @@ export default class AccountStatisticsService extends BullableService {
                           GROUP  BY address) AS delegator_sum_amount
                       ON delegator_sum_amount.address = account.address
         WHERE  denom = '${denom}'
-        GROUP BY account.address, account_balance.denom;
+        GROUP BY account.address, account_balance.denom
+        ORDER BY amount DESC;
 
         CREATE INDEX idx_materialized_view_name_address ON ${viewName}(address);
-        CREATE INDEX idx_materialized_view_name_denom ON ${viewName}(denom);
     `);
     } else {
       await knex.schema.refreshMaterializedView(viewName);
