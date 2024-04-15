@@ -8,7 +8,6 @@ select_permissions:
         - id
         - proxy_contract
         - implementation_contract
-        - admin
         - tx_hash
         - block_height
         - last_updated_height
