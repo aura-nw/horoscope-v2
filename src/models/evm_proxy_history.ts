@@ -10,8 +10,6 @@ export class EvmProxyHistory extends BaseModel {
 
   implementation_contract!: string;
 
-  admin!: string;
-
   tx_hash!: string;
 
   block_height!: number;
