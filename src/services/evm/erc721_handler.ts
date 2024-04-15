@@ -89,7 +89,7 @@ export class Erc721Handler {
     }
   }
 
-  static buildTransferActivity(e: EvmEvent) {
+  static buildTransferActivity(e: EvmEvent): Erc721Activity | undefined {
     try {
       const [from, to, tokenId] = decodeAbiParameters(
         [
@@ -117,7 +117,7 @@ export class Erc721Handler {
     }
   }
 
-  static buildApprovalActivity(e: EvmEvent) {
+  static buildApprovalActivity(e: EvmEvent): Erc721Activity | undefined {
     try {
       const [from, to, tokenId] = decodeAbiParameters(
         [
@@ -145,7 +145,7 @@ export class Erc721Handler {
     }
   }
 
-  static buildApprovalForAllActivity(e: EvmEvent) {
+  static buildApprovalForAllActivity(e: EvmEvent): Erc721Activity | undefined {
     try {
       const [from, to] = decodeAbiParameters(
         [ABI_APPROVAL_PARAMS.OWNER, ABI_APPROVAL_PARAMS.APPROVED],

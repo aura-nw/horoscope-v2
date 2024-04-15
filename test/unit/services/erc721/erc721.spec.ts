@@ -113,6 +113,7 @@ export default class Erc721Test {
         tx_index: 1,
         sender: 'fgfdg',
         evm_smart_contract_id: this.evmSmartContract.id,
+        track: true,
       }),
       EvmEvent.fromJson({
         id: this.evmEvent.id,
@@ -135,6 +136,7 @@ export default class Erc721Test {
         tx_index: 1,
         sender: 'fgfdg',
         evm_smart_contract_id: this.evmSmartContract.id,
+        track: true,
       }),
       EvmEvent.fromJson({
         id: this.evmEvent.id,
@@ -157,6 +159,7 @@ export default class Erc721Test {
         tx_index: 1,
         sender: 'fgfdg',
         evm_smart_contract_id: this.evmSmartContract.id,
+        track: true,
       }),
     ];
     const mockQueryEvents: any = {
