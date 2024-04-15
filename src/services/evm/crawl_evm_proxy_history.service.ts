@@ -82,11 +82,7 @@ export default class CrawlProxyContractEVMService extends BullableService {
     ]);
 
     for (const evmEvent of evmEvents) {
-      let [adminAddress, implementationAddress, beaconAddress]: unknown[] = [
-        null,
-        null,
-        null,
-      ];
+      let implementationAddress = null;
       const anyProxyHistory = await EvmProxyHistory.query()
         .where('proxy_contract', '=', _.toLower(evmEvent.address))
         .andWhereNot('last_updated_height', null);
@@ -105,18 +101,19 @@ export default class CrawlProxyContractEVMService extends BullableService {
             evmEvent.topic1 as any
           );
           break;
-        case Erc1967Events.adminChanged.event:
-          [, adminAddress] = decodeAbiParameters(
-            parseAbiParameters(Erc1967Events.adminChanged.abiParams),
-            toHex(evmEvent.data)
-          );
-          break;
-        case Erc1967Events.beaconUpgraded.event:
-          beaconAddress = decodeAbiParameters(
-            parseAbiParameters(Erc1967Events.beaconUpgraded.abiParams),
-            evmEvent.topic1 as any
-          );
-          break;
+        // TODO: support beacon soon
+        // case Erc1967Events.adminChanged.event:
+        //   [, adminAddress] = decodeAbiParameters(
+        //     parseAbiParameters(Erc1967Events.adminChanged.abiParams),
+        //     toHex(evmEvent.data)
+        //   );
+        //   break;
+        // case Erc1967Events.beaconUpgraded.event:
+        //   beaconAddress = decodeAbiParameters(
+        //     parseAbiParameters(Erc1967Events.beaconUpgraded.abiParams),
+        //     evmEvent.topic1 as any
+        //   );
+        //   break;
         default:
           if (firstTimeCatchProxyEvent) {
             implementationAddress = await this.contractHelper.isContractProxy(
@@ -134,9 +131,8 @@ export default class CrawlProxyContractEVMService extends BullableService {
       }
 
       newJSONProxy.proxy_contract = _.toLower(evmEvent.address);
-      newJSONProxy.admin = _.toLower(adminAddress as string) || null;
       newJSONProxy.implementation_contract =
-        _.toLower(implementationAddress as string) || beaconAddress || null;
+        _.toLower(implementationAddress as string) || null;
       newJSONProxy.block_height = evmEvent.block_height;
       newJSONProxy.tx_hash = evmEvent.tx_hash;
 
@@ -145,9 +141,7 @@ export default class CrawlProxyContractEVMService extends BullableService {
 
     const newProxyContractsToSave = _.filter(
       newProxyHistories,
-      (proxyContract) =>
-        proxyContract.admin !== null ||
-        proxyContract.implementation_contract !== null
+      (proxyContract) => proxyContract.implementation_contract !== null
     );
 
     await knex.transaction(async (trx) => {

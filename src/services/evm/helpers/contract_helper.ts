@@ -73,24 +73,25 @@ export class ContractHelper {
         );
       } else {
         result = await Promise.any([
-          this.detectProxyContractByByteCode(
-            contractAddress,
-            byteCode,
-            EIPProxyContractSupportByteCode.EIP_1967_ADMIN.SLOT,
-            blockHeight
-          ),
+          // this.detectProxyContractByByteCode(
+          //   contractAddress,
+          //   byteCode,
+          //   EIPProxyContractSupportByteCode.EIP_1967_ADMIN.SLOT,
+          //   blockHeight
+          // ),
           this.detectProxyContractByByteCode(
             contractAddress,
             byteCode,
             EIPProxyContractSupportByteCode.EIP_1967_IMPLEMENTATION.SLOT,
             blockHeight
           ),
-          this.detectProxyContractByByteCode(
-            contractAddress,
-            byteCode,
-            EIPProxyContractSupportByteCode.EIP_1967_BEACON.SLOT,
-            blockHeight
-          ),
+          // TODO: support beacon soon.
+          // this.detectProxyContractByByteCode(
+          //   contractAddress,
+          //   byteCode,
+          //   EIPProxyContractSupportByteCode.EIP_1967_BEACON.SLOT,
+          //   blockHeight
+          // ),
           this.detectProxyContractByByteCode(
             contractAddress,
             byteCode,
