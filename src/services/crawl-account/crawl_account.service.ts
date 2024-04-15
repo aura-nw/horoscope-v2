@@ -53,7 +53,7 @@ interface IAccountBalances extends QueryAllBalancesResponse {
 export default class CrawlAccountService extends BullableService {
   private _lcdClient!: IProviderJSClientFactory;
 
-  private _httpBatchClient: HttpBatchClient;
+  _httpBatchClient!: HttpBatchClient;
 
   private registry: any;
 

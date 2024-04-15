@@ -20,6 +20,8 @@ export class AccountBalance extends BaseModel {
 
   account_id!: number;
 
+  type!: string;
+
   static get tableName() {
     return 'account_balance';
   }
