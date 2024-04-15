@@ -125,6 +125,7 @@ export const BULL_JOB_NAME = {
   JOB_UPDATE_TX_COUNT_IN_BLOCK: 'job:update-tx-count-in-block',
   JOB_CW721_UPDATE: 'job:cw721-update',
   CHECKPOINT_UPDATE_DELEGATOR: 'job:checkpoint_update_delegator',
+  REFRESH_ACCOUNT_BALANCE_STATISTIC: 'refresh:account-balance-statistic',
 };
 
 export const SERVICE = {

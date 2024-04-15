@@ -1,0 +1,11 @@
+table:
+  name: m_view_account_balance_statistic
+  schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - address
+        - amount
+      filter: {}
+      limit: 100
