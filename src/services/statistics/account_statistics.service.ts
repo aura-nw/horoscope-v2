@@ -437,7 +437,8 @@ export default class AccountStatisticsService extends BullableService {
         CREATE MATERIALIZED VIEW ${viewName} AS
         SELECT account.address,
               Sum(delegator_sum_amount.amount)
-              + Sum(account_balance.amount) AS amount
+              + Sum(account_balance.amount) AS amount,
+              Now() AS updated_at
         FROM   account_balance
               INNER JOIN account
                       ON account.id = account_balance.account_id
