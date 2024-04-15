@@ -76,7 +76,6 @@ export default class Erc721Service extends BullableService {
           [BULL_JOB_NAME.HANDLE_ERC721_CONTRACT],
           config.erc721.key
         );
-      // TODO: handle track er721 contract only
       const erc721Events = await EvmEvent.query()
         .transacting(trx)
         .joinRelated('[evm_smart_contract,evm_transaction]')
@@ -88,34 +87,36 @@ export default class Erc721Service extends BullableService {
         .where('evm_event.block_height', '>', startBlock)
         .andWhere('evm_event.block_height', '<=', endBlock)
         .andWhere('evm_smart_contract.type', EVMSmartContract.TYPES.ERC721)
-        .andWhere('erc721_contract.track', true)
         .orderBy('evm_event.id', 'asc')
         .select(
           'evm_event.*',
           'evm_transaction.from as sender',
           'evm_smart_contract.id as evm_smart_contract_id',
-          'evm_transaction.id as evm_tx_id'
+          'evm_transaction.id as evm_tx_id',
+          'erc721_contract.track as track'
         );
       await this.handleMissingErc721Contract(erc721Events, trx);
       const erc721Activities: Erc721Activity[] = [];
-      erc721Events.forEach((e) => {
-        if (e.topic0 === ERC721_EVENT_TOPIC0.TRANSFER) {
-          const activity = Erc721Handler.buildTransferActivity(e);
-          if (activity) {
-            erc721Activities.push(activity);
+      erc721Events
+        .filter((e) => e.track)
+        .forEach((e) => {
+          if (e.topic0 === ERC721_EVENT_TOPIC0.TRANSFER) {
+            const activity = Erc721Handler.buildTransferActivity(e);
+            if (activity) {
+              erc721Activities.push(activity);
+            }
+          } else if (e.topic0 === ERC721_EVENT_TOPIC0.APPROVAL) {
+            const activity = Erc721Handler.buildApprovalActivity(e);
+            if (activity) {
+              erc721Activities.push(activity);
+            }
+          } else if (e.topic0 === ERC721_EVENT_TOPIC0.APPROVAL_FOR_ALL) {
+            const activity = Erc721Handler.buildApprovalForAllActivity(e);
+            if (activity) {
+              erc721Activities.push(activity);
+            }
           }
-        } else if (e.topic0 === ERC721_EVENT_TOPIC0.APPROVAL) {
-          const activity = Erc721Handler.buildApprovalActivity(e);
-          if (activity) {
-            erc721Activities.push(activity);
-          }
-        } else if (e.topic0 === ERC721_EVENT_TOPIC0.APPROVAL_FOR_ALL) {
-          const activity = Erc721Handler.buildApprovalForAllActivity(e);
-          if (activity) {
-            erc721Activities.push(activity);
-          }
-        }
-      });
+        });
       if (erc721Activities.length > 0) {
         const erc721Tokens = _.keyBy(
           await Erc721Token.query()
