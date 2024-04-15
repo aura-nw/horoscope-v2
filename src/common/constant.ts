@@ -126,6 +126,9 @@ export const BULL_JOB_NAME = {
   UPLOAD_BLOCK_RAW_LOG_TO_S3: 'job:upload-block-raw-log-to-s3',
   UPLOAD_TX_RAW_LOG_TO_S3: 'job:upload-tx-raw-log-to-s3',
   JOB_UPDATE_ASSETS: 'job:update-assets',
+  JOB_CW721_UPDATE: 'job:cw721-update',
+  CHECKPOINT_UPDATE_DELEGATOR: 'job:checkpoint_update_delegator',
+  REFRESH_ACCOUNT_BALANCE_STATISTIC: 'refresh:account-balance-statistic',
 };
 
 export const SERVICE = {
