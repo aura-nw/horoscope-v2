@@ -409,5 +409,8 @@
     "blocksPerCall": 100,
     "millisecondRepeatJob": 2000,
     "chunkSizeInsert": 1000
+  },
+  "jobRefreshMViewAccountBalanceStatistic": {
+    "timeRefreshMViewAccountBalanceStatistic": "*/10 * * * *"
   }
 }
