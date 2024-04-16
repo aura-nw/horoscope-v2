@@ -153,15 +153,8 @@ export default class Erc721Service extends BullableService {
 
   async handleMissingErc721Contract(events: EvmEvent[], trx: Knex.Transaction) {
     const eventsUniqByAddress = _.keyBy(events, (e) => e.address);
-    const addresses = Object.keys(eventsUniqByAddress);
-    const erc721ContractsByAddress = _.keyBy(
-      await Erc721Contract.query()
-        .whereIn('address', addresses)
-        .transacting(trx),
-      (e) => e.address
-    );
-    const missingErc721ContractsAddress: string[] = addresses.filter(
-      (addr) => !erc721ContractsByAddress[addr]
+    const missingErc721ContractsAddress: string[] = Array.from(
+      new Set(events.filter((e) => e.track === null).map((e) => e.address))
     );
     if (missingErc721ContractsAddress.length > 0) {
       const erc721ContractsInfo = await this.getBatchErc721Info(
