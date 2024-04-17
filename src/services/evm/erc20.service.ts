@@ -9,7 +9,12 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { SERVICE as COSMOS_SERVICE } from '../../common';
 import knex from '../../common/utils/db_connection';
 import EtherJsClient from '../../common/utils/etherjs_client';
-import { BlockCheckpoint, EVMSmartContract, EvmEvent } from '../../models';
+import {
+  BlockCheckpoint,
+  EVMSmartContract,
+  EvmEvent,
+  EvmProxyHistory,
+} from '../../models';
 import { AccountBalance } from '../../models/account_balance';
 import { Erc20Activity } from '../../models/erc20_activity';
 import { Erc20Contract } from '../../models/erc20_contract';
@@ -75,33 +80,53 @@ export default class Erc20Service extends BullableService {
   async getCurrentErc20Proxies(
     erc20ContractsAddr: string[],
     trx: Knex.Transaction
-  ): Promise<
-    {
-      address: string;
-      implementation_contract: string;
-      created_height: number;
-      id: number;
-    }[]
-  > {
-    return (
-      await knex
-        .raw(
-          `
-      SELECT result.proxy_contract as address, result.implementation_contract, mv.max_value as created_height, evm_smart_contract.id as id
-      FROM evm_proxy_history result 
-      JOIN (
-        SELECT proxy_contract, GREATEST(COALESCE(MAX(block_height), -1), COALESCE(MAX(last_updated_height), -1)) AS max_value 
-        FROM evm_proxy_history 
-        GROUP BY proxy_contract
-      ) mv ON result.proxy_contract=mv.proxy_contract 
-      JOIN evm_smart_contract ON result.proxy_contract=evm_smart_contract.address
-      WHERE (result.block_height=mv.max_value OR result.last_updated_height=mv.max_value) AND result.implementation_contract IN ('${erc20ContractsAddr.join(
-        "','"
-      )}')
-      `
+  ): Promise<EvmProxyHistory[]> {
+    const implementationAndLastUpdatedProxyHeight =
+      await EvmProxyHistory.query()
+        .whereIn(
+          'evm_proxy_history.implementation_contract',
+          erc20ContractsAddr
         )
-        .transacting(trx)
-    ).rows;
+        .leftJoin(
+          'evm_proxy_history as tmp',
+          'evm_proxy_history.proxy_contract',
+          'tmp.proxy_contract'
+        )
+        .groupBy('evm_proxy_history.id')
+        .select(
+          'evm_proxy_history.id',
+          knex.raw(
+            'GREATEST(COALESCE(MAX(tmp.block_height), -1), COALESCE(MAX(tmp.last_updated_height), -1)) AS last_updated_proxy_height'
+          )
+        )
+        .transacting(trx);
+    return EvmProxyHistory.query()
+      .leftJoin(
+        'evm_smart_contract',
+        'evm_proxy_history.proxy_contract',
+        'evm_smart_contract.address'
+      )
+      .whereIn(
+        [
+          'evm_proxy_history.id',
+          knex.raw(
+            'GREATEST(evm_proxy_history.block_height,evm_proxy_history.last_updated_height)'
+          ),
+        ],
+        implementationAndLastUpdatedProxyHeight.map((e) => [
+          e.id,
+          e.last_updated_proxy_height,
+        ])
+      )
+      .select(
+        'evm_proxy_history.proxy_contract as address',
+        'evm_proxy_history.implementation_contract',
+        knex.raw(
+          'GREATEST(evm_proxy_history.block_height,evm_proxy_history.last_updated_height) as created_height'
+        ),
+        'evm_smart_contract.id as id'
+      )
+      .transacting(trx);
   }
 
   @QueueHandler({
