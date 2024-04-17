@@ -1,5 +1,6 @@
 import { Dictionary } from 'lodash';
 import { decodeAbiParameters, keccak256, toHex } from 'viem';
+import Moleculer from 'moleculer';
 import { Erc721Activity, Erc721Token, EvmEvent } from '../../models';
 import { ZERO_ADDRESS } from './constant';
 
@@ -89,7 +90,10 @@ export class Erc721Handler {
     }
   }
 
-  static buildTransferActivity(e: EvmEvent): Erc721Activity | undefined {
+  static buildTransferActivity(
+    e: EvmEvent,
+    logger: Moleculer.LoggerInstance
+  ): Erc721Activity | undefined {
     try {
       const [from, to, tokenId] = decodeAbiParameters(
         [
@@ -112,12 +116,15 @@ export class Erc721Handler {
         token_id: tokenId.toString(),
       });
     } catch (e) {
-      console.log(e);
+      logger.error(e);
       return undefined;
     }
   }
 
-  static buildApprovalActivity(e: EvmEvent): Erc721Activity | undefined {
+  static buildApprovalActivity(
+    e: EvmEvent,
+    logger: Moleculer.LoggerInstance
+  ): Erc721Activity | undefined {
     try {
       const [from, to, tokenId] = decodeAbiParameters(
         [
@@ -140,12 +147,15 @@ export class Erc721Handler {
         token_id: tokenId.toString(),
       });
     } catch (e) {
-      console.log(e);
+      logger.error(e);
       return undefined;
     }
   }
 
-  static buildApprovalForAllActivity(e: EvmEvent): Erc721Activity | undefined {
+  static buildApprovalForAllActivity(
+    e: EvmEvent,
+    logger: Moleculer.LoggerInstance
+  ): Erc721Activity | undefined {
     try {
       const [from, to] = decodeAbiParameters(
         [ABI_APPROVAL_PARAMS.OWNER, ABI_APPROVAL_PARAMS.APPROVED],
@@ -163,7 +173,7 @@ export class Erc721Handler {
         evm_tx_id: e.evm_tx_id,
       });
     } catch (e) {
-      console.log(e);
+      logger.error(e);
       return undefined;
     }
   }
