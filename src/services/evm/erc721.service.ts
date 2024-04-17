@@ -101,17 +101,26 @@ export default class Erc721Service extends BullableService {
         .filter((e) => e.track)
         .forEach((e) => {
           if (e.topic0 === ERC721_EVENT_TOPIC0.TRANSFER) {
-            const activity = Erc721Handler.buildTransferActivity(e);
+            const activity = Erc721Handler.buildTransferActivity(
+              e,
+              this.logger
+            );
             if (activity) {
               erc721Activities.push(activity);
             }
           } else if (e.topic0 === ERC721_EVENT_TOPIC0.APPROVAL) {
-            const activity = Erc721Handler.buildApprovalActivity(e);
+            const activity = Erc721Handler.buildApprovalActivity(
+              e,
+              this.logger
+            );
             if (activity) {
               erc721Activities.push(activity);
             }
           } else if (e.topic0 === ERC721_EVENT_TOPIC0.APPROVAL_FOR_ALL) {
-            const activity = Erc721Handler.buildApprovalForAllActivity(e);
+            const activity = Erc721Handler.buildApprovalForAllActivity(
+              e,
+              this.logger
+            );
             if (activity) {
               erc721Activities.push(activity);
             }
