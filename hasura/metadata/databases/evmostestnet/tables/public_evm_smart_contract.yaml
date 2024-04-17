@@ -11,6 +11,15 @@ object_relationships:
         remote_table:
           name: erc20_contract
           schema: public
+  - name: erc721_contract
+    using:
+      manual_configuration:
+        column_mapping:
+          id: evm_smart_contract_id
+        insertion_order: null
+        remote_table:
+          name: erc721_contract
+          schema: public
 array_relationships:
   - name: evm_contract_verifications
     using:

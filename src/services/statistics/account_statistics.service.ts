@@ -418,4 +418,64 @@ export default class AccountStatisticsService extends BullableService {
       top_gas_used: topGasUsed,
     };
   }
+
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.REFRESH_ACCOUNT_BALANCE_STATISTIC,
+    jobName: BULL_JOB_NAME.REFRESH_ACCOUNT_BALANCE_STATISTIC,
+  })
+  public async refreshAccountBalanceStatistic(): Promise<void> {
+    const viewName = 'm_view_account_balance_statistic';
+    const isMViewExists = await knex('pg_matviews')
+      .select('matviewname')
+      .where({ matviewname: viewName })
+      .first();
+
+    const denom = config.networkDenom;
+
+    if (!isMViewExists) {
+      await knex.schema.raw(`
+        CREATE MATERIALIZED VIEW ${viewName} AS
+        SELECT account.address,
+              Sum(delegator_sum_amount.amount)
+              + Sum(account_balance.amount) AS amount,
+              Now() AS updated_at
+        FROM   account_balance
+              INNER JOIN account
+                      ON account.id = account_balance.account_id
+              INNER JOIN (SELECT delegator_address AS address,
+                                  Sum(amount)       AS amount
+                          FROM   delegator
+                          GROUP  BY address) AS delegator_sum_amount
+                      ON delegator_sum_amount.address = account.address
+        WHERE  denom = '${denom}'
+        GROUP BY account.address, account_balance.denom
+        ORDER BY amount DESC;
+
+        CREATE INDEX idx_materialized_view_name_address ON ${viewName}(address);
+    `);
+    } else {
+      await knex.schema.refreshMaterializedView(viewName);
+    }
+  }
+
+  public async _start(): Promise<void> {
+    this.createJob(
+      BULL_JOB_NAME.REFRESH_ACCOUNT_BALANCE_STATISTIC,
+      BULL_JOB_NAME.REFRESH_ACCOUNT_BALANCE_STATISTIC,
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        repeat: {
+          pattern:
+            config.jobRefreshMViewAccountBalanceStatistic
+              .timeRefreshMViewAccountBalanceStatistic,
+        },
+      }
+    );
+
+    return super._start();
+  }
 }

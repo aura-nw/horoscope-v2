@@ -411,5 +411,8 @@
     "key": "crawlEvmProxyHistory",
     "blocksPerCall": 100,
     "millisecondCrawl": 2000
+  },
+  "jobRefreshMViewAccountBalanceStatistic": {
+    "timeRefreshMViewAccountBalanceStatistic": "*/10 * * * *"
   }
 }
