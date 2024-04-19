@@ -51,16 +51,34 @@ export default class Erc20Service extends BullableService {
         .andWhere('created_height', '<=', endBlock)
         .andWhere('type', EVMSmartContract.TYPES.ERC20)
         .orderBy('id', 'asc');
-      const currentErc20Proxies = await this.getCurrentErc20Proxies(
-        erc20SmartContracts.map((e) => e.address),
-        trx
-      );
+      const erc20Proxies = await EvmProxyHistory.query()
+        .leftJoin(
+          'evm_smart_contract',
+          'evm_proxy_history.proxy_contract',
+          'evm_smart_contract.address'
+        )
+        .whereIn(
+          'evm_proxy_history.implementation_contract',
+          erc20SmartContracts.map((e) => e.address)
+        )
+        .select(
+          'evm_proxy_history.proxy_contract as address',
+          'evm_proxy_history.implementation_contract',
+          knex.raw(
+            'GREATEST(evm_proxy_history.block_height,evm_proxy_history.last_updated_height) as created_height'
+          ),
+          'evm_smart_contract.id as id'
+        )
+        .transacting(trx);
       erc20SmartContracts.push(
-        ...currentErc20Proxies.map((e) => EVMSmartContract.fromJson(e))
+        ...erc20Proxies.map((e) => EVMSmartContract.fromJson(e))
       );
       if (erc20SmartContracts.length > 0) {
         const erc20Instances = await this.getErc20Instances(
           erc20SmartContracts
+        );
+        this.logger.info(
+          `Crawl Erc20 contract from block ${startBlock} to block ${endBlock}:\n ${erc20Instances}`
         );
         await Erc20Contract.query()
           .transacting(trx)
@@ -75,58 +93,6 @@ export default class Erc20Service extends BullableService {
         .merge()
         .transacting(trx);
     });
-  }
-
-  async getCurrentErc20Proxies(
-    erc20ContractsAddr: string[],
-    trx: Knex.Transaction
-  ): Promise<EvmProxyHistory[]> {
-    const implementationAndLastUpdatedProxyHeight =
-      await EvmProxyHistory.query()
-        .whereIn(
-          'evm_proxy_history.implementation_contract',
-          erc20ContractsAddr
-        )
-        .leftJoin(
-          'evm_proxy_history as tmp',
-          'evm_proxy_history.proxy_contract',
-          'tmp.proxy_contract'
-        )
-        .groupBy('evm_proxy_history.id')
-        .select(
-          'evm_proxy_history.id',
-          knex.raw(
-            'GREATEST(COALESCE(MAX(tmp.block_height), -1), COALESCE(MAX(tmp.last_updated_height), -1)) AS last_updated_proxy_height'
-          )
-        )
-        .transacting(trx);
-    return EvmProxyHistory.query()
-      .leftJoin(
-        'evm_smart_contract',
-        'evm_proxy_history.proxy_contract',
-        'evm_smart_contract.address'
-      )
-      .whereIn(
-        [
-          'evm_proxy_history.id',
-          knex.raw(
-            'GREATEST(evm_proxy_history.block_height,evm_proxy_history.last_updated_height)'
-          ),
-        ],
-        implementationAndLastUpdatedProxyHeight.map((e) => [
-          e.id,
-          e.last_updated_proxy_height,
-        ])
-      )
-      .select(
-        'evm_proxy_history.proxy_contract as address',
-        'evm_proxy_history.implementation_contract',
-        knex.raw(
-          'GREATEST(evm_proxy_history.block_height,evm_proxy_history.last_updated_height) as created_height'
-        ),
-        'evm_smart_contract.id as id'
-      )
-      .transacting(trx);
   }
 
   @QueueHandler({
@@ -145,9 +111,13 @@ export default class Erc20Service extends BullableService {
       const erc20Events = await EvmEvent.query()
         .transacting(trx)
         .joinRelated('[evm_smart_contract,evm_transaction]')
+        .innerJoin(
+          'erc20_contract',
+          'evm_event.address',
+          'erc20_contract.address'
+        )
         .where('evm_event.block_height', '>', startBlock)
         .andWhere('evm_event.block_height', '<=', endBlock)
-        .andWhere('evm_smart_contract.type', EVMSmartContract.TYPES.ERC20)
         .orderBy('evm_event.id', 'asc')
         .select(
           'evm_event.*',
@@ -171,6 +141,9 @@ export default class Erc20Service extends BullableService {
         }
       });
       if (erc20Activities.length > 0) {
+        this.logger.info(
+          `Crawl Erc20 activity from block ${startBlock} to block ${endBlock}:\n ${erc20Activities}`
+        );
         await knex
           .batchInsert(
             'erc20_activity',

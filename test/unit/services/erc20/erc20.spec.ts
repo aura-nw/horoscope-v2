@@ -1,5 +1,6 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
+import knex from '../../../../src/common/utils/db_connection';
 import {
   Account,
   EVMSmartContract,
@@ -7,9 +8,7 @@ import {
   Erc20Activity,
   Erc20Contract,
   EvmEvent,
-  EvmProxyHistory,
 } from '../../../../src/models';
-import knex from '../../../../src/common/utils/db_connection';
 import Erc20Service from '../../../../src/services/evm/erc20.service';
 
 @Describe('Test erc20 handler')
@@ -34,7 +33,7 @@ export default class Erc20Test {
     creator: 'dfgdfbvxcvxgfds',
     created_height: 100,
     created_hash: 'xdasfsf',
-    type: EVMSmartContract.TYPES.ERC20,
+    type: EVMSmartContract.TYPES.PROXY_EIP_1967,
     code_hash: 'xcsadf',
   });
 
@@ -200,76 +199,5 @@ export default class Erc20Test {
     expect(result[1]).toMatchObject(erc20Contracts[0].activities[0]);
     expect(result[1].from_account_id).toEqual(fromAccount.id);
     expect(result[1].to_account_id).toEqual(toAccount.id);
-  }
-
-  @Test('getCurrentErc20Proxies')
-  async testGetCurrentErc20Proxies() {
-    const implementation1 = 'dsasfdsfsdf';
-    const implementation2 = 'hchchchc';
-    const proxyHistories = [
-      EvmProxyHistory.fromJson({
-        proxy_contract: this.evmSmartContract.address,
-        implementation_contract: 'dghdghgg',
-        tx_hash: 'sfserwerwr',
-        block_height: 100,
-        last_updated_height: null,
-      }),
-      EvmProxyHistory.fromJson({
-        proxy_contract: this.evmSmartContract.address,
-        implementation_contract: 'zzzzzzz',
-        tx_hash: 'drfder',
-        block_height: null,
-        last_updated_height: 99,
-      }),
-      EvmProxyHistory.fromJson({
-        proxy_contract: this.evmSmartContract.address,
-        implementation_contract: implementation1,
-        tx_hash: '',
-        block_height: 98,
-        last_updated_height: null,
-      }),
-      EvmProxyHistory.fromJson({
-        proxy_contract: this.evmSmartContract2.address,
-        implementation_contract: implementation2,
-        tx_hash: 'sfserwerwr',
-        block_height: 1001,
-        last_updated_height: null,
-      }),
-      EvmProxyHistory.fromJson({
-        proxy_contract: this.evmSmartContract2.address,
-        implementation_contract: 'zzzzzzz',
-        tx_hash: 'drfder',
-        block_height: null,
-        last_updated_height: 991,
-      }),
-      EvmProxyHistory.fromJson({
-        proxy_contract: this.evmSmartContract2.address,
-        implementation_contract: 'dfgdfgfbvcbvbv',
-        tx_hash: '',
-        block_height: 981,
-        last_updated_height: null,
-      }),
-      EvmProxyHistory.fromJson({
-        proxy_contract: this.evmSmartContract3.address,
-        implementation_contract: 'vcxbvcbcnvbhdf',
-        tx_hash: '',
-        block_height: 981,
-        last_updated_height: null,
-      }),
-    ];
-    await knex.transaction(async (trx) => {
-      await EvmProxyHistory.query().insert(proxyHistories).transacting(trx);
-      const results = await this.erc20Service.getCurrentErc20Proxies(
-        [implementation1, implementation2],
-        trx
-      );
-      expect(results.length).toEqual(1);
-      expect(results[0]).toMatchObject({
-        address: this.evmSmartContract2.address,
-        implementation_contract: implementation2,
-        created_height: 1001,
-        id: this.evmSmartContract2.id,
-      });
-    });
   }
 }
