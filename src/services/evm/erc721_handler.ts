@@ -9,34 +9,44 @@ export const ERC721_EVENT_TOPIC0 = {
   APPROVAL: keccak256(toHex('Approval(address,address,uint256)')),
   APPROVAL_FOR_ALL: keccak256(toHex('ApprovalForAll(address,address,bool)')),
 };
-export const ABI_TRANSFER_PARAMS = {
-  FROM: {
+export const ABI_TRANSFER_PARAMS = [
+  {
     name: 'from',
     type: 'address',
   },
-  TO: {
+  {
     name: 'to',
     type: 'address',
   },
-  TOKEN_ID: {
+  {
     name: 'tokenId',
     type: 'uint256',
   },
-};
-export const ABI_APPROVAL_PARAMS = {
-  OWNER: {
+];
+export const ABI_APPROVAL_PARAMS = [
+  {
     name: 'owner',
     type: 'address',
   },
-  APPROVED: {
+  {
     name: 'approved',
     type: 'address',
   },
-  TOKEN_ID: {
+  {
     name: 'tokenId',
     type: 'uint256',
   },
-};
+];
+export const ABI_APPROVAL_ALL_PARAMS = [
+  {
+    name: 'owner',
+    type: 'address',
+  },
+  {
+    name: 'approved',
+    type: 'address',
+  },
+];
 export const ERC721_ACTION = {
   TRANSFER: 'transfer',
   APPROVAL: 'approval',
@@ -96,11 +106,7 @@ export class Erc721Handler {
   ): Erc721Activity | undefined {
     try {
       const [from, to, tokenId] = decodeAbiParameters(
-        [
-          ABI_TRANSFER_PARAMS.FROM,
-          ABI_TRANSFER_PARAMS.TO,
-          ABI_TRANSFER_PARAMS.TOKEN_ID,
-        ],
+        ABI_TRANSFER_PARAMS,
         (e.topic1 + e.topic2.slice(2) + e.topic3.slice(2)) as `0x${string}`
       ) as [string, string, number];
       return Erc721Activity.fromJson({
@@ -127,11 +133,7 @@ export class Erc721Handler {
   ): Erc721Activity | undefined {
     try {
       const [from, to, tokenId] = decodeAbiParameters(
-        [
-          ABI_APPROVAL_PARAMS.OWNER,
-          ABI_APPROVAL_PARAMS.APPROVED,
-          ABI_APPROVAL_PARAMS.TOKEN_ID,
-        ],
+        ABI_APPROVAL_PARAMS,
         (e.topic1 + e.topic2.slice(2) + e.topic3.slice(2)) as `0x${string}`
       ) as [string, string, number];
       return Erc721Activity.fromJson({
@@ -158,7 +160,7 @@ export class Erc721Handler {
   ): Erc721Activity | undefined {
     try {
       const [from, to] = decodeAbiParameters(
-        [ABI_APPROVAL_PARAMS.OWNER, ABI_APPROVAL_PARAMS.APPROVED],
+        ABI_APPROVAL_ALL_PARAMS,
         (e.topic1 + e.topic2.slice(2)) as `0x${string}`
       ) as [string, string];
       return Erc721Activity.fromJson({
