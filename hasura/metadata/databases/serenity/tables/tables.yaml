@@ -39,6 +39,7 @@
 - '!include public_ibc_message.yaml'
 - '!include public_knex_migrations.yaml'
 - '!include public_knex_migrations_lock.yaml'
+- '!include public_m_view_account_balance_statistic.yaml'
 - '!include public_m_view_ibc_relayer_statistic.yaml'
 - '!include public_power_event.yaml'
 - '!include public_proposal.yaml'

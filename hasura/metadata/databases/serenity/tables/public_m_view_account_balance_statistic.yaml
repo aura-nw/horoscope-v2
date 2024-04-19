@@ -7,5 +7,7 @@ select_permissions:
       columns:
         - address
         - amount
+        - updated_at
       filter: {}
       limit: 100
+      allow_aggregations: true
