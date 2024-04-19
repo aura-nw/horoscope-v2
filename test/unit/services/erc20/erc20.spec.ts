@@ -37,16 +37,6 @@ export default class Erc20Test {
     code_hash: 'xcsadf',
   });
 
-  evmSmartContract3 = EVMSmartContract.fromJson({
-    id: 777,
-    address: 'mhhgmgjghj',
-    creator: 'nbvnvbn',
-    created_height: 100,
-    created_hash: 'qeqeqe',
-    type: EVMSmartContract.TYPES.ERC20,
-    code_hash: 'dcxvbxcbx',
-  });
-
   evmTx = EVMTransaction.fromJson({
     id: 11111,
     hash: '',
@@ -72,12 +62,11 @@ export default class Erc20Test {
   async initSuite() {
     await this.broker.start();
     await knex.raw(
-      'TRUNCATE TABLE erc20_contract, account, erc20_activity, evm_smart_contract, evm_event, evm_transaction, evm_proxy_history RESTART IDENTITY CASCADE'
+      'TRUNCATE TABLE erc20_contract, account, erc20_activity, evm_smart_contract, evm_event, evm_transaction RESTART IDENTITY CASCADE'
     );
     await EVMSmartContract.query().insert([
       this.evmSmartContract,
       this.evmSmartContract2,
-      this.evmSmartContract3,
     ]);
     await EVMTransaction.query().insert(this.evmTx);
     await EvmEvent.query().insert(this.evmEvent);
