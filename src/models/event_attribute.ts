@@ -132,5 +132,6 @@ export class EventAttribute extends BaseModel {
     USE_FEEGRANT_GRANTEE: 'use_feegrant.grantee',
     TX_FEE: 'tx.fee',
     TX_FEE_PAYER: 'tx.fee_payer',
+    ETHEREUM_TX_ETHEREUM_TX_FAILED: 'ethereum_tx.ethereumTxFailed',
   };
 }
