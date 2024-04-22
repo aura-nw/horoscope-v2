@@ -42,7 +42,10 @@ export default class Erc20Service extends BullableService {
       const [startBlock, endBlock, updateBlockCheckpoint] =
         await BlockCheckpoint.getCheckpoint(
           BULL_JOB_NAME.HANDLE_ERC20_CONTRACT,
-          [BULL_JOB_NAME.CRAWL_SMART_CONTRACT_EVM],
+          [
+            BULL_JOB_NAME.CRAWL_SMART_CONTRACT_EVM,
+            BULL_JOB_NAME.HANDLE_EVM_PROXY_HISTORY,
+          ],
           config.erc20.key
         );
       const erc20SmartContracts = await EVMSmartContract.query()
@@ -57,15 +60,18 @@ export default class Erc20Service extends BullableService {
           'evm_proxy_history.proxy_contract',
           'evm_smart_contract.address'
         )
-        .whereIn(
+        .innerJoin(
+          'erc20_contract',
           'evm_proxy_history.implementation_contract',
-          erc20SmartContracts.map((e) => e.address)
+          'erc20_contract.address'
         )
+        .where(knex.raw('created_height > ?', startBlock))
+        .andWhere(knex.raw('created_height <= ?', endBlock))
         .select(
           'evm_proxy_history.proxy_contract as address',
           'evm_proxy_history.implementation_contract',
           knex.raw(
-            'GREATEST(evm_proxy_history.block_height,evm_proxy_history.last_updated_height) as created_height'
+            'GREATEST(COALESCE(evm_proxy_history.block_height, -1), COALESCE(evm_proxy_history.last_updated_height, -1)) as created_height'
           ),
           'evm_smart_contract.id as id'
         )
@@ -78,7 +84,9 @@ export default class Erc20Service extends BullableService {
           erc20SmartContracts
         );
         this.logger.info(
-          `Crawl Erc20 contract from block ${startBlock} to block ${endBlock}:\n ${erc20Instances}`
+          `Crawl Erc20 contract from block ${startBlock} to block ${endBlock}:\n ${JSON.stringify(
+            erc20Instances
+          )}`
         );
         await Erc20Contract.query()
           .transacting(trx)
@@ -142,7 +150,9 @@ export default class Erc20Service extends BullableService {
       });
       if (erc20Activities.length > 0) {
         this.logger.info(
-          `Crawl Erc20 activity from block ${startBlock} to block ${endBlock}:\n ${erc20Activities}`
+          `Crawl Erc20 activity from block ${startBlock} to block ${endBlock}:\n ${JSON.stringify(
+            erc20Activities
+          )}`
         );
         await knex
           .batchInsert(
