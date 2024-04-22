@@ -6,6 +6,8 @@ import { EVMSmartContract } from './evm_smart_contract';
 export class EvmProxyHistory extends BaseModel {
   id!: number;
 
+  [relation: string]: any;
+
   proxy_contract!: string;
 
   implementation_contract!: string;

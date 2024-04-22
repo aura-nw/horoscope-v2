@@ -1,5 +1,6 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
+import knex from '../../../../src/common/utils/db_connection';
 import {
   Account,
   EVMSmartContract,
@@ -8,7 +9,6 @@ import {
   Erc20Contract,
   EvmEvent,
 } from '../../../../src/models';
-import knex from '../../../../src/common/utils/db_connection';
 import Erc20Service from '../../../../src/services/evm/erc20.service';
 
 @Describe('Test erc20 handler')
@@ -33,7 +33,7 @@ export default class Erc20Test {
     creator: 'dfgdfbvxcvxgfds',
     created_height: 100,
     created_hash: 'xdasfsf',
-    type: EVMSmartContract.TYPES.ERC20,
+    type: EVMSmartContract.TYPES.PROXY_EIP_1967,
     code_hash: 'xcsadf',
   });
 
