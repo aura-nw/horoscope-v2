@@ -6,14 +6,19 @@ import { getContract } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { BULL_JOB_NAME, SERVICE as EVM_SERVICE } from './constant';
 import { SERVICE as COSMOS_SERVICE } from '../../common';
 import knex from '../../common/utils/db_connection';
 import EtherJsClient from '../../common/utils/etherjs_client';
-import { BlockCheckpoint, EVMSmartContract, EvmEvent } from '../../models';
+import {
+  BlockCheckpoint,
+  EVMSmartContract,
+  EvmEvent,
+  EvmProxyHistory,
+} from '../../models';
 import { AccountBalance } from '../../models/account_balance';
 import { Erc20Activity } from '../../models/erc20_activity';
 import { Erc20Contract } from '../../models/erc20_contract';
+import { BULL_JOB_NAME, SERVICE as EVM_SERVICE } from './constant';
 import { ERC20_EVENT_TOPIC0, Erc20Handler } from './erc20_handler';
 import { convertEthAddressToBech32Address } from './utils';
 
@@ -41,15 +46,45 @@ export default class Erc20Service extends BullableService {
           config.erc20.key
         );
       const erc20SmartContracts = await EVMSmartContract.query()
+        .transacting(trx)
         .where('created_height', '>', startBlock)
         .andWhere('created_height', '<=', endBlock)
         .andWhere('type', EVMSmartContract.TYPES.ERC20)
         .orderBy('id', 'asc');
+      const erc20Proxies = await EvmProxyHistory.query()
+        .leftJoin(
+          'evm_smart_contract',
+          'evm_proxy_history.proxy_contract',
+          'evm_smart_contract.address'
+        )
+        .whereIn(
+          'evm_proxy_history.implementation_contract',
+          erc20SmartContracts.map((e) => e.address)
+        )
+        .select(
+          'evm_proxy_history.proxy_contract as address',
+          'evm_proxy_history.implementation_contract',
+          knex.raw(
+            'GREATEST(evm_proxy_history.block_height,evm_proxy_history.last_updated_height) as created_height'
+          ),
+          'evm_smart_contract.id as id'
+        )
+        .transacting(trx);
+      erc20SmartContracts.push(
+        ...erc20Proxies.map((e) => EVMSmartContract.fromJson(e))
+      );
       if (erc20SmartContracts.length > 0) {
         const erc20Instances = await this.getErc20Instances(
           erc20SmartContracts
         );
-        await Erc20Contract.query().transacting(trx).insert(erc20Instances);
+        this.logger.info(
+          `Crawl Erc20 contract from block ${startBlock} to block ${endBlock}:\n ${erc20Instances}`
+        );
+        await Erc20Contract.query()
+          .transacting(trx)
+          .insert(erc20Instances)
+          .onConflict(['address'])
+          .merge();
       }
       updateBlockCheckpoint.height = endBlock;
       await BlockCheckpoint.query()
@@ -76,9 +111,13 @@ export default class Erc20Service extends BullableService {
       const erc20Events = await EvmEvent.query()
         .transacting(trx)
         .joinRelated('[evm_smart_contract,evm_transaction]')
+        .innerJoin(
+          'erc20_contract',
+          'evm_event.address',
+          'erc20_contract.address'
+        )
         .where('evm_event.block_height', '>', startBlock)
         .andWhere('evm_event.block_height', '<=', endBlock)
-        .andWhere('evm_smart_contract.type', EVMSmartContract.TYPES.ERC20)
         .orderBy('evm_event.id', 'asc')
         .select(
           'evm_event.*',
@@ -102,6 +141,9 @@ export default class Erc20Service extends BullableService {
         }
       });
       if (erc20Activities.length > 0) {
+        this.logger.info(
+          `Crawl Erc20 activity from block ${startBlock} to block ${endBlock}:\n ${erc20Activities}`
+        );
         await knex
           .batchInsert(
             'erc20_activity',
