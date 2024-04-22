@@ -124,20 +124,20 @@ export default class EvmSignatureMappingJob extends BullableService {
   }
 
   public async _start(): Promise<void> {
-    this.createJob(
-      BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
-      BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
-      {
-        contract_address: '0x03d389c532e2b0aa33cd302f1e147843245b177a',
-      },
-      {
-        jobId: BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-      }
-    );
+    // this.createJob(
+    //   BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
+    //   BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
+    //   {
+    //     contract_address: '0xb4d3388f0cce7cd394e4e4d19e036bc9df86b373',
+    //   },
+    //   {
+    //     jobId: BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
+    //     removeOnComplete: true,
+    //     removeOnFail: {
+    //       count: 3,
+    //     },
+    //   }
+    // );
     return super._start();
   }
 }
