@@ -51,6 +51,7 @@ export default class CrawlTxService extends BullableService {
     jobName: BULL_JOB_NAME.CRAWL_TRANSACTION,
   })
   public async jobCrawlTx(): Promise<void> {
+    // const config = getConfig
     const [startBlock, endBlock, blockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.CRAWL_TRANSACTION,
@@ -64,7 +65,12 @@ export default class CrawlTxService extends BullableService {
     if (startBlock >= endBlock) {
       return;
     }
+    // endBlock = Math.min(startBlock + config.blockRange, latestCheckpoint.blockHeight);
+    // range = endBlock - startBlock
     const listTxRaw = await this.getListRawTx(startBlock, endBlock);
+    // Compare rows with expected rows
+    // rows < expected_rows => config.blockRange + balance_block
+    // rows > expected_rows => config.blockRange - balance_block
     const listdecodedTx = await this.decodeListRawTx(listTxRaw);
     await knex.transaction(async (trx) => {
       await this.insertTxDecoded(listdecodedTx, trx);

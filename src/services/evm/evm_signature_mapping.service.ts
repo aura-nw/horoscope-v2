@@ -75,7 +75,11 @@ export default class EvmSignatureMappingJob extends BullableService {
   })
   async handler(_payload: { contract_address: string }): Promise<void> {
     const contractVerified = await EVMContractVerification.query()
-      .findOne('contract_address', _payload.contract_address)
+      .findOne({
+        contract_address: _payload.contract_address,
+        status: EVMContractVerification.VERIFICATION_STATUS.SUCCESS,
+      })
+      .orderBy('id', 'DESC')
       .limit(1);
 
     if (!contractVerified) {
@@ -120,20 +124,20 @@ export default class EvmSignatureMappingJob extends BullableService {
   }
 
   public async _start(): Promise<void> {
-    // this.createJob(
-    //   BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
-    //   BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
-    //   {
-    //     contract_address: '0xb4d3388f0cce7cd394e4e4d19e036bc9df86b373',
-    //   },
-    //   {
-    //     jobId: BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
-    //     removeOnComplete: true,
-    //     removeOnFail: {
-    //       count: 3,
-    //     },
-    //   }
-    // );
+    this.createJob(
+      BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
+      BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
+      {
+        contract_address: '0x03d389c532e2b0aa33cd302f1e147843245b177a',
+      },
+      {
+        jobId: BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+      }
+    );
     return super._start();
   }
 }
