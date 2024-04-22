@@ -436,13 +436,12 @@ export default class AccountStatisticsService extends BullableService {
       await knex.schema.raw(`
         CREATE MATERIALIZED VIEW ${viewName} AS
         SELECT account.address,
-              Sum(delegator_sum_amount.amount)
-              + Sum(account_balance.amount) AS amount,
+              COALESCE(SUM(delegator_sum_amount.amount), 0) + COALESCE(SUM(account_balance.amount), 0) AS amount,
               Now() AS updated_at
-        FROM   account_balance
-              INNER JOIN account
+        FROM   account
+              LEFT JOIN account_balance
                       ON account.id = account_balance.account_id
-              INNER JOIN (SELECT delegator_address AS address,
+              LEFT JOIN (SELECT delegator_address AS address,
                                   Sum(amount)       AS amount
                           FROM   delegator
                           GROUP  BY address) AS delegator_sum_amount

@@ -83,6 +83,7 @@ export class Erc20Handler {
           amount,
           last_updated_height: erc20Activity.height,
           account_id: fromAccountId,
+          type: AccountBalance.TYPE.ERC20_TOKEN,
         });
       }
     }
@@ -104,6 +105,7 @@ export class Erc20Handler {
         amount,
         last_updated_height: erc20Activity.height,
         account_id: toAccountId,
+        type: AccountBalance.TYPE.ERC20_TOKEN,
       });
     }
   }
