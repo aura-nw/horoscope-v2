@@ -11,6 +11,7 @@ import {
   keccak256,
   toHex,
 } from 'viem';
+import { Knex } from 'knex';
 import {
   BULL_JOB_NAME,
   SERVICE,
@@ -151,7 +152,7 @@ export default class CrawlProxyContractEVMService extends BullableService {
           newProxyContractsToSave,
           (proxy) => proxy.proxy_contract + proxy.block_height
         );
-        const mergedProxyContract: EvmProxyHistory[] = _.map(
+        const mergedProxyContracts: EvmProxyHistory[] = _.map(
           groupedProxyContract,
           (group) =>
             // eslint-disable-next-line consistent-return
@@ -162,12 +163,15 @@ export default class CrawlProxyContractEVMService extends BullableService {
             })
         );
 
-        await EvmProxyHistory.query()
-          .insert(mergedProxyContract)
+        const newProxyContracts = await EvmProxyHistory.query()
+          .insert(mergedProxyContracts)
           .onConflict(['proxy_contract', 'block_height'])
           .merge()
           .returning('id')
           .transacting(trx);
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        await this.handleErc20ProxyContracts(newProxyContracts, trx);
       }
 
       updateBlockCheckpoint.height = endBlock;
@@ -180,7 +184,40 @@ export default class CrawlProxyContractEVMService extends BullableService {
     });
   }
 
+  async handleErc20ProxyContracts(
+    proxyContracts: EvmProxyHistory[],
+    trx: Knex.Transaction
+  ) {
+    const erc20ProxyContracts = await EvmProxyHistory.query()
+      .leftJoin(
+        'evm_smart_contract',
+        'evm_proxy_history.proxy_contract',
+        'evm_smart_contract.address'
+      )
+      .innerJoin(
+        'erc20_contract',
+        'evm_proxy_history.implementation_contract',
+        'erc20_contract.address'
+      )
+      .whereIn(
+        'id',
+        proxyContracts.map((e) => e.id)
+      )
+      .select(
+        'evm_proxy_history.proxy_contract as address',
+        knex.raw(
+          'GREATEST(COALESCE(evm_proxy_history.block_height, -1), COALESCE(evm_proxy_history.last_updated_height, -1)) as created_height'
+        ),
+        'evm_smart_contract.id as id'
+      )
+      .transacting(trx);
+    await this.broker.call(SERVICE.V1.Erc20.insertNewErc20Contracts.path, {
+      evmSmartContracts: erc20ProxyContracts,
+    });
+  }
+
   public async _start() {
+    await this.broker.waitForServices(SERVICE.V1.Erc20.key);
     this.etherJsClient = new EtherJsClient().etherJsClient;
     this.contractHelper = new ContractHelper(this.etherJsClient);
 
