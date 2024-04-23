@@ -190,25 +190,24 @@ export default class CrawlProxyContractEVMService extends BullableService {
   ) {
     const erc20ProxyContracts = await EvmProxyHistory.query()
       .leftJoin(
-        'evm_smart_contract',
+        'evm_smart_contract as proxy',
         'evm_proxy_history.proxy_contract',
-        'evm_smart_contract.address'
+        'proxy.address'
       )
-      .innerJoin(
-        'erc20_contract',
+      .leftJoin(
+        'evm_smart_contract as implementation',
         'evm_proxy_history.implementation_contract',
-        'erc20_contract.address'
+        'implementation.address'
       )
+      .where('implementation.type', EVMSmartContract.TYPES.ERC20)
       .whereIn(
-        'id',
+        'evm_proxy_history.id',
         proxyContracts.map((e) => e.id)
       )
       .select(
         'evm_proxy_history.proxy_contract as address',
-        knex.raw(
-          'GREATEST(COALESCE(evm_proxy_history.block_height, -1), COALESCE(evm_proxy_history.last_updated_height, -1)) as created_height'
-        ),
-        'evm_smart_contract.id as id'
+        'proxy.created_height',
+        'proxy.id as id'
       )
       .transacting(trx);
     await this.broker.call(SERVICE.V1.Erc20.insertNewErc20Contracts.path, {
@@ -217,11 +216,10 @@ export default class CrawlProxyContractEVMService extends BullableService {
   }
 
   public async _start() {
-    await this.broker.waitForServices(SERVICE.V1.Erc20.key);
     this.etherJsClient = new EtherJsClient().etherJsClient;
     this.contractHelper = new ContractHelper(this.etherJsClient);
 
-    this.createJob(
+    await this.createJob(
       BULL_JOB_NAME.HANDLE_EVM_PROXY_HISTORY,
       BULL_JOB_NAME.HANDLE_EVM_PROXY_HISTORY,
       {},

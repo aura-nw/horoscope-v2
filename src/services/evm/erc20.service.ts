@@ -40,10 +40,7 @@ export default class Erc20Service extends BullableService {
       const [startBlock, endBlock, updateBlockCheckpoint] =
         await BlockCheckpoint.getCheckpoint(
           BULL_JOB_NAME.HANDLE_ERC20_CONTRACT,
-          [
-            BULL_JOB_NAME.CRAWL_SMART_CONTRACT_EVM,
-            BULL_JOB_NAME.HANDLE_EVM_PROXY_HISTORY,
-          ],
+          [BULL_JOB_NAME.CRAWL_SMART_CONTRACT_EVM],
           config.erc20.key
         );
       const erc20SmartContracts = await EVMSmartContract.query()
@@ -224,9 +221,15 @@ export default class Erc20Service extends BullableService {
     },
   })
   async insertNewErc20Contracts(
-    ctx: Context<{ id: number; address: string; created_height: number }[]>
+    ctx: Context<{
+      evmSmartContracts: {
+        id: number;
+        address: string;
+        created_height: number;
+      }[];
+    }>
   ) {
-    const evmSmartContracts = ctx.params;
+    const { evmSmartContracts } = ctx.params;
     const erc20Instances = await this.getErc20Instances(
       evmSmartContracts.map((e) => EVMSmartContract.fromJson(e))
     );
