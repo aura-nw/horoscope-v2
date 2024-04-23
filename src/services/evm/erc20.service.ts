@@ -164,10 +164,14 @@ export default class Erc20Service extends BullableService {
             .transacting(trx)
             .joinRelated('account')
             .whereIn(
-              'account.address',
-              erc20Activities.map((e) => e.erc20_contract_address)
+              ['account.evm_address', 'denom'],
+              erc20Activities.map((e) => [e.from, e.erc20_contract_address])
+            )
+            .orWhereIn(
+              ['account.evm_address', 'denom'],
+              erc20Activities.map((e) => [e.to, e.erc20_contract_address])
             ),
-          (o) => `${o.id}_${o.denom}`
+          (o) => `${o.account_id}_${o.denom}`
         );
         // construct cw721 handler object
         const erc20Handler = new Erc20Handler(accountBalances, erc20Activities);
