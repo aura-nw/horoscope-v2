@@ -165,11 +165,13 @@ export default class Erc20Service extends BullableService {
             .joinRelated('account')
             .whereIn(
               ['account.evm_address', 'denom'],
-              erc20Activities.map((e) => [e.from, e.erc20_contract_address])
-            )
-            .orWhereIn(
-              ['account.evm_address', 'denom'],
-              erc20Activities.map((e) => [e.to, e.erc20_contract_address])
+              [
+                ...erc20Activities.map((e) => [
+                  e.from,
+                  e.erc20_contract_address,
+                ]),
+                ...erc20Activities.map((e) => [e.to, e.erc20_contract_address]),
+              ]
             ),
           (o) => `${o.account_id}_${o.denom}`
         );
