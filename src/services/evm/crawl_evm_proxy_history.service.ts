@@ -2,32 +2,31 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { ServiceBroker } from 'moleculer';
 import { ethers } from 'ethers';
 import _ from 'lodash';
+import { ServiceBroker } from 'moleculer';
 import {
   decodeAbiParameters,
-  parseAbiParameters,
   keccak256,
+  parseAbiParameters,
   toHex,
 } from 'viem';
-import { Knex } from 'knex';
-import {
-  BULL_JOB_NAME,
-  SERVICE,
-  EIPProxyContractSupportByteCode,
-} from './constant';
-import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
+import BullableService, { QueueHandler } from '../../base/bullable.service';
+import knex from '../../common/utils/db_connection';
+import EtherJsClient from '../../common/utils/etherjs_client';
 import {
   BlockCheckpoint,
+  EVMSmartContract,
   EvmEvent,
   EvmProxyHistory,
-  EVMSmartContract,
 } from '../../models';
+import {
+  BULL_JOB_NAME,
+  EIPProxyContractSupportByteCode,
+  SERVICE,
+} from './constant';
 import { ContractHelper } from './helpers/contract_helper';
-import EtherJsClient from '../../common/utils/etherjs_client';
-import knex from '../../common/utils/db_connection';
 
 const Erc1967Events = {
   upgraded: {
@@ -182,15 +181,12 @@ export default class CrawlProxyContractEVMService extends BullableService {
         .merge()
         .returning('id')
         .transacting(trx);
-      // handle erc20 proxies
-      await this.handleErc20ProxyContracts(newProxyContracts, trx);
     });
+    // handle erc20 proxies
+    await this.handleErc20ProxyContracts(newProxyContracts);
   }
 
-  async handleErc20ProxyContracts(
-    proxyContracts: EvmProxyHistory[],
-    trx: Knex.Transaction
-  ) {
+  async handleErc20ProxyContracts(proxyContracts: EvmProxyHistory[]) {
     const erc20ProxyContracts = await EvmProxyHistory.query()
       .leftJoin(
         'evm_smart_contract as proxy',
@@ -211,8 +207,7 @@ export default class CrawlProxyContractEVMService extends BullableService {
         'evm_proxy_history.proxy_contract as address',
         'proxy.created_height',
         'proxy.id as id'
-      )
-      .transacting(trx);
+      );
     await this.broker.call(SERVICE.V1.Erc20.insertNewErc20Contracts.path, {
       evmSmartContracts: erc20ProxyContracts,
     });

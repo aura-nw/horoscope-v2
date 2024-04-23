@@ -84,32 +84,28 @@ export default class EvmProxyServiceTest {
         last_updated_height: null,
       }),
     ];
-    await knex.transaction(async (trx) => {
-      await EVMSmartContract.query().insert(evmSmartContracts).transacting(trx);
-      const newProxyContracts = await EvmProxyHistory.query()
-        .insert(evmProxyHistories)
-        .onConflict(['proxy_contract', 'block_height'])
-        .merge()
-        .returning('id')
-        .transacting(trx);
-      const result = jest
-        .spyOn(this.evmProxyHistoryService.broker, 'call')
-        .mockResolvedValue([]);
-      await this.evmProxyHistoryService.handleErc20ProxyContracts(
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        newProxyContracts,
-        trx
-      );
-      expect(result).toHaveBeenCalledWith('v1.Erc20.insertNewErc20Contracts', {
-        evmSmartContracts: [
-          {
-            address: evmSmartContracts[0].address,
-            id: evmSmartContracts[0].id,
-            created_height: evmSmartContracts[0].created_height,
-          },
-        ],
-      });
+    await EVMSmartContract.query().insert(evmSmartContracts).transacting(trx);
+    const newProxyContracts = await EvmProxyHistory.query()
+      .insert(evmProxyHistories)
+      .onConflict(['proxy_contract', 'block_height'])
+      .merge()
+      .returning('id');
+    const result = jest
+      .spyOn(this.evmProxyHistoryService.broker, 'call')
+      .mockResolvedValue([]);
+    await this.evmProxyHistoryService.handleErc20ProxyContracts(
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      newProxyContracts
+    );
+    expect(result).toHaveBeenCalledWith('v1.Erc20.insertNewErc20Contracts', {
+      evmSmartContracts: [
+        {
+          address: evmSmartContracts[0].address,
+          id: evmSmartContracts[0].id,
+          created_height: evmSmartContracts[0].created_height,
+        },
+      ],
     });
   }
 }
