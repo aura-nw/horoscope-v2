@@ -14,6 +14,8 @@ select_permissions:
     permission:
       columns:
         - address
+        - code_hash
+        - evm_address
         - type
         - account_number
         - id
@@ -26,18 +28,3 @@ select_permissions:
       filter: {}
       limit: 100
       allow_aggregations: true
-  - role: public
-    permission:
-      columns:
-        - address
-        - type
-        - account_number
-        - id
-        - sequence
-        - balances
-        - pubkey
-        - spendable_balances
-        - created_at
-        - updated_at
-      filter: {}
-      limit: 100
