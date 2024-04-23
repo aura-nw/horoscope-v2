@@ -144,7 +144,7 @@ export default class CrawlProxyContractEVMService extends BullableService {
       newProxyHistories,
       (proxyContract) => proxyContract.implementation_contract !== null
     );
-
+    const newProxyContracts: EvmProxyHistory[] = [];
     await knex.transaction(async (trx) => {
       if (newProxyContractsToSave.length > 0) {
         // Unique proxy contract when have multiple events in same block.
@@ -163,15 +163,16 @@ export default class CrawlProxyContractEVMService extends BullableService {
             })
         );
 
-        const newProxyContracts = await EvmProxyHistory.query()
-          .insert(mergedProxyContracts)
-          .onConflict(['proxy_contract', 'block_height'])
-          .merge()
-          .returning('id')
-          .transacting(trx);
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        await this.handleErc20ProxyContracts(newProxyContracts, trx);
+        newProxyContracts.push(
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          ...(await EvmProxyHistory.query()
+            .insert(mergedProxyContracts)
+            .onConflict(['proxy_contract', 'block_height'])
+            .merge()
+            .returning('id')
+            .transacting(trx))
+        );
       }
 
       updateBlockCheckpoint.height = endBlock;
@@ -181,6 +182,8 @@ export default class CrawlProxyContractEVMService extends BullableService {
         .merge()
         .returning('id')
         .transacting(trx);
+      // handle erc20 proxies
+      await this.handleErc20ProxyContracts(newProxyContracts, trx);
     });
   }
 
