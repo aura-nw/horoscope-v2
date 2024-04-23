@@ -65,7 +65,9 @@ select_permissions:
         - id
         - index
         - nonce
+        - reason
         - size
+        - status
         - to
         - tx_id
         - tx_msg_id
