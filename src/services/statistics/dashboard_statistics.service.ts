@@ -16,6 +16,7 @@ import {
   IProviderJSClientFactory,
   REDIS_KEY,
   SERVICE,
+  chainIdConfigOnServer,
   getLcdClient,
 } from '../../common';
 import config from '../../../config.json' assert { type: 'json' };
