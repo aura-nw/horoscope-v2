@@ -22,15 +22,6 @@ object_relationships:
           name: transaction_message
           schema: public
 array_relationships:
-  - name: evm_internal_transactions
-    using:
-      manual_configuration:
-        column_mapping:
-          id: evm_tx_id
-        insertion_order: null
-        remote_table:
-          name: evm_internal_transaction
-          schema: public
   - name: erc20_activities
     using:
       manual_configuration:
@@ -49,6 +40,15 @@ array_relationships:
         insertion_order: null
         remote_table:
           name: evm_event
+          schema: public
+  - name: evm_internal_transactions
+    using:
+      manual_configuration:
+        column_mapping:
+          id: evm_tx_id
+        insertion_order: null
+        remote_table:
+          name: evm_internal_transaction
           schema: public
 select_permissions:
   - role: internal_service
