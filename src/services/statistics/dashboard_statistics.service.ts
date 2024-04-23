@@ -156,14 +156,8 @@ export default class DashboardStatisticsService extends BullableService {
       Validator.query(),
     ]);
 
-    const [communityPool, inflation, distribution, supply] = await Promise.all([
-      this._lcdClient.provider.cosmos.distribution.v1beta1.communityPool(),
-      this._lcdClient.provider.cosmos.mint.v1beta1.inflation(),
-      this._lcdClient.provider.cosmos.distribution.v1beta1.params(),
-      this._lcdClient.provider.cosmos.bank.v1beta1.supplyOf({
-        denom: config.networkDenom,
-      }),
-    ]);
+    const { communityPool, inflation, distribution, supply } =
+      await this.getStatistic();
     let bondedTokens = BigInt(0);
     totalValidators
       .filter(
@@ -188,17 +182,19 @@ export default class DashboardStatisticsService extends BullableService {
         (val) => val.status === Validator.STATUS.UNBONDED
       ).length,
       bonded_tokens: bondedTokens.toString(),
-      inflation: inflation.inflation,
+      inflation: inflation ? inflation.inflation : 0,
       total_aura: totalAura,
-      staking_apr: Number(
-        BigNumber(inflation.inflation)
-          .multipliedBy(
-            BigNumber(1 - Number(distribution.params.community_tax))
+      staking_apr: inflation
+        ? Number(
+            BigNumber(inflation.inflation)
+              .multipliedBy(
+                BigNumber(1 - Number(distribution.params.community_tax))
+              )
+              .multipliedBy(BigNumber(totalAura))
+              .dividedBy(BigNumber(bondedTokens.toString()))
+              .multipliedBy(100)
           )
-          .multipliedBy(BigNumber(totalAura))
-          .dividedBy(BigNumber(bondedTokens.toString()))
-          .multipliedBy(100)
-      ),
+        : 0,
     };
 
     await this.broker.cacher?.set(
