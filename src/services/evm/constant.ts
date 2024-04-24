@@ -109,6 +109,10 @@ export const SERVICE = {
     Erc20: {
       key: 'Erc20',
       path: 'v1.Erc20',
+      insertNewErc20Contracts: {
+        key: 'insertNewErc20Contracts',
+        path: 'v1.Erc20.insertNewErc20Contracts',
+      },
     },
     Erc721: {
       key: 'Erc721',

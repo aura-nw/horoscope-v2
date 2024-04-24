@@ -2,31 +2,31 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { ServiceBroker } from 'moleculer';
 import { ethers } from 'ethers';
 import _ from 'lodash';
+import { ServiceBroker } from 'moleculer';
 import {
   decodeAbiParameters,
-  parseAbiParameters,
   keccak256,
+  parseAbiParameters,
   toHex,
 } from 'viem';
-import {
-  BULL_JOB_NAME,
-  SERVICE,
-  EIPProxyContractSupportByteCode,
-} from './constant';
-import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
+import BullableService, { QueueHandler } from '../../base/bullable.service';
+import knex from '../../common/utils/db_connection';
+import EtherJsClient from '../../common/utils/etherjs_client';
 import {
   BlockCheckpoint,
+  EVMSmartContract,
   EvmEvent,
   EvmProxyHistory,
-  EVMSmartContract,
 } from '../../models';
+import {
+  BULL_JOB_NAME,
+  EIPProxyContractSupportByteCode,
+  SERVICE,
+} from './constant';
 import { ContractHelper } from './helpers/contract_helper';
-import EtherJsClient from '../../common/utils/etherjs_client';
-import knex from '../../common/utils/db_connection';
 
 const Erc1967Events = {
   upgraded: {
@@ -143,7 +143,7 @@ export default class CrawlProxyContractEVMService extends BullableService {
       newProxyHistories,
       (proxyContract) => proxyContract.implementation_contract !== null
     );
-
+    const newProxyContracts: EvmProxyHistory[] = [];
     await knex.transaction(async (trx) => {
       if (newProxyContractsToSave.length > 0) {
         // Unique proxy contract when have multiple events in same block.
@@ -151,7 +151,7 @@ export default class CrawlProxyContractEVMService extends BullableService {
           newProxyContractsToSave,
           (proxy) => proxy.proxy_contract + proxy.block_height
         );
-        const mergedProxyContract: EvmProxyHistory[] = _.map(
+        const mergedProxyContracts: EvmProxyHistory[] = _.map(
           groupedProxyContract,
           (group) =>
             // eslint-disable-next-line consistent-return
@@ -162,12 +162,16 @@ export default class CrawlProxyContractEVMService extends BullableService {
             })
         );
 
-        await EvmProxyHistory.query()
-          .insert(mergedProxyContract)
-          .onConflict(['proxy_contract', 'block_height'])
-          .merge()
-          .returning('id')
-          .transacting(trx);
+        newProxyContracts.push(
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          ...(await EvmProxyHistory.query()
+            .insert(mergedProxyContracts)
+            .onConflict(['proxy_contract', 'block_height'])
+            .merge()
+            .returning('id')
+            .transacting(trx))
+        );
       }
 
       updateBlockCheckpoint.height = endBlock;
@@ -178,13 +182,38 @@ export default class CrawlProxyContractEVMService extends BullableService {
         .returning('id')
         .transacting(trx);
     });
+    // handle erc20 proxies
+    await this.handleErc20ProxyContracts(newProxyContracts);
+  }
+
+  async handleErc20ProxyContracts(proxyContracts: EvmProxyHistory[]) {
+    const erc20ProxyContracts = await EvmProxyHistory.query()
+      .leftJoin(
+        'evm_smart_contract as proxy',
+        'evm_proxy_history.proxy_contract',
+        'proxy.address'
+      )
+      .leftJoin(
+        'evm_smart_contract as implementation',
+        'evm_proxy_history.implementation_contract',
+        'implementation.address'
+      )
+      .where('implementation.type', EVMSmartContract.TYPES.ERC20)
+      .whereIn(
+        'evm_proxy_history.id',
+        proxyContracts.map((e) => e.id)
+      )
+      .select('evm_proxy_history.proxy_contract as address', 'proxy.id as id');
+    await this.broker.call(SERVICE.V1.Erc20.insertNewErc20Contracts.path, {
+      evmSmartContracts: erc20ProxyContracts,
+    });
   }
 
   public async _start() {
     this.etherJsClient = new EtherJsClient().etherJsClient;
     this.contractHelper = new ContractHelper(this.etherJsClient);
 
-    this.createJob(
+    await this.createJob(
       BULL_JOB_NAME.HANDLE_EVM_PROXY_HISTORY,
       BULL_JOB_NAME.HANDLE_EVM_PROXY_HISTORY,
       {},
