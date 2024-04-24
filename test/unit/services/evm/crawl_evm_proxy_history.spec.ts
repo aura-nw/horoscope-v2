@@ -103,7 +103,6 @@ export default class EvmProxyServiceTest {
         {
           address: evmSmartContracts[0].address,
           id: evmSmartContracts[0].id,
-          created_height: evmSmartContracts[0].created_height,
         },
       ],
     });
