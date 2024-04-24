@@ -1878,6 +1878,7 @@ export default class AssetIndexerTest {
         job_name: 'dfdsfgsg',
         height: 100,
       }),
+      undefined,
     ]);
     const msgs = [
       SmartContractEvent.fromJson({
