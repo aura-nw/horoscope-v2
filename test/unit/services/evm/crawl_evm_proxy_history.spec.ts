@@ -84,7 +84,7 @@ export default class EvmProxyServiceTest {
         last_updated_height: null,
       }),
     ];
-    await EVMSmartContract.query().insert(evmSmartContracts).transacting(trx);
+    await EVMSmartContract.query().insert(evmSmartContracts);
     const newProxyContracts = await EvmProxyHistory.query()
       .insert(evmProxyHistories)
       .onConflict(['proxy_contract', 'block_height'])
