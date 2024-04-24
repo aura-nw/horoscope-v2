@@ -9,6 +9,7 @@ export async function up(knex: Knex): Promise<void> {
     table.integer('block_range').notNullable();
     table.integer('acceptance_error').notNullable();
     table.integer('block_balance').notNullable();
+    table.boolean('is_sync').defaultTo(false).notNullable();
   });
 }
 

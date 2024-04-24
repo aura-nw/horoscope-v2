@@ -18,6 +18,9 @@ export class ConfigJob extends BaseModel {
   // When get rows by block range not fit with expected_row, then increase/decrease block_range for fit with
   block_balance!: number;
 
+  // Keep job run normal or use config job and sync
+  is_sync!: boolean;
+
   static get tableName() {
     return 'config_jobs';
   }
@@ -41,7 +44,7 @@ export class ConfigJob extends BaseModel {
     let bestEndBlock = currentEndBlock;
 
     // No config job, then use default config from block checkpoint
-    if (!configJob) return bestEndBlock;
+    if (!configJob || !configJob.is_sync) return bestEndBlock;
 
     if (dependingCheckPointJob) {
       if (
@@ -67,7 +70,7 @@ export class ConfigJob extends BaseModel {
     currentTotalRowFetch: number
   ): ConfigJob | null {
     // No job config so keep every thing normal
-    if (!configJob) return null;
+    if (!configJob || !configJob.is_sync) return null;
 
     // Job depending on another job, so keep current config job
     if (bestEndBlock === dependingCheckPointJob?.height) return null;
