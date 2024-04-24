@@ -38,6 +38,10 @@ export class EVMTransaction extends BaseModel {
 
   index!: number;
 
+  status!: number;
+
+  reason!: string;
+
   static get tableName() {
     return 'evm_transaction';
   }
