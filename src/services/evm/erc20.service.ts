@@ -5,7 +5,7 @@ import {
 import { Knex } from 'knex';
 import _ from 'lodash';
 import { Context, ServiceBroker } from 'moleculer';
-import { getContract } from 'viem';
+import { PublicClient, getContract } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -25,6 +25,8 @@ import { convertEthAddressToBech32Address } from './utils';
   version: 1,
 })
 export default class Erc20Service extends BullableService {
+  viemClient!: PublicClient;
+
   public constructor(public broker: ServiceBroker) {
     super(broker);
   }
@@ -225,13 +227,18 @@ export default class Erc20Service extends BullableService {
       evmSmartContracts: {
         id: number;
         address: string;
-        created_height: number;
       }[];
     }>
   ) {
     const { evmSmartContracts } = ctx.params;
+    const currentHeight = await this.viemClient.getBlockNumber();
     const erc20Instances = await this.getErc20Instances(
-      evmSmartContracts.map((e) => EVMSmartContract.fromJson(e))
+      evmSmartContracts.map((e) =>
+        EVMSmartContract.fromJson({
+          ...e,
+          created_height: currentHeight.toString(),
+        })
+      )
     );
     this.logger.info(
       `New Erc20 Instances:\n ${JSON.stringify(erc20Instances)}`
@@ -323,19 +330,17 @@ export default class Erc20Service extends BullableService {
         decimal: erc20ContractsInfo[index].decimals,
         name: erc20ContractsInfo[index].name,
         track: true,
-        // TODO: update this field
         last_updated_height: e.created_height,
       })
     );
   }
 
   async getBatchErc20Info(addresses: `0x${string}`[]) {
-    const viemClient = EtherJsClient.getViemClient();
     const contracts = addresses.map((address) =>
       getContract({
         address,
         abi: Erc20Contract.ABI,
-        client: viemClient,
+        client: this.viemClient,
       })
     );
     const batchReqs: any[] = [];
@@ -358,6 +363,7 @@ export default class Erc20Service extends BullableService {
   }
 
   public async _start(): Promise<void> {
+    this.viemClient = EtherJsClient.getViemClient();
     await this.createJob(
       BULL_JOB_NAME.HANDLE_ERC20_CONTRACT,
       BULL_JOB_NAME.HANDLE_ERC20_CONTRACT,

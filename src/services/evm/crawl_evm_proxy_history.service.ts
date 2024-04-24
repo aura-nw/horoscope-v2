@@ -203,11 +203,7 @@ export default class CrawlProxyContractEVMService extends BullableService {
         'evm_proxy_history.id',
         proxyContracts.map((e) => e.id)
       )
-      .select(
-        'evm_proxy_history.proxy_contract as address',
-        'proxy.created_height',
-        'proxy.id as id'
-      );
+      .select('evm_proxy_history.proxy_contract as address', 'proxy.id as id');
     await this.broker.call(SERVICE.V1.Erc20.insertNewErc20Contracts.path, {
       evmSmartContracts: erc20ProxyContracts,
     });
