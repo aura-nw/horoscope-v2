@@ -1,0 +1,91 @@
+{
+  "creationBytecode": "0x608060405234801561000f575f80fd5b506101438061001d5f395ff3fe608060405234801561000f575f80fd5b5060043610610034575f3560e01c80632e64cec1146100385780634044ffd114610056575b5f80fd5b610040610072565b60405161004d919061009b565b60405180910390f35b610070600480360381019061006b91906100e2565b61007a565b005b5f8054905090565b805f8190555050565b5f819050919050565b61009581610083565b82525050565b5f6020820190506100ae5f83018461008c565b92915050565b5f80fd5b6100c181610083565b81146100cb575f80fd5b50565b5f813590506100dc816100b8565b92915050565b5f602082840312156100f7576100f66100b4565b5b5f610104848285016100ce565b9150509291505056fea2646970667358221220a7897076d570bdad0b930373b820f4f873b48060ef92cd2c9c20f983119d7d0364736f6c63430008160033",
+  "metadata": {
+    "compiler": {
+      "version": "0.8.22+commit.4fc1097e"
+    },
+    "language": "Solidity",
+    "output": {
+      "abi": [
+        {
+          "inputs": [],
+          "name": "retrieve",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "num123",
+              "type": "uint256"
+            }
+          ],
+          "name": "store123",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        }
+      ],
+      "devdoc": {
+        "details": "Store & retrieve value in a variable",
+        "kind": "dev",
+        "methods": {
+          "retrieve()": {
+            "details": "Return value ",
+            "returns": {
+              "_0": "value of 'number'"
+            }
+          },
+          "store123(uint256)": {
+            "details": "Store value in variable",
+            "params": {
+              "num123": "value to store"
+            }
+          }
+        },
+        "title": "Storage",
+        "version": 1
+      },
+      "userdoc": {
+        "kind": "user",
+        "methods": {},
+        "version": 1
+      }
+    },
+    "settings": {
+      "compilationTarget": {
+        "contracts/1_Storage.sol": "Storage123"
+      },
+      "evmVersion": "shanghai",
+      "libraries": {},
+      "metadata": {
+        "bytecodeHash": "ipfs"
+      },
+      "optimizer": {
+        "enabled": false,
+        "runs": 200
+      },
+      "remappings": []
+    },
+    "sources": {
+      "contracts/1_Storage.sol": {
+        "keccak256": "0x86d1d1a5406efeb57b6be53ef9f6f19dd47c0a3f7cf1efed94865ea9751ce9ff",
+        "license": "GPL-3.0",
+        "urls": [
+          "bzz-raw://51321e78a124d3b750ab1e49f7fc1071d19aa528a971930d3545d0ee05aec208",
+          "dweb:/ipfs/Qmbn5gW5vm2N97khJSpTtuu25EEvrLAP3QZRQGAKSz5qFx"
+        ]
+      }
+    },
+    "version": 1
+  },
+  "runtimeBytecode": "0x608060405234801561000f575f80fd5b5060043610610034575f3560e01c80632e64cec1146100385780634044ffd114610056575b5f80fd5b610040610072565b60405161004d919061009b565b60405180910390f35b610070600480360381019061006b91906100e2565b61007a565b005b5f8054905090565b805f8190555050565b5f819050919050565b61009581610083565b82525050565b5f6020820190506100ae5f83018461008c565b92915050565b5f80fd5b6100c181610083565b81146100cb575f80fd5b50565b5f813590506100dc816100b8565b92915050565b5f602082840312156100f7576100f66100b4565b5b5f610104848285016100ce565b9150509291505056fea2646970667358221220a7897076d570bdad0b930373b820f4f873b48060ef92cd2c9c20f983119d7d0364736f6c63430008160033"
+}

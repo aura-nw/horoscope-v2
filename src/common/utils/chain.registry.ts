@@ -18,9 +18,13 @@ export default class ChainRegistry {
 
   public ibc: any;
 
+  public ethermint: any;
+
   public seiprotocol: any;
 
   public aura: any;
+
+  public evmos: any;
 
   public cosmosSdkVersion: SemVer = new SemVer('v0.45.17');
 
@@ -37,6 +41,8 @@ export default class ChainRegistry {
     this.txRegistryType = providerRegistry.txRegistryType;
     this.aura = providerRegistry.aura;
     this.seiprotocol = providerRegistry.seiprotocol;
+    this.evmos = providerRegistry.evmos;
+    this.ethermint = providerRegistry.ethermint;
 
     // set default registry to decode msg
     this.registry = new Registry([
@@ -159,7 +165,12 @@ export default class ChainRegistry {
         if (!input) {
           return input;
         }
-        return fromUtf8(fromBase64(input));
+        try {
+          return fromUtf8(fromBase64(input));
+        } catch (error) {
+          this._logger.error(error);
+          return input;
+        }
       };
       this.encodeAttribute = (input: string) => toBase64(toUtf8(input));
     } else {

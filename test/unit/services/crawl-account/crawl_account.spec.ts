@@ -11,12 +11,18 @@ import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import { cosmos } from '@aura-nw/aurajs';
 import Long from 'long';
+import { toBase64 } from '@cosmjs/encoding';
+import _ from 'lodash';
 import { AccountType } from '../../../../src/common';
 import {
   defaultSendFee,
   defaultSigningClientOptions,
 } from '../../../helper/constant';
-import { Account, AccountVesting } from '../../../../src/models';
+import {
+  Account,
+  AccountBalance,
+  AccountVesting,
+} from '../../../../src/models';
 import CrawlAccountService from '../../../../src/services/crawl-account/crawl_account.service';
 import config from '../../../../config.json' assert { type: 'json' };
 import network from '../../../../network.json' assert { type: 'json' };
@@ -27,6 +33,7 @@ export default class CrawlAccountTest {
   accounts: Account[] = [
     // Base Account
     Account.fromJson({
+      id: 1,
       address: 'aura1qwexv7c6sm95lwhzn9027vyu2ccneaqa7c24zk',
       balances: [],
       spendable_balances: [],
@@ -44,6 +51,7 @@ export default class CrawlAccountTest {
       pubkey: {},
       account_number: 0,
       sequence: 0,
+      id: 2,
     }),
     // TODO: Currently cannot create MsgCreatePeriodicVestingAccount
     // Account.fromJson({
@@ -63,12 +71,13 @@ export default class CrawlAccountTest {
       pubkey: {},
       account_number: 0,
       sequence: 0,
+      id: 3,
     }),
   ];
 
   broker = new ServiceBroker({ logger: false });
 
-  crawlAccountService?: CrawlAccountService;
+  crawlAccountService!: CrawlAccountService;
 
   @BeforeAll()
   async initSuite() {
@@ -86,6 +95,8 @@ export default class CrawlAccountTest {
     await AccountVesting.query().delete(true);
     await Account.query().delete(true);
     await this.broker.stop();
+    jest.resetAllMocks();
+    jest.restoreAllMocks();
   }
 
   @Test('Crawl base account auth success')
@@ -369,5 +380,77 @@ export default class CrawlAccountTest {
       updatedAccounts.find((acc) => acc.type === AccountType.DELAYED_VESTING)
         ?.spendable_balances.length
     ).toEqual(1);
+  }
+
+  @Test('handleJobAccountBalances')
+  async testHandleJobAccountBalances() {
+    const updateBalance = {
+      balances: [
+        {
+          denom: 'phong',
+          amount: '121411',
+        },
+      ],
+    };
+    const height = 1211;
+    const accountBalances = [
+      AccountBalance.fromJson({
+        denom: 'sdljkhsgkfjg',
+        amount: '132112',
+        last_updated_height: 12141,
+        account_id: this.accounts[0].id,
+        type: AccountBalance.TYPE.NATIVE,
+      }),
+      AccountBalance.fromJson({
+        denom: updateBalance.balances[0].denom,
+        amount: updateBalance.balances[0].amount,
+        last_updated_height: 12141,
+        account_id: this.accounts[0].id,
+        type: AccountBalance.TYPE.NATIVE,
+      }),
+      AccountBalance.fromJson({
+        denom: 'cbvcbnbn',
+        amount: '444',
+        last_updated_height: 12141,
+        account_id: this.accounts[0].id,
+        type: AccountBalance.TYPE.ERC20_TOKEN,
+      }),
+    ];
+    await AccountBalance.query().insert(accountBalances);
+    jest
+      .spyOn(this.crawlAccountService._httpBatchClient, 'execute')
+      .mockResolvedValueOnce({
+        result: {
+          response: {
+            value: toBase64(
+              cosmos.bank.v1beta1.QueryAllBalancesResponse.encode(
+                updateBalance
+              ).finish()
+            ),
+            height,
+          },
+        },
+        id: 1,
+        jsonrpc: '2.0',
+      });
+    await this.crawlAccountService.handleJobAccountBalances({
+      addresses: [this.accounts[0].address],
+    });
+    const results = _.keyBy(await AccountBalance.query(), 'denom');
+    expect(results[accountBalances[0].denom]).toMatchObject({
+      denom: accountBalances[0].denom,
+      amount: '0',
+      type: AccountBalance.TYPE.NATIVE,
+    });
+    expect(results[accountBalances[1].denom]).toMatchObject({
+      denom: updateBalance.balances[0].denom,
+      amount: updateBalance.balances[0].amount,
+      type: AccountBalance.TYPE.NATIVE,
+    });
+    expect(results[accountBalances[2].denom]).toMatchObject({
+      denom: accountBalances[2].denom,
+      amount: accountBalances[2].amount,
+      type: AccountBalance.TYPE.ERC20_TOKEN,
+    });
   }
 }

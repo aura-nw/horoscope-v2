@@ -44,7 +44,7 @@ export async function getProviderFactory(): Promise<{
       break;
     case chainIdConfigOnServer.Euphoria:
     case chainIdConfigOnServer.SerenityTestnet001:
-    case chainIdConfigOnServer.AuraTestnet2:
+    case chainIdConfigOnServer.AuraTestnetEVM:
     case chainIdConfigOnServer.Xstaxy1:
     default:
       ({ ibc, cosmos, cosmwasm, aura } = await import('@aura-nw/aurajs'));

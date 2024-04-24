@@ -18,6 +18,10 @@ export class AccountBalance extends BaseModel {
 
   last_updated_height!: number;
 
+  account_id!: number;
+
+  type!: string;
+
   static get tableName() {
     return 'account_balance';
   }
@@ -28,7 +32,7 @@ export class AccountBalance extends BaseModel {
       required: ['denom', 'amount'],
       properties: {
         denom: { type: 'string' },
-        amount: { type: 'number' },
+        amount: { type: 'string' },
         base_denom: { type: 'string' },
       },
     };
@@ -46,4 +50,9 @@ export class AccountBalance extends BaseModel {
       },
     };
   }
+
+  static TYPE = {
+    NATIVE: 'NATIVE',
+    ERC20_TOKEN: 'ERC20_TOKEN',
+  };
 }
