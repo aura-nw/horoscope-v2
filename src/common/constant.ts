@@ -8,9 +8,11 @@ export const chainIdConfigOnServer = {
   Euphoria: 'euphoria-2',
   SerenityTestnet001: 'serenity-testnet-001',
   AuraTestnet2: 'aura-testnet-2',
+  AuraTestnetEVM: 'auradev_1235-3',
   Xstaxy1: 'xstaxy-1',
   Atlantic2: 'atlantic-2',
   Pacific1: 'pacific-1',
+  Evmos90004: 'evmos_9000-4',
 };
 
 export const REDIS_KEY = {
@@ -124,6 +126,9 @@ export const BULL_JOB_NAME = {
   UPLOAD_BLOCK_RAW_LOG_TO_S3: 'job:upload-block-raw-log-to-s3',
   UPLOAD_TX_RAW_LOG_TO_S3: 'job:upload-tx-raw-log-to-s3',
   JOB_UPDATE_ASSETS: 'job:update-assets',
+  JOB_CW721_UPDATE: 'job:cw721-update',
+  CHECKPOINT_UPDATE_DELEGATOR: 'job:checkpoint_update_delegator',
+  REFRESH_ACCOUNT_BALANCE_STATISTIC: 'refresh:account-balance-statistic',
 };
 
 export const SERVICE = {
@@ -462,6 +467,7 @@ export const MSG_TYPE = {
   MSG_FEEGRANT_GRANT: '/cosmos.feegrant.v1beta1.MsgGrantAllowance',
   MSG_FEEGRANT_REVOKE: '/cosmos.feegrant.v1beta1.MsgRevokeAllowance',
   MSG_CONSENSUS_UPDATE_PARAM: '/cosmos.consensus.v1.MsgUpdateParams',
+  MSG_ETHEREUM_TX: '/ethermint.evm.v1.MsgEthereumTx',
 };
 
 export const ABCI_QUERY_PATH = {

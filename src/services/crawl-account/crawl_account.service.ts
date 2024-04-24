@@ -53,7 +53,7 @@ interface IAccountBalances extends QueryAllBalancesResponse {
 export default class CrawlAccountService extends BullableService {
   private _lcdClient!: IProviderJSClientFactory;
 
-  private _httpBatchClient: HttpBatchClient;
+  _httpBatchClient!: HttpBatchClient;
 
   private registry: any;
 
@@ -125,6 +125,7 @@ export default class CrawlAccountService extends BullableService {
         if (auth) {
           const account: any = {};
           account.type = auth['@type'];
+          account.code_hash = auth.code_hash;
           switch (auth['@type']) {
             case AccountType.CONTINUOUS_VESTING:
             case AccountType.DELAYED_VESTING:
@@ -198,6 +199,7 @@ export default class CrawlAccountService extends BullableService {
                 pubkey: account.pubkey,
                 account_number: account.account_number,
                 sequence: account.sequence,
+                code_hash: account.code_hash,
               })
               .where({ id: account.id })
               .transacting(trx)
@@ -342,7 +344,7 @@ export default class CrawlAccountService extends BullableService {
             .join(',');
           await knex
             .raw(
-              `UPDATE account_balance SET amount = 0, last_updated_height=temp.last_updated_height from (VALUES ${stringListUpdatesReset}) as temp(account_id, last_updated_height) where temp.account_id = account_balance.account_id`
+              `UPDATE account_balance SET amount = 0, last_updated_height=temp.last_updated_height from (VALUES ${stringListUpdatesReset}) as temp(account_id, last_updated_height) where temp.account_id = account_balance.account_id and account_balance.type='${AccountBalance.TYPE.NATIVE}'`
             )
             .transacting(trx);
           if (listAccountBalance.length > 0)

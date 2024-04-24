@@ -1,5 +1,5 @@
 {
-  "extends": "@tsconfig/node16/tsconfig.json",
+  "extends": "./node_modules/@tsconfig/node16/tsconfig.json",
   "compilerOptions": {
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
@@ -23,6 +23,7 @@
     "strictNullChecks": true,
     "stripInternal": true,
     "suppressImplicitAnyIndexErrors": true,
-    "baseUrl": "."
+    "baseUrl": ".",
+    "ignoreDeprecations": "5.0"
   }
 }
