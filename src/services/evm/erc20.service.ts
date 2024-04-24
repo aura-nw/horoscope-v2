@@ -323,6 +323,7 @@ export default class Erc20Service extends BullableService {
         decimal: erc20ContractsInfo[index].decimals,
         name: erc20ContractsInfo[index].name,
         track: true,
+        // TODO: update this field
         last_updated_height: e.created_height,
       })
     );
