@@ -1,7 +1,10 @@
-import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+import {
+  Action,
+  Service,
+} from '@ourparentcenter/moleculer-decorators-extended';
 import { Knex } from 'knex';
 import _, { Dictionary } from 'lodash';
-import { ServiceBroker } from 'moleculer';
+import { Context, ServiceBroker } from 'moleculer';
 import { getContract } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
@@ -154,6 +157,39 @@ export default class Erc721Service extends BullableService {
         .merge()
         .transacting(trx);
     });
+  }
+
+  @Action({
+    name: SERVICE.V1.Erc721.insertNewErc721Contracts.key,
+    params: {
+      evmSmartContracts: 'any[]',
+    },
+  })
+  async insertNewErc721Contracts(
+    ctx: Context<{
+      evmSmartContracts: {
+        id: number;
+        address: string;
+      }[];
+    }>
+  ) {
+    const { evmSmartContracts } = ctx.params;
+    const currentHeight = await this.viemClient.getBlockNumber();
+    const erc721Instances = await this.getErc721Instances(
+      evmSmartContracts.map((e) =>
+        EVMSmartContract.fromJson({
+          ...e,
+          created_height: currentHeight.toString(),
+        })
+      )
+    );
+    this.logger.info(
+      `New Erc721 Instances:\n ${JSON.stringify(erc721Instances)}`
+    );
+    await Erc721Contract.query()
+      .insert(erc721Instances)
+      .onConflict(['address'])
+      .merge();
   }
 
   async updateErc721(

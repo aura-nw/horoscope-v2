@@ -117,6 +117,10 @@ export const SERVICE = {
     Erc721: {
       key: 'Erc721',
       path: 'v1.Erc721',
+      insertNewErc721Contracts: {
+        key: 'insertNewErc721Contracts',
+        path: 'v1.Erc721.insertNewErc721Contracts',
+      },
     },
     SignatureMappingEVM: {
       key: 'SignatureMappingEVM',
