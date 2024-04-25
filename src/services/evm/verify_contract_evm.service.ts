@@ -104,7 +104,8 @@ export default class VerifyContractEVM extends BullableService {
 
               if (!this.isVerifiable(contract)) {
                 compileDetails.push(compileDetail);
-                throw Error('this contract is not verifiable');
+                // eslint-disable-next-line no-continue
+                continue;
               }
               let matchResult;
               try {
@@ -166,8 +167,6 @@ export default class VerifyContractEVM extends BullableService {
                     .transacting(trx)
                 );
                 break;
-              } else {
-                throw Error(matchResult.message);
               }
             }
           } else {
