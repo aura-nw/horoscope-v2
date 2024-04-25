@@ -176,22 +176,24 @@ export default class Erc721Service extends BullableService {
     }>
   ) {
     const { evmSmartContracts } = ctx.params;
-    const currentHeight = await this.viemClient.getBlockNumber();
-    const erc721Instances = await this.getErc721Instances(
-      evmSmartContracts.map((e) =>
-        EVMSmartContract.fromJson({
-          ...e,
-          created_height: currentHeight.toString(),
-        })
-      )
-    );
-    this.logger.info(
-      `New Erc721 Instances:\n ${JSON.stringify(erc721Instances)}`
-    );
-    await Erc721Contract.query()
-      .insert(erc721Instances)
-      .onConflict(['address'])
-      .merge();
+    if (evmSmartContracts.length > 0) {
+      const currentHeight = await this.viemClient.getBlockNumber();
+      const erc721Instances = await this.getErc721Instances(
+        evmSmartContracts.map((e) =>
+          EVMSmartContract.fromJson({
+            ...e,
+            created_height: currentHeight.toString(),
+          })
+        )
+      );
+      this.logger.info(
+        `New Erc721 Instances:\n ${JSON.stringify(erc721Instances)}`
+      );
+      await Erc721Contract.query()
+        .insert(erc721Instances)
+        .onConflict(['address'])
+        .merge();
+    }
   }
 
   async updateErc721(
