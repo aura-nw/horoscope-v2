@@ -144,7 +144,10 @@ export default class VerifyContractEVM extends BullableService {
                 runtimeMatch: matchResult.runtimeMatch,
               };
               compileDetails.push(compileDetail);
-              if (matchResult.runtimeMatch === 'perfect') {
+              if (
+                matchResult.runtimeMatch === 'perfect' ||
+                matchResult.runtimeMatch === 'partial'
+              ) {
                 listTriggerContractSignatureMapping.push(
                   requestVerify.contract_address
                 );
