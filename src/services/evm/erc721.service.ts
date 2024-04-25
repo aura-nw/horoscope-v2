@@ -5,7 +5,7 @@ import {
 import { Knex } from 'knex';
 import _, { Dictionary } from 'lodash';
 import { Context, ServiceBroker } from 'moleculer';
-import { getContract } from 'viem';
+import { PublicClient, getContract } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -29,6 +29,8 @@ const { NODE_ENV } = Config;
   version: 1,
 })
 export default class Erc721Service extends BullableService {
+  viemClient!: PublicClient;
+
   public constructor(public broker: ServiceBroker) {
     super(broker);
   }
@@ -295,12 +297,11 @@ export default class Erc721Service extends BullableService {
   }
 
   async getBatchErc721Info(addresses: `0x${string}`[]) {
-    const viemClient = EtherJsClient.getViemClient();
     const contracts = addresses.map((address) =>
       getContract({
         address,
         abi: Erc721Contract.ABI,
-        client: viemClient,
+        client: this.viemClient,
       })
     );
     const batchReqs: any[] = [];
@@ -319,6 +320,7 @@ export default class Erc721Service extends BullableService {
   }
 
   public async _start(): Promise<void> {
+    this.viemClient = EtherJsClient.getViemClient();
     if (NODE_ENV !== 'test') {
       await this.createJob(
         BULL_JOB_NAME.HANDLE_ERC721_CONTRACT,
