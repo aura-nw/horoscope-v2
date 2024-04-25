@@ -75,7 +75,11 @@ export default class EvmSignatureMappingJob extends BullableService {
   })
   async handler(_payload: { contract_address: string }): Promise<void> {
     const contractVerified = await EVMContractVerification.query()
-      .findOne('contract_address', _payload.contract_address)
+      .findOne({
+        contract_address: _payload.contract_address,
+        status: EVMContractVerification.VERIFICATION_STATUS.SUCCESS,
+      })
+      .orderBy('id', 'DESC')
       .limit(1);
 
     if (!contractVerified) {

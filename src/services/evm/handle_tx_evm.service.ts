@@ -7,6 +7,7 @@ import Utils from '../../common/utils/utils';
 import {
   BlockCheckpoint,
   EVMTransaction,
+  EventAttribute,
   TransactionMessage,
 } from '../../models';
 import { BULL_JOB_NAME, MSG_TYPE, SERVICE } from './constant';
@@ -61,8 +62,25 @@ export default class HandleTransactionEVMService extends BullableService {
       .andWhere('type', MSG_TYPE.MSG_ETHEREUM_TX)
       .orderBy('height', 'asc')
       .orderBy('transaction.id', 'asc');
+
+    const failedTxIds = await EventAttribute.query()
+      .where('block_height', '>', startBlock)
+      .andWhere('block_height', '<=', endBlock)
+      .andWhere(
+        'composite_key',
+        EventAttribute.ATTRIBUTE_COMPOSITE_KEY.ETHEREUM_TX_ETHEREUM_TX_FAILED
+      );
     if (txMsgs.length > 0) {
       txMsgs.forEach((txMsg) => {
+        let evmTxStatus = 1;
+        let evmTxReason = null;
+        const failedTx = failedTxIds.find(
+          (failedTxId) => failedTxId.tx_id === txMsg.tx_id
+        );
+        if (failedTx) {
+          evmTxStatus = 0;
+          evmTxReason = failedTx.value;
+        }
         const { content } = txMsg;
         let { sender } = txMsg;
         if (content?.from) {
@@ -91,6 +109,8 @@ export default class HandleTransactionEVMService extends BullableService {
             nonce: Utils.getBigIntIfNotNull(content.data?.nonce),
             value: Utils.getBigIntIfNotNull(content.data?.value),
             index: txMsg.tx_index,
+            status: evmTxStatus,
+            reason: evmTxReason,
           })
         );
       });
