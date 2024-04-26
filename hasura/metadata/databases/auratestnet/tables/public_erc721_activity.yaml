@@ -1,0 +1,27 @@
+table:
+  name: erc721_activity
+  schema: public
+object_relationships:
+  - name: erc721_contract
+    using:
+      foreign_key_constraint_on: erc721_contract_address
+  - name: erc721_token
+    using:
+      foreign_key_constraint_on: erc721_token_id
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - id
+        - tx_hash
+        - erc721_contract_address
+        - evm_event_id
+        - action
+        - sender
+        - from
+        - to
+        - height
+        - erc721_token_id
+        - evm_tx_id
+      filter: {}
+      limit: 100

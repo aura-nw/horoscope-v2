@@ -1,0 +1,15 @@
+table:
+  name: erc721_token
+  schema: public
+object_relationships:
+  - name: erc721_contract
+    using:
+      foreign_key_constraint_on: erc721_contract_address
+array_relationships:
+  - name: erc721_activities
+    using:
+      foreign_key_constraint_on:
+        column: erc721_token_id
+        table:
+          name: erc721_activity
+          schema: public
