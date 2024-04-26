@@ -138,7 +138,8 @@ export default class Erc721Service extends BullableService {
               ['erc721_contract_address', 'token_id'],
               erc721Activities.map((e) => [
                 e.erc721_contract_address,
-                e.token_id,
+                // if token_id undefined (case approval_all), replace by null => not get any token (because token must have token_id)
+                e.token_id || null,
               ])
             )
             .transacting(trx),
