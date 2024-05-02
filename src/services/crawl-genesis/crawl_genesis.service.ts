@@ -44,7 +44,7 @@ import {
 } from '../../models';
 import { ALLOWANCE_TYPE, FEEGRANT_STATUS } from '../feegrant/feegrant.service';
 
-const { stateFile } = config.crawlGenesis;
+const { stateFileURL, stateFileDirectory } = config.crawlGenesis;
 @Service({
   name: SERVICE.V1.CrawlGenesisService.key,
   version: 1,
@@ -84,13 +84,14 @@ export default class CrawlGenesisService extends BullableService {
       return;
     }
 
-    if (!stateFile) {
-      await this.getGenesisFile();
-    } else {
-      await this.getStateFile();
+    // if not found file genesis.json, then need fetch from rpc or volume
+    if (!fs.existsSync('genesis.json')) {
+      if (stateFileURL || stateFileDirectory) {
+        await this.getStateFile();
+      } else {
+        await this.getGenesisFile();
+      }
     }
-
-    // fs.renameSync('genesis.txt', 'genesis.json');
 
     let updateBlkCheck: BlockCheckpoint;
     if (genesisBlkCheck) {
@@ -169,14 +170,22 @@ export default class CrawlGenesisService extends BullableService {
   }
 
   async getStateFile() {
-    const writer = fs.createWriteStream('genesis.json');
-    const response = await axios({
-      url: stateFile,
-      method: 'GET',
-      responseType: 'stream',
-    });
-    response.data.pipe(writer);
-    return promisify(Stream.Stream.finished)(writer);
+    if (stateFileURL) {
+      const writer = fs.createWriteStream('genesis.json');
+      const response = await axios({
+        url: stateFileURL,
+        method: 'GET',
+        responseType: 'stream',
+      });
+      response.data.pipe(writer);
+      return promisify(Stream.Stream.finished)(writer);
+    }
+    if (stateFileDirectory) {
+      return fs.copyFileSync(stateFileDirectory, 'genesis.json');
+    }
+    throw Error(
+      'At least stateFileUrl or stateFileDirectory must be configured'
+    );
   }
 
   @QueueHandler({
