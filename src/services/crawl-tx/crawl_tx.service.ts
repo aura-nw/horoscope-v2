@@ -22,6 +22,7 @@ import {
 import {
   Block,
   BlockCheckpoint,
+  ConfigJob,
   Event,
   Transaction,
   TransactionMessage,
@@ -85,7 +86,7 @@ export default class CrawlTxService extends BullableService {
     jobName: BULL_JOB_NAME.HANDLE_TRANSACTION,
   })
   public async jobHandlerCrawlTx(): Promise<void> {
-    const [startBlock, endBlock, blockCheckpoint] =
+    const [startBlock, endBlock, blockCheckpoint, dependBlockCheckPoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.HANDLE_TRANSACTION,
         [BULL_JOB_NAME.CRAWL_TRANSACTION],
@@ -99,17 +100,44 @@ export default class CrawlTxService extends BullableService {
     if (startBlock >= endBlock) {
       return;
     }
+
+    const configJob = await ConfigJob.getConfigJob(
+      BULL_JOB_NAME.HANDLE_TRANSACTION
+    );
+    const bestEndBlock = ConfigJob.determineBestRangeBlockForRunJob(
+      startBlock,
+      endBlock,
+      dependBlockCheckPoint,
+      configJob
+    );
+
     const listTxRaw = await Transaction.query()
       .where('height', '>', startBlock)
-      .andWhere('height', '<=', endBlock)
+      .andWhere('height', '<=', bestEndBlock)
       .orderBy('height', 'asc')
       .orderBy('index', 'asc');
+
+    const balanceConfigJob = ConfigJob.prepareBalanceJob(
+      bestEndBlock,
+      dependBlockCheckPoint,
+      configJob,
+      listTxRaw.length
+    );
+
     await knex.transaction(async (trx) => {
       await this.insertRelatedTx(listTxRaw, trx);
       if (blockCheckpoint) {
         blockCheckpoint.height = endBlock;
         await BlockCheckpoint.query()
           .insert(blockCheckpoint)
+          .onConflict('job_name')
+          .merge()
+          .returning('id')
+          .transacting(trx);
+      }
+      if (balanceConfigJob) {
+        await ConfigJob.query()
+          .insert(balanceConfigJob)
           .onConflict('job_name')
           .merge()
           .returning('id')
