@@ -237,22 +237,24 @@ export default class Erc20Service extends BullableService {
     }>
   ) {
     const { evmSmartContracts } = ctx.params;
-    const currentHeight = await this.viemClient.getBlockNumber();
-    const erc20Instances = await this.getErc20Instances(
-      evmSmartContracts.map((e) =>
-        EVMSmartContract.fromJson({
-          ...e,
-          created_height: currentHeight.toString(),
-        })
-      )
-    );
-    this.logger.info(
-      `New Erc20 Instances:\n ${JSON.stringify(erc20Instances)}`
-    );
-    await Erc20Contract.query()
-      .insert(erc20Instances)
-      .onConflict(['address'])
-      .merge();
+    if (evmSmartContracts.length > 0) {
+      const currentHeight = await this.viemClient.getBlockNumber();
+      const erc20Instances = await this.getErc20Instances(
+        evmSmartContracts.map((e) =>
+          EVMSmartContract.fromJson({
+            ...e,
+            created_height: currentHeight.toString(),
+          })
+        )
+      );
+      this.logger.info(
+        `New Erc20 Instances:\n ${JSON.stringify(erc20Instances)}`
+      );
+      await Erc20Contract.query()
+        .insert(erc20Instances)
+        .onConflict(['address'])
+        .merge();
+    }
   }
 
   async getErc20Activities(
