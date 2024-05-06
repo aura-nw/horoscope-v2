@@ -15,6 +15,8 @@ export class Erc721Token extends BaseModel {
 
   erc721_contract_address!: string;
 
+  media_info!: any;
+
   last_updated_height!: number;
 
   created_at!: Date;

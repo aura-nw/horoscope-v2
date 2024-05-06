@@ -213,6 +213,8 @@ export const BULL_JOB_NAME = {
   HANDLE_ERC721_ACTIVITY: 'handle:erc721-activity',
   SYNC_SOURCIFY: 'sync:sourcify',
   INSERT_VERIFY_BY_CODEHASH: 'job:insert-verify-by-codehash',
+  HANDLE_ERC721_MEDIA: 'handle:erc721-media',
+  HANDLE_ERC721_TOKEN_MEDIA: 'handle:erc721-token-media',
 };
 
 export const MSG_TYPE = {
