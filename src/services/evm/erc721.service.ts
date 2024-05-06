@@ -228,8 +228,10 @@ export default class Erc721Service extends BullableService {
           updatedTokens[
             `${activity.erc721_contract_address}_${activity.token_id}`
           ];
-        // eslint-disable-next-line no-param-reassign
-        activity.erc721_token_id = token.id;
+        if (token) {
+          // eslint-disable-next-line no-param-reassign
+          activity.erc721_token_id = token.id;
+        }
       });
       await knex
         .batchInsert(
