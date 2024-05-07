@@ -169,7 +169,7 @@ export default class Erc721Test {
       where: () => mockQueryEvents,
       andWhere: () => mockQueryEvents,
       orderBy: () => mockQueryEvents,
-      leftJoin: () => mockQueryEvents,
+      innerJoin: () => mockQueryEvents,
     };
     jest.spyOn(EvmEvent, 'query').mockImplementation(() => mockQueryEvents);
     await this.erc721Service.handleErc721Activity();
