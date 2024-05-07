@@ -78,20 +78,22 @@ export default class Erc721Service extends BullableService {
       const [startBlock, endBlock, updateBlockCheckpoint] =
         await BlockCheckpoint.getCheckpoint(
           BULL_JOB_NAME.HANDLE_ERC721_ACTIVITY,
-          [BULL_JOB_NAME.HANDLE_ERC721_CONTRACT],
+          [
+            BULL_JOB_NAME.HANDLE_ERC721_CONTRACT,
+            BULL_JOB_NAME.HANDLE_EVM_PROXY_HISTORY,
+          ],
           config.erc721.key
         );
       const erc721Events = await EvmEvent.query()
         .transacting(trx)
         .joinRelated('[evm_smart_contract,evm_transaction]')
-        .leftJoin(
+        .innerJoin(
           'erc721_contract',
           'evm_event.address',
           'erc721_contract.address'
         )
         .where('evm_event.block_height', '>', startBlock)
         .andWhere('evm_event.block_height', '<=', endBlock)
-        .andWhere('evm_smart_contract.type', EVMSmartContract.TYPES.ERC721)
         .orderBy('evm_event.id', 'asc')
         .select(
           'evm_event.*',
