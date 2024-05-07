@@ -204,7 +204,7 @@ export default class Erc721Service extends BullableService {
       await BlockCheckpoint.query()
         .insert({
           job_name: BULL_JOB_NAME.HANDLE_ERC721_MEDIA,
-          height: tokensUnprocess[tokensUnprocess.length - 1].cw721_token_id,
+          height: tokensUnprocess[tokensUnprocess.length - 1].id,
         })
         .onConflict(['job_name'])
         .merge();
@@ -214,7 +214,7 @@ export default class Erc721Service extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_ERC721_TOKEN_MEDIA,
     jobName: BULL_JOB_NAME.HANDLE_ERC721_TOKEN_MEDIA,
-    concurrency: config.cw721.concurrencyHandleTokenMedia,
+    concurrency: config.erc721.concurrencyHandleTokenMedia,
   })
   async jobHandlerTokenMedia(_payload: {
     tokenMedia: Erc721MediaHandler.ITokenMediaInfo;
