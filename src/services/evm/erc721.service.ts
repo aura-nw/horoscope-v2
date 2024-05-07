@@ -21,11 +21,8 @@ import {
 } from '../../models';
 import { Erc721Contract } from '../../models/erc721_contract';
 import { BULL_JOB_NAME, SERVICE } from './constant';
-import {
-  ERC721_EVENT_TOPIC0,
-  Erc721Handler,
-  ITokenMediaInfo,
-} from './erc721_handler';
+import { ERC721_EVENT_TOPIC0, Erc721Handler } from './erc721_handler';
+import * as Erc721MediaHandler from './erc721_media_handler';
 
 const { NODE_ENV } = Config;
 @Service({
@@ -214,6 +211,45 @@ export default class Erc721Service extends BullableService {
     }
   }
 
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.HANDLE_ERC721_TOKEN_MEDIA,
+    jobName: BULL_JOB_NAME.HANDLE_ERC721_TOKEN_MEDIA,
+    concurrency: config.cw721.concurrencyHandleTokenMedia,
+  })
+  async jobHandlerTokenMedia(_payload: {
+    tokenMedia: Erc721MediaHandler.ITokenMediaInfo;
+  }) {
+    let { tokenMedia } = _payload;
+    if (tokenMedia.onchain.token_uri) {
+      try {
+        // update metadata
+        tokenMedia.onchain.metadata = await Erc721MediaHandler.getMetadata(
+          tokenMedia.onchain.token_uri
+        );
+      } catch (error) {
+        this.logger.error(error);
+        throw error;
+      }
+    }
+    // upload & update link s3
+    tokenMedia = await Erc721MediaHandler.updateMediaS3(
+      tokenMedia,
+      this.logger
+    );
+    this.logger.info(tokenMedia);
+    await Erc721Token.query()
+      .where('id', tokenMedia.erc721_token_id)
+      .patch({
+        media_info: {
+          onchain: {
+            token_uri: tokenMedia.onchain.token_uri,
+            metadata: tokenMedia.onchain.metadata,
+          },
+          offchain: tokenMedia.offchain,
+        },
+      });
+  }
+
   @Action({
     name: SERVICE.V1.Erc721.insertNewErc721Contracts.key,
     params: {
@@ -293,7 +329,9 @@ export default class Erc721Service extends BullableService {
     }
   }
 
-  async getTokensUri(tokens: Erc721Token[]): Promise<ITokenMediaInfo[]> {
+  async getTokensUri(
+    tokens: Erc721Token[]
+  ): Promise<Erc721MediaHandler.ITokenMediaInfo[]> {
     const contracts = tokens.map((token) =>
       getContract({
         address: token.erc721_contract_address as `0x${string}`,
@@ -305,7 +343,7 @@ export default class Erc721Service extends BullableService {
     contracts.forEach((e, index) => {
       batchReqs.push(
         e.read
-          .tokenUri([parseInt(tokens[index].token_id, 10)])
+          .tokenURI([parseInt(tokens[index].token_id, 10)])
           .catch(() => Promise.resolve(undefined))
       );
     });
