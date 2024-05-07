@@ -13,3 +13,16 @@ array_relationships:
         table:
           name: erc721_activity
           schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - id
+        - token_id
+        - owner
+        - erc721_contract_address
+        - last_updated_height
+        - created_at
+      filter: {}
+      limit: 100
+      allow_aggregations: true
