@@ -9,7 +9,7 @@ object_relationships:
     using:
       manual_configuration:
         column_mapping:
-          tx_hash: hash
+          evm_tx_id: id
         insertion_order: null
         remote_table:
           name: evm_transaction

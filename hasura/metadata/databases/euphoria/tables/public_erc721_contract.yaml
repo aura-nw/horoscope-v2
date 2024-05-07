@@ -1,0 +1,45 @@
+table:
+  name: erc721_contract
+  schema: public
+object_relationships:
+  - name: evm_smart_contract
+    using:
+      manual_configuration:
+        column_mapping:
+          evm_smart_contract_id: id
+        insertion_order: null
+        remote_table:
+          name: evm_smart_contract
+          schema: public
+array_relationships:
+  - name: evm_internal_transaction_from
+    using:
+      manual_configuration:
+        column_mapping:
+          address: from
+        insertion_order: null
+        remote_table:
+          name: evm_internal_transaction
+          schema: public
+  - name: evm_internal_transaction_to
+    using:
+      manual_configuration:
+        column_mapping:
+          address: to
+        insertion_order: null
+        remote_table:
+          name: evm_internal_transaction
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - id
+        - evm_smart_contract_id
+        - address
+        - symbol
+        - name
+        - track
+        - last_updated_height
+      filter: {}
+      limit: 100
