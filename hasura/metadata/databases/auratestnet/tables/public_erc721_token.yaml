@@ -25,3 +25,4 @@ select_permissions:
         - created_at
       filter: {}
       limit: 100
+      allow_aggregations: true
