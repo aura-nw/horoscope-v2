@@ -348,7 +348,7 @@ export default class Erc721Service extends BullableService {
     contracts.forEach((e, index) => {
       batchReqs.push(
         e.read
-          .tokenURI([parseInt(tokens[index].token_id, 10)])
+          .tokenURI([BigInt(tokens[index].token_id)])
           .catch(() => Promise.resolve(undefined))
       );
     });
