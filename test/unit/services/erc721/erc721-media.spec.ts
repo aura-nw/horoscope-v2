@@ -54,13 +54,13 @@ export default class TestErc721MediaService {
     }),
     tokens: [
       {
-        token_id: 'token_id1',
+        token_id: '1014141',
         media_info: null,
         owner: 'owner1',
         last_updated_height: 1000,
       },
       {
-        token_id: 'token_id2',
+        token_id: '4242147474741717414',
         media_info: null,
         owner: 'owner2',
         last_updated_height: 2000,
@@ -76,13 +76,13 @@ export default class TestErc721MediaService {
     }),
     tokens: [
       {
-        token_id: 'token_id1',
+        token_id: '411741714142',
         media_info: null,
         owner: 'owner1',
         last_updated_height: 1000,
       },
       {
-        token_id: 'token_id2',
+        token_id: '241414147174174',
         media_info: null,
         owner: 'owner2',
         last_updated_height: 2000,
