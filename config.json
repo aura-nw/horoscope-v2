@@ -403,5 +403,9 @@
   },
   "jobRefreshMViewAccountBalanceStatistic": {
     "timeRefreshMViewAccountBalanceStatistic": "*/10 * * * *"
+  },
+  "jobSyncSourcify": {
+    "millisecondCrawl": 2000,
+    "recordsPerCall": 100
   }
 }
