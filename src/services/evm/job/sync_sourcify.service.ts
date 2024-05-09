@@ -47,6 +47,7 @@ export default class SyncSourcify extends BullableService {
     if (sourcifyMatches.length === 0) {
       return;
     }
+    const listTriggerContractSignatureMapping: string[] = [];
     const evmContractVerifications: EVMContractVerification[] = sourcifyMatches
       .filter(
         (sourcifyMatch) =>
@@ -74,6 +75,9 @@ export default class SyncSourcify extends BullableService {
           ),
           status: EVMContractVerification.VERIFICATION_STATUS.SUCCESS,
         });
+        listTriggerContractSignatureMapping.push(
+          evmContractVerification.contract_address
+        );
         return evmContractVerification;
       });
     await knex.transaction(async (trx) => {
@@ -90,6 +94,22 @@ export default class SyncSourcify extends BullableService {
         .returning('id')
         .transacting(trx);
     });
+
+    if (listTriggerContractSignatureMapping.length > 0) {
+      listTriggerContractSignatureMapping.forEach((contract) => {
+        this.createJob(
+          BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
+          BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
+          { contract_address: contract },
+          {
+            removeOnComplete: true,
+            removeOnFail: {
+              count: 3,
+            },
+          }
+        );
+      });
+    }
   }
 
   toHexString(buf: Buffer): string | null {
