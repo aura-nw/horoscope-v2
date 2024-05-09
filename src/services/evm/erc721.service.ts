@@ -22,6 +22,7 @@ import {
 import { Erc721Contract } from '../../models/erc721_contract';
 import { BULL_JOB_NAME, SERVICE } from './constant';
 import { ERC721_EVENT_TOPIC0, Erc721Handler } from './erc721_handler';
+import * as Erc721MediaHandler from './erc721_media_handler';
 
 const { NODE_ENV } = Config;
 @Service({
@@ -164,6 +165,94 @@ export default class Erc721Service extends BullableService {
     });
   }
 
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.HANDLE_ERC721_MEDIA,
+    jobName: BULL_JOB_NAME.HANDLE_ERC721_MEDIA,
+  })
+  async handleErc721Media(): Promise<void> {
+    // get id token checkpoint
+    const tokenCheckpoint = await BlockCheckpoint.query().findOne({
+      job_name: BULL_JOB_NAME.HANDLE_ERC721_MEDIA,
+    });
+    const idTokenCheckpoint = tokenCheckpoint?.height || 0;
+    const tokensUnprocess = await Erc721Token.query()
+      .where('media_info', null)
+      .andWhere('id', '>', idTokenCheckpoint)
+      .orderBy('id', 'ASC')
+      .limit(config.erc721.mediaPerBatch);
+    if (tokensUnprocess.length > 0) {
+      this.logger.info(
+        `from id (token) ${tokensUnprocess[0].id} to id (token) ${
+          tokensUnprocess[tokensUnprocess.length - 1].id
+        }`
+      );
+      // get batch token_uri before start processing for each
+      const tokensMediaInfo = await this.getTokensUri(tokensUnprocess);
+      await Promise.all(
+        tokensMediaInfo.map((tokenMedia) =>
+          this.createJob(
+            BULL_JOB_NAME.HANDLE_ERC721_TOKEN_MEDIA,
+            BULL_JOB_NAME.HANDLE_ERC721_TOKEN_MEDIA,
+            { tokenMedia },
+            {
+              removeOnComplete: true,
+              removeOnFail: {
+                count: 3,
+              },
+              jobId: `${tokenMedia.address}_${tokenMedia.erc721_token_id}`,
+            }
+          )
+        )
+      );
+      await BlockCheckpoint.query()
+        .insert({
+          job_name: BULL_JOB_NAME.HANDLE_ERC721_MEDIA,
+          height: tokensUnprocess[tokensUnprocess.length - 1].id,
+        })
+        .onConflict(['job_name'])
+        .merge();
+    }
+  }
+
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.HANDLE_ERC721_TOKEN_MEDIA,
+    jobName: BULL_JOB_NAME.HANDLE_ERC721_TOKEN_MEDIA,
+    concurrency: config.erc721.concurrencyHandleTokenMedia,
+  })
+  async jobHandlerTokenMedia(_payload: {
+    tokenMedia: Erc721MediaHandler.ITokenMediaInfo;
+  }) {
+    let { tokenMedia } = _payload;
+    if (tokenMedia.onchain.token_uri) {
+      try {
+        // update metadata
+        tokenMedia.onchain.metadata = await Erc721MediaHandler.getMetadata(
+          tokenMedia.onchain.token_uri
+        );
+      } catch (error) {
+        this.logger.error(error);
+        throw error;
+      }
+    }
+    // upload & update link s3
+    tokenMedia = await Erc721MediaHandler.updateMediaS3(
+      tokenMedia,
+      this.logger
+    );
+    this.logger.info(tokenMedia);
+    await Erc721Token.query()
+      .where('id', tokenMedia.erc721_token_id)
+      .patch({
+        media_info: {
+          onchain: {
+            token_uri: tokenMedia.onchain.token_uri,
+            metadata: tokenMedia.onchain.metadata,
+          },
+          offchain: tokenMedia.offchain,
+        },
+      });
+  }
+
   @Action({
     name: SERVICE.V1.Erc721.insertNewErc721Contracts.key,
     params: {
@@ -243,6 +332,48 @@ export default class Erc721Service extends BullableService {
         )
         .transacting(trx);
     }
+  }
+
+  async getTokensUri(
+    tokens: Erc721Token[]
+  ): Promise<Erc721MediaHandler.ITokenMediaInfo[]> {
+    const contracts = tokens.map((token) =>
+      getContract({
+        address: token.erc721_contract_address as `0x${string}`,
+        abi: Erc721Contract.ABI,
+        client: this.viemClient,
+      })
+    );
+    const batchReqs: any[] = [];
+    contracts.forEach((e, index) => {
+      batchReqs.push(
+        e.read
+          .tokenURI([BigInt(tokens[index].token_id)])
+          .catch(() => Promise.resolve(undefined))
+      );
+    });
+    const results = await Promise.all(batchReqs);
+    return tokens.map((token, index) => ({
+      address: token.erc721_contract_address,
+      token_id: token.token_id,
+      erc721_token_id: token.id,
+      onchain: {
+        token_uri: results[index],
+        metadata: {},
+      },
+      offchain: {
+        image: {
+          url: undefined,
+          content_type: undefined,
+          file_path: undefined,
+        },
+        animation: {
+          url: undefined,
+          content_type: undefined,
+          file_path: undefined,
+        },
+      },
+    }));
   }
 
   async handleMissingErc721Contract(events: EvmEvent[], trx: Knex.Transaction) {
@@ -346,6 +477,20 @@ export default class Erc721Service extends BullableService {
       await this.createJob(
         BULL_JOB_NAME.HANDLE_ERC721_ACTIVITY,
         BULL_JOB_NAME.HANDLE_ERC721_ACTIVITY,
+        {},
+        {
+          removeOnComplete: true,
+          removeOnFail: {
+            count: 3,
+          },
+          repeat: {
+            every: config.erc721.millisecondRepeatJob,
+          },
+        }
+      );
+      await this.createJob(
+        BULL_JOB_NAME.HANDLE_ERC721_MEDIA,
+        BULL_JOB_NAME.HANDLE_ERC721_MEDIA,
         {},
         {
           removeOnComplete: true,
