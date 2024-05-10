@@ -38,21 +38,22 @@ export default class SyncSourcify extends BullableService {
     this.logger.info('Sync Sourcify from checkpoint:', blockCheckpoint.height);
     const sourcifyMatches = await SourcifyMatch.query()
       .withGraphFetched(
-        'verified_contract.[compiled_contract.[runtime_code], contract_deployment]'
+        'verified_contract.[compiled_contract, contract_deployment]'
       )
       .where('id', '>', blockCheckpoint.height)
-      .andWhereRaw("runtime_match in ('perfect','partial')")
       .limit(config.jobSyncSourcify.recordsPerCall)
       .orderBy('id', 'asc');
     if (sourcifyMatches.length === 0) {
       return;
     }
-    const listTriggerContractSignatureMapping: string[] = [];
+    const updatedContractAddresses: string[] = [];
     const evmContractVerifications: EVMContractVerification[] = sourcifyMatches
       .filter(
         (sourcifyMatch) =>
           sourcifyMatch.verified_contract.contract_deployment.chain_id ===
-          currentChain.EVMchainId.toString()
+            currentChain.EVMchainId.toString() &&
+          (sourcifyMatch.runtime_match === 'perfect' ||
+            sourcifyMatch.runtime_match === 'partial')
       )
       .map((sourcifyMatch) => {
         const evmContractVerification = EVMContractVerification.fromJson({
@@ -75,9 +76,7 @@ export default class SyncSourcify extends BullableService {
           ),
           status: EVMContractVerification.VERIFICATION_STATUS.SUCCESS,
         });
-        listTriggerContractSignatureMapping.push(
-          evmContractVerification.contract_address
-        );
+        updatedContractAddresses.push(evmContractVerification.contract_address);
         return evmContractVerification;
       });
     await knex.transaction(async (trx) => {
@@ -95,20 +94,22 @@ export default class SyncSourcify extends BullableService {
         .transacting(trx);
     });
 
-    if (listTriggerContractSignatureMapping.length > 0) {
-      listTriggerContractSignatureMapping.forEach((contract) => {
-        this.createJob(
-          BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
-          BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
-          { contract_address: contract },
-          {
-            removeOnComplete: true,
-            removeOnFail: {
-              count: 3,
-            },
-          }
-        );
-      });
+    if (updatedContractAddresses.length > 0) {
+      await Promise.all(
+        updatedContractAddresses.map((contract) =>
+          this.createJob(
+            BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
+            BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
+            { contract_address: contract },
+            {
+              removeOnComplete: true,
+              removeOnFail: {
+                count: 3,
+              },
+            }
+          )
+        )
+      );
     }
   }
 
