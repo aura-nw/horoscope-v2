@@ -17,12 +17,13 @@ select_permissions:
   - role: internal_service
     permission:
       columns:
-        - id
-        - token_id
-        - owner
-        - erc721_contract_address
-        - last_updated_height
         - created_at
+        - erc721_contract_address
+        - id
+        - last_updated_height
+        - media_info
+        - owner
+        - token_id
       filter: {}
       limit: 100
       allow_aggregations: true

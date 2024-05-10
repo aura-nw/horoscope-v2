@@ -1,0 +1,3 @@
+table:
+  name: verified_contracts
+  schema: public
