@@ -102,6 +102,10 @@
       use_prepared_statements: false
   customization:
     naming_convention: hasura-default
+    root_fields:
+      namespace: sourcify
+    type_names:
+      prefix: sourcify_
   tables: '!include sourcify/tables/tables.yaml'
 - name: xstaxy
   kind: postgres
