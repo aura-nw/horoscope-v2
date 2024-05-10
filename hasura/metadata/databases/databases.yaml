@@ -92,6 +92,21 @@
     type_names:
       prefix: serenity_
   tables: '!include serenity/tables/tables.yaml'
+- name: sourcify
+  kind: postgres
+  configuration:
+    connection_info:
+      database_url:
+        from_env: DATABASE_URL_SOURCIFY
+      isolation_level: read-committed
+      use_prepared_statements: false
+  customization:
+    naming_convention: hasura-default
+    root_fields:
+      namespace: sourcify
+    type_names:
+      prefix: sourcify_
+  tables: '!include sourcify/tables/tables.yaml'
 - name: xstaxy
   kind: postgres
   configuration:
