@@ -3,11 +3,15 @@ import BaseModel from './base';
 import { EVMSmartContract } from './evm_smart_contract';
 // eslint-disable-next-line import/no-cycle
 import { Erc721Token } from './erc721_token';
+// eslint-disable-next-line import/no-cycle
+import { Erc721Activity } from './erc721_activity';
 
 export class Erc721Contract extends BaseModel {
   static softDelete = false;
 
   id!: number;
+
+  [relation: string]: any;
 
   evm_smart_contract_id!: number;
 
@@ -53,6 +57,14 @@ export class Erc721Contract extends BaseModel {
         join: {
           from: 'erc721_contract.address',
           to: 'erc721_token.erc721_contract_address',
+        },
+      },
+      erc721_activity: {
+        relation: Model.HasManyRelation,
+        modelClass: Erc721Activity,
+        join: {
+          from: 'erc721_contract.address',
+          to: 'erc721_activity.erc721_contract_address',
         },
       },
     };

@@ -44,3 +44,4 @@ export * from './account_balance';
 export * from './erc721_activity';
 export * from './erc721_token';
 export * from './erc721_contract';
+export * from './erc721_stats';

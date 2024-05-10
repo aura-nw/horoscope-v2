@@ -215,6 +215,7 @@ export const BULL_JOB_NAME = {
   INSERT_VERIFY_BY_CODEHASH: 'job:insert-verify-by-codehash',
   HANDLE_ERC721_MEDIA: 'handle:erc721-media',
   HANDLE_ERC721_TOKEN_MEDIA: 'handle:erc721-token-media',
+  REFRESH_ERC721_STATS: 'refresh:erc721-stats',
 };
 
 export const MSG_TYPE = {
