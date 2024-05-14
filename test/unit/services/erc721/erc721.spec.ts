@@ -1,11 +1,19 @@
-import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
+import {
+  AfterAll,
+  BeforeAll,
+  BeforeEach,
+  Describe,
+  Test,
+} from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import knex from '../../../../src/common/utils/db_connection';
 import {
+  Block,
   BlockCheckpoint,
   EVMSmartContract,
   EVMTransaction,
   Erc721Activity,
+  Erc721Contract,
   Erc721Token,
   EvmEvent,
 } from '../../../../src/models';
@@ -59,6 +67,13 @@ export default class Erc721Test {
     tx_index: 1,
   });
 
+  erc721Contract1 = Erc721Contract.fromJson({
+    evm_smart_contract_id: this.evmSmartContract.id,
+    id: 123,
+    track: true,
+    address: this.evmSmartContract.address,
+  });
+
   @BeforeAll()
   async initSuite() {
     this.erc721Service.getQueueManager().stopAll();
@@ -70,8 +85,16 @@ export default class Erc721Test {
       this.evmSmartContract,
       this.evmSmartContract2,
     ]);
+    await Erc721Contract.query().insert(this.erc721Contract1);
     await EVMTransaction.query().insert(this.evmTx);
     await EvmEvent.query().insert(this.evmEvent);
+  }
+
+  @BeforeEach()
+  async beforeEach() {
+    await knex.raw(
+      'TRUNCATE TABLE erc721_activity, erc721_token RESTART IDENTITY CASCADE'
+    );
   }
 
   @AfterAll()
@@ -200,6 +223,63 @@ export default class Erc721Test {
       from: '0x1317df02a4e712265f5376a9d34156f73ebad640',
       to: '0xe39633931ec4a1841e438b15005a6f141d30789e',
       erc721_token_id: erc721Token.id,
+    });
+  }
+
+  @Test('test calErc721Stats')
+  async testCalErc721Stats() {
+    const mockQueryBlocks: any = {
+      limit: () => [{ height: 10001 }],
+      orderBy: () => mockQueryBlocks,
+      select: () => mockQueryBlocks,
+      where: () => mockQueryBlocks,
+    };
+    jest.spyOn(Block, 'query').mockImplementation(() => mockQueryBlocks);
+    const erc721Activities = [
+      {
+        action: ERC721_ACTION.TRANSFER,
+        erc721_contract_address: this.evmSmartContract.address,
+        height: 10000,
+        evm_event_id: this.evmEvent.id,
+      },
+      {
+        action: ERC721_ACTION.APPROVAL,
+        erc721_contract_address: this.evmSmartContract.address,
+        height: 10000,
+        evm_event_id: this.evmEvent.id,
+      },
+      {
+        action: ERC721_ACTION.TRANSFER,
+        erc721_contract_address: this.evmSmartContract.address,
+        height: 10001,
+        evm_event_id: this.evmEvent.id,
+      },
+      {
+        action: ERC721_ACTION.TRANSFER,
+        erc721_contract_address: this.evmSmartContract.address,
+        height: 10001,
+        evm_event_id: this.evmEvent.id,
+      },
+      {
+        action: ERC721_ACTION.TRANSFER,
+        erc721_contract_address: this.evmSmartContract.address,
+        height: 10001,
+        evm_event_id: this.evmEvent.id,
+      },
+      {
+        erc721_contract_address: this.evmSmartContract.address,
+        height: 10001,
+        evm_event_id: this.evmEvent.id,
+      },
+    ];
+    await Erc721Activity.query().insert(
+      erc721Activities.map((e) => Erc721Activity.fromJson(e))
+    );
+    const result = await this.erc721Service.calErc721Stats();
+    expect(result[0]).toMatchObject({
+      total_activity: '6',
+      transfer_24h: '3',
+      erc721_contract_id: this.erc721Contract1.id,
     });
   }
 }
