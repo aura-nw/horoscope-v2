@@ -2,8 +2,10 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import _ from 'lodash';
 import { parseCoins } from '@cosmjs/proto-signing';
+import { GetNodeInfoResponseSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/base/tendermint/v1beta1/query';
+import { SemVer } from 'semver';
 import knex from '../../common/utils/db_connection';
-import { BULL_JOB_NAME, SERVICE } from '../../common';
+import { BULL_JOB_NAME, SERVICE, getLcdClient } from '../../common';
 import {
   PowerEvent,
   Validator,
@@ -25,6 +27,24 @@ export default class HandleStakeEventService extends BullableService {
     Event.EVENT_TYPE.UNBOND,
     Event.EVENT_TYPE.CREATE_VALIDATOR,
   ];
+
+  private cosmosSdkVersion!: SemVer;
+
+  // map to get index of amount attribute inside event stake based on cosmos sdk version
+  private mapIndexAmountWithEventStakes = {
+    '< 0.47.8': {
+      [Event.EVENT_TYPE.DELEGATE]: 1,
+      [Event.EVENT_TYPE.REDELEGATE]: 2,
+      [Event.EVENT_TYPE.UNBOND]: 1,
+      [Event.EVENT_TYPE.CREATE_VALIDATOR]: 1,
+    },
+    '>= 0.47.8': {
+      [Event.EVENT_TYPE.DELEGATE]: 2,
+      [Event.EVENT_TYPE.REDELEGATE]: 2,
+      [Event.EVENT_TYPE.UNBOND]: 1,
+      [Event.EVENT_TYPE.CREATE_VALIDATOR]: 1,
+    },
+  };
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -87,6 +107,11 @@ export default class HandleStakeEventService extends BullableService {
         switch (stakeEvent.type) {
           case PowerEvent.TYPES.DELEGATE: {
             validatorDstId = validatorKeys[firstValidator.value].id;
+            amountRaw = this.getRawAmountByFirstIndex(
+              stakeEvent.attributes,
+              PowerEvent.TYPES.DELEGATE,
+              firstValidator.index
+            );
             break;
           }
           case PowerEvent.TYPES.REDELEGATE:
@@ -98,39 +123,33 @@ export default class HandleStakeEventService extends BullableService {
               return;
             }
             validatorDstId = validatorKeys[destValidator.value].id;
-            amountRaw = stakeEvent.attributes.find(
-              (attr: any) =>
-                attr.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT &&
-                attr.index === firstValidator.index + 2
+            amountRaw = this.getRawAmountByFirstIndex(
+              stakeEvent.attributes,
+              PowerEvent.TYPES.REDELEGATE,
+              firstValidator.index
             );
-            amount = amountRaw?.value
-              ? parseCoins(amountRaw?.value)[0].amount
-              : '0';
             break;
           case PowerEvent.TYPES.UNBOND:
             validatorSrcId = validatorKeys[firstValidator.value].id;
+            amountRaw = this.getRawAmountByFirstIndex(
+              stakeEvent.attributes,
+              PowerEvent.TYPES.UNBOND,
+              firstValidator.index
+            );
             break;
           case PowerEvent.TYPES.CREATE_VALIDATOR:
             validatorDstId = validatorKeys[firstValidator.value].id;
-            amountRaw = stakeEvent.attributes.find(
-              (attr: any) =>
-                attr.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT &&
-                attr.index === firstValidator.index + 1
+            amountRaw = this.getRawAmountByFirstIndex(
+              stakeEvent.attributes,
+              PowerEvent.TYPES.CREATE_VALIDATOR,
+              firstValidator.index
             );
-            amount = amountRaw?.value
-              ? parseCoins(amountRaw?.value)[0].amount
-              : '0';
             break;
           default:
             break;
         }
-        amountRaw = stakeEvent.attributes.find(
-          (attr: any) =>
-            attr.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT &&
-            attr.index === firstValidator.index + 1
-        );
         if (amountRaw) {
-          amount = amount ?? parseCoins(amountRaw?.value)[0].amount;
+          amount = parseCoins(amountRaw?.value)[0].amount;
         }
         const powerEvent: PowerEvent = PowerEvent.fromJson({
           tx_id: stakeEvent.transaction.id,
@@ -148,6 +167,7 @@ export default class HandleStakeEventService extends BullableService {
           `Error create power event: ${JSON.stringify(stakeEvent)}`
         );
         this.logger.error(error);
+        throw error;
       }
     });
 
@@ -175,7 +195,39 @@ export default class HandleStakeEventService extends BullableService {
     });
   }
 
+  public getRawAmountByFirstIndex(
+    attributes: EventAttribute[],
+    action: string,
+    firstIndex: number
+  ) {
+    let indexRule;
+    if (this.cosmosSdkVersion.compare('0.47.8') === -1) {
+      indexRule = this.mapIndexAmountWithEventStakes['< 0.47.8'];
+    } else {
+      indexRule = this.mapIndexAmountWithEventStakes['>= 0.47.8'];
+    }
+
+    const amountRaw = attributes.find(
+      (attr: any) =>
+        attr.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT &&
+        attr.index === firstIndex + indexRule[action]
+    );
+    return amountRaw;
+  }
+
   public async _start() {
+    const lcdClient = await getLcdClient();
+    // set version cosmos sdk to registry
+    const nodeInfo: GetNodeInfoResponseSDKType =
+      await lcdClient.provider.cosmos.base.tendermint.v1beta1.getNodeInfo();
+    if (nodeInfo.application_version?.cosmos_sdk_version) {
+      this.cosmosSdkVersion = new SemVer(
+        nodeInfo.application_version?.cosmos_sdk_version
+      );
+    } else {
+      throw Error('Cannot found cosmos sdk version');
+    }
+
     this.createJob(
       BULL_JOB_NAME.HANDLE_STAKE_EVENT,
       BULL_JOB_NAME.HANDLE_STAKE_EVENT,
