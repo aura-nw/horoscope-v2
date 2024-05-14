@@ -417,7 +417,7 @@ export default class Erc721Service extends BullableService {
       .count('erc721_activity.id AS total_activity')
       .select(
         knex.raw(
-          `SUM( CASE WHEN erc721_activity.height >= ? AND erc721_activity.action IN ('${ERC721_ACTION.TRANSFER}') THEN 1 ELSE 0 END ) AS transfer_24h`,
+          `SUM( CASE WHEN erc721_activity.height >= ? AND erc721_activity.action = '${ERC721_ACTION.TRANSFER}' THEN 1 ELSE 0 END ) AS transfer_24h`,
           blockSince24hAgo[0]?.height
         )
       )
