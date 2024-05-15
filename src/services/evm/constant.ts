@@ -205,6 +205,7 @@ export const BULL_JOB_NAME = {
   HANDLE_ERC721_ACTIVITY: 'handle:erc721-activity',
   HANDLE_ERC721_MEDIA: 'handle:erc721-media',
   HANDLE_ERC721_TOKEN_MEDIA: 'handle:erc721-token-media',
+  REFRESH_ERC721_STATS: 'refresh:erc721-stats',
   SYNC_SOURCIFY: 'sync:sourcify',
 };
 

@@ -18,10 +18,16 @@ import {
   Erc721Activity,
   Erc721Token,
   EvmEvent,
+  Erc721Stats,
+  Block,
 } from '../../models';
 import { Erc721Contract } from '../../models/erc721_contract';
 import { BULL_JOB_NAME, SERVICE } from './constant';
-import { ERC721_EVENT_TOPIC0, Erc721Handler } from './erc721_handler';
+import {
+  ERC721_ACTION,
+  ERC721_EVENT_TOPIC0,
+  Erc721Handler,
+} from './erc721_handler';
 import * as Erc721MediaHandler from './erc721_media_handler';
 
 const { NODE_ENV } = Config;
@@ -253,6 +259,28 @@ export default class Erc721Service extends BullableService {
       });
   }
 
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.REFRESH_ERC721_STATS,
+    jobName: BULL_JOB_NAME.REFRESH_ERC721_STATS,
+  })
+  async jobHandlerRefresh(): Promise<void> {
+    const erc721Stats = await this.calErc721Stats();
+    // Upsert erc721 stats
+    await Erc721Stats.query()
+      .insert(
+        erc721Stats.map((e) =>
+          Erc721Stats.fromJson({
+            total_activity: e.total_activity,
+            transfer_24h: e.transfer_24h,
+            erc721_contract_id: e.erc721_contract_id,
+          })
+        )
+      )
+      .onConflict('erc721_contract_id')
+      .merge()
+      .returning('id');
+  }
+
   @Action({
     name: SERVICE.V1.Erc721.insertNewErc721Contracts.key,
     params: {
@@ -374,6 +402,29 @@ export default class Erc721Service extends BullableService {
         },
       },
     }));
+  }
+
+  async calErc721Stats(): Promise<Erc721Contract[]> {
+    // Get once block height 24h ago.
+    const blockSince24hAgo = await Block.query()
+      .select('height')
+      .where('time', '<=', knex.raw("now() - '24 hours'::interval"))
+      .orderBy('height', 'desc')
+      .limit(1);
+
+    // Calculate total activity and transfer_24h of erc721
+    return Erc721Contract.query()
+      .count('erc721_activity.id AS total_activity')
+      .select(
+        knex.raw(
+          `SUM( CASE WHEN erc721_activity.height >= ? AND erc721_activity.action = '${ERC721_ACTION.TRANSFER}' THEN 1 ELSE 0 END ) AS transfer_24h`,
+          blockSince24hAgo[0]?.height
+        )
+      )
+      .select('erc721_contract.id as erc721_contract_id')
+      .where('erc721_contract.track', '=', true)
+      .joinRelated('erc721_activity')
+      .groupBy('erc721_contract.id');
   }
 
   async handleMissingErc721Contract(events: EvmEvent[], trx: Knex.Transaction) {
@@ -499,6 +550,20 @@ export default class Erc721Service extends BullableService {
           },
           repeat: {
             every: config.erc721.millisecondRepeatJob,
+          },
+        }
+      );
+      await this.createJob(
+        BULL_JOB_NAME.REFRESH_ERC721_STATS,
+        BULL_JOB_NAME.REFRESH_ERC721_STATS,
+        {},
+        {
+          removeOnComplete: { count: 1 },
+          removeOnFail: {
+            count: 3,
+          },
+          repeat: {
+            pattern: config.erc721.timeRefreshErc721Stats,
           },
         }
       );
