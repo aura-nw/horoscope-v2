@@ -272,7 +272,7 @@ export default class Cw20Service extends BullableService {
   }
 
   async handleTotalHolderStatistic(systemDate: Date) {
-    const totalHolder = await Cw20Contract.query()
+    const totalHolders = await Cw20Contract.query()
       .joinRelated('holders')
       .where('cw20_contract.track', true)
       .groupBy('cw20_contract.id')
@@ -282,9 +282,9 @@ export default class Cw20Service extends BullableService {
           'count(CASE when holders.amount > 0 THEN 1 ELSE null END) as count'
         )
       );
-    if (totalHolder.length > 0) {
+    if (totalHolders.length > 0) {
       await CW20TotalHolderStats.query().insert(
-        totalHolder.map((e) =>
+        totalHolders.map((e) =>
           CW20TotalHolderStats.fromJson({
             cw20_contract_id: e.cw20_contract_id,
             total_holder: e.count,
