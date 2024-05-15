@@ -402,7 +402,7 @@ export default class Erc20Service extends BullableService {
   }
 
   async handleTotalHolderStatistic(systemDate: Date) {
-    const totalHolder = await Erc20Contract.query()
+    const totalHolders = await Erc20Contract.query()
       .joinRelated('holders')
       .where('erc20_contract.track', true)
       .groupBy('erc20_contract.id')
@@ -412,9 +412,9 @@ export default class Erc20Service extends BullableService {
           'count(CASE when holders.amount > 0 THEN 1 ELSE null END) as count'
         )
       );
-    if (totalHolder.length > 0) {
+    if (totalHolders.length > 0) {
       await Erc20Statistic.query().insert(
-        totalHolder.map((e) =>
+        totalHolders.map((e) =>
           Erc20Statistic.fromJson({
             erc20_contract_id: e.erc20_contract_id,
             total_holder: e.count,
