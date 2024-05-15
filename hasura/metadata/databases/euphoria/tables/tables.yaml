@@ -23,6 +23,7 @@
 - '!include public_erc20_contract.yaml'
 - '!include public_erc721_activity.yaml'
 - '!include public_erc721_contract.yaml'
+- '!include public_erc721_stats.yaml'
 - '!include public_erc721_token.yaml'
 - '!include public_event.yaml'
 - '!include public_event_attribute.yaml'
