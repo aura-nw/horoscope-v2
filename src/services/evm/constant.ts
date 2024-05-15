@@ -163,6 +163,10 @@ export const SERVICE = {
         key: 'UpdateEvmAssets',
         path: 'v1.UpdateEvmAssets',
       },
+      SyncSourcify: {
+        key: 'SyncSourcify',
+        path: 'v1.SyncSourcify',
+      },
     },
   },
   V2: {
@@ -199,6 +203,9 @@ export const BULL_JOB_NAME = {
   HANDLE_ERC20_BALANCE: 'handle:erc20-balance',
   EVM_CRAWL_INTERNAL_TX: 'crawl:crawl-internal-tx',
   HANDLE_ERC721_ACTIVITY: 'handle:erc721-activity',
+  HANDLE_ERC721_MEDIA: 'handle:erc721-media',
+  HANDLE_ERC721_TOKEN_MEDIA: 'handle:erc721-token-media',
+  SYNC_SOURCIFY: 'sync:sourcify',
 };
 
 export const MSG_TYPE = {

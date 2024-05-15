@@ -1,5 +1,6 @@
 import { Model } from 'objection';
 import BaseModel from './base';
+// eslint-disable-next-line import/no-cycle
 import { Erc721Contract } from './erc721_contract';
 
 export class Erc721Token extends BaseModel {
@@ -14,6 +15,8 @@ export class Erc721Token extends BaseModel {
   id!: number;
 
   erc721_contract_address!: string;
+
+  media_info!: any;
 
   last_updated_height!: number;
 

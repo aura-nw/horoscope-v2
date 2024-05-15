@@ -408,7 +408,9 @@
     "key": "erc721",
     "blocksPerCall": 100,
     "millisecondRepeatJob": 2000,
-    "chunkSizeInsert": 1000
+    "chunkSizeInsert": 1000,
+    "mediaPerBatch": 10,
+    "concurrencyHandleTokenMedia": 10
   },
   "jobRefreshMViewAccountBalanceStatistic": {
     "timeRefreshMViewAccountBalanceStatistic": "*/10 * * * *"
@@ -417,5 +419,9 @@
     "key": "crawlEvmProxyHistory",
     "blocksPerCall": 100,
     "millisecondCrawl": 2000
+  },
+  "jobSyncSourcify": {
+    "millisecondCrawl": 2000,
+    "recordsPerCall": 100
   }
 }
