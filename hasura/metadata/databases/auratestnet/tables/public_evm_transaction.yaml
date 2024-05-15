@@ -31,6 +31,13 @@ array_relationships:
         remote_table:
           name: erc20_activity
           schema: public
+  - name: erc721_activities
+    using:
+      foreign_key_constraint_on:
+        column: evm_tx_id
+        table:
+          name: erc721_activity
+          schema: public
   - name: evm_events
     using:
       manual_configuration:

@@ -420,5 +420,9 @@
     "key": "crawlEvmProxyHistory",
     "blocksPerCall": 100,
     "millisecondCrawl": 2000
+  },
+  "jobSyncSourcify": {
+    "millisecondCrawl": 2000,
+    "recordsPerCall": 100
   }
 }
