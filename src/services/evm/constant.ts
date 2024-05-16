@@ -167,6 +167,14 @@ export const SERVICE = {
         key: 'SyncSourcify',
         path: 'v1.SyncSourcify',
       },
+      InsertVerifyByCodeHash: {
+        key: 'InsertVerifyByCodeHash',
+        path: 'v1.InsertVerifyByCodeHash',
+        action: {
+          key: 'createJobInsertVerifyByCodeHash',
+          path: 'v1.InsertVerifyByCodeHash.createJobInsertVerifyByCodeHash',
+        },
+      },
     },
   },
   V2: {
@@ -206,6 +214,7 @@ export const BULL_JOB_NAME = {
   HANDLE_ERC721_MEDIA: 'handle:erc721-media',
   HANDLE_ERC721_TOKEN_MEDIA: 'handle:erc721-token-media',
   SYNC_SOURCIFY: 'sync:sourcify',
+  INSERT_VERIFY_BY_CODEHASH: 'job:insert-verify-by-codehash',
 };
 
 export const MSG_TYPE = {

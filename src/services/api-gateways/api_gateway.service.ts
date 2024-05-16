@@ -43,6 +43,7 @@ import config from '../../../config.json' assert { type: 'json' };
           'v1.job.redecode-tx',
           'v1.job.update-delegator-validator',
           'v1.job.signature-mapping',
+          'v1.job.insert-verify-by-codehash',
         ],
       },
       {
