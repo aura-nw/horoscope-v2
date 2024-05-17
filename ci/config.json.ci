@@ -424,5 +424,11 @@
   "jobSyncSourcify": {
     "millisecondCrawl": 2000,
     "recordsPerCall": 100
+  },
+  "crawlEvmBlock": {
+    "millisecondCrawl": 5000,
+    "blocksPerCall": 100,
+    "startBlock": 19500000,
+    "saveRawLog": true
   }
 }

@@ -167,6 +167,18 @@ export const SERVICE = {
         key: 'SyncSourcify',
         path: 'v1.SyncSourcify',
       },
+      CreateEVMBlockPartition: {
+        key: 'CreateEVMBlockPartition',
+        path: 'v1.CreateEVMBlockPartition',
+      },
+      CreateConstraintInEVMBlockPartition: {
+        key: 'CreateConstraintInEVMBlockPartition',
+        path: 'v1.CreateConstraintInEVMBlockPartition',
+      },
+    },
+    CrawlEvmBlock: {
+      key: 'CrawlEvmBlock',
+      path: 'v1.CrawlEvmBlock',
     },
   },
   V2: {
@@ -207,6 +219,10 @@ export const BULL_JOB_NAME = {
   HANDLE_ERC721_TOKEN_MEDIA: 'handle:erc721-token-media',
   REFRESH_ERC721_STATS: 'refresh:erc721-stats',
   SYNC_SOURCIFY: 'sync:sourcify',
+  CRAWL_EVM_BLOCK: 'crawl:evm-block',
+  JOB_CREATE_EVM_BLOCK_PARTITION: 'job:create-evm-block-partition',
+  JOB_CHECK_EVM_BLOCK_CONSTRAINT: 'job:check-need-create-evm-block-constraint',
+  JOB_CREATE_EVM_BLOCK_CONSTRAINT: 'job:create-evm-block-constraint',
 };
 
 export const MSG_TYPE = {
