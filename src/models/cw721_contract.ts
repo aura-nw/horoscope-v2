@@ -2,12 +2,14 @@ import { cosmwasm } from '@aura-nw/aurajs';
 import { fromBase64, fromUtf8, toHex, toUtf8 } from '@cosmjs/encoding';
 import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
-import { Model } from 'objection';
 import { Knex } from 'knex';
+import { Model } from 'objection';
 import { getHttpBatchClient } from '../common';
 import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
 import CW721Token from './cw721_token';
+// eslint-disable-next-line import/no-cycle
+import CW721ContractStats from './cw721_stats';
 // eslint-disable-next-line import/no-cycle
 import CW721Activity from './cw721_tx';
 import { SmartContract } from './smart_contract';
@@ -18,7 +20,7 @@ export interface IContractInfoAndMinter {
   symbol?: string;
   minter?: string;
 }
-export default class CW721Contract extends BaseModel {
+export class CW721Contract extends BaseModel {
   static softDelete = false;
 
   [relation: string]: any;
@@ -86,6 +88,14 @@ export default class CW721Contract extends BaseModel {
         join: {
           from: 'cw721_contract.contract_id',
           to: 'smart_contract.id',
+        },
+      },
+      cw721_contract_stats: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: CW721ContractStats,
+        join: {
+          from: 'cw721_contract.id',
+          to: 'cw721_contract_stats.cw721_contract_id',
         },
       },
     };

@@ -9,7 +9,7 @@ import { Errors, ServiceBroker } from 'moleculer';
 import { BULL_JOB_NAME, SERVICE } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
 import { BlockCheckpoint, Code, EventAttribute } from '../../../../src/models';
-import CW721Contract from '../../../../src/models/cw721_contract';
+import { CW721Contract } from '../../../../src/models/cw721_contract';
 import CW721Token from '../../../../src/models/cw721_token';
 import CW721Activity from '../../../../src/models/cw721_tx';
 import { SmartContractEvent } from '../../../../src/models/smart_contract_event';

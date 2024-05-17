@@ -1,6 +1,7 @@
 import { Model } from 'objection';
 import BaseModel from './base';
-import CW721Contract from './cw721_contract';
+// eslint-disable-next-line import/no-cycle
+import { CW721Contract } from './cw721_contract';
 
 export default class CW721ContractStats extends BaseModel {
   static softDelete = false;

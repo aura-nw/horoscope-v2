@@ -1,6 +1,6 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import knex from '../../../../src/common/utils/db_connection';
-import CW721Contract from '../../../../src/models/cw721_contract';
+import { CW721Contract } from '../../../../src/models/cw721_contract';
 import { Code } from '../../../../src/models';
 
 @Describe('Test view count')

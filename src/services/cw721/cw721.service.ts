@@ -18,7 +18,7 @@ import { BULL_JOB_NAME, SERVICE } from '../../common/constant';
 import knex from '../../common/utils/db_connection';
 import { getAttributeFrom } from '../../common/utils/smart_contract';
 import { Block, BlockCheckpoint, EventAttribute } from '../../models';
-import CW721Contract from '../../models/cw721_contract';
+import { CW721Contract } from '../../models/cw721_contract';
 import CW721ContractStats from '../../models/cw721_stats';
 import CW721Token from '../../models/cw721_token';
 import CW721Activity from '../../models/cw721_tx';

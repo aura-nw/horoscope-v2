@@ -1,7 +1,7 @@
 import { Model } from 'objection';
 import BaseModel from './base';
 // eslint-disable-next-line import/no-cycle
-import CW721Contract from './cw721_contract';
+import { CW721Contract } from './cw721_contract';
 import CW721Token from './cw721_token';
 import { Event } from './event';
 import { SmartContractEvent } from './smart_contract_event';
