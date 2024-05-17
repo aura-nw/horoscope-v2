@@ -19,6 +19,13 @@ array_relationships:
         table:
           name: erc721_activity
           schema: public
+  - name: erc721_tokens
+    using:
+      foreign_key_constraint_on:
+        column: erc721_contract_address
+        table:
+          name: erc721_token
+          schema: public
   - name: evm_internal_transaction_from
     using:
       manual_configuration:
