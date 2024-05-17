@@ -175,6 +175,18 @@ export const SERVICE = {
           path: 'v1.InsertVerifyByCodeHash.createJobInsertVerifyByCodeHash',
         },
       },
+      CreateEVMBlockPartition: {
+        key: 'CreateEVMBlockPartition',
+        path: 'v1.CreateEVMBlockPartition',
+      },
+      CreateConstraintInEVMBlockPartition: {
+        key: 'CreateConstraintInEVMBlockPartition',
+        path: 'v1.CreateConstraintInEVMBlockPartition',
+      },
+    },
+    CrawlEvmBlock: {
+      key: 'CrawlEvmBlock',
+      path: 'v1.CrawlEvmBlock',
     },
   },
   V2: {
@@ -216,6 +228,10 @@ export const BULL_JOB_NAME = {
   REFRESH_ERC721_STATS: 'refresh:erc721-stats',
   SYNC_SOURCIFY: 'sync:sourcify',
   INSERT_VERIFY_BY_CODEHASH: 'job:insert-verify-by-codehash',
+  CRAWL_EVM_BLOCK: 'crawl:evm-block',
+  JOB_CREATE_EVM_BLOCK_PARTITION: 'job:create-evm-block-partition',
+  JOB_CHECK_EVM_BLOCK_CONSTRAINT: 'job:check-need-create-evm-block-constraint',
+  JOB_CREATE_EVM_BLOCK_CONSTRAINT: 'job:create-evm-block-constraint',
 };
 
 export const MSG_TYPE = {
