@@ -29,6 +29,8 @@ export class EVMBlock extends BaseModel {
 
   state_root!: string;
 
+  transactions!: any;
+
   static get tableName() {
     return 'evm_block';
   }

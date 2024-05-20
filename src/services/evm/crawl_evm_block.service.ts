@@ -41,7 +41,7 @@ export default class CrawlEvmBlockService extends BullableService {
     this.logger.info(`startBlock: ${startBlock} endBlock: ${endBlock}`);
     const blockQueries = [];
     for (let i = startBlock; i <= endBlock; i += 1) {
-      blockQueries.push(this.etherJsClient.etherJsClient.getBlock(i));
+      blockQueries.push(this.etherJsClient.etherJsClient.getBlock(i, true));
     }
     const res = await Promise.all(blockQueries);
     // this.logger.info(res);
@@ -64,6 +64,7 @@ export default class CrawlEvmBlockService extends BullableService {
               state_root: block.stateRoot,
               tx_count: block.transactions.length,
               extra_data: block.extraData,
+              transactions: JSON.stringify(block.prefetchedTransactions),
             })
           );
         }

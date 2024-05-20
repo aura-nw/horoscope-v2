@@ -17,7 +17,8 @@ export async function up(knex: Knex): Promise<void> {
       nonce text,
       parent_hash text,
       receipts_root text,
-      state_root text
+      state_root text,
+      transactions jsonb
     ) PARTITION BY RANGE(height);
     CREATE INDEX evm_blockheight_index ON evm_block(height);
     CREATE INDEX evm_block_hash_index ON evm_block(hash);
