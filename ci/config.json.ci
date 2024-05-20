@@ -445,5 +445,11 @@
       "millisecondRepeatJob": 10000
     },
     "statementTimeout": 600000
+  },
+  "crawlEvmTransaction": {
+    "key": "crawlEvmTransaction",
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 100,
+    "chunkSize": 1000
   }
 }

@@ -42,6 +42,14 @@ export class EVMTransaction extends BaseModel {
 
   reason!: string;
 
+  gas_used!: bigint;
+
+  gas_price!: bigint;
+
+  gas_limit!: bigint;
+
+  type!: number;
+
   static get tableName() {
     return 'evm_transaction';
   }

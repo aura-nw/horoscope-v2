@@ -180,6 +180,10 @@ export const SERVICE = {
       key: 'CrawlEvmBlock',
       path: 'v1.CrawlEvmBlock',
     },
+    CrawlEvmTransaction: {
+      key: 'CrawlEvmTransaction',
+      path: 'v1.CrawlEvmTransaction',
+    },
   },
   V2: {
     EvmProxyService: {
@@ -223,6 +227,7 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_EVM_BLOCK_PARTITION: 'job:create-evm-block-partition',
   JOB_CHECK_EVM_BLOCK_CONSTRAINT: 'job:check-need-create-evm-block-constraint',
   JOB_CREATE_EVM_BLOCK_CONSTRAINT: 'job:create-evm-block-constraint',
+  CRAWL_EVM_TRANSACTION: 'crawl:evm-transaction',
 };
 
 export const MSG_TYPE = {
