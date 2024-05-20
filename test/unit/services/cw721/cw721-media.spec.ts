@@ -9,7 +9,7 @@ import { ServiceBroker } from 'moleculer';
 import { BULL_JOB_NAME, Config } from '../../../../src/common';
 import Cw721MediaService from '../../../../src/services/cw721/cw721-media.service';
 import { BlockCheckpoint, Code } from '../../../../src/models';
-import CW721Contract from '../../../../src/models/cw721_contract';
+import { CW721Contract } from '../../../../src/models/cw721_contract';
 import knex from '../../../../src/common/utils/db_connection';
 
 const { IPFS_GATEWAY } = Config;

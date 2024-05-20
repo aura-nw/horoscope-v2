@@ -4,7 +4,7 @@ import CW721Activity from '../../models/cw721_tx';
 import { SmartContractEvent } from '../../models/smart_contract_event';
 import { getAttributeFrom } from '../../common/utils/smart_contract';
 import { EventAttribute } from '../../models';
-import CW721Contract from '../../models/cw721_contract';
+import { CW721Contract } from '../../models/cw721_contract';
 
 export const CW721_ACTION = {
   MINT: 'mint',

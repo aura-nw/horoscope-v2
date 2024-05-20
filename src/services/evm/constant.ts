@@ -167,6 +167,10 @@ export const SERVICE = {
         key: 'SyncSourcify',
         path: 'v1.SyncSourcify',
       },
+      UpdateEvmNftAssets: {
+        key: 'UpdateEvmNftAssets',
+        path: 'v1.UpdateEvmNftAssets',
+      },
     },
   },
   V2: {
@@ -207,6 +211,7 @@ export const BULL_JOB_NAME = {
   HANDLE_ERC721_TOKEN_MEDIA: 'handle:erc721-token-media',
   REFRESH_ERC721_STATS: 'refresh:erc721-stats',
   SYNC_SOURCIFY: 'sync:sourcify',
+  JOB_UPDATE_EVM_NFT_ASSETS: 'job:update-evm-nft-assets',
 };
 
 export const MSG_TYPE = {

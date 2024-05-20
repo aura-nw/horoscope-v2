@@ -126,6 +126,7 @@ export const BULL_JOB_NAME = {
   JOB_CW721_UPDATE: 'job:cw721-update',
   CHECKPOINT_UPDATE_DELEGATOR: 'job:checkpoint_update_delegator',
   REFRESH_ACCOUNT_BALANCE_STATISTIC: 'refresh:account-balance-statistic',
+  JOB_UPDATE_NFT_ASSETS: 'job:update-nft-assets',
 };
 
 export const SERVICE = {
@@ -341,6 +342,10 @@ export const SERVICE = {
       UpdateAssets: {
         key: 'UpdateAssets',
         path: 'v1.UpdateAssets',
+      },
+      UpdateNftAssets: {
+        key: 'UpdateNftAssets',
+        path: 'v1.UpdateNftAssets',
       },
       CreateConstraintInTransactionPartition: {
         key: 'CreateConstraintInTransactionPartition',

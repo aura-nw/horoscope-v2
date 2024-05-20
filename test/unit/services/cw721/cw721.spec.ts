@@ -21,7 +21,7 @@ import {
   Transaction,
 } from '../../../../src/models';
 import { Code } from '../../../../src/models/code';
-import CW721Contract from '../../../../src/models/cw721_contract';
+import { CW721Contract } from '../../../../src/models/cw721_contract';
 import CW721Token from '../../../../src/models/cw721_token';
 import CW721Activity from '../../../../src/models/cw721_tx';
 import { SmartContractEvent } from '../../../../src/models/smart_contract_event';

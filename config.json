@@ -422,5 +422,9 @@
   "jobSyncSourcify": {
     "millisecondCrawl": 2000,
     "recordsPerCall": 100
+  },
+  "jobUpdateNftAssets": {
+    "millisecondRepeatJob": 10000,
+    "lcdRecordGet": 5
   }
 }
