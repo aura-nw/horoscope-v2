@@ -7,7 +7,7 @@ export async function up(knex: Knex): Promise<void> {
       height integer,
       tx_count integer,
       base_fee_per_gas numeric(80,0),
-      date timestamp with timezone,
+      date timestamp with time zone,
       difficulty numeric(80,0),
       extra_data text,
       gas_limit numeric(80,0),
