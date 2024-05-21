@@ -58,6 +58,21 @@ const config: { [key: string]: Knex.Config } = {
       max: parseInt(Config.POSTGRES_POOL_MAX ?? '5', 10),
     },
   },
+  sourcify: {
+    client: 'pg',
+    connection: {
+      database: Config.SOURCIFY_POSTGRES_DB,
+      host: Config.SOURCIFY_POSTGRES_HOST,
+      user: Config.SOURCIFY_POSTGRES_USER,
+      password: Config.SOURCIFY_POSTGRES_PASSWORD,
+      port: Config.SOURCIFY_POSTGRES_PORT,
+      statement_timeout: Config.SOURCIFY_POSTGRES_STATEMENT_TIMEOUT,
+    },
+    pool: {
+      min: 1,
+      max: parseInt(Config.SOURCIFY_POSTGRES_POOL_MAX ?? '5', 10),
+    },
+  },
 };
 
 export default config;

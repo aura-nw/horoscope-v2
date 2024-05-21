@@ -36,7 +36,7 @@ export class EVMContractVerification extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['files', 'contract_address', 'status'],
+      required: ['contract_address', 'status'],
       properties: {
         verification_status: {
           type: ['string', 'null'],
