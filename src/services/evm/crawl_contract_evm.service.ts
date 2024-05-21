@@ -164,13 +164,10 @@ export default class CrawlSmartContractEVMService extends BullableService {
         );
       })
     );
-
+    let newEvmContracts: EVMSmartContract[] = [];
     await knex.transaction(async (trx) => {
       if (evmContracts.length > 0) {
-        const newEvmContracts: EVMSmartContract[] = _.uniqBy(
-          evmContracts,
-          'address'
-        );
+        newEvmContracts = _.uniqBy(evmContracts, 'address');
         await EVMSmartContract.query().insert(newEvmContracts).transacting(trx);
       }
       if (blockCheckpoint) {
@@ -184,6 +181,26 @@ export default class CrawlSmartContractEVMService extends BullableService {
           .transacting(trx);
       }
     });
+    if (newEvmContracts.length > 0) {
+      await Promise.all(
+        newEvmContracts.map(async (evmContract) => {
+          await this.createJob(
+            BULL_JOB_NAME.INSERT_VERIFY_BY_CODEHASH,
+            BULL_JOB_NAME.INSERT_VERIFY_BY_CODEHASH,
+            {
+              codehash: evmContract.code_hash,
+            },
+            {
+              jobId: evmContract.code_hash,
+              removeOnComplete: true,
+              removeOnFail: {
+                count: 3,
+              },
+            }
+          );
+        })
+      );
+    }
   }
 
   detectContractTypeByCode(code: string): string | null {
