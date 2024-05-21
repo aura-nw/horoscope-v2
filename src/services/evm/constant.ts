@@ -159,6 +159,10 @@ export const SERVICE = {
         key: 'UpdateEvmAssets',
         path: 'v1.UpdateEvmAssets',
       },
+      SyncSourcify: {
+        key: 'SyncSourcify',
+        path: 'v1.SyncSourcify',
+      },
       InsertVerifyByCodeHash: {
         key: 'InsertVerifyByCodeHash',
         path: 'v1.InsertVerifyByCodeHash',
@@ -202,6 +206,7 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_EVM_EVENT_PARTITION: 'job:create-evm-event-partition',
   HANDLE_ERC20_BALANCE: 'handle:erc20-balance',
   EVM_CRAWL_INTERNAL_TX: 'crawl:crawl-internal-tx',
+  SYNC_SOURCIFY: 'sync:sourcify',
   INSERT_VERIFY_BY_CODEHASH: 'job:insert-verify-by-codehash',
 };
 
