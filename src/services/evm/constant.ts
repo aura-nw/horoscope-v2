@@ -159,6 +159,14 @@ export const SERVICE = {
         key: 'UpdateEvmAssets',
         path: 'v1.UpdateEvmAssets',
       },
+      InsertVerifyByCodeHash: {
+        key: 'InsertVerifyByCodeHash',
+        path: 'v1.InsertVerifyByCodeHash',
+        action: {
+          key: 'createJobInsertVerifyByCodeHash',
+          path: 'v1.InsertVerifyByCodeHash.createJobInsertVerifyByCodeHash',
+        },
+      },
     },
   },
   V2: {
@@ -194,6 +202,7 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_EVM_EVENT_PARTITION: 'job:create-evm-event-partition',
   HANDLE_ERC20_BALANCE: 'handle:erc20-balance',
   EVM_CRAWL_INTERNAL_TX: 'crawl:crawl-internal-tx',
+  INSERT_VERIFY_BY_CODEHASH: 'job:insert-verify-by-codehash',
 };
 
 export const MSG_TYPE = {
