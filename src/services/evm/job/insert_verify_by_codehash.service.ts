@@ -100,6 +100,7 @@ export default class InsertVerifyByCodeHash extends BullableService {
         codehash: ctx.params.codehash,
       },
       {
+        jobId: ctx.params.codehash,
         removeOnComplete: true,
         removeOnFail: {
           count: 3,
