@@ -1,24 +1,29 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+import { PublicClient } from 'viem';
 import { BlockCheckpoint, EVMBlock } from '../../models';
 import EtherJsClient from '../../common/utils/etherjs_client';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from './constant';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
+import '../../../fetch-polyfill.js';
 
 @Service({
   name: SERVICE.V1.CrawlEvmBlock.key,
   version: 1,
 })
 export default class CrawlEvmBlockService extends BullableService {
-  etherJsClient!: EtherJsClient;
+  viemJsClient!: PublicClient;
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_EVM_BLOCK,
     jobName: BULL_JOB_NAME.CRAWL_EVM_BLOCK,
   })
   async crawlEvmBlock() {
-    const latestBlock = await this.etherJsClient.etherJsClient.getBlockNumber();
+    const latestBlock = parseInt(
+      (await this.viemJsClient.getBlockNumber()).toString(),
+      10
+    );
     this.logger.info(`Latest block network: ${latestBlock}`);
 
     let blockCheckpoint = await BlockCheckpoint.query().findOne({
@@ -41,7 +46,12 @@ export default class CrawlEvmBlockService extends BullableService {
     this.logger.info(`startBlock: ${startBlock} endBlock: ${endBlock}`);
     const blockQueries = [];
     for (let i = startBlock; i <= endBlock; i += 1) {
-      blockQueries.push(this.etherJsClient.etherJsClient.getBlock(i, true));
+      blockQueries.push(
+        this.viemJsClient.getBlock({
+          blockNumber: BigInt(i),
+          includeTransactions: true,
+        })
+      );
     }
     const res = await Promise.all(blockQueries);
     // this.logger.info(res);
@@ -54,7 +64,7 @@ export default class CrawlEvmBlockService extends BullableService {
               height: block.number,
               hash: block.hash,
               parent_hash: block.parentHash,
-              date: block.date,
+              date: new Date(parseInt(block.timestamp.toString(), 10)),
               difficulty: block.difficulty,
               gas_limit: block.gasLimit,
               gas_used: block.gasUsed,
@@ -64,7 +74,9 @@ export default class CrawlEvmBlockService extends BullableService {
               state_root: block.stateRoot,
               tx_count: block.transactions.length,
               extra_data: block.extraData,
-              transactions: JSON.stringify(block.prefetchedTransactions),
+              transactions: JSON.stringify(block.transactions, (key, value) =>
+                typeof value === 'bigint' ? value.toString() : value
+              ),
             })
           );
         }
@@ -87,7 +99,7 @@ export default class CrawlEvmBlockService extends BullableService {
   }
 
   public async _start(): Promise<void> {
-    this.etherJsClient = new EtherJsClient();
+    this.viemJsClient = EtherJsClient.getViemClient();
     this.createJob(
       BULL_JOB_NAME.CRAWL_EVM_BLOCK,
       BULL_JOB_NAME.CRAWL_EVM_BLOCK,
