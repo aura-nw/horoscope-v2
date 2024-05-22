@@ -135,6 +135,18 @@ export default class CrawlEvmTransactionService extends BullableService {
           .onConflict('job_name')
           .merge()
           .transacting(trx);
+
+        // insert block checkpoint evm event
+        await BlockCheckpoint.query()
+          .insert(
+            BlockCheckpoint.fromJson({
+              job_name: BULL_JOB_NAME.JOB_CRAWL_EVM_EVENT,
+              height: endBlock,
+            })
+          )
+          .onConflict('job_name')
+          .merge()
+          .transacting(trx);
       }
     });
   }
