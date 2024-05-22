@@ -451,5 +451,10 @@
     "millisecondCrawl": 1000,
     "blocksPerCall": 100,
     "chunkSize": 1000
+  },
+  "crawlEvmAccount": {
+    "key": "crawlEvmAccount",
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 100
   }
 }
