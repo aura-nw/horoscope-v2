@@ -1,19 +1,22 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { TransactionReceipt, TransactionResponse } from 'ethers';
+import { TransactionResponse } from 'ethers';
 import { fromHex } from '@cosmjs/encoding';
+import { PublicClient, TransactionReceipt } from 'viem';
+import _ from 'lodash';
 import { BlockCheckpoint, EVMBlock } from '../../models';
 import EtherJsClient from '../../common/utils/etherjs_client';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from './constant';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
+import '../../../fetch-polyfill.js';
 
 @Service({
   name: SERVICE.V1.CrawlEvmTransaction.key,
   version: 1,
 })
 export default class CrawlEvmTransactionService extends BullableService {
-  etherJsClient!: EtherJsClient;
+  viemJsClient!: PublicClient;
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_EVM_TRANSACTION,
@@ -54,7 +57,8 @@ export default class CrawlEvmTransactionService extends BullableService {
     const evmEvents: any[] = [];
     offchainTxs.forEach((offchainTx) => {
       const receiptTx = receiptTxs.find(
-        (tx) => tx && tx.hash && tx.hash === offchainTx.hash
+        (tx) =>
+          tx && tx.transactionHash && tx.transactionHash === offchainTx.hash
       );
       if (!receiptTx) {
         throw Error('Transaction receipt not found');
@@ -84,38 +88,31 @@ export default class CrawlEvmTransactionService extends BullableService {
         height: offchainTx.blockNumber,
         index: offchainTx.index,
         gas_used: receiptTx.gasUsed,
-        gas_price: receiptTx.gasPrice,
+        gas_price: receiptTx.effectiveGasPrice,
         gas_limit: offchainTx.gasLimit,
         type: offchainTx.type,
-        status: receiptTx.status,
+        status: receiptTx.status === 'success' ? 1 : 0,
         contract_address: receiptTx.contractAddress,
       });
     });
 
     await knex.transaction(async (trx) => {
       if (evmTxs.length > 0) {
-        // const resultInsertTxs = await EVMTransaction.query()
-        //   .insert(evmTxs)
-        //   .transacting(trx);
-        const resultInsertTxs = await knex
-          .batchInsert(
-            'evm_transaction',
-            evmTxs,
-            config.crawlEvmTransaction.chunkSize
-          )
-          .returning(['id', 'hash'])
-          .transacting(trx);
-        this.logger.debug('result insert evmTxs: ', resultInsertTxs);
+        const insertedTxByHash = _.keyBy(
+          await knex
+            .batchInsert(
+              'evm_transaction',
+              evmTxs,
+              config.crawlEvmTransaction.chunkSize
+            )
+            .returning(['id', 'hash'])
+            .transacting(trx),
+          'hash'
+        );
         if (evmEvents.length > 0) {
           evmEvents.forEach((evmEvent) => {
-            const foundTx = resultInsertTxs.find(
-              (tx) => tx.hash === evmEvent.tx_hash
-            );
-            if (!foundTx) {
-              throw Error('Transaction not found');
-            }
             // eslint-disable-next-line no-param-reassign
-            evmEvent.evm_tx_id = foundTx.id;
+            evmEvent.evm_tx_id = insertedTxByHash[evmEvent.tx_hash].id;
           });
           const resultInsert = await knex
             .batchInsert(
@@ -151,16 +148,14 @@ export default class CrawlEvmTransactionService extends BullableService {
     });
   }
 
-  async getListTxReceipt(
-    blocks: EVMBlock[]
-  ): Promise<(TransactionReceipt | null)[]> {
+  async getListTxReceipt(blocks: EVMBlock[]): Promise<TransactionReceipt[]> {
     const promises = [];
     for (let i = 0; i < blocks.length; i += 1) {
       const block = blocks[i];
       for (let j = 0; j < block.transactions.length; j += 1) {
         const tx = block.transactions[j];
         promises.push(
-          this.etherJsClient.etherJsClient.getTransactionReceipt(tx.hash)
+          this.viemJsClient.getTransactionReceipt({ hash: tx.hash })
         );
       }
     }
@@ -169,7 +164,7 @@ export default class CrawlEvmTransactionService extends BullableService {
   }
 
   public async _start(): Promise<void> {
-    this.etherJsClient = new EtherJsClient();
+    this.viemJsClient = EtherJsClient.getViemClient();
     this.createJob(
       BULL_JOB_NAME.CRAWL_EVM_TRANSACTION,
       BULL_JOB_NAME.CRAWL_EVM_TRANSACTION,
