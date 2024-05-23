@@ -92,6 +92,7 @@ export default class CrawlEvmTransactionService extends BullableService {
         type: offchainTx.type,
         status: receiptTx.status === 'success' ? 1 : 0,
         contract_address: receiptTx.contractAddress,
+        value: offchainTx.value,
       });
     });
 
