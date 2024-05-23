@@ -1,7 +1,6 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { TransactionResponse } from 'ethers';
 import { fromHex } from '@cosmjs/encoding';
-import { PublicClient, TransactionReceipt } from 'viem';
+import { PublicClient, TransactionReceipt, FormattedTransaction } from 'viem';
 import _ from 'lodash';
 import { BlockCheckpoint, EVMBlock } from '../../models';
 import EtherJsClient from '../../common/utils/etherjs_client';
@@ -42,7 +41,7 @@ export default class CrawlEvmTransactionService extends BullableService {
       .where('height', '<=', endBlock)
       .orderBy('height', 'asc');
 
-    const offchainTxs: TransactionResponse[] = blocks
+    const offchainTxs: FormattedTransaction[] = blocks
       .map((block) => block.transactions)
       .flat();
     const receiptTxs = await this.getListTxReceipt(blocks);
@@ -83,13 +82,13 @@ export default class CrawlEvmTransactionService extends BullableService {
         from: offchainTx.from.toLowerCase(),
         to: offchainTx.to?.toLowerCase(),
         hash: offchainTx.hash,
-        data: offchainTx.data === '0x' ? null : offchainTx.data.substring(2),
+        data: offchainTx.input ? offchainTx.input.substring(2) : null,
         nonce: offchainTx.nonce,
         height: offchainTx.blockNumber,
-        index: offchainTx.index,
+        index: offchainTx.transactionIndex,
         gas_used: receiptTx.gasUsed,
         gas_price: receiptTx.effectiveGasPrice,
-        gas_limit: offchainTx.gasLimit,
+        gas: offchainTx.gas,
         type: offchainTx.type,
         status: receiptTx.status === 'success' ? 1 : 0,
         contract_address: receiptTx.contractAddress,
