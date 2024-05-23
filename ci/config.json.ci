@@ -1,5 +1,6 @@
 {
   "chainId": "aura-testnet-2",
+  "chainName": "aura",
   "networkPrefixAddress": "aura",
   "consensusPrefixAddress": "valcons",
   "validatorPrefixAddress": "valoper",
