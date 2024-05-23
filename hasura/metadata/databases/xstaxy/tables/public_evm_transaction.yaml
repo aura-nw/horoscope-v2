@@ -31,6 +31,15 @@ array_relationships:
         remote_table:
           name: erc20_activity
           schema: public
+  - name: erc721_activities
+    using:
+      manual_configuration:
+        column_mapping:
+          id: evm_tx_id
+        insertion_order: null
+        remote_table:
+          name: erc721_activity
+          schema: public
   - name: evm_events
     using:
       manual_configuration:
