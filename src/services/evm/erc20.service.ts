@@ -175,14 +175,20 @@ export default class Erc20Service extends BullableService {
       )
     );
     if (missingAccountsAddress.length > 0) {
-      // crawl missing Account and requery erc20Activities
-      await this.broker.call(
-        COSMOS_SERVICE.V1.HandleAddressService.CrawlNewAccountApi.path,
-        {
-          addresses: missingAccountsAddress,
-        }
-      );
-      erc20Activities = await this.getErc20Activities(startBlock, endBlock);
+      try {
+        // crawl missing Account and requery erc20Activities
+        await this.broker.call(
+          COSMOS_SERVICE.V1.HandleAddressService.CrawlNewAccountApi.path,
+          {
+            addresses: missingAccountsAddress,
+          }
+        );
+        erc20Activities = await this.getErc20Activities(startBlock, endBlock);
+      } catch (error) {
+        this.logger.error(
+          `Unable crawl missing account: ${  missingAccountsAddress}`
+        );
+      }
     }
     await knex.transaction(async (trx) => {
       if (erc20Activities.length > 0) {
