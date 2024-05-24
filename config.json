@@ -422,5 +422,15 @@
   "jobSyncSourcify": {
     "millisecondCrawl": 2000,
     "recordsPerCall": 100
+  },
+  "viemConfig": {
+    "multicall": {
+      "batchSize": 10,
+      "waitMilisecond": 1000
+    },
+    "transport": {
+      "batchSize": 10,
+      "waitMilisecond": 1000
+    }
   }
 }
