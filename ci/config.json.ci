@@ -424,5 +424,26 @@
   "jobSyncSourcify": {
     "millisecondCrawl": 2000,
     "recordsPerCall": 100
+  },
+  "crawlEvmBlock": {
+    "millisecondCrawl": 5000,
+    "blocksPerCall": 100,
+    "startBlock": 19500000,
+    "saveRawLog": true
+  },
+  "createEvmBlockToPartition": {
+    "startId": 0,
+    "endId": 100000000,
+    "step": 100000000
+  },
+  "jobCheckNeedCreateEVMBlockPartition": {
+    "millisecondCrawl": 10000,
+    "templateTable": "evm_block"
+  },
+  "jobCreateConstraintInEVMBlockPartition": {
+    "jobRepeatCheckNeedCreateConstraint": {
+      "millisecondRepeatJob": 10000
+    },
+    "statementTimeout": 600000
   }
 }
