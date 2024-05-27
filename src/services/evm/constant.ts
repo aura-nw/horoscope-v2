@@ -117,6 +117,10 @@ export const SERVICE = {
     Erc721: {
       key: 'Erc721',
       path: 'v1.Erc721',
+      insertNewErc721Contracts: {
+        key: 'insertNewErc721Contracts',
+        path: 'v1.Erc721.insertNewErc721Contracts',
+      },
     },
     SignatureMappingEVM: {
       key: 'SignatureMappingEVM',
@@ -206,8 +210,12 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_EVM_EVENT_PARTITION: 'job:create-evm-event-partition',
   HANDLE_ERC20_BALANCE: 'handle:erc20-balance',
   EVM_CRAWL_INTERNAL_TX: 'crawl:crawl-internal-tx',
+  HANDLE_ERC721_ACTIVITY: 'handle:erc721-activity',
   SYNC_SOURCIFY: 'sync:sourcify',
   INSERT_VERIFY_BY_CODEHASH: 'job:insert-verify-by-codehash',
+  HANDLE_ERC721_MEDIA: 'handle:erc721-media',
+  HANDLE_ERC721_TOKEN_MEDIA: 'handle:erc721-token-media',
+  REFRESH_ERC721_STATS: 'refresh:erc721-stats',
 };
 
 export const MSG_TYPE = {
