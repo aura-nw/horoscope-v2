@@ -1,12 +1,18 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+import _, { Dictionary } from 'lodash';
 import { PublicClient } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
-import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { BULL_JOB_NAME, SERVICE, ZERO_ADDRESS } from './constant';
-import { Account, BlockCheckpoint, EVMTransaction } from '../../models';
-import EtherJsClient from '../../common/utils/etherjs_client';
 import '../../../fetch-polyfill.js';
+import BullableService, { QueueHandler } from '../../base/bullable.service';
 import knex from '../../common/utils/db_connection';
+import EtherJsClient from '../../common/utils/etherjs_client';
+import {
+  Account,
+  AccountBalance,
+  BlockCheckpoint,
+  EVMTransaction,
+} from '../../models';
+import { BULL_JOB_NAME, SERVICE, ZERO_ADDRESS } from './constant';
 
 @Service({
   name: SERVICE.V1.CrawlEvmAccount.key,
@@ -45,15 +51,29 @@ export default class CrawlEvmAccountService extends BullableService {
           accountsAddress.add(partcicipant.to);
         }
       });
-      const accounts = await this.getEvmAccountInstances(
+      const [accountsInstances, height] = await this.getEvmAccountInstances(
         Array.from(accountsAddress)
       );
-      if (accounts.length > 0) {
-        await Account.query()
-          .transacting(trx)
-          .insert(accounts)
-          .onConflict(['address'])
-          .merge();
+      if (accountsInstances.length > 0) {
+        const accounts: Dictionary<Account> = _.keyBy(
+          await Account.query()
+            .transacting(trx)
+            .insert(accountsInstances)
+            .onConflict(['address'])
+            .merge(),
+          'address'
+        );
+        await AccountBalance.query().insert(
+          accountsInstances.map((e) =>
+            AccountBalance.fromJson({
+              denom: config.networkDenom,
+              amount: e.balances[0].amount,
+              last_updated_height: height,
+              account_id: accounts[e.address].id,
+              type: AccountBalance.TYPE.NATIVE,
+            })
+          )
+        );
       }
       if (blockCheckpoint) {
         blockCheckpoint.height = endBlock;
@@ -66,31 +86,36 @@ export default class CrawlEvmAccountService extends BullableService {
     });
   }
 
-  async getEvmAccountInstances(participants: string[]) {
-    const balances = await Promise.all(
-      participants.map((addr) =>
+  async getEvmAccountInstances(
+    participants: string[]
+  ): Promise<[Account[], number]> {
+    const [height, ...results] = await Promise.all([
+      this.viemClient.getBlockNumber(),
+      ...participants.map((addr) =>
         this.viemClient.getBalance({ address: addr as `0x${string}` })
-      )
-    );
-    const nonces = await Promise.all(
-      participants.map((addr) =>
+      ),
+      ...participants.map((addr) =>
         this.viemClient.getTransactionCount({ address: addr as `0x${string}` })
-      )
-    );
-    return participants.map((e, index) =>
-      Account.fromJson({
-        address: e,
-        balances: [{ denom: config.networkDenom, amount: balances[index] }],
-        spendable_balances: [
-          { denom: config.networkDenom, amount: balances[index] },
-        ],
-        type: null,
-        pubkey: {},
-        account_number: 0,
-        sequence: nonces[index],
-        evm_address: e,
-      })
-    );
+      ),
+    ]);
+    const {length} = participants;
+    return [
+      participants.map((e, index) =>
+        Account.fromJson({
+          address: e,
+          balances: [{ denom: config.networkDenom, amount: results[index] }],
+          spendable_balances: [
+            { denom: config.networkDenom, amount: results[index] },
+          ],
+          type: null,
+          pubkey: {},
+          account_number: 0,
+          sequence: results[length + index],
+          evm_address: e,
+        })
+      ),
+      Number(height),
+    ];
   }
 
   public async _start(): Promise<void> {
