@@ -30,24 +30,24 @@ export default class CrawlEvmAccountService extends BullableService {
       `Crawl evm_account from block ${startBlock} to ${endBlock}`
     );
     await knex.transaction(async (trx) => {
-      const participants = (
-        await EVMTransaction.query()
-          .where('height', '>', startBlock)
-          .where('height', '<=', endBlock)
-          .orderBy('height', 'asc')
-          .select('from', 'to')
-          .transacting(trx)
-      ).reduce((acc: string[], curr) => {
-        if (curr.from !== ZERO_ADDRESS) {
-          acc.push(curr.from);
+      const accountsAddress: Set<string> = new Set();
+      const participants = await EVMTransaction.query()
+        .where('height', '>', startBlock)
+        .where('height', '<=', endBlock)
+        .orderBy('height', 'asc')
+        .select('from', 'to')
+        .transacting(trx);
+      participants.forEach((partcicipant) => {
+        if (partcicipant.from !== ZERO_ADDRESS) {
+          accountsAddress.add(partcicipant.from);
         }
-        if (curr.to && curr.to !== ZERO_ADDRESS) {
-          acc.push(curr.to);
+        if (partcicipant.to && partcicipant.to !== ZERO_ADDRESS) {
+          accountsAddress.add(partcicipant.to);
         }
-        return acc;
-      }, []);
-      const uniqueParticipants = Array.from(new Set(participants));
-      const accounts = await this.getEvmAccountInstances(uniqueParticipants);
+      });
+      const accounts = await this.getEvmAccountInstances(
+        Array.from(accountsAddress)
+      );
       if (accounts.length > 0) {
         await Account.query()
           .transacting(trx)
