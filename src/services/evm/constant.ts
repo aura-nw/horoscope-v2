@@ -188,6 +188,14 @@ export const SERVICE = {
       key: 'CrawlEvmAccount',
       path: 'v1.CrawlEvmAccount',
     },
+    InsertVerifyByCodeHash: {
+      key: 'InsertVerifyByCodeHash',
+      path: 'v1.InsertVerifyByCodeHash',
+      action: {
+        key: 'createJobInsertVerifyByCodeHash',
+        path: 'v1.InsertVerifyByCodeHash.createJobInsertVerifyByCodeHash',
+      },
+    },
   },
   V2: {
     EvmProxyService: {
@@ -233,6 +241,7 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_EVM_BLOCK_CONSTRAINT: 'job:create-evm-block-constraint',
   CRAWL_EVM_TRANSACTION: 'crawl:evm-transaction',
   CRAWL_EVM_ACCOUNT: 'crawl:evm-account',
+  INSERT_VERIFY_BY_CODEHASH: 'job:insert-verify-by-codehash',
 };
 
 export const MSG_TYPE = {

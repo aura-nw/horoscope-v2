@@ -144,4 +144,33 @@ export default class JobService extends BaseService {
       }
     );
   }
+
+  @Post('/insert-verify-by-codehash', {
+    name: 'insert-verify-by-codehash',
+    params: {
+      chainid: {
+        type: 'string',
+        optional: false,
+        enum: networks.map((network) => network.chainId),
+      },
+      codehash: {
+        type: 'string',
+        optional: false,
+      },
+    },
+  })
+  async insertVerifyByCodeHash(
+    ctx: Context<{ chainid: string; codehash: string }, Record<string, unknown>>
+  ) {
+    const selectedChain = networks.find(
+      (network) => network.chainId === ctx.params.chainid
+    );
+
+    await this.broker.call(
+      `${EVM_SERVICE.V1.JobService.InsertVerifyByCodeHash.action.path}@${selectedChain?.moleculerNamespace}`,
+      {
+        codehash: ctx.params.codehash,
+      }
+    );
+  }
 }
