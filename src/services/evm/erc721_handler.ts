@@ -1,6 +1,7 @@
 import { Dictionary } from 'lodash';
 import Moleculer from 'moleculer';
 import { decodeAbiParameters, keccak256, toHex } from 'viem';
+import { Knex } from 'knex';
 import { Erc721Activity, Erc721Token, EvmEvent } from '../../models';
 import { ZERO_ADDRESS } from './constant';
 
@@ -178,5 +179,53 @@ export class Erc721Handler {
       logger.error(e);
       return undefined;
     }
+  }
+
+  static async getErc721Activities(
+    startBlock: number,
+    endBlock: number,
+    trx: Knex.Transaction,
+    logger: Moleculer.LoggerInstance
+  ) {
+    const erc721Events = await EvmEvent.query()
+      .transacting(trx)
+      .joinRelated('[evm_smart_contract,evm_transaction]')
+      .innerJoin(
+        'erc721_contract',
+        'evm_event.address',
+        'erc721_contract.address'
+      )
+      .where('evm_event.block_height', '>', startBlock)
+      .andWhere('evm_event.block_height', '<=', endBlock)
+      .orderBy('evm_event.id', 'asc')
+      .select(
+        'evm_event.*',
+        'evm_transaction.from as sender',
+        'evm_smart_contract.id as evm_smart_contract_id',
+        'evm_transaction.id as evm_tx_id',
+        'erc721_contract.track as track'
+      );
+    const erc721Activities: Erc721Activity[] = [];
+    erc721Events
+      .filter((e) => e.track)
+      .forEach((e) => {
+        if (e.topic0 === ERC721_EVENT_TOPIC0.TRANSFER) {
+          const activity = Erc721Handler.buildTransferActivity(e, logger);
+          if (activity) {
+            erc721Activities.push(activity);
+          }
+        } else if (e.topic0 === ERC721_EVENT_TOPIC0.APPROVAL) {
+          const activity = Erc721Handler.buildApprovalActivity(e, logger);
+          if (activity) {
+            erc721Activities.push(activity);
+          }
+        } else if (e.topic0 === ERC721_EVENT_TOPIC0.APPROVAL_FOR_ALL) {
+          const activity = Erc721Handler.buildApprovalForAllActivity(e, logger);
+          if (activity) {
+            erc721Activities.push(activity);
+          }
+        }
+      });
+    return erc721Activities;
   }
 }

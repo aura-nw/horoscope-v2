@@ -13,21 +13,16 @@ import { Config } from '../../common';
 import knex from '../../common/utils/db_connection';
 import EtherJsClient from '../../common/utils/etherjs_client';
 import {
+  Block,
   BlockCheckpoint,
   EVMSmartContract,
   Erc721Activity,
-  Erc721Token,
-  EvmEvent,
   Erc721Stats,
-  Block,
+  Erc721Token,
 } from '../../models';
 import { Erc721Contract } from '../../models/erc721_contract';
 import { BULL_JOB_NAME, SERVICE } from './constant';
-import {
-  ERC721_ACTION,
-  ERC721_EVENT_TOPIC0,
-  Erc721Handler,
-} from './erc721_handler';
+import { ERC721_ACTION, Erc721Handler } from './erc721_handler';
 import * as Erc721MediaHandler from './erc721_media_handler';
 
 const { NODE_ENV } = Config;
@@ -91,55 +86,14 @@ export default class Erc721Service extends BullableService {
           ],
           config.erc721.key
         );
-      const erc721Events = await EvmEvent.query()
-        .transacting(trx)
-        .joinRelated('[evm_smart_contract,evm_transaction]')
-        .innerJoin(
-          'erc721_contract',
-          'evm_event.address',
-          'erc721_contract.address'
-        )
-        .where('evm_event.block_height', '>', startBlock)
-        .andWhere('evm_event.block_height', '<=', endBlock)
-        .orderBy('evm_event.id', 'asc')
-        .select(
-          'evm_event.*',
-          'evm_transaction.from as sender',
-          'evm_smart_contract.id as evm_smart_contract_id',
-          'evm_transaction.id as evm_tx_id',
-          'erc721_contract.track as track'
+      const erc721Activities: Erc721Activity[] =
+        await Erc721Handler.getErc721Activities(
+          startBlock,
+          endBlock,
+          trx,
+          this.logger
         );
-      await this.handleMissingErc721Contract(erc721Events, trx);
-      const erc721Activities: Erc721Activity[] = [];
-      erc721Events
-        .filter((e) => e.track)
-        .forEach((e) => {
-          if (e.topic0 === ERC721_EVENT_TOPIC0.TRANSFER) {
-            const activity = Erc721Handler.buildTransferActivity(
-              e,
-              this.logger
-            );
-            if (activity) {
-              erc721Activities.push(activity);
-            }
-          } else if (e.topic0 === ERC721_EVENT_TOPIC0.APPROVAL) {
-            const activity = Erc721Handler.buildApprovalActivity(
-              e,
-              this.logger
-            );
-            if (activity) {
-              erc721Activities.push(activity);
-            }
-          } else if (e.topic0 === ERC721_EVENT_TOPIC0.APPROVAL_FOR_ALL) {
-            const activity = Erc721Handler.buildApprovalForAllActivity(
-              e,
-              this.logger
-            );
-            if (activity) {
-              erc721Activities.push(activity);
-            }
-          }
-        });
+      await this.handleMissingErc721Contract(erc721Activities, trx);
       if (erc721Activities.length > 0) {
         const erc721Tokens = _.keyBy(
           await Erc721Token.query()
@@ -427,9 +381,15 @@ export default class Erc721Service extends BullableService {
       .groupBy('erc721_contract.id');
   }
 
-  async handleMissingErc721Contract(events: EvmEvent[], trx: Knex.Transaction) {
+  async handleMissingErc721Contract(
+    erc721Activities: Erc721Activity[],
+    trx: Knex.Transaction
+  ) {
     try {
-      const eventsUniqByAddress = _.keyBy(events, (e) => e.address);
+      const eventsUniqByAddress = _.keyBy(
+        erc721Activities,
+        (e) => e.erc721_contract_address
+      );
       const addresses = Object.keys(eventsUniqByAddress);
       const erc721ContractsByAddress = _.keyBy(
         await Erc721Contract.query()
