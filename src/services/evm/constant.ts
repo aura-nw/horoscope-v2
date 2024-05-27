@@ -163,6 +163,18 @@ export const SERVICE = {
         key: 'UpdateEvmAssets',
         path: 'v1.UpdateEvmAssets',
       },
+      SyncSourcify: {
+        key: 'SyncSourcify',
+        path: 'v1.SyncSourcify',
+      },
+      InsertVerifyByCodeHash: {
+        key: 'InsertVerifyByCodeHash',
+        path: 'v1.InsertVerifyByCodeHash',
+        action: {
+          key: 'createJobInsertVerifyByCodeHash',
+          path: 'v1.InsertVerifyByCodeHash.createJobInsertVerifyByCodeHash',
+        },
+      },
     },
   },
   V2: {
@@ -199,6 +211,8 @@ export const BULL_JOB_NAME = {
   HANDLE_ERC20_BALANCE: 'handle:erc20-balance',
   EVM_CRAWL_INTERNAL_TX: 'crawl:crawl-internal-tx',
   HANDLE_ERC721_ACTIVITY: 'handle:erc721-activity',
+  SYNC_SOURCIFY: 'sync:sourcify',
+  INSERT_VERIFY_BY_CODEHASH: 'job:insert-verify-by-codehash',
 };
 
 export const MSG_TYPE = {

@@ -84,7 +84,10 @@ export default class Erc20Service extends BullableService {
       const [startBlock, endBlock, updateBlockCheckpoint] =
         await BlockCheckpoint.getCheckpoint(
           BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY,
-          [BULL_JOB_NAME.HANDLE_ERC20_CONTRACT],
+          [
+            BULL_JOB_NAME.HANDLE_ERC20_CONTRACT,
+            BULL_JOB_NAME.HANDLE_EVM_PROXY_HISTORY,
+          ],
           config.erc20.key
         );
       // TODO: handle track erc20 contract only

@@ -2,6 +2,7 @@
 import { Model } from 'objection';
 import BaseModel from './base';
 import { EvmProxyHistory } from './evm_proxy_history';
+import { EVMContractVerification } from './evm_contract_verification';
 
 export class EVMSmartContract extends BaseModel {
   [relation: string]: any;
@@ -66,6 +67,14 @@ export class EVMSmartContract extends BaseModel {
         join: {
           from: 'evm_smart_contract.address',
           to: 'evm_proxy_history.proxy_contract',
+        },
+      },
+      evm_contract_verifications: {
+        relation: Model.HasManyRelation,
+        modelClass: EVMContractVerification,
+        join: {
+          from: 'evm_smart_contract.address',
+          to: 'evm_contract_verification.contract_address',
         },
       },
     };
