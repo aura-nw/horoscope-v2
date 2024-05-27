@@ -28,9 +28,17 @@ export default class EtherJsClient {
     }
     return createPublicClient({
       batch: {
-        multicall: true,
+        multicall: {
+          batchSize: config.viemConfig.multicall.batchSize,
+          wait: config.viemConfig.multicall.waitMilisecond,
+        },
       },
-      transport: http(selectedChain.EVMJSONRPC[0]),
+      transport: http(selectedChain.EVMJSONRPC[0], {
+        batch: {
+          batchSize: config.viemConfig.transport.batchSize,
+          wait: config.viemConfig.transport.waitMilisecond,
+        },
+      }),
     });
   }
 }
