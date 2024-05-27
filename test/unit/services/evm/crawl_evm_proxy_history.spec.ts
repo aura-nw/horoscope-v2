@@ -28,8 +28,8 @@ export default class EvmProxyServiceTest {
     jest.restoreAllMocks();
   }
 
-  @Test('Test handleErc20ProxyContracts')
-  async testHandleErc20ProxyContracts() {
+  @Test('Test handleTypeProxyContracts')
+  async testHandleTypeProxyContracts() {
     const evmSmartContracts = [
       EVMSmartContract.fromJson({
         id: 1,
@@ -93,7 +93,7 @@ export default class EvmProxyServiceTest {
     const result = jest
       .spyOn(this.evmProxyHistoryService.broker, 'call')
       .mockResolvedValue([]);
-    await this.evmProxyHistoryService.handleErc20ProxyContracts(
+    await this.evmProxyHistoryService.handleTypeProxyContracts(
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       newProxyContracts
@@ -103,6 +103,14 @@ export default class EvmProxyServiceTest {
         {
           address: evmSmartContracts[0].address,
           id: evmSmartContracts[0].id,
+        },
+      ],
+    });
+    expect(result).toHaveBeenCalledWith('v1.Erc721.insertNewErc721Contracts', {
+      evmSmartContracts: [
+        {
+          address: evmSmartContracts[2].address,
+          id: evmSmartContracts[2].id,
         },
       ],
     });

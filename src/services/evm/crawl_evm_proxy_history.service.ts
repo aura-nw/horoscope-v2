@@ -182,8 +182,14 @@ export default class CrawlProxyContractEVMService extends BullableService {
         .returning('id')
         .transacting(trx);
     });
+    await this.handleTypeProxyContracts(newProxyContracts);
+  }
+
+  async handleTypeProxyContracts(proxyContracts: EvmProxyHistory[]) {
     // handle erc20 proxies
-    await this.handleErc20ProxyContracts(newProxyContracts);
+    await this.handleErc20ProxyContracts(proxyContracts);
+    // handle erc721 proxies
+    await this.handleErc721ProxyContracts(proxyContracts);
   }
 
   async handleErc20ProxyContracts(proxyContracts: EvmProxyHistory[]) {
@@ -206,6 +212,29 @@ export default class CrawlProxyContractEVMService extends BullableService {
       .select('evm_proxy_history.proxy_contract as address', 'proxy.id as id');
     await this.broker.call(SERVICE.V1.Erc20.insertNewErc20Contracts.path, {
       evmSmartContracts: erc20ProxyContracts,
+    });
+  }
+
+  async handleErc721ProxyContracts(proxyContracts: EvmProxyHistory[]) {
+    const erc721ProxyContracts = await EvmProxyHistory.query()
+      .leftJoin(
+        'evm_smart_contract as proxy',
+        'evm_proxy_history.proxy_contract',
+        'proxy.address'
+      )
+      .leftJoin(
+        'evm_smart_contract as implementation',
+        'evm_proxy_history.implementation_contract',
+        'implementation.address'
+      )
+      .where('implementation.type', EVMSmartContract.TYPES.ERC721)
+      .whereIn(
+        'evm_proxy_history.id',
+        proxyContracts.map((e) => e.id)
+      )
+      .select('evm_proxy_history.proxy_contract as address', 'proxy.id as id');
+    await this.broker.call(SERVICE.V1.Erc721.insertNewErc721Contracts.path, {
+      evmSmartContracts: erc721ProxyContracts,
     });
   }
 
