@@ -461,5 +461,10 @@
       "batchSize": 10,
       "waitMilisecond": 1000
     }
+  },
+  "crawlEvmAccount": {
+    "key": "crawlEvmAccount",
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 100
   }
 }

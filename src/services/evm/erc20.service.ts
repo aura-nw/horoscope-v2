@@ -186,7 +186,7 @@ export default class Erc20Service extends BullableService {
         erc20Activities = await this.getErc20Activities(startBlock, endBlock);
       } catch (error) {
         this.logger.error(
-          `Unable crawl missing account: ${  missingAccountsAddress}`
+          `Unable crawl missing account: ${missingAccountsAddress}`
         );
       }
     }
