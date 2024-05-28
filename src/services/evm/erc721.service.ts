@@ -3,7 +3,7 @@ import {
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
 import { Knex } from 'knex';
-import _, { Dictionary } from 'lodash';
+import _ from 'lodash';
 import { Context, ServiceBroker } from 'moleculer';
 import { PublicClient, getContract } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
@@ -109,7 +109,7 @@ export default class Erc721Service extends BullableService {
         );
         const erc721Handler = new Erc721Handler(erc721Tokens, erc721Activities);
         erc721Handler.process();
-        await this.updateErc721(
+        await Erc721Handler.updateErc721(
           erc721Activities,
           Object.values(erc721Handler.erc721Tokens),
           trx
@@ -266,52 +266,6 @@ export default class Erc721Service extends BullableService {
         .insert(erc721Instances)
         .onConflict(['address'])
         .merge();
-    }
-  }
-
-  async updateErc721(
-    erc721Activities: Erc721Activity[],
-    erc721Tokens: Erc721Token[],
-    trx: Knex.Transaction
-  ) {
-    let updatedTokens: Dictionary<Erc721Token> = {};
-    if (erc721Tokens.length > 0) {
-      updatedTokens = _.keyBy(
-        await Erc721Token.query()
-          .insert(
-            erc721Tokens.map((token) =>
-              Erc721Token.fromJson({
-                token_id: token.token_id,
-                owner: token.owner,
-                erc721_contract_address: token.erc721_contract_address,
-                last_updated_height: token.last_updated_height,
-              })
-            )
-          )
-          .onConflict(['token_id', 'erc721_contract_address'])
-          .merge()
-          .transacting(trx),
-        (o) => `${o.erc721_contract_address}_${o.token_id}`
-      );
-    }
-    if (erc721Activities.length > 0) {
-      erc721Activities.forEach((activity) => {
-        const token =
-          updatedTokens[
-            `${activity.erc721_contract_address}_${activity.token_id}`
-          ];
-        if (token) {
-          // eslint-disable-next-line no-param-reassign
-          activity.erc721_token_id = token.id;
-        }
-      });
-      await knex
-        .batchInsert(
-          'erc721_activity',
-          erc721Activities.map((e) => _.omit(e, 'token_id')),
-          config.erc721.chunkSizeInsert
-        )
-        .transacting(trx);
     }
   }
 
