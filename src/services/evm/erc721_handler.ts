@@ -188,7 +188,7 @@ export class Erc721Handler {
     endBlock: number,
     trx: Knex.Transaction,
     logger: Moleculer.LoggerInstance,
-    address?: string
+    addresses?: string[]
   ) {
     const erc721Events = await EvmEvent.query()
       .transacting(trx)
@@ -199,8 +199,8 @@ export class Erc721Handler {
         'erc721_contract.address'
       )
       .modify((builder) => {
-        if (address) {
-          builder.andWhere('evm_event.address', address);
+        if (addresses) {
+          builder.whereIn('evm_event.address', addresses);
         }
       })
       .where('evm_event.block_height', '>', startBlock)
