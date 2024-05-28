@@ -107,9 +107,11 @@ export default class CrawlEvmAccountService extends BullableService {
       participants.map((e, index) =>
         Account.fromJson({
           address: e,
-          balances: [{ denom: config.networkDenom, amount: results[index] }],
+          balances: [
+            { denom: config.networkDenom, amount: results[index].toString() },
+          ],
           spendable_balances: [
-            { denom: config.networkDenom, amount: results[index] },
+            { denom: config.networkDenom, amount: results[index].toString() },
           ],
           type: null,
           pubkey: {},
