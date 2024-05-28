@@ -63,17 +63,21 @@ export default class CrawlEvmAccountService extends BullableService {
             .merge(),
           'address'
         );
-        await AccountBalance.query().insert(
-          accountsInstances.map((e) =>
-            AccountBalance.fromJson({
-              denom: config.networkDenom,
-              amount: e.balances[0].amount,
-              last_updated_height: height,
-              account_id: accounts[e.address].id,
-              type: AccountBalance.TYPE.NATIVE,
-            })
+        await AccountBalance.query()
+          .insert(
+            accountsInstances.map((e) =>
+              AccountBalance.fromJson({
+                denom: config.networkDenom,
+                amount: e.balances[0].amount,
+                last_updated_height: height,
+                account_id: accounts[e.address].id,
+                type: AccountBalance.TYPE.NATIVE,
+              })
+            )
           )
-        );
+          .onConflict(['account_id', 'denom'])
+          .merge()
+          .transacting(trx);
       }
       if (blockCheckpoint) {
         blockCheckpoint.height = endBlock;
@@ -98,14 +102,16 @@ export default class CrawlEvmAccountService extends BullableService {
         this.viemClient.getTransactionCount({ address: addr as `0x${string}` })
       ),
     ]);
-    const {length} = participants;
+    const { length } = participants;
     return [
       participants.map((e, index) =>
         Account.fromJson({
           address: e,
-          balances: [{ denom: config.networkDenom, amount: results[index] }],
+          balances: [
+            { denom: config.networkDenom, amount: results[index].toString() },
+          ],
           spendable_balances: [
-            { denom: config.networkDenom, amount: results[index] },
+            { denom: config.networkDenom, amount: results[index].toString() },
           ],
           type: null,
           pubkey: {},
