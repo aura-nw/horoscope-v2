@@ -98,12 +98,10 @@ export class Erc721Reindexer {
       );
       const [heightContract, ...contractsInfo] = await Promise.all([
         this.viemClient.getBlockNumber(),
-        ...contracts
-          .map((contract) => [
-              contract.read.name().catch(() => Promise.resolve(undefined)),
-              contract.read.symbol().catch(() => Promise.resolve(undefined)),
-            ])
-          .flat(),
+        ...contracts.flatMap((contract) => [
+          contract.read.name().catch(() => Promise.resolve(undefined)),
+          contract.read.symbol().catch(() => Promise.resolve(undefined)),
+        ]),
       ]);
       await Erc721Contract.query()
         .insert(
@@ -146,9 +144,11 @@ export class Erc721Reindexer {
       contracts.map((contract) => contract.read.totalSupply())
     )) as bigint[];
     const allTokensId = (await Promise.all(
-      contracts.flatMap((contract, index) => Array.from(Array(Number(totalSupplyResults[index])).keys()).map(
-          (i) => contract.read.tokenByIndex([i])
-        ))
+      contracts.flatMap((contract, index) =>
+        Array.from(Array(Number(totalSupplyResults[index])).keys()).map((i) =>
+          contract.read.tokenByIndex([i])
+        )
+      )
     )) as bigint[];
     const [height, ...allOwners] = (await Promise.all([
       this.viemClient.getBlockNumber(),
