@@ -67,5 +67,15 @@
     "databaseName": "sei_main_net",
     "redisDBNumber": 7,
     "moleculerNamespace": "namespace-sei-main-net"
+  },
+  {
+    "chainId": "ancient8-testnet",
+    "RPC": ["https://rpc.serenity.aura.network"],
+    "LCD": ["https://lcd.serenity.aura.network"],
+    "databaseName": "horoscope_dev_ancient8",
+    "redisDBNumber": 4,
+    "moleculerNamespace": "namespace-ancient8-testnet",
+    "EVMJSONRPC": ["https://rpcv2-testnet.ancient8.gg"],
+    "EVMchainId": 28122024
   }
 ]

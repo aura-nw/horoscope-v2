@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import _, { Dictionary } from 'lodash';
 import { PublicClient } from 'viem';
@@ -55,29 +56,40 @@ export default class CrawlEvmAccountService extends BullableService {
         Array.from(accountsAddress)
       );
       if (accountsInstances.length > 0) {
-        const accounts: Dictionary<Account> = _.keyBy(
-          await Account.query()
-            .transacting(trx)
-            .insert(accountsInstances)
-            .onConflict(['address'])
-            .merge(),
-          'address'
-        );
-        await AccountBalance.query()
-          .insert(
-            accountsInstances.map((e) =>
-              AccountBalance.fromJson({
-                denom: config.networkDenom,
-                amount: e.balances[0].amount,
-                last_updated_height: height,
-                account_id: accounts[e.address].id,
-                type: AccountBalance.TYPE.NATIVE,
-              })
+        const { batchSize } = config.crawlEvmAccount;
+        for (
+          let index = 0;
+          index < accountsInstances.length / batchSize;
+          index += 1
+        ) {
+          const batchAccounts = accountsInstances.slice(
+            index * batchSize,
+            (index + 1) * batchSize
+          );
+          const accounts: Dictionary<Account> = _.keyBy(
+            await Account.query()
+              .transacting(trx)
+              .insert(batchAccounts)
+              .onConflict(['address'])
+              .merge(),
+            'address'
+          );
+          await AccountBalance.query()
+            .insert(
+              batchAccounts.map((e) =>
+                AccountBalance.fromJson({
+                  denom: config.networkDenom,
+                  amount: e.balances[0].amount,
+                  last_updated_height: height,
+                  account_id: accounts[e.address].id,
+                  type: AccountBalance.TYPE.NATIVE,
+                })
+              )
             )
-          )
-          .onConflict(['account_id', 'denom'])
-          .merge()
-          .transacting(trx);
+            .onConflict(['account_id', 'denom'])
+            .merge()
+            .transacting(trx);
+        }
       }
       if (blockCheckpoint) {
         blockCheckpoint.height = endBlock;
