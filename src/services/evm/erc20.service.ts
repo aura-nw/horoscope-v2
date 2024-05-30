@@ -159,37 +159,8 @@ export default class Erc20Service extends BullableService {
       );
     // get Erc20 activities
     let erc20Activities = await this.getErc20Activities(startBlock, endBlock);
-    // get missing Account
-    const missingAccountsAddress = Array.from(
-      new Set(
-        (
-          [
-            ...erc20Activities
-              .filter((e) => !e.from_account_id)
-              .map((e) => e.from),
-            ...erc20Activities.filter((e) => !e.to_account_id).map((e) => e.to),
-          ] as string[]
-        ).map((e) =>
-          convertEthAddressToBech32Address(config.networkPrefixAddress, e)
-        )
-      )
-    );
-    if (missingAccountsAddress.length > 0) {
-      try {
-        // crawl missing Account and requery erc20Activities
-        await this.broker.call(
-          COSMOS_SERVICE.V1.HandleAddressService.CrawlNewAccountApi.path,
-          {
-            addresses: missingAccountsAddress,
-          }
-        );
-        erc20Activities = await this.getErc20Activities(startBlock, endBlock);
-      } catch (error) {
-        this.logger.error(
-          `Unable crawl missing account: ${missingAccountsAddress}`
-        );
-      }
-    }
+    await this.handleMissingAccounts(erc20Activities);
+    erc20Activities = await this.getErc20Activities(startBlock, endBlock);
     await knex.transaction(async (trx) => {
       if (erc20Activities.length > 0) {
         const accountBalances = _.keyBy(
@@ -330,6 +301,46 @@ export default class Erc20Service extends BullableService {
           )
         )
         .transacting(trx);
+    }
+  }
+
+  async handleMissingAccounts(erc20Activities: Erc20Activity[]) {
+    // get missing Account
+    const missingAccountsAddress = Array.from(
+      new Set([
+        ...erc20Activities.filter((e) => !e.from_account_id).map((e) => e.from),
+        ...erc20Activities.filter((e) => !e.to_account_id).map((e) => e.to),
+      ] as string[])
+    );
+    if (missingAccountsAddress.length > 0) {
+      try {
+        if (!config.evmOnly) {
+          console.log(config.evmOnly);
+          // crawl missing Cosmos Account
+          await this.broker.call(
+            COSMOS_SERVICE.V1.HandleAddressService.CrawlNewAccountApi.path,
+            {
+              addresses: missingAccountsAddress.map((e) =>
+                convertEthAddressToBech32Address(config.networkPrefixAddress, e)
+              ),
+            }
+          );
+        } else {
+          // crawl missing Evm Account
+          await this.broker.call(
+            SERVICE.V1.CrawlEvmAccount.CrawlNewAccountApi.path,
+            {
+              addresses: missingAccountsAddress,
+            }
+          );
+        }
+      } catch (error) {
+        console.log(error);
+
+        this.logger.error(
+          `Unable crawl missing account: ${missingAccountsAddress}`
+        );
+      }
     }
   }
 
