@@ -10,6 +10,7 @@
 import ApiGateway from 'moleculer-web';
 import { ServiceBroker } from 'moleculer';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+
 import BaseService from '../../base/base.service';
 import { bullBoardMixin } from '../../mixins/bullBoard/bullBoard.mixin';
 
@@ -39,6 +40,12 @@ import { bullBoardMixin } from '../../mixins/bullBoard/bullBoard.mixin';
           'v1.job.composite-index-to-attribute-partition',
           'v1.job.redecode-tx',
         ],
+      },
+      {
+        path: '/auth',
+        autoAliases: true,
+        mappingPolicy: 'restrict',
+        whitelist: ['v1.horoscope-handler.getDataByChainId'],
       },
     ],
     // empty cors object will have moleculer to generate handler for preflight request and CORS header which allow all origin
