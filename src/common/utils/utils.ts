@@ -215,4 +215,17 @@ export default class Utils {
     const semver = new SemVer(version1);
     return semver.compare(version2);
   }
+
+  public static getBigIntIfNotNull(value: any) {
+    if (value === null || value === undefined) {
+      return null;
+    }
+    try {
+      const result = BigInt(value);
+      return result;
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
 }

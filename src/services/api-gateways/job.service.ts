@@ -1,6 +1,7 @@
 import { Post, Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
 import { SERVICE } from '../../common';
+import { SERVICE as EVM_SERVICE } from '../evm/constant';
 import BaseService from '../../base/base.service';
 import networks from '../../../network.json' assert { type: 'json' };
 
@@ -77,6 +78,98 @@ export default class JobService extends BaseService {
       `${SERVICE.V1.JobService.ReDecodeTx.actionCreateJob.path}@${selectedChain?.moleculerNamespace}`,
       {
         type: ctx.params.type,
+      }
+    );
+  }
+
+  @Post('/update-delegator-validator', {
+    name: 'update-delegator-validator',
+    params: {
+      chainid: {
+        type: 'string',
+        optional: false,
+        enum: networks.map((network) => network.chainId),
+      },
+      height: {
+        type: 'number',
+        optional: false,
+      },
+    },
+  })
+  async updateDelegatorValidator(
+    ctx: Context<{ chainid: string; height: number }, Record<string, unknown>>
+  ) {
+    const selectedChain = networks.find(
+      (network) => network.chainId === ctx.params.chainid
+    );
+    this.logger.info(
+      `${SERVICE.V1.CrawlDelegatorsService.updateAllValidator.path}@${selectedChain?.moleculerNamespace}`
+    );
+    return this.broker.call(
+      `${SERVICE.V1.CrawlDelegatorsService.updateAllValidator.path}@${selectedChain?.moleculerNamespace}`,
+      {
+        height: ctx.params.height,
+      }
+    );
+  }
+
+  @Post('/signature-mapping', {
+    name: 'signature-mapping',
+    params: {
+      chainid: {
+        type: 'string',
+        optional: false,
+        enum: networks.map((network) => network.chainId),
+      },
+      addresses: {
+        type: 'array',
+        optional: false,
+      },
+    },
+  })
+  async syncPrevDateStatsByChainId(
+    ctx: Context<
+      { chainid: string; addresses: string[] },
+      Record<string, unknown>
+    >
+  ) {
+    const selectedChain = networks.find(
+      (network) => network.chainId === ctx.params.chainid
+    );
+
+    await this.broker.call(
+      `${EVM_SERVICE.V1.SignatureMappingEVM.action.path}@${selectedChain?.moleculerNamespace}`,
+      {
+        addresses: ctx.params.addresses,
+      }
+    );
+  }
+
+  @Post('/insert-verify-by-codehash', {
+    name: 'insert-verify-by-codehash',
+    params: {
+      chainid: {
+        type: 'string',
+        optional: false,
+        enum: networks.map((network) => network.chainId),
+      },
+      codehash: {
+        type: 'string',
+        optional: false,
+      },
+    },
+  })
+  async insertVerifyByCodeHash(
+    ctx: Context<{ chainid: string; codehash: string }, Record<string, unknown>>
+  ) {
+    const selectedChain = networks.find(
+      (network) => network.chainId === ctx.params.chainid
+    );
+
+    await this.broker.call(
+      `${EVM_SERVICE.V1.JobService.InsertVerifyByCodeHash.action.path}@${selectedChain?.moleculerNamespace}`,
+      {
+        codehash: ctx.params.codehash,
       }
     );
   }

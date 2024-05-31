@@ -4,6 +4,8 @@ import BaseModel from './base';
 import { Validator } from './validator';
 
 export class Delegator extends BaseModel {
+  id!: number;
+
   validator_id!: number;
 
   delegator_address!: string;

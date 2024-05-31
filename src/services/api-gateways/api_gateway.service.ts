@@ -12,6 +12,7 @@ import { ServiceBroker } from 'moleculer';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import BaseService from '../../base/base.service';
 import { bullBoardMixin } from '../../mixins/bullBoard/bullBoard.mixin';
+import config from '../../../config.json' assert { type: 'json' };
 
 @Service({
   mixins: [ApiGateway, bullBoardMixin()],
@@ -26,6 +27,7 @@ import { bullBoardMixin } from '../../mixins/bullBoard/bullBoard.mixin';
           'v2.statistics.getDashboardStatisticsByChainId',
           'v2.statistics.getTopAccountsByChainId',
           'v2.services-manager.*',
+          'v2.evm-proxy.*',
         ],
       },
       {
@@ -38,7 +40,30 @@ import { bullBoardMixin } from '../../mixins/bullBoard/bullBoard.mixin';
           'v1.cw721-admin.*',
           'v1.job.composite-index-to-attribute-partition',
           'v1.job.redecode-tx',
+          'v1.job.update-delegator-validator',
+          'v1.job.signature-mapping',
+          'v1.job.insert-verify-by-codehash',
         ],
+      },
+      {
+        path: '/verify-contract',
+        mappingPolicy: true,
+        aliases: {
+          'POST /v1/evm/file': {
+            bodyParsers: {
+              json: false,
+              urlencoded: false,
+            },
+            busboyConfig: {
+              limits: {
+                files: config.jobVerifyContractEVM.configUploadFile.files,
+                fileSize: config.jobVerifyContractEVM.configUploadFile.fileSize,
+              },
+            },
+            type: 'multipart',
+            action: 'v1.verify-contract-evm.create-request',
+          },
+        },
       },
     ],
     // empty cors object will have moleculer to generate handler for preflight request and CORS header which allow all origin
