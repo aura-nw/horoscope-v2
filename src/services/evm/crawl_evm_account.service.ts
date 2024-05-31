@@ -1,6 +1,11 @@
 /* eslint-disable no-await-in-loop */
-import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+import {
+  Action,
+  Service,
+} from '@ourparentcenter/moleculer-decorators-extended';
+import { Knex } from 'knex';
 import _, { Dictionary } from 'lodash';
+import { Context } from 'moleculer';
 import { PublicClient } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
@@ -21,6 +26,36 @@ import { BULL_JOB_NAME, SERVICE, ZERO_ADDRESS } from './constant';
 })
 export default class CrawlEvmAccountService extends BullableService {
   viemClient!: PublicClient;
+
+  @Action({
+    name: SERVICE.V1.CrawlEvmAccount.CrawlNewAccountApi.key,
+    params: {
+      addresses: 'string[]',
+    },
+  })
+  public async actionCrawlNewAccountApi(ctx: Context<{ addresses: string[] }>) {
+    const { addresses } = ctx.params;
+    await knex.transaction(async (trx) => {
+      if (addresses.length > 0) {
+        await this.insertNewAccounts(
+          addresses.map((address) =>
+            Account.fromJson({
+              address,
+              evm_address: address,
+              balances: [{ denom: config.networkDenom, amount: '0' }],
+              spendable_balances: [{ denom: config.networkDenom, amount: '0' }],
+              type: null,
+              pubkey: {},
+              account_number: 0,
+              sequence: 0,
+            })
+          ),
+          0,
+          trx
+        );
+      }
+    });
+  }
 
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_EVM_ACCOUNT,
@@ -56,40 +91,7 @@ export default class CrawlEvmAccountService extends BullableService {
         Array.from(accountsAddress)
       );
       if (accountsInstances.length > 0) {
-        const { batchSize } = config.crawlEvmAccount;
-        for (
-          let index = 0;
-          index < accountsInstances.length / batchSize;
-          index += 1
-        ) {
-          const batchAccounts = accountsInstances.slice(
-            index * batchSize,
-            (index + 1) * batchSize
-          );
-          const accounts: Dictionary<Account> = _.keyBy(
-            await Account.query()
-              .transacting(trx)
-              .insert(batchAccounts)
-              .onConflict(['address'])
-              .merge(),
-            'address'
-          );
-          await AccountBalance.query()
-            .insert(
-              batchAccounts.map((e) =>
-                AccountBalance.fromJson({
-                  denom: config.networkDenom,
-                  amount: e.balances[0].amount,
-                  last_updated_height: height,
-                  account_id: accounts[e.address].id,
-                  type: AccountBalance.TYPE.NATIVE,
-                })
-              )
-            )
-            .onConflict(['account_id', 'denom'])
-            .merge()
-            .transacting(trx);
-        }
+        await this.insertNewAccounts(accountsInstances, height, trx);
       }
       if (blockCheckpoint) {
         blockCheckpoint.height = endBlock;
@@ -100,6 +102,47 @@ export default class CrawlEvmAccountService extends BullableService {
           .transacting(trx);
       }
     });
+  }
+
+  async insertNewAccounts(
+    accountsInstances: Account[],
+    lastUpdateHeight: number,
+    trx: Knex.Transaction
+  ) {
+    const { batchSize } = config.crawlEvmAccount;
+    for (
+      let index = 0;
+      index < accountsInstances.length / batchSize;
+      index += 1
+    ) {
+      const batchAccounts = accountsInstances.slice(
+        index * batchSize,
+        (index + 1) * batchSize
+      );
+      const accounts: Dictionary<Account> = _.keyBy(
+        await Account.query()
+          .transacting(trx)
+          .insert(batchAccounts)
+          .onConflict(['address'])
+          .merge(),
+        'address'
+      );
+      await AccountBalance.query()
+        .insert(
+          batchAccounts.map((e) =>
+            AccountBalance.fromJson({
+              denom: config.networkDenom,
+              amount: e.balances[0].amount,
+              last_updated_height: lastUpdateHeight,
+              account_id: accounts[e.address].id,
+              type: AccountBalance.TYPE.NATIVE,
+            })
+          )
+        )
+        .onConflict(['account_id', 'denom'])
+        .merge()
+        .transacting(trx);
+    }
   }
 
   async getEvmAccountInstances(

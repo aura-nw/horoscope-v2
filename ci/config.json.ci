@@ -2,6 +2,7 @@
   "chainId": "aura-testnet-2",
   "chainName": "aura",
   "networkPrefixAddress": "aura",
+  "evmOnly": true,
   "consensusPrefixAddress": "valcons",
   "validatorPrefixAddress": "valoper",
   "networkDenom": "utaura",

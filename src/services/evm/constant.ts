@@ -187,6 +187,10 @@ export const SERVICE = {
     CrawlEvmAccount: {
       key: 'CrawlEvmAccount',
       path: 'v1.CrawlEvmAccount',
+      CrawlNewAccountApi: {
+        key: 'CrawlNewAccountApi',
+        path: 'v1.CrawlEvmAccount.CrawlNewAccountApi',
+      },
     },
   },
   V2: {
