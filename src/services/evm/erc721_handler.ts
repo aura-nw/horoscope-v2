@@ -4,7 +4,13 @@ import Moleculer from 'moleculer';
 import { decodeAbiParameters, keccak256, toHex } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
-import { Erc721Activity, Erc721Token, EvmEvent } from '../../models';
+import {
+  Block,
+  Erc721Activity,
+  Erc721Contract,
+  Erc721Token,
+  EvmEvent,
+} from '../../models';
 import { ZERO_ADDRESS } from './constant';
 
 export const ERC721_EVENT_TOPIC0 = {
@@ -281,5 +287,33 @@ export class Erc721Handler {
         )
         .transacting(trx);
     }
+  }
+
+  static async calErc721Stats(addresses?: string[]): Promise<Erc721Contract[]> {
+    // Get once block height 24h ago.
+    const blockSince24hAgo = await Block.query()
+      .select('height')
+      .where('time', '<=', knex.raw("now() - '24 hours'::interval"))
+      .orderBy('height', 'desc')
+      .limit(1);
+
+    // Calculate total activity and transfer_24h of erc721
+    return Erc721Contract.query()
+      .count('erc721_activity.id AS total_activity')
+      .select(
+        knex.raw(
+          `SUM( CASE WHEN erc721_activity.height >= ? AND erc721_activity.action = '${ERC721_ACTION.TRANSFER}' THEN 1 ELSE 0 END ) AS transfer_24h`,
+          blockSince24hAgo[0]?.height
+        )
+      )
+      .select('erc721_contract.id as erc721_contract_id')
+      .where('erc721_contract.track', '=', true)
+      .modify((builder) => {
+        if (addresses) {
+          builder.whereIn('erc721_contract.address', addresses);
+        }
+      })
+      .joinRelated('erc721_activity')
+      .groupBy('erc721_contract.id');
   }
 }

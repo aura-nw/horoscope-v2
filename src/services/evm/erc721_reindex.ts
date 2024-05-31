@@ -41,15 +41,16 @@ export class Erc721Reindexer {
     const isErc721Enumerable = await Promise.all(
       erc721Contracts.map((e) =>
         e.read
-          .supportsInterface([0x780e9d63])
+          .supportsInterface(['0x780e9d63'])
           .catch(() => Promise.resolve(false))
       )
     );
-    return addresses.filter((_, index) => isErc721Enumerable[index]);
+    return erc721ContractAddrs.filter((_, index) => isErc721Enumerable[index]);
   }
 
   /**
    * @description reindex erc721 contract
+   * @requires filterReindex
    * @param addresses Contracts address that you want to reindex
    * @steps
    * - clean database: ERC721 Contract, ERC721 Activity, ERC721 Holder
@@ -128,6 +129,21 @@ export class Erc721Reindexer {
       );
       await Erc721Handler.updateErc721(activities, tokens, trx);
     });
+    const erc721Stats = await Erc721Handler.calErc721Stats(addresses);
+    // Upsert erc721 stats
+    await Erc721Stats.query()
+      .insert(
+        erc721Stats.map((e) =>
+          Erc721Stats.fromJson({
+            total_activity: e.total_activity,
+            transfer_24h: e.transfer_24h,
+            erc721_contract_id: e.erc721_contract_id,
+          })
+        )
+      )
+      .onConflict('erc721_contract_id')
+      .merge()
+      .returning('id');
   }
 
   async getCurrentTokens(
@@ -170,11 +186,14 @@ export class Erc721Reindexer {
           0
         );
         const tokensId = allTokensId.slice(offset, offset + totalSupply);
-        const owners = allOwners.slice(offset, offset + totalSupply);
+        const owners = allOwners.slice(
+          offset,
+          offset + totalSupply
+        ) as string[];
         return tokensId.map((tokenId, index) =>
           Erc721Token.fromJson({
             token_id: tokenId.toString(),
-            owner: owners[index],
+            owner: owners[index].toLowerCase(),
             erc721_contract_address: address,
             last_updated_height: Number(height),
           })
