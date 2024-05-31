@@ -315,7 +315,6 @@ export default class Erc20Service extends BullableService {
     if (missingAccountsAddress.length > 0) {
       try {
         if (!config.evmOnly) {
-          console.log(config.evmOnly);
           // crawl missing Cosmos Account
           await this.broker.call(
             COSMOS_SERVICE.V1.HandleAddressService.CrawlNewAccountApi.path,
@@ -335,9 +334,8 @@ export default class Erc20Service extends BullableService {
           );
         }
       } catch (error) {
-        console.log(error);
-
-        this.logger.error(
+        this.logger.error(error);
+        throw new Error(
           `Unable crawl missing account: ${missingAccountsAddress}`
         );
       }
