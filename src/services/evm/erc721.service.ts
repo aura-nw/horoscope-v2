@@ -13,7 +13,6 @@ import { Config } from '../../common';
 import knex from '../../common/utils/db_connection';
 import EtherJsClient from '../../common/utils/etherjs_client';
 import {
-  Block,
   BlockCheckpoint,
   EVMSmartContract,
   Erc721Activity,
@@ -22,8 +21,9 @@ import {
 } from '../../models';
 import { Erc721Contract } from '../../models/erc721_contract';
 import { BULL_JOB_NAME, SERVICE } from './constant';
-import { ERC721_ACTION, Erc721Handler } from './erc721_handler';
+import { Erc721Handler } from './erc721_handler';
 import * as Erc721MediaHandler from './erc721_media_handler';
+import { Erc721Reindexer } from './erc721_reindex';
 
 const { NODE_ENV } = Config;
 @Service({
@@ -218,7 +218,7 @@ export default class Erc721Service extends BullableService {
     jobName: BULL_JOB_NAME.REFRESH_ERC721_STATS,
   })
   async jobHandlerRefresh(): Promise<void> {
-    const erc721Stats = await this.calErc721Stats();
+    const erc721Stats = await Erc721Handler.calErc721Stats();
     // Upsert erc721 stats
     await Erc721Stats.query()
       .insert(
@@ -270,6 +270,29 @@ export default class Erc721Service extends BullableService {
     }
   }
 
+  @Action({
+    name: SERVICE.V1.Erc721.reindexing.key,
+    params: {
+      addresses: {
+        type: 'array',
+        items: 'string',
+        optional: false,
+      },
+    },
+  })
+  public async reindexing(
+    ctx: Context<{
+      addresses: `0x${string}`[];
+    }>
+  ) {
+    let { addresses } = ctx.params;
+    const erc721Reindexer = new Erc721Reindexer(this.viemClient, this.logger);
+    addresses = await erc721Reindexer.filterReindex(addresses);
+    if (addresses.length > 0) {
+      await erc721Reindexer.reindex(addresses);
+    }
+  }
+
   async getTokensUri(
     tokens: Erc721Token[]
   ): Promise<Erc721MediaHandler.ITokenMediaInfo[]> {
@@ -310,29 +333,6 @@ export default class Erc721Service extends BullableService {
         },
       },
     }));
-  }
-
-  async calErc721Stats(): Promise<Erc721Contract[]> {
-    // Get once block height 24h ago.
-    const blockSince24hAgo = await Block.query()
-      .select('height')
-      .where('time', '<=', knex.raw("now() - '24 hours'::interval"))
-      .orderBy('height', 'desc')
-      .limit(1);
-
-    // Calculate total activity and transfer_24h of erc721
-    return Erc721Contract.query()
-      .count('erc721_activity.id AS total_activity')
-      .select(
-        knex.raw(
-          `SUM( CASE WHEN erc721_activity.height >= ? AND erc721_activity.action = '${ERC721_ACTION.TRANSFER}' THEN 1 ELSE 0 END ) AS transfer_24h`,
-          blockSince24hAgo[0]?.height
-        )
-      )
-      .select('erc721_contract.id as erc721_contract_id')
-      .where('erc721_contract.track', '=', true)
-      .joinRelated('erc721_activity')
-      .groupBy('erc721_contract.id');
   }
 
   async handleMissingErc721Contract(

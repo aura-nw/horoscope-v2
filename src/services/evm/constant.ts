@@ -121,6 +121,10 @@ export const SERVICE = {
         key: 'insertNewErc721Contracts',
         path: 'v1.Erc721.insertNewErc721Contracts',
       },
+      reindexing: {
+        key: 'reindexing',
+        path: 'v1.Erc721.reindexing',
+      },
     },
     SignatureMappingEVM: {
       key: 'SignatureMappingEVM',
