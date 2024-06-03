@@ -1,6 +1,14 @@
 table:
   name: account
   schema: public
+array_relationships:
+  - name: account_balances
+    using:
+      foreign_key_constraint_on:
+        column: account_id
+        table:
+          name: account_balance
+          schema: public
 select_permissions:
   - role: internal_service
     permission:
