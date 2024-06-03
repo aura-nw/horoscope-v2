@@ -1,0 +1,17 @@
+table:
+  name: account_balance
+  schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - id
+        - account_id
+        - denom
+        - amount
+        - base_denom
+        - created_at
+        - last_updated_height
+        - type
+      filter: {}
+      limit: 100

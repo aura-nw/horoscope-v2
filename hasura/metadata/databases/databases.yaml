@@ -42,3 +42,18 @@
     type_names:
       prefix: xstaxy_
   tables: '!include xstaxy/tables/tables.yaml'
+- name: ancient8
+  kind: postgres
+  configuration:
+    connection_info:
+      database_url:
+        from_env: DATABASE_URL_A8
+      isolation_level: read-committed
+      use_prepared_statements: false
+  customization:
+    naming_convention: hasura-default
+    root_fields:
+      namespace: ancient8
+    type_names:
+      prefix: ancient8_
+  tables: '!include ancient8/tables/tables.yaml'

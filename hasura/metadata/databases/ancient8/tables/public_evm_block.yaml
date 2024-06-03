@@ -1,0 +1,24 @@
+table:
+  name: evm_block
+  schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - height
+        - tx_count
+        - base_fee_per_gas
+        - date
+        - difficulty
+        - extra_data
+        - gas_limit
+        - gas_used
+        - hash
+        - miner
+        - nonce
+        - parent_hash
+        - receipts_root
+        - state_root
+        - transactions
+      filter: {}
+      limit: 100
