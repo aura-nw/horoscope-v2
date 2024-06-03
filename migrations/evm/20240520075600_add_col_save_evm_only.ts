@@ -5,7 +5,7 @@ export async function up(knex: Knex): Promise<void> {
     table.decimal('gas_used', 80, 0);
     table.decimal('gas_price', 80, 0);
     table.decimal('gas_limit', 80, 0);
-    table.integer('type').index();
+    table.string('type').index();
   });
   await knex.schema.alterTable('evm_event', (table) => {
     table.integer('tx_id').nullable().alter();
