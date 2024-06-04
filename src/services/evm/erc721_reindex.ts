@@ -1,6 +1,5 @@
 import Moleculer from 'moleculer';
 import { PublicClient, getContract } from 'viem';
-import _ from 'lodash';
 import knex from '../../common/utils/db_connection';
 import {
   Erc721Activity,
@@ -41,6 +40,7 @@ export class Erc721Reindexer {
     const isErc721Enumerable = await Promise.all(
       erc721Contracts.map((e) =>
         e.read
+          // Erc721 Enumerable InterfaceId
           .supportsInterface(['0x780e9d63'])
           .catch(() => Promise.resolve(false))
       )
@@ -57,79 +57,67 @@ export class Erc721Reindexer {
    * - get current status of those erc721 contracts: contracts info, tokens and holders
    * - reinsert to database
    */
-  async reindex(addresses: `0x${string}`[]) {
+  async reindex(address: `0x${string}`) {
     await knex.transaction(async (trx) => {
-      const erc721Contracts = _.keyBy(
-        await Erc721Contract.query()
-          .transacting(trx)
-          .joinRelated('evm_smart_contract')
-          .whereIn('erc721_contract.address', addresses)
-          .select(
-            'evm_smart_contract.id as evm_smart_contract_id',
-            'erc721_contract.id',
-            'erc721_contract.address'
-          ),
-        'address'
-      );
+      const erc721Contract = await Erc721Contract.query()
+        .transacting(trx)
+        .joinRelated('evm_smart_contract')
+        .where('erc721_contract.address', address)
+        .select(
+          'evm_smart_contract.id as evm_smart_contract_id',
+          'erc721_contract.id'
+        )
+        .first()
+        .throwIfNotFound();
       await Erc721Stats.query()
         .delete()
-        .whereIn(
-          'erc721_contract_id',
-          Object.values(erc721Contracts).map((e) => e.id)
-        )
+        .where('erc721_contract_id', erc721Contract.id)
         .transacting(trx);
       await Erc721Activity.query()
         .delete()
-        .whereIn('erc721_contract_address', addresses)
+        .where('erc721_contract_address', address)
         .transacting(trx);
       await Erc721Token.query()
         .delete()
-        .whereIn('erc721_contract_address', addresses)
+        .where('erc721_contract_address', address)
         .transacting(trx);
       await Erc721Contract.query()
         .delete()
-        .whereIn('address', addresses)
+        .where('address', address)
         .transacting(trx);
-      const contracts = addresses.map((address) =>
-        getContract({
-          address,
-          abi: Erc721Contract.ABI,
-          client: this.viemClient,
-        })
-      );
-      const [heightContract, ...contractsInfo] = await Promise.all([
+      const contract = getContract({
+        address,
+        abi: Erc721Contract.ABI,
+        client: this.viemClient,
+      });
+      const [blockHeight, ...contractInfo] = await Promise.all([
         this.viemClient.getBlockNumber(),
-        ...contracts.flatMap((contract) => [
-          contract.read.name().catch(() => Promise.resolve(undefined)),
-          contract.read.symbol().catch(() => Promise.resolve(undefined)),
-        ]),
+        contract.read.name().catch(() => Promise.resolve(undefined)),
+        contract.read.symbol().catch(() => Promise.resolve(undefined)),
       ]);
       await Erc721Contract.query()
         .insert(
-          addresses.map((address, index) =>
-            Erc721Contract.fromJson({
-              evm_smart_contract_id:
-                erc721Contracts[address].evm_smart_contract_id,
-              address,
-              symbol: contractsInfo[index * 2 + 1],
-              name: contractsInfo[index * 2],
-              track: true,
-              last_updated_height: Number(heightContract),
-            })
-          )
+          Erc721Contract.fromJson({
+            evm_smart_contract_id: erc721Contract.evm_smart_contract_id,
+            address,
+            symbol: contractInfo[1],
+            name: contractInfo[0],
+            track: true,
+            last_updated_height: Number(blockHeight),
+          })
         )
         .transacting(trx);
-      const [tokens, height] = await this.getCurrentTokens(addresses);
+      const [tokens, height] = await this.getCurrentTokens(address);
       const activities = await Erc721Handler.getErc721Activities(
         0,
         height,
         trx,
         this.logger,
-        addresses
+        [address]
       );
       await Erc721Handler.updateErc721(activities, tokens, trx);
     });
-    const erc721Stats = await Erc721Handler.calErc721Stats(addresses);
+    const erc721Stats = await Erc721Handler.calErc721Stats([address]);
     // Upsert erc721 stats
     await Erc721Stats.query()
       .insert(
@@ -147,58 +135,39 @@ export class Erc721Reindexer {
   }
 
   async getCurrentTokens(
-    addresses: `0x${string}`[]
+    address: `0x${string}`
   ): Promise<[Erc721Token[], number]> {
-    const contracts = addresses.map((address) =>
-      getContract({
-        address,
-        abi: Erc721Contract.ABI,
-        client: this.viemClient,
-      })
-    );
-    const totalSupplyResults = (await Promise.all(
-      contracts.map((contract) => contract.read.totalSupply())
-    )) as bigint[];
-    const allTokensId = (await Promise.all(
-      contracts.flatMap((contract, index) =>
-        Array.from(Array(Number(totalSupplyResults[index])).keys()).map((i) =>
-          contract.read.tokenByIndex([i])
-        )
+    const contract = getContract({
+      address,
+      abi: Erc721Contract.ABI,
+      client: this.viemClient,
+    });
+    const totalSupply = (await contract.read
+      .totalSupply()
+      .catch(() => Promise.resolve(BigInt(0)))) as bigint;
+    const tokensId = (await Promise.all(
+      Array.from(Array(Number(totalSupply)).keys()).map((i) =>
+        contract.read.tokenByIndex([i])
       )
     )) as bigint[];
-    const [height, ...allOwners] = (await Promise.all([
+    const [height, ...owners]: [bigint, ...string[]] = await Promise.all([
       this.viemClient.getBlockNumber(),
-      ...contracts.flatMap((contract, index) => {
-        const totalSupply = Number(totalSupplyResults[index]);
-        const offset = Array.from(Array(index).keys()).reduce(
-          (acc: number, curr: number) => acc + Number(totalSupplyResults[curr]),
-          0
-        );
-        const tokensId = allTokensId.slice(offset, offset + totalSupply);
-        return tokensId.map((tokenId) => contract.read.ownerOf([tokenId]));
-      }),
-    ])) as (string | bigint)[];
+      ...tokensId.map(
+        (tokenId) =>
+          contract.read
+            .ownerOf([tokenId])
+            .catch(() => Promise.resolve(BigInt(''))) as Promise<string>
+      ),
+    ]);
     return [
-      addresses.flatMap((address, index) => {
-        const totalSupply = Number(totalSupplyResults[index]);
-        const offset = Array.from(Array(index).keys()).reduce(
-          (acc: number, curr: number) => acc + Number(totalSupplyResults[curr]),
-          0
-        );
-        const tokensId = allTokensId.slice(offset, offset + totalSupply);
-        const owners = allOwners.slice(
-          offset,
-          offset + totalSupply
-        ) as string[];
-        return tokensId.map((tokenId, index) =>
-          Erc721Token.fromJson({
-            token_id: tokenId.toString(),
-            owner: owners[index].toLowerCase(),
-            erc721_contract_address: address,
-            last_updated_height: Number(height),
-          })
-        );
-      }),
+      tokensId.map((tokenId, index) =>
+        Erc721Token.fromJson({
+          token_id: tokenId.toString(),
+          owner: owners[index].toLowerCase(),
+          erc721_contract_address: address,
+          last_updated_height: Number(height),
+        })
+      ),
       Number(height),
     ];
   }
