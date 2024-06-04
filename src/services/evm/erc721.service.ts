@@ -242,6 +242,7 @@ export default class Erc721Service extends BullableService {
     const { address } = _payload;
     const erc721Reindexer = new Erc721Reindexer(this.viemClient, this.logger);
     await erc721Reindexer.reindex(address);
+    this.logger.info(`Reindex erc721 contract ${address} done.`);
   }
 
   @Action({
