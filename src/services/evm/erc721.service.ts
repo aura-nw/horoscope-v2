@@ -234,6 +234,16 @@ export default class Erc721Service extends BullableService {
       .returning('id');
   }
 
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.REINDEX_ERC721,
+    jobName: BULL_JOB_NAME.REINDEX_ERC721,
+  })
+  async reindexErc721(_payload: { address: `0x${string}` }): Promise<void> {
+    const { address } = _payload;
+    const erc721Reindexer = new Erc721Reindexer(this.viemClient, this.logger);
+    await erc721Reindexer.reindex(address);
+  }
+
   @Action({
     name: SERVICE.V1.Erc721.insertNewErc721Contracts.key,
     params: {
@@ -288,7 +298,21 @@ export default class Erc721Service extends BullableService {
     const erc721Reindexer = new Erc721Reindexer(this.viemClient, this.logger);
     addresses = await erc721Reindexer.filterReindex(addresses);
     if (addresses.length > 0) {
-      await erc721Reindexer.reindex(addresses);
+      await Promise.all(
+        addresses.map((address) =>
+          this.createJob(
+            BULL_JOB_NAME.REINDEX_ERC721,
+            BULL_JOB_NAME.REINDEX_ERC721,
+            {
+              address,
+            },
+            {
+              jobId: address,
+              removeOnComplete: true,
+            }
+          )
+        )
+      );
     }
   }
 
