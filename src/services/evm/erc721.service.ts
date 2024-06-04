@@ -240,9 +240,10 @@ export default class Erc721Service extends BullableService {
     jobName: BULL_JOB_NAME.REINDEX_ERC721,
   })
   async reindexErc721(_payload: { address: `0x${string}` }): Promise<void> {
-    const {address} = _payload;
+    const { address } = _payload;
     const erc721Reindexer = new Erc721Reindexer(this.viemClient, this.logger);
     await erc721Reindexer.reindex(address);
+    this.logger.info(`Reindex erc721 contract ${address} done.`);
   }
 
   @Action({
