@@ -156,7 +156,7 @@ export class Erc721Reindexer {
         (tokenId) =>
           contract.read
             .ownerOf([tokenId])
-            .catch(() => Promise.resolve(BigInt(''))) as Promise<string>
+            .catch(() => Promise.resolve('')) as Promise<string>
       ),
     ]);
     return [
