@@ -4,6 +4,7 @@ import { TransactionMessage } from './transaction_message';
 import { Transaction } from './transaction';
 // eslint-disable-next-line import/no-cycle
 import { EvmEvent } from './evm_event';
+import { EvmInternalTransaction } from './evm_internal_transaction';
 
 export class EVMTransaction extends BaseModel {
   id!: number;
@@ -81,6 +82,14 @@ export class EVMTransaction extends BaseModel {
         join: {
           from: 'evm_transaction.id',
           to: 'evm_event.evm_tx_id',
+        },
+      },
+      evm_internal_transactions: {
+        relation: Model.HasManyRelation,
+        modelClass: EvmInternalTransaction,
+        join: {
+          from: 'evm_transaction.id',
+          to: 'evm_internal_transaction.evm_tx_id',
         },
       },
     };

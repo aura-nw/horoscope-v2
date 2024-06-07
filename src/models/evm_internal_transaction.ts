@@ -54,4 +54,10 @@ export class EvmInternalTransaction extends BaseModel {
       },
     };
   }
+
+  static TYPE = {
+    CREATE: 'CREATE',
+    CALL: 'CALL',
+    DELEGATECALL: 'DELEGATECALL',
+  };
 }
