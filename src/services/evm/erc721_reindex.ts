@@ -58,6 +58,11 @@ export class Erc721Reindexer {
    * - reinsert to database
    */
   async reindex(address: `0x${string}`) {
+    // stop tracking => if start reindexing, track will be false (although error when reindex)
+    await Erc721Contract.query()
+      .patch({ track: false })
+      .where('address', address);
+    // reindex
     await knex.transaction(async (trx) => {
       const erc721Contract = await Erc721Contract.query()
         .transacting(trx)
