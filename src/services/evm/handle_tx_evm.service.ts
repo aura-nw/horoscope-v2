@@ -1,8 +1,12 @@
+import { fromBase64, toHex } from '@cosmjs/encoding';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
-import _ from 'lodash';
-import { fromBase64, toHex } from '@cosmjs/encoding';
+import { PublicClient } from 'viem';
+import config from '../../../config.json' assert { type: 'json' };
+import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME as COSMOS_BULL_JOB_NAME } from '../../common';
+import knex from '../../common/utils/db_connection';
+import EtherJsClient from '../../common/utils/etherjs_client';
 import Utils from '../../common/utils/utils';
 import {
   BlockCheckpoint,
@@ -11,10 +15,6 @@ import {
   TransactionMessage,
 } from '../../models';
 import { BULL_JOB_NAME, MSG_TYPE, SERVICE } from './constant';
-import BullableService, { QueueHandler } from '../../base/bullable.service';
-import config from '../../../config.json' assert { type: 'json' };
-import knex from '../../common/utils/db_connection';
-import EtherJsClient from '../../common/utils/etherjs_client';
 import { convertBech32AddressToEthAddress } from './utils';
 
 @Service({
@@ -22,7 +22,7 @@ import { convertBech32AddressToEthAddress } from './utils';
   version: 1,
 })
 export default class HandleTransactionEVMService extends BullableService {
-  etherJsClient!: EtherJsClient;
+  viemClient!: PublicClient;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -120,10 +120,9 @@ export default class HandleTransactionEVMService extends BullableService {
         evmTxs
           .filter((evmTx) => !evmTx.to)
           .map(async (evmTx) => {
-            const txReceipt =
-              await this.etherJsClient.etherJsClient.getTransactionReceipt(
-                evmTx.hash
-              );
+            const txReceipt = await this.viemClient.getTransactionReceipt({
+              hash: evmTx.hash as `0x${string}`,
+            });
             if (txReceipt && txReceipt.contractAddress) {
               // eslint-disable-next-line no-param-reassign
               evmTx.contract_address = txReceipt?.contractAddress.toLowerCase();
@@ -156,7 +155,7 @@ export default class HandleTransactionEVMService extends BullableService {
   }
 
   public async _start(): Promise<void> {
-    this.etherJsClient = new EtherJsClient();
+    this.viemClient = EtherJsClient.getViemClient();
     this.createJob(
       BULL_JOB_NAME.HANDLE_TRANSACTION_EVM,
       BULL_JOB_NAME.HANDLE_TRANSACTION_EVM,
