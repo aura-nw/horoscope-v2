@@ -11,6 +11,7 @@ import EtherJsClient from '../../common/utils/etherjs_client';
 import { EVMSmartContract, EvmProxyHistory } from '../../models';
 import { SERVICE } from './constant';
 import { ContractHelper } from './helpers/contract_helper';
+import '../../../fetch-polyfill.js';
 
 @Service({
   name: SERVICE.V2.EvmProxyService.key,
