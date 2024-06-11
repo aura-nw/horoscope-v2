@@ -3,29 +3,29 @@ import {
   Action,
   Service,
 } from '@ourparentcenter/moleculer-decorators-extended';
-import { Context, ServiceBroker, Errors } from 'moleculer';
-import { ethers } from 'ethers';
 import _ from 'lodash';
+import { Context, Errors, ServiceBroker } from 'moleculer';
+import { PublicClient } from 'viem';
 import BaseService from '../../base/base.service';
 import EtherJsClient from '../../common/utils/etherjs_client';
-import { ContractHelper } from './helpers/contract_helper';
-import { EvmProxyHistory, EVMSmartContract } from '../../models';
+import { EVMSmartContract, EvmProxyHistory } from '../../models';
 import { SERVICE } from './constant';
+import { ContractHelper } from './helpers/contract_helper';
 
 @Service({
   name: SERVICE.V2.EvmProxyService.key,
   version: 2,
 })
 export default class EVMProxy extends BaseService {
-  private etherJsClient!: ethers.AbstractProvider;
+  viemClient!: PublicClient;
 
   private contractHelper!: ContractHelper;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
 
-    this.etherJsClient = new EtherJsClient().etherJsClient;
-    this.contractHelper = new ContractHelper(this.etherJsClient);
+    this.viemClient = EtherJsClient.getViemClient();
+    this.contractHelper = new ContractHelper(this.viemClient);
   }
 
   @Action({
@@ -67,7 +67,7 @@ export default class EVMProxy extends BaseService {
       });
 
       if (!evmProxyHistory) {
-        const currentBlock = await this.etherJsClient.getBlockNumber();
+        const currentBlock = await this.viemClient.getBlockNumber();
 
         evmProxyHistory = await EvmProxyHistory.query()
           .insert({
