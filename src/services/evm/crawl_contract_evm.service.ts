@@ -1,21 +1,22 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { ServiceBroker } from 'moleculer';
-import _ from 'lodash';
 import { ethers, keccak256 } from 'ethers';
+import _, { Dictionary } from 'lodash';
+import { ServiceBroker } from 'moleculer';
+import config from '../../../config.json' assert { type: 'json' };
+import BullableService, { QueueHandler } from '../../base/bullable.service';
+import knex from '../../common/utils/db_connection';
 import EtherJsClient from '../../common/utils/etherjs_client';
 import {
   BlockCheckpoint,
   EVMSmartContract,
   EVMTransaction,
+  EvmInternalTransaction,
 } from '../../models';
 import {
   BULL_JOB_NAME,
-  SERVICE,
   EVM_CONTRACT_METHOD_HEX_PREFIX,
+  SERVICE,
 } from './constant';
-import BullableService, { QueueHandler } from '../../base/bullable.service';
-import config from '../../../config.json' assert { type: 'json' };
-import knex from '../../common/utils/db_connection';
 import { ContractHelper } from './helpers/contract_helper';
 
 @Service({
@@ -39,7 +40,10 @@ export default class CrawlSmartContractEVMService extends BullableService {
     const [startBlock, endBlock, blockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.CRAWL_SMART_CONTRACT_EVM,
-        [BULL_JOB_NAME.JOB_CRAWL_EVM_EVENT],
+        [
+          BULL_JOB_NAME.JOB_CRAWL_EVM_EVENT,
+          BULL_JOB_NAME.EVM_CRAWL_INTERNAL_TX,
+        ],
         config.crawlSmartContractEVM.key
       );
     this.logger.info(
@@ -58,12 +62,20 @@ export default class CrawlSmartContractEVMService extends BullableService {
         'evm_transaction.contract_address',
         'evm_transaction.data'
       )
-      .withGraphFetched('evm_events')
+      .withGraphFetched('[evm_events, evm_internal_transactions]')
       .modifyGraph('evm_events', (builder) => {
         builder
           .select(knex.raw('ARRAY_AGG(address) as event_address'))
           .groupBy('evm_tx_id')
           .orderBy('evm_tx_id');
+      })
+      .modifyGraph('evm_internal_transactions', (builder) => {
+        builder
+          .select('to')
+          .whereIn('type', [
+            EvmInternalTransaction.TYPE.CREATE,
+            EvmInternalTransaction.TYPE.CREATE2,
+          ]);
       })
       .where('evm_transaction.height', '>', startBlock)
       .andWhere('evm_transaction.height', '<=', endBlock)
@@ -71,7 +83,8 @@ export default class CrawlSmartContractEVMService extends BullableService {
       .orderBy('evm_transaction.height', 'ASC');
 
     let addresses: string[] = [];
-    const addressesWithTx: any = [];
+    const addressesWithTx: Dictionary<string[]> = {};
+    const isCreationInternalContracts: Dictionary<boolean> = {};
     evmTxs.forEach((evmTx: any) => {
       let currentAddresses: string[] = [];
       ['from', 'to', 'contract_address'].forEach((key) => {
@@ -86,6 +99,12 @@ export default class CrawlSmartContractEVMService extends BullableService {
       ) {
         currentAddresses.push(...evmTx.evm_events[0].event_address);
       }
+      evmTx.evm_internal_transactions.forEach(
+        (creationInternalTx: EvmInternalTransaction) => {
+          currentAddresses.push(creationInternalTx.to);
+          isCreationInternalContracts[creationInternalTx.to] = true;
+        }
+      );
       currentAddresses = _.uniq(currentAddresses);
       addresses.push(...currentAddresses);
       addressesWithTx[evmTx.hash] = currentAddresses;
@@ -142,7 +161,8 @@ export default class CrawlSmartContractEVMService extends BullableService {
                   data.startsWith(
                     EVM_CONTRACT_METHOD_HEX_PREFIX.CREATE_CONTRACT
                   ) ||
-                  contract_address
+                  contract_address ||
+                  isCreationInternalContracts[address]
                 ) {
                   creator = evmTx.from;
                   createdHeight = evmTx.height;
