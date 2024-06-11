@@ -3,6 +3,7 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import { PublicClient } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
+import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME as COSMOS_BULL_JOB_NAME } from '../../common';
 import knex from '../../common/utils/db_connection';

@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import { PublicClient } from 'viem';
+import '../../../fetch-polyfill.js';
 import {
   DetectEVMProxyContract,
   EIPProxyContractSupportByteCode,
