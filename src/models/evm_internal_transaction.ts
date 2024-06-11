@@ -59,5 +59,6 @@ export class EvmInternalTransaction extends BaseModel {
     CREATE: 'CREATE',
     CALL: 'CALL',
     DELEGATECALL: 'DELEGATECALL',
+    CREATE2: 'CREATE2',
   };
 }

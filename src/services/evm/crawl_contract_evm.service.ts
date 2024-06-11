@@ -70,7 +70,12 @@ export default class CrawlSmartContractEVMService extends BullableService {
           .orderBy('evm_tx_id');
       })
       .modifyGraph('evm_internal_transactions', (builder) => {
-        builder.select('to').where('type', EvmInternalTransaction.TYPE.CREATE);
+        builder
+          .select('to')
+          .whereIn('type', [
+            EvmInternalTransaction.TYPE.CREATE,
+            EvmInternalTransaction.TYPE.CREATE2,
+          ]);
       })
       .where('evm_transaction.height', '>', startBlock)
       .andWhere('evm_transaction.height', '<=', endBlock)
