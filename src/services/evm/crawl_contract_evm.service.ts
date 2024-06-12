@@ -1,14 +1,12 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { whatsabi } from '@shazow/whatsabi';
-import { keccak256 } from 'ethers';
 import _, { Dictionary } from 'lodash';
 import { ServiceBroker } from 'moleculer';
-import { PublicClient } from 'viem';
+import { PublicClient, keccak256 } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
-import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import knex from '../../common/utils/db_connection';
-import EtherJsClient from '../../common/utils/etherjs_client';
+import ViemClient from '../../common/utils/etherjs_client';
 import {
   BlockCheckpoint,
   EVMSmartContract,
@@ -256,7 +254,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
   }
 
   public async _start(): Promise<void> {
-    this.viemClient = EtherJsClient.getViemClient();
+    this.viemClient = ViemClient.getViemClient();
     this.contractHelper = new ContractHelper(this.viemClient);
     this.createJob(
       BULL_JOB_NAME.CRAWL_SMART_CONTRACT_EVM,
