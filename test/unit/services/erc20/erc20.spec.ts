@@ -1,5 +1,12 @@
-import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
+import {
+  AfterAll,
+  BeforeAll,
+  BeforeEach,
+  Describe,
+  Test,
+} from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
+import _ from 'lodash';
 import knex from '../../../../src/common/utils/db_connection';
 import {
   Account,
@@ -7,6 +14,7 @@ import {
   EVMTransaction,
   Erc20Activity,
   Erc20Contract,
+  Erc20Statistic,
   EvmEvent,
 } from '../../../../src/models';
 import Erc20Service from '../../../../src/services/evm/erc20.service';
@@ -60,6 +68,7 @@ export default class Erc20Test {
 
   @BeforeAll()
   async initSuite() {
+    this.erc20Service.getQueueManager().stopAll();
     await this.broker.start();
     await knex.raw(
       'TRUNCATE TABLE erc20_contract, account, erc20_activity, evm_smart_contract, evm_event, evm_transaction RESTART IDENTITY CASCADE'
@@ -75,6 +84,13 @@ export default class Erc20Test {
   @AfterAll()
   async tearDown() {
     await this.broker.stop();
+  }
+
+  @BeforeEach()
+  async initSuiteBeforeEach() {
+    await knex.raw(
+      'TRUNCATE TABLE erc20_activity, account, erc20_statistic RESTART IDENTITY CASCADE'
+    );
   }
 
   @Test('test getErc20Activities')
@@ -188,5 +204,82 @@ export default class Erc20Test {
     expect(result[1]).toMatchObject(erc20Contracts[0].activities[0]);
     expect(result[1].from_account_id).toEqual(fromAccount.id);
     expect(result[1].to_account_id).toEqual(toAccount.id);
+  }
+
+  @Test('test handleTotalHolderStatistic')
+  public async testHandleTotalHolderStatistic() {
+    const accounts = [
+      Account.fromJson({
+        id: 345,
+        address: 'xczfsdfsfsdg',
+        balances: [],
+        spendable_balances: [],
+        type: '',
+        pubkey: '',
+        account_number: 2,
+        sequence: 432,
+        evm_address: '0xghgfhfghfg',
+        account_balances: [
+          {
+            denom: this.evmSmartContract.address,
+            amount: 123,
+          },
+          {
+            denom: this.evmSmartContract2.address,
+            amount: 1234,
+          },
+        ],
+      }),
+      Account.fromJson({
+        id: 456,
+        address: 'cbbvb',
+        balances: [],
+        spendable_balances: [],
+        type: '',
+        pubkey: '',
+        account_number: 2,
+        sequence: 432,
+        evm_address: '0xhgfhfghgfg',
+        account_balances: [
+          {
+            denom: this.evmSmartContract.address,
+            amount: 0,
+          },
+          {
+            denom: this.evmSmartContract2.address,
+            amount: -1234,
+          },
+        ],
+      }),
+      Account.fromJson({
+        id: 567,
+        address: 'xzxzcvv ',
+        balances: [],
+        spendable_balances: [],
+        type: '',
+        pubkey: '',
+        account_number: 2,
+        sequence: 432,
+        evm_address: '0xdgfsdgs4',
+        account_balances: [
+          {
+            denom: this.evmSmartContract.address,
+            amount: 1,
+          },
+        ],
+      }),
+    ];
+    await Account.query().insertGraph(accounts);
+    const date = new Date('2023-01-12T00:53:57.000Z');
+    await this.erc20Service.handleTotalHolderStatistic(date);
+    const erc20Statistics = _.keyBy(
+      await Erc20Statistic.query(),
+      'erc20_contract_id'
+    );
+    expect(erc20Statistics[444]).toMatchObject({
+      total_holder: 2,
+    });
+    // because of track false
+    expect(erc20Statistics[445]).toBeUndefined();
   }
 }
