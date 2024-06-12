@@ -122,24 +122,26 @@ export default class EvmCrawlInternalTxService extends BullableService {
       parentType: string
     ) => {
       calls.forEach((call, stackTraceIndex) => {
-        const typeTraceAddress = currentTypeTraceAddress
-          ? `${currentTypeTraceAddress}_${parentType}[${stackTraceIndex}]`
-          : `${parentType}[${stackTraceIndex}]`;
-        internalTxSave.push(
-          EvmInternalTransaction.fromJson({
-            evm_tx_id: tracerId,
-            type_trace_address: `${typeTraceAddress}_${call.type}`,
-            type: call.type,
-            from: call.from,
-            to: call.to,
-            value: parseInt(call.value ?? 0, 16),
-            input: call.input,
-            gas: parseInt(call.gas, 16),
-            gas_used: parseInt(call.gasUsed, 16),
-          })
-        );
-        if (call.calls) {
-          buildEvmInternalTx(call.calls, typeTraceAddress, call.type);
+        if (!call.error) {
+          const typeTraceAddress = currentTypeTraceAddress
+            ? `${currentTypeTraceAddress}_${parentType}[${stackTraceIndex}]`
+            : `${parentType}[${stackTraceIndex}]`;
+          internalTxSave.push(
+            EvmInternalTransaction.fromJson({
+              evm_tx_id: tracerId,
+              type_trace_address: `${typeTraceAddress}_${call.type}`,
+              type: call.type,
+              from: call.from,
+              to: call.to,
+              value: parseInt(call.value ?? 0, 16),
+              input: call.input,
+              gas: parseInt(call.gas, 16),
+              gas_used: parseInt(call.gasUsed, 16),
+            })
+          );
+          if (call.calls) {
+            buildEvmInternalTx(call.calls, typeTraceAddress, call.type);
+          }
         }
       });
     };
