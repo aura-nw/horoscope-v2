@@ -1,10 +1,9 @@
 import { AfterAll, BeforeEach, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
-import { ethers } from 'ethers';
+import knex from '../../../../src/common/utils/db_connection';
+import { EVMSmartContract, EvmProxyHistory } from '../../../../src/models';
 import EVMProxy from '../../../../src/services/evm/evm_proxy.service';
 import { ContractHelper } from '../../../../src/services/evm/helpers/contract_helper';
-import { EvmProxyHistory, EVMSmartContract } from '../../../../src/models';
-import knex from '../../../../src/common/utils/db_connection';
 
 const ctx: any = {
   params: { contractAddress: '0x0000000000000000000000000000000000000001' },
@@ -81,8 +80,8 @@ export default class EvmProxyServiceTest {
       .spyOn(ContractHelper.prototype, 'isContractProxy')
       .mockResolvedValueOnce(proxyContractRPC);
     jest
-      .spyOn(ethers.AbstractProvider.prototype, 'getBlockNumber')
-      .mockResolvedValueOnce(lastBlockHeight);
+      .spyOn(this.evmProxyService.viemClient, 'getBlockNumber')
+      .mockResolvedValueOnce(Promise.resolve(BigInt(lastBlockHeight)));
 
     await EVMSmartContract.query()
       .insert({
