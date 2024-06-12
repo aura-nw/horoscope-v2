@@ -1,9 +1,5 @@
 /* eslint-disable no-await-in-loop */
-import {
-  Action,
-  Service,
-} from '@ourparentcenter/moleculer-decorators-extended';
-import { Context, ServiceBroker } from 'moleculer';
+import { toUtf8 } from '@cosmjs/encoding';
 import pkg, {
   CheckedContract,
   ISolidityCompiler,
@@ -13,21 +9,26 @@ import pkg, {
   PathContent,
   StringMap,
   extractHardhatMetadataAndSources,
-  storeByHash,
-  verifyDeployed,
-  unzipFiles,
   isEmpty,
+  storeByHash,
+  unzipFiles,
+  verifyDeployed,
 } from '@ethereum-sourcify/lib-sourcify';
-import { id as keccak256str, keccak256 } from 'ethers';
+import {
+  Action,
+  Service,
+} from '@ourparentcenter/moleculer-decorators-extended';
 import { createHash } from 'crypto';
+import { Context, ServiceBroker } from 'moleculer';
 import { lt } from 'semver';
-import { BlockCheckpoint, EVMContractVerification } from '../../models';
-import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { BULL_JOB_NAME, SERVICE } from './constant';
+import { keccak256 } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
-import { SolidityCompiler } from './solidity_compiler';
 import networks from '../../../network.json' assert { type: 'json' };
+import BullableService, { QueueHandler } from '../../base/bullable.service';
 import knex from '../../common/utils/db_connection';
+import { BlockCheckpoint, EVMContractVerification } from '../../models';
+import { BULL_JOB_NAME, SERVICE } from './constant';
+import { SolidityCompiler } from './solidity_compiler';
 
 const HARDHAT_OUTPUT_FORMAT_REGEX = /"hh-sol-build-info-1"/;
 const NESTED_METADATA_REGEX =
@@ -139,7 +140,7 @@ export default class VerifyContractEVM extends BullableService {
               const { abi } = metadata.output;
               this.logger.info(matchResult);
               this.logger.info(abi);
-              codeHash = keccak256(recompiled.runtimeBytecode);
+              codeHash = keccak256(recompiled.runtimeBytecode as `0x${string}`);
 
               compileDetail.matchResult = {
                 runtimeMatch: matchResult.runtimeMatch,
@@ -504,7 +505,7 @@ export default class VerifyContractEVM extends BullableService {
           content: sourceInfoFromMetadata.content,
           path: sourcePath,
         };
-        const contentHash = keccak256str(file.content);
+        const contentHash = keccak256(toUtf8(file.content));
         if (contentHash !== expectedHash) {
           invalidSources[sourcePath] = {
             expectedHash,
