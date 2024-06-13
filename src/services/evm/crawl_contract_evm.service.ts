@@ -142,7 +142,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
               address: address as `0x${string}`,
             });
             // check if this address has code -> is smart contract
-            if (code && code !== '0x') {
+            if (code) {
               // check if this event belongs to smart contract creation tx
               let creator;
               let createdHeight;
