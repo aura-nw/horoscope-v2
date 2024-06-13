@@ -1,4 +1,4 @@
-import { id as keccak256Str } from 'ethers';
+import { keccak256, toBytes } from 'viem';
 import { EVMSmartContract } from '../../models';
 
 export const ABI_CHECK_INTERFACE_ERC_721 = [
@@ -35,13 +35,13 @@ export const EVM_CONTRACT_METHOD_HEX_PREFIX = {
   // https://ethereum.stackexchange.com/questions/124906/how-to-tell-if-a-transaction-is-contract-creation
   CREATE_CONTRACT: '60806040',
   ABI_INTERFACE_ERC20: ABI_CHECK_INTERFACE_ERC_20.map((method) =>
-    keccak256Str(method).slice(2, 10)
+    keccak256(toBytes(method)).slice(2, 10)
   ),
   ABI_INTERFACE_ERC721: ABI_CHECK_INTERFACE_ERC_721.map((method) =>
-    keccak256Str(method).slice(2, 10)
+    keccak256(toBytes(method)).slice(2, 10)
   ),
   ABI_INTERFACE_ERC1155: ABI_CHECK_INTERFACE_ERC_1155.map((method) =>
-    keccak256Str(method).slice(2, 10)
+    keccak256(toBytes(method)).slice(2, 10)
   ),
 };
 

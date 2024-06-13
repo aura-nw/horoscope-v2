@@ -1,5 +1,4 @@
 /* eslint-disable no-await-in-loop */
-import { toUtf8 } from '@cosmjs/encoding';
 import pkg, {
   CheckedContract,
   ISolidityCompiler,
@@ -21,7 +20,7 @@ import {
 import { createHash } from 'crypto';
 import { Context, ServiceBroker } from 'moleculer';
 import { lt } from 'semver';
-import { keccak256 } from 'viem';
+import { keccak256, toBytes } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import networks from '../../../network.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -505,7 +504,7 @@ export default class VerifyContractEVM extends BullableService {
           content: sourceInfoFromMetadata.content,
           path: sourcePath,
         };
-        const contentHash = keccak256(toUtf8(file.content));
+        const contentHash = keccak256(toBytes(file.content));
         if (contentHash !== expectedHash) {
           invalidSources[sourcePath] = {
             expectedHash,
