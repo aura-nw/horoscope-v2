@@ -34,8 +34,6 @@ export class EvmInternalTransaction extends BaseModel {
         'evm_tx_id',
         'type_trace_address',
         'type',
-        'from',
-        'to',
         'value',
         'input',
         'gas',
