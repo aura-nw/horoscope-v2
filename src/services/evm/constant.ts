@@ -225,4 +225,6 @@ export const BULL_JOB_NAME = {
 
 export const MSG_TYPE = {
   MSG_ETHEREUM_TX: '/ethermint.evm.v1.MsgEthereumTx',
+  MSG_DYNAMIC_FEE_TX: '/ethermint.evm.v1.DynamicFeeTx',
+  MSG_LEGACY_TX: '/ethermint.evm.v1.LegacyTx',
 };
