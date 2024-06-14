@@ -102,7 +102,7 @@
     "stream-json": "^1.7.5",
     "underscore": "^1.13.6",
     "util": "^0.12.4",
-    "viem": "^2.8.6"
+    "viem": "^2.14.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.4.1",
