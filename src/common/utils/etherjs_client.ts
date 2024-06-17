@@ -4,14 +4,16 @@ import '../../../fetch-polyfill.js';
 import networks from '../../../network.json' assert { type: 'json' };
 
 export default class ViemClient {
-  public static getViemClient(): PublicClient {
+  public viemClient: PublicClient;
+
+  public constructor() {
     const selectedChain = networks.find(
       (network) => network.chainId === config.chainId
     );
     if (!selectedChain?.EVMJSONRPC) {
       throw new Error(`EVMJSONRPC not found with chainId: ${config.chainId}`);
     }
-    return createPublicClient({
+    this.viemClient = createPublicClient({
       batch: {
         multicall: {
           batchSize: config.viemConfig.multicall.batchSize,
@@ -26,4 +28,9 @@ export default class ViemClient {
       }),
     });
   }
+}
+const client = new ViemClient();
+
+export function getViemClient(): PublicClient {
+  return client.viemClient;
 }

@@ -10,7 +10,7 @@ import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { Config } from '../../common';
 import knex from '../../common/utils/db_connection';
-import ViemClient from '../../common/utils/etherjs_client';
+import { getViemClient } from '../../common/utils/etherjs_client';
 import {
   Block,
   BlockCheckpoint,
@@ -508,7 +508,7 @@ export default class Erc721Service extends BullableService {
   }
 
   public async _start(): Promise<void> {
-    this.viemClient = ViemClient.getViemClient();
+    this.viemClient = getViemClient();
     if (NODE_ENV !== 'test') {
       await this.createJob(
         BULL_JOB_NAME.HANDLE_ERC721_CONTRACT,
