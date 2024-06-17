@@ -14,7 +14,7 @@ import {
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import knex from '../../common/utils/db_connection';
-import ViemClient from '../../common/utils/etherjs_client';
+import { getViemClient } from '../../common/utils/etherjs_client';
 import {
   BlockCheckpoint,
   EVMSmartContract,
@@ -239,7 +239,7 @@ export default class CrawlProxyContractEVMService extends BullableService {
   }
 
   public async _start() {
-    this.viemClient = ViemClient.getViemClient();
+    this.viemClient = getViemClient();
     this.contractHelper = new ContractHelper(this.viemClient);
 
     await this.createJob(
