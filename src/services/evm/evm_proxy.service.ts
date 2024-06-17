@@ -7,7 +7,7 @@ import _ from 'lodash';
 import { Context, Errors, ServiceBroker } from 'moleculer';
 import { PublicClient } from 'viem';
 import BaseService from '../../base/base.service';
-import ViemClient from '../../common/utils/etherjs_client';
+import { getViemClient } from '../../common/utils/etherjs_client';
 import { EVMSmartContract, EvmProxyHistory } from '../../models';
 import { SERVICE } from './constant';
 import { ContractHelper } from './helpers/contract_helper';
@@ -24,7 +24,7 @@ export default class EVMProxy extends BaseService {
   public constructor(public broker: ServiceBroker) {
     super(broker);
 
-    this.viemClient = ViemClient.getViemClient();
+    this.viemClient = getViemClient();
     this.contractHelper = new ContractHelper(this.viemClient);
   }
 
