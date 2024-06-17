@@ -140,6 +140,7 @@ export default class EvmCrawlInternalTxService extends BullableService {
             input: call.input,
             gas: parseInt(call.gas, 16),
             gas_used: parseInt(call.gasUsed, 16),
+            error: call.error,
           })
         );
         if (call.calls) {
