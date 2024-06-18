@@ -162,6 +162,9 @@ export default class VerifyContractEVM extends BullableService {
                       contract_name: contract.name,
                       status:
                         EVMContractVerification.VERIFICATION_STATUS.SUCCESS,
+                      compiler_setting: JSON.stringify(
+                        contract.metadata.settings
+                      ),
                     })
                     .where({ id: requestVerify.id })
                     .transacting(trx)
