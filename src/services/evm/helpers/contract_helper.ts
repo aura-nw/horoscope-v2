@@ -1,19 +1,20 @@
 import _ from 'lodash';
-import { ethers } from 'ethers';
+import { PublicClient } from 'viem';
+import '../../../../fetch-polyfill.js';
 import {
-  EIPProxyContractSupportByteCode,
   DetectEVMProxyContract,
+  EIPProxyContractSupportByteCode,
+  EVM_DEFAULT_SLOT_BYTE_CODE_LENGTH,
   EVM_PREFIX,
   NULL_BYTE_CODE,
-  EVM_DEFAULT_SLOT_BYTE_CODE_LENGTH,
   ZERO_ADDRESS,
 } from '../constant';
 
 export class ContractHelper {
-  private etherJsClient: ethers.AbstractProvider;
+  private viemClient: PublicClient;
 
-  constructor(etherJsClient: ethers.AbstractProvider) {
-    this.etherJsClient = etherJsClient;
+  constructor(viemClient: PublicClient) {
+    this.viemClient = viemClient;
   }
 
   public async detectProxyContractByByteCode(
@@ -29,14 +30,17 @@ export class ContractHelper {
     const result = byteCode.includes(byteCodeSlot);
 
     if (!result) throw Error('Not proxy contract!');
+    const storageSlotValue = await this.viemClient.getStorageAt({
+      address: contractAddress as `0x${string}`,
+      slot: `${EVM_PREFIX}${byteCodeSlot}`,
+      blockNumber: blockHeight ? BigInt(blockHeight) : undefined,
+    });
 
-    const storageSlotValue = await this.etherJsClient.getStorage(
-      contractAddress,
-      `${EVM_PREFIX}${byteCodeSlot}`,
-      blockHeight || 'latest'
-    );
-
-    if (storageSlotValue === '0x' || storageSlotValue === NULL_BYTE_CODE)
+    if (
+      storageSlotValue === '0x' ||
+      storageSlotValue === NULL_BYTE_CODE ||
+      storageSlotValue === undefined
+    )
       throw Error('Invalid contract address!');
 
     const logicAddress =
@@ -60,9 +64,13 @@ export class ContractHelper {
     blockHeight?: number | string,
     byteCodeSlot?: string
   ): Promise<DetectEVMProxyContract | null> {
-    const byteCode = await this.etherJsClient.getCode(contractAddress);
+    const byteCode = await this.viemClient.getBytecode({
+      address: contractAddress as `0x${string}`,
+    });
     let result: DetectEVMProxyContract | null;
-
+    if (!byteCode) {
+      return null;
+    }
     try {
       if (byteCodeSlot) {
         result = await this.detectProxyContractByByteCode(

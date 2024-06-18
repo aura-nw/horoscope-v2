@@ -1,12 +1,12 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { ethers, keccak256 } from 'ethers';
+import { whatsabi } from '@shazow/whatsabi';
 import _, { Dictionary } from 'lodash';
 import { ServiceBroker } from 'moleculer';
-import { whatsabi } from '@shazow/whatsabi';
+import { PublicClient, keccak256 } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import knex from '../../common/utils/db_connection';
-import EtherJsClient from '../../common/utils/etherjs_client';
+import { getViemClient } from '../../common/utils/etherjs_client';
 import {
   BlockCheckpoint,
   EVMSmartContract,
@@ -25,7 +25,7 @@ import { ContractHelper } from './helpers/contract_helper';
   version: 1,
 })
 export default class CrawlSmartContractEVMService extends BullableService {
-  etherJsClient!: ethers.AbstractProvider;
+  viemClient!: PublicClient;
 
   private contractHelper!: ContractHelper;
 
@@ -138,10 +138,11 @@ export default class CrawlSmartContractEVMService extends BullableService {
 
         await Promise.all(
           notFoundAddresses.map(async (address: string) => {
-            const code = await this.etherJsClient.getCode(address);
-
+            const code = await this.viemClient.getBytecode({
+              address: address as `0x${string}`,
+            });
             // check if this address has code -> is smart contract
-            if (code !== '0x') {
+            if (code) {
               // check if this event belongs to smart contract creation tx
               let creator;
               let createdHeight;
@@ -253,8 +254,8 @@ export default class CrawlSmartContractEVMService extends BullableService {
   }
 
   public async _start(): Promise<void> {
-    this.etherJsClient = new EtherJsClient().etherJsClient;
-    this.contractHelper = new ContractHelper(this.etherJsClient);
+    this.viemClient = getViemClient();
+    this.contractHelper = new ContractHelper(this.viemClient);
     this.createJob(
       BULL_JOB_NAME.CRAWL_SMART_CONTRACT_EVM,
       BULL_JOB_NAME.CRAWL_SMART_CONTRACT_EVM,

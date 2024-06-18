@@ -7,11 +7,10 @@ import _ from 'lodash';
 import { Context, ServiceBroker } from 'moleculer';
 import { PublicClient, getContract } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
-import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { Config } from '../../common';
 import knex from '../../common/utils/db_connection';
-import EtherJsClient from '../../common/utils/etherjs_client';
+import { getViemClient } from '../../common/utils/etherjs_client';
 import {
   BlockCheckpoint,
   EVMSmartContract,
@@ -448,7 +447,7 @@ export default class Erc721Service extends BullableService {
   }
 
   public async _start(): Promise<void> {
-    this.viemClient = EtherJsClient.getViemClient();
+    this.viemClient = getViemClient();
     if (NODE_ENV !== 'test') {
       await this.createJob(
         BULL_JOB_NAME.HANDLE_ERC721_CONTRACT,
