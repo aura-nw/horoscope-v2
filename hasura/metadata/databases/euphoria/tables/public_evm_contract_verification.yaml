@@ -5,17 +5,18 @@ select_permissions:
   - role: internal_service
     permission:
       columns:
-        - files
+        - abi
         - code_hash
+        - compile_detail
+        - compiler_setting
         - compiler_version
         - contract_address
         - contract_name
-        - creator_tx_hash
-        - status
-        - id
-        - abi
-        - compile_detail
         - created_at
+        - creator_tx_hash
+        - files
+        - id
+        - status
         - updated_at
       filter: {}
       limit: 100
