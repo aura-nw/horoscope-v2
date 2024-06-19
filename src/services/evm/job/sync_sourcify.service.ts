@@ -74,6 +74,14 @@ export default class SyncSourcify extends BullableService {
           code_hash: this.toHexString(
             sourcifyMatch.verified_contract.compiled_contract.runtime_code_hash
           ),
+          compiler_setting: JSON.stringify(
+            sourcifyMatch.verified_contract.compiled_contract.compiler_settings
+          ),
+          files: Buffer.from(
+            JSON.stringify(
+              sourcifyMatch.verified_contract.compiled_contract.sources
+            )
+          ),
           status: EVMContractVerification.VERIFICATION_STATUS.SUCCESS,
         });
         updatedContractAddresses.push(evmContractVerification.contract_address);
