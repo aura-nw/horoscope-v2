@@ -59,6 +59,13 @@ export class EVMSmartContract extends BaseModel {
     };
   }
 
+  static get STATUS() {
+    return {
+      CREATED: 'CREATED',
+      DELETED: 'DELETED',
+    };
+  }
+
   static get relationMappings() {
     return {
       evm_proxy_histories: {
