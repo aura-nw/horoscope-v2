@@ -208,6 +208,55 @@ export default class CrawlSmartContractEVMService extends BullableService {
     });
   }
 
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.HANDLE_SELF_DESTRUCT,
+    jobName: BULL_JOB_NAME.HANDLE_SELF_DESTRUCT,
+  })
+  async handleSelfDestruct() {
+    const [startBlock, endBlock, blockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.HANDLE_SELF_DESTRUCT,
+        [BULL_JOB_NAME.CRAWL_SMART_CONTRACT_EVM],
+        config.crawlSmartContractEVM.key
+      );
+    this.logger.info(
+      `Handle self-destruct from block ${startBlock} to block ${endBlock}`
+    );
+    if (startBlock >= endBlock) {
+      return;
+    }
+    const selfDestructEvents = await EvmInternalTransaction.query()
+      .joinRelated('evm_transaction')
+      .where('evm_transaction.height', '>', startBlock)
+      .andWhere('evm_transaction.height', '<=', endBlock)
+      .andWhere(
+        'evm_internal_transaction.type',
+        EvmInternalTransaction.TYPE.SELFDESTRUCT
+      )
+      .andWhere('evm_internal_transaction.error', null)
+      .orderBy('evm_internal_transaction.id');
+    await knex.transaction(async (trx) => {
+      if (selfDestructEvents.length > 0) {
+        const destructContractsAddr = selfDestructEvents.map((e) => e.from);
+        await EVMSmartContract.query()
+          .patch({
+            status: EVMSmartContract.STATUS.DELETED,
+          })
+          .whereIn('address', destructContractsAddr)
+          .transacting(trx);
+      }
+      if (blockCheckpoint) {
+        blockCheckpoint.height = endBlock;
+        await BlockCheckpoint.query()
+          .insert(blockCheckpoint)
+          .onConflict('job_name')
+          .merge()
+          .returning('id')
+          .transacting(trx);
+      }
+    });
+  }
+
   detectContractTypeByCode(code: string): string | null {
     const selectors = whatsabi
       .selectorsFromBytecode(code)
@@ -239,9 +288,23 @@ export default class CrawlSmartContractEVMService extends BullableService {
   public async _start(): Promise<void> {
     this.viemClient = getViemClient();
     this.contractHelper = new ContractHelper(this.viemClient);
-    this.createJob(
+    await this.createJob(
       BULL_JOB_NAME.CRAWL_SMART_CONTRACT_EVM,
       BULL_JOB_NAME.CRAWL_SMART_CONTRACT_EVM,
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        repeat: {
+          every: config.crawlSmartContractEVM.millisecondCrawl,
+        },
+      }
+    );
+    await this.createJob(
+      BULL_JOB_NAME.HANDLE_SELF_DESTRUCT,
+      BULL_JOB_NAME.HANDLE_SELF_DESTRUCT,
       {},
       {
         removeOnComplete: true,
