@@ -76,7 +76,8 @@ export default class CrawlSmartContractEVMService extends BullableService {
           .whereIn('type', [
             EvmInternalTransaction.TYPE.CREATE,
             EvmInternalTransaction.TYPE.CREATE2,
-          ]);
+          ])
+          .andWhere('error', null);
       })
       .where('evm_transaction.height', '>', startBlock)
       .andWhere('evm_transaction.height', '<=', endBlock)
@@ -179,6 +180,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
                   created_hash: createdHash,
                   created_height: createdHeight,
                   code_hash: codeHash,
+                  status: EVMSmartContract.STATUS.CREATED,
                 })
               );
             }
@@ -190,7 +192,11 @@ export default class CrawlSmartContractEVMService extends BullableService {
     await knex.transaction(async (trx) => {
       if (evmContracts.length > 0) {
         newEvmContracts = _.uniqBy(evmContracts, 'address');
-        await EVMSmartContract.query().insert(newEvmContracts).transacting(trx);
+        await EVMSmartContract.query()
+          .insert(newEvmContracts)
+          .onConflict(['address'])
+          .merge()
+          .transacting(trx);
       }
       if (blockCheckpoint) {
         blockCheckpoint.height = endBlock;
@@ -242,24 +248,40 @@ export default class CrawlSmartContractEVMService extends BullableService {
     if (startBlock >= endBlock) {
       return;
     }
-    const selfDestructEvents = await EvmInternalTransaction.query()
-      .joinRelated('evm_transaction')
-      .where('evm_transaction.height', '>', startBlock)
-      .andWhere('evm_transaction.height', '<=', endBlock)
-      .andWhere(
-        'evm_internal_transaction.type',
-        EvmInternalTransaction.TYPE.SELFDESTRUCT
-      )
-      .andWhere('evm_internal_transaction.error', null)
-      .orderBy('evm_internal_transaction.id');
+    const selfDestructEvents = _.keyBy(
+      await EvmInternalTransaction.query()
+        .joinRelated('evm_transaction')
+        .where('evm_transaction.height', '>', startBlock)
+        .andWhere('evm_transaction.height', '<=', endBlock)
+        .andWhere(
+          'evm_internal_transaction.type',
+          EvmInternalTransaction.TYPE.SELFDESTRUCT
+        )
+        .andWhere('evm_internal_transaction.error', null)
+        .select('evm_internal_transaction.from', 'evm_transaction.height')
+        .orderBy('evm_internal_transaction.id'),
+      'from'
+    );
     await knex.transaction(async (trx) => {
-      if (selfDestructEvents.length > 0) {
-        const destructContractsAddr = selfDestructEvents.map((e) => e.from);
+      const destructContractsAddr = Object.keys(selfDestructEvents);
+      if (destructContractsAddr.length > 0) {
+        const selfDestructContracts = _.keyBy(
+          await EVMSmartContract.query().whereIn(
+            'address',
+            destructContractsAddr
+          ),
+          'address'
+        );
+        const updateContracts = Object.keys(selfDestructContracts).filter(
+          (e) =>
+            selfDestructEvents[e].height >=
+            selfDestructContracts[e].created_height
+        );
         await EVMSmartContract.query()
           .patch({
             status: EVMSmartContract.STATUS.DELETED,
           })
-          .whereIn('address', destructContractsAddr)
+          .whereIn('address', updateContracts)
           .transacting(trx);
       }
       if (blockCheckpoint) {
