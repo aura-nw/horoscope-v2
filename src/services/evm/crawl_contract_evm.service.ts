@@ -1,6 +1,7 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import _, { Dictionary } from 'lodash';
 import { ServiceBroker } from 'moleculer';
+import { whatsabi } from '@shazow/whatsabi';
 import { PublicClient, keccak256 } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -225,23 +226,26 @@ export default class CrawlSmartContractEVMService extends BullableService {
   }
 
   detectContractTypeByCode(code: string): string | null {
+    const selectors = whatsabi
+      .selectorsFromBytecode(code)
+      .map((selector) => selector.slice(2, 10));
     if (
       EVM_CONTRACT_METHOD_HEX_PREFIX.ABI_INTERFACE_ERC20.every((method) =>
-        code.includes(method)
+        selectors.includes(method)
       )
     ) {
       return EVMSmartContract.TYPES.ERC20;
     }
     if (
       EVM_CONTRACT_METHOD_HEX_PREFIX.ABI_INTERFACE_ERC721.every((method) =>
-        code.includes(method)
+        selectors.includes(method)
       )
     ) {
       return EVMSmartContract.TYPES.ERC721;
     }
     if (
       EVM_CONTRACT_METHOD_HEX_PREFIX.ABI_INTERFACE_ERC1155.every((method) =>
-        code.includes(method)
+        selectors.includes(method)
       )
     ) {
       return EVMSmartContract.TYPES.ERC1155;
