@@ -1,0 +1,187 @@
+{
+  "txs": [
+    {
+      "hash": "CE1C281B2F98B4569616CACC82E28456E805BE571CB71EC464183935F8E76D3C",
+      "height": "20006980",
+      "index": 0,
+      "tx_result": {
+        "code": 0,
+        "data": "EsAECicvZXRoZXJtaW50LmV2bS52MS5Nc2dFdGhlcmV1bVR4UmVzcG9uc2USlAQKQjB4MTU4Y2ZmMTA0NGZjZDViZThlZjI3ZDczNGQxMWIzNzAyYzAyYWZlZjlhMTFiNTlmZDUzYjUxYjY0OGUyZWY5MxLJAwoqMHgwZTQyZGFGYzAzYmRiQTc0YzA1NjhkRGUyOURkYmM1RGFBNzQwYjYyEkIweDhjNWJlMWU1ZWJlYzdkNWJkMTRmNzE0MjdkMWU4NGYzZGQwMzE0YzBmN2IyMjkxZTViMjAwYWM4YzdjM2I5MjUSQjB4MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMzY0ZTI3ZWZhZDFjY2M4ZGJjY2M4ZTFiZTk0ZTE5OWUwZGU2N2NiMRJCMHgwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDBhMWY3MzIwYzBkNDQ1MDkwMjM3NzVjZTg5ZDgwYjNkNGY0MjE3MWRjEkIweDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAzZTcgxJDFCSpCMHgxNThjZmYxMDQ0ZmNkNWJlOGVmMjdkNzM0ZDExYjM3MDJjMDJhZmVmOWExMWI1OWZkNTNiNTFiNjQ4ZTJlZjkzOkIweDlmZmRhN2JkYTY5ZTljOTQ4ZWNhYjgyYjFhZmY2NGM3MDc0YzliMzIxZjZkMjE1ZDQwMTQ2MDAyOTFjZjA3YmEoxP8C",
+        "log": "[{\"msg_index\":0,\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"/ethermint.evm.v1.MsgEthereumTx\"},{\"key\":\"sender\",\"value\":\"aura1xe8z0madrnxgm0xv3cd7jnsencx7vl93tj3znv\"}]},{\"type\":\"ethereum_tx\",\"attributes\":[{\"key\":\"amount\",\"value\":\"0\"},{\"key\":\"ethereumTxHash\",\"value\":\"0x158cff1044fcd5be8ef27d734d11b3702c02afef9a11b59fd53b51b648e2ef93\"},{\"key\":\"txIndex\",\"value\":\"0\"},{\"key\":\"txGasUsed\",\"value\":\"49092\"},{\"key\":\"txHash\",\"value\":\"CE1C281B2F98B4569616CACC82E28456E805BE571CB71EC464183935F8E76D3C\"},{\"key\":\"recipient\",\"value\":\"0x0e42daFc03bdbA74c0568dDe29Ddbc5DaA740b62\"}]},{\"type\":\"tx_log\",\"attributes\":[{\"key\":\"txLog\",\"value\":\"{\\\"address\\\":\\\"0x0e42daFc03bdbA74c0568dDe29Ddbc5DaA740b62\\\",\\\"topics\\\":[\\\"0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925\\\",\\\"0x000000000000000000000000364e27efad1ccc8dbccc8e1be94e199e0de67cb1\\\",\\\"0x000000000000000000000000a1f7320c0d44509023775ce89d80b3d4f42171dc\\\",\\\"0x00000000000000000000000000000000000000000000000000000000000003e7\\\"],\\\"blockNumber\\\":20006980,\\\"transactionHash\\\":\\\"0x158cff1044fcd5be8ef27d734d11b3702c02afef9a11b59fd53b51b648e2ef93\\\",\\\"transactionIndex\\\":0,\\\"blockHash\\\":\\\"0x9ffda7bda69e9c948ecab82b1aff64c7074c9b321f6d215d4014600291cf07ba\\\",\\\"logIndex\\\":0}\"}]},{\"type\":\"message\",\"attributes\":[{\"key\":\"module\",\"value\":\"evm\"},{\"key\":\"sender\",\"value\":\"0x364E27efAd1Ccc8dBCcc8e1bE94E199E0De67Cb1\"},{\"key\":\"txType\",\"value\":\"2\"}]}]}]",
+        "info": "",
+        "gas_wanted": "58910",
+        "gas_used": "49092",
+        "events": [
+          {
+            "type": "coin_spent",
+            "attributes": [
+              {
+                "key": "spender",
+                "value": "aura1w9vxuke5dz6hyza2j932qgmxltnfxwl7qlx4mg",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1uaura",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "coin_received",
+            "attributes": [
+              {
+                "key": "receiver",
+                "value": "aura17xpfvakm2amg962yls6f84z3kell8c5lt05zfy",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1uaura",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "transfer",
+            "attributes": [
+              {
+                "key": "recipient",
+                "value": "aura17xpfvakm2amg962yls6f84z3kell8c5lt05zfy",
+                "index": true
+              },
+              {
+                "key": "sender",
+                "value": "aura1w9vxuke5dz6hyza2j932qgmxltnfxwl7qlx4mg",
+                "index": true
+              },
+              {
+                "key": "amount",
+                "value": "1uaura",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "sender",
+                "value": "aura1w9vxuke5dz6hyza2j932qgmxltnfxwl7qlx4mg",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "tx",
+            "attributes": [
+              {
+                "key": "fee",
+                "value": "589100000000aaura",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "ethereum_tx",
+            "attributes": [
+              {
+                "key": "ethereumTxHash",
+                "value": "0x158cff1044fcd5be8ef27d734d11b3702c02afef9a11b59fd53b51b648e2ef93",
+                "index": true
+              },
+              {
+                "key": "txIndex",
+                "value": "0",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "action",
+                "value": "/ethermint.evm.v1.MsgEthereumTx",
+                "index": true
+              },
+              {
+                "key": "sender",
+                "value": "aura1xe8z0madrnxgm0xv3cd7jnsencx7vl93tj3znv",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "ethereum_tx",
+            "attributes": [
+              {
+                "key": "amount",
+                "value": "0",
+                "index": true
+              },
+              {
+                "key": "ethereumTxHash",
+                "value": "0x158cff1044fcd5be8ef27d734d11b3702c02afef9a11b59fd53b51b648e2ef93",
+                "index": true
+              },
+              {
+                "key": "txIndex",
+                "value": "0",
+                "index": true
+              },
+              {
+                "key": "txGasUsed",
+                "value": "49092",
+                "index": true
+              },
+              {
+                "key": "txHash",
+                "value": "CE1C281B2F98B4569616CACC82E28456E805BE571CB71EC464183935F8E76D3C",
+                "index": true
+              },
+              {
+                "key": "recipient",
+                "value": "0x0e42daFc03bdbA74c0568dDe29Ddbc5DaA740b62",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "tx_log",
+            "attributes": [
+              {
+                "key": "txLog",
+                "value": "{\"address\":\"0x0e42daFc03bdbA74c0568dDe29Ddbc5DaA740b62\",\"topics\":[\"0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925\",\"0x000000000000000000000000364e27efad1ccc8dbccc8e1be94e199e0de67cb1\",\"0x000000000000000000000000a1f7320c0d44509023775ce89d80b3d4f42171dc\",\"0x00000000000000000000000000000000000000000000000000000000000003e7\"],\"blockNumber\":20006980,\"transactionHash\":\"0x158cff1044fcd5be8ef27d734d11b3702c02afef9a11b59fd53b51b648e2ef93\",\"transactionIndex\":0,\"blockHash\":\"0x9ffda7bda69e9c948ecab82b1aff64c7074c9b321f6d215d4014600291cf07ba\",\"logIndex\":0}",
+                "index": true
+              }
+            ]
+          },
+          {
+            "type": "message",
+            "attributes": [
+              {
+                "key": "module",
+                "value": "evm",
+                "index": true
+              },
+              {
+                "key": "sender",
+                "value": "0x364E27efAd1Ccc8dBCcc8e1bE94E199E0De67Cb1",
+                "index": true
+              },
+              {
+                "key": "txType",
+                "value": "2",
+                "index": true
+              }
+            ]
+          }
+        ],
+        "codespace": ""
+      },
+      "tx": "Cp8DCusCCh8vZXRoZXJtaW50LmV2bS52MS5Nc2dFdGhlcmV1bVR4EscCCoACCh4vZXRoZXJtaW50LmV2bS52MS5EeW5hbWljRmVlVHgS3QEKBDEyMzYQgQQaCDEwMDAwMDAwIggxMDAwMDAwMCiezAMyKjB4MGU0MmRhRmMwM2JkYkE3NGMwNTY4ZERlMjlEZGJjNURhQTc0MGI2MjoBMEJECV6nswAAAAAAAAAAAAAAAKH3MgwNRFCQI3dc6J2As9T0IXHcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+dSAQFaIMeKwwGr4Si1AusIPTaSXMF0N/PFYRB4gNxkFi22WDEQYiAjm9eTINjssHbvhHkpBD2fP/rJs54wgg72vSPBGBzR7xpCMHgxNThjZmYxMDQ0ZmNkNWJlOGVmMjdkNzM0ZDExYjM3MDJjMDJhZmVmOWExMWI1OWZkNTNiNTFiNjQ4ZTJlZjkz+j8uCiwvZXRoZXJtaW50LmV2bS52MS5FeHRlbnNpb25PcHRpb25zRXRoZXJldW1UeBIdEhsKFQoFYWF1cmESDDU4OTEwMDAwMDAwMBCezAM="
+    }
+  ],
+  "total_count": "1"
+}
