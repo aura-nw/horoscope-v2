@@ -2,6 +2,7 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import _ from 'lodash';
 import { ethers, keccak256 } from 'ethers';
+import { whatsabi } from '@shazow/whatsabi';
 import EtherJsClient from '../../common/utils/etherjs_client';
 import {
   BlockCheckpoint,
@@ -204,23 +205,26 @@ export default class CrawlSmartContractEVMService extends BullableService {
   }
 
   detectContractTypeByCode(code: string): string | null {
+    const selectors = whatsabi
+      .selectorsFromBytecode(code)
+      .map((selector) => selector.slice(2, 10));
     if (
       EVM_CONTRACT_METHOD_HEX_PREFIX.ABI_INTERFACE_ERC20.every((method) =>
-        code.includes(method)
+        selectors.includes(method)
       )
     ) {
       return EVMSmartContract.TYPES.ERC20;
     }
     if (
       EVM_CONTRACT_METHOD_HEX_PREFIX.ABI_INTERFACE_ERC721.every((method) =>
-        code.includes(method)
+        selectors.includes(method)
       )
     ) {
       return EVMSmartContract.TYPES.ERC721;
     }
     if (
       EVM_CONTRACT_METHOD_HEX_PREFIX.ABI_INTERFACE_ERC1155.every((method) =>
-        code.includes(method)
+        selectors.includes(method)
       )
     ) {
       return EVMSmartContract.TYPES.ERC1155;
