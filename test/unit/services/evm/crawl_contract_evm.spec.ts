@@ -52,15 +52,35 @@ export default class CrawlContractEvmTest {
         height: 100,
       }),
     ]);
+    const selfDestructEvents = [
+      EvmInternalTransaction.fromJson({
+        from: evmSmartContract.address,
+        gas: '0',
+        gas_used: '0',
+        evm_tx_id: 5969,
+        input: '0x',
+        to: '0xe1fb381d6fe4ebd25d38929fa7e4c00de2ccd2b2',
+        type: 'SELFDESTRUCT',
+        type_trace_address: 'CALL[0]_SELFDESTRUCT',
+        value: '0',
+        height: evmSmartContract.created_height,
+      }),
+    ];
     const mockSelfDestructQuery: any = {
-      select: () => 1,
+      select: () => mockSelfDestructQuery,
       joinRelated: () => mockSelfDestructQuery,
       where: () => mockSelfDestructQuery,
       andWhere: () => mockSelfDestructQuery,
-      orderBy: () => mockSelfDestructQuery,
+      orderBy: () => selfDestructEvents,
     };
     jest
       .spyOn(EvmInternalTransaction, 'query')
       .mockImplementation(() => mockSelfDestructQuery);
+    await this.crawlContractEvmService.handleSelfDestruct();
+    const result = await EVMSmartContract.query()
+      .where('address', evmSmartContract.address)
+      .first()
+      .throwIfNotFound();
+    expect(result.status).toEqual(EVMSmartContract.STATUS.DELETED);
   }
 }
