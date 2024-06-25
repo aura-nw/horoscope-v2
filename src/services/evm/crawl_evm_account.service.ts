@@ -11,7 +11,7 @@ import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import knex from '../../common/utils/db_connection';
-import EtherJsClient from '../../common/utils/etherjs_client';
+import { getViemClient } from '../../common/utils/etherjs_client';
 import {
   Account,
   AccountBalance,
@@ -180,7 +180,7 @@ export default class CrawlEvmAccountService extends BullableService {
   }
 
   public async _start(): Promise<void> {
-    this.viemClient = EtherJsClient.getViemClient();
+    this.viemClient = getViemClient();
     await this.createJob(
       BULL_JOB_NAME.CRAWL_EVM_ACCOUNT,
       BULL_JOB_NAME.CRAWL_EVM_ACCOUNT,

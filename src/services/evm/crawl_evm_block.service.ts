@@ -1,7 +1,7 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { PublicClient } from 'viem';
 import { BlockCheckpoint, EVMBlock } from '../../models';
-import EtherJsClient from '../../common/utils/etherjs_client';
+import { getViemClient } from '../../common/utils/etherjs_client';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from './constant';
 import config from '../../../config.json' assert { type: 'json' };
@@ -99,7 +99,7 @@ export default class CrawlEvmBlockService extends BullableService {
   }
 
   public async _start(): Promise<void> {
-    this.viemJsClient = EtherJsClient.getViemClient();
+    this.viemJsClient = getViemClient();
     this.createJob(
       BULL_JOB_NAME.CRAWL_EVM_BLOCK,
       BULL_JOB_NAME.CRAWL_EVM_BLOCK,
