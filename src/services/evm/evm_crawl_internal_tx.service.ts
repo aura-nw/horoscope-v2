@@ -36,7 +36,11 @@ export default class EvmCrawlInternalTxService extends BullableService {
     const [startBlock, endBlock, blockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.EVM_CRAWL_INTERNAL_TX,
-        [BULL_JOB_NAME.HANDLE_TRANSACTION_EVM],
+        [
+          config.evmOnly
+            ? BULL_JOB_NAME.CRAWL_EVM_TRANSACTION
+            : BULL_JOB_NAME.HANDLE_TRANSACTION_EVM,
+        ],
         config.evmCrawlInternalTx.key
       );
     this.logger.info(
