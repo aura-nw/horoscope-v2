@@ -1,7 +1,16 @@
-import { Dictionary } from 'lodash';
+import { Knex } from 'knex';
+import _, { Dictionary } from 'lodash';
 import Moleculer from 'moleculer';
 import { decodeAbiParameters, keccak256, toHex } from 'viem';
-import { Erc721Activity, Erc721Token, EvmEvent } from '../../models';
+import config from '../../../config.json' assert { type: 'json' };
+import knex from '../../common/utils/db_connection';
+import {
+  Block,
+  Erc721Activity,
+  Erc721Contract,
+  Erc721Token,
+  EvmEvent,
+} from '../../models';
 import { ZERO_ADDRESS } from './constant';
 
 export const ERC721_EVENT_TOPIC0 = {
@@ -178,5 +187,133 @@ export class Erc721Handler {
       logger.error(e);
       return undefined;
     }
+  }
+
+  static async getErc721Activities(
+    startBlock: number,
+    endBlock: number,
+    trx: Knex.Transaction,
+    logger: Moleculer.LoggerInstance,
+    addresses?: string[]
+  ) {
+    const erc721Events = await EvmEvent.query()
+      .transacting(trx)
+      .joinRelated('[evm_smart_contract,evm_transaction]')
+      .innerJoin(
+        'erc721_contract',
+        'evm_event.address',
+        'erc721_contract.address'
+      )
+      .modify((builder) => {
+        if (addresses) {
+          builder.whereIn('evm_event.address', addresses);
+        }
+      })
+      .where('evm_event.block_height', '>', startBlock)
+      .andWhere('evm_event.block_height', '<=', endBlock)
+      .orderBy('evm_event.id', 'asc')
+      .select(
+        'evm_event.*',
+        'evm_transaction.from as sender',
+        'evm_smart_contract.id as evm_smart_contract_id',
+        'evm_transaction.id as evm_tx_id',
+        'erc721_contract.track as track'
+      );
+    const erc721Activities: Erc721Activity[] = [];
+    erc721Events
+      .filter((e) => e.track)
+      .forEach((e) => {
+        if (e.topic0 === ERC721_EVENT_TOPIC0.TRANSFER) {
+          const activity = Erc721Handler.buildTransferActivity(e, logger);
+          if (activity) {
+            erc721Activities.push(activity);
+          }
+        } else if (e.topic0 === ERC721_EVENT_TOPIC0.APPROVAL) {
+          const activity = Erc721Handler.buildApprovalActivity(e, logger);
+          if (activity) {
+            erc721Activities.push(activity);
+          }
+        } else if (e.topic0 === ERC721_EVENT_TOPIC0.APPROVAL_FOR_ALL) {
+          const activity = Erc721Handler.buildApprovalForAllActivity(e, logger);
+          if (activity) {
+            erc721Activities.push(activity);
+          }
+        }
+      });
+    return erc721Activities;
+  }
+
+  static async updateErc721(
+    erc721Activities: Erc721Activity[],
+    erc721Tokens: Erc721Token[],
+    trx: Knex.Transaction
+  ) {
+    let updatedTokens: Dictionary<Erc721Token> = {};
+    if (erc721Tokens.length > 0) {
+      updatedTokens = _.keyBy(
+        await Erc721Token.query()
+          .insert(
+            erc721Tokens.map((token) =>
+              Erc721Token.fromJson({
+                token_id: token.token_id,
+                owner: token.owner,
+                erc721_contract_address: token.erc721_contract_address,
+                last_updated_height: token.last_updated_height,
+              })
+            )
+          )
+          .onConflict(['token_id', 'erc721_contract_address'])
+          .merge()
+          .transacting(trx),
+        (o) => `${o.erc721_contract_address}_${o.token_id}`
+      );
+    }
+    if (erc721Activities.length > 0) {
+      erc721Activities.forEach((activity) => {
+        const token =
+          updatedTokens[
+            `${activity.erc721_contract_address}_${activity.token_id}`
+          ];
+        if (token) {
+          // eslint-disable-next-line no-param-reassign
+          activity.erc721_token_id = token.id;
+        }
+      });
+      await knex
+        .batchInsert(
+          'erc721_activity',
+          erc721Activities.map((e) => _.omit(e, 'token_id')),
+          config.erc721.chunkSizeInsert
+        )
+        .transacting(trx);
+    }
+  }
+
+  static async calErc721Stats(addresses?: string[]): Promise<Erc721Contract[]> {
+    // Get once block height 24h ago.
+    const blockSince24hAgo = await Block.query()
+      .select('height')
+      .where('time', '<=', knex.raw("now() - '24 hours'::interval"))
+      .orderBy('height', 'desc')
+      .limit(1);
+
+    // Calculate total activity and transfer_24h of erc721
+    return Erc721Contract.query()
+      .count('erc721_activity.id AS total_activity')
+      .select(
+        knex.raw(
+          `SUM( CASE WHEN erc721_activity.height >= ? AND erc721_activity.action = '${ERC721_ACTION.TRANSFER}' THEN 1 ELSE 0 END ) AS transfer_24h`,
+          blockSince24hAgo[0]?.height
+        )
+      )
+      .select('erc721_contract.id as erc721_contract_id')
+      .where('erc721_contract.track', '=', true)
+      .modify((builder) => {
+        if (addresses) {
+          builder.whereIn('erc721_contract.address', addresses);
+        }
+      })
+      .joinRelated('erc721_activity')
+      .groupBy('erc721_contract.id');
   }
 }

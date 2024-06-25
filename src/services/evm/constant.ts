@@ -121,6 +121,10 @@ export const SERVICE = {
         key: 'insertNewErc721Contracts',
         path: 'v1.Erc721.insertNewErc721Contracts',
       },
+      reindexing: {
+        key: 'reindexing',
+        path: 'v1.Erc721.reindexing',
+      },
     },
     SignatureMappingEVM: {
       key: 'SignatureMappingEVM',
@@ -230,6 +234,7 @@ export const BULL_JOB_NAME = {
   HANDLE_ERC721_MEDIA: 'handle:erc721-media',
   HANDLE_ERC721_TOKEN_MEDIA: 'handle:erc721-token-media',
   REFRESH_ERC721_STATS: 'refresh:erc721-stats',
+  REINDEX_ERC721: 'reindex:erc721',
   SYNC_SOURCIFY: 'sync:sourcify',
   CRAWL_EVM_BLOCK: 'crawl:evm-block',
   JOB_CREATE_EVM_BLOCK_PARTITION: 'job:create-evm-block-partition',

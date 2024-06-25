@@ -31,7 +31,9 @@
     "LCD": ["https://lcd.serenity.aura.network"],
     "databaseName": "horoscope_dev_serenitytestnet001",
     "redisDBNumber": 3,
-    "moleculerNamespace": "namespace-serenity"
+    "moleculerNamespace": "namespace-serenity",
+    "EVMJSONRPC": ["https://jsonrpc.serenity.aura.network/"],
+    "EVMchainId": 1236
   },
   {
     "chainId": "auradev_1235-3",
