@@ -76,6 +76,7 @@ export default class EvmCrawlInternalTxService extends BullableService {
           'Content-Type': 'application/json',
         },
         data: {
+          jsonrpc: '2.0',
           id: evmTx.id,
           method: 'debug_traceTransaction',
           params: [evmTx.hash, { tracer: 'callTracer' }],
