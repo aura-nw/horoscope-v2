@@ -42,6 +42,7 @@ export default class CrawlContractEvmTest {
       created_hash: 'cvxcvcxv',
       type: EVMSmartContract.TYPES.ERC721,
       code_hash: 'dfgdfghf',
+      last_updated_tx_id: 5968,
     });
     await EVMSmartContract.query().insert(evmSmartContract);
     jest.spyOn(BlockCheckpoint, 'getCheckpoint').mockResolvedValue([

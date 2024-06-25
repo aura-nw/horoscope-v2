@@ -61,7 +61,8 @@ export default class CrawlSmartContractEVMService extends BullableService {
         'evm_transaction.from',
         'evm_transaction.to',
         'evm_transaction.contract_address',
-        'evm_transaction.data'
+        'evm_transaction.data',
+        'evm_transaction.id'
       )
       .withGraphFetched('[evm_events, evm_internal_transactions]')
       .modifyGraph('evm_events', (builder) => {
@@ -181,6 +182,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
                   created_height: createdHeight,
                   code_hash: codeHash,
                   status: EVMSmartContract.STATUS.CREATED,
+                  last_updated_tx_id: evmTx.id,
                 })
               );
             }
@@ -258,7 +260,10 @@ export default class CrawlSmartContractEVMService extends BullableService {
           EvmInternalTransaction.TYPE.SELFDESTRUCT
         )
         .andWhere('evm_internal_transaction.error', null)
-        .select('evm_internal_transaction.from', 'evm_transaction.height')
+        .select(
+          'evm_internal_transaction.from',
+          'evm_internal_transaction.evm_tx_id'
+        )
         .orderBy('evm_internal_transaction.id'),
       'from'
     );
@@ -274,8 +279,8 @@ export default class CrawlSmartContractEVMService extends BullableService {
         );
         const updateContracts = Object.keys(selfDestructContracts).filter(
           (e) =>
-            selfDestructEvents[e].height >=
-            selfDestructContracts[e].created_height
+            parseInt(selfDestructEvents[e].evm_tx_id, 10) >=
+            (selfDestructContracts[e].last_updated_tx_id || 0)
         );
         await EVMSmartContract.query()
           .patch({
