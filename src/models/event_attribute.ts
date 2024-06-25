@@ -133,5 +133,6 @@ export class EventAttribute extends BaseModel {
     TX_FEE: 'tx.fee',
     TX_FEE_PAYER: 'tx.fee_payer',
     ETHEREUM_TX_ETHEREUM_TX_FAILED: 'ethereum_tx.ethereumTxFailed',
+    ACTIVE_PROPOSAL_PROPOSAL_ID: 'active_proposal.proposal_id',
   };
 }

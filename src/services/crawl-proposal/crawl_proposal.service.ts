@@ -339,6 +339,47 @@ export default class CrawlProposalService extends BullableService {
       });
   }
 
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.HANDLE_RESULT_ACTIVE_PROPOSAL,
+    jobName: BULL_JOB_NAME.HANDLE_RESULT_ACTIVE_PROPOSAL,
+  })
+  public async handleResultActiveProposals() {
+    const [startBlock, endBlock, blockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.HANDLE_RESULT_ACTIVE_PROPOSAL,
+        [BULL_JOB_NAME.HANDLE_TRANSACTION],
+        config.crawlProposal.key
+      );
+    this.logger.info(
+      `Crawl event active proposal from block ${startBlock} to ${endBlock}`
+    );
+    if (startBlock >= endBlock) {
+      return;
+    }
+    const eventAttributes = await EventAttribute.query()
+      .where('block_height', '>', startBlock)
+      .andWhere('block_height', '<=', endBlock)
+      .andWhere(
+        'composite_key',
+        EventAttribute.ATTRIBUTE_COMPOSITE_KEY.ACTIVE_PROPOSAL_PROPOSAL_ID
+      );
+    if (eventAttributes.length > 0) {
+      eventAttributes.forEach((eventAttribute: EventAttribute) => {
+        this.logger.info(
+          `Block ${eventAttribute.block_height} has attribute ${eventAttribute.key} with value ${eventAttribute.value}`
+        );
+        // do something when found active proposal
+      });
+    }
+    if (blockCheckpoint) {
+      blockCheckpoint.height = endBlock;
+      await BlockCheckpoint.query()
+        .insert(blockCheckpoint)
+        .onConflict('job_name')
+        .merge();
+    }
+  }
+
   public async _start() {
     this.createJob(
       BULL_JOB_NAME.CRAWL_PROPOSAL,
@@ -384,7 +425,21 @@ export default class CrawlProposalService extends BullableService {
         },
       }
     );
-
+    this.createJob(
+      BULL_JOB_NAME.HANDLE_RESULT_ACTIVE_PROPOSAL,
+      BULL_JOB_NAME.HANDLE_RESULT_ACTIVE_PROPOSAL,
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        repeat: {
+          every:
+            config.crawlProposal.handleResultActiveProposal.millisecondCrawl,
+        },
+      }
+    );
     return super._start();
   }
 }

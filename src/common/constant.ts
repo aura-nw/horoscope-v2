@@ -58,6 +58,7 @@ export const BULL_JOB_NAME = {
   COUNT_VOTE_PROPOSAL: 'handle:count-vote-proposal',
   HANDLE_NOT_ENOUGH_DEPOSIT_PROPOSAL: 'handle:not-enough-deposit-proposal',
   HANDLE_ENDED_PROPOSAL: 'handle:ended-proposal',
+  HANDLE_RESULT_ACTIVE_PROPOSAL: 'handle:result-active-proposal',
   CRAWL_GENESIS: 'crawl:genesis',
   CRAWL_CODE: 'crawl:code',
   CRAWL_SMART_CONTRACT: 'crawl:smart-contract',
