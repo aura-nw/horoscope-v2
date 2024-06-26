@@ -10,6 +10,10 @@ import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
 import '../../../fetch-polyfill.js';
 
+type CustomFormattedTransaction = FormattedTransaction & {
+  date: number;
+};
+
 @Service({
   name: SERVICE.V1.CrawlEvmTransaction.key,
   version: 1,
@@ -36,13 +40,19 @@ export default class CrawlEvmTransactionService extends BullableService {
     }
 
     const blocks = await EVMBlock.query()
-      .select('height', 'transactions', 'tx_count')
+      .select('height', 'transactions', 'tx_count', 'date')
       .where('height', '>', startBlock)
       .where('height', '<=', endBlock)
       .orderBy('height', 'asc');
 
-    const offchainTxs: FormattedTransaction[] = blocks
-      .map((block) => block.transactions)
+    const offchainTxs: CustomFormattedTransaction[] = blocks
+      .map((block) => {
+        block.transactions.forEach((tx: any) => {
+          // eslint-disable-next-line no-param-reassign
+          tx.date = block.date;
+        });
+        return block.transactions;
+      })
       .flat();
     const receiptTxs = await this.getListTxReceipt(blocks);
     if (receiptTxs.find((tx) => tx == null)) {
@@ -93,6 +103,7 @@ export default class CrawlEvmTransactionService extends BullableService {
         status: receiptTx.status === 'success' ? 1 : 0,
         contract_address: receiptTx.contractAddress,
         value: offchainTx.value,
+        date: offchainTx.date,
       });
     });
 
