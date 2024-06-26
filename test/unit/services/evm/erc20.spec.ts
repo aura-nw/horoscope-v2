@@ -117,6 +117,8 @@ export default class Erc20Test {
   @AfterAll()
   async tearDown() {
     await this.broker.stop();
+    jest.resetAllMocks();
+    jest.restoreAllMocks();
   }
 
   @Test('test getErc20Activities')
