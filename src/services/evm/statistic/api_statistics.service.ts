@@ -33,7 +33,7 @@ export default class ApiEVMStatisticsService extends BaseService {
   }
 
   @Action({
-    name: 'getTopAccounts',
+    name: 'getTopEVMAccounts',
     params: {},
   })
   async getTopAccounts() {
