@@ -4,6 +4,8 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import {
   BlockCheckpoint,
+  DailyStatistics,
+  EVMBlock,
   EVMTransaction,
   Statistic,
   StatisticKey,
@@ -84,6 +86,19 @@ export default class DashboardEVMStatisticsService extends BullableService {
     return totalTx;
   }
 
+  async avgBlockTime() {
+    const last100Block = await EVMBlock.query()
+      .orderBy('height', 'desc')
+      .limit(100);
+    if (last100Block.length === 0) return 0;
+    const avgTime =
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      (last100Block[0].date - last100Block[last100Block.length - 1].date) /
+      last100Block.length;
+    return avgTime;
+  }
+
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_DASHBOARD_EVM_STATISTICS,
     jobName: BULL_JOB_NAME.HANDLE_DASHBOARD_EVM_STATISTICS,
@@ -91,19 +106,25 @@ export default class DashboardEVMStatisticsService extends BullableService {
   public async handleJob(_payload: object): Promise<void> {
     this.logger.info('Update EVM dashboard statistics');
 
-    const [totalBlocks, totalTxs] = await Promise.all([
-      BlockCheckpoint.query().findOne(
-        'job_name',
-        config.evmOnly
-          ? BULL_JOB_NAME.CRAWL_EVM_TRANSACTION
-          : BULL_JOB_NAME.HANDLE_TRANSACTION_EVM
-      ),
-      this.statisticTotalTransaction(),
-    ]);
+    const [totalBlocks, totalTxs, avgBlockTime, latestDailyStat] =
+      await Promise.all([
+        BlockCheckpoint.query().findOne(
+          'job_name',
+          config.evmOnly
+            ? BULL_JOB_NAME.CRAWL_EVM_TRANSACTION
+            : BULL_JOB_NAME.HANDLE_TRANSACTION_EVM
+        ),
+        this.statisticTotalTransaction(),
+        this.avgBlockTime(),
+        DailyStatistics.query().orderBy('date', 'desc').first(),
+      ]);
 
     const dashboardStatistics = {
       total_blocks: totalBlocks?.height,
       total_transactions: Number(totalTxs),
+      avg_block_time: avgBlockTime,
+      addresses: latestDailyStat ? latestDailyStat.unique_addresses : 0,
+      daily_transaction: latestDailyStat ? latestDailyStat.daily_txs : 0,
     };
 
     await this.broker.cacher?.set(
