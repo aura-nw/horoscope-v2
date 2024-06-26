@@ -129,6 +129,11 @@ export default class TestErc721MediaService {
     expect(parsedIpfsPath).toEqual(`${IPFS_GATEWAY}${path}`);
   }
 
+  /**
+   * @description test parseFilename function
+   * @input ipfs uri
+   * @result media file url which store at Aura
+   */
   @Test('Test parseFilename function')
   public async testParseFilename() {
     const host = 'ipfs';

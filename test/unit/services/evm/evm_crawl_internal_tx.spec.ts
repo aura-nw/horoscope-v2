@@ -10,6 +10,11 @@ export default class TestEvmCrawlInternalTx {
     EvmCrawlInternalTxService
   ) as EvmCrawlInternalTxService;
 
+  /**
+   * @description test buildEvmInternalTransaction function
+   * @input result from eth_debugTracecall
+   * @result build evm internal transaction
+   */
   @Test('Test buildEvmInternalTransaction')
   async testBuildEvmInternalTransaction() {
     const result = {

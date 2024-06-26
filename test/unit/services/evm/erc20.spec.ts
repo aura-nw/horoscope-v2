@@ -121,6 +121,10 @@ export default class Erc20Test {
     jest.restoreAllMocks();
   }
 
+  /**
+   * @input range blocks
+   * @result erc20Activities in range blocks
+   */
   @Test('test getErc20Activities')
   async testGetErc20Activities() {
     const fromAccount = Account.fromJson({
@@ -150,40 +154,43 @@ export default class Erc20Test {
       Erc20Activity.fromJson({
         id: 44444,
         evm_event_id: this.evmEvent.id,
-        sender: 'fdgdfgdf',
+        sender: '0xDF587daaC47ae7B5586E34bCdb23d0b900b18a6C',
         action: 'transfer',
         erc20_contract_address: this.evmSmartContract.address,
         amount: '4543',
         from: fromAccount.evm_address,
         to: toAccount.evm_address,
         height: 400,
-        tx_hash: 'dfghdfhdfhgdf',
+        tx_hash:
+          '0x21f905f14a26c5b35e43e1bfbcf8ff395e453d6497a0ce0a0c3cd7814ec0ba03',
         evm_tx_id: this.evmTx.id,
       }),
       Erc20Activity.fromJson({
         id: 1234,
         evm_event_id: this.evmEvent.id,
-        sender: 'vgcxbvb',
+        sender: '0xa0008c8B4b39Ae646f910B2d2d2F279F92ca6D2b',
         action: 'transfer',
         erc20_contract_address: this.evmSmartContract.address,
         amount: '666666',
         from: fromAccount.evm_address,
         to: toAccount.evm_address,
         height: 401,
-        tx_hash: 'dfghdfhdfhgdf',
+        tx_hash:
+          '0x21f905f14a26c5b35e43e1bfbcf8ff395e453d6497a0ce0a0c3cd7814ec0ba03',
         evm_tx_id: this.evmTx.id,
       }),
       Erc20Activity.fromJson({
         id: 4444211,
         evm_event_id: this.evmEvent.id,
-        sender: 'fdgdfgdf',
+        sender: '0xDF587daaC47ae7B5586E34bCdb23d0b900b18a6C',
         action: 'transfer',
         erc20_contract_address: this.evmSmartContract2.address,
         amount: '4543',
         from: fromAccount.evm_address,
         to: toAccount.evm_address,
         height: 400,
-        tx_hash: 'dfghdfhdfhgdf',
+        tx_hash:
+          '0x21f905f14a26c5b35e43e1bfbcf8ff395e453d6497a0ce0a0c3cd7814ec0ba03',
         evm_tx_id: this.evmTx.id,
       }),
     ];
@@ -198,6 +205,10 @@ export default class Erc20Test {
     expect(result[1].to_account_id).toEqual(toAccount.id);
   }
 
+  /**
+   * @description: 3 accounts do transfer with each other
+   * @result updated account balances for each others
+   */
   @Test('test handleErc20Balance')
   async testHandleErc20Balance() {
     jest.spyOn(BlockCheckpoint, 'getCheckpoint').mockResolvedValue([
@@ -246,7 +257,7 @@ export default class Erc20Test {
       {
         id: 44444,
         evm_event_id: this.evmEvent.id,
-        sender: 'fdgdfgdf',
+        sender: '0xDF587daaC47ae7B5586E34bCdb23d0b900b18a6C',
         action: 'transfer',
         erc20_contract_address: this.evmSmartContract.address,
         amount: '4543',
@@ -255,13 +266,14 @@ export default class Erc20Test {
         from: account1.evm_address,
         to: account2.evm_address,
         height: 400,
-        tx_hash: 'dfghdfhdfhgdf',
+        tx_hash:
+          '0x21f905f14a26c5b35e43e1bfbcf8ff395e453d6497a0ce0a0c3cd7814ec0ba03',
         evm_tx_id: this.evmTx.id,
       },
       {
         id: 44444,
         evm_event_id: this.evmEvent.id,
-        sender: 'fdgdfgdf',
+        sender: '0xDF587daaC47ae7B5586E34bCdb23d0b900b18a6C',
         action: 'transfer',
         erc20_contract_address: this.evmSmartContract.address,
         amount: '2211',
@@ -270,7 +282,8 @@ export default class Erc20Test {
         from: account2.evm_address,
         to: account3.evm_address,
         height: 400,
-        tx_hash: 'dfghdfhdfhgdf',
+        tx_hash:
+          '0x21f905f14a26c5b35e43e1bfbcf8ff395e453d6497a0ce0a0c3cd7814ec0ba03',
         evm_tx_id: this.evmTx.id,
       },
     ];

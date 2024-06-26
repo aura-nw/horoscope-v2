@@ -104,6 +104,11 @@ export default class Erc721Test {
     jest.restoreAllMocks();
   }
 
+  /**
+   * @description test handleErc721Activity function
+   * @input evm events of an erc721 contract
+   * @result build erc721Activities, updated tokens
+   */
   @Test('test handleErc721Activity')
   async testHandleErc721Activity() {
     jest.spyOn(BlockCheckpoint, 'getCheckpoint').mockResolvedValue([

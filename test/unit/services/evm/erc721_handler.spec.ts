@@ -78,6 +78,11 @@ export default class Erc721HandlerTest {
     await EVMTransaction.query().insert(this.evmTx);
   }
 
+  /**
+   * @description test getErc721Activities function
+   * @input evm events in range blocks
+   * @result build erc721Activities from those evm events
+   */
   @Test('test getErc721Activities')
   async testGetErc721Activities() {
     await knex.transaction(async (trx) => {
@@ -208,6 +213,11 @@ export default class Erc721HandlerTest {
     });
   }
 
+  /**
+   * @description test calErc721Stats function
+   * @input erc721Activities list
+   * @result statistic from those erc721Activities
+   */
   @Test('test calErc721Stats')
   async testCalErc721Stats() {
     const evmEvent = EvmEvent.fromJson({
