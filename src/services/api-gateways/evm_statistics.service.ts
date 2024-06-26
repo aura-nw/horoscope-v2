@@ -34,7 +34,7 @@ export default class EVMStatisticsService extends BaseService {
     );
 
     return this.broker.call(
-      `v1.api-evm-statistics.getDashboardStatistics@${selectedChain?.moleculerNamespace}`
+      `v1.api-evm-statistics.getDashboardEVMStatistics@${selectedChain?.moleculerNamespace}`
     );
   }
 
@@ -56,7 +56,7 @@ export default class EVMStatisticsService extends BaseService {
     );
 
     return this.broker.call(
-      `v1.api-evm-statistics.getTopAccounts@${selectedChain?.moleculerNamespace}`
+      `v1.api-evm-statistics.getTopEVMAccounts@${selectedChain?.moleculerNamespace}`
     );
   }
 
