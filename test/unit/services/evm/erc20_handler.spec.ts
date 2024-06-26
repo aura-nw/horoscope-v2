@@ -26,6 +26,10 @@ export default class Erc20HandlerTest {
     await this.broker.stop();
   }
 
+  /**
+   * @input evm event that be transfer erc20
+   * @result build erc20TransferActivity
+   */
   @Test('test build erc20 transfer activity')
   async testBuildErc20TransferActivity() {
     const evmEvent = {
@@ -76,6 +80,10 @@ export default class Erc20HandlerTest {
     });
   }
 
+  /**
+   * @input evm event that be approval erc20
+   * @result build erc20ApprovalActivity
+   */
   @Test('test build erc20 approval activity')
   async testBuildErc20ApprovalActivity() {
     const evmEvent = {
@@ -126,18 +134,23 @@ export default class Erc20HandlerTest {
     });
   }
 
+  /**
+   * @input erc20 transfer activity
+   * @result from/to account balances be updated
+   */
   @Test('test handlerErc20Transfer')
   async testHandlerErc20Transfer() {
     const erc20Activity = Erc20Activity.fromJson({
       evm_event_id: 1,
-      sender: 'dafjfjj',
+      sender: '0x7c756Cba10Ff2C65016494E8BA37C12a108572b5',
       action: ERC20_ACTION.TRANSFER,
       erc20_contract_address: 'hsdbjbfbdsfc',
       amount: '12345222',
-      from: 'phamphong1',
-      to: 'phamphong2',
+      from: '0x3E665ACfE64628774d3bA8E589Fa8683eD8706C9',
+      to: '0xD83E708D7FE0E769Af80d990f9241458734808Ac',
       height: 10000,
-      tx_hash: 'fghkjghfdkjgbvkdfngkjdf',
+      tx_hash:
+        '0xb97228e533e3af1323d873c9c3e4c0a9b85d95ecd8e98110c8890c9453d2f077',
       evm_tx_id: 1,
       from_account_id: 123,
       to_account_id: 234,
