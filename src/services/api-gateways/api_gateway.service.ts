@@ -29,6 +29,8 @@ import config from '../../../config.json' assert { type: 'json' };
           'v2.statistics.getTopAccountsByChainId',
           'v2.services-manager.*',
           'v2.evm-proxy.*',
+          'v2.evm-statistics.getDashboardStatisticsByChainId',
+          'v2.evm-statistics.getTopAccountsByChainId',
         ],
       },
       {
@@ -45,6 +47,7 @@ import config from '../../../config.json' assert { type: 'json' };
           'v1.job.signature-mapping',
           'v1.job.insert-verify-by-codehash',
           'v1.erc721-admin.*',
+          'v2.evm-statistics.syncPrevDateStatsByChainId',
         ],
       },
       {
