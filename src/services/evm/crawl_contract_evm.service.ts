@@ -260,7 +260,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
         const updateContracts = Object.keys(selfDestructContracts).filter(
           (e) =>
             parseInt(selfDestructEvents[e].evm_tx_id, 10) >=
-            (selfDestructContracts[e].last_updated_tx_id || 0)
+            (selfDestructContracts[e]?.last_updated_tx_id || 0)
         );
         await EVMSmartContract.query()
           .patch({
