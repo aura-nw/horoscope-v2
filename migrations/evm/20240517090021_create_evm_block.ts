@@ -22,7 +22,8 @@ export async function up(knex: Knex): Promise<void> {
     ) PARTITION BY RANGE(height);
     CREATE INDEX evm_blockheight_index ON evm_block(height);
     CREATE INDEX evm_block_hash_index ON evm_block(hash);
-    CREATE INDEX evm_block_date_index ON evm_block(date);`
+    CREATE INDEX evm_block_date_index ON evm_block(date);
+    CREATE INDEX evm_block_height_date_index on evm_block(height, date);`
   );
   let endId = config.createEvmBlockToPartition.endId;
   let step = config.createEvmBlockToPartition.step;
