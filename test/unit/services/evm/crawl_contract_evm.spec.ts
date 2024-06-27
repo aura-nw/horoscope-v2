@@ -36,12 +36,14 @@ export default class CrawlContractEvmTest {
   async testHandleSelfDestruct() {
     const evmSmartContract = EVMSmartContract.fromJson({
       id: 555,
-      address: 'ghghdfgdsgre',
-      creator: 'dfgdfbvxcvxgfds',
+      address: '0xC57dC0FFa86AEFbdD1b3F30E825fcAE878A155F6',
+      creator: '0xDF587daaC47ae7B5586E34bCdb23d0b900b18a6C',
       created_height: 100,
-      created_hash: 'cvxcvcxv',
+      created_hash:
+        '0xae4b0793937b440f566ba5bdec4d3728a5c26cfc3233ca3a104ff0963841ac92',
       type: EVMSmartContract.TYPES.ERC721,
-      code_hash: 'dfgdfghf',
+      code_hash:
+        '0xaf7378ea38b2c744796688746c4234e253647da6d8e7325a36f69c1ac0e53d2c',
       last_updated_tx_id: 5968,
     });
     await EVMSmartContract.query().insert(evmSmartContract);
@@ -49,7 +51,7 @@ export default class CrawlContractEvmTest {
       1,
       2,
       BlockCheckpoint.fromJson({
-        job_name: 'dfdsfgsg',
+        job_name: 'handle:self_destruct',
         height: 100,
       }),
     ]);
