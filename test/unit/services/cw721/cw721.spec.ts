@@ -1812,13 +1812,10 @@ export default class AssetIndexerTest {
   @Test('test handleJob')
   public async testHandleJob() {
     const newTokenId = 'fgksdfjghkjsdfg';
-    const spy = jest.spyOn(BlockCheckpoint, 'getCheckpoint');
-    spy.mockResolvedValue([
-      1,
-      2,
+    await BlockCheckpoint.query().insert([
       BlockCheckpoint.fromJson({
-        job_name: 'dfdsfgsg',
-        height: 100,
+        job_name: BULL_JOB_NAME.HANDLE_CW721_TRANSACTION,
+        height: 1,
       }),
     ]);
     const msgs = [
