@@ -1,4 +1,4 @@
-import { BeforeAll, Describe, Test } from '@jest-decorated/core';
+import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
 import knex from '../../../../src/common/utils/db_connection';
 import {
@@ -78,6 +78,13 @@ export default class Erc721HandlerTest {
       this.erc721Contract2,
     ]);
     await EVMTransaction.query().insert(this.evmTx);
+  }
+
+  @AfterAll()
+  async tearDown() {
+    await this.broker.stop();
+    jest.resetAllMocks();
+    jest.restoreAllMocks();
   }
 
   /**
