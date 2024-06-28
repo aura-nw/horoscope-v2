@@ -4,7 +4,7 @@ import { ServiceBroker } from 'moleculer';
 import { PublicClient } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { BULL_JOB_NAME as COSMOS_BULL_JOB_NAME } from '../../common';
+import { BULL_JOB_NAME as COSMOS_BULL_JOB_NAME, Config } from '../../common';
 import knex from '../../common/utils/db_connection';
 import { getViemClient } from '../../common/utils/etherjs_client';
 import Utils from '../../common/utils/utils';
@@ -17,6 +17,7 @@ import {
 import { BULL_JOB_NAME, MSG_TYPE, SERVICE } from './constant';
 import { convertBech32AddressToEthAddress } from './utils';
 
+const { NODE_ENV } = Config;
 @Service({
   name: SERVICE.V1.HandleTransactionEVM.key,
   version: 1,
@@ -156,20 +157,22 @@ export default class HandleTransactionEVMService extends BullableService {
 
   public async _start(): Promise<void> {
     this.viemClient = getViemClient();
-    this.createJob(
-      BULL_JOB_NAME.HANDLE_TRANSACTION_EVM,
-      BULL_JOB_NAME.HANDLE_TRANSACTION_EVM,
-      {},
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-        repeat: {
-          every: config.handleTransactionEVM.millisecondCrawl,
-        },
-      }
-    );
+    if (NODE_ENV !== 'test') {
+      this.createJob(
+        BULL_JOB_NAME.HANDLE_TRANSACTION_EVM,
+        BULL_JOB_NAME.HANDLE_TRANSACTION_EVM,
+        {},
+        {
+          removeOnComplete: true,
+          removeOnFail: {
+            count: 3,
+          },
+          repeat: {
+            every: config.handleTransactionEVM.millisecondCrawl,
+          },
+        }
+      );
+    }
     return super._start();
   }
 }

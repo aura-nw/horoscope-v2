@@ -18,6 +18,7 @@ import {
 } from '../../../../src/models';
 import Erc721Service from '../../../../src/services/evm/erc721.service';
 import { ERC721_ACTION } from '../../../../src/services/evm/erc721_handler';
+import { BULL_JOB_NAME } from '../../../../src/services/evm/constant';
 
 @Describe('Test erc721')
 export default class Erc721Test {
@@ -27,22 +28,24 @@ export default class Erc721Test {
 
   evmSmartContract = EVMSmartContract.fromJson({
     id: 555,
-    address: 'ghghdfgdsgre',
-    creator: 'dfgdfbvxcvxgfds',
+    address: '0x98605ae21dd3be686337a6d7a8f156d0d8baee92',
+    creator: '0xc7663c6a454fc9971C93235A170c8997e8c5E661',
     created_height: 100,
-    created_hash: 'cvxcvcxv',
+    created_hash:
+      '0x9ed3b06713baf17b7d7266294a82d51c36c84514a7d29f28585d85e586249525',
     type: EVMSmartContract.TYPES.ERC721,
-    code_hash: 'dfgdfghf',
+    code_hash: '0x623d4ffdfa5555aa1234366sdaff1a1sdfafa4dasdfas4r',
   });
 
   evmSmartContract2 = EVMSmartContract.fromJson({
     id: 666,
-    address: 'bcvbcvbcv',
-    creator: 'dfgdfbvxcvxgfds',
+    address: '0xc211C2CF383A38933f8352CBDd326B51b94574e6',
+    creator: '0xc7663c6a454fc9971C93235A170c8997e8c5E661',
     created_height: 100,
-    created_hash: 'xdasfsf',
+    created_hash:
+      '0x888d3b06713baf17b7d7266294a82d51c36c84514a7d29f28585d85e586252200',
     type: EVMSmartContract.TYPES.ERC721,
-    code_hash: 'xcsadf',
+    code_hash: '0x5fdfa5555aa1234366sdaff1a1sdfafa4dasdfas4r',
   });
 
   evmTx = EVMTransaction.fromJson({
@@ -56,7 +59,7 @@ export default class Erc721Test {
   });
 
   evmEvent = EvmEvent.fromJson({
-    id: 888,
+    id: 1,
     tx_id: 1234,
     evm_tx_id: this.evmTx.id,
     tx_hash: '',
@@ -73,9 +76,20 @@ export default class Erc721Test {
     address: this.evmSmartContract.address,
   });
 
+  blockCheckpoints = [
+    BlockCheckpoint.fromJson({
+      job_name: BULL_JOB_NAME.HANDLE_ERC721_ACTIVITY,
+      height: 100,
+    }),
+    BlockCheckpoint.fromJson({
+      job_name: BULL_JOB_NAME.HANDLE_ERC721_CONTRACT,
+      height: 400,
+    }),
+  ];
+
   @BeforeAll()
   async initSuite() {
-    this.erc721Service.getQueueManager().stopAll();
+    await this.erc721Service.getQueueManager().stopAll();
     await this.broker.start();
     await knex.raw(
       'TRUNCATE TABLE erc721_contract, account, erc721_activity, evm_smart_contract, evm_event, evm_transaction, block_checkpoint RESTART IDENTITY CASCADE'
@@ -92,8 +106,9 @@ export default class Erc721Test {
   @BeforeEach()
   async beforeEach() {
     await knex.raw(
-      'TRUNCATE TABLE erc721_activity, erc721_token RESTART IDENTITY CASCADE'
+      'TRUNCATE TABLE erc721_activity, erc721_token, block_checkpoint, evm_event RESTART IDENTITY CASCADE'
     );
+    await BlockCheckpoint.query().insert(this.blockCheckpoints);
   }
 
   @AfterAll()
@@ -103,27 +118,13 @@ export default class Erc721Test {
     jest.restoreAllMocks();
   }
 
-  /**
-   * @description test handleErc721Activity function
-   * @input evm events of an erc721 contract
-   * @result build erc721Activities, updated tokens
-   */
   @Test('test handleErc721Activity')
   async testHandleErc721Activity() {
-    jest.spyOn(BlockCheckpoint, 'getCheckpoint').mockResolvedValue([
-      this.evmSmartContract.created_height - 1,
-      this.evmSmartContract.created_height,
-      BlockCheckpoint.fromJson({
-        job_name: 'dfdsfgsg',
-        height: this.evmSmartContract.created_height - 1,
-      }),
-    ]);
     const erc721Events = [
       EvmEvent.fromJson({
-        id: this.evmEvent.id,
         block_hash:
           '0x6d70a03cda3fb815b54742fbd47c6141a7e754ff4d7426f10a73644ac44411d2',
-        block_height: 21937980,
+        block_height: this.blockCheckpoints[0].height + 1,
         data: null,
         topic0:
           '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
@@ -138,15 +139,11 @@ export default class Erc721Test {
         tx_id: 1234,
         tx_hash: this.evmTx.hash,
         tx_index: 1,
-        sender: 'fgfdg',
-        evm_smart_contract_id: this.evmSmartContract.id,
-        track: true,
       }),
       EvmEvent.fromJson({
-        id: this.evmEvent.id,
         block_hash:
           '0xd39b1e6c35a7985db6ca367b1e061162b7a8610097e99cadaf98bea6b81a6096',
-        block_height: 21937981,
+        block_height: this.blockCheckpoints[0].height + 2,
         data: null,
         topic0:
           '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925',
@@ -161,15 +158,11 @@ export default class Erc721Test {
         tx_id: 1234,
         tx_hash: this.evmTx.hash,
         tx_index: 1,
-        sender: 'fgfdg',
-        evm_smart_contract_id: this.evmSmartContract.id,
-        track: true,
       }),
       EvmEvent.fromJson({
-        id: this.evmEvent.id,
         block_hash:
           '0x6d70a03cda3fb815b54742fbd47c6141a7e754ff4d7426f10a73644ac44411d2',
-        block_height: 21937982,
+        block_height: this.blockCheckpoints[0].height + 3,
         data: null,
         topic0:
           '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
@@ -184,22 +177,9 @@ export default class Erc721Test {
         tx_id: 1234,
         tx_hash: this.evmTx.hash,
         tx_index: 1,
-        sender: 'fgfdg',
-        evm_smart_contract_id: this.evmSmartContract.id,
-        track: true,
       }),
     ];
-    const mockQueryEvents: any = {
-      select: () => erc721Events,
-      transacting: () => mockQueryEvents,
-      joinRelated: () => mockQueryEvents,
-      where: () => mockQueryEvents,
-      andWhere: () => mockQueryEvents,
-      orderBy: () => mockQueryEvents,
-      innerJoin: () => mockQueryEvents,
-      modify: () => mockQueryEvents,
-    };
-    jest.spyOn(EvmEvent, 'query').mockImplementation(() => mockQueryEvents);
+    await EvmEvent.query().insert(erc721Events);
     await this.erc721Service.handleErc721Activity();
     const erc721Token = await Erc721Token.query().first().throwIfNotFound();
     expect(erc721Token).toMatchObject({
