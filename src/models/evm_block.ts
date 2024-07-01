@@ -7,7 +7,7 @@ export class EVMBlock extends BaseModel {
 
   base_fee_per_gas!: bigint;
 
-  date!: Date;
+  timestamp!: Date;
 
   difficulty!: bigint;
 

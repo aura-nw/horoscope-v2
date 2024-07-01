@@ -51,7 +51,7 @@ export class EVMTransaction extends BaseModel {
 
   type!: number;
 
-  date!: Date;
+  timestamp!: Date;
 
   static get tableName() {
     return 'evm_transaction';

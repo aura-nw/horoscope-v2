@@ -11,7 +11,7 @@ import knex from '../../common/utils/db_connection';
 import '../../../fetch-polyfill.js';
 
 type CustomFormattedTransaction = FormattedTransaction & {
-  date: number;
+  timestamp: number;
 };
 
 @Service({
@@ -49,7 +49,7 @@ export default class CrawlEvmTransactionService extends BullableService {
       .map((block) => {
         block.transactions.forEach((tx: any) => {
           // eslint-disable-next-line no-param-reassign
-          tx.date = block.date;
+          tx.timestamp = block.timestamp;
         });
         return block.transactions;
       })
@@ -103,7 +103,7 @@ export default class CrawlEvmTransactionService extends BullableService {
         status: receiptTx.status === 'success' ? 1 : 0,
         contract_address: receiptTx.contractAddress,
         value: offchainTx.value,
-        date: offchainTx.date,
+        timestamp: offchainTx.timestamp,
       });
     });
 

@@ -64,7 +64,9 @@ export default class CrawlEvmBlockService extends BullableService {
               height: block.number,
               hash: block.hash,
               parent_hash: block.parentHash,
-              date: new Date(parseInt(block.timestamp.toString(), 10) * 1000),
+              timestamp: new Date(
+                parseInt(block.timestamp.toString(), 10) * 1000
+              ),
               difficulty: block.difficulty,
               gas_limit: block.gasLimit,
               gas_used: block.gasUsed,
