@@ -1,46 +1,50 @@
 /* eslint-disable no-param-reassign */
 /* eslint-disable no-await-in-loop */
-import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { ServiceBroker } from 'moleculer';
+import { ibc } from '@aura-nw/aurajs';
+import { QueryDenomTraceRequest } from '@aura-nw/aurajs/types/codegen/ibc/applications/transfer/v1/query';
+import { fromBase64, fromUtf8, toHex } from '@cosmjs/encoding';
+import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
-import { fromBase64, fromUtf8, toHex } from '@cosmjs/encoding';
+import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+import axios from 'axios';
 import fs from 'fs';
 import _ from 'lodash';
+import { ServiceBroker } from 'moleculer';
+import { Stream } from 'stream';
 import Chain from 'stream-chain';
 import Pick from 'stream-json/filters/Pick';
 import StreamArr from 'stream-json/streamers/StreamArray';
-import { QueryDenomTraceRequest } from '@aura-nw/aurajs/types/codegen/ibc/applications/transfer/v1/query';
-import { ibc } from '@aura-nw/aurajs';
-import { JsonRpcSuccessResponse } from '@cosmjs/json-rpc';
-import Utils from '../../common/utils/utils';
-import {
-  Account,
-  BlockCheckpoint,
-  Code,
-  Proposal,
-  SmartContract,
-  Validator,
-  Feegrant,
-  IbcClient,
-  IbcConnection,
-  IbcChannel,
-} from '../../models';
+import { promisify } from 'util';
+import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import {
   ABCI_QUERY_PATH,
   AccountType,
   BULL_JOB_NAME,
-  getHttpBatchClient,
   ICoin,
   MSG_TYPE,
   REDIS_KEY,
   SERVICE,
+  getHttpBatchClient,
 } from '../../common';
-import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
+import Utils from '../../common/utils/utils';
+import {
+  Account,
+  BlockCheckpoint,
+  Code,
+  Feegrant,
+  IbcChannel,
+  IbcClient,
+  IbcConnection,
+  Proposal,
+  SmartContract,
+  Validator,
+} from '../../models';
 import { ALLOWANCE_TYPE, FEEGRANT_STATUS } from '../feegrant/feegrant.service';
 
+const { stateFileURL, stateFileDirectory } = config.crawlGenesis;
 @Service({
   name: SERVICE.V1.CrawlGenesisService.key,
   version: 1,
@@ -80,6 +84,50 @@ export default class CrawlGenesisService extends BullableService {
       return;
     }
 
+    // if not found file genesis.json, then need fetch from rpc or volume
+    if (!fs.existsSync('genesis.json')) {
+      if (stateFileURL || stateFileDirectory) {
+        await this.getStateFile();
+      } else {
+        await this.getGenesisFile();
+      }
+    }
+
+    let updateBlkCheck: BlockCheckpoint;
+    if (genesisBlkCheck) {
+      updateBlkCheck = genesisBlkCheck;
+      updateBlkCheck.height = 1;
+    } else
+      updateBlkCheck = BlockCheckpoint.fromJson({
+        job_name: BULL_JOB_NAME.CRAWL_GENESIS,
+        height: 1,
+      });
+    await BlockCheckpoint.query()
+      .insert(updateBlkCheck)
+      .onConflict('job_name')
+      .merge()
+      .returning('id');
+
+    this.genesisJobs.forEach(async (job) => {
+      if (job !== BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT) {
+        await this.createJob(
+          job,
+          job,
+          {},
+          {
+            removeOnComplete: true,
+            removeOnFail: {
+              count: 3,
+            },
+            attempts: config.jobRetryAttempt,
+            backoff: config.jobRetryBackoff,
+          }
+        );
+      }
+    });
+  }
+
+  async getGenesisFile() {
     if (!fs.existsSync('genesis.json')) fs.appendFileSync('genesis.json', '');
     try {
       const genesis = await this._httpBatchClient.execute(
@@ -119,41 +167,25 @@ export default class CrawlGenesisService extends BullableService {
         }
       }
     }
+  }
 
-    // fs.renameSync('genesis.txt', 'genesis.json');
-
-    let updateBlkCheck: BlockCheckpoint;
-    if (genesisBlkCheck) {
-      updateBlkCheck = genesisBlkCheck;
-      updateBlkCheck.height = 1;
-    } else
-      updateBlkCheck = BlockCheckpoint.fromJson({
-        job_name: BULL_JOB_NAME.CRAWL_GENESIS,
-        height: 1,
+  async getStateFile() {
+    if (stateFileURL) {
+      const writer = fs.createWriteStream('genesis.json');
+      const response = await axios({
+        url: stateFileURL,
+        method: 'GET',
+        responseType: 'stream',
       });
-    await BlockCheckpoint.query()
-      .insert(updateBlkCheck)
-      .onConflict('job_name')
-      .merge()
-      .returning('id');
-
-    this.genesisJobs.forEach(async (job) => {
-      if (job !== BULL_JOB_NAME.CRAWL_GENESIS_CONTRACT) {
-        await this.createJob(
-          job,
-          job,
-          {},
-          {
-            removeOnComplete: true,
-            removeOnFail: {
-              count: 3,
-            },
-            attempts: config.jobRetryAttempt,
-            backoff: config.jobRetryBackoff,
-          }
-        );
-      }
-    });
+      response.data.pipe(writer);
+      return promisify(Stream.Stream.finished)(writer);
+    }
+    if (stateFileDirectory) {
+      return fs.copyFileSync(stateFileDirectory, 'genesis.json');
+    }
+    throw Error(
+      'At least stateFileUrl or stateFileDirectory must be configured'
+    );
   }
 
   @QueueHandler({
