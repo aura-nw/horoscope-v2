@@ -17,18 +17,18 @@ select_permissions:
       columns:
         - height
         - tx_count
+        - transactions
         - base_fee_per_gas
-        - date
         - difficulty
-        - extra_data
         - gas_limit
         - gas_used
+        - extra_data
         - hash
         - miner
         - nonce
         - parent_hash
         - receipts_root
         - state_root
-        - transactions
+        - timestamp
       filter: {}
       limit: 100
