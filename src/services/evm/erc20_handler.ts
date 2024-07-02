@@ -139,7 +139,7 @@ export class Erc20Handler {
     }
   }
 
-  static buildTransferActivityByCosmos(e: Event) {
+  static buildTransferActivityByCosmos(e: Event, erc20ModuleAccount: string) {
     try {
       const getAddressFromAttrAndConvert0x = (
         attrs: EventAttribute[],
@@ -158,14 +158,26 @@ export class Erc20Handler {
         }
         return undefined;
       };
-      const from = getAddressFromAttrAndConvert0x(
+
+      let from = getAddressFromAttrAndConvert0x(
         e.attributes,
         EventAttribute.ATTRIBUTE_KEY.SENDER
       );
-      const to = getAddressFromAttrAndConvert0x(
+      let to = getAddressFromAttrAndConvert0x(
         e.attributes,
         EventAttribute.ATTRIBUTE_KEY.RECEIVER
       );
+      if (e.type === Event.EVENT_TYPE.CONVERT_COIN) {
+        from = convertBech32AddressToEthAddress(
+          config.networkPrefixAddress,
+          erc20ModuleAccount
+        ).toLowerCase();
+      } else if (e.type === Event.EVENT_TYPE.CONVERT_ERC20) {
+        to = convertBech32AddressToEthAddress(
+          config.networkPrefixAddress,
+          erc20ModuleAccount
+        ).toLowerCase();
+      }
       const amount = e.attributes.find(
         (attr) => attr.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT
       );
