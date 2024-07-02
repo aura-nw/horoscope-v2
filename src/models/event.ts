@@ -111,5 +111,7 @@ export class Event extends BaseModel {
     CHANNEL_CLOSE_CONFIRM: 'channel_close_confirm',
     CHANNEL_CLOSE: 'channel_close',
     BLOCK_BLOOM: 'block_bloom',
+    CONVERT_COIN: 'convert_coin',
+    CONVERT_ERC20: 'convert_erc20',
   };
 }
