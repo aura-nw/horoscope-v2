@@ -80,6 +80,9 @@
     },
     "handleEndedProposal": {
       "millisecondCrawl": 30000
+    },
+    "handleResultActiveProposal": {
+      "millisecondCrawl": 1000
     }
   },
   "crawlTallyProposal": {
