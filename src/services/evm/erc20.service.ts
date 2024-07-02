@@ -96,7 +96,6 @@ export default class Erc20Service extends BullableService {
         );
       // TODO: handle track erc20 contract only
       const erc20Events = await EvmEvent.query()
-        .transacting(trx)
         .joinRelated('[evm_smart_contract,evm_transaction]')
         .innerJoin(
           'erc20_contract',
@@ -115,7 +114,6 @@ export default class Erc20Service extends BullableService {
       let erc20CosmosEvents: Event[] = [];
       if (config.evmOnly === false) {
         erc20CosmosEvents = await Event.query()
-          .transacting(trx)
           .where('block_height', '>', startBlock)
           .andWhere('block_height', '<=', endBlock)
           .andWhere((query) => {
