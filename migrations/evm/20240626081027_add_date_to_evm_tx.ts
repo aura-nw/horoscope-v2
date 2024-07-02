@@ -5,12 +5,12 @@ export async function up(knex: Knex): Promise<void> {
     table.renameColumn('date', 'timestamp');
   });
   await knex.schema.alterTable('evm_transaction', (table) => {
-    table.timestamp('timstamp').index();
+    table.timestamp('timestamp').index();
   });
 }
 
 export async function down(knex: Knex): Promise<void> {
   await knex.schema.alterTable('evm_transaction', (table) => {
-    table.dropColumn('timstamp');
+    table.dropColumn('timestamp');
   });
 }
