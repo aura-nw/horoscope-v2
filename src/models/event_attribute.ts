@@ -121,6 +121,7 @@ export class EventAttribute extends BaseModel {
     REFUND_AMOUNT: 'refund_amount',
     MEMO: 'memo',
     BLOOM: 'bloom',
+    ERC20_TOKEN: 'erc20_token',
   };
 
   static ATTRIBUTE_COMPOSITE_KEY = {

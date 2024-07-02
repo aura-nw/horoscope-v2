@@ -32,6 +32,10 @@ export class Erc20Activity extends BaseModel {
 
   evm_tx_id!: number;
 
+  cosmos_tx_id!: number;
+
+  cosmos_event_id!: string;
+
   static get tableName() {
     return 'erc20_activity';
   }
@@ -39,7 +43,7 @@ export class Erc20Activity extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['evm_event_id', 'erc20_contract_address', 'height'],
+      required: ['erc20_contract_address', 'height'],
       properties: {
         evm_event_id: { type: 'number' },
         erc20_contract_address: { type: 'string' },
@@ -48,6 +52,8 @@ export class Erc20Activity extends BaseModel {
         action: { type: 'string' },
         from: { type: 'string' },
         sender: { type: 'string' },
+        cosmos_tx_id: { type: 'number' },
+        cosmos_event_id: { type: 'string' },
       },
     };
   }
