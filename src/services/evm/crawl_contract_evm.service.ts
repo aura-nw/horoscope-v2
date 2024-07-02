@@ -84,6 +84,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
       .orderBy('evm_transaction.height', 'ASC');
 
     let addresses: string[] = [];
+    const txCreationWithAdressses: Dictionary<EVMTransaction> = {};
     const addressesWithTx: Dictionary<string[]> = {};
     const isCreationInternalContracts: Dictionary<boolean> = {};
     evmTxs.forEach((evmTx: any) => {
@@ -91,6 +92,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
       ['from', 'to', 'contract_address'].forEach((key) => {
         if (evmTx[key] && evmTx[key].startsWith('0x')) {
           currentAddresses.push(evmTx[key]);
+          txCreationWithAdressses[evmTxs[key]] = evmTx;
         }
       });
 
@@ -99,10 +101,14 @@ export default class CrawlSmartContractEVMService extends BullableService {
         evmTx.evm_events[0].event_address.length > 0
       ) {
         currentAddresses.push(...evmTx.evm_events[0].event_address);
+        evmTx.evm_events[0].event_address.forEach((e: string) => {
+          txCreationWithAdressses[e] = evmTx;
+        });
       }
       evmTx.evm_internal_transactions.forEach(
         (creationInternalTx: EvmInternalTransaction) => {
           currentAddresses.push(creationInternalTx.to);
+          txCreationWithAdressses[creationInternalTx.to] = evmTx;
           isCreationInternalContracts[creationInternalTx.to] = true;
         }
       );
@@ -124,66 +130,58 @@ export default class CrawlSmartContractEVMService extends BullableService {
       evmContractsWithAddress[evmContract.address] = evmContract;
     });
 
+    const notFoundAddresses = Object.keys(txCreationWithAdressses).filter(
+      (address: string) => !evmContractsWithAddress[address]
+    );
+
+    if (notFoundAddresses.length === 0) {
+      return;
+    }
+
     await Promise.all(
-      evmTxs.map(async (evmTx) => {
-        const currentAddresses = addressesWithTx[evmTx.hash];
+      notFoundAddresses.map(async (address: string) => {
+        const code = await this.viemClient.getBytecode({
+          address: address as `0x${string}`,
+        });
+        // check if this address has code -> is smart contract
+        if (code) {
+          // check if this event belongs to smart contract creation tx
+          let creator;
+          let createdHeight;
+          let createdHash;
+          let type = this.detectContractTypeByCode(code);
+          const implementContractInfo =
+            await this.contractHelper.isContractProxy(address);
 
-        const notFoundAddresses = currentAddresses.filter(
-          (address: string) => !evmContractsWithAddress[address]
-        );
+          if (implementContractInfo) {
+            type = implementContractInfo.EIP as any;
+          }
 
-        if (notFoundAddresses.length === 0) {
-          return;
-        }
-
-        await Promise.all(
-          notFoundAddresses.map(async (address: string) => {
-            const code = await this.viemClient.getBytecode({
-              address: address as `0x${string}`,
-            });
-            // check if this address has code -> is smart contract
-            if (code) {
-              // check if this event belongs to smart contract creation tx
-              let creator;
-              let createdHeight;
-              let createdHash;
-              let type = this.detectContractTypeByCode(code);
-              const implementContractInfo =
-                await this.contractHelper.isContractProxy(address);
-
-              if (implementContractInfo) {
-                type = implementContractInfo.EIP as any;
-              }
-
-              const codeHash = keccak256(code);
-              if (evmTx.data) {
-                // eslint-disable-next-line @typescript-eslint/naming-convention
-                const { data, contract_address } = evmTx;
-                if (
-                  data.startsWith(
-                    EVM_CONTRACT_METHOD_HEX_PREFIX.CREATE_CONTRACT
-                  ) ||
-                  contract_address ||
-                  isCreationInternalContracts[address]
-                ) {
-                  creator = evmTx.from;
-                  createdHeight = evmTx.height;
-                  createdHash = evmTx.hash;
-                }
-              }
-              evmContracts.push(
-                EVMSmartContract.fromJson({
-                  address,
-                  creator,
-                  type,
-                  created_hash: createdHash,
-                  created_height: createdHeight,
-                  code_hash: codeHash,
-                })
-              );
+          const codeHash = keccak256(code);
+          if (txCreationWithAdressses[address].data) {
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            const { data, contract_address } = txCreationWithAdressses[address];
+            if (
+              data.startsWith(EVM_CONTRACT_METHOD_HEX_PREFIX.CREATE_CONTRACT) ||
+              contract_address ||
+              isCreationInternalContracts[address]
+            ) {
+              creator = txCreationWithAdressses[address].from;
+              createdHeight = txCreationWithAdressses[address].height;
+              createdHash = txCreationWithAdressses[address].hash;
             }
-          })
-        );
+          }
+          evmContracts.push(
+            EVMSmartContract.fromJson({
+              address,
+              creator,
+              type,
+              created_hash: createdHash,
+              created_height: createdHeight,
+              code_hash: codeHash,
+            })
+          );
+        }
       })
     );
     let newEvmContracts: EVMSmartContract[] = [];
