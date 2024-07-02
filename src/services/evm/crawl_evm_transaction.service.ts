@@ -10,6 +10,10 @@ import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
 import '../../../fetch-polyfill.js';
 
+type CustomFormattedTransaction = FormattedTransaction & {
+  timestamp: number;
+};
+
 @Service({
   name: SERVICE.V1.CrawlEvmTransaction.key,
   version: 1,
@@ -36,65 +40,12 @@ export default class CrawlEvmTransactionService extends BullableService {
     }
 
     const blocks = await EVMBlock.query()
-      .select('height', 'transactions', 'tx_count')
+      .select('height', 'transactions', 'tx_count', 'timestamp')
       .where('height', '>', startBlock)
       .where('height', '<=', endBlock)
       .orderBy('height', 'asc');
 
-    const offchainTxs: FormattedTransaction[] = blocks
-      .map((block) => block.transactions)
-      .flat();
-    const receiptTxs = await this.getListTxReceipt(blocks);
-    if (receiptTxs.find((tx) => tx == null)) {
-      throw Error('Found null transaction receipt');
-    }
-
-    if (receiptTxs.length !== offchainTxs.length) {
-      throw Error('Transaction count not match');
-    }
-    const evmTxs: any[] = [];
-    const evmEvents: any[] = [];
-    offchainTxs.forEach((offchainTx) => {
-      const receiptTx = receiptTxs.find(
-        (tx) =>
-          tx && tx.transactionHash && tx.transactionHash === offchainTx.hash
-      );
-      if (!receiptTx) {
-        throw Error('Transaction receipt not found');
-      }
-
-      evmEvents.push(
-        ...receiptTx.logs.map((log) => ({
-          address: log.address,
-          data: log.data === '0x' ? null : fromHex(log.data.substring(2)),
-          block_height: log.blockNumber,
-          block_hash: log.blockHash,
-          tx_index: log.transactionIndex,
-          topic0: log.topics[0],
-          topic1: log.topics[1],
-          topic2: log.topics[2],
-          topic3: log.topics[3],
-          tx_hash: log.transactionHash,
-        }))
-      );
-
-      evmTxs.push({
-        from: offchainTx.from.toLowerCase(),
-        to: offchainTx.to?.toLowerCase(),
-        hash: offchainTx.hash,
-        data: offchainTx.input ? offchainTx.input.substring(2) : null,
-        nonce: offchainTx.nonce,
-        height: offchainTx.blockNumber,
-        index: offchainTx.transactionIndex,
-        gas_used: receiptTx.gasUsed,
-        gas_price: receiptTx.effectiveGasPrice,
-        gas: offchainTx.gas,
-        type: offchainTx.type,
-        status: receiptTx.status === 'success' ? 1 : 0,
-        contract_address: receiptTx.contractAddress,
-        value: offchainTx.value,
-      });
-    });
+    const { evmTxs, evmEvents } = await this.getEVMTxsFromBlocks(blocks);
 
     await knex.transaction(async (trx) => {
       if (evmTxs.length > 0) {
@@ -146,6 +97,76 @@ export default class CrawlEvmTransactionService extends BullableService {
           .transacting(trx);
       }
     });
+  }
+
+  async getEVMTxsFromBlocks(
+    blocks: EVMBlock[]
+  ): Promise<{ evmTxs: any[]; evmEvents: any[] }> {
+    const evmTxs: any[] = [];
+    const evmEvents: any[] = [];
+    const offchainTxs: CustomFormattedTransaction[] = blocks
+      .map((block) => {
+        block.transactions.forEach((tx: any) => {
+          // eslint-disable-next-line no-param-reassign
+          tx.timestamp = block.timestamp;
+        });
+        return block.transactions;
+      })
+      .flat();
+    const receiptTxs = await this.getListTxReceipt(blocks);
+    if (receiptTxs.find((tx) => tx == null)) {
+      throw Error('Found null transaction receipt');
+    }
+
+    if (receiptTxs.length !== offchainTxs.length) {
+      throw Error('Transaction count not match');
+    }
+    offchainTxs.forEach((offchainTx) => {
+      const receiptTx = receiptTxs.find(
+        (tx) =>
+          tx && tx.transactionHash && tx.transactionHash === offchainTx.hash
+      );
+      if (!receiptTx) {
+        throw Error('Transaction receipt not found');
+      }
+
+      evmEvents.push(
+        ...receiptTx.logs.map((log) => ({
+          address: log.address,
+          data: log.data === '0x' ? null : fromHex(log.data.substring(2)),
+          block_height: log.blockNumber,
+          block_hash: log.blockHash,
+          tx_index: log.transactionIndex,
+          topic0: log.topics[0],
+          topic1: log.topics[1],
+          topic2: log.topics[2],
+          topic3: log.topics[3],
+          tx_hash: log.transactionHash,
+        }))
+      );
+
+      evmTxs.push({
+        from: offchainTx.from.toLowerCase(),
+        to: offchainTx.to?.toLowerCase(),
+        hash: offchainTx.hash,
+        data: offchainTx.input ? offchainTx.input.substring(2) : null,
+        nonce: offchainTx.nonce,
+        height: offchainTx.blockNumber,
+        index: offchainTx.transactionIndex,
+        gas_used: receiptTx.gasUsed,
+        gas_price: receiptTx.effectiveGasPrice,
+        gas: offchainTx.gas,
+        type: offchainTx.type,
+        status: receiptTx.status === 'success' ? 1 : 0,
+        contract_address: receiptTx.contractAddress,
+        value: offchainTx.value,
+        timestamp: offchainTx.timestamp,
+      });
+    });
+    return {
+      evmTxs,
+      evmEvents,
+    };
   }
 
   async getListTxReceipt(blocks: EVMBlock[]): Promise<TransactionReceipt[]> {
