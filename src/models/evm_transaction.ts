@@ -7,6 +7,8 @@ import { EvmEvent } from './evm_event';
 import { EvmInternalTransaction } from './evm_internal_transaction';
 
 export class EVMTransaction extends BaseModel {
+  [relation: string]: any;
+
   id!: number;
 
   hash!: string;

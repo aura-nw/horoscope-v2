@@ -467,5 +467,8 @@
     "key": "crawlEvmAccount",
     "millisecondCrawl": 1000,
     "blocksPerCall": 100
+  },
+  "dailyEVMStatsJobs": {
+    "jobPattern": "0 0 0 * * ?"
   }
 }
