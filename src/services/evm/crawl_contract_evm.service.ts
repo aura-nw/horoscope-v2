@@ -2,7 +2,7 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { whatsabi } from '@shazow/whatsabi';
 import _, { Dictionary } from 'lodash';
 import { ServiceBroker } from 'moleculer';
-import { PublicClient, keccak256 } from 'viem';
+import { GetBytecodeReturnType, PublicClient, keccak256 } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import knex from '../../common/utils/db_connection';
@@ -137,12 +137,11 @@ export default class CrawlSmartContractEVMService extends BullableService {
     if (notFoundAddresses.length === 0) {
       return;
     }
+    const bytecodes = await this.getBytecodeContracts(notFoundAddresses);
 
     await Promise.all(
       notFoundAddresses.map(async (address: string) => {
-        const code = await this.viemClient.getBytecode({
-          address: address as `0x${string}`,
-        });
+        const code = bytecodes[address];
         // check if this address has code -> is smart contract
         if (code) {
           // check if this event belongs to smart contract creation tx
@@ -221,6 +220,23 @@ export default class CrawlSmartContractEVMService extends BullableService {
         })
       );
     }
+  }
+
+  async getBytecodeContracts(
+    addresses: string[]
+  ): Promise<_.Dictionary<GetBytecodeReturnType>> {
+    const codesByAddress: Dictionary<GetBytecodeReturnType> = {};
+    const codes = await Promise.all(
+      addresses.map((address) =>
+        this.viemClient.getBytecode({
+          address: address as `0x${string}`,
+        })
+      )
+    );
+    addresses.forEach((address, index) => {
+      codesByAddress[address] = codes[index];
+    });
+    return codesByAddress;
   }
 
   detectContractTypeByCode(code: string): string | null {
