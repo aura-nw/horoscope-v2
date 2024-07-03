@@ -55,6 +55,7 @@
 - '!include public_transaction_message.yaml'
 - '!include public_validator.yaml'
 - '!include public_view_count_holder_cw721.yaml'
+- '!include public_view_count_holder_erc721.yaml'
 - '!include public_view_event_attribute_value_index.yaml'
 - '!include public_view_ibc_channel_detail_statistic.yaml'
 - '!include public_vote.yaml'

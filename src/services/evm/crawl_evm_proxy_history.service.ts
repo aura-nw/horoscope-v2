@@ -2,10 +2,10 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { ethers } from 'ethers';
 import _ from 'lodash';
 import { ServiceBroker } from 'moleculer';
 import {
+  PublicClient,
   decodeAbiParameters,
   keccak256,
   parseAbiParameters,
@@ -14,7 +14,7 @@ import {
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import knex from '../../common/utils/db_connection';
-import EtherJsClient from '../../common/utils/etherjs_client';
+import { getViemClient } from '../../common/utils/etherjs_client';
 import {
   BlockCheckpoint,
   EVMSmartContract,
@@ -48,7 +48,7 @@ const Erc1967Events = {
   version: 1,
 })
 export default class CrawlProxyContractEVMService extends BullableService {
-  private etherJsClient!: ethers.AbstractProvider;
+  viemClient!: PublicClient;
 
   private contractHelper!: ContractHelper;
 
@@ -125,7 +125,7 @@ export default class CrawlProxyContractEVMService extends BullableService {
             );
 
             newJSONProxy.last_updated_height =
-              await this.etherJsClient.getBlockNumber();
+              await this.viemClient.getBlockNumber();
           }
           break;
       }
@@ -239,8 +239,8 @@ export default class CrawlProxyContractEVMService extends BullableService {
   }
 
   public async _start() {
-    this.etherJsClient = new EtherJsClient().etherJsClient;
-    this.contractHelper = new ContractHelper(this.etherJsClient);
+    this.viemClient = getViemClient();
+    this.contractHelper = new ContractHelper(this.viemClient);
 
     await this.createJob(
       BULL_JOB_NAME.HANDLE_EVM_PROXY_HISTORY,

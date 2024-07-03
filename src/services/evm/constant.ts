@@ -1,4 +1,4 @@
-import { id as keccak256Str } from 'ethers';
+import { keccak256, toBytes } from 'viem';
 import { EVMSmartContract } from '../../models';
 
 export const ABI_CHECK_INTERFACE_ERC_721 = [
@@ -35,13 +35,13 @@ export const EVM_CONTRACT_METHOD_HEX_PREFIX = {
   // https://ethereum.stackexchange.com/questions/124906/how-to-tell-if-a-transaction-is-contract-creation
   CREATE_CONTRACT: '60806040',
   ABI_INTERFACE_ERC20: ABI_CHECK_INTERFACE_ERC_20.map((method) =>
-    keccak256Str(method).slice(2, 10)
+    keccak256(toBytes(method)).slice(2, 10)
   ),
   ABI_INTERFACE_ERC721: ABI_CHECK_INTERFACE_ERC_721.map((method) =>
-    keccak256Str(method).slice(2, 10)
+    keccak256(toBytes(method)).slice(2, 10)
   ),
   ABI_INTERFACE_ERC1155: ABI_CHECK_INTERFACE_ERC_1155.map((method) =>
-    keccak256Str(method).slice(2, 10)
+    keccak256(toBytes(method)).slice(2, 10)
   ),
 };
 
@@ -121,6 +121,10 @@ export const SERVICE = {
         key: 'insertNewErc721Contracts',
         path: 'v1.Erc721.insertNewErc721Contracts',
       },
+      reindexing: {
+        key: 'reindexing',
+        path: 'v1.Erc721.reindexing',
+      },
     },
     SignatureMappingEVM: {
       key: 'SignatureMappingEVM',
@@ -167,6 +171,14 @@ export const SERVICE = {
         key: 'SyncSourcify',
         path: 'v1.SyncSourcify',
       },
+      InsertVerifyByCodeHash: {
+        key: 'InsertVerifyByCodeHash',
+        path: 'v1.InsertVerifyByCodeHash',
+        action: {
+          key: 'createJobInsertVerifyByCodeHash',
+          path: 'v1.InsertVerifyByCodeHash.createJobInsertVerifyByCodeHash',
+        },
+      },
     },
   },
   V2: {
@@ -206,7 +218,10 @@ export const BULL_JOB_NAME = {
   HANDLE_ERC721_MEDIA: 'handle:erc721-media',
   HANDLE_ERC721_TOKEN_MEDIA: 'handle:erc721-token-media',
   REFRESH_ERC721_STATS: 'refresh:erc721-stats',
+  REINDEX_ERC721: 'reindex:erc721',
   SYNC_SOURCIFY: 'sync:sourcify',
+  INSERT_VERIFY_BY_CODEHASH: 'job:insert-verify-by-codehash',
+  HANDLE_SELF_DESTRUCT: 'handle:self-destruct',
 };
 
 export const MSG_TYPE = {

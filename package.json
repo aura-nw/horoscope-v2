@@ -59,6 +59,7 @@
     "@horoscope/sei-js-proto": "3.1.9",
     "@osmonauts/lcd": "^0.10.0",
     "@ourparentcenter/moleculer-decorators-extended": "^1.1.1",
+    "@shazow/whatsabi": "^0.11.0",
     "@tendermint/amino-js": "^0.6.2",
     "@types/parse-uri": "^1.0.0",
     "ajv-formats": "^2.1.1",
@@ -71,7 +72,7 @@
     "cosmjs-types": "^0.6.1",
     "dayjs": "^1.11.9",
     "dotenv": "^16.0.3",
-    "ethers": "^6.11.1",
+    "ethers": "^6.13.0",
     "file-type": "^18.4.0",
     "graphql": "^16.8.1",
     "graphql-tag": "^2.12.6",
@@ -101,7 +102,7 @@
     "stream-json": "^1.7.5",
     "underscore": "^1.13.6",
     "util": "^0.12.4",
-    "viem": "^2.8.6"
+    "viem": "^2.14.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.4.1",
