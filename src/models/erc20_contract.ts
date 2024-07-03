@@ -3,8 +3,11 @@ import BaseModel from './base';
 import { EVMSmartContract } from './evm_smart_contract';
 // eslint-disable-next-line import/no-cycle
 import { Erc20Activity } from './erc20_activity';
+import { AccountBalance } from './account_balance';
 
 export class Erc20Contract extends BaseModel {
+  [relation: string]: any;
+
   static softDelete = false;
 
   id!: number;
@@ -58,6 +61,14 @@ export class Erc20Contract extends BaseModel {
         modelClass: Erc20Activity,
         join: {
           to: 'erc20_activity.erc20_contract_address',
+          from: 'erc20_contract.address',
+        },
+      },
+      holders: {
+        relation: Model.HasManyRelation,
+        modelClass: AccountBalance,
+        join: {
+          to: 'account_balance.denom',
           from: 'erc20_contract.address',
         },
       },

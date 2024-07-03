@@ -8,10 +8,16 @@ import { Context, ServiceBroker } from 'moleculer';
 import { PublicClient, getContract } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { SERVICE as COSMOS_SERVICE } from '../../common';
+import { SERVICE as COSMOS_SERVICE, Config } from '../../common';
 import knex from '../../common/utils/db_connection';
 import { getViemClient } from '../../common/utils/etherjs_client';
-import { BlockCheckpoint, EVMSmartContract, EvmEvent } from '../../models';
+import {
+  Block,
+  BlockCheckpoint,
+  EVMSmartContract,
+  Erc20Statistic,
+  EvmEvent,
+} from '../../models';
 import { AccountBalance } from '../../models/account_balance';
 import { Erc20Activity } from '../../models/erc20_activity';
 import { Erc20Contract } from '../../models/erc20_contract';
@@ -19,6 +25,7 @@ import { BULL_JOB_NAME, SERVICE as EVM_SERVICE, SERVICE } from './constant';
 import { ERC20_EVENT_TOPIC0, Erc20Handler } from './erc20_handler';
 import { convertEthAddressToBech32Address } from './utils';
 
+const { NODE_ENV } = Config;
 @Service({
   name: EVM_SERVICE.V1.Erc20.key,
   version: 1,
@@ -156,6 +163,7 @@ export default class Erc20Service extends BullableService {
         [BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY],
         config.erc20.key
       );
+    await this.handleStatistic(startBlock);
     // get Erc20 activities
     let erc20Activities = await this.getErc20Activities(startBlock, endBlock);
     // get missing Account
@@ -372,50 +380,96 @@ export default class Erc20Service extends BullableService {
     }));
   }
 
+  async handleStatistic(startBlock: number) {
+    const systemDate = (
+      await Block.query()
+        .where('height', startBlock + 1)
+        .first()
+        .throwIfNotFound()
+    ).time;
+    const lastUpdatedRecord = await Erc20Statistic.query().max('date').first();
+    const lastUpdatedDate = lastUpdatedRecord?.max;
+    if (lastUpdatedDate) {
+      systemDate.setHours(0, 0, 0, 0);
+      lastUpdatedDate.setHours(0, 0, 0, 0);
+      if (systemDate > lastUpdatedDate) {
+        await this.handleTotalHolderStatistic(systemDate);
+      }
+    } else {
+      await this.handleTotalHolderStatistic(systemDate);
+    }
+  }
+
+  async handleTotalHolderStatistic(systemDate: Date) {
+    const totalHolders = await Erc20Contract.query()
+      .joinRelated('holders')
+      .where('erc20_contract.track', true)
+      .groupBy('erc20_contract.id')
+      .select(
+        'erc20_contract.id as erc20_contract_id',
+        knex.raw(
+          'count(CASE when holders.amount > 0 THEN 1 ELSE null END) as count'
+        )
+      );
+    if (totalHolders.length > 0) {
+      await Erc20Statistic.query().insert(
+        totalHolders.map((e) =>
+          Erc20Statistic.fromJson({
+            erc20_contract_id: e.erc20_contract_id,
+            total_holder: e.count,
+            date: systemDate,
+          })
+        )
+      );
+    }
+  }
+
   public async _start(): Promise<void> {
     this.viemClient = getViemClient();
-    await this.createJob(
-      BULL_JOB_NAME.HANDLE_ERC20_CONTRACT,
-      BULL_JOB_NAME.HANDLE_ERC20_CONTRACT,
-      {},
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-        repeat: {
-          every: config.erc20.millisecondRepeatJob,
-        },
-      }
-    );
-    await this.createJob(
-      BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY,
-      BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY,
-      {},
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-        repeat: {
-          every: config.erc20.millisecondRepeatJob,
-        },
-      }
-    );
-    await this.createJob(
-      BULL_JOB_NAME.HANDLE_ERC20_BALANCE,
-      BULL_JOB_NAME.HANDLE_ERC20_BALANCE,
-      {},
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-        repeat: {
-          every: config.erc20.millisecondRepeatJob,
-        },
-      }
-    );
+    if (NODE_ENV !== 'test') {
+      await this.createJob(
+        BULL_JOB_NAME.HANDLE_ERC20_CONTRACT,
+        BULL_JOB_NAME.HANDLE_ERC20_CONTRACT,
+        {},
+        {
+          removeOnComplete: true,
+          removeOnFail: {
+            count: 3,
+          },
+          repeat: {
+            every: config.erc20.millisecondRepeatJob,
+          },
+        }
+      );
+      await this.createJob(
+        BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY,
+        BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY,
+        {},
+        {
+          removeOnComplete: true,
+          removeOnFail: {
+            count: 3,
+          },
+          repeat: {
+            every: config.erc20.millisecondRepeatJob,
+          },
+        }
+      );
+      await this.createJob(
+        BULL_JOB_NAME.HANDLE_ERC20_BALANCE,
+        BULL_JOB_NAME.HANDLE_ERC20_BALANCE,
+        {},
+        {
+          removeOnComplete: true,
+          removeOnFail: {
+            count: 3,
+          },
+          repeat: {
+            every: config.erc20.millisecondRepeatJob,
+          },
+        }
+      );
+    }
     return super._start();
   }
 }
