@@ -371,8 +371,8 @@ export default class Erc20Service extends BullableService {
         .first()
         .throwIfNotFound()
     ).time;
-    const lastUpdatedDate = (await Erc20Statistic.query().max('date').first())
-      ?.max;
+    const lastUpdatedRecord = await Erc20Statistic.query().max('date').first();
+    const lastUpdatedDate = lastUpdatedRecord?.max;
     if (lastUpdatedDate) {
       systemDate.setHours(0, 0, 0, 0);
       lastUpdatedDate.setHours(0, 0, 0, 0);
