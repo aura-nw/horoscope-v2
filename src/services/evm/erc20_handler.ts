@@ -167,6 +167,7 @@ export class Erc20Handler {
         e.attributes,
         EventAttribute.ATTRIBUTE_KEY.RECEIVER
       );
+      const sender = from;
       if (e.type === Event.EVENT_TYPE.CONVERT_COIN) {
         from = convertBech32AddressToEthAddress(
           config.networkPrefixAddress,
@@ -186,7 +187,7 @@ export class Erc20Handler {
         EventAttribute.ATTRIBUTE_KEY.ERC20_TOKEN
       );
       return Erc20Activity.fromJson({
-        sender: from,
+        sender,
         action: ERC20_ACTION.TRANSFER,
         erc20_contract_address: address,
         amount: amount?.value,
