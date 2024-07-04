@@ -114,7 +114,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
         if (
           data &&
           (data.startsWith(EVM_CONTRACT_METHOD_HEX_PREFIX.CREATE_CONTRACT) ||
-            contract_address)
+            contractAddress)
         ) {
           evmTx.evm_events[0].event_address.forEach((addr: string) => {
             txCreationWithAdressses[addr] = evmTx;
