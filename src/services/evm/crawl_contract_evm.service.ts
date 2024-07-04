@@ -87,14 +87,16 @@ export default class CrawlSmartContractEVMService extends BullableService {
 
     let addresses: string[] = [];
     const addressesWithTx: Dictionary<string[]> = {};
-    const txCreationWithAdressses: Dictionary<EVMTransaction> = {};
+    const txFirstWithAdressses: Dictionary<EVMTransaction> = {};
     const isCreationInternalContracts: Dictionary<boolean> = {};
     evmTxs.forEach((evmTx: any) => {
       let currentAddresses: string[] = [];
       ['from', 'to', 'contract_address'].forEach((key) => {
         if (evmTx[key] && evmTx[key].startsWith('0x')) {
           currentAddresses.push(evmTx[key]);
-          txCreationWithAdressses[evmTxs[key]] = evmTx;
+          if (!txFirstWithAdressses[evmTx[key]]) {
+            txFirstWithAdressses[evmTx[key]] = evmTx;
+          }
         }
       });
 
@@ -104,13 +106,17 @@ export default class CrawlSmartContractEVMService extends BullableService {
       ) {
         currentAddresses.push(...evmTx.evm_events[0].event_address);
         evmTx.evm_events[0].event_address.forEach((e: string) => {
-          txCreationWithAdressses[e] = evmTx;
+          if (!txFirstWithAdressses[e]) {
+            txFirstWithAdressses[e] = evmTx;
+          }
         });
       }
       evmTx.evm_internal_transactions.forEach(
         (creationInternalTx: EvmInternalTransaction) => {
           currentAddresses.push(creationInternalTx.to);
-          txCreationWithAdressses[creationInternalTx.to] = evmTx;
+          if (!txFirstWithAdressses[creationInternalTx.to]) {
+            txFirstWithAdressses[creationInternalTx.to] = evmTx;
+          }
           isCreationInternalContracts[creationInternalTx.to] = true;
         }
       );
@@ -132,7 +138,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
       evmContractsWithAddress[evmContract.address] = evmContract;
     });
 
-    const notFoundAddresses = Object.keys(txCreationWithAdressses).filter(
+    const notFoundAddresses = Object.keys(txFirstWithAdressses).filter(
       (address: string) => !evmContractsWithAddress[address]
     );
     const bytecodes = await this.getBytecodeContracts(notFoundAddresses);
@@ -154,17 +160,17 @@ export default class CrawlSmartContractEVMService extends BullableService {
           }
 
           const codeHash = keccak256(code);
-          if (txCreationWithAdressses[address].data) {
+          if (txFirstWithAdressses[address].data) {
             // eslint-disable-next-line @typescript-eslint/naming-convention
-            const { data, contract_address } = txCreationWithAdressses[address];
+            const { data, contract_address } = txFirstWithAdressses[address];
             if (
               data.startsWith(EVM_CONTRACT_METHOD_HEX_PREFIX.CREATE_CONTRACT) ||
               contract_address ||
               isCreationInternalContracts[address]
             ) {
-              creator = txCreationWithAdressses[address].from;
-              createdHeight = txCreationWithAdressses[address].height;
-              createdHash = txCreationWithAdressses[address].hash;
+              creator = txFirstWithAdressses[address].from;
+              createdHeight = txFirstWithAdressses[address].height;
+              createdHash = txFirstWithAdressses[address].hash;
             }
           }
           evmContracts.push(
@@ -176,7 +182,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
               created_height: createdHeight,
               code_hash: codeHash,
               status: EVMSmartContract.STATUS.CREATED,
-              last_updated_tx_id: txCreationWithAdressses[address].id,
+              last_updated_tx_id: txFirstWithAdressses[address].id,
             })
           );
         }
