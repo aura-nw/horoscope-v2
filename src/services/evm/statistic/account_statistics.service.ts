@@ -10,10 +10,16 @@ import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import _ from 'lodash';
-import { AccountStatistics, EVMBlock, EVMTransaction } from '../../../models';
+import {
+  AccountStatistics,
+  EVMBlock,
+  EVMTransaction,
+  EvmInternalTransaction,
+} from '../../../models';
 import { BULL_JOB_NAME, REDIS_KEY, SERVICE } from '../constant';
 import config from '../../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../../base/bullable.service';
+import knex from '../../../common/utils/db_connection';
 
 dayjs.extend(utc);
 
@@ -65,12 +71,12 @@ export default class EVMAccountStatisticsService extends BullableService {
     const [startBlock, endBlock] = await Promise.all([
       EVMBlock.query()
         .select('height')
-        .where('date', '>=', startTime)
+        .where('timestamp', '>=', startTime)
         .limit(1)
         .orderBy('height'),
       EVMBlock.query()
         .select('height')
-        .where('date', '<', endTime)
+        .where('timestamp', '<', endTime)
         .limit(1)
         .orderBy('height', 'desc'),
     ]);
@@ -79,20 +85,12 @@ export default class EVMAccountStatisticsService extends BullableService {
       `Get account statistic events for day ${new Date(startTime)}`
     );
 
-    await Promise.all([
-      this.calculateSpendReceive(
-        startBlock[0].height,
-        endBlock[0].height,
-        accountStats,
-        startTime.toISOString()
-      ),
-      this.calculateGasUsedTxSent(
-        startBlock[0].height,
-        endBlock[0].height,
-        accountStats,
-        startTime.toISOString()
-      ),
-    ]);
+    await this.calculateSpendReceiveGasUsedTxSent(
+      startBlock[0].height,
+      endBlock[0].height,
+      accountStats,
+      startTime.toISOString()
+    );
 
     const dailyAccountStats = Object.keys(accountStats).map(
       (acc) => accountStats[acc]
@@ -100,7 +98,11 @@ export default class EVMAccountStatisticsService extends BullableService {
 
     this.logger.info(`Insert new account statistics for date ${startTime}`);
     if (dailyAccountStats.length > 0) {
-      await AccountStatistics.query().insert(dailyAccountStats);
+      await knex.batchInsert(
+        AccountStatistics.tableName,
+        dailyAccountStats,
+        config.dailyEVMStatsJobs.crawlAccountStat.chunkSize
+      );
     }
 
     await this.createJob(
@@ -142,7 +144,7 @@ export default class EVMAccountStatisticsService extends BullableService {
     await this.broker.cacher?.set(REDIS_KEY.TOP_EVM_ACCOUNTS, topAccounts);
   }
 
-  private async calculateSpendReceive(
+  private async calculateSpendReceiveGasUsedTxSent(
     startHeight: number,
     endHeight: number,
     accountStats: any,
@@ -150,46 +152,41 @@ export default class EVMAccountStatisticsService extends BullableService {
   ) {
     const dailyTxs = await EVMTransaction.query()
       .where('height', '>=', startHeight)
-      .andWhere('height', '<=', endHeight);
+      .andWhere('height', '<=', endHeight)
+      .withGraphFetched('[evm_internal_transactions]');
     dailyTxs.forEach((tx) => {
       if (!accountStats[tx.from]) {
         accountStats[tx.from] = AccountStatistics.newAccountStat(tx.from, date);
       }
-      if (!accountStats[tx.to]) {
-        accountStats[tx.to] = AccountStatistics.newAccountStat(tx.to, date);
-      }
-      accountStats[tx.from].amount_sent = (
-        BigInt(accountStats[tx.from].amount_sent) + BigInt(tx.value)
-      ).toString();
-      accountStats[tx.to].amount_received = (
-        BigInt(accountStats[tx.to].amount_received) + BigInt(tx.value)
-      ).toString();
-    });
-  }
+      accountStats[tx.from].tx_sent += 1;
 
-  private async calculateGasUsedTxSent(
-    startHeight: number,
-    endHeight: number,
-    accountStats: any,
-    date: string
-  ) {
-    const dailyTxs = await EVMTransaction.query()
-      .where('height', '>=', startHeight)
-      .andWhere('height', '<=', endHeight);
-    if (dailyTxs.length > 0) {
-      dailyTxs.forEach((tx) => {
-        if (!accountStats[tx.from]) {
-          accountStats[tx.from] = AccountStatistics.newAccountStat(
-            tx.from,
-            date
-          );
+      tx.evm_internal_transactions.forEach(
+        (txInternal: EvmInternalTransaction) => {
+          const { from, to } = txInternal;
+          if (from) {
+            if (!accountStats[from]) {
+              accountStats[from] = AccountStatistics.newAccountStat(from, date);
+            }
+            accountStats[from].amount_sent = (
+              BigInt(accountStats[from].amount_sent) + BigInt(txInternal.value)
+            ).toString();
+            accountStats[from].gas_used = (
+              BigInt(accountStats[from].gas_used) + BigInt(txInternal.gas_used)
+            ).toString();
+          }
+          if (to) {
+            if (!accountStats[to]) {
+              accountStats[to] = AccountStatistics.newAccountStat(to, date);
+            }
+
+            accountStats[to].amount_received = (
+              BigInt(accountStats[to].amount_received) +
+              BigInt(txInternal.value)
+            ).toString();
+          }
         }
-        accountStats[tx.from].tx_sent += 1;
-        accountStats[tx.from].gas_used = (
-          BigInt(accountStats[tx.from].gas_used) + BigInt(tx.gas_used)
-        ).toString();
-      });
-    }
+      );
+    });
   }
 
   private async getStatsFromSpecificDaysAgo(

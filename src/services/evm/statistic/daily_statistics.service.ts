@@ -65,12 +65,12 @@ export default class DailyEVMStatisticsService extends BullableService {
     const [startBlock, endBlock] = await Promise.all([
       EVMBlock.query()
         .select('height')
-        .where('date', '>=', startTime)
+        .where('timestamp', '>=', startTime)
         .limit(1)
         .orderBy('height'),
       EVMBlock.query()
         .select('height')
-        .where('date', '<', endTime)
+        .where('timestamp', '<', endTime)
         .limit(1)
         .orderBy('height', 'desc'),
     ]);

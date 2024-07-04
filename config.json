@@ -468,6 +468,9 @@
     "batchSize": 10
   },
   "dailyEVMStatsJobs": {
-    "jobPattern": "0 0 0 * * ?"
+    "jobPattern": "0 0 0 * * ?",
+    "crawlAccountStat": {
+      "chunkSize": 1000
+    }
   }
 }
