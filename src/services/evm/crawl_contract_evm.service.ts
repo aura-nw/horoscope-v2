@@ -15,6 +15,8 @@ import {
 } from '../../models';
 import {
   BULL_JOB_NAME,
+  DetectEVMProxyContract,
+  EIPProxyContractSupportByteCode,
   EVM_CONTRACT_METHOD_HEX_PREFIX,
   SERVICE,
 } from './constant';
@@ -87,15 +89,19 @@ export default class CrawlSmartContractEVMService extends BullableService {
 
     let addresses: string[] = [];
     const addressesWithTx: Dictionary<string[]> = {};
-    const txFirstWithAdressses: Dictionary<EVMTransaction> = {};
-    const isCreationInternalContracts: Dictionary<boolean> = {};
+    const txCreationWithAdressses: Dictionary<EVMTransaction> = {};
     evmTxs.forEach((evmTx: any) => {
+      const { data, contractAddress } = evmTx;
       let currentAddresses: string[] = [];
       ['from', 'to', 'contract_address'].forEach((key) => {
         if (evmTx[key] && evmTx[key].startsWith('0x')) {
           currentAddresses.push(evmTx[key]);
-          if (!txFirstWithAdressses[evmTx[key]]) {
-            txFirstWithAdressses[evmTx[key]] = evmTx;
+          if (
+            data &&
+            (data.startsWith(EVM_CONTRACT_METHOD_HEX_PREFIX.CREATE_CONTRACT) ||
+              contractAddress)
+          ) {
+            txCreationWithAdressses[evmTx[key]] = evmTx;
           }
         }
       });
@@ -105,19 +111,20 @@ export default class CrawlSmartContractEVMService extends BullableService {
         evmTx.evm_events[0].event_address.length > 0
       ) {
         currentAddresses.push(...evmTx.evm_events[0].event_address);
-        evmTx.evm_events[0].event_address.forEach((e: string) => {
-          if (!txFirstWithAdressses[e]) {
-            txFirstWithAdressses[e] = evmTx;
-          }
-        });
+        if (
+          data &&
+          (data.startsWith(EVM_CONTRACT_METHOD_HEX_PREFIX.CREATE_CONTRACT) ||
+            contract_address)
+        ) {
+          evmTx.evm_events[0].event_address.forEach((addr: string) => {
+            txCreationWithAdressses[addr] = evmTx;
+          });
+        }
       }
       evmTx.evm_internal_transactions.forEach(
         (creationInternalTx: EvmInternalTransaction) => {
           currentAddresses.push(creationInternalTx.to);
-          if (!txFirstWithAdressses[creationInternalTx.to]) {
-            txFirstWithAdressses[creationInternalTx.to] = evmTx;
-          }
-          isCreationInternalContracts[creationInternalTx.to] = true;
+          txCreationWithAdressses[creationInternalTx.to] = evmTx;
         }
       );
       currentAddresses = _.uniq(currentAddresses);
@@ -131,63 +138,47 @@ export default class CrawlSmartContractEVMService extends BullableService {
 
     const evmContractsInDB: EVMSmartContract[] = await EVMSmartContract.query()
       .select('address')
-      .whereIn('address', addresses);
+      .whereIn('address', addresses)
+      .andWhere('status', EVMSmartContract.STATUS.CREATED);
 
     const evmContractsWithAddress: any = [];
     evmContractsInDB.forEach((evmContract) => {
       evmContractsWithAddress[evmContract.address] = evmContract;
     });
-
-    const notFoundAddresses = Object.keys(txFirstWithAdressses).filter(
+    const notFoundAddresses = addresses.filter(
       (address: string) => !evmContractsWithAddress[address]
     );
     const bytecodes = await this.getBytecodeContracts(notFoundAddresses);
-    await Promise.all(
-      notFoundAddresses.map(async (address: string) => {
-        const code = bytecodes[address];
-        // check if this address has code -> is smart contract
-        if (code) {
-          // check if this event belongs to smart contract creation tx
-          let creator;
-          let createdHeight;
-          let createdHash;
-          let type = this.detectContractTypeByCode(code);
-          const implementContractInfo =
-            await this.contractHelper.isContractProxy(address);
-
-          if (implementContractInfo) {
-            type = implementContractInfo.EIP as any;
-          }
-
-          const codeHash = keccak256(code);
-          if (txFirstWithAdressses[address].data) {
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            const { data, contract_address } = txFirstWithAdressses[address];
-            if (
-              data.startsWith(EVM_CONTRACT_METHOD_HEX_PREFIX.CREATE_CONTRACT) ||
-              contract_address ||
-              isCreationInternalContracts[address]
-            ) {
-              creator = txFirstWithAdressses[address].from;
-              createdHeight = txFirstWithAdressses[address].height;
-              createdHash = txFirstWithAdressses[address].hash;
-            }
-          }
-          evmContracts.push(
-            EVMSmartContract.fromJson({
-              address,
-              creator,
-              type,
-              created_hash: createdHash,
-              created_height: createdHeight,
-              code_hash: codeHash,
-              status: EVMSmartContract.STATUS.CREATED,
-              last_updated_tx_id: txFirstWithAdressses[address].id,
-            })
-          );
-        }
-      })
+    const isContractsProxy = await this.checkContractsProxy(
+      notFoundAddresses,
+      bytecodes
     );
+    notFoundAddresses.map(async (address: string) => {
+      const code = bytecodes[address];
+      // check if this address has code -> is smart contract
+      if (code) {
+        // check if this event belongs to smart contract creation tx
+        let type = this.detectContractTypeByCode(code);
+        const implementContractInfo = isContractsProxy[address];
+
+        if (implementContractInfo) {
+          type = implementContractInfo.EIP as any;
+        }
+        const codeHash = keccak256(code);
+        evmContracts.push(
+          EVMSmartContract.fromJson({
+            address,
+            creator: txCreationWithAdressses[address]?.from,
+            type,
+            created_hash: txCreationWithAdressses[address]?.hash,
+            created_height: txCreationWithAdressses[address]?.height,
+            code_hash: codeHash,
+            status: EVMSmartContract.STATUS.CREATED,
+            last_updated_tx_id: txCreationWithAdressses[address]?.id,
+          })
+        );
+      }
+    });
     let newEvmContracts: EVMSmartContract[] = [];
     await knex.transaction(async (trx) => {
       if (evmContracts.length > 0) {
@@ -297,6 +288,44 @@ export default class CrawlSmartContractEVMService extends BullableService {
           .transacting(trx);
       }
     });
+  }
+
+  async checkContractsProxy(
+    addrs: string[],
+    bytecodes: _.Dictionary<GetBytecodeReturnType>
+  ) {
+    const result: _.Dictionary<DetectEVMProxyContract | null> = {};
+    // eslint-disable-next-line no-restricted-syntax
+    for (const addr of addrs) {
+      const byteCode = bytecodes[addr];
+      if (!byteCode) {
+        result[addr] = null;
+      } else {
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          result[addr] = await Promise.any([
+            this.contractHelper.detectProxyContractByByteCode(
+              addr,
+              byteCode,
+              EIPProxyContractSupportByteCode.EIP_1967_IMPLEMENTATION.SLOT
+            ),
+            this.detectProxyContractByByteCode(
+              addr,
+              byteCode,
+              EIPProxyContractSupportByteCode.EIP_1822_IMPLEMENTATION.SLOT
+            ),
+            this.detectProxyContractByByteCode(
+              addr,
+              byteCode,
+              EIPProxyContractSupportByteCode.OPEN_ZEPPELIN_IMPLEMENTATION.SLOT
+            ),
+          ]);
+        } catch (error) {
+          result[addr] = null;
+        }
+      }
+    }
+    return result;
   }
 
   async getBytecodeContracts(
