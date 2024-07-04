@@ -30,6 +30,8 @@ export class Account extends BaseModel {
 
   evm_address!: string;
 
+  code_hash!: string;
+
   static get tableName() {
     return 'account';
   }

@@ -433,6 +433,7 @@ export enum AccountType {
   MODULE = '/cosmos.auth.v1beta1.ModuleAccount',
   BASE = '/cosmos.auth.v1beta1.BaseAccount',
   SMART_ACCOUNT = '/aura.smartaccount.v1beta1.SmartAccount',
+  ETH_ACCOUNT = '/ethermint.types.v1.EthAccount',
 }
 
 export enum PubkeyType {
