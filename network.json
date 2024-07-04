@@ -79,5 +79,12 @@
     "moleculerNamespace": "namespace-ancient8-testnet",
     "EVMJSONRPC": ["https://rpcv2-testnet.ancient8.gg"],
     "EVMchainId": 28122024
+  },
+  {
+    "chainId": "ethereum",
+    "EVMJSONRPC": ["https://1rpc.io/eth"],
+    "RPC": [],
+    "LCD": [],
+    "EVMchainId": 1
   }
 ]

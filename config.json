@@ -466,5 +466,13 @@
     "millisecondCrawl": 1000,
     "blocksPerCall": 100,
     "batchSize": 10
+  },
+  "crawlOptimismDeposit": {
+    "startBlockInL1": 20227972,
+    "l1ChainId": "ethereum",
+    "l1OptimismPortal": "0x639F2AECE398Aa76b07e59eF6abe2cFe32bacb68",
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 100,
+    "chunkSize": 1000
   }
 }

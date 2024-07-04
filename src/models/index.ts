@@ -46,3 +46,4 @@ export * from './account_balance';
 export * from './erc721_contract';
 export * from './erc721_stats';
 export * from './evm_block';
+export * from './optimism_deposit';

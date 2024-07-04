@@ -242,6 +242,7 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_EVM_BLOCK_CONSTRAINT: 'job:create-evm-block-constraint',
   CRAWL_EVM_TRANSACTION: 'crawl:evm-transaction',
   CRAWL_EVM_ACCOUNT: 'crawl:evm-account',
+  CRAWL_OPTIMISM_DEPOSIT: 'crawl:optimism-deposit',
 };
 
 export const MSG_TYPE = {
