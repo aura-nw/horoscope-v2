@@ -88,7 +88,6 @@ export default class CrawlSmartContractEVMService extends BullableService {
       .orderBy('evm_transaction.height', 'ASC');
 
     let addresses: string[] = [];
-    const addressesWithTx: Dictionary<string[]> = {};
     const txCreationWithAdressses: Dictionary<EVMTransaction> = {};
     evmTxs.forEach((evmTx: any) => {
       const { data, contractAddress } = evmTx;
@@ -129,7 +128,6 @@ export default class CrawlSmartContractEVMService extends BullableService {
       );
       currentAddresses = _.uniq(currentAddresses);
       addresses.push(...currentAddresses);
-      addressesWithTx[evmTx.hash] = currentAddresses;
     });
 
     addresses = _.uniq(addresses);
@@ -291,12 +289,12 @@ export default class CrawlSmartContractEVMService extends BullableService {
               byteCode,
               EIPProxyContractSupportByteCode.EIP_1967_IMPLEMENTATION.SLOT
             ),
-            this.detectProxyContractByByteCode(
+            this.contractHelper.detectProxyContractByByteCode(
               addr,
               byteCode,
               EIPProxyContractSupportByteCode.EIP_1822_IMPLEMENTATION.SLOT
             ),
-            this.detectProxyContractByByteCode(
+            this.contractHelper.detectProxyContractByByteCode(
               addr,
               byteCode,
               EIPProxyContractSupportByteCode.OPEN_ZEPPELIN_IMPLEMENTATION.SLOT
