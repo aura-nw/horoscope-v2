@@ -148,12 +148,14 @@ export default class CrawlSmartContractEVMService extends BullableService {
     const notFoundAddresses = addresses.filter(
       (address: string) => !evmContractsWithAddress[address]
     );
+    // dictionary addr->bytecode
     const bytecodes = await this.getBytecodeContracts(notFoundAddresses);
+    // dictionary addr->isContractProxy
     const isContractsProxy = await this.checkContractsProxy(
       notFoundAddresses,
       bytecodes
     );
-    notFoundAddresses.map(async (address: string) => {
+    notFoundAddresses.forEach((address: string) => {
       const code = bytecodes[address];
       // check if this address has code -> is smart contract
       if (code) {
