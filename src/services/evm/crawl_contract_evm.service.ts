@@ -146,21 +146,16 @@ export default class CrawlSmartContractEVMService extends BullableService {
     const notFoundAddresses = addresses.filter(
       (address: string) => !evmContractsWithAddress[address]
     );
-    // dictionary addr->bytecode
-    const bytecodes = await this.getBytecodeContracts(notFoundAddresses);
-    // dictionary addr->isContractProxy
-    const isContractsProxy = await this.checkContractsProxy(
-      notFoundAddresses,
-      bytecodes
-    );
+    const bytecodesByAddress: _.Dictionary<GetBytecodeReturnType> =
+      await this.getBytecodeContracts(notFoundAddresses);
+    const proxyInfoByAddress: _.Dictionary<DetectEVMProxyContract | null> =
+      await this.getContractsProxyInfo(notFoundAddresses, bytecodesByAddress);
     notFoundAddresses.forEach((address: string) => {
-      const code = bytecodes[address];
+      const code = bytecodesByAddress[address];
       // check if this address has code -> is smart contract
       if (code) {
-        // check if this event belongs to smart contract creation tx
         let type = this.detectContractTypeByCode(code);
-        const implementContractInfo = isContractsProxy[address];
-
+        const implementContractInfo = proxyInfoByAddress[address];
         if (implementContractInfo) {
           type = implementContractInfo.EIP as any;
         }
@@ -270,41 +265,39 @@ export default class CrawlSmartContractEVMService extends BullableService {
     });
   }
 
-  async checkContractsProxy(
+  async getContractsProxyInfo(
     addrs: string[],
     bytecodes: _.Dictionary<GetBytecodeReturnType>
   ) {
     const result: _.Dictionary<DetectEVMProxyContract | null> = {};
-    // eslint-disable-next-line no-restricted-syntax
-    for (const addr of addrs) {
-      const byteCode = bytecodes[addr];
-      if (!byteCode) {
-        result[addr] = null;
-      } else {
-        try {
-          // eslint-disable-next-line no-await-in-loop
-          result[addr] = await Promise.any([
-            this.contractHelper.detectProxyContractByByteCode(
-              addr,
-              byteCode,
-              EIPProxyContractSupportByteCode.EIP_1967_IMPLEMENTATION.SLOT
-            ),
-            this.contractHelper.detectProxyContractByByteCode(
-              addr,
-              byteCode,
-              EIPProxyContractSupportByteCode.EIP_1822_IMPLEMENTATION.SLOT
-            ),
-            this.contractHelper.detectProxyContractByByteCode(
-              addr,
-              byteCode,
-              EIPProxyContractSupportByteCode.OPEN_ZEPPELIN_IMPLEMENTATION.SLOT
-            ),
-          ]);
-        } catch (error) {
-          result[addr] = null;
+    const proxiesInfo = await Promise.all(
+      addrs.map(async (addr) => {
+        const byteCode = bytecodes[addr];
+        if (!byteCode) {
+          return Promise.resolve(null);
         }
-      }
-    }
+        return Promise.any([
+          this.contractHelper.detectProxyContractByByteCode(
+            addr,
+            byteCode,
+            EIPProxyContractSupportByteCode.EIP_1967_IMPLEMENTATION.SLOT
+          ),
+          this.contractHelper.detectProxyContractByByteCode(
+            addr,
+            byteCode,
+            EIPProxyContractSupportByteCode.EIP_1822_IMPLEMENTATION.SLOT
+          ),
+          this.contractHelper.detectProxyContractByByteCode(
+            addr,
+            byteCode,
+            EIPProxyContractSupportByteCode.OPEN_ZEPPELIN_IMPLEMENTATION.SLOT
+          ),
+        ]).catch(() => Promise.resolve(null));
+      })
+    );
+    addrs.forEach((addr, index) => {
+      result[addr] = proxiesInfo[index];
+    });
     return result;
   }
 
