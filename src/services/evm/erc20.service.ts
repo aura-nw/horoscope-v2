@@ -120,6 +120,16 @@ export default class Erc20Service extends BullableService {
           if (activity) {
             erc20Activities.push(activity);
           }
+        } else if (e.topic0 === ERC20_EVENT_TOPIC0.DEPOSIT) {
+          const activity = Erc20Handler.buildDepositActivity(e);
+          if (activity) {
+            erc20Activities.push(activity);
+          }
+        } else if (e.topic0 === ERC20_EVENT_TOPIC0.WITHDRAWAL) {
+          const activity = Erc20Handler.buildWithdrawalActivity(e);
+          if (activity) {
+            erc20Activities.push(activity);
+          }
         }
       });
       if (erc20Activities.length > 0) {
