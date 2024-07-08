@@ -196,6 +196,10 @@ export const SERVICE = {
         path: 'v1.CrawlEvmAccount.CrawlNewAccountApi',
       },
     },
+    CrawlOptimismDepositEVM: {
+      key: 'CrawlOptimismDepositEVM',
+      path: 'v1.CrawlOptimismDepositEVM',
+    },
   },
   V2: {
     EvmProxyService: {

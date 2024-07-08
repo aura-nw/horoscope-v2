@@ -11,7 +11,7 @@ import { BlockCheckpoint, OptimismDeposit } from '../../../models';
 import knex from '../../../common/utils/db_connection';
 
 @Service({
-  name: SERVICE.V1.CrawlEvmProxyHistory.key,
+  name: SERVICE.V1.CrawlOptimismDepositEVM.key,
   version: 1,
 })
 export default class CrawlOptimismDepositEVMService extends BullableService {
