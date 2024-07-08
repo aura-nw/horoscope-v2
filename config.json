@@ -466,5 +466,11 @@
     "millisecondCrawl": 1000,
     "blocksPerCall": 100,
     "batchSize": 10
+  },
+  "dailyEVMStatsJobs": {
+    "jobPattern": "0 0 0 * * ?",
+    "crawlAccountStat": {
+      "chunkSize": 1000
+    }
   }
 }

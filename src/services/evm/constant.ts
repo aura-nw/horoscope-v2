@@ -196,6 +196,28 @@ export const SERVICE = {
         path: 'v1.CrawlEvmAccount.CrawlNewAccountApi',
       },
     },
+    DashboardEVMStatisticsService: {
+      key: 'DashboardStatisticsService',
+    },
+    DailyEVMStatsJobsService: {
+      key: 'DailyEVMStatsJobsService',
+    },
+    DailyEVMStatisticsService: {
+      key: 'DailyEVMStatisticsService',
+      path: 'v1.DailyEVMStatisticsService',
+      CreateSpecificDateJob: {
+        key: 'CreateSpecificDateJob',
+        path: 'v1.DailyEVMStatisticsService.CreateSpecificDateJob',
+      },
+    },
+    EVMAccountStatisticsService: {
+      key: 'EVMAccountStatisticsService',
+      path: 'v1.EVMAccountStatisticsService',
+      CreateSpecificDateJob: {
+        key: 'CreateSpecificDateJob',
+        path: 'v1.EVMAccountStatisticsService.CreateSpecificDateJob',
+      },
+    },
   },
   V2: {
     EvmProxyService: {
@@ -242,8 +264,18 @@ export const BULL_JOB_NAME = {
   JOB_CREATE_EVM_BLOCK_CONSTRAINT: 'job:create-evm-block-constraint',
   CRAWL_EVM_TRANSACTION: 'crawl:evm-transaction',
   CRAWL_EVM_ACCOUNT: 'crawl:evm-account',
+  HANDLE_DASHBOARD_EVM_STATISTICS: 'handle:dashboard-evm-statistics',
+  HANDLE_DAILY_EVM_STATS_JOBS: 'handle:daily-evm-stats-jobs',
+  CRAWL_DAILY_EVM_STATISTICS: 'crawl:daily-evm-statistics',
+  CRAWL_EVM_ACCOUNT_STATISTICS: 'crawl:evm-account-statistics',
+  HANDLE_TOP_EVM_ACCOUNT: 'handle:top-evm-account',
 };
 
 export const MSG_TYPE = {
   MSG_ETHEREUM_TX: '/ethermint.evm.v1.MsgEthereumTx',
+};
+
+export const REDIS_KEY = {
+  DASHBOARD_EVM_STATISTICS: 'dashboard_statistics',
+  TOP_EVM_ACCOUNTS: 'top_accounts',
 };
