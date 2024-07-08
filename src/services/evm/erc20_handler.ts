@@ -10,6 +10,8 @@ import config from '../../../config.json' assert { type: 'json' };
 export const ERC20_ACTION = {
   TRANSFER: 'transfer',
   APPROVAL: 'approval',
+  DEPOSIT: 'deposit',
+  WITHDRAWAL: 'withdrawal',
 };
 export const ABI_TRANSFER_PARAMS = {
   FROM: {
@@ -42,6 +44,8 @@ export const ABI_APPROVAL_PARAMS = {
 export const ERC20_EVENT_TOPIC0 = {
   TRANSFER: keccak256(toHex('Transfer(address,address,uint256)')),
   APPROVAL: keccak256(toHex('Approval(address,address,uint256)')),
+  DEPOSIT: keccak256(toHex('Deposit(address,uint256)')),
+  WITHDRAWAL: keccak256(toHex('Withdrawal(address,uint256)')),
 };
 export class Erc20Handler {
   // key: {accountId}_{erc20ContractAddress}
@@ -60,7 +64,13 @@ export class Erc20Handler {
 
   process() {
     this.erc20Activities.forEach((erc20Activity) => {
-      if (erc20Activity.action === ERC20_ACTION.TRANSFER) {
+      if (
+        [
+          ERC20_ACTION.TRANSFER,
+          ERC20_ACTION.DEPOSIT,
+          ERC20_ACTION.WITHDRAWAL,
+        ].includes(erc20Activity.action)
+      ) {
         this.handlerErc20Transfer(erc20Activity);
       }
     });
@@ -227,6 +237,52 @@ export class Erc20Handler {
         amount: amount.toString(),
         from: from.toLowerCase(),
         to: to.toLowerCase(),
+        height: e.block_height,
+        tx_hash: e.tx_hash,
+        evm_tx_id: e.evm_tx_id,
+      });
+    } catch {
+      return undefined;
+    }
+  }
+
+  static buildDepositActivity(e: EvmEvent) {
+    try {
+      const [to, amount] = decodeAbiParameters(
+        [ABI_TRANSFER_PARAMS.TO, ABI_APPROVAL_PARAMS.VALUE],
+        (e.topic1 + toHex(e.data).slice(2)) as `0x${string}`
+      ) as [string, bigint];
+      return Erc20Activity.fromJson({
+        evm_event_id: e.id,
+        sender: e.sender,
+        action: ERC20_ACTION.DEPOSIT,
+        erc20_contract_address: e.address,
+        amount: amount.toString(),
+        from: ZERO_ADDRESS,
+        to: to.toLowerCase(),
+        height: e.block_height,
+        tx_hash: e.tx_hash,
+        evm_tx_id: e.evm_tx_id,
+      });
+    } catch {
+      return undefined;
+    }
+  }
+
+  static buildWithdrawalActivity(e: EvmEvent) {
+    try {
+      const [from, amount] = decodeAbiParameters(
+        [ABI_TRANSFER_PARAMS.FROM, ABI_APPROVAL_PARAMS.VALUE],
+        (e.topic1 + toHex(e.data).slice(2)) as `0x${string}`
+      ) as [string, bigint];
+      return Erc20Activity.fromJson({
+        evm_event_id: e.id,
+        sender: e.sender,
+        action: ERC20_ACTION.WITHDRAWAL,
+        erc20_contract_address: e.address,
+        amount: amount.toString(),
+        from: from.toLowerCase(),
+        to: ZERO_ADDRESS,
         height: e.block_height,
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
