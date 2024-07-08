@@ -145,6 +145,7 @@ export default class CrawlAccountService extends BullableService {
               );
               break;
             case AccountType.MODULE:
+            case AccountType.ETH_ACCOUNT:
               account.id = accountsInDb.find(
                 (acc) => acc.address === auth.base_account.address
               )!.id;

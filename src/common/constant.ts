@@ -439,7 +439,8 @@ export enum AccountType {
   DELAYED_VESTING = '/cosmos.vesting.v1beta1.DelayedVestingAccount',
   MODULE = '/cosmos.auth.v1beta1.ModuleAccount',
   BASE = '/cosmos.auth.v1beta1.BaseAccount',
-  SMART_ACCOUNT = '/auranw.aura.smartaccount.SmartAccount',
+  SMART_ACCOUNT = '/aura.smartaccount.v1beta1.SmartAccount',
+  ETH_ACCOUNT = '/ethermint.types.v1.EthAccount',
 }
 
 export enum PubkeyType {
