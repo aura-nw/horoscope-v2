@@ -148,13 +148,13 @@ export class Erc20Handler {
         const attr = attrs.find((attr) => attr.key === key);
         if (attr) {
           let { value } = attr;
-          if (value.startsWith('0x')) value = value.toLowerCase();
-          else
+          if (!value.startsWith('0x')) {
             value = convertBech32AddressToEthAddress(
               config.networkPrefixAddress,
               value
-            ).toLowerCase();
-          return value;
+            );
+          }
+          return value.toLowerCase();
         }
         return undefined;
       };
