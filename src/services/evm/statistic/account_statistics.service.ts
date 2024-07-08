@@ -160,6 +160,10 @@ export default class EVMAccountStatisticsService extends BullableService {
       }
       accountStats[tx.from].tx_sent += 1;
 
+      accountStats[tx.from].gas_used = (
+        BigInt(accountStats[tx.from].gas_used) + BigInt(tx.gas_used)
+      ).toString();
+
       tx.evm_internal_transactions.forEach(
         (txInternal: EvmInternalTransaction) => {
           const { from, to } = txInternal;
@@ -169,9 +173,6 @@ export default class EVMAccountStatisticsService extends BullableService {
             }
             accountStats[from].amount_sent = (
               BigInt(accountStats[from].amount_sent) + BigInt(txInternal.value)
-            ).toString();
-            accountStats[from].gas_used = (
-              BigInt(accountStats[from].gas_used) + BigInt(txInternal.gas_used)
             ).toString();
           }
           if (to) {
