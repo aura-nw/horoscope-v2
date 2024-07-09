@@ -1,10 +1,8 @@
 import { decodeAbiParameters, keccak256, toHex } from 'viem';
-import Moleculer from 'moleculer';
 import { Dictionary } from 'lodash';
-import { Erc20Activity, Event, EventAttribute, EvmEvent } from '../../models';
+import { Erc20Activity, EvmEvent } from '../../models';
 import { AccountBalance } from '../../models/account_balance';
 import { ZERO_ADDRESS } from './constant';
-import { convertBech32AddressToEthAddress } from './utils';
 import config from '../../../config.json' assert { type: 'json' };
 
 export const ERC20_ACTION = {
@@ -150,75 +148,6 @@ export class Erc20Handler {
     }
   }
 
-  static buildTransferActivityByCosmos(
-    e: Event,
-    erc20ModuleAccount: string,
-    logger: Moleculer.LoggerInstance
-  ): Erc20Activity | undefined {
-    try {
-      const getAddressFromAttrAndConvert0x = (
-        attrs: EventAttribute[],
-        key: string
-      ) => {
-        const attr = attrs.find((attr) => attr.key === key);
-        if (attr) {
-          let { value } = attr;
-          if (!value.startsWith('0x')) {
-            value = convertBech32AddressToEthAddress(
-              config.networkPrefixAddress,
-              value
-            );
-          }
-          return value.toLowerCase();
-        }
-        return undefined;
-      };
-
-      let from = getAddressFromAttrAndConvert0x(
-        e.attributes,
-        EventAttribute.ATTRIBUTE_KEY.SENDER
-      );
-      let to = getAddressFromAttrAndConvert0x(
-        e.attributes,
-        EventAttribute.ATTRIBUTE_KEY.RECEIVER
-      );
-      const sender = from;
-      if (e.type === Event.EVENT_TYPE.CONVERT_COIN) {
-        from = convertBech32AddressToEthAddress(
-          config.networkPrefixAddress,
-          erc20ModuleAccount
-        ).toLowerCase();
-      } else if (e.type === Event.EVENT_TYPE.CONVERT_ERC20) {
-        to = convertBech32AddressToEthAddress(
-          config.networkPrefixAddress,
-          erc20ModuleAccount
-        ).toLowerCase();
-      }
-      const amount = e.attributes.find(
-        (attr) => attr.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT
-      );
-      const address = getAddressFromAttrAndConvert0x(
-        e.attributes,
-        EventAttribute.ATTRIBUTE_KEY.ERC20_TOKEN
-      );
-      return Erc20Activity.fromJson({
-        sender,
-        action: ERC20_ACTION.TRANSFER,
-        erc20_contract_address: address,
-        amount: amount?.value,
-        from,
-        to,
-        height: e.block_height,
-        tx_hash: e.transaction.hash,
-        cosmos_event_id: e.id,
-        cosmos_tx_id: e.tx_id,
-      });
-    } catch (e) {
-      logger.error(e);
-      return undefined;
-    }
-  }
-
   static buildApprovalActivity(e: EvmEvent) {
     try {
       const [from, to, amount] = decodeAbiParameters(
@@ -246,7 +175,28 @@ export class Erc20Handler {
     }
   }
 
-  static buildDepositActivity(e: EvmEvent) {
+  static buildExtensionActivity(e: EvmEvent) {
+    const contractAddr = e.address;
+    if (
+      e.topic0 === ERC20_EVENT_TOPIC0.DEPOSIT &&
+      // check contract address is in support deposit list
+      config.erc20.extensionActivityContract.deposit.includes(contractAddr)
+    ) {
+      const activity = Erc20Handler.buildDepositActivity(e);
+      return activity;
+    }
+    if (
+      e.topic0 === ERC20_EVENT_TOPIC0.WITHDRAWAL &&
+      // check contract address is in support withdrawal list
+      config.erc20.extensionActivityContract.withdrawal.includes(contractAddr)
+    ) {
+      const activity = Erc20Handler.buildWithdrawalActivity(e);
+      return activity;
+    }
+    return undefined;
+  }
+
+  private static buildDepositActivity(e: EvmEvent) {
     try {
       const [to, amount] = decodeAbiParameters(
         [ABI_TRANSFER_PARAMS.TO, ABI_APPROVAL_PARAMS.VALUE],
@@ -269,7 +219,7 @@ export class Erc20Handler {
     }
   }
 
-  static buildWithdrawalActivity(e: EvmEvent) {
+  private static buildWithdrawalActivity(e: EvmEvent) {
     try {
       const [from, amount] = decodeAbiParameters(
         [ABI_TRANSFER_PARAMS.FROM, ABI_APPROVAL_PARAMS.VALUE],
