@@ -100,7 +100,8 @@ export default class CrawlOptimismDepositEVMService extends BullableService {
       await BlockCheckpoint.query()
         .insert(blockCheckpoint)
         .onConflict('job_name')
-        .merge();
+        .merge()
+        .transacting(trx);
     });
   }
 
