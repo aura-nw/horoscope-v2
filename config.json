@@ -400,7 +400,11 @@
     "key": "erc20",
     "blocksPerCall": 100,
     "millisecondRepeatJob": 2000,
-    "chunkSizeInsert": 1000
+    "chunkSizeInsert": 1000,
+    "extensionActivityContract": {
+      "deposit": ["0xe974cc14c93fc6077b0d65f98832b846c5454a0b"],
+      "withdrawal":["0xe974cc14c93fc6077b0d65f98832b846c5454a0b"]
+    }
   },
   "erc721": {
     "key": "erc721",
