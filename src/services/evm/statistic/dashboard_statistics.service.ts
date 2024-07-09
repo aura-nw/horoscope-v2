@@ -94,7 +94,10 @@ export default class DashboardEVMStatisticsService extends BullableService {
     const avgTime =
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-      (last100Block[0].date - last100Block[last100Block.length - 1].date) /
+      (last100Block[0].timestamp -
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        last100Block[last100Block.length - 1].timestamp) /
       last100Block.length;
     return avgTime;
   }
