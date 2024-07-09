@@ -1,4 +1,5 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+import { whatsabi } from '@shazow/whatsabi';
 import _, { Dictionary } from 'lodash';
 import { ServiceBroker } from 'moleculer';
 import { PublicClient, keccak256 } from 'viem';
