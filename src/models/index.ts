@@ -47,3 +47,5 @@ export * from './erc721_contract';
 export * from './erc721_stats';
 export * from './evm_block';
 export * from './optimism_deposit';
+export * from './optimism_withdrawal';
+export * from './optimism_withdrawal_event';

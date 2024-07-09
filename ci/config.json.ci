@@ -475,5 +475,19 @@
     "millisecondCrawl": 1000,
     "blocksPerCall": 100,
     "chunkSize": 1000
+  },
+  "handleOptimismWithdrawal": {
+    "key": "handleOptimismWithdrawal",
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 100,
+    "chunkSize": 1000,
+    "messageParser": "0x4200000000000000000000000000000000000016",
+  },
+  "crawlOptimismWithdrawalEventOnL1": {
+    "key": "crawlOptimismWithdrawalEventOnL1",
+    "millisecondCrawl": 1000,
+    "blocksPerCall": 100,
+    "chunkSize": 1000,
+    "l1OptimismPortal": "0x639F2AECE398Aa76b07e59eF6abe2cFe32bacb68"
   }
 }

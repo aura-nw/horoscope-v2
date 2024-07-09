@@ -200,6 +200,10 @@ export const SERVICE = {
       key: 'CrawlOptimismDepositEVM',
       path: 'v1.CrawlOptimismDepositEVM',
     },
+    HandleOptimismWithdrawalEVM: {
+      key: 'HandleOptimismWithdrawalEVM',
+      path: 'v1.HandleOptimismWithdrawalEVM',
+    },
   },
   V2: {
     EvmProxyService: {
@@ -247,6 +251,9 @@ export const BULL_JOB_NAME = {
   CRAWL_EVM_TRANSACTION: 'crawl:evm-transaction',
   CRAWL_EVM_ACCOUNT: 'crawl:evm-account',
   CRAWL_OPTIMISM_DEPOSIT: 'crawl:optimism-deposit',
+  HANDLE_OPTIMISM_WITHDRAWAL: 'handle:optimism-withdrawal',
+  CRAWL_OPTIMISM_WITHDRAWAL_EVENT_ON_L1:
+    'crawl:optimism-withdrawal-event-on-l1',
 };
 
 export const MSG_TYPE = {
