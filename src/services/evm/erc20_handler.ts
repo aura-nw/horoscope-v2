@@ -1,5 +1,6 @@
 import { decodeAbiParameters, keccak256, toHex } from 'viem';
 import { Dictionary } from 'lodash';
+import Moleculer from 'moleculer';
 import { Erc20Activity, EvmEvent } from '../../models';
 import { AccountBalance } from '../../models/account_balance';
 import { ZERO_ADDRESS } from './constant';
@@ -121,7 +122,7 @@ export class Erc20Handler {
     }
   }
 
-  static buildTransferActivity(e: EvmEvent) {
+  static buildTransferActivity(e: EvmEvent, logger: Moleculer.LoggerInstance) {
     try {
       const [from, to, amount] = decodeAbiParameters(
         [
@@ -143,12 +144,13 @@ export class Erc20Handler {
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
       });
-    } catch {
+    } catch (e) {
+      logger.error(e);
       return undefined;
     }
   }
 
-  static buildApprovalActivity(e: EvmEvent) {
+  static buildApprovalActivity(e: EvmEvent, logger: Moleculer.LoggerInstance) {
     try {
       const [from, to, amount] = decodeAbiParameters(
         [
@@ -170,19 +172,20 @@ export class Erc20Handler {
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
       });
-    } catch {
+    } catch (e) {
+      logger.error(e);
       return undefined;
     }
   }
 
-  static buildExtensionActivity(e: EvmEvent) {
+  static buildExtensionActivity(e: EvmEvent, logger: Moleculer.LoggerInstance) {
     const contractAddr = e.address;
     if (
       e.topic0 === ERC20_EVENT_TOPIC0.DEPOSIT &&
       // check contract address is in support deposit list
       config.erc20.extensionActivityContract.deposit.includes(contractAddr)
     ) {
-      const activity = Erc20Handler.buildDepositActivity(e);
+      const activity = Erc20Handler.buildDepositActivity(e, logger);
       return activity;
     }
     if (
@@ -190,13 +193,16 @@ export class Erc20Handler {
       // check contract address is in support withdrawal list
       config.erc20.extensionActivityContract.withdrawal.includes(contractAddr)
     ) {
-      const activity = Erc20Handler.buildWithdrawalActivity(e);
+      const activity = Erc20Handler.buildWithdrawalActivity(e, logger);
       return activity;
     }
     return undefined;
   }
 
-  private static buildDepositActivity(e: EvmEvent) {
+  private static buildDepositActivity(
+    e: EvmEvent,
+    logger: Moleculer.LoggerInstance
+  ) {
     try {
       const [to, amount] = decodeAbiParameters(
         [ABI_TRANSFER_PARAMS.TO, ABI_APPROVAL_PARAMS.VALUE],
@@ -214,12 +220,16 @@ export class Erc20Handler {
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
       });
-    } catch {
+    } catch (e) {
+      logger.error(e);
       return undefined;
     }
   }
 
-  private static buildWithdrawalActivity(e: EvmEvent) {
+  private static buildWithdrawalActivity(
+    e: EvmEvent,
+    logger: Moleculer.LoggerInstance
+  ) {
     try {
       const [from, amount] = decodeAbiParameters(
         [ABI_TRANSFER_PARAMS.FROM, ABI_APPROVAL_PARAMS.VALUE],
@@ -237,7 +247,8 @@ export class Erc20Handler {
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
       });
-    } catch {
+    } catch (e) {
+      logger.error(e);
       return undefined;
     }
   }
