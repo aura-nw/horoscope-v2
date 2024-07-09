@@ -246,7 +246,28 @@ export class Erc20Handler {
     }
   }
 
-  static buildDepositActivity(e: EvmEvent) {
+  static buildExtensionActivity(e: EvmEvent) {
+    const contractAddr = e.address;
+    if (
+      e.topic0 === ERC20_EVENT_TOPIC0.DEPOSIT &&
+      // check contract address is in support deposit list
+      config.erc20.extensionActivityContract.deposit.includes(contractAddr)
+    ) {
+      const activity = Erc20Handler.buildDepositActivity(e);
+      return activity;
+    }
+    if (
+      e.topic0 === ERC20_EVENT_TOPIC0.WITHDRAWAL &&
+      // check contract address is in support withdrawal list
+      config.erc20.extensionActivityContract.withdrawal.includes(contractAddr)
+    ) {
+      const activity = Erc20Handler.buildWithdrawalActivity(e);
+      return activity;
+    }
+    return undefined;
+  }
+
+  private static buildDepositActivity(e: EvmEvent) {
     try {
       const [to, amount] = decodeAbiParameters(
         [ABI_TRANSFER_PARAMS.TO, ABI_APPROVAL_PARAMS.VALUE],
@@ -269,7 +290,7 @@ export class Erc20Handler {
     }
   }
 
-  static buildWithdrawalActivity(e: EvmEvent) {
+  private static buildWithdrawalActivity(e: EvmEvent) {
     try {
       const [from, amount] = decodeAbiParameters(
         [ABI_TRANSFER_PARAMS.FROM, ABI_APPROVAL_PARAMS.VALUE],
