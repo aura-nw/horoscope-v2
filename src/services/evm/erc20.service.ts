@@ -111,17 +111,20 @@ export default class Erc20Service extends BullableService {
       const erc20Activities: Erc20Activity[] = [];
       erc20Events.forEach((e) => {
         if (e.topic0 === ERC20_EVENT_TOPIC0.TRANSFER) {
-          const activity = Erc20Handler.buildTransferActivity(e);
+          const activity = Erc20Handler.buildTransferActivity(e, this.logger);
           if (activity) {
             erc20Activities.push(activity);
           }
         } else if (e.topic0 === ERC20_EVENT_TOPIC0.APPROVAL) {
-          const activity = Erc20Handler.buildApprovalActivity(e);
+          const activity = Erc20Handler.buildApprovalActivity(e, this.logger);
           if (activity) {
             erc20Activities.push(activity);
           }
         } else {
-          const extensionActivities = Erc20Handler.buildExtensionActivity(e);
+          const extensionActivities = Erc20Handler.buildExtensionActivity(
+            e,
+            this.logger
+          );
           if (extensionActivities) {
             erc20Activities.push(extensionActivities);
           }
