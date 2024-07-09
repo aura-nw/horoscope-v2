@@ -484,6 +484,8 @@
   },
   "crawlOptimismWithdrawalEventOnL1": {
     "key": "crawlOptimismWithdrawalEventOnL1",
+    "l1ChainId": "ethereum",
+    "startBlockInL1": 20227972,
     "millisecondCrawl": 1000,
     "blocksPerCall": 100,
     "chunkSize": 1000,

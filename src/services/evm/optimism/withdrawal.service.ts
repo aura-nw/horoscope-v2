@@ -118,25 +118,25 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
   async crawlOptimismWithdrawalEventOnL1() {
     let blockCheckpoint = await BlockCheckpoint.query().findOne(
       'job_name',
-      BULL_JOB_NAME.CRAWL_OPTIMISM_DEPOSIT
+      BULL_JOB_NAME.CRAWL_OPTIMISM_WITHDRAWAL_EVENT_ON_L1
     );
     if (!blockCheckpoint) {
       blockCheckpoint = await BlockCheckpoint.query().insert({
-        job_name: BULL_JOB_NAME.CRAWL_OPTIMISM_DEPOSIT,
-        height: config.crawlOptimismDeposit.startBlockInL1,
+        job_name: BULL_JOB_NAME.CRAWL_OPTIMISM_WITHDRAWAL_EVENT_ON_L1,
+        height: config.crawlOptimismWithdrawalEventOnL1.startBlockInL1,
       });
     }
     const latestBlockL1 = await this.viemClient.getBlockNumber();
     const startBlock = blockCheckpoint.height + 1;
     const endBlock = Math.min(
-      startBlock + config.crawlOptimismDeposit.blocksPerCall - 1,
+      startBlock + config.crawlOptimismWithdrawalEventOnL1.blocksPerCall - 1,
       parseInt(latestBlockL1.toString(), 10)
     );
     if (startBlock > endBlock) {
       return;
     }
     this.logger.info(
-      `Crawl Optimism Deposit from block ${startBlock} to block ${endBlock}`
+      `Crawl Optimism Withdrawal Event from block ${startBlock} to block ${endBlock}`
     );
     const events = await this.viemClient.getLogs({
       fromBlock: BigInt(startBlock),
@@ -179,7 +179,9 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
   }
 
   async _start(): Promise<void> {
-    this.viemClient = getViemClient(config.crawlOptimismDeposit.l1ChainId);
+    this.viemClient = getViemClient(
+      config.crawlOptimismWithdrawalEventOnL1.l1ChainId
+    );
     this.createJob(
       BULL_JOB_NAME.HANDLE_OPTIMISM_WITHDRAWAL,
       BULL_JOB_NAME.HANDLE_OPTIMISM_WITHDRAWAL,
