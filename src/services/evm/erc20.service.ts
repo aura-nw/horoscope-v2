@@ -120,13 +120,13 @@ export default class Erc20Service extends BullableService {
           if (activity) {
             erc20Activities.push(activity);
           }
-        } else {
-          const extensionActivities = Erc20Handler.buildExtensionActivity(
+        } else if (config.erc20.wrapExtensionContract.includes(e.address)) {
+          const wrapActivity = Erc20Handler.buildWrapExtensionActivity(
             e,
             this.logger
           );
-          if (extensionActivities) {
-            erc20Activities.push(extensionActivities);
+          if (wrapActivity) {
+            erc20Activities.push(wrapActivity);
           }
         }
       });

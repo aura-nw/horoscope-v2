@@ -404,10 +404,7 @@
     "blocksPerCall": 100,
     "millisecondRepeatJob": 5000,
     "chunkSizeInsert": 1000,
-    "extensionActivityContract": {
-      "deposit": ["0xE974cC14c93FC6077B0d65F98832B846C5454A0B"],
-      "withdrawal":["0xE974cC14c93FC6077B0d65F98832B846C5454A0B"]
-    }
+    "wrapExtensionContract": ["0xe974cc14c93fc6077b0d65f98832b846c5454a0b"]
   },
   "erc721": {
     "key": "erc721",
