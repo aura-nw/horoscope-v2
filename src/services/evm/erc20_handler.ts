@@ -1,10 +1,9 @@
-import { decodeAbiParameters, keccak256, toHex } from 'viem';
 import { Dictionary } from 'lodash';
 import Moleculer from 'moleculer';
+import { decodeAbiParameters, keccak256, toHex } from 'viem';
 import { Erc20Activity, EvmEvent } from '../../models';
 import { AccountBalance } from '../../models/account_balance';
 import { ZERO_ADDRESS } from './constant';
-import config from '../../../config.json' assert { type: 'json' };
 
 export const ERC20_ACTION = {
   TRANSFER: 'transfer',
@@ -122,7 +121,10 @@ export class Erc20Handler {
     }
   }
 
-  static buildTransferActivity(e: EvmEvent, logger: Moleculer.LoggerInstance) {
+  static buildTransferActivity(
+    e: EvmEvent,
+    logger: Moleculer.LoggerInstance
+  ): Erc20Activity | undefined {
     try {
       const [from, to, amount] = decodeAbiParameters(
         [
@@ -150,7 +152,10 @@ export class Erc20Handler {
     }
   }
 
-  static buildApprovalActivity(e: EvmEvent, logger: Moleculer.LoggerInstance) {
+  static buildApprovalActivity(
+    e: EvmEvent,
+    logger: Moleculer.LoggerInstance
+  ): Erc20Activity | undefined {
     try {
       const [from, to, amount] = decodeAbiParameters(
         [
@@ -178,31 +183,25 @@ export class Erc20Handler {
     }
   }
 
-  static buildExtensionActivity(e: EvmEvent, logger: Moleculer.LoggerInstance) {
-    const contractAddr = e.address;
-    if (
-      e.topic0 === ERC20_EVENT_TOPIC0.DEPOSIT &&
-      // check contract address is in support deposit list
-      config.erc20.extensionActivityContract.deposit.includes(contractAddr)
-    ) {
-      const activity = Erc20Handler.buildDepositActivity(e, logger);
+  static buildWrapExtensionActivity(
+    e: EvmEvent,
+    logger: Moleculer.LoggerInstance
+  ): Erc20Activity | undefined {
+    if (e.topic0 === ERC20_EVENT_TOPIC0.DEPOSIT) {
+      const activity = Erc20Handler.buildWrapDepositActivity(e, logger);
       return activity;
     }
-    if (
-      e.topic0 === ERC20_EVENT_TOPIC0.WITHDRAWAL &&
-      // check contract address is in support withdrawal list
-      config.erc20.extensionActivityContract.withdrawal.includes(contractAddr)
-    ) {
-      const activity = Erc20Handler.buildWithdrawalActivity(e, logger);
+    if (e.topic0 === ERC20_EVENT_TOPIC0.WITHDRAWAL) {
+      const activity = Erc20Handler.buildWrapWithdrawalActivity(e, logger);
       return activity;
     }
     return undefined;
   }
 
-  private static buildDepositActivity(
+  private static buildWrapDepositActivity(
     e: EvmEvent,
     logger: Moleculer.LoggerInstance
-  ) {
+  ): Erc20Activity | undefined {
     try {
       const [to, amount] = decodeAbiParameters(
         [ABI_TRANSFER_PARAMS.TO, ABI_APPROVAL_PARAMS.VALUE],
@@ -226,10 +225,10 @@ export class Erc20Handler {
     }
   }
 
-  private static buildWithdrawalActivity(
+  private static buildWrapWithdrawalActivity(
     e: EvmEvent,
     logger: Moleculer.LoggerInstance
-  ) {
+  ): Erc20Activity | undefined {
     try {
       const [from, amount] = decodeAbiParameters(
         [ABI_TRANSFER_PARAMS.FROM, ABI_APPROVAL_PARAMS.VALUE],
