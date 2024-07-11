@@ -158,7 +158,7 @@ export class Erc20Handler {
     e: Event,
     erc20ModuleAccount: string,
     logger: Moleculer.LoggerInstance
-  ) {
+  ): Erc20Activity | undefined {
     try {
       const getAddressFromAttrAndConvert0x = (
         attrs: EventAttribute[],
