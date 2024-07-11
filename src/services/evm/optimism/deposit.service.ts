@@ -71,24 +71,26 @@ export default class CrawlOptimismDepositEVMService extends BullableService {
     ]);
     const blockByHeight = _.keyBy(blocks, 'number');
     const eventsByTxHash = _.keyBy(events, 'transactionHash');
-    const optimismDeposits: any[] = [];
+    const optimismDeposits: OptimismDeposit[] = [];
     txs.forEach((tx) => {
       const l2Info = getL2TransactionHashes(tx);
-      optimismDeposits.push({
-        l1_block: parseInt(tx.blockNumber.toString(), 10),
-        l1_tx_hash: tx.transactionHash,
-        l1_from: eventsByTxHash[tx.transactionHash].args.from,
-        l2_to: eventsByTxHash[tx.transactionHash].args.to,
-        l2_tx_hash: l2Info.toString(),
-        gas_used: tx.gasUsed,
-        gas_price: tx.effectiveGasPrice,
-        timestamp: new Date(
-          parseInt(
-            blockByHeight[tx.blockNumber.toString()].timestamp.toString(),
-            10
-          ) * 1000
-        ),
-      });
+      optimismDeposits.push(
+        OptimismDeposit.fromJson({
+          l1_block: parseInt(tx.blockNumber.toString(), 10),
+          l1_tx_hash: tx.transactionHash,
+          l1_from: eventsByTxHash[tx.transactionHash].args.from,
+          l2_to: eventsByTxHash[tx.transactionHash].args.to,
+          l2_tx_hash: l2Info.toString(),
+          gas_used: tx.gasUsed,
+          gas_price: tx.effectiveGasPrice,
+          timestamp: new Date(
+            parseInt(
+              blockByHeight[tx.blockNumber.toString()].timestamp.toString(),
+              10
+            ) * 1000
+          ),
+        })
+      );
     });
     await knex.transaction(async (trx) => {
       if (optimismDeposits.length > 0) {
