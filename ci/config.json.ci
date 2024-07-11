@@ -481,7 +481,7 @@
     "millisecondCrawl": 1000,
     "blocksPerCall": 100,
     "chunkSize": 1000,
-    "messageParser": "0x4200000000000000000000000000000000000016",
+    "messageParser": "0x4200000000000000000000000000000000000016"
   },
   "crawlOptimismWithdrawalEventOnL1": {
     "key": "crawlOptimismWithdrawalEventOnL1",
