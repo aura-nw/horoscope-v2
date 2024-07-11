@@ -52,4 +52,23 @@ export class OptimismWithdrawal extends BaseModel {
       FINALIZE: 'finalized',
     };
   }
+
+  static rebuildTxFromEvmEvent(evmEvent: EvmEvent) {
+    return {
+      transactionHash: evmEvent.tx_hash,
+      blockNumber: evmEvent.block_height,
+      logs: [
+        {
+          address: evmEvent.address,
+          topics: [
+            evmEvent.topic0,
+            evmEvent.topic1,
+            evmEvent.topic2,
+            evmEvent.topic3,
+          ],
+          data: evmEvent.data,
+        },
+      ],
+    };
+  }
 }
