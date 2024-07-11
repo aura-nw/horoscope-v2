@@ -4,6 +4,7 @@ import { TransactionMessage } from './transaction_message';
 import { Transaction } from './transaction';
 // eslint-disable-next-line import/no-cycle
 import { EvmEvent } from './evm_event';
+// eslint-disable-next-line import/no-cycle
 import { EvmInternalTransaction } from './evm_internal_transaction';
 
 export class EVMTransaction extends BaseModel {
