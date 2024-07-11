@@ -42,7 +42,7 @@ export default class CrawlEvmTransactionService extends BullableService {
     const blocks = await EVMBlock.query()
       .select('height', 'transactions', 'tx_count', 'timestamp')
       .where('height', '>', startBlock)
-      .where('height', '<=', endBlock)
+      .andWhere('height', '<=', endBlock)
       .orderBy('height', 'asc');
 
     const { evmTxs, evmEvents } = await this.getEVMTxsFromBlocks(blocks);
