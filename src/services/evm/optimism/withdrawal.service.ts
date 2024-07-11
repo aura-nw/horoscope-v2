@@ -1,9 +1,17 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import { PublicClient, decodeAbiParameters } from 'viem';
+import {
+  PublicClient,
+  decodeAbiParameters,
+  toHex,
+  defineChain,
+  Chain,
+} from 'viem';
 import _ from 'lodash';
+import axios from 'axios';
 import BullableService, { QueueHandler } from '../../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../constant';
 import config from '../../../../config.json' assert { type: 'json' };
+import networks from '../../../../network.json' assert { type: 'json' };
 import '../../../../fetch-polyfill.js';
 import { BlockCheckpoint, OptimismWithdrawal, EvmEvent } from '../../../models';
 import knex from '../../../common/utils/db_connection';
@@ -14,9 +22,11 @@ import { getViemClient } from '../../../common/utils/etherjs_client';
   version: 1,
 })
 export default class HandleOptimismWithdrawalEVMService extends BullableService {
-  viemClient!: PublicClient;
+  viemClientL1!: PublicClient;
 
-  ABI_MESSAGE_PASSED = [
+  l2Chain!: Chain;
+
+  ABI_MESSAGE_PASSED_INDEXED = [
     {
       name: 'nonce',
       type: 'uint256',
@@ -28,6 +38,25 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
     {
       name: 'target',
       type: 'address',
+    },
+  ];
+
+  ABI_MESSAGE_PASSED_NON_INDEXED = [
+    {
+      name: 'value',
+      type: 'uint256',
+    },
+    {
+      name: 'gasLimit',
+      type: 'uint256',
+    },
+    {
+      name: 'data',
+      type: 'bytes',
+    },
+    {
+      name: 'withdrawalHash',
+      type: 'bytes32',
     },
   ];
 
@@ -68,37 +97,63 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
     if (startBlock >= endBlock) {
       return;
     }
+    // scan evm event fromBlock to toBlock to get event with (address, topic0) for MESSAGE_PASSED_EVENT
     const evmEvents = await EvmEvent.query()
       .where('block_height', '>', startBlock)
       .andWhere('block_height', '<=', endBlock)
       .andWhere('address', config.handleOptimismWithdrawal.messageParser)
       .andWhere('topic0', this.MESSAGE_PASSED_EVENT)
       .withGraphFetched('evm_transaction');
-    await knex.transaction(async (trx) => {
-      if (evmEvents.length > 0) {
-        const optimismWithdrawals: any[] = [];
-        evmEvents.forEach((evmEvent) => {
-          const [nonce, ,] = decodeAbiParameters(
-            this.ABI_MESSAGE_PASSED,
-            (evmEvent.topic1 +
-              evmEvent.topic2.slice(2) +
-              evmEvent.topic3.slice(2)) as `0x${string}`
-          );
-          optimismWithdrawals.push({
-            l2_tx_hash: evmEvent.evm_transaction.hash,
-            l2_block: evmEvent.evm_transaction.height,
-            sender: evmEvent.evm_transaction.from,
-            timestamp: evmEvent.evm_transaction.timestamp,
-            msg_nonce: nonce,
-          });
+
+    await Promise.all(
+      evmEvents.map(async (evmEvent) => {
+        const txReceipt = this.rebuildTxFromEvmEvent(evmEvent);
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const status = await this.viemClientL1.getWithdrawalStatus({
+          receipt: txReceipt,
+          portalAddress:
+            config.crawlOptimismWithdrawalEventOnL1.l1OptimismPortal,
+          targetChain: this.l2Chain,
+          l2OutputOracleAddress:
+            config.crawlOptimismWithdrawalEventOnL1.l2OutputOracleProxy,
         });
-        if (evmEvents.length > 0) {
-          await trx.batchInsert(
-            OptimismWithdrawal.tableName,
-            optimismWithdrawals,
-            config.handleOptimismWithdrawal.chunkSize
-          );
-        }
+        // eslint-disable-next-line no-param-reassign
+        evmEvent.withdrawalStatus = status;
+      })
+    );
+    const optimismWithdrawals: any[] = [];
+    if (evmEvents.length > 0) {
+      evmEvents.forEach(async (evmEvent) => {
+        const [nonce, ,] = decodeAbiParameters(
+          this.ABI_MESSAGE_PASSED_INDEXED,
+          (evmEvent.topic1 +
+            evmEvent.topic2.slice(2) +
+            evmEvent.topic3.slice(2)) as `0x${string}`
+        );
+        const [, , , withdrawalHash] = decodeAbiParameters(
+          this.ABI_MESSAGE_PASSED_NON_INDEXED,
+          `0x${evmEvent.data.toString('hex')}`
+        );
+        optimismWithdrawals.push({
+          l2_tx_hash: evmEvent.evm_transaction.hash,
+          l2_block: evmEvent.evm_transaction.height,
+          sender: evmEvent.evm_transaction.from,
+          timestamp: evmEvent.evm_transaction.timestamp,
+          msg_nonce: nonce,
+          withdrawal_hash: withdrawalHash,
+          status: evmEvent.withdrawalStatus,
+          evm_event_id: evmEvent.id,
+        });
+      });
+    }
+    await knex.transaction(async (trx) => {
+      if (optimismWithdrawals.length > 0) {
+        await trx.batchInsert(
+          OptimismWithdrawal.tableName,
+          optimismWithdrawals,
+          config.handleOptimismWithdrawal.chunkSize
+        );
       }
       if (blockCheckpoint) {
         blockCheckpoint.height = endBlock;
@@ -138,37 +193,99 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
     this.logger.info(
       `Crawl Optimism Withdrawal Event from block ${startBlock} to block ${endBlock}`
     );
-    const events = await this.viemClient.getLogs({
-      fromBlock: BigInt(startBlock),
-      toBlock: BigInt(endBlock),
-      address: config.crawlOptimismWithdrawalEventOnL1
-        .l1OptimismPortal as `0x${string}`,
-      events: [
-        this.WITHDRAWAL_FINALIZED_EVENT,
-        this.WITHDRAWAL_FINALIZED_EVENT_BLAST,
-        this.WITHDRAWAL_PROVEN_EVENT,
-        this.WITHDRAWAL_PROVEN_EVENT_BLAST,
-      ],
-    });
-    const txPromises = events.map((event) =>
-      this.viemClient.getTransactionReceipt({
-        hash: event.transactionHash,
+
+    const l1Chain = networks.find(
+      (network) =>
+        network.chainId === config.crawlOptimismWithdrawalEventOnL1.l1ChainId
+    );
+    if (!l1Chain || !l1Chain.EVMJSONRPC) {
+      throw new Error(`EVMJSONRPC not found with chainId: ${config.chainId}`);
+    }
+
+    // scan l1 layer has 1 of 4 event (WITHDRAWAL_PROVEN_EVENT/WITHDRAWAL_PROVEN_EVENT_BLAST/WITHDRAWAL_FINALIZED_EVENT/WITHDRAWAL_FINALIZED_EVENT_BLAST) fromBlock to toBlock
+    const events = (
+      await axios({
+        url: l1Chain.EVMJSONRPC[0],
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        data: {
+          jsonrpc: '2.0',
+          id: '1',
+          method: 'eth_getLogs',
+          params: [
+            {
+              fromBlock: toHex(startBlock),
+              toBlock: toHex(endBlock),
+              address: config.crawlOptimismWithdrawalEventOnL1.l1OptimismPortal,
+              topics: [
+                [
+                  this.WITHDRAWAL_PROVEN_EVENT,
+                  this.WITHDRAWAL_PROVEN_EVENT_BLAST,
+                  this.WITHDRAWAL_FINALIZED_EVENT,
+                  this.WITHDRAWAL_FINALIZED_EVENT_BLAST,
+                ],
+              ],
+            },
+          ],
+        },
+      })
+    ).data.result;
+    const listUpdateOpWithdrawalStatus: {
+      id: number;
+      status: string;
+      txHash: string;
+    }[] = [];
+    await Promise.all(
+      events.map(async (event: any) => {
+        const withdrawalHash = event.topics[0];
+        const opWithdrawal = await OptimismWithdrawal.query()
+          .findOne('withdrawal_hash', withdrawalHash)
+          .withGraphFetched('evm_event');
+        if (!opWithdrawal) {
+          throw Error(
+            `Cannot found Optimism Withdrawal with hash ${withdrawalHash}`
+          );
+        }
+        const txReceipt = this.rebuildTxFromEvmEvent(opWithdrawal.evm_event);
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const status = await this.viemClientL1.getWithdrawalStatus({
+          receipt: txReceipt,
+          portalAddress:
+            config.crawlOptimismWithdrawalEventOnL1.l1OptimismPortal,
+          targetChain: this.l2Chain,
+          l2OutputOracleAddress:
+            config.crawlOptimismWithdrawalEventOnL1.l2OutputOracleProxy,
+        });
+
+        listUpdateOpWithdrawalStatus.push({
+          id: opWithdrawal.id,
+          status,
+          txHash:
+            status === OptimismWithdrawal.STATUS.FINALIZE
+              ? event.transactionHash
+              : null,
+        });
       })
     );
-    const blockPromises = events.map((event) =>
-      this.viemClient.getBlock({
-        blockNumber: event.blockNumber,
-        includeTransactions: false,
-      })
-    );
-    const [blocks, txs] = await Promise.all([
-      Promise.all(blockPromises),
-      Promise.all(txPromises),
-    ]);
-    const blockByHeight = _.keyBy(blocks, 'number');
+
     await knex.transaction(async (trx) => {
-      this.logger.debug(txs);
-      this.logger.debug(blockByHeight);
+      if (listUpdateOpWithdrawalStatus.length > 0) {
+        const stringListUpdates = listUpdateOpWithdrawalStatus
+          .map((update) => {
+            if (update.txHash) {
+              return `(${update.id}, '${update.status}', '${update.txHash}'})`;
+            }
+            return `(${update.id}, '${update.status}', NULL)`;
+          })
+          .join(',');
+        await trx.raw(
+          `UPDATE ${OptimismWithdrawal.tableName} SET status = temp.status, l1_tx_hash = temp.txHash from (VALUES ${stringListUpdates}) as temp(id, status, txHash) where temp.id = ${OptimismWithdrawal.tableName}.id`
+        );
+      }
       blockCheckpoint.height = endBlock;
       await BlockCheckpoint.query()
         .insert(blockCheckpoint)
@@ -179,8 +296,38 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
   }
 
   async _start(): Promise<void> {
-    this.viemClient = getViemClient(
-      config.crawlOptimismWithdrawalEventOnL1.l1ChainId
+    // create currentChain as L2 Chain
+    const currentChain = networks.find(
+      (network) => network.chainId === config.chainId
+    );
+    if (!currentChain || !currentChain.EVMJSONRPC) {
+      throw new Error(`EVMJSONRPC not found with chainId: ${config.chainId}`);
+    }
+
+    this.l2Chain = defineChain({
+      id: currentChain.EVMchainId,
+      name: currentChain.EVMchainId.toString(),
+      nativeCurrency: {
+        name: '',
+        symbol: '',
+        decimals: 18,
+      },
+      contracts: {
+        multicall3: {
+          address: config.crawlOptimismWithdrawalEventOnL1
+            .multicall3Contract as `0x${string}`,
+        },
+      },
+      rpcUrls: {
+        default: {
+          http: currentChain.EVMJSONRPC,
+        },
+      },
+    });
+
+    this.viemClientL1 = getViemClient(
+      config.crawlOptimismWithdrawalEventOnL1.l1ChainId,
+      this.l2Chain
     );
     this.createJob(
       BULL_JOB_NAME.HANDLE_OPTIMISM_WITHDRAWAL,
@@ -211,5 +358,24 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
       }
     );
     return super._start();
+  }
+
+  rebuildTxFromEvmEvent(evmEvent: EvmEvent) {
+    return {
+      transactionHash: evmEvent.tx_hash,
+      blockNumber: evmEvent.block_height,
+      logs: [
+        {
+          address: evmEvent.address,
+          topics: [
+            evmEvent.topic0,
+            evmEvent.topic1,
+            evmEvent.topic2,
+            evmEvent.topic3,
+          ],
+          data: evmEvent.data,
+        },
+      ],
+    };
   }
 }
