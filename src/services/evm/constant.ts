@@ -218,6 +218,10 @@ export const SERVICE = {
         path: 'v1.EVMAccountStatisticsService.CreateSpecificDateJob',
       },
     },
+    CrawlOptimismDepositEVM: {
+      key: 'CrawlOptimismDepositEVM',
+      path: 'v1.CrawlOptimismDepositEVM',
+    },
   },
   V2: {
     EvmProxyService: {
@@ -269,6 +273,7 @@ export const BULL_JOB_NAME = {
   CRAWL_DAILY_EVM_STATISTICS: 'crawl:daily-evm-statistics',
   CRAWL_EVM_ACCOUNT_STATISTICS: 'crawl:evm-account-statistics',
   HANDLE_TOP_EVM_ACCOUNT: 'handle:top-evm-account',
+  CRAWL_OPTIMISM_DEPOSIT: 'crawl:optimism-deposit',
 };
 
 export const MSG_TYPE = {
