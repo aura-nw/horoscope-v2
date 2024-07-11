@@ -181,7 +181,7 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
         height: config.crawlOptimismWithdrawalEventOnL1.startBlockInL1,
       });
     }
-    const latestBlockL1 = await this.viemClient.getBlockNumber();
+    const latestBlockL1 = await this.viemClientL1.getBlockNumber();
     const startBlock = blockCheckpoint.height + 1;
     const endBlock = Math.min(
       startBlock + config.crawlOptimismWithdrawalEventOnL1.blocksPerCall - 1,
@@ -240,7 +240,7 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
     }[] = [];
     await Promise.all(
       events.map(async (event: any) => {
-        const withdrawalHash = event.topics[0];
+        const withdrawalHash = event.topics[1];
         const opWithdrawal = await OptimismWithdrawal.query()
           .findOne('withdrawal_hash', withdrawalHash)
           .withGraphFetched('evm_event');
@@ -277,7 +277,7 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
         const stringListUpdates = listUpdateOpWithdrawalStatus
           .map((update) => {
             if (update.txHash) {
-              return `(${update.id}, '${update.status}', '${update.txHash}'})`;
+              return `(${update.id}, '${update.status}', '${update.txHash}')`;
             }
             return `(${update.id}, '${update.status}', NULL)`;
           })
