@@ -79,10 +79,10 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
   WITHDRAWAL_FINALIZED_EVENT_BLAST =
     '0x36d89e6190aa646d1a48286f8ad05e60a144483f42fd7e0ea08baba79343645b';
 
-  // @QueueHandler({
-  //   queueName: BULL_JOB_NAME.HANDLE_OPTIMISM_WITHDRAWAL,
-  //   jobName: BULL_JOB_NAME.HANDLE_OPTIMISM_WITHDRAWAL,
-  // })
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.HANDLE_OPTIMISM_WITHDRAWAL,
+    jobName: BULL_JOB_NAME.HANDLE_OPTIMISM_WITHDRAWAL,
+  })
   async handleOptimismWithdrawal() {
     const [startBlock, endBlock, blockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
