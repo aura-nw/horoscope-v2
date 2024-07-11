@@ -1,4 +1,5 @@
 import { decodeAbiParameters, keccak256, toHex } from 'viem';
+import Moleculer from 'moleculer';
 import { Dictionary } from 'lodash';
 import { Erc20Activity, Event, EventAttribute, EvmEvent } from '../../models';
 import { AccountBalance } from '../../models/account_balance';
@@ -139,7 +140,11 @@ export class Erc20Handler {
     }
   }
 
-  static buildTransferActivityByCosmos(e: Event, erc20ModuleAccount: string) {
+  static buildTransferActivityByCosmos(
+    e: Event,
+    erc20ModuleAccount: string,
+    logger: Moleculer.LoggerInstance
+  ): Erc20Activity | undefined {
     try {
       const getAddressFromAttrAndConvert0x = (
         attrs: EventAttribute[],
@@ -198,7 +203,8 @@ export class Erc20Handler {
         cosmos_event_id: e.id,
         cosmos_tx_id: e.tx_id,
       });
-    } catch {
+    } catch (e) {
+      logger.error(e);
       return undefined;
     }
   }
