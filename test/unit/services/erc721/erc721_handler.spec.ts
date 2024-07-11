@@ -1,8 +1,10 @@
 import { BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
+import config from '../../../../config.json' assert { type: 'json' };
 import knex from '../../../../src/common/utils/db_connection';
 import {
   Block,
+  EVMBlock,
   EVMSmartContract,
   EVMTransaction,
   Erc721Activity,
@@ -227,7 +229,11 @@ export default class Erc721HandlerTest {
       select: () => mockQueryBlocks,
       where: () => mockQueryBlocks,
     };
-    jest.spyOn(Block, 'query').mockImplementation(() => mockQueryBlocks);
+    if (!config.evmOnly) {
+      jest.spyOn(Block, 'query').mockImplementation(() => mockQueryBlocks);
+    } else {
+      jest.spyOn(EVMBlock, 'query').mockImplementation(() => mockQueryBlocks);
+    }
     const erc721Activities = [
       {
         action: ERC721_ACTION.TRANSFER,

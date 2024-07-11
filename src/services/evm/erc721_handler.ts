@@ -6,6 +6,7 @@ import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
 import {
   Block,
+  EVMBlock,
   Erc721Activity,
   Erc721Contract,
   Erc721Token,
@@ -291,12 +292,20 @@ export class Erc721Handler {
 
   static async calErc721Stats(addresses?: string[]): Promise<Erc721Contract[]> {
     // Get once block height 24h ago.
-    const blockSince24hAgo = await Block.query()
-      .select('height')
-      .where('time', '<=', knex.raw("now() - '24 hours'::interval"))
-      .orderBy('height', 'desc')
-      .limit(1);
-
+    let blockSince24hAgo = {};
+    if (!config.evmOnly) {
+      blockSince24hAgo = await Block.query()
+        .select('height')
+        .where('time', '<=', knex.raw("now() - '24 hours'::interval"))
+        .orderBy('height', 'desc')
+        .limit(1);
+    } else {
+      blockSince24hAgo = await EVMBlock.query()
+        .select('height')
+        .where('timestamp', '<=', knex.raw("now() - '24 hours'::interval"))
+        .orderBy('height', 'desc')
+        .limit(1);
+    }
     // Calculate total activity and transfer_24h of erc721
     return Erc721Contract.query()
       .count('erc721_activity.id AS total_activity')
