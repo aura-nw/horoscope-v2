@@ -24,6 +24,8 @@ export class OptimismWithdrawal extends BaseModel {
 
   l1_tx_hash!: string;
 
+  evm_tx_id!: number;
+
   static get tableName() {
     return 'optimism_withdrawal';
   }

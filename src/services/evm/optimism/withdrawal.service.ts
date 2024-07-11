@@ -122,7 +122,7 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
         evmEvent.withdrawalStatus = status;
       })
     );
-    const optimismWithdrawals: any[] = [];
+    const optimismWithdrawals: OptimismWithdrawal[] = [];
     if (evmEvents.length > 0) {
       evmEvents.forEach(async (evmEvent) => {
         const [nonce, ,] = decodeAbiParameters(
@@ -135,16 +135,19 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
           this.ABI_MESSAGE_PASSED_NON_INDEXED,
           `0x${evmEvent.data.toString('hex')}`
         );
-        optimismWithdrawals.push({
-          l2_tx_hash: evmEvent.evm_transaction.hash,
-          l2_block: evmEvent.evm_transaction.height,
-          sender: evmEvent.evm_transaction.from,
-          timestamp: evmEvent.evm_transaction.timestamp,
-          msg_nonce: nonce,
-          withdrawal_hash: withdrawalHash,
-          status: evmEvent.withdrawalStatus,
-          evm_event_id: evmEvent.id,
-        });
+        optimismWithdrawals.push(
+          OptimismWithdrawal.fromJson({
+            l2_tx_hash: evmEvent.evm_transaction.hash,
+            l2_block: evmEvent.evm_transaction.height,
+            sender: evmEvent.evm_transaction.from,
+            timestamp: evmEvent.evm_transaction.timestamp,
+            msg_nonce: nonce,
+            withdrawal_hash: withdrawalHash,
+            status: evmEvent.withdrawalStatus,
+            evm_event_id: evmEvent.id,
+            evm_tx_id: evmEvent.evm_tx_id,
+          })
+        );
       });
     }
     await knex.transaction(async (trx) => {

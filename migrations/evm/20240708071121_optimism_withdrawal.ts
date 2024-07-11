@@ -12,6 +12,7 @@ export async function up(knex: Knex): Promise<void> {
     table.integer('evm_event_id').index();
     table.string('l1_tx_hash').index();
     table.string('withdrawal_hash').index();
+    table.integer('evm_tx_id').index();
   });
 }
 
