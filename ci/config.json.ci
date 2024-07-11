@@ -491,8 +491,7 @@
     "blocksPerCall": 100,
     "chunkSize": 1000,
     "l1OptimismPortal": "0x639F2AECE398Aa76b07e59eF6abe2cFe32bacb68",
-    "l2OutputOracleProxy": 
-    "0xB09DC08428C8b4EFB4ff9C0827386CDF34277996",
+    "l2OutputOracleProxy": "0xB09DC08428C8b4EFB4ff9C0827386CDF34277996",
     "multicall3Contract": "0xcA11bde05977b3631167028862bE2a173976CA11"
   }
 }
