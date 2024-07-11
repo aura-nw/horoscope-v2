@@ -221,7 +221,7 @@ export const SERVICE = {
     CrawlOptimismDepositEVM: {
       key: 'CrawlOptimismDepositEVM',
       path: 'v1.CrawlOptimismDepositEVM',
-    }
+    },
   },
   V2: {
     EvmProxyService: {
