@@ -475,7 +475,6 @@
     "blocksPerCall": 100,
     "chunkSize": 1000
   },
-
   "handleOptimismWithdrawal": {
     "key": "handleOptimismWithdrawal",
     "millisecondCrawl": 1000,
