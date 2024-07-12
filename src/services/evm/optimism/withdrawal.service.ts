@@ -107,7 +107,7 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
     );
     const optimismWithdrawals: OptimismWithdrawal[] = [];
     if (evmEvents.length > 0) {
-      evmEvents.forEach(async (evmEvent) => {
+      evmEvents.forEach((evmEvent) => {
         const [nonce, ,] = decodeAbiParameters(
           this.ABI_MESSAGE_PASSED_INDEXED,
           (evmEvent.topic1 +
@@ -192,6 +192,13 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
         'event WithdrawalFinalized(bytes32 indexed withdrawalHash, uint256 indexed hintId, bool success)',
       ]),
     });
+
+    const listTopic1 = events.map((event) => event.topics[1]);
+    const listOpWithdrawal = await OptimismWithdrawal.query()
+      .whereIn('withdrawal_hash', listTopic1)
+      .withGraphFetched('evm_event');
+    const listOpWithdrawalByHash = _.keyBy(listOpWithdrawal, 'withdrawal_hash');
+
     const listUpdateOpWithdrawalStatus: {
       id: number;
       status: string;
@@ -200,9 +207,7 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
     await Promise.all(
       events.map(async (event: any) => {
         const withdrawalHash = event.topics[1];
-        const opWithdrawal = await OptimismWithdrawal.query()
-          .findOne('withdrawal_hash', withdrawalHash)
-          .withGraphFetched('evm_event');
+        const opWithdrawal = listOpWithdrawalByHash[withdrawalHash];
         if (!opWithdrawal) {
           throw Error(
             `Cannot found Optimism Withdrawal with hash ${withdrawalHash}`
