@@ -1,6 +1,6 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { fromHex } from '@cosmjs/encoding';
-import { PublicClient, TransactionReceipt, FormattedTransaction } from 'viem';
+import { PublicClient, FormattedTransaction } from 'viem';
 import _ from 'lodash';
 import { OpStackTransactionReceipt } from 'viem/chains';
 import { BlockCheckpoint, EVMBlock } from '../../models';
@@ -162,7 +162,6 @@ export default class CrawlEvmTransactionService extends BullableService {
         contract_address: receiptTx.contractAddress,
         value: offchainTx.value,
         timestamp: offchainTx.timestamp,
-
         l1_fee: receiptTx.l1Fee,
         l1_fee_scalar: receiptTx.l1FeeScalar,
         l1_gas_price: receiptTx.l1GasPrice,
@@ -189,17 +188,11 @@ export default class CrawlEvmTransactionService extends BullableService {
       }
     }
     const receiptTxs = await Promise.all(promises);
-    return receiptTxs;
+    return receiptTxs as OpStackTransactionReceipt[];
   }
 
   public async _start(): Promise<void> {
     this.viemJsClient = getViemClient();
-    const res: TransactionReceipt =
-      await this.viemJsClient.getTransactionReceipt({
-        hash: '0xb098dc6bcb560ad642e5bb3db12c886dc3e27919e06d4fb423672acda4472de3',
-      });
-    this.logger.info(res);
-    // this.logger.info(res.l1);
     this.createJob(
       BULL_JOB_NAME.CRAWL_EVM_TRANSACTION,
       BULL_JOB_NAME.CRAWL_EVM_TRANSACTION,
