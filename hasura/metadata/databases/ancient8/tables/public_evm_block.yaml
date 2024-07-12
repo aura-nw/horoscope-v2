@@ -18,7 +18,7 @@ select_permissions:
         - height
         - tx_count
         - base_fee_per_gas
-        - date
+        - timestamp
         - difficulty
         - extra_data
         - gas_limit

@@ -56,7 +56,10 @@ select_permissions:
         - from
         - gas
         - gas_fee_cap
+        - gas_limit
+        - gas_price
         - gas_tip_cap
+        - gas_used
         - hash
         - height
         - id
@@ -65,9 +68,11 @@ select_permissions:
         - reason
         - size
         - status
+        - timestamp
         - to
         - tx_id
         - tx_msg_id
+        - type
         - value
       filter: {}
       limit: 100

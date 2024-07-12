@@ -2,15 +2,6 @@ table:
   name: evm_internal_transaction
   schema: public
 object_relationships:
-  - name: evm_transaction_id
-    using:
-      manual_configuration:
-        column_mapping:
-          evm_tx_id: id
-        insertion_order: null
-        remote_table:
-          name: evm_transaction
-          schema: public
   - name: evm_erc20_contract_mapping_from
     using:
       manual_configuration:
@@ -46,6 +37,15 @@ object_relationships:
         insertion_order: null
         remote_table:
           name: erc721_contract
+          schema: public
+  - name: evm_transaction_id
+    using:
+      manual_configuration:
+        column_mapping:
+          evm_tx_id: id
+        insertion_order: null
+        remote_table:
+          name: evm_transaction
           schema: public
 select_permissions:
   - role: internal_service
