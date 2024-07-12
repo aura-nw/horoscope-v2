@@ -158,7 +158,8 @@ export default class Erc20Service extends BullableService {
       erc20CosmosEvents.forEach((event) => {
         const activity = Erc20Handler.buildTransferActivityByCosmos(
           event,
-          this.erc20ModuleAccount
+          this.erc20ModuleAccount,
+          this.logger
         );
         if (activity) {
           erc20Activities.push(activity);
