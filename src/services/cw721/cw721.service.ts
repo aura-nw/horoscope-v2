@@ -57,34 +57,34 @@ export default class Cw721HandlerService extends BullableService {
 
   async _start(): Promise<void> {
     if (NODE_ENV !== 'test') {
-      await this.createJob(
-        BULL_JOB_NAME.HANDLE_CW721_TRANSACTION,
-        BULL_JOB_NAME.HANDLE_CW721_TRANSACTION,
-        {},
-        {
-          removeOnComplete: true,
-          removeOnFail: {
-            count: 3,
-          },
-          repeat: {
-            every: config.cw721.millisecondRepeatJob,
-          },
-        }
-      );
-      await this.createJob(
-        BULL_JOB_NAME.REFRESH_CW721_STATS,
-        BULL_JOB_NAME.REFRESH_CW721_STATS,
-        {},
-        {
-          removeOnComplete: { count: 1 },
-          removeOnFail: {
-            count: 3,
-          },
-          repeat: {
-            pattern: config.cw721.timeRefreshCw721Stats,
-          },
-        }
-      );
+      // await this.createJob(
+      //   BULL_JOB_NAME.HANDLE_CW721_TRANSACTION,
+      //   BULL_JOB_NAME.HANDLE_CW721_TRANSACTION,
+      //   {},
+      //   {
+      //     removeOnComplete: true,
+      //     removeOnFail: {
+      //       count: 3,
+      //     },
+      //     repeat: {
+      //       every: config.cw721.millisecondRepeatJob,
+      //     },
+      //   }
+      // );
+      // await this.createJob(
+      //   BULL_JOB_NAME.REFRESH_CW721_STATS,
+      //   BULL_JOB_NAME.REFRESH_CW721_STATS,
+      //   {},
+      //   {
+      //     removeOnComplete: { count: 1 },
+      //     removeOnFail: {
+      //       count: 3,
+      //     },
+      //     repeat: {
+      //       pattern: config.cw721.timeRefreshCw721Stats,
+      //     },
+      //   }
+      // );
       await this.createJob(
         BULL_JOB_NAME.JOB_CW721_UPDATE,
         BULL_JOB_NAME.JOB_CW721_UPDATE,
@@ -94,9 +94,9 @@ export default class Cw721HandlerService extends BullableService {
           removeOnFail: {
             count: 3,
           },
-          repeat: {
-            every: config.cw721.jobCw721Update.millisecondRepeatJob,
-          },
+          // repeat: {
+          //   every: config.cw721.jobCw721Update.millisecondRepeatJob,
+          // },
         }
       );
     }
@@ -309,12 +309,12 @@ export default class Cw721HandlerService extends BullableService {
       .map((noHolder) => `(${noHolder.cw721_contract_id}, ${noHolder.count})`)
       .join(',');
     await knex.transaction(async (trx) => {
-      await knex
-        .raw(
-          `UPDATE cw721_contract SET no_holders = temp.no_holders from (VALUES ${stringListUpdates}) as temp(id, no_holders) where temp.id = cw721_contract.id`
-        )
-        .transacting(trx);
       if (newActDistinctByContract.length > 0) {
+        await knex
+          .raw(
+            `UPDATE cw721_contract SET no_holders = temp.no_holders from (VALUES ${stringListUpdates}) as temp(id, no_holders) where temp.id = cw721_contract.id`
+          )
+          .transacting(trx);
         await BlockCheckpoint.query()
           .transacting(trx)
           .insert({
