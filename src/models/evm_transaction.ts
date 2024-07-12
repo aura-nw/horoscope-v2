@@ -55,13 +55,7 @@ export class EVMTransaction extends BaseModel {
 
   timestamp!: Date;
 
-  l1_fee!: bigint;
-
-  l1_fee_scalar!: number;
-
-  l1_gas_price!: bigint;
-
-  l1_gas_used!: bigint;
+  additional_data!: any;
 
   static get tableName() {
     return 'evm_transaction';

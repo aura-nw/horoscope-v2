@@ -162,10 +162,14 @@ export default class CrawlEvmTransactionService extends BullableService {
         contract_address: receiptTx.contractAddress,
         value: offchainTx.value,
         timestamp: offchainTx.timestamp,
-        l1_fee: receiptTx.l1Fee,
-        l1_fee_scalar: receiptTx.l1FeeScalar,
-        l1_gas_price: receiptTx.l1GasPrice,
-        l1_gas_used: receiptTx.l1GasUsed,
+        additional_data: config.crawlEvmTransaction.additionalData.optimism
+          ? JSON.stringify({
+              l1_fee: receiptTx.l1Fee?.toString(),
+              l1_fee_scalar: receiptTx.l1FeeScalar?.toString(),
+              l1_gas_price: receiptTx.l1GasPrice?.toString(),
+              l1_gas_used: receiptTx.l1GasUsed?.toString(),
+            })
+          : null,
       });
     });
     return {
