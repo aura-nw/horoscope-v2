@@ -1,12 +1,7 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import {
-  PublicClient,
-  decodeAbiParameters,
-  defineChain,
-  Chain,
-  parseAbi,
-} from 'viem';
+import { PublicClient, decodeAbiParameters, parseAbi } from 'viem';
 import _ from 'lodash';
+import { mainnet, ancient8 } from 'viem/chains';
 import BullableService, { QueueHandler } from '../../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../constant';
 import config from '../../../../config.json' assert { type: 'json' };
@@ -22,8 +17,6 @@ import { getViemClient } from '../../../common/utils/etherjs_client';
 })
 export default class HandleOptimismWithdrawalEVMService extends BullableService {
   viemClientL1!: PublicClient;
-
-  l2Chain!: Chain;
 
   ABI_MESSAGE_PASSED_INDEXED = [
     {
@@ -63,22 +56,6 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
   MESSAGE_PASSED_EVENT =
     '0x02a52367d10742d8032712c1bb8e0144ff1ec5ffda1ed7d70bb05a2744955054';
 
-  // 32-byte signature of the event WithdrawalProven(bytes32 indexed withdrawalHash, address indexed from, address indexed to)
-  WITHDRAWAL_PROVEN_EVENT =
-    '0x67a6208cfcc0801d50f6cbe764733f4fddf66ac0b04442061a8a8c0cb6b63f62';
-
-  // 32-byte signature of the Blast chain event WithdrawalProven(bytes32 indexed withdrawalHash, address indexed from, address indexed to, uint256 requestId)
-  WITHDRAWAL_PROVEN_EVENT_BLAST =
-    '0x5d5446905f1f582d57d04ced5b1bed0f1a6847bcee57f7dd9d6f2ec12ab9ec2e';
-
-  // 32-byte signature of the event WithdrawalFinalized(bytes32 indexed withdrawalHash, bool success)
-  WITHDRAWAL_FINALIZED_EVENT =
-    '0xdb5c7652857aa163daadd670e116628fb42e869d8ac4251ef8971d9e5727df1b';
-
-  // 32-byte signature of the Blast chain event WithdrawalFinalized(bytes32 indexed withdrawalHash, uint256 indexed hintId, bool success)
-  WITHDRAWAL_FINALIZED_EVENT_BLAST =
-    '0x36d89e6190aa646d1a48286f8ad05e60a144483f42fd7e0ea08baba79343645b';
-
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_OPTIMISM_WITHDRAWAL,
     jobName: BULL_JOB_NAME.HANDLE_OPTIMISM_WITHDRAWAL,
@@ -113,7 +90,7 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
           receipt: txReceipt,
           portalAddress:
             config.crawlOptimismWithdrawalEventOnL1.l1OptimismPortal,
-          targetChain: this.l2Chain,
+          targetChain: ancient8,
           l2OutputOracleAddress:
             config.crawlOptimismWithdrawalEventOnL1.l2OutputOracleProxy,
         });
@@ -233,7 +210,7 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
           receipt: txReceipt,
           portalAddress:
             config.crawlOptimismWithdrawalEventOnL1.l1OptimismPortal,
-          targetChain: this.l2Chain,
+          targetChain: ancient8,
           l2OutputOracleAddress:
             config.crawlOptimismWithdrawalEventOnL1.l2OutputOracleProxy,
         });
@@ -276,30 +253,9 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
       throw new Error(`EVMJSONRPC not found with chainId: ${config.chainId}`);
     }
 
-    this.l2Chain = defineChain({
-      id: currentChain.EVMchainId,
-      name: currentChain.EVMchainId.toString(),
-      nativeCurrency: {
-        name: '',
-        symbol: '',
-        decimals: 18,
-      },
-      contracts: {
-        multicall3: {
-          address: config.crawlOptimismWithdrawalEventOnL1
-            .multicall3Contract as `0x${string}`,
-        },
-      },
-      rpcUrls: {
-        default: {
-          http: currentChain.EVMJSONRPC,
-        },
-      },
-    });
-
     this.viemClientL1 = getViemClient(
       config.crawlOptimismWithdrawalEventOnL1.l1ChainId,
-      this.l2Chain
+      mainnet
     );
     this.createJob(
       BULL_JOB_NAME.HANDLE_OPTIMISM_WITHDRAWAL,
