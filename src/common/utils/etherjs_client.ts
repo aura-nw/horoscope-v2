@@ -3,17 +3,16 @@ import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
 import networks from '../../../network.json' assert { type: 'json' };
 
-let viemClient!: PublicClient;
-
+const viemClientMapping: Map<string, PublicClient> = new Map();
 export function getViemClient(chainId?: string): PublicClient {
-  if (!viemClient) {
+  if (!viemClientMapping.has(chainId ?? config.chainId)) {
     const selectedChain = networks.find(
       (network) => network.chainId === (chainId ?? config.chainId)
     );
     if (!selectedChain?.EVMJSONRPC) {
       throw new Error(`EVMJSONRPC not found with chainId: ${config.chainId}`);
     }
-    viemClient = createPublicClient({
+    const viemClient = createPublicClient({
       batch: {
         multicall: {
           batchSize: config.viemConfig.multicall.batchSize,
@@ -27,6 +26,9 @@ export function getViemClient(chainId?: string): PublicClient {
         },
       }),
     });
+    viemClientMapping.set(chainId ?? config.chainId, viemClient);
   }
-  return viemClient;
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  return viemClientMapping.get(chainId ?? config.chainId);
 }
