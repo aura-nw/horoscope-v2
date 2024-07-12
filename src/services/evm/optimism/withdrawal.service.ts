@@ -1,7 +1,7 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { PublicClient, decodeAbiParameters, parseAbi } from 'viem';
 import _ from 'lodash';
-import { mainnet, ancient8 } from 'viem/chains';
+import { INetworkInfo } from '../../../common';
 import BullableService, { QueueHandler } from '../../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from '../constant';
 import config from '../../../../config.json' assert { type: 'json' };
@@ -9,7 +9,10 @@ import networks from '../../../../network.json' assert { type: 'json' };
 import '../../../../fetch-polyfill.js';
 import { BlockCheckpoint, OptimismWithdrawal, EvmEvent } from '../../../models';
 import knex, { batchUpdate } from '../../../common/utils/db_connection';
-import { getViemClient } from '../../../common/utils/etherjs_client';
+import {
+  getViemChainById,
+  getViemClient,
+} from '../../../common/utils/etherjs_client';
 
 @Service({
   name: SERVICE.V1.HandleOptimismWithdrawalEVM.key,
@@ -56,6 +59,10 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
   MESSAGE_PASSED_EVENT =
     '0x02a52367d10742d8032712c1bb8e0144ff1ec5ffda1ed7d70bb05a2744955054';
 
+  l1Chain!: INetworkInfo;
+
+  l2Chain!: INetworkInfo;
+
   @QueueHandler({
     queueName: BULL_JOB_NAME.HANDLE_OPTIMISM_WITHDRAWAL,
     jobName: BULL_JOB_NAME.HANDLE_OPTIMISM_WITHDRAWAL,
@@ -90,7 +97,7 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
           receipt: txReceipt,
           portalAddress:
             config.crawlOptimismWithdrawalEventOnL1.l1OptimismPortal,
-          targetChain: ancient8,
+          targetChain: getViemChainById(this.l2Chain.EVMchainId),
           l2OutputOracleAddress:
             config.crawlOptimismWithdrawalEventOnL1.l2OutputOracleProxy,
         });
@@ -210,7 +217,7 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
           receipt: txReceipt,
           portalAddress:
             config.crawlOptimismWithdrawalEventOnL1.l1OptimismPortal,
-          targetChain: ancient8,
+          targetChain: getViemChainById(this.l2Chain.EVMchainId),
           l2OutputOracleAddress:
             config.crawlOptimismWithdrawalEventOnL1.l2OutputOracleProxy,
         });
@@ -249,13 +256,22 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
     const currentChain = networks.find(
       (network) => network.chainId === config.chainId
     );
-    if (!currentChain || !currentChain.EVMJSONRPC) {
+    if (!currentChain || !currentChain.EVMJSONRPC || !currentChain.EVMJSONRPC) {
       throw new Error(`EVMJSONRPC not found with chainId: ${config.chainId}`);
     }
 
+    const l1Chain = networks.find(
+      (network) =>
+        network.chainId === config.crawlOptimismWithdrawalEventOnL1.l1ChainId
+    );
+    if (!l1Chain || !l1Chain.EVMJSONRPC || !l1Chain.EVMchainId) {
+      throw new Error(`EVMJSONRPC not found with chainId: ${config.chainId}`);
+    }
+
+    this.l1Chain = l1Chain;
+    this.l2Chain = currentChain;
     this.viemClientL1 = getViemClient(
-      config.crawlOptimismWithdrawalEventOnL1.l1ChainId,
-      mainnet
+      config.crawlOptimismWithdrawalEventOnL1.l1ChainId
     );
     this.createJob(
       BULL_JOB_NAME.HANDLE_OPTIMISM_WITHDRAWAL,
