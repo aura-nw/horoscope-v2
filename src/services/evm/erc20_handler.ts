@@ -1,7 +1,13 @@
 import { Dictionary } from 'lodash';
 import Moleculer from 'moleculer';
 import { decodeAbiParameters, keccak256, toHex } from 'viem';
-import { Erc20Activity, Event, EventAttribute, EvmEvent } from '../../models';
+import {
+  Erc20Activity,
+  Erc20Contract,
+  Event,
+  EventAttribute,
+  EvmEvent,
+} from '../../models';
 import { AccountBalance } from '../../models/account_balance';
 import { ZERO_ADDRESS } from './constant';
 import { convertBech32AddressToEthAddress } from './utils';
@@ -54,12 +60,16 @@ export class Erc20Handler {
 
   erc20Activities: Erc20Activity[];
 
+  erc20Contracts: Dictionary<Erc20Contract>;
+
   constructor(
     accountBalances: Dictionary<AccountBalance>,
+    erc20Contracts: Dictionary<Erc20Contract>,
     erc20Activities: Erc20Activity[]
   ) {
     this.accountBalances = accountBalances;
     this.erc20Activities = erc20Activities;
+    this.erc20Contracts = erc20Contracts;
   }
 
   process() {
@@ -99,6 +109,20 @@ export class Erc20Handler {
           type: AccountBalance.TYPE.ERC20_TOKEN,
         });
       }
+    } else {
+      const erc20Contract: Erc20Contract =
+        this.erc20Contracts[erc20Activity.erc20_contract_address];
+      if (
+        erc20Contract &&
+        erc20Contract.last_updated_height <= erc20Activity.height
+      ) {
+        // update total supply
+        erc20Contract.total_supply = (
+          BigInt(erc20Contract.total_supply || 0) + BigInt(erc20Activity.amount)
+        ).toString();
+        // update last updated height
+        erc20Contract.last_updated_height = erc20Activity.height;
+      }
     }
     // update to account balance
     const toAccountId = erc20Activity.to_account_id;
@@ -120,6 +144,20 @@ export class Erc20Handler {
         account_id: toAccountId,
         type: AccountBalance.TYPE.ERC20_TOKEN,
       });
+    } else {
+      const erc20Contract: Erc20Contract =
+        this.erc20Contracts[erc20Activity.erc20_contract_address];
+      if (
+        erc20Contract &&
+        erc20Contract.last_updated_height <= erc20Activity.height
+      ) {
+        // update total supply
+        erc20Contract.total_supply = (
+          BigInt(erc20Contract.total_supply || 0) - BigInt(erc20Activity.amount)
+        ).toString();
+        // update last updated height
+        erc20Contract.last_updated_height = erc20Activity.height;
+      }
     }
   }
 

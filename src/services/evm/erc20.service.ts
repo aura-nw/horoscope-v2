@@ -252,8 +252,21 @@ export default class Erc20Service extends BullableService {
             ),
           (o) => `${o.account_id}_${o.denom}`
         );
+        const erc20Contracts = _.keyBy(
+          await Erc20Contract.query()
+            .transacting(trx)
+            .whereIn(
+              'address',
+              erc20Activities.map((e) => e.erc20_contract_address)
+            ),
+          'address'
+        );
         // construct cw721 handler object
-        const erc20Handler = new Erc20Handler(accountBalances, erc20Activities);
+        const erc20Handler = new Erc20Handler(
+          accountBalances,
+          erc20Contracts,
+          erc20Activities
+        );
         erc20Handler.process();
         const updatedAccountBalances = Object.values(
           erc20Handler.accountBalances
@@ -263,6 +276,16 @@ export default class Erc20Service extends BullableService {
             .transacting(trx)
             .insert(updatedAccountBalances)
             .onConflict(['account_id', 'denom'])
+            .merge();
+        }
+        const updatedErc20Contracts = Object.values(
+          erc20Handler.erc20Contracts
+        );
+        if (updatedErc20Contracts.length > 0) {
+          await Erc20Contract.query()
+            .transacting(trx)
+            .insert(updatedErc20Contracts)
+            .onConflict(['id'])
             .merge();
         }
       }
