@@ -20,6 +20,8 @@ select_permissions:
       columns:
         - action
         - amount
+        - cosmos_event_id
+        - cosmos_tx_id
         - erc20_contract_address
         - evm_event_id
         - evm_tx_id
