@@ -64,7 +64,8 @@ export default class QueueManager {
         const func = this._handlerOwner ? fn.bind(this._handlerOwner) : fn;
         await func(payload);
       } catch (error: any) {
-        this._handlerOwner.logger.error(error.message);
+        this._handlerOwner.logger.error(error.stack);
+        throw error;
       }
     };
     // register the handler
