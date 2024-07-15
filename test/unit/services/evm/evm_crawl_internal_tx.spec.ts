@@ -1,5 +1,6 @@
 import { Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
+import _ from 'lodash';
 import EvmCrawlInternalTxService from '../../../../src/services/evm/evm_crawl_internal_tx.service';
 
 @Describe('Test EvmCrawlInternalTx')
@@ -50,21 +51,15 @@ export default class TestEvmCrawlInternalTx {
     expect(internalTxs.length).toEqual(2);
     expect(internalTxs[0]).toMatchObject({
       evm_tx_id: '1',
-      type: result.calls[0].type,
-      from: result.calls[0].from,
-      to: result.calls[0].to,
+      ..._.pick(result.calls[0], ['type', 'from', 'to', 'input']),
       value: parseInt(result.calls[0].value || '0', 16),
-      input: result.calls[0].input,
       gas: parseInt(result.calls[0].gas, 16),
       gas_used: parseInt(result.calls[0].gasUsed, 16),
     });
     expect(internalTxs[1]).toMatchObject({
+      ..._.pick(result.calls[1], ['type', 'from', 'to', 'input']),
       evm_tx_id: '1',
-      type: result.calls[1].type,
-      from: result.calls[1].from,
-      to: result.calls[1].to,
       value: parseInt(result.calls[1].value || '0', 16),
-      input: result.calls[1].input,
       gas: parseInt(result.calls[1].gas, 16),
       gas_used: parseInt(result.calls[1].gasUsed, 16),
     });
@@ -159,58 +154,40 @@ export default class TestEvmCrawlInternalTx {
     expect(internalTxs.length).toEqual(6);
     expect(internalTxs[0]).toMatchObject({
       evm_tx_id: '1',
-      type: result.calls[0].type,
-      from: result.calls[0].from,
-      to: result.calls[0].to,
+      ..._.pick(result.calls[0], ['type', 'from', 'to', 'input']),
       value: parseInt(result.calls[0].value || '0', 16),
-      input: result.calls[0].input,
       gas: parseInt(result.calls[0].gas, 16),
       gas_used: parseInt(result.calls[0].gasUsed, 16),
     });
     expect(internalTxs[1]).toMatchObject({
-      type: result.calls[1].type,
-      from: result.calls[1].from,
-      to: result.calls[1].to,
+      ..._.pick(result.calls[1], ['type', 'from', 'to', 'input']),
       value: parseInt(result.calls[1].value || '0', 16),
-      input: result.calls[1].input,
       gas: parseInt(result.calls[1].gas, 16),
       gas_used: parseInt(result.calls[1].gasUsed, 16),
     });
     expect(internalTxs[2]).toMatchObject({
-      type: result.calls[2].type,
-      from: result.calls[2].from,
-      to: result.calls[2].to,
+      ..._.pick(result.calls[2], ['type', 'from', 'to', 'input']),
       value: parseInt(result.calls[2].value || '0', 16),
-      input: result.calls[2].input,
       gas: parseInt(result.calls[2].gas, 16),
       gas_used: parseInt(result.calls[2].gasUsed, 16),
     });
     expect(internalTxs[3]).toMatchObject({
-      type: result.calls[3].type,
-      from: result.calls[3].from,
-      to: result.calls[3].to,
+      ..._.pick(result.calls[3], ['type', 'from', 'to', 'input']),
       value: parseInt(result.calls[3].value || '0', 16),
-      input: result.calls[3].input,
       gas: parseInt(result.calls[3].gas, 16),
       gas_used: parseInt(result.calls[3].gasUsed, 16),
     });
     expect(internalTxs[4]).toMatchObject({
-      type: result.calls[4].type,
-      from: result.calls[4].from,
-      to: result.calls[4].to,
+      ..._.pick(result.calls[4], ['type', 'from', 'to', 'input']),
       value: parseInt(result.calls[4].value || '0', 16),
-      input: result.calls[4].input,
       gas: parseInt(result.calls[4].gas, 16),
       gas_used: parseInt(result.calls[4].gasUsed, 16),
     });
     const nestedCall = result.calls[4].calls || [];
     expect(nestedCall?.length).toEqual(1);
     expect(internalTxs[5]).toMatchObject({
-      type: nestedCall[0].type,
-      from: nestedCall[0].from,
-      to: nestedCall[0].to,
+      ..._.pick(nestedCall[0], ['type', 'from', 'to', 'input']),
       input: nestedCall[0].input,
-      gas: parseInt(nestedCall[0].gas, 16),
       gas_used: parseInt(nestedCall[0].gasUsed, 16),
     });
   }
