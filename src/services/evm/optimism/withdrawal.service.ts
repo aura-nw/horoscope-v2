@@ -105,9 +105,8 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
         evmEvent.withdrawalStatus = status;
       })
     );
-    const optimismWithdrawals: OptimismWithdrawal[] = [];
-    if (evmEvents.length > 0) {
-      evmEvents.forEach((evmEvent) => {
+    const optimismWithdrawals: OptimismWithdrawal[] = evmEvents.map(
+      (evmEvent) => {
         const [nonce, ,] = decodeAbiParameters(
           this.ABI_MESSAGE_PASSED_INDEXED,
           (evmEvent.topic1 +
@@ -118,21 +117,19 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
           this.ABI_MESSAGE_PASSED_NON_INDEXED,
           `0x${evmEvent.data.toString('hex')}`
         );
-        optimismWithdrawals.push(
-          OptimismWithdrawal.fromJson({
-            l2_tx_hash: evmEvent.evm_transaction.hash,
-            l2_block: evmEvent.evm_transaction.height,
-            sender: evmEvent.evm_transaction.from,
-            timestamp: evmEvent.evm_transaction.timestamp,
-            msg_nonce: nonce,
-            withdrawal_hash: withdrawalHash,
-            status: evmEvent.withdrawalStatus,
-            evm_event_id: evmEvent.id,
-            evm_tx_id: evmEvent.evm_tx_id,
-          })
-        );
-      });
-    }
+        return OptimismWithdrawal.fromJson({
+          l2_tx_hash: evmEvent.evm_transaction.hash,
+          l2_block: evmEvent.evm_transaction.height,
+          sender: evmEvent.evm_transaction.from,
+          timestamp: evmEvent.evm_transaction.timestamp,
+          msg_nonce: nonce,
+          withdrawal_hash: withdrawalHash,
+          status: evmEvent.withdrawalStatus,
+          evm_event_id: evmEvent.id,
+          evm_tx_id: evmEvent.evm_tx_id,
+        });
+      }
+    );
     await knex.transaction(async (trx) => {
       if (optimismWithdrawals.length > 0) {
         await trx.batchInsert(
@@ -261,7 +258,7 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
     const currentChain = networks.find(
       (network) => network.chainId === config.chainId
     );
-    if (!currentChain || !currentChain.EVMJSONRPC || !currentChain.EVMJSONRPC) {
+    if (!currentChain || !currentChain.EVMJSONRPC || !currentChain.EVMchainId) {
       throw new Error(`EVMJSONRPC not found with chainId: ${config.chainId}`);
     }
 
