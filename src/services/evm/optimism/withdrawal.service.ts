@@ -200,8 +200,7 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
       id: number;
       status: string;
       l1_tx_hash: string;
-    }[] = [];
-    await Promise.all(
+    }[] = await Promise.all(
       events.map(async (event: any) => {
         const withdrawalHash = event.topics[1];
         const opWithdrawal = listOpWithdrawalByHash[withdrawalHash];
@@ -224,14 +223,14 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
             config.crawlOptimismWithdrawalEventOnL1.l2OutputOracleProxy,
         });
 
-        listUpdateOpWithdrawalStatus.push({
+        return {
           id: opWithdrawal.id,
           status,
           l1_tx_hash:
             status === OptimismWithdrawal.STATUS.FINALIZE
               ? event.transactionHash
               : null,
-        });
+        };
       })
     );
 
