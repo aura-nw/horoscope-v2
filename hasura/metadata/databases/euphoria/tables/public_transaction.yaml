@@ -49,6 +49,15 @@ array_relationships:
         remote_table:
           name: cw721_activity
           schema: public
+  - name: erc20_activities
+    using:
+      manual_configuration:
+        column_mapping:
+          id: cosmos_tx_id
+        insertion_order: null
+        remote_table:
+          name: erc20_activity
+          schema: public
   - name: event_attribute_index
     using:
       manual_configuration:
