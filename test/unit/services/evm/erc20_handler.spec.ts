@@ -65,7 +65,8 @@ export default class Erc20HandlerTest {
         toHex(evmEvent.data).slice(2)) as `0x${string}`
     ) as [string, string, bigint];
     const result = Erc20Handler.buildTransferActivity(
-      EvmEvent.fromJson(evmEvent)
+      EvmEvent.fromJson(evmEvent),
+      this.broker.logger
     );
     expect(result).toMatchObject({
       evm_event_id: evmEvent.id,
@@ -109,7 +110,8 @@ export default class Erc20HandlerTest {
       sender: 'evmos1u47fy86l8uaz4t0f533d4dctpjuhmm2dh3ezg0',
     };
     const result = Erc20Handler.buildApprovalActivity(
-      EvmEvent.fromJson(evmEvent)
+      EvmEvent.fromJson(evmEvent),
+      this.broker.logger
     );
     const [from, to, amount] = decodeAbiParameters(
       [

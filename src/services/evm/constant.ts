@@ -221,6 +221,7 @@ export const BULL_JOB_NAME = {
   REINDEX_ERC721: 'reindex:erc721',
   SYNC_SOURCIFY: 'sync:sourcify',
   INSERT_VERIFY_BY_CODEHASH: 'job:insert-verify-by-codehash',
+  HANDLE_SELF_DESTRUCT: 'handle:self-destruct',
 };
 
 export const MSG_TYPE = {

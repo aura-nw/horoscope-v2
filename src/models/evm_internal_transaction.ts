@@ -1,4 +1,7 @@
+import { Model } from 'objection';
 import BaseModel from './base';
+// eslint-disable-next-line import/no-cycle
+import { EVMTransaction } from './evm_transaction';
 
 export class EvmInternalTransaction extends BaseModel {
   [relation: string]: any;
@@ -22,6 +25,8 @@ export class EvmInternalTransaction extends BaseModel {
   gas!: bigint;
 
   gas_used!: bigint;
+
+  error!: string;
 
   static get tableName() {
     return 'evm_internal_transaction';
@@ -53,10 +58,24 @@ export class EvmInternalTransaction extends BaseModel {
     };
   }
 
+  static get relationMappings() {
+    return {
+      evm_transaction: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: EVMTransaction,
+        join: {
+          from: 'evm_internal_transaction.evm_tx_id',
+          to: 'evm_transaction.id',
+        },
+      },
+    };
+  }
+
   static TYPE = {
     CREATE: 'CREATE',
     CALL: 'CALL',
     DELEGATECALL: 'DELEGATECALL',
     CREATE2: 'CREATE2',
+    SELFDESTRUCT: 'SELFDESTRUCT',
   };
 }

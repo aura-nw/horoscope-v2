@@ -309,12 +309,12 @@ export default class Cw721HandlerService extends BullableService {
       .map((noHolder) => `(${noHolder.cw721_contract_id}, ${noHolder.count})`)
       .join(',');
     await knex.transaction(async (trx) => {
-      await knex
-        .raw(
-          `UPDATE cw721_contract SET no_holders = temp.no_holders from (VALUES ${stringListUpdates}) as temp(id, no_holders) where temp.id = cw721_contract.id`
-        )
-        .transacting(trx);
       if (newActDistinctByContract.length > 0) {
+        await knex
+          .raw(
+            `UPDATE cw721_contract SET no_holders = temp.no_holders from (VALUES ${stringListUpdates}) as temp(id, no_holders) where temp.id = cw721_contract.id`
+          )
+          .transacting(trx);
         await BlockCheckpoint.query()
           .transacting(trx)
           .insert({

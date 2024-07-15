@@ -112,6 +112,7 @@ export default class JobSummarizeBrinIndex extends BullableService {
       {
         table: 'transaction',
         tableConfigName: 'transactionTable',
+        isPartitionTable: true,
       },
       {
         jobId: 'transaction',
@@ -133,6 +134,7 @@ export default class JobSummarizeBrinIndex extends BullableService {
       {
         table: 'event',
         tableConfigName: 'eventTable',
+        isPartitionTable: true,
       },
       {
         jobId: 'event',
