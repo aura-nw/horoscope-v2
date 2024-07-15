@@ -6,12 +6,18 @@ import { Knex } from 'knex';
 import _ from 'lodash';
 import { Context, ServiceBroker } from 'moleculer';
 import { PublicClient, getContract } from 'viem';
+import { QueryModuleAccountByNameResponseSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/auth/v1beta1/query';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import { SERVICE as COSMOS_SERVICE } from '../../common';
+import { SERVICE as COSMOS_SERVICE, getLcdClient } from '../../common';
 import knex from '../../common/utils/db_connection';
 import { getViemClient } from '../../common/utils/etherjs_client';
-import { BlockCheckpoint, EVMSmartContract, EvmEvent } from '../../models';
+import {
+  BlockCheckpoint,
+  EVMSmartContract,
+  EvmEvent,
+  Event,
+} from '../../models';
 import { AccountBalance } from '../../models/account_balance';
 import { Erc20Activity } from '../../models/erc20_activity';
 import { Erc20Contract } from '../../models/erc20_contract';
@@ -25,6 +31,8 @@ import { convertEthAddressToBech32Address } from './utils';
 })
 export default class Erc20Service extends BullableService {
   viemClient!: PublicClient;
+
+  erc20ModuleAccount!: string;
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -91,7 +99,6 @@ export default class Erc20Service extends BullableService {
         );
       // TODO: handle track erc20 contract only
       const erc20Events = await EvmEvent.query()
-        .transacting(trx)
         .joinRelated('[evm_smart_contract,evm_transaction]')
         .innerJoin(
           'erc20_contract',
@@ -107,7 +114,33 @@ export default class Erc20Service extends BullableService {
           'evm_smart_contract.id as evm_smart_contract_id',
           'evm_transaction.id as evm_tx_id'
         );
-      await this.handleMissingErc20Contract(erc20Events, trx);
+      let erc20CosmosEvents: Event[] = [];
+      if (config.evmOnly === false) {
+        if (!this.erc20ModuleAccount) {
+          const lcdClient = await getLcdClient();
+          const erc20Account: QueryModuleAccountByNameResponseSDKType =
+            await lcdClient.provider.cosmos.auth.v1beta1.moduleAccountByName({
+              name: 'erc20',
+            });
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          this.erc20ModuleAccount = erc20Account.account.base_account.address;
+        }
+        erc20CosmosEvents = await Event.query()
+          .where('block_height', '>', startBlock)
+          .andWhere('block_height', '<=', endBlock)
+          .andWhere((query) => {
+            query
+              .where('type', Event.EVENT_TYPE.CONVERT_COIN)
+              .orWhere('type', Event.EVENT_TYPE.CONVERT_ERC20);
+          })
+          .withGraphFetched('[transaction, attributes]');
+      }
+      await this.handleMissingErc20Contract(
+        erc20Events,
+        erc20CosmosEvents,
+        trx
+      );
       const erc20Activities: Erc20Activity[] = [];
       erc20Events.forEach((e) => {
         if (e.topic0 === ERC20_EVENT_TOPIC0.TRANSFER) {
@@ -120,6 +153,16 @@ export default class Erc20Service extends BullableService {
           if (activity) {
             erc20Activities.push(activity);
           }
+        }
+      });
+      erc20CosmosEvents.forEach((event) => {
+        const activity = Erc20Handler.buildTransferActivityByCosmos(
+          event,
+          this.erc20ModuleAccount,
+          this.logger
+        );
+        if (activity) {
+          erc20Activities.push(activity);
         }
       });
       if (erc20Activities.length > 0) {
@@ -290,15 +333,31 @@ export default class Erc20Service extends BullableService {
       .orderBy('erc20_activity.id');
   }
 
-  async handleMissingErc20Contract(events: EvmEvent[], trx: Knex.Transaction) {
-    const eventsUniqByAddress = _.keyBy(events, (e) => e.address);
-    const addresses = Object.keys(eventsUniqByAddress);
+  async handleMissingErc20Contract(
+    events: EvmEvent[],
+    cosmosEvents: Event[],
+    trx: Knex.Transaction
+  ) {
+    const evmEventsUniqByAddress = _.keyBy(events, (e) => e.address);
+    const cosmosEventsUniqByAddress = _.keyBy(cosmosEvents, (e) =>
+      e.attributes.find((a) => a.key === 'erc20_token')?.value.toLowerCase()
+    );
+
+    const addresses = [
+      ...Object.keys(evmEventsUniqByAddress),
+      ...Object.keys(cosmosEventsUniqByAddress),
+    ];
+
     const erc20ContractsByAddress = _.keyBy(
-      await Erc20Contract.query()
-        .whereIn('address', addresses)
-        .transacting(trx),
+      await Erc20Contract.query().whereIn('address', addresses),
       (e) => e.address
     );
+
+    const evmSmartContracts = _.keyBy(
+      await EVMSmartContract.query().whereIn('address', addresses),
+      (e) => e.address
+    );
+
     const missingErc20ContractsAddress: string[] = addresses.filter(
       (addr) => !erc20ContractsByAddress[addr]
     );
@@ -310,8 +369,7 @@ export default class Erc20Service extends BullableService {
         .insert(
           missingErc20ContractsAddress.map((addr, index) =>
             Erc20Contract.fromJson({
-              evm_smart_contract_id:
-                eventsUniqByAddress[addr].evm_smart_contract_id,
+              evm_smart_contract_id: evmSmartContracts[addr].id,
               address: addr,
               total_supply: erc20ContractsInfo[index].totalSupply,
               symbol: erc20ContractsInfo[index].symbol,
