@@ -252,10 +252,7 @@ export default class Cw20Service extends BullableService {
 
   async handleStatistic(startBlock: number) {
     const systemDate = (
-      await Block.query()
-        .where('height', startBlock + 1)
-        .first()
-        .throwIfNotFound()
+      await Block.query().where('height', startBlock).first().throwIfNotFound()
     ).time;
     const lastUpdatedDate = (
       await CW20TotalHolderStats.query().max('date').first()
