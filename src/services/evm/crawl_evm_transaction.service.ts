@@ -1,7 +1,8 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { fromHex } from '@cosmjs/encoding';
-import { PublicClient, TransactionReceipt, FormattedTransaction } from 'viem';
+import { PublicClient, FormattedTransaction } from 'viem';
 import _ from 'lodash';
+import { OpStackTransactionReceipt } from 'viem/chains';
 import { BlockCheckpoint, EVMBlock } from '../../models';
 import { getViemClient } from '../../common/utils/etherjs_client';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -161,6 +162,14 @@ export default class CrawlEvmTransactionService extends BullableService {
         contract_address: receiptTx.contractAddress,
         value: offchainTx.value,
         timestamp: offchainTx.timestamp,
+        additional_data: config.crawlEvmTransaction.additionalData.optimism
+          ? JSON.stringify({
+              l1_fee: receiptTx.l1Fee?.toString(),
+              l1_fee_scalar: receiptTx.l1FeeScalar?.toString(),
+              l1_gas_price: receiptTx.l1GasPrice?.toString(),
+              l1_gas_used: receiptTx.l1GasUsed?.toString(),
+            })
+          : null,
       });
     });
     return {
@@ -169,7 +178,9 @@ export default class CrawlEvmTransactionService extends BullableService {
     };
   }
 
-  async getListTxReceipt(blocks: EVMBlock[]): Promise<TransactionReceipt[]> {
+  async getListTxReceipt(
+    blocks: EVMBlock[]
+  ): Promise<OpStackTransactionReceipt[]> {
     const promises = [];
     for (let i = 0; i < blocks.length; i += 1) {
       const block = blocks[i];
@@ -181,7 +192,7 @@ export default class CrawlEvmTransactionService extends BullableService {
       }
     }
     const receiptTxs = await Promise.all(promises);
-    return receiptTxs;
+    return receiptTxs as OpStackTransactionReceipt[];
   }
 
   public async _start(): Promise<void> {

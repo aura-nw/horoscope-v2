@@ -55,6 +55,8 @@ export class EVMTransaction extends BaseModel {
 
   timestamp!: Date;
 
+  additional_data!: any;
+
   static get tableName() {
     return 'evm_transaction';
   }

@@ -449,7 +449,10 @@
     "key": "crawlEvmTransaction",
     "millisecondCrawl": 1000,
     "blocksPerCall": 100,
-    "chunkSize": 1000
+    "chunkSize": 1000,
+    "additionalData": {
+      "optimism": false
+    }
   },
   "viemConfig": {
     "multicall": {
