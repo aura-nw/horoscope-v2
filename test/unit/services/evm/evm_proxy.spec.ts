@@ -33,6 +33,8 @@ export default class EvmProxyServiceTest {
   @AfterAll()
   async tearDown() {
     await this.broker.stop();
+    jest.resetAllMocks();
+    jest.restoreAllMocks();
   }
 
   @Test('Test detectEvmProxy throw validation error')
