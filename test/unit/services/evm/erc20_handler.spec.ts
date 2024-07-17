@@ -11,6 +11,7 @@ import {
   Erc20Handler,
 } from '../../../../src/services/evm/erc20_handler';
 import { AccountBalance } from '../../../../src/models/account_balance';
+import { ZERO_ADDRESS } from '../../../../src/services/evm/constant';
 
 @Describe('Test erc20 handler')
 export default class Erc20HandlerTest {
@@ -26,6 +27,10 @@ export default class Erc20HandlerTest {
     await this.broker.stop();
   }
 
+  /**
+   * @input evm event that be transfer erc20
+   * @result build erc20TransferActivity
+   */
   @Test('test build erc20 transfer activity')
   async testBuildErc20TransferActivity() {
     const evmEvent = {
@@ -77,6 +82,10 @@ export default class Erc20HandlerTest {
     });
   }
 
+  /**
+   * @input evm event that be approval erc20
+   * @result build erc20ApprovalActivity
+   */
   @Test('test build erc20 approval activity')
   async testBuildErc20ApprovalActivity() {
     const evmEvent = {
@@ -128,18 +137,25 @@ export default class Erc20HandlerTest {
     });
   }
 
+  /**
+   * @input erc20 transfer activity
+   * @result from/to account balances be updated
+   */
   @Test('test handlerErc20Transfer')
   async testHandlerErc20Transfer() {
+    const fromAmount = '4424242424';
+    const toAmount = '1123342';
     const erc20Activity = Erc20Activity.fromJson({
       evm_event_id: 1,
-      sender: 'dafjfjj',
+      sender: '0x7c756Cba10Ff2C65016494E8BA37C12a108572b5',
       action: ERC20_ACTION.TRANSFER,
-      erc20_contract_address: 'hsdbjbfbdsfc',
-      amount: '12345222',
-      from: 'phamphong1',
-      to: 'phamphong2',
+      erc20_contract_address: '0x98605ae21dd3be686337a6d7a8f156d0d8baee92',
+      amount: '998222',
+      from: '0x3E665ACfE64628774d3bA8E589Fa8683eD8706C9',
+      to: '0xD83E708D7FE0E769Af80d990f9241458734808Ac',
       height: 10000,
-      tx_hash: 'fghkjghfdkjgbvkdfngkjdf',
+      tx_hash:
+        '0xb97228e533e3af1323d873c9c3e4c0a9b85d95ecd8e98110c8890c9453d2f077',
       evm_tx_id: 1,
       from_account_id: 123,
       to_account_id: 234,
@@ -151,12 +167,12 @@ export default class Erc20HandlerTest {
     const accountBalances: Dictionary<AccountBalance> = {
       [fromKey]: AccountBalance.fromJson({
         denom: erc20Activity.erc20_contract_address,
-        amount: '998222',
+        amount: fromAmount,
         last_updated_height: 1,
       }),
       [toKey]: AccountBalance.fromJson({
         denom: erc20Activity.erc20_contract_address,
-        amount: '1111111',
+        amount: toAmount,
         last_updated_height: 1,
       }),
     };
@@ -164,11 +180,96 @@ export default class Erc20HandlerTest {
     erc20Handler.handlerErc20Transfer(erc20Activity);
     expect(erc20Handler.accountBalances[fromKey]).toMatchObject({
       denom: erc20Activity.erc20_contract_address,
-      amount: '-11347000',
+      amount: (BigInt(fromAmount) - BigInt(erc20Activity.amount)).toString(),
     });
     expect(erc20Handler.accountBalances[toKey]).toMatchObject({
       denom: erc20Activity.erc20_contract_address,
-      amount: '13456333',
+      amount: (BigInt(erc20Activity.amount) + BigInt(toAmount)).toString(),
+    });
+  }
+
+  @Test('test handlerErc20Transfer when from is zero')
+  async testHandlerErc20TransferWhenFromIsZero() {
+    const toAmount = '242423234';
+    const erc20Activity = Erc20Activity.fromJson({
+      evm_event_id: 1,
+      sender: '0x7c756Cba10Ff2C65016494E8BA37C12a108572b5',
+      action: ERC20_ACTION.TRANSFER,
+      erc20_contract_address: '0x98605ae21dd3be686337a6d7a8f156d0d8baee92',
+      amount: '12345222',
+      from: ZERO_ADDRESS,
+      to: '0xD83E708D7FE0E769Af80d990f9241458734808Ac',
+      height: 10000,
+      tx_hash:
+        '0xb97228e533e3af1323d873c9c3e4c0a9b85d95ecd8e98110c8890c9453d2f077',
+      evm_tx_id: 1,
+      from_account_id: 123,
+      to_account_id: 234,
+    });
+    const [fromKey, toKey] = [
+      `${erc20Activity.from_account_id}_${erc20Activity.erc20_contract_address}`,
+      `${erc20Activity.to_account_id}_${erc20Activity.erc20_contract_address}`,
+    ];
+    const accountBalances: Dictionary<AccountBalance> = {
+      [toKey]: AccountBalance.fromJson({
+        denom: erc20Activity.erc20_contract_address,
+        amount: toAmount,
+        last_updated_height: 1,
+      }),
+    };
+    const erc20Handler = new Erc20Handler(accountBalances, []);
+    erc20Handler.handlerErc20Transfer(erc20Activity);
+    expect(erc20Handler.accountBalances[fromKey]).toBeUndefined();
+    expect(erc20Handler.accountBalances[toKey]).toMatchObject({
+      denom: erc20Activity.erc20_contract_address,
+      amount: (BigInt(erc20Activity.amount) + BigInt(toAmount)).toString(),
+    });
+  }
+
+  @Test('test handlerErc20Transfer when last_updated_height not suitable')
+  async testHandlerErc20TransferWhenNotHeight() {
+    const fromAmount = '23442423';
+    const toAmount = '32323232';
+    const erc20Activity = Erc20Activity.fromJson({
+      evm_event_id: 1,
+      sender: '0x7c756Cba10Ff2C65016494E8BA37C12a108572b5',
+      action: ERC20_ACTION.TRANSFER,
+      erc20_contract_address: '0x98605ae21dd3be686337a6d7a8f156d0d8baee92',
+      amount: '12345222',
+      from: '0x3E665ACfE64628774d3bA8E589Fa8683eD8706C9',
+      to: '0xD83E708D7FE0E769Af80d990f9241458734808Ac',
+      height: 10000,
+      tx_hash:
+        '0xb97228e533e3af1323d873c9c3e4c0a9b85d95ecd8e98110c8890c9453d2f077',
+      evm_tx_id: 1,
+      from_account_id: 123,
+      to_account_id: 234,
+    });
+    const [fromKey, toKey] = [
+      `${erc20Activity.from_account_id}_${erc20Activity.erc20_contract_address}`,
+      `${erc20Activity.to_account_id}_${erc20Activity.erc20_contract_address}`,
+    ];
+    const accountBalances: Dictionary<AccountBalance> = {
+      [fromKey]: AccountBalance.fromJson({
+        denom: erc20Activity.erc20_contract_address,
+        amount: fromAmount,
+        last_updated_height: 10001,
+      }),
+      [toKey]: AccountBalance.fromJson({
+        denom: erc20Activity.erc20_contract_address,
+        amount: toAmount,
+        last_updated_height: 1,
+      }),
+    };
+    const erc20Handler = new Erc20Handler(accountBalances, []);
+    erc20Handler.handlerErc20Transfer(erc20Activity);
+    expect(erc20Handler.accountBalances[fromKey]).toMatchObject({
+      denom: erc20Activity.erc20_contract_address,
+      amount: fromAmount,
+    });
+    expect(erc20Handler.accountBalances[toKey]).toMatchObject({
+      denom: erc20Activity.erc20_contract_address,
+      amount: (BigInt(erc20Activity.amount) + BigInt(toAmount)).toString(),
     });
   }
 }
