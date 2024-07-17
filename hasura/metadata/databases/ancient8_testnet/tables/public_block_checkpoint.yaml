@@ -1,0 +1,3 @@
+table:
+  name: block_checkpoint
+  schema: public

@@ -1,0 +1,18 @@
+table:
+  name: optimism_deposit
+  schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - id
+        - l1_block
+        - l1_tx_hash
+        - l1_from
+        - l2_to
+        - l2_tx_hash
+        - gas_used
+        - gas_price
+        - timestamp
+      filter: {}
+      limit: 100
