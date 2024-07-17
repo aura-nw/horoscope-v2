@@ -1,11 +1,15 @@
-import { Dictionary } from 'lodash';
+import { QueryModuleAccountByNameResponseSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/auth/v1beta1/query';
+import { Knex } from 'knex';
+import _, { Dictionary } from 'lodash';
 import Moleculer from 'moleculer';
 import { decodeAbiParameters, keccak256, toHex } from 'viem';
+import config from '../../../config.json' assert { type: 'json' };
+import { getLcdClient } from '../../common';
+import knex from '../../common/utils/db_connection';
 import { Erc20Activity, Event, EventAttribute, EvmEvent } from '../../models';
 import { AccountBalance } from '../../models/account_balance';
 import { ZERO_ADDRESS } from './constant';
 import { convertBech32AddressToEthAddress } from './utils';
-import config from '../../../config.json' assert { type: 'json' };
 
 export const ERC20_ACTION = {
   TRANSFER: 'transfer',
@@ -53,6 +57,8 @@ export class Erc20Handler {
   accountBalances: Dictionary<AccountBalance>;
 
   erc20Activities: Erc20Activity[];
+
+  static erc20ModuleAccount: any;
 
   constructor(
     accountBalances: Dictionary<AccountBalance>,
@@ -120,6 +126,176 @@ export class Erc20Handler {
         account_id: toAccountId,
         type: AccountBalance.TYPE.ERC20_TOKEN,
       });
+    }
+  }
+
+  static async buildErc20Activities(
+    startBlock: number,
+    endBlock: number,
+    trx: Knex.Transaction,
+    logger: Moleculer.LoggerInstance,
+    addresses?: string[]
+  ) {
+    const erc20Activities: Erc20Activity[] = [];
+    const erc20Events = await EvmEvent.query()
+      .transacting(trx)
+      .joinRelated('[evm_smart_contract,evm_transaction]')
+      .innerJoin(
+        'erc20_contract',
+        'evm_event.address',
+        'erc20_contract.address'
+      )
+      .modify((builder) => {
+        if (addresses) {
+          builder.whereIn('evm_event.address', addresses);
+        }
+      })
+      .where('evm_event.block_height', '>', startBlock)
+      .andWhere('evm_event.block_height', '<=', endBlock)
+      .orderBy('evm_event.id', 'asc')
+      .select(
+        'evm_event.*',
+        'evm_transaction.from as sender',
+        'evm_smart_contract.id as evm_smart_contract_id',
+        'evm_transaction.id as evm_tx_id'
+      );
+    let erc20CosmosEvents: Event[] = [];
+    if (config.evmOnly === false) {
+      if (!this.erc20ModuleAccount) {
+        const lcdClient = await getLcdClient();
+        const erc20Account: QueryModuleAccountByNameResponseSDKType =
+          await lcdClient.provider.cosmos.auth.v1beta1.moduleAccountByName({
+            name: 'erc20',
+          });
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        this.erc20ModuleAccount = erc20Account.account.base_account.address;
+      }
+      erc20CosmosEvents = await Event.query()
+        .transacting(trx)
+        .where('event.block_height', '>', startBlock)
+        .andWhere('event.block_height', '<=', endBlock)
+        .andWhere((query) => {
+          query
+            .where('event.type', Event.EVENT_TYPE.CONVERT_COIN)
+            .orWhere('event.type', Event.EVENT_TYPE.CONVERT_ERC20);
+        })
+        .modify((builder) => {
+          if (addresses) {
+            builder
+              .joinRelated('attributes')
+              .where('attributes.key', EventAttribute.ATTRIBUTE_KEY.ERC20_TOKEN)
+              .whereIn(knex.raw('lower("value")'), addresses);
+          }
+        })
+        .withGraphFetched('[transaction, attributes]');
+      erc20Events.forEach((e) => {
+        if (e.topic0 === ERC20_EVENT_TOPIC0.TRANSFER) {
+          const activity = Erc20Handler.buildTransferActivity(e, logger);
+          if (activity) {
+            erc20Activities.push(activity);
+          }
+        } else if (e.topic0 === ERC20_EVENT_TOPIC0.APPROVAL) {
+          const activity = Erc20Handler.buildApprovalActivity(e, logger);
+          if (activity) {
+            erc20Activities.push(activity);
+          }
+        } else if (config.erc20.wrapExtensionContract.includes(e.address)) {
+          const wrapActivity = Erc20Handler.buildWrapExtensionActivity(
+            e,
+            logger
+          );
+          if (wrapActivity) {
+            erc20Activities.push(wrapActivity);
+          }
+        }
+      });
+      erc20CosmosEvents.forEach((event) => {
+        const activity = Erc20Handler.buildTransferActivityByCosmos(
+          event,
+          this.erc20ModuleAccount,
+          logger
+        );
+        if (activity) {
+          erc20Activities.push(activity);
+        }
+      });
+    }
+    return erc20Activities;
+  }
+
+  static async getErc20Activities(
+    startBlock: number,
+    endBlock: number,
+    trx?: Knex.Transaction,
+    addresses?: string[]
+  ): Promise<Erc20Activity[]> {
+    return Erc20Activity.query()
+      .modify((builder) => {
+        if (addresses) {
+          builder.whereIn('erc20_contract.address', addresses);
+        }
+        if (trx) {
+          builder.transacting(trx);
+        }
+      })
+      .leftJoin(
+        'account as from_account',
+        'erc20_activity.from',
+        'from_account.evm_address'
+      )
+      .leftJoin(
+        'account as to_account',
+        'erc20_activity.to',
+        'to_account.evm_address'
+      )
+      .leftJoin(
+        'erc20_contract as erc20_contract',
+        'erc20_activity.erc20_contract_address',
+        'erc20_contract.address'
+      )
+      .where('erc20_activity.height', '>', startBlock)
+      .andWhere('erc20_activity.height', '<=', endBlock)
+      .andWhere('erc20_contract.track', true)
+      .select(
+        'erc20_activity.*',
+        'from_account.id as from_account_id',
+        'to_account.id as to_account_id'
+      )
+      .orderBy('erc20_activity.id');
+  }
+
+  static async updateErc20AccountsBalance(
+    erc20Activities: Erc20Activity[],
+    trx: Knex.Transaction
+  ) {
+    if (erc20Activities.length > 0) {
+      const accountBalances = _.keyBy(
+        await AccountBalance.query()
+          .transacting(trx)
+          .joinRelated('account')
+          .whereIn(
+            ['account.evm_address', 'denom'],
+            [
+              ...erc20Activities.map((e) => [e.from, e.erc20_contract_address]),
+              ...erc20Activities.map((e) => [e.to, e.erc20_contract_address]),
+            ]
+          ),
+        (o) => `${o.account_id}_${o.denom}`
+      );
+      // construct cw721 handler object
+      const erc20Handler = new Erc20Handler(accountBalances, erc20Activities);
+      erc20Handler.process();
+      const updatedAccountBalances = Object.values(
+        erc20Handler.accountBalances
+      );
+      if (updatedAccountBalances.length > 0) {
+        await AccountBalance.query()
+          .transacting(trx)
+          .insert(updatedAccountBalances)
+          .onConflict(['account_id', 'denom'])
+          .merge();
+      }
     }
   }
 
