@@ -24,6 +24,10 @@ export class EVMSmartContract extends BaseModel {
 
   code_hash!: string;
 
+  status!: string;
+
+  last_updated_tx_id!: number;
+
   static get tableName() {
     return 'evm_smart_contract';
   }
@@ -55,6 +59,13 @@ export class EVMSmartContract extends BaseModel {
       PROXY_EIP_1967: 'PROXY_EIP_1967',
       PROXY_EIP_1822: 'PROXY_EIP_1822',
       PROXY_OPEN_ZEPPELIN_IMPLEMENTATION: 'PROXY_OPEN_ZEPPELIN_IMPLEMENTATION',
+    };
+  }
+
+  static get STATUS() {
+    return {
+      CREATED: 'CREATED',
+      DELETED: 'DELETED',
     };
   }
 
