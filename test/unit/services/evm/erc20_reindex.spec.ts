@@ -13,7 +13,10 @@ import {
   EVMSmartContract,
   EVMTransaction,
 } from '../../../../src/models';
-import { ABI_TRANSFER_PARAMS } from '../../../../src/services/evm/erc20_handler';
+import {
+  ABI_TRANSFER_PARAMS,
+  Erc20Handler,
+} from '../../../../src/services/evm/erc20_handler';
 import { Erc20Reindexer } from '../../../../src/services/evm/erc20_reindex';
 
 const accounts = [
@@ -145,6 +148,7 @@ export default class Erc20ReindexTest {
   @Test('test reindex')
   async testReindex() {
     const viemClient = getViemClient();
+    Erc20Handler.erc20ModuleAccount = '0x0000000000000dfd';
     jest.spyOn(viemClient, 'getBlockNumber').mockResolvedValue(BigInt(123456));
     // Instantiate Erc20Reindexer with the mock
     const reindexer = new Erc20Reindexer(viemClient, this.broker.logger);
@@ -170,7 +174,7 @@ export default class Erc20ReindexTest {
       address: evmSmartContract.address,
       evm_tx_id: evmTransaction.id,
     });
-    const e = await EvmEvent.query().insert(event);
+    await EvmEvent.query().insert(event);
     // Call the reindex method
     await reindexer.reindex(erc20Contract.address as `0x${string}`);
     // Test phase
@@ -183,7 +187,7 @@ export default class Erc20ReindexTest {
       ],
       (event.topic1 +
         event.topic2.slice(2) +
-        toHex(e.data).slice(2)) as `0x${string}`
+        toHex(event.data).slice(2)) as `0x${string}`
     ) as [string, string, bigint];
     // Test new activity had been inserted
     expect(erc20Activity).toMatchObject({
@@ -199,14 +203,14 @@ export default class Erc20ReindexTest {
     );
     // from account balance had been reindexed
     expect(
-      accountBalances[`${accounts[0].id  }_${  erc20Contract.address}`]
+      accountBalances[`${accounts[0].id}_${erc20Contract.address}`]
     ).toMatchObject({
       denom: erc20Contract.address,
-      amount: `-${  amount.toString()}`,
+      amount: `-${amount.toString()}`,
     });
     // to account balance had been reindexed
     expect(
-      accountBalances[`${accounts[1].id  }_${  erc20Contract.address}`]
+      accountBalances[`${accounts[1].id}_${erc20Contract.address}`]
     ).toMatchObject({
       denom: erc20Contract.address,
       amount: amount.toString(),
@@ -214,7 +218,7 @@ export default class Erc20ReindexTest {
     // from account balance without erc20 had been orinal
     expect(
       accountBalances[
-        `${accounts[0].id  }_${  accounts[0].account_balances[0].denom}`
+        `${accounts[0].id}_${accounts[0].account_balances[0].denom}`
       ]
     ).toMatchObject({
       denom: accounts[0].account_balances[0].denom,
