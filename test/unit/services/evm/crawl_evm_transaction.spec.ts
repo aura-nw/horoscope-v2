@@ -1,6 +1,6 @@
 import { AfterAll, BeforeEach, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
-import { TransactionReceipt } from 'viem';
+import { OpStackTransactionReceipt } from 'viem/chains';
 import CrawlEvmTransactionService from '../../../../src/services/evm/crawl_evm_transaction.service';
 
 @Describe('Test crawl evm transaction')
@@ -60,7 +60,7 @@ export default class CrawlEVMTransactionTest {
         },
       ],
     };
-    const mockTxReceipt: TransactionReceipt[] = [
+    const mockTxReceipt: OpStackTransactionReceipt[] = [
       {
         blockHash:
           '0x1384e6013e77278ffb0d10eba6d7b2c8400f7d21f3f80083167f0234d6031d41',
@@ -79,6 +79,10 @@ export default class CrawlEVMTransactionTest {
           '0x035e40976d79376eee54a216f040275c185a9349722397cff31123e7767a717b',
         transactionIndex: 0,
         type: '0x7e',
+        l1GasPrice: BigInt(0),
+        l1GasUsed: BigInt(0),
+        l1Fee: BigInt(0),
+        l1FeeScalar: 0,
       },
     ];
     this.crawlEvmTxService.getListTxReceipt = jest.fn(() =>

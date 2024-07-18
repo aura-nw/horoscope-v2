@@ -1,9 +1,11 @@
 import { PublicClient, createPublicClient, http } from 'viem';
+import { ancient8, publicActionsL1 } from 'viem/op-stack';
+import { ancient8Sepolia, mainnet, sepolia } from 'viem/chains';
 import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
 import networks from '../../../network.json' assert { type: 'json' };
 
-const viemClientMapping: Map<string, PublicClient> = new Map();
+const viemClientMapping: Map<string, any> = new Map();
 export function getViemClient(chainId?: string): PublicClient {
   if (!viemClientMapping.has(chainId ?? config.chainId)) {
     const selectedChain = networks.find(
@@ -13,6 +15,7 @@ export function getViemClient(chainId?: string): PublicClient {
       throw new Error(`EVMJSONRPC not found with chainId: ${config.chainId}`);
     }
     const viemClient = createPublicClient({
+      chain: getViemChainById(selectedChain.EVMchainId),
       batch: {
         multicall: {
           batchSize: config.viemConfig.multicall.batchSize,
@@ -25,10 +28,24 @@ export function getViemClient(chainId?: string): PublicClient {
           wait: config.viemConfig.transport.waitMilisecond,
         },
       }),
-    });
+    }).extend(publicActionsL1());
     viemClientMapping.set(chainId ?? config.chainId, viemClient);
   }
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
   return viemClientMapping.get(chainId ?? config.chainId);
+}
+
+export function getViemChainById(evmChainId: number | undefined) {
+  if (evmChainId === mainnet.id) {
+    return mainnet;
+  }
+  if (evmChainId === sepolia.id) {
+    return sepolia;
+  }
+  if (evmChainId === ancient8.id) {
+    return ancient8;
+  }
+  if (evmChainId === ancient8Sepolia.id) {
+    return ancient8Sepolia;
+  }
+  return undefined;
 }
