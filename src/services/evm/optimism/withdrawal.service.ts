@@ -229,7 +229,7 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
           l1_tx_hash:
             status === OptimismWithdrawal.STATUS.FINALIZE
               ? event.transactionHash
-              : null,
+              : undefined,
         };
       })
     );
