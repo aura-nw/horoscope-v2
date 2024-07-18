@@ -18,4 +18,5 @@
 - '!include public_evm_smart_contract.yaml'
 - '!include public_evm_transaction.yaml'
 - '!include public_optimism_deposit.yaml'
+- '!include public_optimism_withdrawal.yaml'
 - '!include public_view_count_holder_erc721.yaml'
