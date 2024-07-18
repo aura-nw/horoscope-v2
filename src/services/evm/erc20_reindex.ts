@@ -17,7 +17,6 @@ export class Erc20Reindexer {
 
   /**
    * @description reindex erc20 contract
-   * @requires filterReindex
    * @param addresses Contracts address that you want to reindex
    * @steps
    * - clean database: erc20 AccountBalance
