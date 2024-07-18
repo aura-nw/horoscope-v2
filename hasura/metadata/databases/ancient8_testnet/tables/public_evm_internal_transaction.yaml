@@ -1,0 +1,65 @@
+table:
+  name: evm_internal_transaction
+  schema: public
+object_relationships:
+  - name: evm_erc20_contract_mapping_from
+    using:
+      manual_configuration:
+        column_mapping:
+          from: address
+        insertion_order: null
+        remote_table:
+          name: erc20_contract
+          schema: public
+  - name: evm_erc20_contract_mapping_to
+    using:
+      manual_configuration:
+        column_mapping:
+          to: address
+        insertion_order: null
+        remote_table:
+          name: erc20_contract
+          schema: public
+  - name: evm_erc721_contract_mapping_from
+    using:
+      manual_configuration:
+        column_mapping:
+          from: address
+        insertion_order: null
+        remote_table:
+          name: erc721_contract
+          schema: public
+  - name: evm_erc721_contract_mapping_to
+    using:
+      manual_configuration:
+        column_mapping:
+          to: address
+        insertion_order: null
+        remote_table:
+          name: erc721_contract
+          schema: public
+  - name: evm_transaction_id
+    using:
+      manual_configuration:
+        column_mapping:
+          evm_tx_id: id
+        insertion_order: null
+        remote_table:
+          name: evm_transaction
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - id
+        - evm_tx_id
+        - type_trace_address
+        - type
+        - from
+        - to
+        - value
+        - input
+        - gas
+        - gas_used
+      filter: {}
+      limit: 100

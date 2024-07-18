@@ -60,8 +60,13 @@ export default class QueueManager {
   ) {
     // bind the owner, so 'this' can be accessed in the handler function
     const f = async (payload: object) => {
-      const func = this._handlerOwner ? fn.bind(this._handlerOwner) : fn;
-      await func(payload);
+      try {
+        const func = this._handlerOwner ? fn.bind(this._handlerOwner) : fn;
+        await func(payload);
+      } catch (error: any) {
+        this._handlerOwner.logger.error(error.stack);
+        throw error;
+      }
     };
     // register the handler
     this._queueProvider.registerQueueHandler(qOpt, f);

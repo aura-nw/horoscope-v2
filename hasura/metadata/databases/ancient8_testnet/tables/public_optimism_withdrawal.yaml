@@ -1,0 +1,20 @@
+table:
+  name: optimism_withdrawal
+  schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - id
+        - msg_nonce
+        - sender
+        - l2_tx_hash
+        - l2_block
+        - timestamp
+        - status
+        - evm_event_id
+        - l1_tx_hash
+        - withdrawal_hash
+        - evm_tx_id
+      filter: {}
+      limit: 100

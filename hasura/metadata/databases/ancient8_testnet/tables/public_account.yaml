@@ -1,0 +1,29 @@
+table:
+  name: account
+  schema: public
+array_relationships:
+  - name: account_balances
+    using:
+      foreign_key_constraint_on:
+        column: account_id
+        table:
+          name: account_balance
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - address
+        - code_hash
+        - evm_address
+        - type
+        - account_number
+        - id
+        - sequence
+        - balances
+        - pubkey
+        - spendable_balances
+        - created_at
+        - updated_at
+      filter: {}
+      limit: 100

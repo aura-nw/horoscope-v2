@@ -49,22 +49,45 @@ const brokerConfig: BrokerOptions = {
 
   // Enable/disable logging or use custom logger. More info: https://moleculer.services/docs/0.14/logging.html
   // Available logger types: "Console", "File", "Pino", "Winston", "Bunyan", "debug", "Log4js", "Datadog"
-  logger: {
-    type: Config.LOGGERTYPE || 'Console',
-    options: {
-      // Using colors on the output
-      colors: Config.LOGGERCOLORS || true,
-      // Print module names with different colors (like docker-compose for containers)
-      moduleColors: Config.LOGGERMODULECOLORS || false,
-      // Line formatter. It can be "json", "short", "simple", "full", a `Function` or a template string like "{timestamp} {level} {nodeID}/{mod}: {msg}"
-      formatter: Config.LOGGERFORMATTER || 'full',
-      // Custom object printer. If not defined, it uses the `util.inspect` method.
-      objectPrinter: (o: never) =>
-        inspect(o, { depth: 4, colors: true, breakLength: 100 }),
-      // Auto-padding the module name in order to messages begin at the same column.
-      autoPadding: Config.LOGGERAUTOPADDING || false,
+  logger: [
+    {
+      type: Config.LOGGERTYPE || 'Console',
+      options: {
+        // Using colors on the output
+        colors: Config.LOGGERCOLORS || true,
+        // Print module names with different colors (like docker-compose for containers)
+        moduleColors: Config.LOGGERMODULECOLORS || false,
+        // Line formatter. It can be "json", "short", "simple", "full", a `Function` or a template string like "{timestamp} {level} {nodeID}/{mod}: {msg}"
+        formatter: Config.LOGGERFORMATTER || 'full',
+        // Custom object printer. If not defined, it uses the `util.inspect` method.
+        objectPrinter: (o: never) =>
+          inspect(o, { depth: 4, colors: true, breakLength: 100 }),
+        // Auto-padding the module name in order to messages begin at the same column.
+        autoPadding: Config.LOGGERAUTOPADDING || false,
+      },
     },
-  },
+    {
+      type: 'Pino',
+      options: {
+        level: 'error',
+        pino: {
+          options: {
+            transport: {
+              target: 'pino-discord-transport',
+              options: {
+                webhookUrl: Config.DISCORD_WEBHOOK,
+              },
+            },
+            base: undefined,
+            redact: {
+              paths: ['nodeID', 'ns', 'svc', 'level', 'ver'],
+              remove: true,
+            },
+          },
+        },
+      },
+    },
+  ],
   // Default log level for built-in console logger. It can be overwritten in logger options above.
   // Available values: trace, debug, info, warn, error, fatal
   logLevel: Config.LOGLEVEL,
