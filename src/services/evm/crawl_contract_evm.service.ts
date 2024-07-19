@@ -60,7 +60,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
         'evm_transaction.hash',
         'evm_transaction.from',
         'evm_transaction.to',
-        'evm_transaction.contract_address',
+        'evm_transaction.contract_address as contractAddress',
         'evm_transaction.data',
         'evm_transaction.id'
       )
@@ -90,7 +90,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
     const isCreationInternalContracts: Dictionary<boolean> = {};
     evmTxs.forEach((evmTx: any) => {
       let currentAddresses: string[] = [];
-      ['from', 'to', 'contract_address'].forEach((key) => {
+      ['from', 'to', 'contractAddress'].forEach((key) => {
         if (evmTx[key] && evmTx[key].startsWith('0x')) {
           currentAddresses.push(evmTx[key]);
         }
