@@ -189,7 +189,12 @@ export default class Erc20HandlerTest {
         last_updated_height: 1,
       }),
     };
-    const erc20Handler = new Erc20Handler(accountBalances, erc20Contracts, []);
+    const erc20Handler = new Erc20Handler(
+      accountBalances,
+      erc20Contracts,
+      [],
+      [ZERO_ADDRESS]
+    );
     erc20Handler.handlerErc20Transfer(erc20Activity);
     expect(erc20Handler.accountBalances[fromKey]).toMatchObject({
       denom: erc20Activity.erc20_contract_address,
@@ -246,7 +251,12 @@ export default class Erc20HandlerTest {
         last_updated_height: 1,
       }),
     };
-    const erc20Handler = new Erc20Handler(accountBalances, erc20Contracts, []);
+    const erc20Handler = new Erc20Handler(
+      accountBalances,
+      erc20Contracts,
+      [],
+      [ZERO_ADDRESS]
+    );
     erc20Handler.handlerErc20Transfer(erc20Activity);
     expect(erc20Handler.accountBalances[fromKey]).toBeUndefined();
     expect(erc20Handler.accountBalances[toKey]).toMatchObject({
@@ -300,7 +310,12 @@ export default class Erc20HandlerTest {
         last_updated_height: 1,
       }),
     };
-    const erc20Handler = new Erc20Handler(accountBalances, erc20Contracts, []);
+    const erc20Handler = new Erc20Handler(
+      accountBalances,
+      erc20Contracts,
+      [],
+      [ZERO_ADDRESS]
+    );
     erc20Handler.handlerErc20Transfer(erc20Activity);
     expect(erc20Handler.accountBalances[fromKey]).toMatchObject({
       denom: erc20Activity.erc20_contract_address,
@@ -360,7 +375,12 @@ export default class Erc20HandlerTest {
         last_updated_height: 1,
       }),
     };
-    const erc20Handler = new Erc20Handler(accountBalances, erc20Contracts, []);
+    const erc20Handler = new Erc20Handler(
+      accountBalances,
+      erc20Contracts,
+      [],
+      [ZERO_ADDRESS]
+    );
     erc20Handler.handlerErc20Transfer(erc20Activity);
     expect(erc20Handler.accountBalances[fromKey]).toMatchObject({
       denom: erc20Activity.erc20_contract_address,

@@ -21,7 +21,12 @@ import {
 import { AccountBalance } from '../../models/account_balance';
 import { Erc20Activity } from '../../models/erc20_activity';
 import { Erc20Contract } from '../../models/erc20_contract';
-import { BULL_JOB_NAME, SERVICE as EVM_SERVICE, SERVICE } from './constant';
+import {
+  BULL_JOB_NAME,
+  SERVICE as EVM_SERVICE,
+  SERVICE,
+  ZERO_ADDRESS,
+} from './constant';
 import { ERC20_EVENT_TOPIC0, Erc20Handler } from './erc20_handler';
 import { convertEthAddressToBech32Address } from './utils';
 
@@ -117,16 +122,6 @@ export default class Erc20Service extends BullableService {
         );
       let erc20CosmosEvents: Event[] = [];
       if (config.evmOnly === false) {
-        if (!this.erc20ModuleAccount) {
-          const lcdClient = await getLcdClient();
-          const erc20Account: QueryModuleAccountByNameResponseSDKType =
-            await lcdClient.provider.cosmos.auth.v1beta1.moduleAccountByName({
-              name: 'erc20',
-            });
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          this.erc20ModuleAccount = erc20Account.account.base_account.address;
-        }
         erc20CosmosEvents = await Event.query()
           .where('block_height', '>', startBlock)
           .andWhere('block_height', '<=', endBlock)
@@ -262,11 +257,16 @@ export default class Erc20Service extends BullableService {
             ),
           'address'
         );
+        const factoryAccounts = [ZERO_ADDRESS];
+        if (this.erc20ModuleAccount) {
+          factoryAccounts.push(this.erc20ModuleAccount);
+        }
         // construct cw721 handler object
         const erc20Handler = new Erc20Handler(
           accountBalances,
           erc20Contracts,
-          erc20Activities
+          erc20Activities,
+          factoryAccounts
         );
         erc20Handler.process();
         const updatedAccountBalances = Object.values(
@@ -465,6 +465,18 @@ export default class Erc20Service extends BullableService {
   public async _start(): Promise<void> {
     this.viemClient = getViemClient();
     if (NODE_ENV !== 'test') {
+      if (config.evmOnly === false) {
+        if (!this.erc20ModuleAccount) {
+          const lcdClient = await getLcdClient();
+          const erc20Account: QueryModuleAccountByNameResponseSDKType =
+            await lcdClient.provider.cosmos.auth.v1beta1.moduleAccountByName({
+              name: 'erc20',
+            });
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          this.erc20ModuleAccount = erc20Account.account.base_account.address;
+        }
+      }
       await this.createJob(
         BULL_JOB_NAME.HANDLE_ERC20_CONTRACT,
         BULL_JOB_NAME.HANDLE_ERC20_CONTRACT,

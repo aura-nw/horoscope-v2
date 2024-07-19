@@ -62,14 +62,18 @@ export class Erc20Handler {
 
   erc20Contracts: Dictionary<Erc20Contract>;
 
+  factoryAccounts: string[];
+
   constructor(
     accountBalances: Dictionary<AccountBalance>,
     erc20Contracts: Dictionary<Erc20Contract>,
-    erc20Activities: Erc20Activity[]
+    erc20Activities: Erc20Activity[],
+    factoryAccounts: string[]
   ) {
     this.accountBalances = accountBalances;
     this.erc20Activities = erc20Activities;
     this.erc20Contracts = erc20Contracts;
+    this.factoryAccounts = factoryAccounts;
   }
 
   process() {
@@ -87,8 +91,8 @@ export class Erc20Handler {
   }
 
   handlerErc20Transfer(erc20Activity: Erc20Activity) {
-    // update from account balance if from != ZERO_ADDRESS
-    if (erc20Activity.from !== ZERO_ADDRESS) {
+    // update from account balance if from != factory account
+    if (!this.factoryAccounts.includes(erc20Activity.from)) {
       const fromAccountId = erc20Activity.from_account_id;
       const key = `${fromAccountId}_${erc20Activity.erc20_contract_address}`;
       const fromAccountBalance = this.accountBalances[key];
@@ -124,8 +128,8 @@ export class Erc20Handler {
         erc20Contract.last_updated_height = erc20Activity.height;
       }
     }
-    // update from account balance if from != ZERO_ADDRESS
-    if (erc20Activity.to !== ZERO_ADDRESS) {
+    // update from account balance if to != factory account
+    if (!this.factoryAccounts.includes(erc20Activity.to)) {
       // update to account balance
       const toAccountId = erc20Activity.to_account_id;
       const key = `${toAccountId}_${erc20Activity.erc20_contract_address}`;
