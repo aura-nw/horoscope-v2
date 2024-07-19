@@ -1,6 +1,16 @@
 table:
   name: optimism_deposit
   schema: public
+object_relationships:
+  - name: evm_transaction
+    using:
+      manual_configuration:
+        column_mapping:
+          l2_tx_hash: hash
+        insertion_order: null
+        remote_table:
+          name: evm_transaction
+          schema: public
 select_permissions:
   - role: internal_service
     permission:
