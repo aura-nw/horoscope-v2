@@ -51,6 +51,7 @@ select_permissions:
   - role: internal_service
     permission:
       columns:
+        - additional_data
         - contract_address
         - data
         - from
