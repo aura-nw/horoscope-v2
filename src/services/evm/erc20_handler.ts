@@ -189,38 +189,35 @@ export class Erc20Handler {
           }
         })
         .withGraphFetched('[transaction, attributes]');
-      erc20Events.forEach((e) => {
-        if (e.topic0 === ERC20_EVENT_TOPIC0.TRANSFER) {
-          const activity = Erc20Handler.buildTransferActivity(e, logger);
-          if (activity) {
-            erc20Activities.push(activity);
-          }
-        } else if (e.topic0 === ERC20_EVENT_TOPIC0.APPROVAL) {
-          const activity = Erc20Handler.buildApprovalActivity(e, logger);
-          if (activity) {
-            erc20Activities.push(activity);
-          }
-        } else if (config.erc20.wrapExtensionContract.includes(e.address)) {
-          const wrapActivity = Erc20Handler.buildWrapExtensionActivity(
-            e,
-            logger
-          );
-          if (wrapActivity) {
-            erc20Activities.push(wrapActivity);
-          }
-        }
-      });
-      erc20CosmosEvents.forEach((event) => {
-        const activity = Erc20Handler.buildTransferActivityByCosmos(
-          event,
-          this.erc20ModuleAccount,
-          logger
-        );
+    }
+    erc20Events.forEach((e) => {
+      if (e.topic0 === ERC20_EVENT_TOPIC0.TRANSFER) {
+        const activity = Erc20Handler.buildTransferActivity(e, logger);
         if (activity) {
           erc20Activities.push(activity);
         }
-      });
-    }
+      } else if (e.topic0 === ERC20_EVENT_TOPIC0.APPROVAL) {
+        const activity = Erc20Handler.buildApprovalActivity(e, logger);
+        if (activity) {
+          erc20Activities.push(activity);
+        }
+      } else if (config.erc20.wrapExtensionContract.includes(e.address)) {
+        const wrapActivity = Erc20Handler.buildWrapExtensionActivity(e, logger);
+        if (wrapActivity) {
+          erc20Activities.push(wrapActivity);
+        }
+      }
+    });
+    erc20CosmosEvents.forEach((event) => {
+      const activity = Erc20Handler.buildTransferActivityByCosmos(
+        event,
+        this.erc20ModuleAccount,
+        logger
+      );
+      if (activity) {
+        erc20Activities.push(activity);
+      }
+    });
     return erc20Activities;
   }
 
