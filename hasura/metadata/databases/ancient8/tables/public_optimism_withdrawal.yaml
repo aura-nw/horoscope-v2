@@ -1,0 +1,31 @@
+table:
+  name: optimism_withdrawal
+  schema: public
+object_relationships:
+  - name: evm_transaction
+    using:
+      manual_configuration:
+        column_mapping:
+          evm_tx_id: id
+        insertion_order: null
+        remote_table:
+          name: evm_transaction
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - id
+        - msg_nonce
+        - sender
+        - l2_tx_hash
+        - l2_block
+        - timestamp
+        - status
+        - evm_event_id
+        - l1_tx_hash
+        - withdrawal_hash
+        - evm_tx_id
+      filter: {}
+      limit: 100
+      allow_aggregations: true

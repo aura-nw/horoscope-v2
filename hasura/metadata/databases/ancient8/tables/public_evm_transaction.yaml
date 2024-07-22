@@ -11,6 +11,15 @@ object_relationships:
         remote_table:
           name: evm_block
           schema: public
+  - name: optimism_deposit
+    using:
+      manual_configuration:
+        column_mapping:
+          hash: l2_tx_hash
+        insertion_order: null
+        remote_table:
+          name: optimism_deposit
+          schema: public
 array_relationships:
   - name: erc20_activities
     using:
