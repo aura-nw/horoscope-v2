@@ -28,3 +28,4 @@ select_permissions:
         - evm_tx_id
       filter: {}
       limit: 100
+      allow_aggregations: true
