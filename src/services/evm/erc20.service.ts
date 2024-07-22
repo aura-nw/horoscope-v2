@@ -180,10 +180,15 @@ export default class Erc20Service extends BullableService {
             erc20Activities
           )}`
         );
+        const sortedErc20Activities = erc20Activities.sort(
+          (a, b) =>
+            a.cosmos_tx_id - b.cosmos_tx_id || a.evm_event_id - b.evm_event_id
+        );
+        this.logger.info(sortedErc20Activities);
         await knex
           .batchInsert(
             'erc20_activity',
-            erc20Activities,
+            sortedErc20Activities,
             config.erc20.chunkSizeInsert
           )
           .transacting(trx);

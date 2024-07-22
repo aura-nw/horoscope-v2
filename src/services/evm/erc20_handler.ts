@@ -147,6 +147,7 @@ export class Erc20Handler {
         height: e.block_height,
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
+        cosmos_tx_id: e.tx_id,
       });
     } catch (e) {
       logger.error(e);
@@ -247,6 +248,7 @@ export class Erc20Handler {
         height: e.block_height,
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
+        cosmos_tx_id: e.tx_id,
       });
     } catch (e) {
       logger.error(e);
@@ -289,6 +291,7 @@ export class Erc20Handler {
         height: e.block_height,
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
+        cosmos_tx_id: e.tx_id,
       });
     } catch (e) {
       logger.error(e);
@@ -316,6 +319,7 @@ export class Erc20Handler {
         height: e.block_height,
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
+        cosmos_tx_id: e.tx_id,
       });
     } catch (e) {
       logger.error(e);
