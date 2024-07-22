@@ -184,7 +184,6 @@ export default class Erc20Service extends BullableService {
           (a, b) =>
             a.cosmos_tx_id - b.cosmos_tx_id || a.evm_event_id - b.evm_event_id
         );
-        this.logger.info(sortedErc20Activities);
         await knex
           .batchInsert(
             'erc20_activity',
