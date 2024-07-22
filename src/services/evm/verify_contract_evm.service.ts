@@ -21,6 +21,7 @@ import { createHash } from 'crypto';
 import { Context, ServiceBroker } from 'moleculer';
 import { lt } from 'semver';
 import { keccak256, toBytes } from 'viem';
+import _ from 'lodash';
 import config from '../../../config.json' assert { type: 'json' };
 import networks from '../../../network.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -572,5 +573,63 @@ export default class VerifyContractEVM extends BullableService {
 
   isVerifiable(contract: CheckedContract) {
     return isEmpty(contract.missing) && isEmpty(contract.invalid);
+  }
+
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.INSERT_CONTRACT_VERIFICATION,
+    jobName: BULL_JOB_NAME.INSERT_CONTRACT_VERIFICATION,
+  })
+  async insertContractVerification(_payload: {
+    contracts: {
+      address: string;
+      contractVerification: {
+        contractName: string;
+        compilerVersion: string;
+        abi: any;
+        compilerSetting: any;
+      };
+    }[];
+  }) {
+    this.logger.info('Inserting contract verification');
+    const foundContracts = await EVMContractVerification.query()
+      .whereIn(
+        'contract_address',
+        _payload.contracts.map((contract) => contract.address)
+      )
+      .select('id', 'contract_address');
+    if (foundContracts.length > 0) {
+      this.logger.warn(
+        `Found contracts in DB: ${JSON.stringify(foundContracts)}`
+      );
+    }
+    const foundContractByAddress = _.keyBy(foundContracts, 'contract_address');
+    const newContracts = _payload.contracts.filter(
+      (contract) => !foundContractByAddress[contract.address]
+    );
+    const evmContractVerification = newContracts.map((contract) =>
+      EVMContractVerification.fromJson({
+        contract_address: contract.address,
+        abi: JSON.stringify(contract.contractVerification.abi),
+        compiler_setting: JSON.stringify(
+          contract.contractVerification.compilerSetting
+        ),
+        contract_name: contract.contractVerification.contractName,
+        status: EVMContractVerification.VERIFICATION_STATUS.SUCCESS,
+      })
+    );
+    await EVMContractVerification.query().insert(evmContractVerification);
+    newContracts.forEach((contract) => {
+      this.createJob(
+        BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
+        BULL_JOB_NAME.HANDLE_EVM_SIGNATURE_MAPPING,
+        { contract_address: contract.address },
+        {
+          removeOnComplete: true,
+          removeOnFail: {
+            count: 3,
+          },
+        }
+      );
+    });
   }
 }
