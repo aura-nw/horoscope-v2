@@ -105,8 +105,8 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
         evmEvent.withdrawalStatus = status;
       })
     );
-    const optimismWithdrawals: OptimismWithdrawal[] = evmEvents.map(
-      (evmEvent) => {
+    const optimismWithdrawals: OptimismWithdrawal[] = await Promise.all(
+      evmEvents.map(async (evmEvent) => {
         const [nonce, ,] = decodeAbiParameters(
           this.ABI_MESSAGE_PASSED_INDEXED,
           (evmEvent.topic1 +
@@ -117,6 +117,14 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
           this.ABI_MESSAGE_PASSED_NON_INDEXED,
           `0x${evmEvent.data.toString('hex')}`
         );
+
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const finalizeTime = await this.viemClientL1.getTimeToFinalize({
+          withdrawalHash,
+          targetChain: getViemChainById(this.l2Chain.EVMchainId),
+        });
+
         return OptimismWithdrawal.fromJson({
           l2_tx_hash: evmEvent.evm_transaction.hash,
           l2_block: evmEvent.evm_transaction.height,
@@ -127,8 +135,9 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
           status: evmEvent.withdrawalStatus,
           evm_event_id: evmEvent.id,
           evm_tx_id: evmEvent.evm_tx_id,
+          finalize_time: new Date(finalizeTime.timestamp),
         });
-      }
+      })
     );
     await knex.transaction(async (trx) => {
       if (optimismWithdrawals.length > 0) {
