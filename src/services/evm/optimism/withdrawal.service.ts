@@ -223,14 +223,24 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
         );
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        const status = await this.viemClientL1.getWithdrawalStatus({
-          receipt: txReceipt,
-          portalAddress:
-            config.crawlOptimismWithdrawalEventOnL1.l1OptimismPortal,
-          targetChain: getViemChainById(this.l2Chain.EVMchainId),
-          l2OutputOracleAddress:
-            config.crawlOptimismWithdrawalEventOnL1.l2OutputOracleProxy,
-        });
+        const [status, finalizeTime] = await Promise.all([
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          this.viemClientL1.getWithdrawalStatus({
+            receipt: txReceipt,
+            portalAddress:
+              config.crawlOptimismWithdrawalEventOnL1.l1OptimismPortal,
+            targetChain: getViemChainById(this.l2Chain.EVMchainId),
+            l2OutputOracleAddress:
+              config.crawlOptimismWithdrawalEventOnL1.l2OutputOracleProxy,
+          }),
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          this.viemClientL1.getTimeToFinalize({
+            withdrawalHash,
+            targetChain: getViemChainById(this.l2Chain.EVMchainId),
+          }),
+        ]);
 
         return {
           id: opWithdrawal.id,
@@ -239,6 +249,10 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
             status === OptimismWithdrawal.STATUS.FINALIZE
               ? event.transactionHash
               : undefined,
+          finalize_time: {
+            value: finalizeTime.timestamp / 1000,
+            type: 'timestamp',
+          },
         };
       })
     );
@@ -249,7 +263,7 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
           trx,
           OptimismWithdrawal.tableName,
           listUpdateOpWithdrawalStatus,
-          ['status', 'l1_tx_hash']
+          ['status', 'l1_tx_hash', 'finalize_time']
         );
       }
       blockCheckpoint.height = endBlock;
