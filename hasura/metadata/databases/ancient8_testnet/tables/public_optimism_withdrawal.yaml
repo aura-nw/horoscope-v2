@@ -15,17 +15,18 @@ select_permissions:
   - role: internal_service
     permission:
       columns:
+        - evm_event_id
+        - evm_tx_id
+        - finalize_time
         - id
+        - l1_tx_hash
+        - l2_block
+        - l2_tx_hash
         - msg_nonce
         - sender
-        - l2_tx_hash
-        - l2_block
-        - timestamp
         - status
-        - evm_event_id
-        - l1_tx_hash
+        - timestamp
         - withdrawal_hash
-        - evm_tx_id
       filter: {}
       limit: 100
       allow_aggregations: true
