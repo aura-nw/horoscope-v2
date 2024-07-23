@@ -26,6 +26,8 @@ export class OptimismWithdrawal extends BaseModel {
 
   evm_tx_id!: number;
 
+  finalize_time!: Date;
+
   static get tableName() {
     return 'optimism_withdrawal';
   }
