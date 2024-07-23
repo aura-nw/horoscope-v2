@@ -16,9 +16,16 @@ export async function batchUpdate(
   if (records.length === 0) return;
   const stringListUpdates = records
     .map((record: any) => {
-      const values = fields.map((field) =>
-        record[field] !== undefined ? `'${record[field]}'` : 'NULL'
-      );
+      const values = fields.map((field) => {
+        if (record[field]?.type === 'timestamp') {
+          return `to_timestamp(${record[field].value})`;
+        }
+
+        if (record[field] !== undefined) {
+          return `'${record[field]}'`;
+        }
+        return 'NULL';
+      });
       return `(${record.id}, ${values.join(', ')})`;
     })
     .join(',');
