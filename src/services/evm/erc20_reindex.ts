@@ -1,9 +1,10 @@
 import Moleculer from 'moleculer';
-import { PublicClient, getContract } from 'viem';
+import { getContract, PublicClient } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
 import { AccountBalance, Erc20Activity, Erc20Contract } from '../../models';
 import { Erc20Handler } from './erc20_handler';
+import { convertEthAddressToBech32Address } from './utils';
 
 export class Erc20Reindexer {
   viemClient: PublicClient;
@@ -96,6 +97,26 @@ export class Erc20Reindexer {
         trx,
         [address]
       );
+      // get missing Account
+      const missingAccountsAddress = Array.from(
+        new Set(
+          [
+            ...erc20ActivitiesInDb
+              .filter((e) => !e.from_account_id)
+              .map((e) => e.from),
+            ...erc20ActivitiesInDb
+              .filter((e) => !e.to_account_id)
+              .map((e) => e.to),
+          ].map((e) =>
+            convertEthAddressToBech32Address(config.networkPrefixAddress, e)
+          ) as string[]
+        )
+      );
+      if (missingAccountsAddress.length > 0) {
+        throw new Error(
+          `Missing accounts ${missingAccountsAddress}. You should reindex them`
+        );
+      }
       await Erc20Handler.updateErc20AccountsBalance(erc20ActivitiesInDb, trx);
     });
   }
