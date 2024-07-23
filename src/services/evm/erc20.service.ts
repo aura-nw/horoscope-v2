@@ -349,48 +349,61 @@ export default class Erc20Service extends BullableService {
 
   public async _start(): Promise<void> {
     this.viemClient = getViemClient();
-    await this.createJob(
-      BULL_JOB_NAME.HANDLE_ERC20_CONTRACT,
-      BULL_JOB_NAME.HANDLE_ERC20_CONTRACT,
-      {},
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-        repeat: {
-          every: config.erc20.millisecondRepeatJob,
-        },
+    if (NODE_ENV !== 'test') {
+      if (config.evmOnly === false) {
+        const lcdClient = await getLcdClient();
+        const erc20Account: QueryModuleAccountByNameResponseSDKType =
+          await lcdClient.provider.cosmos.auth.v1beta1.moduleAccountByName({
+            name: 'erc20',
+          });
+        Erc20Handler.erc20ModuleAccount =
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          erc20Account.account.base_account.address;
       }
-    );
-    await this.createJob(
-      BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY,
-      BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY,
-      {},
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-        repeat: {
-          every: config.erc20.millisecondRepeatJob,
-        },
-      }
-    );
-    await this.createJob(
-      BULL_JOB_NAME.HANDLE_ERC20_BALANCE,
-      BULL_JOB_NAME.HANDLE_ERC20_BALANCE,
-      {},
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-        repeat: {
-          every: config.erc20.millisecondRepeatJob,
-        },
-      }
-    );
+      await this.createJob(
+        BULL_JOB_NAME.HANDLE_ERC20_CONTRACT,
+        BULL_JOB_NAME.HANDLE_ERC20_CONTRACT,
+        {},
+        {
+          removeOnComplete: true,
+          removeOnFail: {
+            count: 3,
+          },
+          repeat: {
+            every: config.erc20.millisecondRepeatJob,
+          },
+        }
+      );
+      await this.createJob(
+        BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY,
+        BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY,
+        {},
+        {
+          removeOnComplete: true,
+          removeOnFail: {
+            count: 3,
+          },
+          repeat: {
+            every: config.erc20.millisecondRepeatJob,
+          },
+        }
+      );
+      await this.createJob(
+        BULL_JOB_NAME.HANDLE_ERC20_BALANCE,
+        BULL_JOB_NAME.HANDLE_ERC20_BALANCE,
+        {},
+        {
+          removeOnComplete: true,
+          removeOnFail: {
+            count: 3,
+          },
+          repeat: {
+            every: config.erc20.millisecondRepeatJob,
+          },
+        }
+      );
+    }
     return super._start();
   }
 }
