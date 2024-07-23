@@ -1,10 +1,8 @@
-import { QueryModuleAccountByNameResponseSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/auth/v1beta1/query';
 import { Knex } from 'knex';
 import _, { Dictionary } from 'lodash';
 import Moleculer from 'moleculer';
 import { decodeAbiParameters, keccak256, toHex } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
-import { getLcdClient } from '../../common';
 import knex from '../../common/utils/db_connection';
 import { Erc20Activity, Event, EventAttribute, EvmEvent } from '../../models';
 import { AccountBalance } from '../../models/account_balance';
@@ -162,14 +160,7 @@ export class Erc20Handler {
     let erc20CosmosEvents: Event[] = [];
     if (config.evmOnly === false) {
       if (!this.erc20ModuleAccount) {
-        const lcdClient = await getLcdClient();
-        const erc20Account: QueryModuleAccountByNameResponseSDKType =
-          await lcdClient.provider.cosmos.auth.v1beta1.moduleAccountByName({
-            name: 'erc20',
-          });
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        this.erc20ModuleAccount = erc20Account.account.base_account.address;
+        throw new Error('erc20 module account undefined');
       }
       erc20CosmosEvents = await Event.query()
         .transacting(trx)
