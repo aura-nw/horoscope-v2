@@ -185,7 +185,7 @@ export default class Erc20Service extends BullableService {
   async reindexErc20(_payload: { address: `0x${string}` }): Promise<void> {
     const { address } = _payload;
     const erc20Reindexer = new Erc20Reindexer(this.viemClient, this.logger);
-    await erc20Reindexer.reindex(address);
+    await erc20Reindexer.reindex(address.toLowerCase() as `0x${string}`);
     this.logger.info(`Reindex erc20 contract ${address} done.`);
   }
 
