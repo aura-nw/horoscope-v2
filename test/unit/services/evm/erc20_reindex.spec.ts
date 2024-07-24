@@ -148,7 +148,8 @@ export default class Erc20ReindexTest {
   @Test('test reindex')
   async testReindex() {
     const viemClient = getViemClient();
-    Erc20Handler.erc20ModuleAccount = '0x0000000000000dfd';
+    Erc20Handler.erc20ModuleAccount =
+      'aura16st9fmex8xjdahwzwxldhjm2ssu6utw8rnxlkj';
     jest.spyOn(viemClient, 'getBlockNumber').mockResolvedValue(BigInt(123456));
     // Instantiate Erc20Reindexer with the mock
     const reindexer = new Erc20Reindexer(viemClient, this.broker.logger);

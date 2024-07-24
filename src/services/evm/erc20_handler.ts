@@ -3,7 +3,7 @@ import _, { Dictionary } from 'lodash';
 import Moleculer from 'moleculer';
 import { decodeAbiParameters, keccak256, toHex } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
-import knex, { batchUpdate } from '../../common/utils/db_connection';
+import knex from '../../common/utils/db_connection';
 import {
   Erc20Activity,
   Erc20Contract,
@@ -130,11 +130,12 @@ export class Erc20Handler {
         this.erc20Contracts[erc20Activity.erc20_contract_address];
       if (
         erc20Contract &&
-        erc20Contract.last_updated_height <= erc20Activity.height
+        erc20Contract.last_updated_height <= erc20Activity.height &&
+        erc20Contract.total_supply !== null
       ) {
         // update total supply
         erc20Contract.total_supply = (
-          BigInt(erc20Contract.total_supply || 0) + BigInt(erc20Activity.amount)
+          BigInt(erc20Contract.total_supply) + BigInt(erc20Activity.amount)
         ).toString();
         // update last updated height
         erc20Contract.last_updated_height = erc20Activity.height;
@@ -168,11 +169,12 @@ export class Erc20Handler {
         this.erc20Contracts[erc20Activity.erc20_contract_address];
       if (
         erc20Contract &&
-        erc20Contract.last_updated_height <= erc20Activity.height
+        erc20Contract.last_updated_height <= erc20Activity.height &&
+        erc20Contract.total_supply !== null
       ) {
         // update total supply
         erc20Contract.total_supply = (
-          BigInt(erc20Contract.total_supply || 0) - BigInt(erc20Activity.amount)
+          BigInt(erc20Contract.total_supply) - BigInt(erc20Activity.amount)
         ).toString();
         // update last updated height
         erc20Contract.last_updated_height = erc20Activity.height;
@@ -342,10 +344,11 @@ export class Erc20Handler {
       erc20Handler.process();
       const updatedErc20Contracts = Object.values(erc20Handler.erc20Contracts);
       if (updatedErc20Contracts.length > 0) {
-        await batchUpdate(trx, Erc20Contract.tableName, updatedErc20Contracts, [
-          'last_updated_height',
-          'total_supply',
-        ]);
+        await Erc20Contract.query()
+          .transacting(trx)
+          .insert(updatedErc20Contracts)
+          .onConflict(['id'])
+          .merge();
       }
       const updatedAccountBalances = Object.values(
         erc20Handler.accountBalances
