@@ -207,18 +207,10 @@ export class Erc20Handler {
         logger
       );
       if (activity) {
-        const index = erc20Activities.findIndex(
-          (e) => e.height > activity.height
-        );
-        // sort activity
-        if (index === -1) {
-          erc20Activities.splice(erc20Activities.length, 0, activity);
-        } else {
-          erc20Activities.splice(index, 0, activity);
-        }
+        erc20Activities.push(activity);
       }
     });
-    return erc20Activities;
+    return _.sortBy(erc20Activities, 'cosmos_tx_id');
   }
 
   static async getErc20Activities(

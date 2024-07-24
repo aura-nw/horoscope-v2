@@ -322,7 +322,7 @@ export default class Erc20HandlerTest {
       gas_wanted: '2456353',
       hash: '1406F9DDCE529F0E6EB32E07A88E5BC4EE220D3A2AB6D57E89DD12EB1945CC19',
       height: blockHeight,
-      id: 505671,
+      id: evmTransaction.id,
       index: 0,
       memo: 'memo',
       timestamp: '2024-07-15T17:08:43.386+07:00',
@@ -432,7 +432,7 @@ export default class Erc20HandlerTest {
         tx_hash:
           '0x8a82a0c8848487d716f10a91f0aefb0526d35bd0f489166cc5141718a4d8aa64',
         topic3: null,
-        tx_id: evmTransaction.id,
+        tx_id: evmTransaction.id - 1,
         tx_index: 0,
       }),
       // transfer event
@@ -454,7 +454,7 @@ export default class Erc20HandlerTest {
         tx_hash:
           '0x8a82a0c8848487d716f10a91f0aefb0526d35bd0f489166cc5141718a4d8aa64',
         topic3: null,
-        tx_id: evmTransaction.id,
+        tx_id: evmTransaction.id + 1,
         tx_index: 0,
       }),
     ];
