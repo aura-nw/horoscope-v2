@@ -179,7 +179,8 @@ export class Erc20Handler {
               .whereIn(knex.raw('lower("value")'), addresses);
           }
         })
-        .withGraphFetched('[transaction, attributes]');
+        .withGraphFetched('[transaction, attributes]')
+        .orderBy('event.id', 'asc');
     }
     erc20Events.forEach((e) => {
       if (e.topic0 === ERC20_EVENT_TOPIC0.TRANSFER) {
@@ -206,7 +207,15 @@ export class Erc20Handler {
         logger
       );
       if (activity) {
-        erc20Activities.push(activity);
+        const index = erc20Activities.findIndex(
+          (e) => e.height > activity.height
+        );
+        // sort activity
+        if (index === -1) {
+          erc20Activities.splice(erc20Activities.length, 0, activity);
+        } else {
+          erc20Activities.splice(index, 0, activity);
+        }
       }
     });
     return erc20Activities;
@@ -311,6 +320,7 @@ export class Erc20Handler {
         height: e.block_height,
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
+        cosmos_tx_id: e.tx_id,
       });
     } catch (e) {
       logger.error(e);
@@ -411,6 +421,7 @@ export class Erc20Handler {
         height: e.block_height,
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
+        cosmos_tx_id: e.tx_id,
       });
     } catch (e) {
       logger.error(e);
@@ -453,6 +464,7 @@ export class Erc20Handler {
         height: e.block_height,
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
+        cosmos_tx_id: e.tx_id,
       });
     } catch (e) {
       logger.error(e);
@@ -480,6 +492,7 @@ export class Erc20Handler {
         height: e.block_height,
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
+        cosmos_tx_id: e.tx_id,
       });
     } catch (e) {
       logger.error(e);
