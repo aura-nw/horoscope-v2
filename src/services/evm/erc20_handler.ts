@@ -3,8 +3,14 @@ import _, { Dictionary } from 'lodash';
 import Moleculer from 'moleculer';
 import { decodeAbiParameters, keccak256, toHex } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
-import knex from '../../common/utils/db_connection';
-import { Erc20Activity, Event, EventAttribute, EvmEvent } from '../../models';
+import knex, { batchUpdate } from '../../common/utils/db_connection';
+import {
+  Erc20Activity,
+  Erc20Contract,
+  Event,
+  EventAttribute,
+  EvmEvent,
+} from '../../models';
 import { AccountBalance } from '../../models/account_balance';
 import { ZERO_ADDRESS } from './constant';
 import { convertBech32AddressToEthAddress } from './utils';
@@ -56,14 +62,30 @@ export class Erc20Handler {
 
   erc20Activities: Erc20Activity[];
 
+  erc20Contracts: Dictionary<Erc20Contract>;
+
+  factoryAccounts: string[];
+
   static erc20ModuleAccount: any;
 
   constructor(
     accountBalances: Dictionary<AccountBalance>,
-    erc20Activities: Erc20Activity[]
+    erc20Activities: Erc20Activity[],
+    erc20Contracts: Dictionary<Erc20Contract>
   ) {
     this.accountBalances = accountBalances;
     this.erc20Activities = erc20Activities;
+    this.erc20Contracts = erc20Contracts;
+    this.factoryAccounts = [ZERO_ADDRESS];
+    if (Erc20Handler.erc20ModuleAccount) {
+      this.factoryAccounts.push(
+        // convert to evm address
+        convertBech32AddressToEthAddress(
+          config.networkPrefixAddress,
+          Erc20Handler.erc20ModuleAccount
+        ).toLowerCase()
+      );
+    }
   }
 
   process() {
@@ -82,7 +104,7 @@ export class Erc20Handler {
 
   handlerErc20Transfer(erc20Activity: Erc20Activity) {
     // update from account balance if from != ZERO_ADDRESS
-    if (erc20Activity.from !== ZERO_ADDRESS) {
+    if (!this.factoryAccounts.includes(erc20Activity.from)) {
       const fromAccountId = erc20Activity.from_account_id;
       const key = `${fromAccountId}_${erc20Activity.erc20_contract_address}`;
       const fromAccountBalance = this.accountBalances[key];
@@ -103,27 +125,58 @@ export class Erc20Handler {
           type: AccountBalance.TYPE.ERC20_TOKEN,
         });
       }
+    } else {
+      const erc20Contract: Erc20Contract =
+        this.erc20Contracts[erc20Activity.erc20_contract_address];
+      if (
+        erc20Contract &&
+        erc20Contract.last_updated_height <= erc20Activity.height
+      ) {
+        // update total supply
+        erc20Contract.total_supply = (
+          BigInt(erc20Contract.total_supply || 0) + BigInt(erc20Activity.amount)
+        ).toString();
+        // update last updated height
+        erc20Contract.last_updated_height = erc20Activity.height;
+      }
     }
-    // update to account balance
-    const toAccountId = erc20Activity.to_account_id;
-    const key = `${toAccountId}_${erc20Activity.erc20_contract_address}`;
-    const toAccountBalance = this.accountBalances[key];
-    if (
-      !toAccountBalance ||
-      toAccountBalance.last_updated_height <= erc20Activity.height
-    ) {
-      // calculate new balance: increase balance of to account
-      const amount = (
-        BigInt(toAccountBalance?.amount || 0) + BigInt(erc20Activity.amount)
-      ).toString();
-      // update object accountBalance
-      this.accountBalances[key] = AccountBalance.fromJson({
-        denom: erc20Activity.erc20_contract_address,
-        amount,
-        last_updated_height: erc20Activity.height,
-        account_id: toAccountId,
-        type: AccountBalance.TYPE.ERC20_TOKEN,
-      });
+    // update from account balance if to != ZERO_ADDRESS
+    if (!this.factoryAccounts.includes(erc20Activity.to)) {
+      // update to account balance
+      const toAccountId = erc20Activity.to_account_id;
+      const key = `${toAccountId}_${erc20Activity.erc20_contract_address}`;
+      const toAccountBalance = this.accountBalances[key];
+      if (
+        !toAccountBalance ||
+        toAccountBalance.last_updated_height <= erc20Activity.height
+      ) {
+        // calculate new balance: increase balance of to account
+        const amount = (
+          BigInt(toAccountBalance?.amount || 0) + BigInt(erc20Activity.amount)
+        ).toString();
+        // update object accountBalance
+        this.accountBalances[key] = AccountBalance.fromJson({
+          denom: erc20Activity.erc20_contract_address,
+          amount,
+          last_updated_height: erc20Activity.height,
+          account_id: toAccountId,
+          type: AccountBalance.TYPE.ERC20_TOKEN,
+        });
+      }
+    } else {
+      const erc20Contract: Erc20Contract =
+        this.erc20Contracts[erc20Activity.erc20_contract_address];
+      if (
+        erc20Contract &&
+        erc20Contract.last_updated_height <= erc20Activity.height
+      ) {
+        // update total supply
+        erc20Contract.total_supply = (
+          BigInt(erc20Contract.total_supply || 0) - BigInt(erc20Activity.amount)
+        ).toString();
+        // update last updated height
+        erc20Contract.last_updated_height = erc20Activity.height;
+      }
     }
   }
 
@@ -271,9 +324,29 @@ export class Erc20Handler {
           ),
         (o) => `${o.account_id}_${o.denom}`
       );
+      const erc20Contracts = _.keyBy(
+        await Erc20Contract.query()
+          .transacting(trx)
+          .whereIn(
+            'address',
+            erc20Activities.map((e) => e.erc20_contract_address)
+          ),
+        'address'
+      );
       // construct cw721 handler object
-      const erc20Handler = new Erc20Handler(accountBalances, erc20Activities);
+      const erc20Handler = new Erc20Handler(
+        accountBalances,
+        erc20Activities,
+        erc20Contracts
+      );
       erc20Handler.process();
+      const updatedErc20Contracts = Object.values(erc20Handler.erc20Contracts);
+      if (updatedErc20Contracts.length > 0) {
+        await batchUpdate(trx, Erc20Contract.tableName, updatedErc20Contracts, [
+          'last_updated_height',
+          'total_supply',
+        ]);
+      }
       const updatedAccountBalances = Object.values(
         erc20Handler.accountBalances
       );

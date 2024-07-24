@@ -562,6 +562,7 @@ export default class Erc20HandlerTest {
   async testHandlerErc20Transfer() {
     const fromAmount = '4424242424';
     const toAmount = '1123342';
+    const totalSupply = '123654';
     const erc20Activity = Erc20Activity.fromJson({
       evm_event_id: 1,
       sender: '0x7c756Cba10Ff2C65016494E8BA37C12a108572b5',
@@ -593,7 +594,19 @@ export default class Erc20HandlerTest {
         last_updated_height: 1,
       }),
     };
-    const erc20Handler = new Erc20Handler(accountBalances, []);
+    const erc20Contracts = {
+      [erc20Activity.erc20_contract_address]: Erc20Contract.fromJson({
+        evm_smart_contract_id: 1,
+        total_supply: totalSupply,
+        symbol: 'ALPHA',
+        address: erc20Activity.erc20_contract_address,
+        decimal: '20',
+        name: 'Alpha Grand Wolf',
+        track: true,
+        last_updated_height: 1,
+      }),
+    };
+    const erc20Handler = new Erc20Handler(accountBalances, [], erc20Contracts);
     erc20Handler.handlerErc20Transfer(erc20Activity);
     expect(erc20Handler.accountBalances[fromKey]).toMatchObject({
       denom: erc20Activity.erc20_contract_address,
@@ -603,11 +616,15 @@ export default class Erc20HandlerTest {
       denom: erc20Activity.erc20_contract_address,
       amount: (BigInt(erc20Activity.amount) + BigInt(toAmount)).toString(),
     });
+    expect(
+      erc20Contracts[erc20Activity.erc20_contract_address].total_supply
+    ).toEqual(totalSupply);
   }
 
   @Test('test handlerErc20Transfer when from is zero')
   async testHandlerErc20TransferWhenFromIsZero() {
     const toAmount = '242423234';
+    const totalSupply = '123654';
     const erc20Activity = Erc20Activity.fromJson({
       evm_event_id: 1,
       sender: '0x7c756Cba10Ff2C65016494E8BA37C12a108572b5',
@@ -623,6 +640,18 @@ export default class Erc20HandlerTest {
       from_account_id: 123,
       to_account_id: 234,
     });
+    const erc20Contracts = {
+      [erc20Activity.erc20_contract_address]: Erc20Contract.fromJson({
+        evm_smart_contract_id: 1,
+        total_supply: totalSupply,
+        symbol: 'ALPHA',
+        address: erc20Activity.erc20_contract_address,
+        decimal: '20',
+        name: 'Alpha Grand Wolf',
+        track: true,
+        last_updated_height: 1,
+      }),
+    };
     const [fromKey, toKey] = [
       `${erc20Activity.from_account_id}_${erc20Activity.erc20_contract_address}`,
       `${erc20Activity.to_account_id}_${erc20Activity.erc20_contract_address}`,
@@ -634,19 +663,77 @@ export default class Erc20HandlerTest {
         last_updated_height: 1,
       }),
     };
-    const erc20Handler = new Erc20Handler(accountBalances, []);
+    const erc20Handler = new Erc20Handler(accountBalances, [], erc20Contracts);
     erc20Handler.handlerErc20Transfer(erc20Activity);
     expect(erc20Handler.accountBalances[fromKey]).toBeUndefined();
     expect(erc20Handler.accountBalances[toKey]).toMatchObject({
       denom: erc20Activity.erc20_contract_address,
       amount: (BigInt(erc20Activity.amount) + BigInt(toAmount)).toString(),
     });
+    expect(
+      erc20Contracts[erc20Activity.erc20_contract_address].total_supply
+    ).toEqual((BigInt(totalSupply) + BigInt(erc20Activity.amount)).toString());
+  }
+
+  @Test('test handlerErc20Transfer when to is zero')
+  async testHandlerErc20TransferWhenToIsZero() {
+    const balance = '242423234';
+    const erc20Activity = Erc20Activity.fromJson({
+      evm_event_id: 1,
+      sender: '0x7c756Cba10Ff2C65016494E8BA37C12a108572b5',
+      action: ERC20_ACTION.TRANSFER,
+      erc20_contract_address: '0x98605ae21dd3be686337a6d7a8f156d0d8baee92',
+      amount: '12345222',
+      from: '0xD83E708D7FE0E769Af80d990f9241458734808Ac',
+      to: ZERO_ADDRESS,
+      height: 10000,
+      tx_hash:
+        '0xb97228e533e3af1323d873c9c3e4c0a9b85d95ecd8e98110c8890c9453d2f077',
+      evm_tx_id: 1,
+      from_account_id: 123,
+      to_account_id: 234,
+    });
+    const [fromKey, toKey] = [
+      `${erc20Activity.from_account_id}_${erc20Activity.erc20_contract_address}`,
+      `${erc20Activity.to_account_id}_${erc20Activity.erc20_contract_address}`,
+    ];
+    const accountBalances: Dictionary<AccountBalance> = {
+      [fromKey]: AccountBalance.fromJson({
+        denom: erc20Activity.erc20_contract_address,
+        amount: balance,
+        last_updated_height: 1,
+      }),
+    };
+    const totalSupply = '123654';
+    const erc20Contracts = {
+      [erc20Activity.erc20_contract_address]: Erc20Contract.fromJson({
+        evm_smart_contract_id: 1,
+        total_supply: totalSupply,
+        symbol: 'ALPHA',
+        address: erc20Activity.erc20_contract_address,
+        decimal: '20',
+        name: 'Alpha Grand Wolf',
+        track: true,
+        last_updated_height: 1,
+      }),
+    };
+    const erc20Handler = new Erc20Handler(accountBalances, [], erc20Contracts);
+    erc20Handler.handlerErc20Transfer(erc20Activity);
+    expect(erc20Handler.accountBalances[fromKey]).toMatchObject({
+      denom: erc20Activity.erc20_contract_address,
+      amount: (BigInt(balance) - BigInt(erc20Activity.amount)).toString(),
+    });
+    expect(erc20Handler.accountBalances[toKey]).toBeUndefined();
+    expect(
+      erc20Contracts[erc20Activity.erc20_contract_address].total_supply
+    ).toEqual((BigInt(totalSupply) - BigInt(erc20Activity.amount)).toString());
   }
 
   @Test('test handlerErc20Transfer when last_updated_height not suitable')
   async testHandlerErc20TransferWhenNotHeight() {
     const fromAmount = '23442423';
     const toAmount = '32323232';
+    const totalSupply = '123456';
     const erc20Activity = Erc20Activity.fromJson({
       evm_event_id: 1,
       sender: '0x7c756Cba10Ff2C65016494E8BA37C12a108572b5',
@@ -662,6 +749,18 @@ export default class Erc20HandlerTest {
       from_account_id: 123,
       to_account_id: 234,
     });
+    const erc20Contracts = {
+      [erc20Activity.erc20_contract_address]: Erc20Contract.fromJson({
+        evm_smart_contract_id: 1,
+        total_supply: totalSupply,
+        symbol: 'ALPHA',
+        address: erc20Activity.erc20_contract_address,
+        decimal: '20',
+        name: 'Alpha Grand Wolf',
+        track: true,
+        last_updated_height: 1,
+      }),
+    };
     const [fromKey, toKey] = [
       `${erc20Activity.from_account_id}_${erc20Activity.erc20_contract_address}`,
       `${erc20Activity.to_account_id}_${erc20Activity.erc20_contract_address}`,
@@ -678,7 +777,7 @@ export default class Erc20HandlerTest {
         last_updated_height: 1,
       }),
     };
-    const erc20Handler = new Erc20Handler(accountBalances, []);
+    const erc20Handler = new Erc20Handler(accountBalances, [], erc20Contracts);
     erc20Handler.handlerErc20Transfer(erc20Activity);
     expect(erc20Handler.accountBalances[fromKey]).toMatchObject({
       denom: erc20Activity.erc20_contract_address,
@@ -688,5 +787,48 @@ export default class Erc20HandlerTest {
       denom: erc20Activity.erc20_contract_address,
       amount: (BigInt(erc20Activity.amount) + BigInt(toAmount)).toString(),
     });
+    expect(
+      erc20Contracts[erc20Activity.erc20_contract_address].total_supply
+    ).toEqual(totalSupply);
+  }
+
+  @Test('test handlerErc20Transfer when from/to is erc20 module account')
+  async testHandlerErc20TransferWhenToIsErc20ModuleAccount() {
+    const erc20Activity = Erc20Activity.fromJson({
+      evm_event_id: 1,
+      sender: '0x7c756Cba10Ff2C65016494E8BA37C12a108572b5',
+      action: ERC20_ACTION.TRANSFER,
+      erc20_contract_address: '0x98605ae21dd3be686337a6d7a8f156d0d8baee92',
+      amount: '12345222',
+      from: '0xD83E708D7FE0E769Af80d990f9241458734808Ac',
+      to: convertBech32AddressToEthAddress(
+        config.networkPrefixAddress,
+        erc20ModuleAccount
+      ).toLowerCase(),
+      height: 10000,
+      tx_hash:
+        '0xb97228e533e3af1323d873c9c3e4c0a9b85d95ecd8e98110c8890c9453d2f077',
+      evm_tx_id: 1,
+      from_account_id: 123,
+      to_account_id: 234,
+    });
+    const totalSupply = '123654';
+    const erc20Contracts = {
+      [erc20Activity.erc20_contract_address]: Erc20Contract.fromJson({
+        evm_smart_contract_id: 1,
+        total_supply: totalSupply,
+        symbol: 'ALPHA',
+        address: erc20Activity.erc20_contract_address,
+        decimal: '20',
+        name: 'Alpha Grand Wolf',
+        track: true,
+        last_updated_height: 1,
+      }),
+    };
+    const erc20Handler = new Erc20Handler({}, [], erc20Contracts);
+    erc20Handler.handlerErc20Transfer(erc20Activity);
+    expect(
+      erc20Contracts[erc20Activity.erc20_contract_address].total_supply
+    ).toEqual((BigInt(totalSupply) - BigInt(erc20Activity.amount)).toString());
   }
 }
