@@ -64,10 +64,6 @@ export class Erc20Handler {
 
   erc20Contracts: Dictionary<Erc20Contract>;
 
-  factoryAccounts: string[];
-
-  static erc20ModuleAccount: any;
-
   constructor(
     accountBalances: Dictionary<AccountBalance>,
     erc20Activities: Erc20Activity[],
@@ -76,16 +72,6 @@ export class Erc20Handler {
     this.accountBalances = accountBalances;
     this.erc20Activities = erc20Activities;
     this.erc20Contracts = erc20Contracts;
-    this.factoryAccounts = [ZERO_ADDRESS];
-    if (Erc20Handler.erc20ModuleAccount) {
-      this.factoryAccounts.push(
-        // convert to evm address
-        convertBech32AddressToEthAddress(
-          config.networkPrefixAddress,
-          Erc20Handler.erc20ModuleAccount
-        ).toLowerCase()
-      );
-    }
   }
 
   process() {
@@ -104,7 +90,7 @@ export class Erc20Handler {
 
   handlerErc20Transfer(erc20Activity: Erc20Activity) {
     // update from account balance if from != ZERO_ADDRESS
-    if (!this.factoryAccounts.includes(erc20Activity.from)) {
+    if (erc20Activity.from !== ZERO_ADDRESS) {
       const fromAccountId = erc20Activity.from_account_id;
       const key = `${fromAccountId}_${erc20Activity.erc20_contract_address}`;
       const fromAccountBalance = this.accountBalances[key];
@@ -142,7 +128,7 @@ export class Erc20Handler {
       }
     }
     // update from account balance if to != ZERO_ADDRESS
-    if (!this.factoryAccounts.includes(erc20Activity.to)) {
+    if (erc20Activity.to !== ZERO_ADDRESS) {
       // update to account balance
       const toAccountId = erc20Activity.to_account_id;
       const key = `${toAccountId}_${erc20Activity.erc20_contract_address}`;
@@ -214,9 +200,6 @@ export class Erc20Handler {
       );
     let erc20CosmosEvents: Event[] = [];
     if (config.evmOnly === false) {
-      if (!this.erc20ModuleAccount) {
-        throw new Error('erc20 module account undefined');
-      }
       erc20CosmosEvents = await Event.query()
         .transacting(trx)
         .where('event.block_height', '>', startBlock)
@@ -257,7 +240,6 @@ export class Erc20Handler {
     erc20CosmosEvents.forEach((event) => {
       const activity = Erc20Handler.buildTransferActivityByCosmos(
         event,
-        this.erc20ModuleAccount,
         logger
       );
       if (activity) {
@@ -396,7 +378,6 @@ export class Erc20Handler {
 
   static buildTransferActivityByCosmos(
     e: Event,
-    erc20ModuleAccount: string,
     logger: Moleculer.LoggerInstance
   ): Erc20Activity | undefined {
     try {
@@ -428,15 +409,9 @@ export class Erc20Handler {
       );
       const sender = from;
       if (e.type === Event.EVENT_TYPE.CONVERT_COIN) {
-        from = convertBech32AddressToEthAddress(
-          config.networkPrefixAddress,
-          erc20ModuleAccount
-        ).toLowerCase();
+        from = ZERO_ADDRESS;
       } else if (e.type === Event.EVENT_TYPE.CONVERT_ERC20) {
-        to = convertBech32AddressToEthAddress(
-          config.networkPrefixAddress,
-          erc20ModuleAccount
-        ).toLowerCase();
+        to = ZERO_ADDRESS;
       }
       const amount = e.attributes.find(
         (attr) => attr.key === EventAttribute.ATTRIBUTE_KEY.AMOUNT

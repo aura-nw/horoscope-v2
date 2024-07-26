@@ -29,7 +29,6 @@ import {
   ERC20_ACTION,
   Erc20Handler,
 } from '../../../../src/services/evm/erc20_handler';
-import { convertBech32AddressToEthAddress } from '../../../../src/services/evm/utils';
 
 const evmTransaction = EVMTransaction.fromJson({
   id: 2931,
@@ -97,7 +96,6 @@ export default class Erc20HandlerTest {
       wrapSmartContract,
     ]);
     await Erc20Contract.query().insert([erc20Contract, erc20WrapContract]);
-    Erc20Handler.erc20ModuleAccount = erc20ModuleAccount;
   }
 
   @AfterAll()
@@ -422,10 +420,7 @@ export default class Erc20HandlerTest {
       // test convert coin activity
       const convertCoinActivity = erc20Activitites[0];
       expect(convertCoinActivity).toMatchObject({
-        from: convertBech32AddressToEthAddress(
-          config.networkPrefixAddress,
-          erc20ModuleAccount
-        ).toLowerCase(),
+        from: ZERO_ADDRESS,
         to,
         amount,
         action: ERC20_ACTION.TRANSFER,
@@ -436,10 +431,7 @@ export default class Erc20HandlerTest {
       const convertErc20Activity = erc20Activitites[1];
       expect(convertErc20Activity).toMatchObject({
         from,
-        to: convertBech32AddressToEthAddress(
-          config.networkPrefixAddress,
-          erc20ModuleAccount
-        ).toLowerCase(),
+        to: ZERO_ADDRESS,
         amount,
         action: ERC20_ACTION.TRANSFER,
         erc20_contract_address: erc20Contract.address,
@@ -801,10 +793,7 @@ export default class Erc20HandlerTest {
       erc20_contract_address: '0x98605ae21dd3be686337a6d7a8f156d0d8baee92',
       amount: '12345222',
       from: '0xD83E708D7FE0E769Af80d990f9241458734808Ac',
-      to: convertBech32AddressToEthAddress(
-        config.networkPrefixAddress,
-        erc20ModuleAccount
-      ).toLowerCase(),
+      to: ZERO_ADDRESS,
       height: 10000,
       tx_hash:
         '0xb97228e533e3af1323d873c9c3e4c0a9b85d95ecd8e98110c8890c9453d2f077',
