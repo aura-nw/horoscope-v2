@@ -69,5 +69,39 @@
     "databaseName": "sei_main_net",
     "redisDBNumber": 7,
     "moleculerNamespace": "namespace-sei-main-net"
+  },
+  {
+    "chainId": "ancient-8",
+    "RPC": [],
+    "LCD": [],
+    "databaseName": "local_ancient8",
+    "redisDBNumber": 4,
+    "moleculerNamespace": "namespace-ancient8",
+    "EVMJSONRPC": ["https://rpc.ancient8.gg"],
+    "EVMchainId": 888888888 
+  },
+  {
+    "chainId": "ancient-8-testnet",
+    "RPC": [],
+    "LCD": [],
+    "databaseName": "local_ancient8_testnet",
+    "redisDBNumber": 4,
+    "moleculerNamespace": "namespace-auratestnet",
+    "EVMJSONRPC": ["https://rpcv2-testnet.ancient8.gg"],
+    "EVMchainId": 28122024 
+  },
+  {
+    "chainId": "ethereum",
+    "EVMJSONRPC": ["https://eth-pokt.nodies.app"],
+    "RPC": [],
+    "LCD": [],
+    "EVMchainId": 1
+  },
+  {
+    "chainId": "sepolia",
+    "EVMJSONRPC": ["https://1rpc.io/sepolia"],
+    "RPC": [],
+    "LCD": [],
+    "EVMchainId": 11155111
   }
 ]
