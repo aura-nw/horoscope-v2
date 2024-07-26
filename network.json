@@ -69,5 +69,25 @@
     "databaseName": "sei_main_net",
     "redisDBNumber": 7,
     "moleculerNamespace": "namespace-sei-main-net"
+  },
+  {
+    "chainId": "ancient-8",
+    "RPC": ["https://rpc.dev.aura.network"],
+    "LCD": ["https://lcd.dev.aura.network"],
+    "databaseName": "horoscope_dev_ancient8",
+    "redisDBNumber": 4,
+    "moleculerNamespace": "namespace-auratestnet",
+    "EVMJSONRPC": ["https://rpc.ancient8.gg"],
+    "EVMchainId": 888888888 
+  },
+  {
+    "chainId": "ancient-8-testnet",
+    "RPC": ["https://rpc.dev.aura.network"],
+    "LCD": ["https://lcd.dev.aura.network"],
+    "databaseName": "horoscope_dev_ancient8_testnet",
+    "redisDBNumber": 4,
+    "moleculerNamespace": "namespace-auratestnet",
+    "EVMJSONRPC": ["https://rpcv2-testnet.ancient8.gg"],
+    "EVMchainId": 28122024 
   }
 ]
