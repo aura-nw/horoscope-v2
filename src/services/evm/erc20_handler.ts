@@ -89,36 +89,39 @@ export class Erc20Handler {
   }
 
   handlerErc20Transfer(erc20Activity: Erc20Activity) {
+    const erc20Contract: Erc20Contract =
+      this.erc20Contracts[erc20Activity.erc20_contract_address];
+    if (!erc20Contract) {
+      throw new Error(
+        `Erc20 contract not found:${  erc20Activity.erc20_contract_address}`
+      );
+    }
     // update from account balance if from != ZERO_ADDRESS
     if (erc20Activity.from !== ZERO_ADDRESS) {
       const fromAccountId = erc20Activity.from_account_id;
       const key = `${fromAccountId}_${erc20Activity.erc20_contract_address}`;
       const fromAccountBalance = this.accountBalances[key];
       if (
-        !fromAccountBalance ||
-        fromAccountBalance.last_updated_height <= erc20Activity.height
+        fromAccountBalance &&
+        erc20Activity.height < fromAccountBalance.last_updated_height
       ) {
-        // calculate new balance: decrease balance of from account
-        const amount = (
-          BigInt(fromAccountBalance?.amount || 0) - BigInt(erc20Activity.amount)
-        ).toString();
-        // update object accountBalance
-        this.accountBalances[key] = AccountBalance.fromJson({
-          denom: erc20Activity.erc20_contract_address,
-          amount,
-          last_updated_height: erc20Activity.height,
-          account_id: fromAccountId,
-          type: AccountBalance.TYPE.ERC20_TOKEN,
-        });
+        throw new Error(
+          `Process erc20 balance: fromAccountBalance ${erc20Activity.from} was updated`
+        );
       }
-    } else {
-      const erc20Contract: Erc20Contract =
-        this.erc20Contracts[erc20Activity.erc20_contract_address];
-      if (
-        erc20Contract &&
-        erc20Contract.last_updated_height <= erc20Activity.height &&
-        erc20Contract.total_supply !== null
-      ) {
+      // calculate new balance: decrease balance of from account
+      const amount = (
+        BigInt(fromAccountBalance?.amount || 0) - BigInt(erc20Activity.amount)
+      ).toString();
+      // update object accountBalance
+      this.accountBalances[key] = AccountBalance.fromJson({
+        denom: erc20Activity.erc20_contract_address,
+        amount,
+        last_updated_height: erc20Activity.height,
+        account_id: fromAccountId,
+        type: AccountBalance.TYPE.ERC20_TOKEN,
+      });
+    } else if (erc20Contract.total_supply !== null) {
         // update total supply
         erc20Contract.total_supply = (
           BigInt(erc20Contract.total_supply) + BigInt(erc20Activity.amount)
@@ -126,7 +129,6 @@ export class Erc20Handler {
         // update last updated height
         erc20Contract.last_updated_height = erc20Activity.height;
       }
-    }
     // update from account balance if to != ZERO_ADDRESS
     if (erc20Activity.to !== ZERO_ADDRESS) {
       // update to account balance
@@ -134,30 +136,26 @@ export class Erc20Handler {
       const key = `${toAccountId}_${erc20Activity.erc20_contract_address}`;
       const toAccountBalance = this.accountBalances[key];
       if (
-        !toAccountBalance ||
-        toAccountBalance.last_updated_height <= erc20Activity.height
+        toAccountBalance &&
+        erc20Activity.height < toAccountBalance.last_updated_height
       ) {
-        // calculate new balance: increase balance of to account
-        const amount = (
-          BigInt(toAccountBalance?.amount || 0) + BigInt(erc20Activity.amount)
-        ).toString();
-        // update object accountBalance
-        this.accountBalances[key] = AccountBalance.fromJson({
-          denom: erc20Activity.erc20_contract_address,
-          amount,
-          last_updated_height: erc20Activity.height,
-          account_id: toAccountId,
-          type: AccountBalance.TYPE.ERC20_TOKEN,
-        });
+        throw new Error(
+          `Process erc20 balance: toAccountBalance ${erc20Activity.to} was updated`
+        );
       }
-    } else {
-      const erc20Contract: Erc20Contract =
-        this.erc20Contracts[erc20Activity.erc20_contract_address];
-      if (
-        erc20Contract &&
-        erc20Contract.last_updated_height <= erc20Activity.height &&
-        erc20Contract.total_supply !== null
-      ) {
+      // calculate new balance: increase balance of to account
+      const amount = (
+        BigInt(toAccountBalance?.amount || 0) + BigInt(erc20Activity.amount)
+      ).toString();
+      // update object accountBalance
+      this.accountBalances[key] = AccountBalance.fromJson({
+        denom: erc20Activity.erc20_contract_address,
+        amount,
+        last_updated_height: erc20Activity.height,
+        account_id: toAccountId,
+        type: AccountBalance.TYPE.ERC20_TOKEN,
+      });
+    } else if (erc20Contract.total_supply !== null) {
         // update total supply
         erc20Contract.total_supply = (
           BigInt(erc20Contract.total_supply) - BigInt(erc20Activity.amount)
@@ -165,7 +163,6 @@ export class Erc20Handler {
         // update last updated height
         erc20Contract.last_updated_height = erc20Activity.height;
       }
-    }
   }
 
   static async buildErc20Activities(

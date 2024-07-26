@@ -770,18 +770,9 @@ export default class Erc20HandlerTest {
       }),
     };
     const erc20Handler = new Erc20Handler(accountBalances, [], erc20Contracts);
-    erc20Handler.handlerErc20Transfer(erc20Activity);
-    expect(erc20Handler.accountBalances[fromKey]).toMatchObject({
-      denom: erc20Activity.erc20_contract_address,
-      amount: fromAmount,
-    });
-    expect(erc20Handler.accountBalances[toKey]).toMatchObject({
-      denom: erc20Activity.erc20_contract_address,
-      amount: (BigInt(erc20Activity.amount) + BigInt(toAmount)).toString(),
-    });
-    expect(
-      erc20Contracts[erc20Activity.erc20_contract_address].total_supply
-    ).toEqual(totalSupply);
+    expect(() => erc20Handler.handlerErc20Transfer(erc20Activity)).toThrow(
+      `Process erc20 balance: fromAccountBalance ${erc20Activity.from} was updated`
+    );
   }
 
   @Test('test handlerErc20Transfer when from/to is erc20 module account')
