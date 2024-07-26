@@ -89,5 +89,19 @@
     "moleculerNamespace": "namespace-auratestnet",
     "EVMJSONRPC": ["https://rpcv2-testnet.ancient8.gg"],
     "EVMchainId": 28122024 
+  },
+  {
+    "chainId": "ethereum",
+    "EVMJSONRPC": ["https://eth-pokt.nodies.app"],
+    "RPC": [],
+    "LCD": [],
+    "EVMchainId": 1
+  },
+  {
+    "chainId": "sepolia",
+    "EVMJSONRPC": ["https://1rpc.io/sepolia"],
+    "RPC": [],
+    "LCD": [],
+    "EVMchainId": 11155111
   }
 ]
