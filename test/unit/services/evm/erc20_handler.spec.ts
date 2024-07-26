@@ -322,13 +322,13 @@ export default class Erc20HandlerTest {
       gas_wanted: '2456353',
       hash: '1406F9DDCE529F0E6EB32E07A88E5BC4EE220D3A2AB6D57E89DD12EB1945CC19',
       height: blockHeight,
-      id: 505671,
+      id: evmTransaction.id,
       index: 0,
       memo: 'memo',
       timestamp: '2024-07-15T17:08:43.386+07:00',
       events: [
         {
-          id: 2,
+          id: 3,
           tx_msg_index: 0,
           type: Event.EVENT_TYPE.CONVERT_COIN,
           source: 'TX_EVENT',
@@ -369,7 +369,7 @@ export default class Erc20HandlerTest {
           ],
         },
         {
-          id: 3,
+          id: 2,
           tx_msg_index: 1,
           type: Event.EVENT_TYPE.CONVERT_ERC20,
           source: 'TX_EVENT',
@@ -412,15 +412,62 @@ export default class Erc20HandlerTest {
       ],
     });
     await Transaction.query().insertGraph(transaction);
+    const evmEvents = [
+      // transfer event
+      EvmEvent.fromJson({
+        id: 1,
+        address: erc20Contract.address,
+        block_hash:
+          '0xed6a2d3c3ac9a2868420c4fdd67240d2d96298fc4272cd31455cd0cdaabf9093',
+        block_height: blockHeight - 1,
+        data: fromHex(
+          encodeAbiParameters([ABI_TRANSFER_PARAMS.VALUE], [amount]),
+          'bytes'
+        ),
+        evm_tx_id: evmTransaction.id,
+        topic0:
+          '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+        topic1: encodeAbiParameters([ABI_TRANSFER_PARAMS.FROM], [from]),
+        topic2: encodeAbiParameters([ABI_TRANSFER_PARAMS.TO], [to]),
+        tx_hash:
+          '0x8a82a0c8848487d716f10a91f0aefb0526d35bd0f489166cc5141718a4d8aa64',
+        topic3: null,
+        tx_id: evmTransaction.id - 1,
+        tx_index: 0,
+      }),
+      // transfer event
+      EvmEvent.fromJson({
+        id: 2,
+        address: erc20Contract.address,
+        block_hash:
+          '0xed6a2d3c3ac9a2868420c4fdd67240d2d96298fc4272cd31455cd0cdaabf9093',
+        block_height: blockHeight + 1,
+        data: fromHex(
+          encodeAbiParameters([ABI_TRANSFER_PARAMS.VALUE], [amount]),
+          'bytes'
+        ),
+        evm_tx_id: evmTransaction.id,
+        topic0:
+          '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+        topic1: encodeAbiParameters([ABI_TRANSFER_PARAMS.FROM], [from]),
+        topic2: encodeAbiParameters([ABI_TRANSFER_PARAMS.TO], [to]),
+        tx_hash:
+          '0x8a82a0c8848487d716f10a91f0aefb0526d35bd0f489166cc5141718a4d8aa64',
+        topic3: null,
+        tx_id: evmTransaction.id + 1,
+        tx_index: 0,
+      }),
+    ];
+    await EvmEvent.query().insert(evmEvents);
     await knex.transaction(async (trx) => {
       const erc20Activitites = await Erc20Handler.buildErc20Activities(
-        blockHeight - 1,
-        blockHeight,
+        blockHeight - 2,
+        blockHeight + 1,
         trx,
         this.broker.logger
       );
       // test convert coin activity
-      const convertCoinActivity = erc20Activitites[0];
+      const convertCoinActivity = erc20Activitites[2];
       expect(convertCoinActivity).toMatchObject({
         from: convertBech32AddressToEthAddress(
           config.networkPrefixAddress,
@@ -444,6 +491,27 @@ export default class Erc20HandlerTest {
         action: ERC20_ACTION.TRANSFER,
         erc20_contract_address: erc20Contract.address,
         cosmos_event_id: transaction.events[1].id,
+      });
+      // test sort order
+      const transferActivity1 = erc20Activitites[0];
+      expect(transferActivity1).toMatchObject({
+        action: ERC20_ACTION.TRANSFER,
+        erc20_contract_address: erc20Contract.address,
+        from,
+        to,
+        amount,
+        evm_tx_id: evmEvents[0].evm_tx_id,
+        cosmos_tx_id: evmEvents[0].tx_id,
+      });
+      const transferActivity2 = erc20Activitites[3];
+      expect(transferActivity2).toMatchObject({
+        action: ERC20_ACTION.TRANSFER,
+        erc20_contract_address: erc20Contract.address,
+        from,
+        to,
+        amount,
+        evm_tx_id: evmEvents[1].evm_tx_id,
+        cosmos_tx_id: evmEvents[1].tx_id,
       });
     });
   }

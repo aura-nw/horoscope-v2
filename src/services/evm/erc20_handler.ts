@@ -179,7 +179,8 @@ export class Erc20Handler {
               .whereIn(knex.raw('lower("value")'), addresses);
           }
         })
-        .withGraphFetched('[transaction, attributes]');
+        .withGraphFetched('[transaction, attributes]')
+        .orderBy('event.id', 'asc');
     }
     erc20Events.forEach((e) => {
       if (e.topic0 === ERC20_EVENT_TOPIC0.TRANSFER) {
@@ -209,7 +210,7 @@ export class Erc20Handler {
         erc20Activities.push(activity);
       }
     });
-    return erc20Activities;
+    return _.sortBy(erc20Activities, 'cosmos_tx_id');
   }
 
   static async getErc20Activities(
@@ -311,6 +312,7 @@ export class Erc20Handler {
         height: e.block_height,
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
+        cosmos_tx_id: e.tx_id,
       });
     } catch (e) {
       logger.error(e);
@@ -411,6 +413,7 @@ export class Erc20Handler {
         height: e.block_height,
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
+        cosmos_tx_id: e.tx_id,
       });
     } catch (e) {
       logger.error(e);
@@ -453,6 +456,7 @@ export class Erc20Handler {
         height: e.block_height,
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
+        cosmos_tx_id: e.tx_id,
       });
     } catch (e) {
       logger.error(e);
@@ -480,6 +484,7 @@ export class Erc20Handler {
         height: e.block_height,
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
+        cosmos_tx_id: e.tx_id,
       });
     } catch (e) {
       logger.error(e);
