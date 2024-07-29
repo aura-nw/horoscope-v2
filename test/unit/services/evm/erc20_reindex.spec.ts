@@ -13,10 +13,7 @@ import {
   EVMSmartContract,
   EVMTransaction,
 } from '../../../../src/models';
-import {
-  ABI_TRANSFER_PARAMS,
-  Erc20Handler,
-} from '../../../../src/services/evm/erc20_handler';
+import { ABI_TRANSFER_PARAMS } from '../../../../src/services/evm/erc20_handler';
 import { Erc20Reindexer } from '../../../../src/services/evm/erc20_reindex';
 
 const accounts = [
@@ -148,7 +145,6 @@ export default class Erc20ReindexTest {
   @Test('test reindex')
   async testReindex() {
     const viemClient = getViemClient();
-    Erc20Handler.erc20ModuleAccount = '0x0000000000000dfd';
     jest.spyOn(viemClient, 'getBlockNumber').mockResolvedValue(BigInt(123456));
     // Instantiate Erc20Reindexer with the mock
     const reindexer = new Erc20Reindexer(viemClient, this.broker.logger);
