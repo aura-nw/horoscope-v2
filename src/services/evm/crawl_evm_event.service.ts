@@ -31,7 +31,10 @@ export default class CrawlEvmEventJob extends BullableService {
     const [startBlock, endBlock, jobCheckpointUpdate] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.JOB_CRAWL_EVM_EVENT,
-        [BULL_JOB_NAME.HANDLE_TRANSACTION_EVM],
+        [
+          BULL_JOB_NAME.HANDLE_TRANSACTION_EVM,
+          BULL_JOB_NAME.EVM_CRAWL_INTERNAL_TX,
+        ],
         'jobCrawlEvmEvent'
       );
 
