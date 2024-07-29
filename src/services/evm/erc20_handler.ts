@@ -1,15 +1,17 @@
-import { decodeAbiParameters, keccak256, toHex } from 'viem';
-import Moleculer from 'moleculer';
 import { Dictionary } from 'lodash';
+import Moleculer from 'moleculer';
+import { decodeAbiParameters, keccak256, toHex } from 'viem';
+import config from '../../../config.json' assert { type: 'json' };
 import { Erc20Activity, Event, EventAttribute, EvmEvent } from '../../models';
 import { AccountBalance } from '../../models/account_balance';
 import { ZERO_ADDRESS } from './constant';
 import { convertBech32AddressToEthAddress } from './utils';
-import config from '../../../config.json' assert { type: 'json' };
 
 export const ERC20_ACTION = {
   TRANSFER: 'transfer',
   APPROVAL: 'approval',
+  DEPOSIT: 'deposit',
+  WITHDRAWAL: 'withdrawal',
 };
 export const ABI_TRANSFER_PARAMS = {
   FROM: {
@@ -42,6 +44,8 @@ export const ABI_APPROVAL_PARAMS = {
 export const ERC20_EVENT_TOPIC0 = {
   TRANSFER: keccak256(toHex('Transfer(address,address,uint256)')),
   APPROVAL: keccak256(toHex('Approval(address,address,uint256)')),
+  DEPOSIT: keccak256(toHex('Deposit(address,uint256)')),
+  WITHDRAWAL: keccak256(toHex('Withdrawal(address,uint256)')),
 };
 export class Erc20Handler {
   // key: {accountId}_{erc20ContractAddress}
@@ -60,7 +64,13 @@ export class Erc20Handler {
 
   process() {
     this.erc20Activities.forEach((erc20Activity) => {
-      if (erc20Activity.action === ERC20_ACTION.TRANSFER) {
+      if (
+        [
+          ERC20_ACTION.TRANSFER,
+          ERC20_ACTION.DEPOSIT,
+          ERC20_ACTION.WITHDRAWAL,
+        ].includes(erc20Activity.action)
+      ) {
         this.handlerErc20Transfer(erc20Activity);
       }
     });
@@ -113,7 +123,10 @@ export class Erc20Handler {
     }
   }
 
-  static buildTransferActivity(e: EvmEvent) {
+  static buildTransferActivity(
+    e: EvmEvent,
+    logger: Moleculer.LoggerInstance
+  ): Erc20Activity | undefined {
     try {
       const [from, to, amount] = decodeAbiParameters(
         [
@@ -135,7 +148,8 @@ export class Erc20Handler {
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
       });
-    } catch {
+    } catch (e) {
+      logger.error(e);
       return undefined;
     }
   }
@@ -209,7 +223,10 @@ export class Erc20Handler {
     }
   }
 
-  static buildApprovalActivity(e: EvmEvent) {
+  static buildApprovalActivity(
+    e: EvmEvent,
+    logger: Moleculer.LoggerInstance
+  ): Erc20Activity | undefined {
     try {
       const [from, to, amount] = decodeAbiParameters(
         [
@@ -231,7 +248,77 @@ export class Erc20Handler {
         tx_hash: e.tx_hash,
         evm_tx_id: e.evm_tx_id,
       });
-    } catch {
+    } catch (e) {
+      logger.error(e);
+      return undefined;
+    }
+  }
+
+  static buildWrapExtensionActivity(
+    e: EvmEvent,
+    logger: Moleculer.LoggerInstance
+  ): Erc20Activity | undefined {
+    if (e.topic0 === ERC20_EVENT_TOPIC0.DEPOSIT) {
+      const activity = Erc20Handler.buildWrapDepositActivity(e, logger);
+      return activity;
+    }
+    if (e.topic0 === ERC20_EVENT_TOPIC0.WITHDRAWAL) {
+      const activity = Erc20Handler.buildWrapWithdrawalActivity(e, logger);
+      return activity;
+    }
+    return undefined;
+  }
+
+  private static buildWrapDepositActivity(
+    e: EvmEvent,
+    logger: Moleculer.LoggerInstance
+  ): Erc20Activity | undefined {
+    try {
+      const [to, amount] = decodeAbiParameters(
+        [ABI_TRANSFER_PARAMS.TO, ABI_APPROVAL_PARAMS.VALUE],
+        (e.topic1 + toHex(e.data).slice(2)) as `0x${string}`
+      ) as [string, bigint];
+      return Erc20Activity.fromJson({
+        evm_event_id: e.id,
+        sender: e.sender,
+        action: ERC20_ACTION.DEPOSIT,
+        erc20_contract_address: e.address,
+        amount: amount.toString(),
+        from: ZERO_ADDRESS,
+        to: to.toLowerCase(),
+        height: e.block_height,
+        tx_hash: e.tx_hash,
+        evm_tx_id: e.evm_tx_id,
+      });
+    } catch (e) {
+      logger.error(e);
+      return undefined;
+    }
+  }
+
+  private static buildWrapWithdrawalActivity(
+    e: EvmEvent,
+    logger: Moleculer.LoggerInstance
+  ): Erc20Activity | undefined {
+    try {
+      const [from, amount] = decodeAbiParameters(
+        [ABI_TRANSFER_PARAMS.FROM, ABI_APPROVAL_PARAMS.VALUE],
+        (e.topic1 + toHex(e.data).slice(2)) as `0x${string}`
+      ) as [string, bigint];
+      return Erc20Activity.fromJson({
+        evm_event_id: e.id,
+        sender: e.sender,
+        action: ERC20_ACTION.WITHDRAWAL,
+        erc20_contract_address: e.address,
+        amount: amount.toString(),
+        from: from.toLowerCase(),
+        to: ZERO_ADDRESS,
+        height: e.block_height,
+        tx_hash: e.tx_hash,
+        evm_tx_id: e.evm_tx_id,
+      });
+    } catch (e) {
+      logger.error(e);
       return undefined;
     }
   }
