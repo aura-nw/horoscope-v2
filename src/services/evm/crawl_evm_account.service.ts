@@ -86,7 +86,7 @@ export default class CrawlEvmAccountService extends BullableService {
         .where('evm_transaction.height', '>', startBlock)
         .andWhere('evm_transaction.height', '<=', endBlock)
         .andWhere('evm_internal_transaction.error', null)
-        .select('from', 'to');
+        .select('evm_internal_transaction.from', 'evm_internal_transaction.to');
       participants.forEach((partcicipant) => {
         if (partcicipant.from !== ZERO_ADDRESS) {
           accountsAddress.add(partcicipant.from);
