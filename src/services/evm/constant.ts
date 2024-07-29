@@ -226,9 +226,6 @@ export const SERVICE = {
       key: 'HandleOptimismWithdrawalEVM',
       path: 'v1.HandleOptimismWithdrawalEVM',
     },
-    InsertOptimismContractVerification: {
-      key: 'InsertOptimismContractVerification',
-    },
   },
   V2: {
     EvmProxyService: {
@@ -286,7 +283,6 @@ export const BULL_JOB_NAME = {
     'crawl:optimism-withdrawal-event-on-l1',
   INSERT_VERIFY_BY_CODEHASH: 'job:insert-verify-by-codehash',
   HANDLE_SELF_DESTRUCT: 'handle:self-destruct',
-  INSERT_CONTRACT_VERIFICATION: 'job:insert-contract-verification',
 };
 
 export const MSG_TYPE = {
