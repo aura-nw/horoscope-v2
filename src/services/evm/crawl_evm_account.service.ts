@@ -16,6 +16,7 @@ import {
   Account,
   AccountBalance,
   BlockCheckpoint,
+  EvmInternalTransaction,
   EVMTransaction,
 } from '../../models';
 import { BULL_JOB_NAME, SERVICE, ZERO_ADDRESS } from './constant';
@@ -77,14 +78,32 @@ export default class CrawlEvmAccountService extends BullableService {
         .where('height', '>', startBlock)
         .where('height', '<=', endBlock)
         .orderBy('height', 'asc')
-        .select('from', 'to')
+        .select('from', 'to', 'contract_address as contractAddress')
         .transacting(trx);
+      const participantsFromInternal = await EvmInternalTransaction.query()
+        .transacting(trx)
+        .joinRelated('evm_transaction')
+        .where('evm_transaction.height', '>', startBlock)
+        .andWhere('evm_transaction.height', '<=', endBlock)
+        .andWhere('evm_internal_transaction.error', null)
+        .select('from', 'to');
       participants.forEach((partcicipant) => {
         if (partcicipant.from !== ZERO_ADDRESS) {
           accountsAddress.add(partcicipant.from);
         }
         if (partcicipant.to && partcicipant.to !== ZERO_ADDRESS) {
           accountsAddress.add(partcicipant.to);
+        }
+        if (partcicipant.contractAddress) {
+          accountsAddress.add(partcicipant.contractAddress);
+        }
+      });
+      participantsFromInternal.forEach((participant) => {
+        if (participant.from !== ZERO_ADDRESS) {
+          accountsAddress.add(participant.from);
+        }
+        if (participant.to && participant.to !== ZERO_ADDRESS) {
+          accountsAddress.add(participant.to);
         }
       });
       const [accountsInstances, height] = await this.getEvmAccountInstances(
