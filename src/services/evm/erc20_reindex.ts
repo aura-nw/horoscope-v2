@@ -59,7 +59,6 @@ export class Erc20Reindexer {
         contract.read.name().catch(() => Promise.resolve(undefined)),
         contract.read.symbol().catch(() => Promise.resolve(undefined)),
         contract.read.decimals().catch(() => Promise.resolve(undefined)),
-        contract.read.totalSupply().catch(() => Promise.resolve(undefined)),
       ]);
       await Erc20Contract.query()
         .insert(
@@ -68,7 +67,7 @@ export class Erc20Reindexer {
             address,
             symbol: contractInfo[1],
             name: contractInfo[0],
-            total_supply: contractInfo[3]?.toString(),
+            total_supply: '0',
             decimal: contractInfo[2],
             track: true,
             last_updated_height: Number(blockHeight),
