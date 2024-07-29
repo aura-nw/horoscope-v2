@@ -25,7 +25,8 @@ export async function insertContractVerification(_payload: {
     )
     .select('id', 'contract_address');
   if (foundContracts.length > 0) {
-    console.warn(`Found contracts in DB: ${JSON.stringify(foundContracts)}`);
+    console.error(`Found contracts in DB: ${JSON.stringify(foundContracts)}`);
+    return;
   }
   const foundContractByAddress = _.keyBy(foundContracts, 'contract_address');
   const newContracts = _payload.contracts.filter(
