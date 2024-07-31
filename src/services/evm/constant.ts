@@ -72,6 +72,10 @@ export const EIPProxyContractSupportByteCode = {
     SLOT: '7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3', // org.zeppelinos.proxy.implementation
     TYPE: EVMSmartContract.TYPES.PROXY_OPEN_ZEPPELIN_IMPLEMENTATION,
   },
+  EIP_1167_IMPLEMENTATION: {
+    SLOT: '363d3d373d3d3d363d73',
+    TYPE: EVMSmartContract.TYPES.PROXY_EIP_1167,
+  },
 };
 
 export const NULL_BYTE_CODE =
