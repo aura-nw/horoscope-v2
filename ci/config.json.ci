@@ -5,6 +5,7 @@
   "consensusPrefixAddress": "valcons",
   "validatorPrefixAddress": "valoper",
   "networkDenom": "utaura",
+  "evmOnly": false,
   "jobRetryAttempt": 5,
   "jobRetryBackoff": 1000,
   "crawlValidator": {
@@ -371,7 +372,8 @@
     "key": "erc20",
     "blocksPerCall": 100,
     "millisecondRepeatJob": 5000,
-    "chunkSizeInsert": 1000
+    "chunkSizeInsert": 1000,
+    "wrapExtensionContract": ["0xe974cc14c93fc6077b0d65f98832b846c5454a0b"]
   },
   "erc721": {
     "key": "erc721",

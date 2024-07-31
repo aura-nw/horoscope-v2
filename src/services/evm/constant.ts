@@ -113,6 +113,10 @@ export const SERVICE = {
         key: 'insertNewErc20Contracts',
         path: 'v1.Erc20.insertNewErc20Contracts',
       },
+      reindexing: {
+        key: 'reindexing',
+        path: 'v1.Erc20.reindexing',
+      },
     },
     Erc721: {
       key: 'Erc721',
@@ -216,6 +220,7 @@ export const BULL_JOB_NAME = {
   HANDLE_ERC721_MEDIA: 'handle:erc721-media',
   HANDLE_ERC721_TOKEN_MEDIA: 'handle:erc721-token-media',
   REFRESH_ERC721_STATS: 'refresh:erc721-stats',
+  REINDEX_ERC20: 'reindex:erc20',
 };
 
 export const MSG_TYPE = {
