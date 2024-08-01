@@ -28,6 +28,8 @@ export class OptimismWithdrawal extends BaseModel {
 
   finalize_time!: Date;
 
+  prove_time!: Date;
+
   static get tableName() {
     return 'optimism_withdrawal';
   }
@@ -58,7 +60,7 @@ export class OptimismWithdrawal extends BaseModel {
   static rebuildTxFromEvmEvent(evmEvent: EvmEvent) {
     return {
       transactionHash: evmEvent.tx_hash,
-      blockNumber: evmEvent.block_height,
+      blockNumber: BigInt(evmEvent.block_height),
       logs: [
         {
           address: evmEvent.address,

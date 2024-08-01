@@ -285,6 +285,7 @@ export const BULL_JOB_NAME = {
   HANDLE_OPTIMISM_WITHDRAWAL: 'handle:optimism-withdrawal',
   CRAWL_OPTIMISM_WITHDRAWAL_EVENT_ON_L1:
     'crawl:optimism-withdrawal-event-on-l1',
+  UPDATE_OPTIMISM_WITHDRAWAL_STATUS: 'handle:update-optimism-withdrawal-status',
   INSERT_VERIFY_BY_CODEHASH: 'job:insert-verify-by-codehash',
   HANDLE_SELF_DESTRUCT: 'handle:self-destruct',
 };

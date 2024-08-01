@@ -117,13 +117,67 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
           this.ABI_MESSAGE_PASSED_NON_INDEXED,
           `0x${evmEvent.data.toString('hex')}`
         );
-
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        const finalizeTime = await this.viemClientL1.getTimeToFinalize({
-          withdrawalHash,
-          targetChain: getViemChainById(this.l2Chain.EVMchainId),
-        });
+        const [finalizeTime, proveTime] = await Promise.all([
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          this.viemClientL1.getTimeToFinalize({
+            withdrawalHash,
+            targetChain: getViemChainById(this.l2Chain.EVMchainId),
+          }),
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          this.viemClientL1.getTimeToProve({
+            receipt: OptimismWithdrawal.rebuildTxFromEvmEvent(evmEvent),
+            targetChain: getViemChainById(this.l2Chain.EVMchainId),
+          }),
+        ]);
+
+        if (
+          evmEvent.withdrawalStatus ===
+          OptimismWithdrawal.STATUS.WAITING_TO_PROVE
+        ) {
+          await this.createJob(
+            BULL_JOB_NAME.UPDATE_OPTIMISM_WITHDRAWAL_STATUS,
+            BULL_JOB_NAME.UPDATE_OPTIMISM_WITHDRAWAL_STATUS,
+            {
+              withdrawalHash,
+            },
+            {
+              jobId: withdrawalHash as string,
+              attempts: 3,
+              backoff: 10,
+              removeOnComplete: true,
+              removeOnFail: {
+                count: 3,
+              },
+              delay: proveTime.timestamp - Date.now(),
+            }
+          );
+        }
+        if (
+          evmEvent.withdrawalStatus ===
+          OptimismWithdrawal.STATUS.WAITING_TO_FINALIZE
+        ) {
+          await this.createJob(
+            BULL_JOB_NAME.UPDATE_OPTIMISM_WITHDRAWAL_STATUS,
+            BULL_JOB_NAME.UPDATE_OPTIMISM_WITHDRAWAL_STATUS,
+            {
+              withdrawalHash,
+            },
+            {
+              jobId: withdrawalHash as string,
+              attempts: 3,
+              backoff: 10,
+              removeOnComplete: true,
+              removeOnFail: {
+                count: 3,
+              },
+              delay: finalizeTime.timestamp - Date.now(),
+            }
+          );
+        }
 
         return OptimismWithdrawal.fromJson({
           l2_tx_hash: evmEvent.evm_transaction.hash,
@@ -135,7 +189,12 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
           status: evmEvent.withdrawalStatus,
           evm_event_id: evmEvent.id,
           evm_tx_id: evmEvent.evm_tx_id,
-          finalize_time: new Date(finalizeTime.timestamp),
+          finalize_time: finalizeTime.timestamp
+            ? new Date(finalizeTime.timestamp)
+            : undefined,
+          prove_time: proveTime.timestamp
+            ? new Date(proveTime.timestamp)
+            : undefined,
         });
       })
     );
@@ -223,7 +282,7 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
         );
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        const [status, finalizeTime] = await Promise.all([
+        const [status, finalizeTime, proveTime] = await Promise.all([
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
           this.viemClientL1.getWithdrawalStatus({
@@ -240,6 +299,12 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
             withdrawalHash,
             targetChain: getViemChainById(this.l2Chain.EVMchainId),
           }),
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          this.viemClientL1.getTimeToProve({
+            receipt: txReceipt,
+            targetChain: getViemChainById(this.l2Chain.EVMchainId),
+          }),
         ]);
 
         return {
@@ -249,10 +314,18 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
             status === OptimismWithdrawal.STATUS.FINALIZE
               ? event.transactionHash
               : undefined,
-          finalize_time: {
-            value: finalizeTime.timestamp / 1000,
-            type: 'timestamp',
-          },
+          finalize_time: finalizeTime.timestamp
+            ? {
+                value: finalizeTime.timestamp / 1000,
+                type: 'timestamp',
+              }
+            : undefined,
+          prove_time: proveTime.timestamp
+            ? {
+                value: proveTime.timestamp / 1000,
+                type: 'timestamp',
+              }
+            : undefined,
         };
       })
     );
@@ -263,7 +336,7 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
           trx,
           OptimismWithdrawal.tableName,
           listUpdateOpWithdrawalStatus,
-          ['status', 'l1_tx_hash', 'finalize_time']
+          ['status', 'l1_tx_hash', 'finalize_time', 'prove_time']
         );
       }
       blockCheckpoint.height = endBlock;
@@ -273,6 +346,69 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
         .merge()
         .transacting(trx);
     });
+  }
+
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.UPDATE_OPTIMISM_WITHDRAWAL_STATUS,
+    jobName: BULL_JOB_NAME.UPDATE_OPTIMISM_WITHDRAWAL_STATUS,
+  })
+  async updateOpWithdrawalStatus(_payload: { withdrawalHash: string }) {
+    this.logger.info(
+      `Update optimism withdrawal with hash ${_payload.withdrawalHash}`
+    );
+    const opWithdrawal = await OptimismWithdrawal.query()
+      .findOne('withdrawal_hash', _payload.withdrawalHash)
+      .withGraphFetched('evm_event');
+    if (!opWithdrawal) {
+      throw Error(
+        `Cannot found Optimism Withdrawal when update status with hash ${_payload.withdrawalHash}`
+      );
+    }
+    const txReceipt = OptimismWithdrawal.rebuildTxFromEvmEvent(
+      opWithdrawal.evm_event
+    );
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const [status, finalizeTime, proveTime] = await Promise.all([
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      this.viemClientL1.getWithdrawalStatus({
+        receipt: txReceipt,
+        portalAddress: config.crawlOptimismWithdrawalEventOnL1.l1OptimismPortal,
+        targetChain: getViemChainById(this.l2Chain.EVMchainId),
+        l2OutputOracleAddress:
+          config.crawlOptimismWithdrawalEventOnL1.l2OutputOracleProxy,
+      }),
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      this.viemClientL1.getTimeToFinalize({
+        withdrawalHash: _payload.withdrawalHash,
+        targetChain: getViemChainById(this.l2Chain.EVMchainId),
+      }),
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      this.viemClientL1.getTimeToProve({
+        receipt: txReceipt,
+        targetChain: getViemChainById(this.l2Chain.EVMchainId),
+      }),
+    ]);
+
+    if (status === opWithdrawal.status) {
+      const error = `Status not change when fetch status ${opWithdrawal.withdrawal_hash}`;
+      this.logger.error(error);
+      throw Error(error);
+    }
+    await OptimismWithdrawal.query()
+      .patch({
+        status,
+        prove_time: proveTime.timestamp
+          ? new Date(proveTime.timestamp)
+          : undefined,
+        finalize_time: finalizeTime.timestamp
+          ? new Date(finalizeTime.timestamp)
+          : undefined,
+      })
+      .where({ id: opWithdrawal.id });
   }
 
   async _start(): Promise<void> {
