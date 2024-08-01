@@ -168,8 +168,8 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
             },
             {
               jobId: withdrawalHash as string,
-              attempts: 3,
-              backoff: 10,
+              attempts: config.jobRetryAttempt,
+              backoff: config.jobRetryBackoff,
               removeOnComplete: true,
               removeOnFail: {
                 count: 3,
