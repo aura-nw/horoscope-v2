@@ -18,7 +18,10 @@ export async function batchUpdate(
     .map((record: any) => {
       const values = fields.map((field) => {
         if (record[field]?.type === 'timestamp') {
-          return `to_timestamp(${record[field].value})`;
+          if (record[field].value !== undefined) {
+            return `to_timestamp(${record[field].value})`;
+          }
+          return 'NULL::timestamp';
         }
 
         if (record[field] !== undefined) {

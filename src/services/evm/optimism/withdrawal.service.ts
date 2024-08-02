@@ -314,18 +314,16 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
             status === OptimismWithdrawal.STATUS.FINALIZE
               ? event.transactionHash
               : undefined,
-          finalize_time: finalizeTime.timestamp
-            ? {
-                value: finalizeTime.timestamp / 1000,
-                type: 'timestamp',
-              }
-            : undefined,
-          prove_time: proveTime.timestamp
-            ? {
-                value: proveTime.timestamp / 1000,
-                type: 'timestamp',
-              }
-            : undefined,
+          finalize_time: {
+            value: finalizeTime.timestamp
+              ? finalizeTime.timestamp / 1000
+              : undefined,
+            type: 'timestamp',
+          },
+          prove_time: {
+            value: proveTime.timestamp ? proveTime.timestamp / 1000 : undefined,
+            type: 'timestamp',
+          },
         };
       })
     );
@@ -401,12 +399,16 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
     await OptimismWithdrawal.query()
       .patch({
         status,
-        prove_time: proveTime.timestamp
-          ? new Date(proveTime.timestamp)
-          : undefined,
-        finalize_time: finalizeTime.timestamp
-          ? new Date(finalizeTime.timestamp)
-          : undefined,
+        finalize_time: {
+          value: finalizeTime.timestamp
+            ? finalizeTime.timestamp / 1000
+            : undefined,
+          type: 'timestamp',
+        },
+        prove_time: {
+          value: proveTime.timestamp ? proveTime.timestamp / 1000 : undefined,
+          type: 'timestamp',
+        },
       })
       .where({ id: opWithdrawal.id });
   }
