@@ -19,8 +19,8 @@ import {
   EvmEvent,
 } from '../../../../src/models';
 import Erc20Service from '../../../../src/services/evm/erc20.service';
-import { BULL_JOB_NAME } from '../../../../src/services/evm/constant';
-import { SERVICE } from '../../../../src/common/constant';
+import { BULL_JOB_NAME, SERVICE } from '../../../../src/services/evm/constant';
+import { SERVICE as COSMOS_SERVICE } from '../../../../src/common/constant';
 import config from '../../../../config.json' assert { type: 'json' };
 import { convertEthAddressToBech32Address } from '../../../../src/services/evm/utils';
 
@@ -308,17 +308,26 @@ export class Erc20Test {
       await AccountBalance.query(),
       (o) => `${o.account_id}_${o.denom}`
     );
-    expect(mockCall).toHaveBeenCalledWith(
-      SERVICE.V1.HandleAddressService.CrawlNewAccountApi.path,
-      {
-        addresses: [
-          convertEthAddressToBech32Address(
-            config.networkPrefixAddress,
-            missingAccountAddr
-          ),
-        ],
-      }
-    );
+    if (!config.evmOnly) {
+      expect(mockCall).toHaveBeenCalledWith(
+        COSMOS_SERVICE.V1.HandleAddressService.CrawlNewAccountApi.path,
+        {
+          addresses: [
+            convertEthAddressToBech32Address(
+              config.networkPrefixAddress,
+              missingAccountAddr
+            ),
+          ],
+        }
+      );
+    } else {
+      expect(mockCall).toHaveBeenCalledWith(
+        SERVICE.V1.CrawlEvmAccount.CrawlNewAccountApi.path,
+        {
+          addresses: [missingAccountAddr],
+        }
+      );
+    }
     expect(
       accountBalances[`${this.account1.id}_${this.evmSmartContract.address}`]
         .amount
