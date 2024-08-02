@@ -48,6 +48,7 @@ import config from '../../../config.json' assert { type: 'json' };
           'v1.job.insert-verify-by-codehash',
           'v1.erc721-admin.*',
           'v2.evm-statistics.syncPrevDateStatsByChainId',
+          'v1.erc20-admin.*',
         ],
       },
       {

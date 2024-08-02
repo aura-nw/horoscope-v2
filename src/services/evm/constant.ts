@@ -117,6 +117,10 @@ export const SERVICE = {
         key: 'insertNewErc20Contracts',
         path: 'v1.Erc20.insertNewErc20Contracts',
       },
+      reindexing: {
+        key: 'reindexing',
+        path: 'v1.Erc20.reindexing',
+      },
     },
     Erc721: {
       key: 'Erc721',
@@ -288,6 +292,7 @@ export const BULL_JOB_NAME = {
   UPDATE_OPTIMISM_WITHDRAWAL_STATUS: 'handle:update-optimism-withdrawal-status',
   INSERT_VERIFY_BY_CODEHASH: 'job:insert-verify-by-codehash',
   HANDLE_SELF_DESTRUCT: 'handle:self-destruct',
+  REINDEX_ERC20: 'reindex:erc20',
 };
 
 export const MSG_TYPE = {
