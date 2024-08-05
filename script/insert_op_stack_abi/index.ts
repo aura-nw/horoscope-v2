@@ -1,10 +1,10 @@
 import _ from 'lodash';
 import { EVMContractVerification } from '../../src/models';
-import proxy from './abis/proxy.json';
-import l1_block from './abis/l1_block.json';
-import l2_cross_domain_messenger from './abis/l2_cross_domain_messenger.json';
-import l2_standard_bridge from './abis/l2_standard_bridge.json';
-import l2_to_l1_message_passer from './abis/l2_to_l1_message_passer.json';
+import proxy from './abis/proxy.json' assert { type: 'json' };
+import l1_block from './abis/l1_block.json' assert { type: 'json' };
+import l2_cross_domain_messenger from './abis/l2_cross_domain_messenger.json' assert { type: 'json' };
+import l2_standard_bridge from './abis/l2_standard_bridge.json' assert { type: 'json' };
+import l2_to_l1_message_passer from './abis/l2_to_l1_message_passer.json' assert { type: 'json' };
 
 export async function insertContractVerification(_payload: {
   contracts: {
