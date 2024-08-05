@@ -1,3 +1,0 @@
-table:
-  name: knex_migrations
-  schema: public
