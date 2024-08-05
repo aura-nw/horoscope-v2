@@ -399,16 +399,12 @@ export default class HandleOptimismWithdrawalEVMService extends BullableService 
     await OptimismWithdrawal.query()
       .patch({
         status,
-        finalize_time: {
-          value: finalizeTime.timestamp
-            ? finalizeTime.timestamp / 1000
-            : undefined,
-          type: 'timestamp',
-        },
-        prove_time: {
-          value: proveTime.timestamp ? proveTime.timestamp / 1000 : undefined,
-          type: 'timestamp',
-        },
+        finalize_time: finalizeTime.timestamp
+          ? new Date(finalizeTime.timestamp)
+          : undefined,
+        prove_time: proveTime.timestamp
+          ? new Date(proveTime.timestamp)
+          : undefined,
       })
       .where({ id: opWithdrawal.id });
   }
