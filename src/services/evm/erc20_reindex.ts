@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop */
 import Moleculer from 'moleculer';
 import { getContract, PublicClient } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
@@ -74,49 +75,90 @@ export class Erc20Reindexer {
           })
         )
         .transacting(trx);
-      const erc20Activities = await Erc20Handler.buildErc20Activities(
-        0,
-        Number(blockHeight),
-        trx,
-        this.logger,
-        [address]
-      );
-      if (erc20Activities.length > 0) {
-        await knex
-          .batchInsert(
-            'erc20_activity',
-            erc20Activities,
-            config.erc20.chunkSizeInsert
-          )
-          .transacting(trx);
+      const {limitRecordGet} = config.erc20.reindex;
+      let prevEvmEventId = 0;
+      let prevCosmosEventId = '0';
+      let numActivities = 0;
+      while (true) {
+        const resultBuildErc20Activities =
+          await Erc20Handler.buildErc20Activities(
+            0,
+            Number(blockHeight),
+            trx,
+            this.logger,
+            [address],
+            {
+              prevEvmEventId,
+              limitRecordGet,
+            }
+          );
+        const {erc20Activities} = resultBuildErc20Activities;
+        if (erc20Activities.length > 0) {
+          const resultInsert: any = await knex
+            .batchInsert(
+              'erc20_activity',
+              erc20Activities,
+              config.erc20.chunkSizeInsert
+            )
+            .transacting(trx);
+          numActivities += resultInsert[0].rowCount;
+        }
+        prevEvmEventId = resultBuildErc20Activities.prevEvmEventId;
+        prevCosmosEventId = resultBuildErc20Activities.prevCosmosEventId;
+        if (prevEvmEventId === undefined && prevCosmosEventId === undefined) {
+          break;
+        }
       }
-      const erc20ActivitiesInDb = await Erc20Handler.getErc20Activities(
-        0,
-        Number(blockHeight),
-        trx,
-        [address]
-      );
-      // get missing Account
-      const missingAccountsAddress = Array.from(
-        new Set(
-          [
-            ...erc20ActivitiesInDb
-              .filter((e) => !e.from_account_id)
-              .map((e) => e.from),
-            ...erc20ActivitiesInDb
-              .filter((e) => !e.to_account_id)
-              .map((e) => e.to),
-          ].map((e) =>
-            convertEthAddressToBech32Address(config.networkPrefixAddress, e)
-          ) as string[]
-        )
-      );
-      if (missingAccountsAddress.length > 0) {
-        throw new Error(
-          `Missing accounts ${missingAccountsAddress}. You should reindex them`
+      this.logger.info(`Reindex erc20 activities ${address} done.`);
+      let prevId = 0;
+      let numChunk = 1;
+      while (true) {
+        const erc20ActivitiesInDb = await Erc20Handler.getErc20Activities(
+          0,
+          Number(blockHeight),
+          trx,
+          [address],
+          {
+            prevId,
+            limitRecordGet,
+          }
         );
+        // get missing Account
+        const missingAccountsAddress = Array.from(
+          new Set(
+            [
+              ...erc20ActivitiesInDb
+                .filter((e) => !e.from_account_id)
+                .map((e) => e.from),
+              ...erc20ActivitiesInDb
+                .filter((e) => !e.to_account_id)
+                .map((e) => e.to),
+            ].map((e) =>
+              convertEthAddressToBech32Address(config.networkPrefixAddress, e)
+            ) as string[]
+          )
+        );
+        if (missingAccountsAddress.length > 0) {
+          throw new Error(
+            `Missing accounts ${missingAccountsAddress}. You should reindex them`
+          );
+        }
+        if (erc20ActivitiesInDb.length > 0) {
+          await Erc20Handler.updateErc20AccountsBalance(
+            erc20ActivitiesInDb,
+            trx
+          );
+          prevId = erc20ActivitiesInDb[erc20ActivitiesInDb.length - 1].id;
+          this.logger.info(
+            `Reindex erc20 contract ${address}: Chunk ${numChunk}/${Math.floor(
+              numActivities / limitRecordGet + 1
+            )} done`
+          );
+          numChunk += 1;
+        } else {
+          break;
+        }
       }
-      await Erc20Handler.updateErc20AccountsBalance(erc20ActivitiesInDb, trx);
     });
   }
 }
