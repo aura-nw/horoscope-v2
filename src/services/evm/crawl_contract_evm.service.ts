@@ -312,6 +312,11 @@ export default class CrawlSmartContractEVMService extends BullableService {
             byteCode,
             EIPProxyContractSupportByteCode.OPEN_ZEPPELIN_IMPLEMENTATION.SLOT
           ),
+          this.contractHelper.detectProxyContractByByteCode(
+            addr,
+            byteCode,
+            EIPProxyContractSupportByteCode.EIP_1167_IMPLEMENTATION.SLOT
+          ),
         ]).catch(() => Promise.resolve(null));
       })
     );
