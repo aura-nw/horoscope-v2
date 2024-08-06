@@ -116,6 +116,11 @@ export class ContractHelper {
             EIPProxyContractSupportByteCode.OPEN_ZEPPELIN_IMPLEMENTATION.SLOT,
             blockHeight
           ),
+          this.detectProxyContractByByteCode(
+            contractAddress,
+            byteCode,
+            EIPProxyContractSupportByteCode.EIP_1167_IMPLEMENTATION.SLOT
+          ),
         ]);
       }
     } catch (error) {
