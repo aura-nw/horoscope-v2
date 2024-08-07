@@ -292,7 +292,7 @@ export class Erc721Handler {
 
   static async calErc721Stats(addresses?: string[]): Promise<Erc721Contract[]> {
     // Get once block height 24h ago.
-    let blockSince24hAgo = {};
+    let blockSince24hAgo: any = [];
     if (!config.evmOnly) {
       blockSince24hAgo = await Block.query()
         .select('height')
@@ -307,6 +307,7 @@ export class Erc721Handler {
         .limit(1);
     }
     // Calculate total activity and transfer_24h of erc721
+    // not return record if erc721 contract haven't erc721 activities
     return Erc721Contract.query()
       .count('erc721_activity.id AS total_activity')
       .select(
