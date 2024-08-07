@@ -298,6 +298,7 @@ export class Erc721Handler {
       .limit(1);
 
     // Calculate total activity and transfer_24h of erc721
+    // not return record if erc721 contract haven't erc721 activities
     return Erc721Contract.query()
       .count('erc721_activity.id AS total_activity')
       .select(
