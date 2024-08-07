@@ -402,7 +402,10 @@
     "blocksPerCall": 100,
     "millisecondRepeatJob": 2000,
     "chunkSizeInsert": 1000,
-    "wrapExtensionContract": ["0xe974cc14c93fc6077b0d65f98832b846c5454a0b"]
+    "wrapExtensionContract": ["0xe974cc14c93fc6077b0d65f98832b846c5454a0b"],
+    "reindex": {
+      "limitRecordGet": 2000
+    }
   },
   "erc721": {
     "key": "erc721",

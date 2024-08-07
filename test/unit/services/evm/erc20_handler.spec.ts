@@ -187,15 +187,15 @@ export default class Erc20HandlerTest {
     ];
     await EvmEvent.query().insert(evmEvents);
     await knex.transaction(async (trx) => {
-      const erc20Activitites = await Erc20Handler.buildErc20Activities(
+      const { erc20Activities } = await Erc20Handler.buildErc20Activities(
         blockHeight - 1,
         blockHeight,
         trx,
         this.broker.logger
       );
-      expect(erc20Activitites.length).toEqual(evmEvents.length - 1);
+      expect(erc20Activities.length).toEqual(evmEvents.length - 1);
       // test build transfer activity
-      const transferActivity = erc20Activitites[0];
+      const transferActivity = erc20Activities[0];
       expect(transferActivity).toMatchObject({
         action: ERC20_ACTION.TRANSFER,
         erc20_contract_address: erc20Contract.address,
@@ -204,7 +204,7 @@ export default class Erc20HandlerTest {
         amount,
       });
       // test build approve activity
-      const approvalActivity = erc20Activitites[1];
+      const approvalActivity = erc20Activities[1];
       expect(approvalActivity).toMatchObject({
         action: ERC20_ACTION.APPROVAL,
         erc20_contract_address: erc20Contract.address,
@@ -269,15 +269,15 @@ export default class Erc20HandlerTest {
     ];
     await EvmEvent.query().insert(evmEvents);
     await knex.transaction(async (trx) => {
-      const erc20Activitites = await Erc20Handler.buildErc20Activities(
+      const { erc20Activities } = await Erc20Handler.buildErc20Activities(
         blockHeight - 1,
         blockHeight,
         trx,
         this.broker.logger
       );
-      expect(erc20Activitites.length).toEqual(evmEvents.length);
+      expect(erc20Activities.length).toEqual(evmEvents.length);
       // test build deposit activity
-      const depositActivity = erc20Activitites[0];
+      const depositActivity = erc20Activities[0];
       expect(depositActivity).toMatchObject({
         action: ERC20_ACTION.DEPOSIT,
         erc20_contract_address: erc20WrapContract.address,
@@ -286,7 +286,7 @@ export default class Erc20HandlerTest {
         amount,
       });
       // test build withdrawal activity
-      const withdrawalActivity = erc20Activitites[1];
+      const withdrawalActivity = erc20Activities[1];
       expect(withdrawalActivity).toMatchObject({
         action: ERC20_ACTION.WITHDRAWAL,
         erc20_contract_address: erc20WrapContract.address,
@@ -470,14 +470,14 @@ export default class Erc20HandlerTest {
     ];
     await EvmEvent.query().insert(evmEvents);
     await knex.transaction(async (trx) => {
-      const erc20Activitites = await Erc20Handler.buildErc20Activities(
+      const { erc20Activities } = await Erc20Handler.buildErc20Activities(
         blockHeight - 2,
         blockHeight + 1,
         trx,
         this.broker.logger
       );
       // test convert coin activity
-      const convertCoinActivity = erc20Activitites[2];
+      const convertCoinActivity = erc20Activities[2];
       expect(convertCoinActivity).toMatchObject({
         from: ZERO_ADDRESS,
         to,
@@ -487,7 +487,7 @@ export default class Erc20HandlerTest {
         cosmos_event_id: transaction.events[0].id,
       });
       // test convert erc20 activity
-      const convertErc20Activity = erc20Activitites[1];
+      const convertErc20Activity = erc20Activities[1];
       expect(convertErc20Activity).toMatchObject({
         from,
         to: ZERO_ADDRESS,
@@ -497,7 +497,7 @@ export default class Erc20HandlerTest {
         cosmos_event_id: transaction.events[1].id,
       });
       // test sort order
-      const transferActivity1 = erc20Activitites[0];
+      const transferActivity1 = erc20Activities[0];
       expect(transferActivity1).toMatchObject({
         action: ERC20_ACTION.TRANSFER,
         erc20_contract_address: erc20Contract.address,
@@ -507,7 +507,7 @@ export default class Erc20HandlerTest {
         evm_tx_id: evmEvents[0].evm_tx_id,
         cosmos_tx_id: evmEvents[0].tx_id,
       });
-      const transferActivity2 = erc20Activitites[3];
+      const transferActivity2 = erc20Activities[3];
       expect(transferActivity2).toMatchObject({
         action: ERC20_ACTION.TRANSFER,
         erc20_contract_address: erc20Contract.address,
