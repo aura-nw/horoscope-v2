@@ -13,6 +13,7 @@ import CrawlTxService from '../../../../src/services/crawl-tx/crawl_tx.service';
 import knex from '../../../../src/common/utils/db_connection';
 import tx_fixture from './tx.fixture.json' assert { type: 'json' };
 import tx_fixture_authz from './tx_authz.fixture.json' assert { type: 'json' };
+import tx_fixture_evm from './evm_tx.fixture.json' assert { type: 'json' };
 import ChainRegistry from '../../../../src/common/utils/chain.registry';
 import { getProviderRegistry } from '../../../../src/common/utils/provider.registry';
 
@@ -168,8 +169,50 @@ export default class CrawlTransactionTest {
         });
       });
     }
-    // }
-    // );
+  }
+
+  @Test('Parse transaction evm and insert to DB')
+  public async testHandleTransactionEvm() {
+    await Block.query().insert(
+      Block.fromJson({
+        height: 2006980,
+        hash: 'data hash evm',
+        time: '2023-04-17T03:44:41.000Z',
+        proposer_address: 'proposer address',
+        data: {},
+      })
+    );
+    const listdecodedTx = await this.crawlTxService?.decodeListRawTx([
+      {
+        listTx: { ...tx_fixture_evm },
+        height: 2006980,
+        timestamp: '2023-04-17T03:44:41.000Z',
+      },
+    ]);
+    if (listdecodedTx)
+      await knex.transaction(async (trx) => {
+        await this.crawlTxService?.insertTxDecoded(listdecodedTx, trx);
+        const listTxRaw = await Transaction.query()
+          .where('height', '>', 2006979)
+          .andWhere('height', '<=', 2006980)
+          .orderBy('height', 'asc')
+          .orderBy('index', 'asc')
+          .transacting(trx);
+        await this.crawlTxService?.insertRelatedTx(listTxRaw, trx);
+      });
+    const tx = await Transaction.query()
+      .findOne(
+        'hash',
+        'CE1C281B2F98B4569616CACC82E28456E805BE571CB71EC464183935F8E76D3C'
+      )
+      .withGraphFetched('messages');
+    expect(tx).not.toBeUndefined();
+    if (tx) {
+      // check evm tx use signing user as sender, not from event_attribute
+      expect(tx.messages[0].sender).toEqual(
+        'aura1xe8z0madrnxgm0xv3cd7jnsencx7vl93tj3znv'
+      );
+    }
   }
 
   arrDest = {
