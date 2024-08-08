@@ -26,3 +26,4 @@ select_permissions:
         - timestamp
       filter: {}
       limit: 100
+      allow_aggregations: true
