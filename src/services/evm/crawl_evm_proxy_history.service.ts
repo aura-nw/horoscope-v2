@@ -151,12 +151,12 @@ export default class CrawlProxyContractEVMService extends BullableService {
     newProxyHistories.forEach((proxyHistory) => {
       if (
         proxyHistory.implementation_contract !== null &&
-        foundContractsInDB[proxyHistory.implementation_contract] !== null
+        foundContractsInDB[proxyHistory.proxy_contract] !== null
       ) {
         newProxyContractsToSave.push(proxyHistory);
       } else {
         this.logger.warn(
-          `This contract address ${proxyHistory.implementation_contract} is not proxy, at tx hash ${proxyHistory.tx_hash}`
+          `This contract address ${proxyHistory.proxy_contract} is not proxy, at tx hash ${proxyHistory.tx_hash}`
         );
       }
     });
