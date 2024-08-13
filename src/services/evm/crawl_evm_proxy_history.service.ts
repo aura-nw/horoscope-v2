@@ -79,6 +79,7 @@ export default class CrawlProxyContractEVMService extends BullableService {
       EVMSmartContract.TYPES.PROXY_EIP_1967,
       EVMSmartContract.TYPES.PROXY_EIP_1822,
       EVMSmartContract.TYPES.PROXY_OPEN_ZEPPELIN_IMPLEMENTATION,
+      EVMSmartContract.TYPES.PROXY_EIP_1167,
     ]);
 
     for (const evmEvent of evmEvents) {
@@ -139,10 +140,27 @@ export default class CrawlProxyContractEVMService extends BullableService {
       newProxyHistories.push(EvmProxyHistory.fromJson(newJSONProxy));
     }
 
-    const newProxyContractsToSave = _.filter(
-      newProxyHistories,
-      (proxyContract) => proxyContract.implementation_contract !== null
+    // check evm_smart_contract if proxy_contract is existed
+    const foundContractsInDB = _.keyBy(
+      await EVMSmartContract.query().whereIn(
+        'address',
+        newProxyHistories.map((e) => e.proxy_contract)
+      ),
+      'address'
     );
+    const newProxyContractsToSave: EvmProxyHistory[] = [];
+    newProxyHistories.forEach((proxyHistory) => {
+      if (
+        proxyHistory.implementation_contract !== null &&
+        foundContractsInDB[proxyHistory.proxy_contract] !== null
+      ) {
+        newProxyContractsToSave.push(proxyHistory);
+      } else {
+        this.logger.warn(
+          `This contract address ${proxyHistory.proxy_contract} is not proxy, at tx hash ${proxyHistory.tx_hash}`
+        );
+      }
+    });
     const newProxyContracts: EvmProxyHistory[] = [];
     await knex.transaction(async (trx) => {
       if (newProxyContractsToSave.length > 0) {

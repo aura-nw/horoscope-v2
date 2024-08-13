@@ -12,6 +12,7 @@ import { decodeAbiParameters, encodeAbiParameters, fromHex, toHex } from 'viem';
 import config from '../../../../config.json' assert { type: 'json' };
 import knex from '../../../../src/common/utils/db_connection';
 import {
+  Block,
   Erc20Activity,
   Erc20Contract,
   Event,
@@ -106,7 +107,7 @@ export default class Erc20HandlerTest {
   @BeforeEach()
   async beforeEach() {
     await knex.raw(
-      'TRUNCATE TABLE evm_event, transaction, event, event_attribute RESTART IDENTITY CASCADE'
+      'TRUNCATE TABLE evm_event, transaction, event, event_attribute, block RESTART IDENTITY CASCADE'
     );
   }
 
@@ -330,6 +331,16 @@ export default class Erc20HandlerTest {
     const from = '0x400207c680a1c5d5a86f35f97111afc00f2f1826';
     const to = '0xea780c13a5450ac7c3e6ae4b17a0445998132b15';
     const amount = '45222000';
+    const block = Block.fromJson({
+      data: JSON.stringify({
+        linkS3: 'https://nft.aurascan.io/rawlog/aura/aura_6322-2/block/7424149',
+      }),
+      tx_count: 2,
+      hash: '152A5BDEE0768D2BAB1E65C726C4B94ACC28FF792E202F4676EFC888B3E22A79',
+      height: blockHeight,
+      proposer_address: '39A5D22101441C1B1D93C4F3B72A64681D59B2A0',
+      time: '2024-07-26T01:00:21.319351+07:00',
+    });
     const transaction = Transaction.fromJson({
       code: 0,
       codespace: '',
@@ -437,6 +448,7 @@ export default class Erc20HandlerTest {
         },
       ],
     });
+    await Block.query().insert(block);
     await Transaction.query().insertGraph(transaction);
     const evmEvents = [
       // transfer event

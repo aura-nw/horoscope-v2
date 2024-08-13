@@ -1,3 +1,0 @@
-function:
-  name: fetch_tx_ids_by_events
-  schema: public

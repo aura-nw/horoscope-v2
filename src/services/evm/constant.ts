@@ -72,6 +72,10 @@ export const EIPProxyContractSupportByteCode = {
     SLOT: '7050c9e0f4ca769c69bd3a8ef740bc37934f8e2c036e5a723fd8ee048ed3f8c3', // org.zeppelinos.proxy.implementation
     TYPE: EVMSmartContract.TYPES.PROXY_OPEN_ZEPPELIN_IMPLEMENTATION,
   },
+  EIP_1167_IMPLEMENTATION: {
+    SLOT: '363d3d373d3d3d363d73',
+    TYPE: EVMSmartContract.TYPES.PROXY_EIP_1167,
+  },
 };
 
 export const NULL_BYTE_CODE =
@@ -224,6 +228,22 @@ export const BULL_JOB_NAME = {
   REFRESH_ERC721_STATS: 'refresh:erc721-stats',
   REINDEX_ERC721: 'reindex:erc721',
   SYNC_SOURCIFY: 'sync:sourcify',
+  CRAWL_EVM_BLOCK: 'crawl:evm-block',
+  JOB_CREATE_EVM_BLOCK_PARTITION: 'job:create-evm-block-partition',
+  JOB_CHECK_EVM_BLOCK_CONSTRAINT: 'job:check-need-create-evm-block-constraint',
+  JOB_CREATE_EVM_BLOCK_CONSTRAINT: 'job:create-evm-block-constraint',
+  CRAWL_EVM_TRANSACTION: 'crawl:evm-transaction',
+  CRAWL_EVM_ACCOUNT: 'crawl:evm-account',
+  HANDLE_DASHBOARD_EVM_STATISTICS: 'handle:dashboard-evm-statistics',
+  HANDLE_DAILY_EVM_STATS_JOBS: 'handle:daily-evm-stats-jobs',
+  CRAWL_DAILY_EVM_STATISTICS: 'crawl:daily-evm-statistics',
+  CRAWL_EVM_ACCOUNT_STATISTICS: 'crawl:evm-account-statistics',
+  HANDLE_TOP_EVM_ACCOUNT: 'handle:top-evm-account',
+  CRAWL_OPTIMISM_DEPOSIT: 'crawl:optimism-deposit',
+  HANDLE_OPTIMISM_WITHDRAWAL: 'handle:optimism-withdrawal',
+  CRAWL_OPTIMISM_WITHDRAWAL_EVENT_ON_L1:
+    'crawl:optimism-withdrawal-event-on-l1',
+  UPDATE_OPTIMISM_WITHDRAWAL_STATUS: 'handle:update-optimism-withdrawal-status',
   INSERT_VERIFY_BY_CODEHASH: 'job:insert-verify-by-codehash',
   HANDLE_SELF_DESTRUCT: 'handle:self-destruct',
   REINDEX_ERC20: 'reindex:erc20',

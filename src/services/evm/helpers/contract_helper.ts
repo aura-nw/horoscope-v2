@@ -30,31 +30,35 @@ export class ContractHelper {
     const result = byteCode.includes(byteCodeSlot);
 
     if (!result) throw Error('Not proxy contract!');
-    const storageSlotValue = await this.viemClient.getStorageAt({
-      address: contractAddress as `0x${string}`,
-      slot: `${EVM_PREFIX}${byteCodeSlot}`,
-      blockNumber: blockHeight ? BigInt(blockHeight) : undefined,
-    });
-
-    if (
-      storageSlotValue === '0x' ||
-      storageSlotValue === NULL_BYTE_CODE ||
-      storageSlotValue === undefined
-    )
-      throw Error('Invalid contract address!');
-
-    const logicAddress =
-      storageSlotValue.length === EVM_DEFAULT_SLOT_BYTE_CODE_LENGTH
-        ? `${EVM_PREFIX}${storageSlotValue.slice(-40)}`
-        : storageSlotValue;
-
-    if (logicAddress === ZERO_ADDRESS) throw Error('Zero contract detected!');
-
-    resultReturn.logicContractAddress = logicAddress;
-    resultReturn.EIP = _.find(
+    const eip = _.find(
       EIPProxyContractSupportByteCode,
       (val) => val.SLOT === byteCodeSlot
     )?.TYPE;
+    let logicAddress = '';
+    if (eip === EIPProxyContractSupportByteCode.EIP_1167_IMPLEMENTATION.TYPE) {
+      logicAddress = `0x${byteCode.slice(22, 62)}`;
+    } else {
+      const storageSlotValue = await this.viemClient.getStorageAt({
+        address: contractAddress as `0x${string}`,
+        slot: `${EVM_PREFIX}${byteCodeSlot}`,
+        blockNumber: blockHeight ? BigInt(blockHeight) : undefined,
+      });
+      if (
+        storageSlotValue === '0x' ||
+        storageSlotValue === NULL_BYTE_CODE ||
+        storageSlotValue === undefined
+      )
+        throw Error('Invalid contract address!');
+
+      logicAddress =
+        storageSlotValue.length === EVM_DEFAULT_SLOT_BYTE_CODE_LENGTH
+          ? `${EVM_PREFIX}${storageSlotValue.slice(-40)}`
+          : storageSlotValue;
+
+      if (logicAddress === ZERO_ADDRESS) throw Error('Zero contract detected!');
+    }
+    resultReturn.logicContractAddress = logicAddress;
+    resultReturn.EIP = eip;
     return resultReturn;
   }
 
@@ -111,6 +115,11 @@ export class ContractHelper {
             byteCode,
             EIPProxyContractSupportByteCode.OPEN_ZEPPELIN_IMPLEMENTATION.SLOT,
             blockHeight
+          ),
+          this.detectProxyContractByByteCode(
+            contractAddress,
+            byteCode,
+            EIPProxyContractSupportByteCode.EIP_1167_IMPLEMENTATION.SLOT
           ),
         ]);
       }
