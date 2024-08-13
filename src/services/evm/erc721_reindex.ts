@@ -123,20 +123,22 @@ export class Erc721Reindexer {
       await Erc721Handler.updateErc721(activities, tokens, trx);
     });
     const erc721Stats = await Erc721Handler.calErc721Stats([address]);
-    // Upsert erc721 stats
-    await Erc721Stats.query()
-      .insert(
-        erc721Stats.map((e) =>
-          Erc721Stats.fromJson({
-            total_activity: e.total_activity,
-            transfer_24h: e.transfer_24h,
-            erc721_contract_id: e.erc721_contract_id,
-          })
+    if (erc721Stats.length > 0) {
+      // Upsert erc721 stats
+      await Erc721Stats.query()
+        .insert(
+          erc721Stats.map((e) =>
+            Erc721Stats.fromJson({
+              total_activity: e.total_activity,
+              transfer_24h: e.transfer_24h,
+              erc721_contract_id: e.erc721_contract_id,
+            })
+          )
         )
-      )
-      .onConflict('erc721_contract_id')
-      .merge()
-      .returning('id');
+        .onConflict('erc721_contract_id')
+        .merge()
+        .returning('id');
+    }
   }
 
   async getCurrentTokens(
