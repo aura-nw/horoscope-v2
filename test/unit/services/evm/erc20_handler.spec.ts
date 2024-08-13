@@ -183,6 +183,25 @@ export default class Erc20HandlerTest {
         tx_id: evmTransaction.id,
         tx_index: 0,
       }),
+      // transfer event
+      EvmEvent.fromJson({
+        id: 4,
+        address: erc20Contract.address,
+        block_hash:
+          '0xed6a2d3c3ac9a2868420c4fdd67240d2d96298fc4272cd31455cd0cdaabf9093',
+        block_height: blockHeight,
+        data: null,
+        evm_tx_id: evmTransaction.id,
+        topic0:
+          '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+        topic1: encodeAbiParameters([ABI_TRANSFER_PARAMS.FROM], [from]),
+        topic2: encodeAbiParameters([ABI_TRANSFER_PARAMS.TO], [to]),
+        topic3: encodeAbiParameters([ABI_TRANSFER_PARAMS.VALUE], [amount]),
+        tx_hash:
+          '0x8a82a0c8848487d716f10a91f0aefb0526d35bd0f489166cc5141718a4d8aa64',
+        tx_id: evmTransaction.id,
+        tx_index: 0,
+      }),
     ];
     await EvmEvent.query().insert(evmEvents);
     await knex.transaction(async (trx) => {
@@ -206,6 +225,15 @@ export default class Erc20HandlerTest {
       const approvalActivity = erc20Activitites[1];
       expect(approvalActivity).toMatchObject({
         action: ERC20_ACTION.APPROVAL,
+        erc20_contract_address: erc20Contract.address,
+        from,
+        to,
+        amount,
+      });
+      // test build transfer activity case amount in topic 3
+      const transfer2Activity = erc20Activitites[2];
+      expect(transfer2Activity).toMatchObject({
+        action: ERC20_ACTION.TRANSFER,
         erc20_contract_address: erc20Contract.address,
         from,
         to,

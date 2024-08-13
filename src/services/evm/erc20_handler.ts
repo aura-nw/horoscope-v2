@@ -348,14 +348,16 @@ export class Erc20Handler {
     logger: Moleculer.LoggerInstance
   ): Erc20Activity | undefined {
     try {
-      const amountEncoded = e.data ? toHex(e.data) : e.topic3;
       const [from, to, amount] = decodeAbiParameters(
         [
           ABI_TRANSFER_PARAMS.FROM,
           ABI_TRANSFER_PARAMS.TO,
           ABI_TRANSFER_PARAMS.VALUE,
         ],
-        (e.topic1 + e.topic2.slice(2) + amountEncoded.slice(2)) as `0x${string}`
+        (e.topic1 +
+          e.topic2.slice(2) +
+          toHex(e.data || '').slice(2) +
+          (e.topic3 || '0x').slice(2)) as `0x${string}`
       ) as [string, string, bigint];
       return Erc20Activity.fromJson({
         evm_event_id: e.id,
