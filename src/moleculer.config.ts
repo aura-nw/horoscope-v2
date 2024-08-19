@@ -7,6 +7,7 @@ import InterNamespaceMiddleware from './middlewares/internamespace';
 import { Config } from './common';
 import MoleculerRetryableError = Errors.MoleculerRetryableError;
 import networks from '../network.json' assert { type: 'json' };
+import config from '../config.json' assert { type: 'json' };
 
 // TODO: Set default value for common config (TRACING_TYPE ...)
 
@@ -82,6 +83,9 @@ const brokerConfig: BrokerOptions = {
             redact: {
               paths: ['nodeID', 'ns', 'svc', 'level', 'ver'],
               remove: true,
+            },
+            mixin() {
+              return { chainId: config.chainId };
             },
           },
         },
