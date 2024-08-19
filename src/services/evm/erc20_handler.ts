@@ -93,7 +93,7 @@ export class Erc20Handler {
       this.erc20Contracts[erc20Activity.erc20_contract_address];
     if (!erc20Contract) {
       throw new Error(
-        `Erc20 contract not found:${  erc20Activity.erc20_contract_address}`
+        `Erc20 contract not found:${erc20Activity.erc20_contract_address}`
       );
     }
     // update from account balance if from != ZERO_ADDRESS
@@ -122,13 +122,13 @@ export class Erc20Handler {
         type: AccountBalance.TYPE.ERC20_TOKEN,
       });
     } else if (erc20Contract.total_supply !== null) {
-        // update total supply
-        erc20Contract.total_supply = (
-          BigInt(erc20Contract.total_supply) + BigInt(erc20Activity.amount)
-        ).toString();
-        // update last updated height
-        erc20Contract.last_updated_height = erc20Activity.height;
-      }
+      // update total supply
+      erc20Contract.total_supply = (
+        BigInt(erc20Contract.total_supply) + BigInt(erc20Activity.amount)
+      ).toString();
+      // update last updated height
+      erc20Contract.last_updated_height = erc20Activity.height;
+    }
     // update from account balance if to != ZERO_ADDRESS
     if (erc20Activity.to !== ZERO_ADDRESS) {
       // update to account balance
@@ -156,13 +156,13 @@ export class Erc20Handler {
         type: AccountBalance.TYPE.ERC20_TOKEN,
       });
     } else if (erc20Contract.total_supply !== null) {
-        // update total supply
-        erc20Contract.total_supply = (
-          BigInt(erc20Contract.total_supply) - BigInt(erc20Activity.amount)
-        ).toString();
-        // update last updated height
-        erc20Contract.last_updated_height = erc20Activity.height;
-      }
+      // update total supply
+      erc20Contract.total_supply = (
+        BigInt(erc20Contract.total_supply) - BigInt(erc20Activity.amount)
+      ).toString();
+      // update last updated height
+      erc20Contract.last_updated_height = erc20Activity.height;
+    }
   }
 
   static async buildErc20Activities(
@@ -354,7 +354,10 @@ export class Erc20Handler {
           ABI_TRANSFER_PARAMS.TO,
           ABI_TRANSFER_PARAMS.VALUE,
         ],
-        (e.topic1 + e.topic2.slice(2) + toHex(e.data).slice(2)) as `0x${string}`
+        (e.topic1 +
+          e.topic2.slice(2) +
+          toHex(e.data || '').slice(2) +
+          (e.topic3 || '0x').slice(2)) as `0x${string}`
       ) as [string, string, bigint];
       return Erc20Activity.fromJson({
         evm_event_id: e.id,
