@@ -574,8 +574,8 @@ export default class CrawlTxService extends BullableService {
         await jobInDelayed[0].promote();
       }
     } catch (error) {
-      this.logger.error('No job can be promoted');
-      this.logger.error(error);
+      this.logger.warn('No job can be promoted');
+      this.logger.warn(error);
     }
   }
 
