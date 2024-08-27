@@ -1,0 +1,13 @@
+table:
+  name: view_count_holder_erc721
+  schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - owner
+        - erc721_contract_address
+        - count
+      filter: {}
+      limit: 100
+      allow_aggregations: true

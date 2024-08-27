@@ -91,6 +91,21 @@
     type_names:
       prefix: serenity_
   tables: '!include serenity/tables/tables.yaml'
+- name: storytestnet
+  kind: postgres
+  configuration:
+    connection_info:
+      database_url:
+        from_env: DATABASE_URL_STORY_TESTNET
+      isolation_level: read-committed
+      use_prepared_statements: false
+  customization:
+    naming_convention: hasura-default
+    root_fields:
+      namespace: storytestnet
+    type_names:
+      prefix: storytestnet_
+  tables: '!include story_testnet/tables/tables.yaml'
 - name: sourcify
   kind: postgres
   configuration:
