@@ -31,7 +31,7 @@ export default class CrawlEvmTransactionService extends BullableService {
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.CRAWL_EVM_TRANSACTION,
         [BULL_JOB_NAME.CRAWL_EVM_BLOCK],
-        config.crawlTransaction.key
+        config.crawlEvmTransaction.key
       );
     this.logger.info(
       `Crawl evm_transaction from block ${startBlock} to ${endBlock}`
