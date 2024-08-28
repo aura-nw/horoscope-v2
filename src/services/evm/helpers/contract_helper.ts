@@ -66,11 +66,14 @@ export class ContractHelper {
   public async isContractProxy(
     contractAddress: string,
     blockHeight?: number | string,
-    byteCodeSlot?: string
+    byteCodeSlot?: string,
+    bytecode?: string
   ): Promise<DetectEVMProxyContract | null> {
-    const byteCode = await this.viemClient.getBytecode({
-      address: contractAddress as `0x${string}`,
-    });
+    const byteCode =
+      bytecode ||
+      (await this.viemClient.getBytecode({
+        address: contractAddress as `0x${string}`,
+      }));
     let result: DetectEVMProxyContract | null;
     if (!byteCode) {
       return null;
