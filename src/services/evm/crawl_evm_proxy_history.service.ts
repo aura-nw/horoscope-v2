@@ -2,7 +2,7 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import _ from 'lodash';
+import _, { Dictionary } from 'lodash';
 import { ServiceBroker } from 'moleculer';
 import {
   PublicClient,
@@ -74,14 +74,31 @@ export default class CrawlProxyContractEVMService extends BullableService {
     const evmEvents = await EvmEvent.query()
       .select('*')
       .where('block_height', '>', startBlock)
-      .andWhere('block_height', '<=', endBlock);
-    const proxyContractDb = await EVMSmartContract.query().whereIn('type', [
-      EVMSmartContract.TYPES.PROXY_EIP_1967,
-      EVMSmartContract.TYPES.PROXY_EIP_1822,
-      EVMSmartContract.TYPES.PROXY_OPEN_ZEPPELIN_IMPLEMENTATION,
-      EVMSmartContract.TYPES.PROXY_EIP_1167,
-    ]);
-
+      .andWhere('block_height', '<=', endBlock)
+      .select('address', 'topic0', 'topic1', 'block_height', 'tx_hash');
+    const proxyContractDb = await EVMSmartContract.query()
+      .whereIn('type', [
+        EVMSmartContract.TYPES.PROXY_EIP_1967,
+        EVMSmartContract.TYPES.PROXY_EIP_1822,
+        EVMSmartContract.TYPES.PROXY_OPEN_ZEPPELIN_IMPLEMENTATION,
+        EVMSmartContract.TYPES.PROXY_EIP_1167,
+      ])
+      .select('address');
+    const distictAddresses = _.uniq(evmEvents.map((e) => e.address));
+    const batchReqs: any[] = [];
+    distictAddresses.forEach((address) => {
+      batchReqs.push(
+        this.viemClient.getBytecode({
+          address: address as `0x${string}`,
+        })
+      );
+    });
+    const results = await Promise.all(batchReqs);
+    const bytecodes: Dictionary<string> = {};
+    distictAddresses.forEach((address, index) => {
+      bytecodes[address] = results[index];
+    });
+    const lastUpdatedHeight = await this.viemClient.getBlockNumber();
     for (const evmEvent of evmEvents) {
       let implementationAddress = null;
       const anyProxyHistory = await EvmProxyHistory.query()
@@ -122,11 +139,10 @@ export default class CrawlProxyContractEVMService extends BullableService {
               _.find(
                 EIPProxyContractSupportByteCode,
                 (value, __) => value.TYPE === evmEventProxy.type
-              )?.SLOT
+              )?.SLOT,
+              undefined,
+              bytecodes[evmEvent.address]
             );
-
-            newJSONProxy.last_updated_height =
-              await this.viemClient.getBlockNumber();
           }
           break;
       }
@@ -136,14 +152,31 @@ export default class CrawlProxyContractEVMService extends BullableService {
         _.toLower(implementationAddress as string) || null;
       newJSONProxy.block_height = evmEvent.block_height;
       newJSONProxy.tx_hash = evmEvent.tx_hash;
-
+      newJSONProxy.last_updated_height = lastUpdatedHeight;
       newProxyHistories.push(EvmProxyHistory.fromJson(newJSONProxy));
     }
 
-    const newProxyContractsToSave = _.filter(
-      newProxyHistories,
-      (proxyContract) => proxyContract.implementation_contract !== null
+    // check evm_smart_contract if proxy_contract is existed
+    const foundContractsInDB = _.keyBy(
+      await EVMSmartContract.query().whereIn(
+        'address',
+        newProxyHistories.map((e) => e.proxy_contract)
+      ),
+      'address'
     );
+    const newProxyContractsToSave: EvmProxyHistory[] = [];
+    newProxyHistories.forEach((proxyHistory) => {
+      if (
+        proxyHistory.implementation_contract !== null &&
+        foundContractsInDB[proxyHistory.proxy_contract] !== undefined
+      ) {
+        newProxyContractsToSave.push(proxyHistory);
+      } else {
+        this.logger.warn(
+          `This contract address ${proxyHistory.proxy_contract} is not proxy, at tx hash ${proxyHistory.tx_hash}`
+        );
+      }
+    });
     const newProxyContracts: EvmProxyHistory[] = [];
     await knex.transaction(async (trx) => {
       if (newProxyContractsToSave.length > 0) {
