@@ -3,6 +3,7 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import {
   BlockCheckpoint,
+  EVMBlock,
   EvmInternalTransaction,
   EVMTransaction,
 } from '../../models';
@@ -50,15 +51,18 @@ export default class EvmCrawlInternalTxService extends BullableService {
     if (startBlock >= endBlock) {
       return;
     }
+    const [evmBlocks, evmTxs] = await Promise.all([
+      EVMBlock.query()
+        .where('height', '>', startBlock)
+        .andWhere('height', '<=', endBlock),
+      EVMTransaction.query()
+        .select('id', 'hash')
+        .where('height', '>', startBlock)
+        .andWhere('height', '<=', endBlock),
+    ]);
 
-    const evmTxs = await EVMTransaction.query()
-      .where('height', '>', startBlock)
-      .andWhere('height', '<=', endBlock);
-
-    if (evmTxs.length === 0) {
-      this.logger.info(
-        `No evm transaction found from ${startBlock} to ${endBlock}`
-      );
+    if (evmBlocks.length === 0) {
+      this.logger.info(`No evm block found from ${startBlock} to ${endBlock}`);
       blockCheckpoint.height = endBlock;
       await BlockCheckpoint.query()
         .insert(blockCheckpoint)
@@ -67,7 +71,7 @@ export default class EvmCrawlInternalTxService extends BullableService {
       return;
     }
 
-    const requests = evmTxs.map((evmTx) =>
+    const requests = evmBlocks.map((evmBlock) =>
       axios({
         url: this.EvmJsonRpc,
         method: 'POST',
@@ -77,10 +81,10 @@ export default class EvmCrawlInternalTxService extends BullableService {
         },
         data: {
           jsonrpc: '2.0',
-          id: evmTx.id,
-          method: 'debug_traceTransaction',
+          id: evmBlock.height,
+          method: 'debug_traceBlockByNumber',
           params: [
-            evmTx.hash,
+            `0x${evmBlock.height.toString(16)}`,
             {
               tracer: 'callTracer',
               timeout: config.evmCrawlInternalTx.timeoutJSONRPC,
@@ -90,18 +94,31 @@ export default class EvmCrawlInternalTxService extends BullableService {
       })
     );
 
-    const response = await Promise.all(requests).then((res) =>
+    const responseBlocks = await Promise.all(requests).then((res) =>
       res.map((result) => result.data)
     );
     const internalTxSave: EvmInternalTransaction[] = [];
 
-    response.forEach((tracer) => {
-      if (tracer.result?.calls) {
-        const internalTx = this.buildEvmInternalTransaction(
-          tracer.result,
-          tracer.id
-        );
-        internalTxSave.push(...internalTx);
+    responseBlocks.forEach((responseBlock: any) => {
+      if (responseBlock.error) {
+        throw Error(JSON.stringify(responseBlock.error));
+      }
+      if (responseBlock.result) {
+        responseBlock.result.forEach((responseTx: any) => {
+          if (responseTx.result?.calls) {
+            const { txHash } = responseTx;
+            const evmTxDB = evmTxs.find((tx) => tx.hash === txHash);
+            if (!evmTxDB) {
+              throw Error('Cannot found this evm_tx_id');
+            }
+            const resultTx = responseTx.result;
+            const internalTx = this.buildEvmInternalTransaction(
+              resultTx,
+              evmTxDB.id
+            );
+            internalTxSave.push(...internalTx);
+          }
+        });
       }
     });
 
