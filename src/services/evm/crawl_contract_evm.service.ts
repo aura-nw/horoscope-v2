@@ -56,6 +56,23 @@ export default class CrawlSmartContractEVMService extends BullableService {
       return;
     }
 
+    const [fromTx, toTx] = await Promise.all([
+      EVMTransaction.query()
+        .select('id')
+        .findOne('height', '>', startBlock)
+        .orderBy('height', 'asc')
+        .orderBy('index', 'asc')
+        .limit(1),
+      EVMTransaction.query()
+        .select('id')
+        .findOne('height', '<=', endBlock)
+        .orderBy('height', 'desc')
+        .orderBy('index', 'desc')
+        .limit(1),
+    ]);
+    if (!fromTx || !toTx) {
+      return;
+    }
     const evmTxs = await EVMTransaction.query()
       .select(
         'evm_transaction.height',
@@ -80,12 +97,14 @@ export default class CrawlSmartContractEVMService extends BullableService {
             EvmInternalTransaction.TYPE.CREATE,
             EvmInternalTransaction.TYPE.CREATE2,
           ])
+          .andWhere('id', '>=', fromTx.id)
+          .andWhere('id', '<=', toTx.id)
           .andWhere('error', null);
       })
       .where('evm_transaction.height', '>', startBlock)
       .andWhere('evm_transaction.height', '<=', endBlock)
-      .orderBy('evm_transaction.id', 'ASC')
-      .orderBy('evm_transaction.height', 'ASC');
+      .orderBy('evm_transaction.height', 'ASC')
+      .orderBy('evm_transaction.index', 'ASC');
 
     let addresses: string[] = [];
     const txCreationWithAdressses: Dictionary<EVMTransaction> = {};
