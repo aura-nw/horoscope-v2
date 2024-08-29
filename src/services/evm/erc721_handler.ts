@@ -231,7 +231,7 @@ export class Erc721Handler {
           builder.transacting(trx);
         }
       })
-      .where('evm_event.evm_tx_id', '>', fromTx.id)
+      .where('evm_event.evm_tx_id', '>=', fromTx.id)
       .andWhere('evm_event.evm_tx_id', '<=', toTx.id)
       .orderBy('evm_event.id', 'asc')
       .select(
