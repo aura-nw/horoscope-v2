@@ -75,43 +75,41 @@ export default class CrawlEvmAccountService extends BullableService {
     this.logger.info(
       `Crawl evm_account from block ${startBlock} to ${endBlock}`
     );
+    const accountsAddress: Set<string> = new Set();
+    const participants = await EVMTransaction.query()
+      .where('height', '>', startBlock)
+      .where('height', '<=', endBlock)
+      .orderBy('height', 'asc')
+      .select('from', 'to', 'contract_address as contractAddress');
+    const participantsFromInternal = await EvmInternalTransaction.query()
+      .joinRelated('evm_transaction')
+      .where('evm_transaction.height', '>', startBlock)
+      .andWhere('evm_transaction.height', '<=', endBlock)
+      .andWhere('evm_internal_transaction.error', null)
+      .select('evm_internal_transaction.from', 'evm_internal_transaction.to');
+    participants.forEach((partcicipant) => {
+      if (partcicipant.from !== ZERO_ADDRESS) {
+        accountsAddress.add(partcicipant.from);
+      }
+      if (partcicipant.to && partcicipant.to !== ZERO_ADDRESS) {
+        accountsAddress.add(partcicipant.to);
+      }
+      if (partcicipant.contractAddress) {
+        accountsAddress.add(partcicipant.contractAddress);
+      }
+    });
+    participantsFromInternal.forEach((participant) => {
+      if (participant.from !== ZERO_ADDRESS) {
+        accountsAddress.add(participant.from);
+      }
+      if (participant.to && participant.to !== ZERO_ADDRESS) {
+        accountsAddress.add(participant.to);
+      }
+    });
+    const [accountsInstances, height] = await this.getEvmAccountInstances(
+      Array.from(accountsAddress)
+    );
     await knex.transaction(async (trx) => {
-      const accountsAddress: Set<string> = new Set();
-      const participants = await EVMTransaction.query()
-        .where('height', '>', startBlock)
-        .where('height', '<=', endBlock)
-        .orderBy('height', 'asc')
-        .select('from', 'to', 'contract_address as contractAddress')
-        .transacting(trx);
-      const participantsFromInternal = await EvmInternalTransaction.query()
-        .transacting(trx)
-        .joinRelated('evm_transaction')
-        .where('evm_transaction.height', '>', startBlock)
-        .andWhere('evm_transaction.height', '<=', endBlock)
-        .andWhere('evm_internal_transaction.error', null)
-        .select('evm_internal_transaction.from', 'evm_internal_transaction.to');
-      participants.forEach((partcicipant) => {
-        if (partcicipant.from !== ZERO_ADDRESS) {
-          accountsAddress.add(partcicipant.from);
-        }
-        if (partcicipant.to && partcicipant.to !== ZERO_ADDRESS) {
-          accountsAddress.add(partcicipant.to);
-        }
-        if (partcicipant.contractAddress) {
-          accountsAddress.add(partcicipant.contractAddress);
-        }
-      });
-      participantsFromInternal.forEach((participant) => {
-        if (participant.from !== ZERO_ADDRESS) {
-          accountsAddress.add(participant.from);
-        }
-        if (participant.to && participant.to !== ZERO_ADDRESS) {
-          accountsAddress.add(participant.to);
-        }
-      });
-      const [accountsInstances, height] = await this.getEvmAccountInstances(
-        Array.from(accountsAddress)
-      );
       if (accountsInstances.length > 0) {
         await this.insertNewAccounts(accountsInstances, height, trx);
       }
