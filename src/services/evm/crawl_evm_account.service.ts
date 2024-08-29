@@ -70,7 +70,7 @@ export default class CrawlEvmAccountService extends BullableService {
           BULL_JOB_NAME.CRAWL_EVM_TRANSACTION,
           BULL_JOB_NAME.EVM_CRAWL_INTERNAL_TX,
         ],
-        config.crawlTransaction.key
+        config.evmCrawlInternalTx.key
       );
     this.logger.info(
       `Crawl evm_account from block ${startBlock} to ${endBlock}`
