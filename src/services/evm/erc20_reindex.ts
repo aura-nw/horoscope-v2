@@ -75,7 +75,7 @@ export class Erc20Reindexer {
           })
         )
         .transacting(trx);
-      const {limitRecordGet} = config.erc20.reindex;
+      const { limitRecordGet } = config.erc20.reindex;
       let prevEvmEventId = 0;
       let prevCosmosEventId = '0';
       let numActivities = 0;
@@ -92,7 +92,7 @@ export class Erc20Reindexer {
               limitRecordGet,
             }
           );
-        const {erc20Activities} = resultBuildErc20Activities;
+        const { erc20Activities } = resultBuildErc20Activities;
         if (erc20Activities.length > 0) {
           const resultInsert: any = await knex
             .batchInsert(
