@@ -7,6 +7,7 @@ import knex from '../../common/utils/db_connection';
 import {
   Block,
   EVMBlock,
+  EVMTransaction,
   Erc721Activity,
   Erc721Contract,
   Erc721Token,
@@ -193,12 +194,29 @@ export class Erc721Handler {
   static async getErc721Activities(
     startBlock: number,
     endBlock: number,
-    trx: Knex.Transaction,
     logger: Moleculer.LoggerInstance,
-    addresses?: string[]
+    addresses?: string[],
+    trx?: Knex.Transaction
   ) {
+    const [fromTx, toTx] = await Promise.all([
+      EVMTransaction.query()
+        .select('id')
+        .findOne('height', '>', startBlock)
+        .orderBy('height', 'asc')
+        .orderBy('index', 'asc')
+        .limit(1),
+      EVMTransaction.query()
+        .select('id')
+        .findOne('height', '<=', endBlock)
+        .orderBy('height', 'desc')
+        .orderBy('index', 'desc')
+        .limit(1),
+    ]);
+    if (!fromTx || !toTx) {
+      throw Error('fromTx or toTx cannot be found');
+    }
+
     const erc721Events = await EvmEvent.query()
-      .transacting(trx)
       .joinRelated('[evm_smart_contract,evm_transaction]')
       .innerJoin(
         'erc721_contract',
@@ -209,9 +227,12 @@ export class Erc721Handler {
         if (addresses) {
           builder.whereIn('evm_event.address', addresses);
         }
+        if (trx) {
+          builder.transacting(trx);
+        }
       })
-      .where('evm_event.block_height', '>', startBlock)
-      .andWhere('evm_event.block_height', '<=', endBlock)
+      .where('evm_event.evm_tx_id', '>', fromTx.id)
+      .andWhere('evm_event.evm_tx_id', '<=', toTx.id)
       .orderBy('evm_event.id', 'asc')
       .select(
         'evm_event.*',

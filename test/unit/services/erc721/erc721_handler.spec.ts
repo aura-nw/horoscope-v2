@@ -165,8 +165,9 @@ export default class Erc721HandlerTest {
       const erc721Activities = await Erc721Handler.getErc721Activities(
         21937979,
         21937985,
-        trx,
-        this.broker.logger
+        this.broker.logger,
+        undefined,
+        trx
       );
       expect(erc721Activities[0]).toMatchObject({
         action: ERC721_ACTION.TRANSFER,
@@ -196,9 +197,9 @@ export default class Erc721HandlerTest {
         await Erc721Handler.getErc721Activities(
           21937979,
           21937985,
-          trx,
           this.broker.logger,
-          [this.evmSmartContract2.address]
+          [this.evmSmartContract2.address],
+          trx
         );
       expect(erc721ActivitiesByContract[0]).toMatchObject({
         action: ERC721_ACTION.APPROVAL,

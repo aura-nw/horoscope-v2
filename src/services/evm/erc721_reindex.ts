@@ -116,9 +116,9 @@ export class Erc721Reindexer {
       const activities = await Erc721Handler.getErc721Activities(
         0,
         height,
-        trx,
         this.logger,
-        [address]
+        [address],
+        trx
       );
       await Erc721Handler.updateErc721(activities, tokens, trx);
     });
