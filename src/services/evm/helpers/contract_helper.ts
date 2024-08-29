@@ -20,13 +20,17 @@ export class ContractHelper {
   public async detectProxyContractByByteCode(
     contractAddress: string,
     byteCode: string,
-    byteCodeSlot: string,
+    type: string,
     blockHeight?: number | string
   ): Promise<DetectEVMProxyContract> {
     const resultReturn: DetectEVMProxyContract = {
       logicContractAddress: '',
       EIP: '',
     };
+    const byteCodeSlot = Object.values(EIPProxyContractSupportByteCode).find(
+      (e) => e.TYPE === type
+    )?.SLOT;
+    if (!byteCodeSlot) throw Error('Type proxy not supported');
     const result = byteCode.includes(byteCodeSlot);
 
     if (!result) throw Error('Not proxy contract!');

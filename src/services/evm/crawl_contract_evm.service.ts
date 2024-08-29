@@ -301,22 +301,22 @@ export default class CrawlSmartContractEVMService extends BullableService {
           this.contractHelper.detectProxyContractByByteCode(
             addr,
             byteCode,
-            EIPProxyContractSupportByteCode.EIP_1967_IMPLEMENTATION.SLOT
+            EIPProxyContractSupportByteCode.EIP_1967_IMPLEMENTATION.TYPE
           ),
           this.contractHelper.detectProxyContractByByteCode(
             addr,
             byteCode,
-            EIPProxyContractSupportByteCode.EIP_1822_IMPLEMENTATION.SLOT
+            EIPProxyContractSupportByteCode.EIP_1822_IMPLEMENTATION.TYPE
           ),
           this.contractHelper.detectProxyContractByByteCode(
             addr,
             byteCode,
-            EIPProxyContractSupportByteCode.OPEN_ZEPPELIN_IMPLEMENTATION.SLOT
+            EIPProxyContractSupportByteCode.OPEN_ZEPPELIN_IMPLEMENTATION.TYPE
           ),
           this.contractHelper.detectProxyContractByByteCode(
             addr,
             byteCode,
-            EIPProxyContractSupportByteCode.EIP_1167_IMPLEMENTATION.SLOT
+            EIPProxyContractSupportByteCode.EIP_1167_IMPLEMENTATION.TYPE
           ),
         ]).catch(() => Promise.resolve(null));
       })
