@@ -79,7 +79,13 @@ export default class EvmCrawlInternalTxService extends BullableService {
           jsonrpc: '2.0',
           id: evmTx.id,
           method: 'debug_traceTransaction',
-          params: [evmTx.hash, { tracer: 'callTracer' }],
+          params: [
+            evmTx.hash,
+            {
+              tracer: 'callTracer',
+              timeout: config.evmCrawlInternalTx.timeoutJSONRPC,
+            },
+          ],
         },
       })
     );

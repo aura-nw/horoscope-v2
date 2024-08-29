@@ -74,7 +74,8 @@
     "key": "evmCrawlInternalTx",
     "blocksPerCall": 100,
     "millisecondCrawl": 3000,
-    "chunkSize": 1000
+    "chunkSize": 1000,
+    "timeoutJSONRPC": "10s"
   },
   "crawlProposal": {
     "key": "crawlProposal",

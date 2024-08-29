@@ -364,7 +364,8 @@
     "key": "evmCrawlInternalTx",
     "blocksPerCall": 100,
     "millisecondCrawl": 3000,
-    "chunkSize": 1000
+    "chunkSize": 1000,
+    "timeoutJSONRPC": "10s"
   },
   "createEVMTransactionPartition": {
     "endId": 200000000,
@@ -385,7 +386,7 @@
   },
   "crawlSmartContractEVM": {
     "key": "crawlSmartContractEVM",
-    "blocksPerCall": 10000,
+    "blocksPerCall": 1000,
     "millisecondCrawl": 1000
   },
   "jobVerifyContractEVM": {
