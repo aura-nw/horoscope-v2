@@ -174,7 +174,9 @@ export default class EVMAccountStatisticsService extends BullableService {
       .orderBy('index', 'asc')
       .withGraphFetched('[evm_internal_transactions]')
       .modifyGraph('evm_internal_transactions', (builder) => {
-        builder.andWhere('id', '>=', fromTx.id).andWhere('id', '<=', toTx.id);
+        builder
+          .andWhere('evm_tx_id', '>=', fromTx.id)
+          .andWhere('evm_tx_id', '<=', toTx.id);
       });
     dailyTxs.forEach((tx) => {
       if (!accountStats[tx.from]) {
