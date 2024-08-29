@@ -61,7 +61,6 @@ export default class CrawlProxyContractEVMService extends BullableService {
     jobName: BULL_JOB_NAME.HANDLE_EVM_PROXY_HISTORY,
   })
   public async jobHandler() {
-    const newProxyHistories: EvmProxyHistory[] = [];
     const [startBlock, endBlock, updateBlockCheckpoint] =
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.HANDLE_EVM_PROXY_HISTORY,
@@ -99,18 +98,24 @@ export default class CrawlProxyContractEVMService extends BullableService {
       bytecodes[address] = results[index];
     });
     const lastUpdatedHeight = await this.viemClient.getBlockNumber();
-    for (const evmEvent of evmEvents) {
+    const anyProxyHistoryByAddress = _.keyBy(
+      await EvmProxyHistory.query()
+        .whereIn(
+          'proxy_contract',
+          evmEvents.map((e) => _.toLower(e.address))
+        )
+        .andWhereNot('last_updated_height', null),
+      'proxy_contract'
+    );
+    const getProxyPromises = evmEvents.map(async (evmEvent) => {
       let implementationAddress = null;
-      const anyProxyHistory = await EvmProxyHistory.query()
-        .where('proxy_contract', '=', _.toLower(evmEvent.address))
-        .andWhereNot('last_updated_height', null);
       const evmEventProxy: EVMSmartContract = _.find(proxyContractDb, {
         address: evmEvent.address,
       }) as EVMSmartContract;
       const firstTimeCatchProxyEvent =
         proxyContractDb.find((proxy) => proxy.address === evmEvent.address) &&
-        anyProxyHistory.length === 0;
-      const newJSONProxy = {} as any;
+        anyProxyHistoryByAddress[evmEvent.address];
+      const newJSONProxy: Dictionary<any> = {};
 
       switch (evmEvent.topic0) {
         case Erc1967Events.upgraded.event:
@@ -153,9 +158,11 @@ export default class CrawlProxyContractEVMService extends BullableService {
       newJSONProxy.block_height = evmEvent.block_height;
       newJSONProxy.tx_hash = evmEvent.tx_hash;
       newJSONProxy.last_updated_height = lastUpdatedHeight;
-      newProxyHistories.push(EvmProxyHistory.fromJson(newJSONProxy));
-    }
-
+      return EvmProxyHistory.fromJson(newJSONProxy);
+    });
+    const newProxyHistories: EvmProxyHistory[] = await Promise.all(
+      getProxyPromises
+    );
     // check evm_smart_contract if proxy_contract is existed
     const foundContractsInDB = _.keyBy(
       await EVMSmartContract.query().whereIn(
