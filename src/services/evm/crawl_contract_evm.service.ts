@@ -87,6 +87,8 @@ export default class CrawlSmartContractEVMService extends BullableService {
       .modifyGraph('evm_events', (builder) => {
         builder
           .select(knex.raw('ARRAY_AGG(address) as event_address'))
+          .andWhere('evm_tx_id', '>=', fromTx.id)
+          .andWhere('evm_tx_id', '<=', toTx.id)
           .groupBy('evm_tx_id')
           .orderBy('evm_tx_id');
       })
@@ -97,8 +99,8 @@ export default class CrawlSmartContractEVMService extends BullableService {
             EvmInternalTransaction.TYPE.CREATE,
             EvmInternalTransaction.TYPE.CREATE2,
           ])
-          .andWhere('id', '>=', fromTx.id)
-          .andWhere('id', '<=', toTx.id)
+          .andWhere('evm_tx_id', '>=', fromTx.id)
+          .andWhere('evm_tx_id', '<=', toTx.id)
           .andWhere('error', null);
       })
       .where('evm_transaction.height', '>', startBlock)
