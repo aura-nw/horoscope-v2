@@ -150,10 +150,32 @@ export default class EVMAccountStatisticsService extends BullableService {
     accountStats: any,
     date: string
   ) {
+    const [fromTx, toTx] = await Promise.all([
+      EVMTransaction.query()
+        .select('id')
+        .findOne('height', '>=', startHeight)
+        .orderBy('height', 'asc')
+        .orderBy('index', 'asc')
+        .limit(1),
+      EVMTransaction.query()
+        .select('id')
+        .findOne('height', '<=', endHeight)
+        .orderBy('height', 'desc')
+        .orderBy('index', 'desc')
+        .limit(1),
+    ]);
+    if (!fromTx || !toTx) {
+      return;
+    }
     const dailyTxs = await EVMTransaction.query()
       .where('height', '>=', startHeight)
       .andWhere('height', '<=', endHeight)
-      .withGraphFetched('[evm_internal_transactions]');
+      .orderBy('height', 'asc')
+      .orderBy('index', 'asc')
+      .withGraphFetched('[evm_internal_transactions]')
+      .modifyGraph('evm_internal_transactions', (builder) => {
+        builder.andWhere('id', '>=', fromTx.id).andWhere('id', '<=', toTx.id);
+      });
     dailyTxs.forEach((tx) => {
       if (!accountStats[tx.from]) {
         accountStats[tx.from] = AccountStatistics.newAccountStat(tx.from, date);
