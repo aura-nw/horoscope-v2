@@ -76,15 +76,34 @@ export default class CrawlEvmAccountService extends BullableService {
       `Crawl evm_account from block ${startBlock} to ${endBlock}`
     );
     const accountsAddress: Set<string> = new Set();
-    const participants = await EVMTransaction.query()
-      .where('height', '>', startBlock)
-      .where('height', '<=', endBlock)
-      .orderBy('height', 'asc')
-      .select('from', 'to', 'contract_address as contractAddress');
+    const [fromTx, toTx, participants] = await Promise.all([
+      EVMTransaction.query()
+        .select('id')
+        .findOne('height', '>', startBlock)
+        .orderBy('height', 'asc')
+        .orderBy('index', 'asc')
+        .limit(1),
+      EVMTransaction.query()
+        .select('id')
+        .findOne('height', '<=', endBlock)
+        .orderBy('height', 'desc')
+        .orderBy('index', 'desc')
+        .limit(1),
+      EVMTransaction.query()
+        .where('height', '>', startBlock)
+        .where('height', '<=', endBlock)
+        .orderBy('height', 'asc')
+        .orderBy('index', 'asc')
+        .select('from', 'to', 'contract_address as contractAddress'),
+    ]);
+
+    if (!fromTx || !toTx) {
+      return;
+    }
+
     const participantsFromInternal = await EvmInternalTransaction.query()
-      .joinRelated('evm_transaction')
-      .where('evm_transaction.height', '>', startBlock)
-      .andWhere('evm_transaction.height', '<=', endBlock)
+      .where('evm_tx_id', '>=', fromTx.id)
+      .andWhere('evm_tx_id', '<=', toTx.id)
       .andWhere('evm_internal_transaction.error', null)
       .select('evm_internal_transaction.from', 'evm_internal_transaction.to');
     participants.forEach((partcicipant) => {
