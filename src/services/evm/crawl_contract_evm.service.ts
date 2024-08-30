@@ -2,7 +2,7 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { whatsabi } from '@shazow/whatsabi';
 import _, { Dictionary } from 'lodash';
 import { ServiceBroker } from 'moleculer';
-import { GetBytecodeReturnType, PublicClient, keccak256, toHex } from 'viem';
+import { GetBytecodeReturnType, PublicClient, keccak256 } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import knex from '../../common/utils/db_connection';
@@ -23,9 +23,6 @@ import {
 } from './constant';
 import { ContractHelper } from './helpers/contract_helper';
 
-export const PROXY_EVENT_TOPIC0 = {
-  BEACON_UPGRADED: keccak256(toHex('BeaconUpgraded(address)')),
-};
 @Service({
   name: SERVICE.V1.CrawlSmartContractEVM.key,
   version: 1,
@@ -177,7 +174,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
       await EvmEvent.query()
         .where('evm_tx_id', '>=', fromTx.id)
         .andWhere('evm_tx_id', '<=', toTx.id)
-        .andWhere('topic0', PROXY_EVENT_TOPIC0.BEACON_UPGRADED)
+        .andWhere('topic0', EVMSmartContract.PROXY_EVENT_TOPIC0.BEACON_UPGRADED)
         .select('address', 'topic1')
     ).map((e) => ({
       address: e.address,

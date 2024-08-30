@@ -1,6 +1,6 @@
 import _ from 'lodash';
-import { EvmEvent, EVMSmartContract } from 'src/models';
 import { getContract, PublicClient } from 'viem';
+import { EvmEvent, EVMSmartContract } from '../../../models';
 import '../../../../fetch-polyfill.js';
 import {
   DetectEVMProxyContract,
@@ -10,7 +10,6 @@ import {
   NULL_BYTE_CODE,
   ZERO_ADDRESS,
 } from '../constant';
-import { PROXY_EVENT_TOPIC0 } from '../crawl_contract_evm.service.js';
 
 export class ContractHelper {
   private viemClient: PublicClient;
@@ -101,7 +100,7 @@ export class ContractHelper {
     const beaconContract = (
       await EvmEvent.query()
         .where('address', contractAddress)
-        .andWhere('topic0', PROXY_EVENT_TOPIC0.BEACON_UPGRADED)
+        .andWhere('topic0', EVMSmartContract.PROXY_EVENT_TOPIC0.BEACON_UPGRADED)
         .select('topic1')
     ).map((e) => `0x${e.topic1.slice(26)}`);
     try {

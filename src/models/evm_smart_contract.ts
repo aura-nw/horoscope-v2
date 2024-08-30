@@ -1,5 +1,6 @@
 /* eslint-disable import/no-cycle */
 import { Model } from 'objection';
+import { keccak256, toHex } from 'viem';
 import BaseModel from './base';
 import { EvmProxyHistory } from './evm_proxy_history';
 
@@ -83,6 +84,10 @@ export class EVMSmartContract extends BaseModel {
       },
     };
   }
+
+  static PROXY_EVENT_TOPIC0 = {
+    BEACON_UPGRADED: keccak256(toHex('BeaconUpgraded(address)')),
+  };
 
   static BEACON_ABI = [
     {
