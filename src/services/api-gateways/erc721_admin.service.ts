@@ -2,6 +2,7 @@ import { Post, Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { Context, ServiceBroker } from 'moleculer';
 import networks from '../../../network.json' assert { type: 'json' };
 import BaseService from '../../base/base.service';
+import { REINDEX_TYPE } from '../evm/erc721_reindex';
 
 @Service({
   name: 'erc721-admin',
@@ -25,6 +26,11 @@ export default class Erc721AdminService extends BaseService {
         optional: false,
         items: 'string',
       },
+      type: {
+        type: 'enum',
+        optional: false,
+        values: Object.values(REINDEX_TYPE),
+      },
     },
   })
   async erc721Reindexing(
@@ -32,6 +38,7 @@ export default class Erc721AdminService extends BaseService {
       {
         chainid: string;
         addresses: string[];
+        type: string;
       },
       Record<string, unknown>
     >
@@ -43,6 +50,7 @@ export default class Erc721AdminService extends BaseService {
       `v1.Erc721.reindexing@${selectedChain?.moleculerNamespace}`,
       {
         addresses: ctx.params.addresses,
+        type: ctx.params.type,
       }
     );
   }

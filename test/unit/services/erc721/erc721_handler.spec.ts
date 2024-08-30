@@ -162,7 +162,7 @@ export default class Erc721HandlerTest {
         }),
       ];
       await EvmEvent.query().insert(erc721Events).transacting(trx);
-      const erc721Activities = await Erc721Handler.getErc721Activities(
+      const { erc721Activities } = await Erc721Handler.getErc721Activities(
         21937979,
         21937985,
         this.broker.logger,
@@ -193,7 +193,7 @@ export default class Erc721HandlerTest {
         from: '0x1317df02a4e712265f5376a9d34156f73ebad640',
         to: '0xe39633931ec4a1841e438b15005a6f141d30789e',
       });
-      const erc721ActivitiesByContract =
+      const { erc721Activities: erc721ActivitiesByContract } =
         await Erc721Handler.getErc721Activities(
           21937979,
           21937985,

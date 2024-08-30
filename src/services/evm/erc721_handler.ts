@@ -196,7 +196,11 @@ export class Erc721Handler {
     endBlock: number,
     logger: Moleculer.LoggerInstance,
     addresses?: string[],
-    trx?: Knex.Transaction
+    trx?: Knex.Transaction,
+    page?: {
+      prevEvmEventId?: number;
+      limitRecordGet: number;
+    }
   ) {
     const [fromTx, toTx] = await Promise.all([
       EVMTransaction.query()
@@ -230,9 +234,15 @@ export class Erc721Handler {
         if (trx) {
           builder.transacting(trx);
         }
+        if (page && page.prevEvmEventId !== undefined) {
+          builder
+            .andWhere('evm_event.id', '>', page.prevEvmEventId)
+            .limit(page.limitRecordGet);
+        }
       })
       .where('evm_event.evm_tx_id', '>=', fromTx.id)
       .andWhere('evm_event.evm_tx_id', '<=', toTx.id)
+      .orderBy('evm_event.evm_tx_id', 'asc')
       .orderBy('evm_event.id', 'asc')
       .select(
         'evm_event.*',
@@ -262,7 +272,10 @@ export class Erc721Handler {
           }
         }
       });
-    return erc721Activities;
+    return {
+      erc721Activities,
+      prevEvmEventId: erc721Events[erc721Events.length - 1]?.id,
+    };
   }
 
   static async updateErc721(
