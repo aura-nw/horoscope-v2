@@ -48,7 +48,7 @@ export default class Erc721Test {
   evmTx = EVMTransaction.fromJson({
     id: 11111,
     hash: '',
-    height: 111,
+    height: this.evmSmartContract.created_height,
     tx_msg_id: 222,
     tx_id: 223,
     contract_address: '',

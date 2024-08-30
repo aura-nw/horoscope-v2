@@ -5,6 +5,7 @@ import knex from '../../../../src/common/utils/db_connection';
 import {
   BlockCheckpoint,
   EVMSmartContract,
+  EVMTransaction,
   EvmInternalTransaction,
 } from '../../../../src/models';
 
@@ -69,6 +70,13 @@ export default class CrawlContractEvmTest {
         height: evmSmartContract.created_height,
       }),
     ];
+    const mockTxQuery: any = {
+      select: () => mockTxQuery,
+      limit: () => ({ id: 1 }),
+      findOne: () => mockTxQuery,
+      orderBy: () => mockTxQuery,
+    };
+    jest.spyOn(EVMTransaction, 'query').mockImplementation(() => mockTxQuery);
     const mockSelfDestructQuery: any = {
       select: () => mockSelfDestructQuery,
       joinRelated: () => mockSelfDestructQuery,
