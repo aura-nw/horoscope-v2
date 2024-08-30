@@ -82,15 +82,33 @@ export default class EVMAccountStatisticsService extends BullableService {
     ]);
 
     this.logger.info(
-      `Get account statistic events for day ${new Date(startTime)}`
+      `Get account statistic events for day ${new Date(startTime)} from ${
+        startBlock[0].height
+      } to ${endBlock[0].height}`
     );
 
-    await this.calculateSpendReceiveGasUsedTxSent(
-      startBlock[0].height,
+    let startBlockNumber = startBlock[0].height;
+    let endBlockNumber = Math.min(
       endBlock[0].height,
-      accountStats,
-      startTime.toISOString()
+      startBlockNumber + config.dailyEVMStatsJobs.crawlAccountStat.blocksPerCall
     );
+    while (startBlockNumber <= endBlock[0].height) {
+      this.logger.info(
+        `get account statistic from ${startBlockNumber} to ${endBlockNumber}`
+      );
+      // eslint-disable-next-line no-await-in-loop
+      await this.calculateSpendReceiveGasUsedTxSent(
+        startBlockNumber,
+        endBlockNumber,
+        accountStats,
+        startTime.toISOString()
+      );
+      startBlockNumber = endBlockNumber + 1;
+      endBlockNumber = Math.min(
+        endBlock[0].height,
+        endBlockNumber + config.dailyEVMStatsJobs.crawlAccountStat.blocksPerCall
+      );
+    }
 
     const dailyAccountStats = Object.keys(accountStats).map(
       (acc) => accountStats[acc]

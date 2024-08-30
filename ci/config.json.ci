@@ -505,7 +505,8 @@
   "dailyEVMStatsJobs": {
     "jobPattern": "0 0 0 * * ?",
     "crawlAccountStat": {
-      "chunkSize": 1000
+      "chunkSize": 1000,
+      "blocksPerCall": 100
     }
   }
 }
