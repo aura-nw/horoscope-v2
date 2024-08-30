@@ -103,6 +103,7 @@ export default class CrawlValidatorService extends BullableService {
           offchainMapped.set(validator.operator_address, true);
 
           validatorEntity = foundValidator;
+          validatorEntity.consensus_pubkey = validator.consensus_pubkey;
           validatorEntity.jailed = validator.jailed === undefined;
           validatorEntity.status = validator.status;
           validatorEntity.tokens = validator.tokens;
@@ -164,8 +165,8 @@ export default class CrawlValidatorService extends BullableService {
       fromBech32(validator.operator_address).data
     );
     const consensusPubkey = {
-      type: validator.consensus_pubkey['@type'],
-      key: validator.consensus_pubkey.key,
+      type: validator.consensus_pubkey.type,
+      key: validator.consensus_pubkey.value,
     };
 
     const validatorEntity = Validator.fromJson({
