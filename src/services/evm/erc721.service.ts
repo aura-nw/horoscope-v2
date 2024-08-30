@@ -89,8 +89,9 @@ export default class Erc721Service extends BullableService {
         await Erc721Handler.getErc721Activities(
           startBlock,
           endBlock,
-          trx,
-          this.logger
+          this.logger,
+          undefined,
+          trx
         );
       await this.handleMissingErc721Contract(erc721Activities, trx);
       if (erc721Activities.length > 0) {

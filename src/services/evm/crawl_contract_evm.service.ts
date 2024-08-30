@@ -250,11 +250,27 @@ export default class CrawlSmartContractEVMService extends BullableService {
     if (startBlock >= endBlock) {
       return;
     }
+    const [fromTx, toTx] = await Promise.all([
+      EVMTransaction.query()
+        .select('id')
+        .findOne('height', '>', startBlock)
+        .orderBy('height', 'asc')
+        .orderBy('index', 'asc')
+        .limit(1),
+      EVMTransaction.query()
+        .select('id')
+        .findOne('height', '<=', endBlock)
+        .orderBy('height', 'desc')
+        .orderBy('index', 'desc')
+        .limit(1),
+    ]);
+    if (!fromTx || !toTx) {
+      return;
+    }
     const selfDestructEvents = _.keyBy(
       await EvmInternalTransaction.query()
-        .joinRelated('evm_transaction')
-        .where('evm_transaction.height', '>', startBlock)
-        .andWhere('evm_transaction.height', '<=', endBlock)
+        .where('evm_tx_id', '>=', fromTx.id)
+        .andWhere('evm_tx_id', '<=', toTx.id)
         .andWhere(
           'evm_internal_transaction.type',
           EvmInternalTransaction.TYPE.SELFDESTRUCT

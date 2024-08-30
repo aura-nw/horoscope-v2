@@ -10,6 +10,7 @@ import {
   Event,
   EventAttribute,
   EvmEvent,
+  EVMTransaction,
 } from '../../models';
 import { AccountBalance } from '../../models/account_balance';
 import { ZERO_ADDRESS } from './constant';
@@ -177,6 +178,23 @@ export class Erc20Handler {
       prevCosmosEventId?: number;
     }
   ) {
+    const [fromTx, toTx] = await Promise.all([
+      EVMTransaction.query()
+        .select('id')
+        .findOne('height', '>', startBlock)
+        .orderBy('height', 'asc')
+        .orderBy('index', 'asc')
+        .limit(1),
+      EVMTransaction.query()
+        .select('id')
+        .findOne('height', '<=', endBlock)
+        .orderBy('height', 'desc')
+        .orderBy('index', 'desc')
+        .limit(1),
+    ]);
+    if (!fromTx || !toTx) {
+      throw Error('fromTx or toTx cannot be found');
+    }
     const erc20Activities: Erc20Activity[] = [];
     const erc20Events = await EvmEvent.query()
       .transacting(trx)
@@ -196,8 +214,8 @@ export class Erc20Handler {
             .limit(page.limitRecordGet);
         }
       })
-      .where('evm_event.block_height', '>', startBlock)
-      .andWhere('evm_event.block_height', '<=', endBlock)
+      .where('evm_event.evm_tx_id', '>=', fromTx.id)
+      .andWhere('evm_event.evm_tx_id', '<=', toTx.id)
       .orderBy('evm_event.id', 'asc')
       .select(
         'evm_event.*',
