@@ -60,6 +60,7 @@ export class EVMSmartContract extends BaseModel {
       PROXY_EIP_1822: 'PROXY_EIP_1822',
       PROXY_OPEN_ZEPPELIN_IMPLEMENTATION: 'PROXY_OPEN_ZEPPELIN_IMPLEMENTATION',
       PROXY_EIP_1167: 'PROXY_EIP_1167',
+      PROXY_EIP_1967_BEACON: 'PROXY_EIP_1967_BEACON',
     };
   }
 
@@ -82,4 +83,20 @@ export class EVMSmartContract extends BaseModel {
       },
     };
   }
+
+  static BEACON_ABI = [
+    {
+      inputs: [],
+      name: 'implementation',
+      outputs: [
+        {
+          internalType: 'address',
+          name: '',
+          type: 'address',
+        },
+      ],
+      stateMutability: 'view',
+      type: 'function',
+    },
+  ];
 }

@@ -1,5 +1,6 @@
 import _ from 'lodash';
-import { PublicClient } from 'viem';
+import { EvmEvent, EVMSmartContract } from 'src/models';
+import { getContract, PublicClient } from 'viem';
 import '../../../../fetch-polyfill.js';
 import {
   DetectEVMProxyContract,
@@ -9,6 +10,7 @@ import {
   NULL_BYTE_CODE,
   ZERO_ADDRESS,
 } from '../constant';
+import { PROXY_EVENT_TOPIC0 } from '../crawl_contract_evm.service.js';
 
 export class ContractHelper {
   private viemClient: PublicClient;
@@ -20,17 +22,13 @@ export class ContractHelper {
   public async detectProxyContractByByteCode(
     contractAddress: string,
     byteCode: string,
-    type: string,
+    byteCodeSlot: string,
     blockHeight?: number | string
   ): Promise<DetectEVMProxyContract> {
     const resultReturn: DetectEVMProxyContract = {
       logicContractAddress: '',
       EIP: '',
     };
-    const byteCodeSlot = Object.values(EIPProxyContractSupportByteCode).find(
-      (e) => e.TYPE === type
-    )?.SLOT;
-    if (!byteCodeSlot) throw Error('Type proxy not supported');
     const result = byteCode.includes(byteCodeSlot);
 
     if (!result) throw Error('Not proxy contract!');
@@ -66,6 +64,24 @@ export class ContractHelper {
     return resultReturn;
   }
 
+  public async detectBeaconProxyContract(
+    beacon?: string
+  ): Promise<DetectEVMProxyContract> {
+    if (!beacon) {
+      throw Error('Not beacon contract!');
+    }
+    const contract = getContract({
+      address: beacon as `0x${string}`,
+      abi: EVMSmartContract.BEACON_ABI,
+      client: this.viemClient,
+    });
+    const implementation = (await contract.read.implementation()) as string;
+    return {
+      logicContractAddress: implementation,
+      EIP: EIPProxyContractSupportByteCode.EIP_1967_BEACON.TYPE,
+    };
+  }
+
   // Detect contract is proxy contract or not
   public async isContractProxy(
     contractAddress: string,
@@ -82,6 +98,12 @@ export class ContractHelper {
     if (!byteCode) {
       return null;
     }
+    const beaconContract = (
+      await EvmEvent.query()
+        .where('address', contractAddress)
+        .andWhere('topic0', PROXY_EVENT_TOPIC0.BEACON_UPGRADED)
+        .select('topic1')
+    ).map((e) => `0x${e.topic1.slice(26)}`);
     try {
       if (byteCodeSlot) {
         result = await this.detectProxyContractByByteCode(
@@ -104,13 +126,7 @@ export class ContractHelper {
             EIPProxyContractSupportByteCode.EIP_1967_IMPLEMENTATION.SLOT,
             blockHeight
           ),
-          // TODO: support beacon soon.
-          // this.detectProxyContractByByteCode(
-          //   contractAddress,
-          //   byteCode,
-          //   EIPProxyContractSupportByteCode.EIP_1967_BEACON.SLOT,
-          //   blockHeight
-          // ),
+          this.detectBeaconProxyContract(beaconContract[0]),
           this.detectProxyContractByByteCode(
             contractAddress,
             byteCode,

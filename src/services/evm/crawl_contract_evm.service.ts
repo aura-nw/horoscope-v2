@@ -2,7 +2,7 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { whatsabi } from '@shazow/whatsabi';
 import _, { Dictionary } from 'lodash';
 import { ServiceBroker } from 'moleculer';
-import { GetBytecodeReturnType, PublicClient, keccak256 } from 'viem';
+import { GetBytecodeReturnType, PublicClient, keccak256, toHex } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import knex from '../../common/utils/db_connection';
@@ -11,6 +11,7 @@ import {
   BlockCheckpoint,
   EVMSmartContract,
   EVMTransaction,
+  EvmEvent,
   EvmInternalTransaction,
 } from '../../models';
 import {
@@ -22,6 +23,9 @@ import {
 } from './constant';
 import { ContractHelper } from './helpers/contract_helper';
 
+export const PROXY_EVENT_TOPIC0 = {
+  BEACON_UPGRADED: keccak256(toHex('BeaconUpgraded(address)')),
+};
 @Service({
   name: SERVICE.V1.CrawlSmartContractEVM.key,
   version: 1,
@@ -169,8 +173,22 @@ export default class CrawlSmartContractEVMService extends BullableService {
     );
     const bytecodesByAddress: _.Dictionary<GetBytecodeReturnType> =
       await this.getBytecodeContracts(notFoundAddresses);
+    const beaconContracts = (
+      await EvmEvent.query()
+        .where('evm_tx_id', '>=', fromTx.id)
+        .andWhere('evm_tx_id', '<=', toTx.id)
+        .andWhere('topic0', PROXY_EVENT_TOPIC0.BEACON_UPGRADED)
+        .select('address', 'topic1')
+    ).map((e) => ({
+      address: e.address,
+      beacon: `0x${e.topic1.slice(26)}`,
+    }));
     const proxyInfoByAddress: _.Dictionary<DetectEVMProxyContract | null> =
-      await this.getContractsProxyInfo(notFoundAddresses, bytecodesByAddress);
+      await this.getContractsProxyInfo(
+        notFoundAddresses,
+        bytecodesByAddress,
+        beaconContracts
+      );
     notFoundAddresses.forEach((address: string) => {
       const code = bytecodesByAddress[address];
       // check if this address has code -> is smart contract
@@ -288,7 +306,11 @@ export default class CrawlSmartContractEVMService extends BullableService {
 
   async getContractsProxyInfo(
     addrs: string[],
-    bytecodes: _.Dictionary<GetBytecodeReturnType>
+    bytecodes: _.Dictionary<GetBytecodeReturnType>,
+    beaconContracts: {
+      address: string;
+      beacon: string;
+    }[]
   ) {
     const result: _.Dictionary<DetectEVMProxyContract | null> = {};
     const proxiesInfo = await Promise.all(
@@ -301,22 +323,25 @@ export default class CrawlSmartContractEVMService extends BullableService {
           this.contractHelper.detectProxyContractByByteCode(
             addr,
             byteCode,
-            EIPProxyContractSupportByteCode.EIP_1967_IMPLEMENTATION.TYPE
+            EIPProxyContractSupportByteCode.EIP_1967_IMPLEMENTATION.SLOT
           ),
           this.contractHelper.detectProxyContractByByteCode(
             addr,
             byteCode,
-            EIPProxyContractSupportByteCode.EIP_1822_IMPLEMENTATION.TYPE
+            EIPProxyContractSupportByteCode.EIP_1822_IMPLEMENTATION.SLOT
           ),
           this.contractHelper.detectProxyContractByByteCode(
             addr,
             byteCode,
-            EIPProxyContractSupportByteCode.OPEN_ZEPPELIN_IMPLEMENTATION.TYPE
+            EIPProxyContractSupportByteCode.OPEN_ZEPPELIN_IMPLEMENTATION.SLOT
           ),
           this.contractHelper.detectProxyContractByByteCode(
             addr,
             byteCode,
-            EIPProxyContractSupportByteCode.EIP_1167_IMPLEMENTATION.TYPE
+            EIPProxyContractSupportByteCode.EIP_1167_IMPLEMENTATION.SLOT
+          ),
+          this.contractHelper.detectBeaconProxyContract(
+            beaconContracts.find((e) => e.address === addr)?.beacon
           ),
         ]).catch(() => Promise.resolve(null));
       })
