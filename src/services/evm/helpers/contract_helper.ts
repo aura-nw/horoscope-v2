@@ -97,12 +97,16 @@ export class ContractHelper {
     if (!byteCode) {
       return null;
     }
-    const beaconContract = (
+    let beaconContract = (
       await EvmEvent.query()
         .where('address', contractAddress)
         .andWhere('topic0', EVMSmartContract.PROXY_EVENT_TOPIC0.BEACON_UPGRADED)
+        .first()
         .select('topic1')
-    ).map((e) => `0x${e.topic1.slice(26)}`);
+    )?.topic1.slice(26);
+    if (beaconContract) {
+      beaconContract = `0x${beaconContract}`;
+    }
     try {
       if (byteCodeSlot) {
         result = await this.detectProxyContractByByteCode(
@@ -125,7 +129,7 @@ export class ContractHelper {
             EIPProxyContractSupportByteCode.EIP_1967_IMPLEMENTATION.SLOT,
             blockHeight
           ),
-          this.detectBeaconProxyContract(beaconContract[0]),
+          this.detectBeaconProxyContract(beaconContract),
           this.detectProxyContractByByteCode(
             contractAddress,
             byteCode,
