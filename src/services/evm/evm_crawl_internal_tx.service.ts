@@ -80,6 +80,7 @@ export default class EvmCrawlInternalTxService extends BullableService {
           `0x${evmBlock.height.toString(16)}`,
           {
             tracer: 'callTracer',
+            timeout: config.evmCrawlInternalTx.timeoutJSONRPC,
           },
         ],
       })
