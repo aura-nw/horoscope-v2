@@ -1,6 +1,7 @@
-import axios from 'axios';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
+import { PublicClient } from 'viem';
+import { getViemClient } from '../../common/utils/etherjs_client';
 import {
   BlockCheckpoint,
   EVMBlock,
@@ -10,7 +11,6 @@ import {
 import { BULL_JOB_NAME, SERVICE } from './constant';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import config from '../../../config.json' assert { type: 'json' };
-import networks from '../../../network.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
 
 @Service({
@@ -18,11 +18,13 @@ import knex from '../../common/utils/db_connection';
   version: 1,
 })
 export default class EvmCrawlInternalTxService extends BullableService {
-  private selectedChain: any = networks.find(
-    (network) => network.chainId === config.chainId
-  );
+  viemJsClient!: PublicClient;
 
-  private EvmJsonRpc = this.selectedChain.EVMJSONRPC[0];
+  // private selectedChain: any = networks.find(
+  //   (network) => network.chainId === config.chainId
+  // );
+
+  // private EvmJsonRpc = this.selectedChain.EVMJSONRPC[0];
 
   public constructor(public broker: ServiceBroker) {
     super(broker);
@@ -72,39 +74,45 @@ export default class EvmCrawlInternalTxService extends BullableService {
     }
 
     const requests = evmBlocks.map((evmBlock) =>
-      axios({
-        url: this.EvmJsonRpc,
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        data: {
-          jsonrpc: '2.0',
-          id: evmBlock.height,
-          method: 'debug_traceBlockByNumber',
-          params: [
-            `0x${evmBlock.height.toString(16)}`,
-            {
-              tracer: 'callTracer',
-              timeout: config.evmCrawlInternalTx.timeoutJSONRPC,
-            },
-          ],
-        },
+      this.viemJsClient.request<any>({
+        method: 'debug_traceBlockByNumber',
+        params: [
+          `0x${evmBlock.height.toString(16)}`,
+          {
+            tracer: 'callTracer',
+          },
+        ],
       })
     );
 
-    const responseBlocks = await Promise.all(requests).then((res) =>
-      res.map((result) => result.data)
-    );
+    // const requests = evmBlocks.map((evmBlock) =>
+    //   axios({
+    //     url: 'https://testnet.storyrpc.io',
+    //     method: 'POST',
+    //     headers: {
+    //       Accept: 'application/json',
+    //       'Content-Type': 'application/json',
+    //     },
+    //     data: {
+    //       jsonrpc: '2.0',
+    //       id: evmBlock.height,
+    //       method: 'debug_traceBlockByNumber',
+    //       params: [
+    //         `0x${evmBlock.height.toString(16)}`,
+    //         {
+    //           tracer: 'callTracer',
+    //           timeout: config.evmCrawlInternalTx.timeoutJSONRPC,
+    //         },
+    //       ],
+    //     },
+    //   })
+    // );
+    const responseBlocks = await Promise.all(requests);
     const internalTxSave: EvmInternalTransaction[] = [];
 
     responseBlocks.forEach((responseBlock: any) => {
-      if (responseBlock.error) {
-        throw Error(JSON.stringify(responseBlock.error));
-      }
-      if (responseBlock.result) {
-        responseBlock.result.forEach((responseTx: any) => {
+      if (responseBlock) {
+        responseBlock.forEach((responseTx: any) => {
           if (responseTx.result?.calls) {
             const { txHash } = responseTx;
             const evmTxDB = evmTxs.find((tx) => tx.hash === txHash);
@@ -124,13 +132,16 @@ export default class EvmCrawlInternalTxService extends BullableService {
 
     await knex.transaction(async (trx) => {
       blockCheckpoint.height = endBlock;
-      await trx
-        .batchInsert(
-          EvmInternalTransaction.tableName,
-          internalTxSave,
-          config.evmCrawlInternalTx.chunkSize
-        )
-        .transacting(trx);
+      if (internalTxSave.length > 0) {
+        await knex
+          .batchInsert(
+            EvmInternalTransaction.tableName,
+            internalTxSave,
+            config.evmCrawlInternalTx.chunkSize
+          )
+          .transacting(trx);
+      }
+
       await BlockCheckpoint.query()
         .transacting(trx)
         .insert(blockCheckpoint)
@@ -178,6 +189,7 @@ export default class EvmCrawlInternalTxService extends BullableService {
   }
 
   public async _start(): Promise<void> {
+    this.viemJsClient = getViemClient();
     await this.createJob(
       BULL_JOB_NAME.EVM_CRAWL_INTERNAL_TX,
       BULL_JOB_NAME.EVM_CRAWL_INTERNAL_TX,

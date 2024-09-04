@@ -115,6 +115,7 @@ export default class CrawlEvmTransactionService extends BullableService {
       })
       .flat();
     const receiptTxs = await this.getListTxReceipt(blocks);
+    const receiptTxsByHash = _.keyBy(receiptTxs, 'transactionHash');
     if (receiptTxs.find((tx) => tx == null)) {
       throw Error('Found null transaction receipt');
     }
@@ -123,10 +124,7 @@ export default class CrawlEvmTransactionService extends BullableService {
       throw Error('Transaction count not match');
     }
     offchainTxs.forEach((offchainTx) => {
-      const receiptTx = receiptTxs.find(
-        (tx) =>
-          tx && tx.transactionHash && tx.transactionHash === offchainTx.hash
-      );
+      const receiptTx = receiptTxsByHash[offchainTx.hash];
       if (!receiptTx) {
         throw Error('Transaction receipt not found');
       }
@@ -135,9 +133,9 @@ export default class CrawlEvmTransactionService extends BullableService {
         ...receiptTx.logs.map((log) => ({
           address: log.address,
           data: log.data === '0x' ? null : fromHex(log.data.substring(2)),
-          block_height: log.blockNumber,
+          block_height: Number(log.blockNumber),
           block_hash: log.blockHash,
-          tx_index: log.transactionIndex,
+          tx_index: Number(log.transactionIndex),
           topic0: log.topics[0],
           topic1: log.topics[1],
           topic2: log.topics[2],
@@ -154,11 +152,11 @@ export default class CrawlEvmTransactionService extends BullableService {
         nonce: offchainTx.nonce,
         height: offchainTx.blockNumber,
         index: offchainTx.transactionIndex,
-        gas_used: receiptTx.gasUsed,
-        gas_price: receiptTx.effectiveGasPrice,
+        gas_used: Number(receiptTx.gasUsed),
+        gas_price: Number(receiptTx.effectiveGasPrice),
         gas: offchainTx.gas,
         type: offchainTx.type,
-        status: receiptTx.status === 'success' ? 1 : 0,
+        status: Number(receiptTx.status),
         contract_address: receiptTx.contractAddress,
         value: offchainTx.value,
         timestamp: offchainTx.timestamp,
@@ -184,14 +182,14 @@ export default class CrawlEvmTransactionService extends BullableService {
     const promises = [];
     for (let i = 0; i < blocks.length; i += 1) {
       const block = blocks[i];
-      for (let j = 0; j < block.transactions.length; j += 1) {
-        const tx = block.transactions[j];
-        promises.push(
-          this.viemJsClient.getTransactionReceipt({ hash: tx.hash })
-        );
-      }
+      promises.push(
+        this.viemJsClient.request<any>({
+          method: 'eth_getBlockReceipts',
+          params: [`0x${block.height.toString(16)}`],
+        })
+      );
     }
-    const receiptTxs = await Promise.all(promises);
+    const receiptTxs = _.flatten(await Promise.all(promises));
     return receiptTxs as OpStackTransactionReceipt[];
   }
 
