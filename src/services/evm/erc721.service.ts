@@ -246,6 +246,14 @@ export default class Erc721Service extends BullableService {
     this.logger.info(`Reindex erc721 contract ${address} done.`);
   }
 
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.REFRESH_ERC721_HOLDER_STATISTIC,
+    jobName: BULL_JOB_NAME.REFRESH_ERC721_HOLDER_STATISTIC,
+  })
+  public async refreshErc721HolderStatistic(): Promise<void> {
+    await knex.schema.refreshMaterializedView('m_view_erc721_holder_statistic');
+  }
+
   @Action({
     name: SERVICE.V1.Erc721.insertNewErc721Contracts.key,
     params: {
@@ -449,6 +457,9 @@ export default class Erc721Service extends BullableService {
 
   public async _start(): Promise<void> {
     this.viemClient = getViemClient();
+    await knex.raw(
+      `set statement_timeout to ${config.erc721.statementTimeout}`
+    );
     if (NODE_ENV !== 'test') {
       await this.createJob(
         BULL_JOB_NAME.HANDLE_ERC721_CONTRACT,
@@ -503,6 +514,20 @@ export default class Erc721Service extends BullableService {
           },
           repeat: {
             pattern: config.erc721.timeRefreshErc721Stats,
+          },
+        }
+      );
+      await this.createJob(
+        BULL_JOB_NAME.REFRESH_ERC721_HOLDER_STATISTIC,
+        BULL_JOB_NAME.REFRESH_ERC721_HOLDER_STATISTIC,
+        {},
+        {
+          removeOnComplete: true,
+          removeOnFail: {
+            count: 3,
+          },
+          repeat: {
+            pattern: config.erc721.timeRefreshMViewErc721HolderStats,
           },
         }
       );

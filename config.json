@@ -415,7 +415,9 @@
     "chunkSizeInsert": 1000,
     "mediaPerBatch": 10,
     "concurrencyHandleTokenMedia": 10,
-    "timeRefreshErc721Stats": "1 * * * *"
+    "timeRefreshErc721Stats": "1 * * * *",
+    "timeRefreshMViewErc721HolderStats": "*/10 * * * *",
+    "statementTimeout": 600000
   },
   "crawlEvmProxyHistory": {
     "key": "crawlEvmProxyHistory",

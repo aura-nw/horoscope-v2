@@ -293,6 +293,7 @@ export const BULL_JOB_NAME = {
   INSERT_VERIFY_BY_CODEHASH: 'job:insert-verify-by-codehash',
   HANDLE_SELF_DESTRUCT: 'handle:self-destruct',
   REINDEX_ERC20: 'reindex:erc20',
+  REFRESH_ERC721_HOLDER_STATISTIC: 'refresh:erc721-holder-statistic',
 };
 
 export const MSG_TYPE = {
