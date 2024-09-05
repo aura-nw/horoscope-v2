@@ -95,6 +95,15 @@ export default class Erc721Service extends BullableService {
         );
       await this.handleMissingErc721Contract(erc721Activities, trx);
       if (erc721Activities.length > 0) {
+        const erc721Contracts = _.keyBy(
+          await Erc721Contract.query()
+            .whereIn(
+              'address',
+              erc721Activities.map((e) => e.erc721_contract_address)
+            )
+            .transacting(trx),
+          'address'
+        );
         const erc721Tokens = _.keyBy(
           await Erc721Token.query()
             .whereIn(
@@ -108,9 +117,14 @@ export default class Erc721Service extends BullableService {
             .transacting(trx),
           (o) => `${o.erc721_contract_address}_${o.token_id}`
         );
-        const erc721Handler = new Erc721Handler(erc721Tokens, erc721Activities);
+        const erc721Handler = new Erc721Handler(
+          erc721Contracts,
+          erc721Tokens,
+          erc721Activities
+        );
         erc721Handler.process();
         await Erc721Handler.updateErc721(
+          Object.values(erc721Handler.erc721Contracts),
           erc721Activities,
           Object.values(erc721Handler.erc721Tokens),
           trx

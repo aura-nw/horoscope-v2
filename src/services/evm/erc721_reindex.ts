@@ -100,7 +100,9 @@ export class Erc721Reindexer {
         contract.read.name().catch(() => Promise.resolve(undefined)),
         contract.read.symbol().catch(() => Promise.resolve(undefined)),
       ]);
-      await Erc721Contract.query()
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      const newErc721Contract: Erc721Contract[] = await Erc721Contract.query()
         .insert(
           Erc721Contract.fromJson({
             evm_smart_contract_id: erc721Contract.evm_smart_contract_id,
@@ -120,7 +122,12 @@ export class Erc721Reindexer {
         [address],
         trx
       );
-      await Erc721Handler.updateErc721(activities, tokens, trx);
+      await Erc721Handler.updateErc721(
+        newErc721Contract,
+        activities,
+        tokens,
+        trx
+      );
     });
     const erc721Stats = await Erc721Handler.calErc721Stats([address]);
     if (erc721Stats.length > 0) {

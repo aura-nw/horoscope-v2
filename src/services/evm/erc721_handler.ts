@@ -64,6 +64,8 @@ export const ERC721_ACTION = {
   APPROVAL_FOR_ALL: 'approval_for_all',
 };
 export class Erc721Handler {
+  erc721Contracts: Dictionary<Erc721Contract>;
+
   // key: {contract_address}_{token_id}
   // value: erc721 token
   erc721Tokens: Dictionary<Erc721Token>;
@@ -71,9 +73,11 @@ export class Erc721Handler {
   erc721Activities: Erc721Activity[];
 
   constructor(
+    erc721Contracts: Dictionary<Erc721Contract>,
     erc721Tokens: Dictionary<Erc721Token>,
     erc721Activities: Erc721Activity[]
   ) {
+    this.erc721Contracts = erc721Contracts;
     this.erc721Tokens = erc721Tokens;
     this.erc721Activities = erc721Activities;
   }
@@ -91,10 +95,15 @@ export class Erc721Handler {
       this.erc721Tokens[
         `${erc721Activity.erc721_contract_address}_${erc721Activity.token_id}`
       ];
+    const erc721Contract =
+      this.erc721Contracts[`${erc721Activity.erc721_contract_address}`];
     if (token) {
       // update new owner and last updated height
       token.owner = erc721Activity.to;
       token.last_updated_height = erc721Activity.height;
+      if (erc721Activity.to === ZERO_ADDRESS) {
+        erc721Contract.total_supply -= 1;
+      }
     } else if (erc721Activity.from === ZERO_ADDRESS) {
       // handle mint
       this.erc721Tokens[
@@ -106,6 +115,7 @@ export class Erc721Handler {
         last_updated_height: erc721Activity.height,
         burned: false,
       });
+      erc721Contract.total_supply += 1;
     } else {
       throw new Error('Handle erc721 tranfer error');
     }
@@ -266,10 +276,24 @@ export class Erc721Handler {
   }
 
   static async updateErc721(
+    erc721Contracts: Erc721Contract[],
     erc721Activities: Erc721Activity[],
     erc721Tokens: Erc721Token[],
     trx: Knex.Transaction
   ) {
+    if (erc721Contracts.length > 0) {
+      const stringListUpdates = erc721Contracts
+        .map(
+          (erc721Contract) =>
+            `('${erc721Contract.address}', ${erc721Contract.total_supply})`
+        )
+        .join(',');
+      await knex
+        .raw(
+          `UPDATE erc721_contract SET total_supply = temp.total_supply from (VALUES ${stringListUpdates}) as temp(address, total_supply) where temp.address = erc721_contract.address`
+        )
+        .transacting(trx);
+    }
     let updatedTokens: Dictionary<Erc721Token> = {};
     if (erc721Tokens.length > 0) {
       updatedTokens = _.keyBy(
