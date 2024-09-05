@@ -1,5 +1,6 @@
 import _ from 'lodash';
-import { PublicClient } from 'viem';
+import { getContract, PublicClient } from 'viem';
+import { EvmEvent, EVMSmartContract } from '../../../models';
 import '../../../../fetch-polyfill.js';
 import {
   DetectEVMProxyContract,
@@ -62,6 +63,24 @@ export class ContractHelper {
     return resultReturn;
   }
 
+  public async detectBeaconProxyContract(
+    beacon?: string
+  ): Promise<DetectEVMProxyContract> {
+    if (!beacon) {
+      throw Error('Not beacon contract!');
+    }
+    const contract = getContract({
+      address: beacon as `0x${string}`,
+      abi: EVMSmartContract.BEACON_ABI,
+      client: this.viemClient,
+    });
+    const implementation = (await contract.read.implementation()) as string;
+    return {
+      logicContractAddress: implementation,
+      EIP: EIPProxyContractSupportByteCode.EIP_1967_BEACON.TYPE,
+    };
+  }
+
   // Detect contract is proxy contract or not
   public async isContractProxy(
     contractAddress: string,
@@ -77,6 +96,16 @@ export class ContractHelper {
     let result: DetectEVMProxyContract | null;
     if (!byteCode) {
       return null;
+    }
+    let beaconContract = (
+      await EvmEvent.query()
+        .where('address', contractAddress)
+        .andWhere('topic0', EVMSmartContract.PROXY_EVENT_TOPIC0.BEACON_UPGRADED)
+        .first()
+        .select('topic1')
+    )?.topic1.slice(26);
+    if (beaconContract) {
+      beaconContract = `0x${beaconContract}`;
     }
     try {
       if (byteCodeSlot) {
@@ -100,13 +129,7 @@ export class ContractHelper {
             EIPProxyContractSupportByteCode.EIP_1967_IMPLEMENTATION.SLOT,
             blockHeight
           ),
-          // TODO: support beacon soon.
-          // this.detectProxyContractByByteCode(
-          //   contractAddress,
-          //   byteCode,
-          //   EIPProxyContractSupportByteCode.EIP_1967_BEACON.SLOT,
-          //   blockHeight
-          // ),
+          this.detectBeaconProxyContract(beaconContract),
           this.detectProxyContractByByteCode(
             contractAddress,
             byteCode,
