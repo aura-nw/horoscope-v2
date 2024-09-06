@@ -155,8 +155,13 @@ export default class CrawlProxyContractEVMService extends BullableService {
       }
 
       newJSONProxy.proxy_contract = _.toLower(evmEvent.address);
-      newJSONProxy.implementation_contract =
-        _.toLower(implementationAddress as string | undefined) || null;
+      if (implementationAddress) {
+        newJSONProxy.implementation_contract = _.toLower(
+          implementationAddress as string
+        );
+      } else {
+        newJSONProxy.implementation_contract = null;
+      }
       newJSONProxy.block_height = evmEvent.block_height;
       newJSONProxy.tx_hash = evmEvent.tx_hash;
       newJSONProxy.last_updated_height = lastUpdatedHeight;
