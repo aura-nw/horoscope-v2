@@ -139,22 +139,24 @@ export default class CrawlProxyContractEVMService extends BullableService {
         //   break;
         default:
           if (firstTimeCatchProxyEvent) {
-            implementationAddress = await this.contractHelper.isContractProxy(
-              evmEvent.address,
-              _.find(
-                EIPProxyContractSupportByteCode,
-                (value, __) => value.TYPE === evmEventProxy.type
-              )?.SLOT,
-              undefined,
-              bytecodes[evmEvent.address]
-            );
+            implementationAddress = (
+              await this.contractHelper.isContractProxy(
+                evmEvent.address,
+                _.find(
+                  EIPProxyContractSupportByteCode,
+                  (value, __) => value.TYPE === evmEventProxy.type
+                )?.SLOT,
+                undefined,
+                bytecodes[evmEvent.address]
+              )
+            )?.logicContractAddress;
           }
           break;
       }
 
       newJSONProxy.proxy_contract = _.toLower(evmEvent.address);
       newJSONProxy.implementation_contract =
-        _.toLower(implementationAddress as string) || null;
+        _.toLower(implementationAddress as string | undefined) || null;
       newJSONProxy.block_height = evmEvent.block_height;
       newJSONProxy.tx_hash = evmEvent.tx_hash;
       newJSONProxy.last_updated_height = lastUpdatedHeight;
