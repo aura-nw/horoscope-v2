@@ -59,6 +59,12 @@ export default class CrawlValidatorService extends BullableService {
       limit: Long.fromInt(config.crawlValidator.queryPageLimit),
     };
 
+    const stakingPoolCallApi: any = await axios({
+      baseURL: this._lcd,
+      url: '/staking/pool',
+      method: 'GET',
+    });
+
     while (!done) {
       resultCallApi = await axios({
         baseURL: this._lcd,
@@ -107,6 +113,11 @@ export default class CrawlValidatorService extends BullableService {
           validatorEntity.jailed = validator.jailed === undefined;
           validatorEntity.status = validator.status;
           validatorEntity.tokens = validator.tokens;
+          validatorEntity.percent_voting_power =
+            Number(
+              (BigInt(validator.tokens) * BigInt(100000000)) /
+                BigInt(stakingPoolCallApi.data.pool.bonded_tokens)
+            ) / 1000000;
           validatorEntity.delegator_shares = validator.delegator_shares;
           validatorEntity.description = validator.description;
           validatorEntity.unbonding_height = Number.parseInt(
