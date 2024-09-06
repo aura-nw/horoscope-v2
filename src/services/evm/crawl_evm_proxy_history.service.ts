@@ -114,7 +114,7 @@ export default class CrawlProxyContractEVMService extends BullableService {
       }) as EVMSmartContract;
       const firstTimeCatchProxyEvent =
         proxyContractDb.find((proxy) => proxy.address === evmEvent.address) &&
-        anyProxyHistoryByAddress[evmEvent.address];
+        !anyProxyHistoryByAddress[evmEvent.address];
       const newJSONProxy: Dictionary<any> = {};
 
       switch (evmEvent.topic0) {
