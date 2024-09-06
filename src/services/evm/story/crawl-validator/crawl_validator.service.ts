@@ -116,7 +116,7 @@ export default class CrawlValidatorService extends BullableService {
           validatorEntity.percent_voting_power =
             Number(
               (BigInt(validator.tokens) * BigInt(100000000)) /
-                BigInt(stakingPoolCallApi.data.pool.bonded_tokens)
+                BigInt(stakingPoolCallApi.data.msg.pool.bonded_tokens)
             ) / 1000000;
           validatorEntity.delegator_shares = validator.delegator_shares;
           validatorEntity.description = validator.description;
