@@ -22,7 +22,7 @@ import { Erc721Contract } from '../../models/erc721_contract';
 import { BULL_JOB_NAME, SERVICE } from './constant';
 import { Erc721Handler } from './erc721_handler';
 import * as Erc721MediaHandler from './erc721_media_handler';
-import { Erc721Reindexer } from './erc721_reindex';
+import { Erc721Reindexer, REINDEX_TYPE } from './erc721_reindex';
 
 const { NODE_ENV } = Config;
 @Service({
@@ -85,14 +85,13 @@ export default class Erc721Service extends BullableService {
           ],
           config.erc721.key
         );
-      const erc721Activities: Erc721Activity[] =
-        await Erc721Handler.getErc721Activities(
-          startBlock,
-          endBlock,
-          this.logger,
-          undefined,
-          trx
-        );
+      const { erc721Activities } = await Erc721Handler.getErc721Activities(
+        startBlock,
+        endBlock,
+        this.logger,
+        undefined,
+        trx
+      );
       await this.handleMissingErc721Contract(erc721Activities, trx);
       if (erc721Activities.length > 0) {
         const erc721Tokens = _.keyBy(
@@ -239,10 +238,17 @@ export default class Erc721Service extends BullableService {
     queueName: BULL_JOB_NAME.REINDEX_ERC721,
     jobName: BULL_JOB_NAME.REINDEX_ERC721,
   })
-  async reindexErc721(_payload: { address: `0x${string}` }): Promise<void> {
-    const { address } = _payload;
+  async reindexErc721(_payload: {
+    address: `0x${string}`;
+    type: string;
+  }): Promise<void> {
+    const { address, type } = _payload;
     const erc721Reindexer = new Erc721Reindexer(this.viemClient, this.logger);
-    await erc721Reindexer.reindex(address);
+    if (type === REINDEX_TYPE.HISTORY) {
+      await erc721Reindexer.reindexFromHistory(address);
+    } else {
+      await erc721Reindexer.reindex(address);
+    }
     this.logger.info(`Reindex erc721 contract ${address} done.`);
   }
 
@@ -289,16 +295,24 @@ export default class Erc721Service extends BullableService {
         items: 'string',
         optional: false,
       },
+      type: {
+        type: 'string',
+        optional: false,
+      },
     },
   })
   public async reindexing(
     ctx: Context<{
       addresses: `0x${string}`[];
+      type: string;
     }>
   ) {
     let { addresses } = ctx.params;
-    const erc721Reindexer = new Erc721Reindexer(this.viemClient, this.logger);
-    addresses = await erc721Reindexer.filterReindex(addresses);
+    const { type } = ctx.params;
+    if (type === REINDEX_TYPE.CURRENT) {
+      const erc721Reindexer = new Erc721Reindexer(this.viemClient, this.logger);
+      addresses = await erc721Reindexer.filterReindex(addresses);
+    }
     if (addresses.length > 0) {
       await Promise.all(
         addresses.map((address) =>
@@ -307,6 +321,7 @@ export default class Erc721Service extends BullableService {
             BULL_JOB_NAME.REINDEX_ERC721,
             {
               address,
+              type,
             },
             {
               jobId: address,

@@ -417,7 +417,10 @@
     "chunkSizeInsert": 1000,
     "mediaPerBatch": 10,
     "concurrencyHandleTokenMedia": 10,
-    "timeRefreshErc721Stats": "1 * * * *"
+    "timeRefreshErc721Stats": "1 * * * *",
+    "reindex": {
+      "limitRecordGet": 2
+    }
   },
   "jobRefreshMViewAccountBalanceStatistic": {
     "timeRefreshMViewAccountBalanceStatistic": "*/10 * * * *"
