@@ -1,5 +1,6 @@
 import { BeforeEach, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
+import { hexToBytes } from 'viem';
 import knex from '../../../../src/common/utils/db_connection';
 import CreateConstraintInEVMTransactionPartitionJob from '../../../../src/services/evm/job/create_constraint_in_evm_transaction_partition.service';
 import { EVMTransaction } from '../../../../src/models';
@@ -15,7 +16,7 @@ export default class CreateEVMTransactionConstraintPartitionSpec {
     newEVMTx.id = desiredId;
     newEVMTx.tx_id = 1;
     newEVMTx.tx_msg_id = 2;
-    newEVMTx.hash = 'hash';
+    newEVMTx.hash = Buffer.from(hexToBytes('0x1234'));
     newEVMTx.height = 123;
     await EVMTransaction.query().insert(newEVMTx);
   }
