@@ -19,7 +19,8 @@
         "src/services/**/*.service.ts",
         "--config",
         "src/moleculer.config.ts"
-      ]
+      ],
+      "console": "integratedTerminal"
     },
     {
       "type": "node",

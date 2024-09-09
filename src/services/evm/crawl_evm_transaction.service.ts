@@ -1,6 +1,11 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { fromHex } from '@cosmjs/encoding';
-import { PublicClient, FormattedTransaction } from 'viem';
+import {
+  PublicClient,
+  FormattedTransaction,
+  hexToBytes,
+  bytesToHex,
+} from 'viem';
 import _ from 'lodash';
 import { OpStackTransactionReceipt } from 'viem/chains';
 import { BlockCheckpoint, EVMBlock } from '../../models';
@@ -45,9 +50,7 @@ export default class CrawlEvmTransactionService extends BullableService {
       .where('height', '>', startBlock)
       .andWhere('height', '<=', endBlock)
       .orderBy('height', 'asc');
-
     const { evmTxs, evmEvents } = await this.getEVMTxsFromBlocks(blocks);
-
     await knex.transaction(async (trx) => {
       if (evmTxs.length > 0) {
         const insertedTxByHash = _.keyBy(
@@ -59,22 +62,21 @@ export default class CrawlEvmTransactionService extends BullableService {
             )
             .returning(['id', 'hash'])
             .transacting(trx),
-          'hash'
+          (e) => bytesToHex(e.hash)
         );
         if (evmEvents.length > 0) {
-          evmEvents.forEach((evmEvent) => {
+          // eslint-disable-next-line array-callback-return
+          evmEvents.map((evmEvent) => {
             // eslint-disable-next-line no-param-reassign
             evmEvent.evm_tx_id = insertedTxByHash[evmEvent.tx_hash].id;
           });
-          const resultInsert = await knex
+          await knex
             .batchInsert(
               'evm_event',
               evmEvents,
               config.crawlEvmTransaction.chunkSize
             )
-            .returning('id')
             .transacting(trx);
-          this.logger.debug('result insert evmEvents: ', resultInsert);
         }
       }
       if (blockCheckpoint) {
@@ -145,10 +147,10 @@ export default class CrawlEvmTransactionService extends BullableService {
       );
 
       evmTxs.push({
-        from: offchainTx.from.toLowerCase(),
-        to: offchainTx.to?.toLowerCase(),
-        hash: offchainTx.hash,
-        data: offchainTx.input ? offchainTx.input.substring(2) : null,
+        from: offchainTx.from ? hexToBytes(offchainTx.from) : null,
+        to: offchainTx.to ? hexToBytes(offchainTx.to) : null,
+        hash: offchainTx.hash ? hexToBytes(offchainTx.hash) : null,
+        data: offchainTx.input ? hexToBytes(offchainTx.input) : null,
         nonce: offchainTx.nonce,
         height: offchainTx.blockNumber,
         index: offchainTx.transactionIndex,
@@ -157,7 +159,9 @@ export default class CrawlEvmTransactionService extends BullableService {
         gas: offchainTx.gas,
         type: offchainTx.type,
         status: Number(receiptTx.status),
-        contract_address: receiptTx.contractAddress,
+        contract_address: receiptTx.contractAddress
+          ? hexToBytes(receiptTx.contractAddress)
+          : null,
         value: offchainTx.value,
         timestamp: offchainTx.timestamp,
         additional_data: config.crawlEvmTransaction.additionalData.optimism
