@@ -1,7 +1,7 @@
 import { fromBase64, toHex } from '@cosmjs/encoding';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
-import { PublicClient } from 'viem';
+import { bytesToHex, hexToBytes, PublicClient } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME as COSMOS_BULL_JOB_NAME } from '../../common';
@@ -121,11 +121,13 @@ export default class HandleTransactionEVMService extends BullableService {
           .filter((evmTx) => !evmTx.to)
           .map(async (evmTx) => {
             const txReceipt = await this.viemClient.getTransactionReceipt({
-              hash: evmTx.hash as `0x${string}`,
+              hash: bytesToHex(evmTx.hash) as `0x${string}`,
             });
             if (txReceipt && txReceipt.contractAddress) {
               // eslint-disable-next-line no-param-reassign
-              evmTx.contract_address = txReceipt?.contractAddress.toLowerCase();
+              evmTx.contract_address = Buffer.from(
+                hexToBytes(txReceipt?.contractAddress)
+              );
             }
           })
       );
