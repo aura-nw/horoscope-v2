@@ -114,7 +114,7 @@ export default class CrawlProxyContractEVMService extends BullableService {
       }) as EVMSmartContract;
       const firstTimeCatchProxyEvent =
         proxyContractDb.find((proxy) => proxy.address === evmEvent.address) &&
-        anyProxyHistoryByAddress[evmEvent.address];
+        !anyProxyHistoryByAddress[evmEvent.address];
       const newJSONProxy: Dictionary<any> = {};
 
       switch (evmEvent.topic0) {
@@ -139,22 +139,29 @@ export default class CrawlProxyContractEVMService extends BullableService {
         //   break;
         default:
           if (firstTimeCatchProxyEvent) {
-            implementationAddress = await this.contractHelper.isContractProxy(
-              evmEvent.address,
-              _.find(
-                EIPProxyContractSupportByteCode,
-                (value, __) => value.TYPE === evmEventProxy.type
-              )?.SLOT,
-              undefined,
-              bytecodes[evmEvent.address]
-            );
+            implementationAddress = (
+              await this.contractHelper.isContractProxy(
+                evmEvent.address,
+                _.find(
+                  EIPProxyContractSupportByteCode,
+                  (value, __) => value.TYPE === evmEventProxy.type
+                )?.SLOT,
+                undefined,
+                bytecodes[evmEvent.address]
+              )
+            )?.logicContractAddress;
           }
           break;
       }
 
       newJSONProxy.proxy_contract = _.toLower(evmEvent.address);
-      newJSONProxy.implementation_contract =
-        _.toLower(implementationAddress as string) || null;
+      if (implementationAddress) {
+        newJSONProxy.implementation_contract = _.toLower(
+          implementationAddress as string
+        );
+      } else {
+        newJSONProxy.implementation_contract = null;
+      }
       newJSONProxy.block_height = evmEvent.block_height;
       newJSONProxy.tx_hash = evmEvent.tx_hash;
       newJSONProxy.last_updated_height = lastUpdatedHeight;
