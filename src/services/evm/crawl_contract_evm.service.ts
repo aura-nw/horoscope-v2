@@ -117,7 +117,7 @@ export default class CrawlSmartContractEVMService extends BullableService {
     let addresses: string[] = [];
     const txCreationWithAdressses: Dictionary<EVMTransaction> = {};
     evmTxs.forEach((evmTx: any) => {
-      ['from', 'to', 'data', 'contractAddress'].forEach((key) => {
+      ['hash', 'from', 'to', 'data', 'contractAddress'].forEach((key) => {
         if (evmTx[key]) {
           // eslint-disable-next-line no-param-reassign
           evmTx[key] = bytesToHex(evmTx[key]);
