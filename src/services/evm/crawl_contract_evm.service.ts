@@ -2,7 +2,12 @@ import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { whatsabi } from '@shazow/whatsabi';
 import _, { Dictionary } from 'lodash';
 import { ServiceBroker } from 'moleculer';
-import { GetBytecodeReturnType, PublicClient, keccak256 } from 'viem';
+import {
+  GetBytecodeReturnType,
+  PublicClient,
+  bytesToHex,
+  keccak256,
+} from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../base/bullable.service';
 import knex from '../../common/utils/db_connection';
@@ -112,6 +117,12 @@ export default class CrawlSmartContractEVMService extends BullableService {
     let addresses: string[] = [];
     const txCreationWithAdressses: Dictionary<EVMTransaction> = {};
     evmTxs.forEach((evmTx: any) => {
+      ['hash', 'from', 'to', 'data', 'contractAddress'].forEach((key) => {
+        if (evmTx[key]) {
+          // eslint-disable-next-line no-param-reassign
+          evmTx[key] = bytesToHex(evmTx[key]);
+        }
+      });
       const { data, contractAddress } = evmTx;
       let currentAddresses: string[] = [];
       ['from', 'to', 'contractAddress'].forEach((key) => {

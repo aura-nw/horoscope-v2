@@ -1,6 +1,7 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
-import { PublicClient } from 'viem';
+import { bytesToHex, PublicClient } from 'viem';
+import _ from 'lodash';
 import { getViemClient } from '../../common/utils/etherjs_client';
 import {
   BlockCheckpoint,
@@ -62,7 +63,7 @@ export default class EvmCrawlInternalTxService extends BullableService {
         .where('height', '>', startBlock)
         .andWhere('height', '<=', endBlock),
     ]);
-
+    const evmTxsByHash = _.keyBy(evmTxs, (e) => bytesToHex(e.hash));
     if (evmBlocks.length === 0) {
       this.logger.info(`No evm block found from ${startBlock} to ${endBlock}`);
       blockCheckpoint.height = endBlock;
@@ -85,29 +86,6 @@ export default class EvmCrawlInternalTxService extends BullableService {
         ],
       })
     );
-
-    // const requests = evmBlocks.map((evmBlock) =>
-    //   axios({
-    //     url: 'https://testnet.storyrpc.io',
-    //     method: 'POST',
-    //     headers: {
-    //       Accept: 'application/json',
-    //       'Content-Type': 'application/json',
-    //     },
-    //     data: {
-    //       jsonrpc: '2.0',
-    //       id: evmBlock.height,
-    //       method: 'debug_traceBlockByNumber',
-    //       params: [
-    //         `0x${evmBlock.height.toString(16)}`,
-    //         {
-    //           tracer: 'callTracer',
-    //           timeout: config.evmCrawlInternalTx.timeoutJSONRPC,
-    //         },
-    //       ],
-    //     },
-    //   })
-    // );
     const responseBlocks = await Promise.all(requests);
     const internalTxSave: EvmInternalTransaction[] = [];
 
@@ -116,7 +94,7 @@ export default class EvmCrawlInternalTxService extends BullableService {
         responseBlock.forEach((responseTx: any) => {
           if (responseTx.result?.calls) {
             const { txHash } = responseTx;
-            const evmTxDB = evmTxs.find((tx) => tx.hash === txHash);
+            const evmTxDB = evmTxsByHash[txHash];
             if (!evmTxDB) {
               throw Error('Cannot found this evm_tx_id');
             }

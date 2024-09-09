@@ -1,7 +1,7 @@
 import { Knex } from 'knex';
 import _, { Dictionary } from 'lodash';
 import Moleculer from 'moleculer';
-import { decodeAbiParameters, keccak256, toHex } from 'viem';
+import { bytesToHex, decodeAbiParameters, keccak256, toHex } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
 import {
@@ -122,7 +122,7 @@ export class Erc721Handler {
       ) as [string, string, number];
       return Erc721Activity.fromJson({
         evm_event_id: e.id,
-        sender: e.sender,
+        sender: bytesToHex(e.sender),
         action: ERC721_ACTION.TRANSFER,
         erc721_contract_address: e.address,
         from: from.toLowerCase(),
@@ -149,7 +149,7 @@ export class Erc721Handler {
       ) as [string, string, number];
       return Erc721Activity.fromJson({
         evm_event_id: e.id,
-        sender: e.sender,
+        sender: bytesToHex(e.sender),
         action: ERC721_ACTION.APPROVAL,
         erc721_contract_address: e.address,
         from: from.toLowerCase(),
@@ -176,7 +176,7 @@ export class Erc721Handler {
       ) as [string, string];
       return Erc721Activity.fromJson({
         evm_event_id: e.id,
-        sender: e.sender,
+        sender: bytesToHex(e.sender),
         action: ERC721_ACTION.APPROVAL_FOR_ALL,
         erc721_contract_address: e.address,
         from: from.toLowerCase(),

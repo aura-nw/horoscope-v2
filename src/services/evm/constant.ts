@@ -33,7 +33,7 @@ export const ABI_CHECK_INTERFACE_ERC_1155 = [
 
 export const EVM_CONTRACT_METHOD_HEX_PREFIX = {
   // https://ethereum.stackexchange.com/questions/124906/how-to-tell-if-a-transaction-is-contract-creation
-  CREATE_CONTRACT: '60806040',
+  CREATE_CONTRACT: '0x60806040',
   ABI_INTERFACE_ERC20: ABI_CHECK_INTERFACE_ERC_20.map((method) =>
     keccak256(toBytes(method)).slice(2, 10)
   ),
