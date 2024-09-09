@@ -56,10 +56,10 @@ export const EIPProxyContractSupportByteCode = {
     TYPE: EVMSmartContract.TYPES.PROXY_EIP_1967,
   },
   // TODO: support beacon soon.
-  // EIP_1967_BEACON: {
-  //   SLOT: 'a3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50', // eip1967.proxy.beacon
-  //   TYPE: EVMSmartContract.TYPES.PROXY_EIP_1967,
-  // },
+  EIP_1967_BEACON: {
+    SLOT: 'a3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50', // eip1967.proxy.beacon
+    TYPE: EVMSmartContract.TYPES.PROXY_EIP_1967_BEACON,
+  },
   // EIP_1967_ADMIN: {
   //   SLOT: 'b53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103', // eip1967.proxy.admin
   //   TYPE: EVMSmartContract.TYPES.PROXY_EIP_1967,
