@@ -81,6 +81,7 @@ export default class CrawlProxyContractEVMService extends BullableService {
         EVMSmartContract.TYPES.PROXY_EIP_1822,
         EVMSmartContract.TYPES.PROXY_OPEN_ZEPPELIN_IMPLEMENTATION,
         EVMSmartContract.TYPES.PROXY_EIP_1167,
+        EVMSmartContract.TYPES.PROXY_EIP_1967_BEACON,
       ])
       .select('address');
     const distictAddresses = _.uniq(evmEvents.map((e) => e.address));
