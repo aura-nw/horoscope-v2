@@ -466,7 +466,8 @@
     },
     "transport": {
       "batchSize": 10,
-      "waitMilisecond": 1000
+      "waitMilisecond": 1000,
+      "timeout": 10000
     }
   },
   "crawlEvmAccount": {
