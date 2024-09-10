@@ -1,5 +1,6 @@
 import { BeforeAll, Describe, Test } from '@jest-decorated/core';
 import { ServiceBroker } from 'moleculer';
+import { bytesToHex, hexToBytes } from 'viem';
 import config from '../../../../config.json' assert { type: 'json' };
 import knex from '../../../../src/common/utils/db_connection';
 import {
@@ -42,11 +43,12 @@ export default class Erc721HandlerTest {
 
   evmTx = EVMTransaction.fromJson({
     id: 11111,
-    hash: '',
+    hash: hexToBytes(
+      '0x3faac2ed3ca031892c04598177f7c36e9fdcdf2fb3b6c4a13c520590facb82ef'
+    ),
     height: 111,
     tx_msg_id: 222,
     tx_id: 223,
-    contract_address: '',
     index: 1,
   });
 
@@ -100,7 +102,7 @@ export default class Erc721HandlerTest {
           address: this.evmSmartContract.address,
           evm_tx_id: this.evmTx.id,
           tx_id: 1234,
-          tx_hash: this.evmTx.hash,
+          tx_hash: bytesToHex(this.evmTx.hash),
           tx_index: 1,
         }),
         EvmEvent.fromJson({
@@ -119,7 +121,7 @@ export default class Erc721HandlerTest {
           address: this.evmSmartContract.address,
           evm_tx_id: this.evmTx.id,
           tx_id: 1234,
-          tx_hash: this.evmTx.hash,
+          tx_hash: bytesToHex(this.evmTx.hash),
           tx_index: 1,
         }),
         EvmEvent.fromJson({
@@ -138,7 +140,7 @@ export default class Erc721HandlerTest {
           address: this.evmSmartContract2.address,
           evm_tx_id: this.evmTx.id,
           tx_id: 1234,
-          tx_hash: this.evmTx.hash,
+          tx_hash: bytesToHex(this.evmTx.hash),
           tx_index: 1,
         }),
         EvmEvent.fromJson({
@@ -157,7 +159,7 @@ export default class Erc721HandlerTest {
           address: this.evmSmartContract.address,
           evm_tx_id: this.evmTx.id,
           tx_id: 1234,
-          tx_hash: this.evmTx.hash,
+          tx_hash: bytesToHex(this.evmTx.hash),
           tx_index: 1,
         }),
       ];
