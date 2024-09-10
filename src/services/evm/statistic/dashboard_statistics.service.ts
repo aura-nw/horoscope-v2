@@ -2,6 +2,8 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
+import BigNumber from 'bignumber.js';
+import axios from 'axios';
 import {
   BlockCheckpoint,
   DailyStatistics,
@@ -13,12 +15,19 @@ import {
 import { BULL_JOB_NAME, REDIS_KEY, SERVICE } from '../constant';
 import config from '../../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../../base/bullable.service';
+import networks from '../../../../network.json' assert { type: 'json' };
 
 @Service({
   name: SERVICE.V1.DashboardEVMStatisticsService.key,
   version: 1,
 })
 export default class DashboardEVMStatisticsService extends BullableService {
+  private selectedChain: any = networks.find(
+    (network) => network.chainId === config.chainId
+  );
+
+  private _lcd = this.selectedChain.LCD[0];
+
   public constructor(public broker: ServiceBroker) {
     super(broker);
   }
@@ -109,18 +118,26 @@ export default class DashboardEVMStatisticsService extends BullableService {
   public async handleJob(_payload: object): Promise<void> {
     this.logger.info('Update EVM dashboard statistics');
 
-    const [totalBlocks, totalTxs, avgBlockTime, latestDailyStat] =
-      await Promise.all([
-        BlockCheckpoint.query().findOne(
-          'job_name',
-          config.evmOnly
-            ? BULL_JOB_NAME.CRAWL_EVM_TRANSACTION
-            : BULL_JOB_NAME.HANDLE_TRANSACTION_EVM
-        ),
-        this.statisticTotalTransaction(),
-        this.avgBlockTime(),
-        DailyStatistics.query().orderBy('date', 'desc').first(),
-      ]);
+    const [
+      totalBlocks,
+      totalTxs,
+      avgBlockTime,
+      latestDailyStat,
+      totalSupply,
+      bondedTokens,
+    ] = await Promise.all([
+      BlockCheckpoint.query().findOne(
+        'job_name',
+        config.evmOnly
+          ? BULL_JOB_NAME.CRAWL_EVM_TRANSACTION
+          : BULL_JOB_NAME.HANDLE_TRANSACTION_EVM
+      ),
+      this.statisticTotalTransaction(),
+      this.avgBlockTime(),
+      DailyStatistics.query().orderBy('date', 'desc').first(),
+      this.getTotalSupplyByDenom(),
+      this.getBondedTokenInStakingPool(),
+    ]);
 
     const dashboardStatistics = {
       total_blocks: totalBlocks?.height,
@@ -128,12 +145,52 @@ export default class DashboardEVMStatisticsService extends BullableService {
       avg_block_time: avgBlockTime,
       addresses: latestDailyStat ? latestDailyStat.unique_addresses : 0,
       daily_transaction: latestDailyStat ? latestDailyStat.daily_txs : 0,
+      total_supply: totalSupply,
+      staking_apr: BigNumber(config.dashboardStatistics.currentInflation)
+        .multipliedBy(
+          BigNumber(1 - config.dashboardStatistics.currentCommunityTax)
+        )
+        .multipliedBy(BigNumber(totalSupply))
+        .dividedBy(bondedTokens)
+        .multipliedBy(100),
     };
 
     await this.broker.cacher?.set(
       REDIS_KEY.DASHBOARD_EVM_STATISTICS,
       dashboardStatistics
     );
+  }
+
+  async getBondedTokenInStakingPool() {
+    if (!this._lcd) {
+      this.logger.error('Config network not have LCD');
+      return 0;
+    }
+    const resultCallApi = await axios({
+      baseURL: this._lcd,
+      url: 'staking/pool',
+      method: 'GET',
+      params: {
+        denom: config.dashboardStatistics.denomSupply,
+      },
+    });
+    return resultCallApi.data.msg.pool.bonded_tokens;
+  }
+
+  async getTotalSupplyByDenom() {
+    if (!this._lcd) {
+      this.logger.error('Config network not have LCD');
+      return 0;
+    }
+    const resultCallApi = await axios({
+      baseURL: this._lcd,
+      url: '/bank/supply/by_denom',
+      method: 'GET',
+      params: {
+        denom: config.dashboardStatistics.denomSupply,
+      },
+    });
+    return resultCallApi.data.msg.amount.amount;
   }
 
   public async _start() {

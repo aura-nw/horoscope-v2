@@ -1,13 +1,17 @@
 /* eslint-disable no-param-reassign */
+import { fromBase64, fromUtf8 } from '@cosmjs/encoding';
 import { AWSError } from 'aws-sdk';
 import axios, { AxiosError } from 'axios';
 import * as FileType from 'file-type';
 import * as isIPFS from 'is-ipfs';
-import parse from 'parse-uri';
 import Moleculer from 'moleculer';
+import parse from 'parse-uri';
 import { Config } from '../../common';
 import { S3Service } from '../../common/utils/s3';
 
+const SUPPORT_DECODED_TOKEN_URI = {
+  BASE64: 'data:application/json;base64',
+};
 export interface ITokenMediaInfo {
   erc721_token_id: number;
   address: string;
@@ -168,7 +172,10 @@ export async function getMetadata(token_uri: string): Promise<{
   image?: string;
   animation_url?: string;
 }> {
-  console.log(parseIPFSUri(token_uri));
+  if (token_uri.split(',')[0] === SUPPORT_DECODED_TOKEN_URI.BASE64) {
+    const base64Metadata = token_uri.split(',')[1];
+    return JSON.parse(fromUtf8(fromBase64(base64Metadata)));
+  }
   const metadata = await downloadAttachment(parseIPFSUri(token_uri));
   return JSON.parse(metadata.toString());
 }
@@ -181,8 +188,9 @@ export async function downloadAttachment(url: string) {
     maxContentLength: parseInt(MAX_CONTENT_LENGTH_BYTE, 10),
     maxBodyLength: parseInt(MAX_BODY_LENGTH_BYTE, 10),
   });
-
-  return axiosClient.get(url).then((response: any) => {
+  const fromGithub = url.includes('//github.com');
+  const formatedUrl = fromGithub ? `${url}?raw=true` : url;
+  return axiosClient.get(formatedUrl).then((response: any) => {
     const buffer = Buffer.from(response.data, 'base64');
     return buffer;
   });
@@ -205,6 +213,9 @@ export function parseFilename(media_uri: string) {
         return parsed.host + parsed.path; // http://bafybeie5gq4jxvzmsym6hjlwxej4rwdoxt7wadqvmmwbqi7r27fclha2va.ipfs.dweb.link/1.jpg
       }
       return parsed.path.substring(1); // http://ipfs.io/ipfs/QmWov9DpE1vYZtTH7JLKXb7b8bJycN91rEPJEmXRXdmh2G/nerd_access_pass.gif
+    }
+    if (media_uri.includes('//github.com')) {
+      return parsed.path.substring(1); // https://github.com/storyprotocol/protocol-core/blob/main/assets/license-image.gif
     }
   }
   if (media_uri.startsWith('/ipfs/')) {

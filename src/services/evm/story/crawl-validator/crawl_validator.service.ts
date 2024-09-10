@@ -4,16 +4,21 @@
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
 import { ServiceBroker } from 'moleculer';
 import Long from 'long';
-import { fromBase64, fromBech32, toBech32, toHex } from '@cosmjs/encoding';
+import {
+  fromBase64,
+  fromBech32,
+  toBase64,
+  toBech32,
+  toHex,
+} from '@cosmjs/encoding';
 import axios from 'axios';
 import { pubkeyToRawAddress } from '@cosmjs/tendermint-rpc';
 import { Validator } from '../../../../models/validator';
 import BullableService, {
   QueueHandler,
 } from '../../../../base/bullable.service';
-import knex from '../../../../common/utils/db_connection';
 import config from '../../../../../config.json' assert { type: 'json' };
-import { BULL_JOB_NAME, IPagination, SERVICE } from '../../../../common';
+import { BULL_JOB_NAME, SERVICE } from '../../../../common';
 import networks from '../../../../../network.json' assert { type: 'json' };
 
 @Service({
@@ -55,8 +60,9 @@ export default class CrawlValidatorService extends BullableService {
 
     let resultCallApi: any;
     let done = false;
-    const pagination: IPagination = {
+    const pagination: any = {
       limit: Long.fromInt(config.crawlValidator.queryPageLimit),
+      count_total: true,
     };
 
     const stakingPoolCallApi: any = await axios({
@@ -64,76 +70,86 @@ export default class CrawlValidatorService extends BullableService {
       url: '/staking/pool',
       method: 'GET',
     });
-
+    let validatorCount = 0;
     while (!done) {
       resultCallApi = await axios({
         baseURL: this._lcd,
         url: '/staking/validators',
         method: 'GET',
         params: {
+          // status: 'BOND_STATUS_BONDED',
           'pagination.limit': pagination.limit,
           'pagination.key': pagination.key,
+          'pagination.count_total': pagination.count_total,
         },
       });
-
+      if (
+        pagination.key &&
+        resultCallApi.data.msg.pagination.next_key === toBase64(pagination.key)
+      ) {
+        break;
+      }
       validators.push(...resultCallApi.data.msg.validators);
-      if (!resultCallApi.data.msg.pagination.next_key) {
+      if (
+        !resultCallApi.data.msg.pagination.next_key ||
+        (validators.length >= validatorCount && validatorCount > 0)
+      ) {
         done = true;
       } else {
+        if (validatorCount === 0) {
+          validatorCount = Number(resultCallApi.data.msg.pagination.total);
+        }
         pagination.key = fromBase64(resultCallApi.data.msg.pagination.next_key);
+        pagination.count_total = false;
       }
     }
 
     let validatorInDB: Validator[] = [];
-    await knex.transaction(async (trx) => {
-      validatorInDB = await Validator.query()
-        .select('*')
-        .whereNot('status', Validator.STATUS.UNRECOGNIZED)
-        .forUpdate()
-        .transacting(trx);
-    });
+
+    validatorInDB = await Validator.query()
+      .select('*')
+      .whereIn('status', ['1', '2', '3']);
 
     const offchainMapped: Map<string, boolean> = new Map();
-    await Promise.all(
-      validators.map(async (validator) => {
-        const foundValidator = validatorInDB.find(
-          (val: Validator) =>
-            val.operator_address === validator.operator_address
+
+    // eslint-disable-next-line array-callback-return
+    validators.map((validator) => {
+      const foundValidator = validatorInDB.find(
+        (val: Validator) => val.operator_address === validator.operator_address
+      );
+
+      let validatorEntity: Validator;
+      if (!foundValidator) {
+        validatorEntity = this.createNewValidator(validator);
+      } else {
+        // mark this offchain validator is mapped with onchain
+        offchainMapped.set(validator.operator_address, true);
+
+        validatorEntity = foundValidator;
+        validatorEntity.consensus_pubkey = validator.consensus_pubkey;
+        validatorEntity.jailed = validator.jailed ?? false;
+        validatorEntity.status = validator.status;
+        validatorEntity.tokens = validator.tokens;
+        validatorEntity.percent_voting_power =
+          Number(
+            (BigInt(validator.tokens) * BigInt(100000000)) /
+              BigInt(stakingPoolCallApi.data.msg.pool.bonded_tokens)
+          ) / 1000000;
+        validatorEntity.delegator_shares = validator.delegator_shares;
+        validatorEntity.description = validator.description;
+        validatorEntity.unbonding_height = Number.parseInt(
+          validator.unbonding_height ?? 0,
+          10
         );
+        validatorEntity.unbonding_time = validator.unbonding_time;
+        validatorEntity.commission = validator.commission;
+        validatorEntity.jailed_until = (
+          foundValidator.jailed_until as unknown as Date
+        )?.toISOString();
+      }
 
-        let validatorEntity: Validator;
-        if (!foundValidator) {
-          validatorEntity = this.createNewValidator(validator);
-        } else {
-          // mark this offchain validator is mapped with onchain
-          offchainMapped.set(validator.operator_address, true);
-
-          validatorEntity = foundValidator;
-          validatorEntity.consensus_pubkey = validator.consensus_pubkey;
-          validatorEntity.jailed = validator.jailed === undefined;
-          validatorEntity.status = validator.status;
-          validatorEntity.tokens = validator.tokens;
-          validatorEntity.percent_voting_power =
-            Number(
-              (BigInt(validator.tokens) * BigInt(100000000)) /
-                BigInt(stakingPoolCallApi.data.msg.pool.bonded_tokens)
-            ) / 1000000;
-          validatorEntity.delegator_shares = validator.delegator_shares;
-          validatorEntity.description = validator.description;
-          validatorEntity.unbonding_height = Number.parseInt(
-            validator.unbonding_height ?? 0,
-            10
-          );
-          validatorEntity.unbonding_time = validator.unbonding_time;
-          validatorEntity.commission = validator.commission;
-          validatorEntity.jailed_until = (
-            foundValidator.jailed_until as unknown as Date
-          ).toISOString();
-        }
-
-        updateValidators.push(validatorEntity);
-      })
-    );
+      updateValidators.push(validatorEntity);
+    });
 
     // loop all validator not found onchain, update status is UNRECOGNIZED
     validatorInDB
@@ -149,9 +165,9 @@ export default class CrawlValidatorService extends BullableService {
         validatorNotOnchain.percent_voting_power = 0;
 
         validatorNotOnchain.jailed_until =
-          validatorNotOnchain.jailed_until.toISOString();
+          validatorNotOnchain.jailed_until?.toISOString();
         validatorNotOnchain.unbonding_time =
-          validatorNotOnchain.unbonding_time.toISOString();
+          validatorNotOnchain.unbonding_time?.toISOString();
         updateValidators.push(validatorNotOnchain);
       });
     return updateValidators;
@@ -186,7 +202,7 @@ export default class CrawlValidatorService extends BullableService {
       consensus_address: consensusAddress,
       consensus_hex_address: consensusHexAddress,
       consensus_pubkey: consensusPubkey,
-      jailed: validator.jailed !== undefined,
+      jailed: validator.jailed ?? false,
       status: validator.status,
       tokens: validator.tokens,
       delegator_shares: Number.parseInt(validator.delegator_shares, 10),
