@@ -119,6 +119,7 @@ const evmTransaction = EVMTransaction.fromJson({
   tx_msg_id: 4752908,
   contract_address: null,
   index: 0,
+  from: hexToBytes('0x51aeade652867f342ddc012e15c27d0cd6220398'),
 });
 
 @Describe('Test erc20 reindex')
