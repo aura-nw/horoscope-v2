@@ -65,9 +65,8 @@ export class EVMTransaction extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['hash', 'height'],
+      required: ['height'],
       properties: {
-        hash: { type: 'string' },
         height: { type: 'number' },
       },
     };

@@ -1,7 +1,7 @@
 import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
 import _ from 'lodash';
 import { ServiceBroker } from 'moleculer';
-import { decodeAbiParameters, toHex } from 'viem';
+import { decodeAbiParameters, hexToBytes, toHex } from 'viem';
 import knex from '../../../../src/common/utils/db_connection';
 import { getViemClient } from '../../../../src/common/utils/etherjs_client';
 import {
@@ -111,7 +111,9 @@ const erc20Contract = Erc20Contract.fromJson({
 });
 const evmTransaction = EVMTransaction.fromJson({
   id: 2931,
-  hash: '0xf15467ec2a25eeef95798d93c2fe9ed8e7c891578b8e1bcc3284105849656c9d',
+  hash: hexToBytes(
+    '0xf15467ec2a25eeef95798d93c2fe9ed8e7c891578b8e1bcc3284105849656c9d'
+  ),
   height: 1,
   tx_id: 1612438,
   tx_msg_id: 4752908,

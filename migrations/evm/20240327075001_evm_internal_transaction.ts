@@ -1,5 +1,5 @@
 import { Knex } from 'knex';
-import { EvmInternalTransaction } from '../src/models/evm_internal_transaction';
+import { EvmInternalTransaction } from '../../src/models/evm_internal_transaction';
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.createTable(EvmInternalTransaction.tableName, (table) => {

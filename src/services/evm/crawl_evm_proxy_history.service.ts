@@ -78,6 +78,7 @@ export default class CrawlProxyContractEVMService extends BullableService {
       .where('block_height', '>', startBlock)
       .andWhere('block_height', '<=', endBlock)
       .select('address', 'topic0', 'topic1', 'block_height', 'tx_hash');
+    const distictAddresses = _.uniq(evmEvents.map((e) => e.address));
     const proxyContractDb = await EVMSmartContract.query()
       .whereIn('type', [
         EVMSmartContract.TYPES.PROXY_EIP_1967,
@@ -86,8 +87,8 @@ export default class CrawlProxyContractEVMService extends BullableService {
         EVMSmartContract.TYPES.PROXY_EIP_1167,
         EVMSmartContract.TYPES.PROXY_EIP_1967_BEACON,
       ])
+      .andWhere('address', 'in', distictAddresses)
       .select('address');
-    const distictAddresses = _.uniq(evmEvents.map((e) => e.address));
     const batchReqs: any[] = [];
     distictAddresses.forEach((address) => {
       batchReqs.push(
@@ -190,7 +191,7 @@ export default class CrawlProxyContractEVMService extends BullableService {
       ) {
         newProxyContractsToSave.push(proxyHistory);
       } else {
-        this.logger.warn(
+        this.logger.debug(
           `This contract address ${proxyHistory.proxy_contract} is not proxy, at tx hash ${proxyHistory.tx_hash}`
         );
       }
