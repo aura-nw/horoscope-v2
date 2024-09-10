@@ -415,7 +415,8 @@
     "key": "erc721",
     "blocksPerCall": 100,
     "millisecondRepeatJob": 2000,
-    "chunkSizeInsert": 1000,
+    "chunkSizeQuery": 1000,
+    "chunkSizeInsert": 500,
     "mediaPerBatch": 10,
     "concurrencyHandleTokenMedia": 10,
     "timeRefreshErc721Stats": "1 * * * *"

@@ -50,6 +50,9 @@ export default class Erc721Service extends BullableService {
           [BULL_JOB_NAME.CRAWL_SMART_CONTRACT_EVM],
           config.erc721.key
         );
+      this.logger.info(
+        `Handle erc721 contract from block ${startBlock} to ${endBlock}`
+      );
       const erc721SmartContracts = await EVMSmartContract.query()
         .where('created_height', '>', startBlock)
         .andWhere('created_height', '<=', endBlock)
@@ -85,6 +88,9 @@ export default class Erc721Service extends BullableService {
           ],
           config.erc721.key
         );
+      this.logger.info(
+        `Handle erc721 activity from block ${startBlock} to ${endBlock}`
+      );
       const erc721Activities: Erc721Activity[] =
         await Erc721Handler.getErc721Activities(
           startBlock,
@@ -95,17 +101,38 @@ export default class Erc721Service extends BullableService {
         );
       await this.handleMissingErc721Contract(erc721Activities, trx);
       if (erc721Activities.length > 0) {
-        const erc721Tokens = _.keyBy(
-          await Erc721Token.query()
-            .whereIn(
+        // create chunk array
+        const listChunkErc721Activities = [];
+        const erc721TokensOnDB: Erc721Token[] = [];
+        for (
+          let i = 0;
+          i < erc721Activities.length;
+          i += config.erc721.chunkSizeQuery
+        ) {
+          const chunk = erc721Activities.slice(
+            i,
+            i + config.erc721.chunkSizeQuery
+          );
+          listChunkErc721Activities.push(chunk);
+        }
+        // process chunk array
+        await Promise.all(
+          // eslint-disable-next-line array-callback-return
+          listChunkErc721Activities.map(async (chunk) => {
+            const erc721TokensInChunk = await Erc721Token.query().whereIn(
               ['erc721_contract_address', 'token_id'],
-              erc721Activities.map((e) => [
+              chunk.map((e) => [
                 e.erc721_contract_address,
                 // if token_id undefined (case approval_all), replace by null => not get any token (because token must have token_id)
                 e.token_id || null,
               ])
-            )
-            .transacting(trx),
+            );
+            erc721TokensOnDB.push(...erc721TokensInChunk);
+          })
+        );
+
+        const erc721Tokens = _.keyBy(
+          erc721TokensOnDB,
           (o) => `${o.erc721_contract_address}_${o.token_id}`
         );
         const erc721Handler = new Erc721Handler(erc721Tokens, erc721Activities);
