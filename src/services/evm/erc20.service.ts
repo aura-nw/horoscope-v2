@@ -99,9 +99,7 @@ export default class Erc20Service extends BullableService {
       await this.handleMissingErc20Contract(erc20Activities, trx);
       if (erc20Activities.length > 0) {
         this.logger.info(
-          `Crawl Erc20 activity from block ${startBlock} to block ${endBlock}:\n ${JSON.stringify(
-            erc20Activities
-          )}`
+          `Crawl Erc20 activity from block ${startBlock} to block ${endBlock}`
         );
         await knex
           .batchInsert(
