@@ -50,6 +50,7 @@ export default class Erc721HandlerTest {
     tx_msg_id: 222,
     tx_id: 223,
     index: 1,
+    from: hexToBytes('0x51aeade652867f342ddc012e15c27d0cd6220398'),
   });
 
   erc721Contract1 = Erc721Contract.fromJson({

@@ -189,7 +189,7 @@ export async function downloadAttachment(url: string) {
     maxBodyLength: parseInt(MAX_BODY_LENGTH_BYTE, 10),
   });
   const fromGithub = url.includes('//github.com');
-  const formatedUrl = fromGithub ? `${url  }?raw=true` : url;
+  const formatedUrl = fromGithub ? `${url}?raw=true` : url;
   return axiosClient.get(formatedUrl).then((response: any) => {
     const buffer = Buffer.from(response.data, 'base64');
     return buffer;
@@ -213,9 +213,10 @@ export function parseFilename(media_uri: string) {
         return parsed.host + parsed.path; // http://bafybeie5gq4jxvzmsym6hjlwxej4rwdoxt7wadqvmmwbqi7r27fclha2va.ipfs.dweb.link/1.jpg
       }
       return parsed.path.substring(1); // http://ipfs.io/ipfs/QmWov9DpE1vYZtTH7JLKXb7b8bJycN91rEPJEmXRXdmh2G/nerd_access_pass.gif
-    } 
+    }
+    if (media_uri.includes('//github.com')) {
       return parsed.path.substring(1); // https://github.com/storyprotocol/protocol-core/blob/main/assets/license-image.gif
-    
+    }
   }
   if (media_uri.startsWith('/ipfs/')) {
     return media_uri.substring(1); // /ipfs/QmPAGifcMvxDBgYr1XmEz9gZiC3DEkfYeinFdVSe364uQp/689.png
