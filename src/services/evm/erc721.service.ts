@@ -190,7 +190,15 @@ export default class Erc721Service extends BullableService {
           tokenMedia.onchain.token_uri
         );
       } catch (error) {
-        this.logger.error(error);
+        await Erc721Token.query()
+          .where('id', tokenMedia.erc721_token_id)
+          .patch({
+            media_info: {
+              onchain: {
+                token_uri: tokenMedia.onchain.token_uri,
+              },
+            },
+          });
         throw error;
       }
     }
