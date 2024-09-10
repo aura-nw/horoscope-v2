@@ -492,9 +492,6 @@ export default class Erc721Service extends BullableService {
         {},
         {
           removeOnComplete: true,
-          removeOnFail: {
-            count: 3,
-          },
           repeat: {
             every: config.erc721.millisecondRepeatJob,
           },
