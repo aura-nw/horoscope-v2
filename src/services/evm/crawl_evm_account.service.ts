@@ -6,7 +6,7 @@ import {
 import { Knex } from 'knex';
 import _, { Dictionary } from 'lodash';
 import { Context } from 'moleculer';
-import { PublicClient } from 'viem';
+import { bytesToHex, PublicClient } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -70,7 +70,7 @@ export default class CrawlEvmAccountService extends BullableService {
           BULL_JOB_NAME.CRAWL_EVM_TRANSACTION,
           BULL_JOB_NAME.EVM_CRAWL_INTERNAL_TX,
         ],
-        config.evmCrawlInternalTx.key
+        config.crawlEvmAccount.key
       );
     this.logger.info(
       `Crawl evm_account from block ${startBlock} to ${endBlock}`
@@ -106,15 +106,21 @@ export default class CrawlEvmAccountService extends BullableService {
       .andWhere('evm_tx_id', '<=', toTx.id)
       .andWhere('evm_internal_transaction.error', null)
       .select('evm_internal_transaction.from', 'evm_internal_transaction.to');
-    participants.forEach((partcicipant) => {
-      if (partcicipant.from !== ZERO_ADDRESS) {
-        accountsAddress.add(partcicipant.from);
+    participants.forEach((participant) => {
+      ['from', 'to', 'contractAddress'].forEach((key) => {
+        if (participant[key]) {
+          // eslint-disable-next-line no-param-reassign
+          participant[key] = bytesToHex(participant[key]);
+        }
+      });
+      if (String(participant.from) !== ZERO_ADDRESS) {
+        accountsAddress.add(String(participant.from));
       }
-      if (partcicipant.to && partcicipant.to !== ZERO_ADDRESS) {
-        accountsAddress.add(partcicipant.to);
+      if (participant.to && String(participant.to) !== ZERO_ADDRESS) {
+        accountsAddress.add(String(participant.to));
       }
-      if (partcicipant.contractAddress) {
-        accountsAddress.add(partcicipant.contractAddress);
+      if (participant.contractAddress) {
+        accountsAddress.add(participant.contractAddress);
       }
     });
     participantsFromInternal.forEach((participant) => {

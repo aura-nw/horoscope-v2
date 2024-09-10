@@ -148,7 +148,10 @@
   },
   "dashboardStatistics": {
     "millisecondCrawl": 10000,
-    "queryPageLimit": 100
+    "queryPageLimit": 100,
+    "currentInflation": 0.05,
+    "currentCommunityTax": 0,
+    "denomSupply": "stake"
   },
   "graphiqlApi": {
     "hasuraRole": "internal_service",
@@ -470,7 +473,8 @@
     },
     "transport": {
       "batchSize": 10,
-      "waitMilisecond": 1000
+      "waitMilisecond": 1000,
+      "timeout": 10000
     }
   },
   "crawlEvmAccount": {

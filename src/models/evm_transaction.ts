@@ -12,13 +12,13 @@ export class EVMTransaction extends BaseModel {
 
   id!: number;
 
-  hash!: string;
+  hash!: Buffer;
 
   height!: number;
 
-  from!: string;
+  from!: Buffer;
 
-  to!: string;
+  to!: Buffer;
 
   size!: string;
 
@@ -30,7 +30,7 @@ export class EVMTransaction extends BaseModel {
 
   gas_tip_cap!: bigint;
 
-  data!: string;
+  data!: Buffer;
 
   nonce!: bigint;
 
@@ -38,7 +38,7 @@ export class EVMTransaction extends BaseModel {
 
   tx_id!: number;
 
-  contract_address!: string;
+  contract_address!: Buffer;
 
   index!: number;
 
@@ -65,9 +65,8 @@ export class EVMTransaction extends BaseModel {
   static get jsonSchema() {
     return {
       type: 'object',
-      required: ['hash', 'height'],
+      required: ['height'],
       properties: {
-        hash: { type: 'string' },
         height: { type: 'number' },
       },
     };

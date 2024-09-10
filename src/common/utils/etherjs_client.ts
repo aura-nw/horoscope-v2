@@ -27,6 +27,7 @@ export function getViemClient(chainId?: string): PublicClient {
           batchSize: config.viemConfig.transport.batchSize,
           wait: config.viemConfig.transport.waitMilisecond,
         },
+        timeout: config.viemConfig.transport.timeout,
       }),
     }).extend(publicActionsL1());
     viemClientMapping.set(chainId ?? config.chainId, viemClient);

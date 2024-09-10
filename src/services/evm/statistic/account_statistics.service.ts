@@ -10,6 +10,7 @@ import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import _ from 'lodash';
+import { bytesToHex } from 'viem';
 import {
   AccountStatistics,
   EVMBlock,
@@ -197,13 +198,23 @@ export default class EVMAccountStatisticsService extends BullableService {
           .andWhere('evm_tx_id', '<=', toTx.id);
       });
     dailyTxs.forEach((tx) => {
-      if (!accountStats[tx.from]) {
-        accountStats[tx.from] = AccountStatistics.newAccountStat(tx.from, date);
-      }
-      accountStats[tx.from].tx_sent += 1;
+      ['from'].forEach((key) => {
+        if (tx[key]) {
+          // eslint-disable-next-line no-param-reassign
+          tx[key] = bytesToHex(tx[key]);
+        }
+      });
 
-      accountStats[tx.from].gas_used = (
-        BigInt(accountStats[tx.from].gas_used) + BigInt(tx.gas_used)
+      if (!accountStats[String(tx.from)]) {
+        accountStats[String(tx.from)] = AccountStatistics.newAccountStat(
+          String(tx.from),
+          date
+        );
+      }
+      accountStats[String(tx.from)].tx_sent += 1;
+
+      accountStats[String(tx.from)].gas_used = (
+        BigInt(accountStats[String(tx.from)].gas_used) + BigInt(tx.gas_used)
       ).toString();
 
       tx.evm_internal_transactions.forEach(

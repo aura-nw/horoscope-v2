@@ -75,15 +75,17 @@ export default class CrawlProxyContractEVMService extends BullableService {
       .where('block_height', '>', startBlock)
       .andWhere('block_height', '<=', endBlock)
       .select('address', 'topic0', 'topic1', 'block_height', 'tx_hash');
+    const distictAddresses = _.uniq(evmEvents.map((e) => e.address));
     const proxyContractDb = await EVMSmartContract.query()
       .whereIn('type', [
         EVMSmartContract.TYPES.PROXY_EIP_1967,
         EVMSmartContract.TYPES.PROXY_EIP_1822,
         EVMSmartContract.TYPES.PROXY_OPEN_ZEPPELIN_IMPLEMENTATION,
         EVMSmartContract.TYPES.PROXY_EIP_1167,
+        EVMSmartContract.TYPES.PROXY_EIP_1967_BEACON,
       ])
+      .andWhere('address', 'in', distictAddresses)
       .select('address');
-    const distictAddresses = _.uniq(evmEvents.map((e) => e.address));
     const batchReqs: any[] = [];
     distictAddresses.forEach((address) => {
       batchReqs.push(
@@ -114,7 +116,7 @@ export default class CrawlProxyContractEVMService extends BullableService {
       }) as EVMSmartContract;
       const firstTimeCatchProxyEvent =
         proxyContractDb.find((proxy) => proxy.address === evmEvent.address) &&
-        anyProxyHistoryByAddress[evmEvent.address];
+        !anyProxyHistoryByAddress[evmEvent.address];
       const newJSONProxy: Dictionary<any> = {};
 
       switch (evmEvent.topic0) {
@@ -139,22 +141,29 @@ export default class CrawlProxyContractEVMService extends BullableService {
         //   break;
         default:
           if (firstTimeCatchProxyEvent) {
-            implementationAddress = await this.contractHelper.isContractProxy(
-              evmEvent.address,
-              _.find(
-                EIPProxyContractSupportByteCode,
-                (value, __) => value.TYPE === evmEventProxy.type
-              )?.SLOT,
-              undefined,
-              bytecodes[evmEvent.address]
-            );
+            implementationAddress = (
+              await this.contractHelper.isContractProxy(
+                evmEvent.address,
+                _.find(
+                  EIPProxyContractSupportByteCode,
+                  (value, __) => value.TYPE === evmEventProxy.type
+                )?.SLOT,
+                undefined,
+                bytecodes[evmEvent.address]
+              )
+            )?.logicContractAddress;
           }
           break;
       }
 
       newJSONProxy.proxy_contract = _.toLower(evmEvent.address);
-      newJSONProxy.implementation_contract =
-        _.toLower(implementationAddress as string) || null;
+      if (implementationAddress) {
+        newJSONProxy.implementation_contract = _.toLower(
+          implementationAddress as string
+        );
+      } else {
+        newJSONProxy.implementation_contract = null;
+      }
       newJSONProxy.block_height = evmEvent.block_height;
       newJSONProxy.tx_hash = evmEvent.tx_hash;
       newJSONProxy.last_updated_height = lastUpdatedHeight;
@@ -179,7 +188,7 @@ export default class CrawlProxyContractEVMService extends BullableService {
       ) {
         newProxyContractsToSave.push(proxyHistory);
       } else {
-        this.logger.warn(
+        this.logger.debug(
           `This contract address ${proxyHistory.proxy_contract} is not proxy, at tx hash ${proxyHistory.tx_hash}`
         );
       }
