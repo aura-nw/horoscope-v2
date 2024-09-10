@@ -110,7 +110,7 @@ export default class CrawlValidatorService extends BullableService {
 
           validatorEntity = foundValidator;
           validatorEntity.consensus_pubkey = validator.consensus_pubkey;
-          validatorEntity.jailed = validator.jailed === undefined;
+          validatorEntity.jailed = validator.jailed;
           validatorEntity.status = validator.status;
           validatorEntity.tokens = validator.tokens;
           validatorEntity.percent_voting_power =
@@ -186,7 +186,7 @@ export default class CrawlValidatorService extends BullableService {
       consensus_address: consensusAddress,
       consensus_hex_address: consensusHexAddress,
       consensus_pubkey: consensusPubkey,
-      jailed: validator.jailed !== undefined,
+      jailed: validator.jailed,
       status: validator.status,
       tokens: validator.tokens,
       delegator_shares: Number.parseInt(validator.delegator_shares, 10),
