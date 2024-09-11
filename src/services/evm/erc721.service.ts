@@ -183,9 +183,6 @@ export default class Erc721Service extends BullableService {
             { tokenMedia },
             {
               removeOnComplete: true,
-              removeOnFail: {
-                count: 3,
-              },
               jobId: `${tokenMedia.address}_${tokenMedia.erc721_token_id}`,
             }
           )
