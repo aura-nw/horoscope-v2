@@ -12,6 +12,11 @@ import { S3Service } from '../../common/utils/s3';
 const SUPPORT_DECODED_TOKEN_URI = {
   BASE64: 'data:application/json;base64',
 };
+const TOKEN_URI_FORMAT = {
+  IPFS: 'IPFS',
+  BASE64: 'BASE64',
+  JSON: 'JSON',
+};
 export interface ITokenMediaInfo {
   erc721_token_id: number;
   address: string;
@@ -172,12 +177,31 @@ export async function getMetadata(token_uri: string): Promise<{
   image?: string;
   animation_url?: string;
 }> {
-  if (token_uri.split(',')[0] === SUPPORT_DECODED_TOKEN_URI.BASE64) {
-    const base64Metadata = token_uri.split(',')[1];
-    return JSON.parse(fromUtf8(fromBase64(base64Metadata)));
+  const tokenUriType = detechTokenUriFormat(token_uri);
+  switch (tokenUriType) {
+    case TOKEN_URI_FORMAT.BASE64: {
+      const base64Metadata = token_uri.split(',')[1];
+      return JSON.parse(fromUtf8(fromBase64(base64Metadata)));
+    }
+    case TOKEN_URI_FORMAT.JSON:
+      return JSON.parse(token_uri);
+    default: {
+      const metadata = await downloadAttachment(parseIPFSUri(token_uri));
+      return JSON.parse(metadata.toString());
+    }
   }
-  const metadata = await downloadAttachment(parseIPFSUri(token_uri));
-  return JSON.parse(metadata.toString());
+}
+function detechTokenUriFormat(token_uri: string) {
+  if (token_uri.split(',')[0] === SUPPORT_DECODED_TOKEN_URI.BASE64) {
+    return TOKEN_URI_FORMAT.BASE64;
+  }
+  try {
+    JSON.parse(token_uri);
+    return TOKEN_URI_FORMAT.JSON;
+  } catch {
+    // do nothing
+  }
+  return TOKEN_URI_FORMAT.IPFS;
 }
 
 // dowload image/animation from url
@@ -214,9 +238,7 @@ export function parseFilename(media_uri: string) {
       }
       return parsed.path.substring(1); // http://ipfs.io/ipfs/QmWov9DpE1vYZtTH7JLKXb7b8bJycN91rEPJEmXRXdmh2G/nerd_access_pass.gif
     }
-    if (media_uri.includes('//github.com')) {
-      return parsed.path.substring(1); // https://github.com/storyprotocol/protocol-core/blob/main/assets/license-image.gif
-    }
+    return parsed.path.substring(1); // https://github.com/storyprotocol/protocol-core/blob/main/assets/license-image.gif
   }
   if (media_uri.startsWith('/ipfs/')) {
     return media_uri.substring(1); // /ipfs/QmPAGifcMvxDBgYr1XmEz9gZiC3DEkfYeinFdVSe364uQp/689.png
