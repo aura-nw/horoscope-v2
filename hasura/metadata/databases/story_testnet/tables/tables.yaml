@@ -24,3 +24,4 @@
 - '!include public_validator.yaml'
 - '!include public_delegator.yaml'
 - '!include public_power_event.yaml'
+- '!include public_m_view_erc721_holder_statistic.yaml'
