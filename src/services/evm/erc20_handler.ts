@@ -342,10 +342,16 @@ export class Erc20Handler {
           .joinRelated('account')
           .whereIn(
             ['account.evm_address', 'denom'],
-            [
-              ...erc20Activities.map((e) => [e.from, e.erc20_contract_address]),
-              ...erc20Activities.map((e) => [e.to, e.erc20_contract_address]),
-            ]
+            _.uniqWith(
+              [
+                ...erc20Activities.map((e) => [
+                  e.from,
+                  e.erc20_contract_address,
+                ]),
+                ...erc20Activities.map((e) => [e.to, e.erc20_contract_address]),
+              ],
+              _.isEqual
+            )
           ),
         (o) => `${o.account_id}_${o.denom}`
       );
@@ -354,7 +360,7 @@ export class Erc20Handler {
           .transacting(trx)
           .whereIn(
             'address',
-            erc20Activities.map((e) => e.erc20_contract_address)
+            _.uniq(erc20Activities.map((e) => e.erc20_contract_address))
           ),
         'address'
       );
