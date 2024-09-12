@@ -12,11 +12,6 @@ import { S3Service } from '../../common/utils/s3';
 const SUPPORT_DECODED_TOKEN_URI = {
   BASE64: 'data:application/json;base64',
 };
-const TOKEN_URI_FORMAT = {
-  IPFS: 'IPFS',
-  BASE64: 'BASE64',
-  JSON: 'JSON',
-};
 export interface ITokenMediaInfo {
   erc721_token_id: number;
   address: string;
@@ -53,62 +48,78 @@ const {
 // download image/animation from media_uri, then upload to S3
 export async function uploadMediaToS3(media_uri?: string) {
   if (media_uri) {
-    const fileName = parseFilename(media_uri);
-    if (!fileName) {
-      return null;
-    }
-    const uploadAttachmentToS3 = async (
-      type: string | undefined,
-      buffer: Buffer
-    ) => {
-      const params = {
-        Key: fileName,
-        Body: buffer,
-        Bucket: BUCKET,
-        ContentType: type,
-      };
-      return s3Client
-        .upload(params)
-        .promise()
-        .then(
-          (response: { Location: string; Key: string }) => ({
-            linkS3: S3_GATEWAY + response.Key,
-            contentType: type,
-            key: response.Key,
-          }),
-          (err: string) => {
-            throw new Error(err);
+    const fileName = parseFilenameFromIPFS(media_uri); //
+    if (fileName) {
+      // case media uri is ipfs supported
+      try {
+        const s3Object = await s3Client
+          .headObject({
+            Bucket: BUCKET,
+            Key: fileName,
+          })
+          .promise();
+        return {
+          linkS3: S3_GATEWAY + fileName,
+          contentType: s3Object.ContentType,
+          key: fileName,
+        };
+      } catch (e) {
+        const error = e as AWSError;
+        if (error.statusCode === 404) {
+          const mediaBuffer = await downloadAttachment(parseIPFSUri(media_uri));
+          let type: string | undefined = (
+            await FileType.fileTypeFromBuffer(mediaBuffer)
+          )?.mime;
+          if (type === 'application/xml') {
+            type = 'image/svg+xml';
           }
-        );
-    };
-    try {
-      const s3Object = await s3Client
-        .headObject({
-          Bucket: BUCKET,
-          Key: fileName,
-        })
-        .promise();
-      return {
-        linkS3: S3_GATEWAY + fileName,
-        contentType: s3Object.ContentType,
-        key: fileName,
-      };
-    } catch (e) {
-      const error = e as AWSError;
-      if (error.statusCode === 404) {
-        const mediaBuffer = await downloadAttachment(parseIPFSUri(media_uri));
-        let type: string | undefined = (
-          await FileType.fileTypeFromBuffer(mediaBuffer)
-        )?.mime;
-        if (type === 'application/xml') {
-          type = 'image/svg+xml';
+          return uploadAttachmentToS3(fileName, type, mediaBuffer);
         }
-        return uploadAttachmentToS3(type, mediaBuffer);
+        throw e;
       }
-      throw e;
+    } else {
+      // case media uri isnot ipfs supported or http/https
+      const mediaBuffer = await downloadAttachment(parseIPFSUri(media_uri));
+      let type: string | undefined = (
+        await FileType.fileTypeFromBuffer(mediaBuffer)
+      )?.mime;
+      if (type === 'application/xml') {
+        type = 'image/svg+xml';
+      }
+      return {
+        linkS3: media_uri,
+        contentType: type,
+        key: undefined,
+      };
     }
   }
   return null;
+}
+
+async function uploadAttachmentToS3(
+  file: string,
+  type: string | undefined,
+  buffer: Buffer
+) {
+  const params = {
+    Key: file,
+    Body: buffer,
+    Bucket: BUCKET,
+    ContentType: type,
+  };
+  return s3Client
+    .upload(params)
+    .promise()
+    .then(
+      (response: { Location: string; Key: string }) => ({
+        linkS3: S3_GATEWAY + response.Key,
+        contentType: type,
+        key: response.Key,
+      }),
+      (err: string) => {
+        throw new Error(err);
+      }
+    );
 }
 
 // update s3 media link
@@ -177,31 +188,22 @@ export async function getMetadata(token_uri: string): Promise<{
   image?: string;
   animation_url?: string;
 }> {
-  const tokenUriType = detechTokenUriFormat(token_uri);
-  switch (tokenUriType) {
-    case TOKEN_URI_FORMAT.BASE64: {
+  let metadata = '{}';
+  try {
+    if (token_uri.split(',')[0] === SUPPORT_DECODED_TOKEN_URI.BASE64) {
       const base64Metadata = token_uri.split(',')[1];
-      return JSON.parse(fromUtf8(fromBase64(base64Metadata)));
+      metadata = fromUtf8(fromBase64(base64Metadata));
     }
-    case TOKEN_URI_FORMAT.JSON:
-      return JSON.parse(token_uri);
-    default: {
-      const metadata = await downloadAttachment(parseIPFSUri(token_uri));
-      return JSON.parse(metadata.toString());
-    }
-  }
-}
-function detechTokenUriFormat(token_uri: string) {
-  if (token_uri.split(',')[0] === SUPPORT_DECODED_TOKEN_URI.BASE64) {
-    return TOKEN_URI_FORMAT.BASE64;
+  } catch {
+    // not base64
   }
   try {
-    JSON.parse(token_uri);
-    return TOKEN_URI_FORMAT.JSON;
+    metadata = JSON.parse(token_uri);
   } catch {
-    // do nothing
+    // not json
   }
-  return TOKEN_URI_FORMAT.IPFS;
+  metadata = (await downloadAttachment(parseIPFSUri(token_uri))).toString();
+  return JSON.parse(metadata);
 }
 
 // dowload image/animation from url
@@ -221,7 +223,7 @@ export async function downloadAttachment(url: string) {
 }
 
 // parse filename which be stored in AWS S3
-export function parseFilename(media_uri: string) {
+export function parseFilenameFromIPFS(media_uri: string) {
   const parsed = parse(media_uri);
   if (parsed.protocol === IPFS_PREFIX) {
     const cid = parsed.host;
@@ -238,7 +240,6 @@ export function parseFilename(media_uri: string) {
       }
       return parsed.path.substring(1); // http://ipfs.io/ipfs/QmWov9DpE1vYZtTH7JLKXb7b8bJycN91rEPJEmXRXdmh2G/nerd_access_pass.gif
     }
-    return parsed.path.substring(1); // https://github.com/storyprotocol/protocol-core/blob/main/assets/license-image.gif
   }
   if (media_uri.startsWith('/ipfs/')) {
     return media_uri.substring(1); // /ipfs/QmPAGifcMvxDBgYr1XmEz9gZiC3DEkfYeinFdVSe364uQp/689.png

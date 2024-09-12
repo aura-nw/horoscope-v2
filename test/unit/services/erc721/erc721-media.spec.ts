@@ -131,29 +131,30 @@ export default class TestErc721MediaService {
     expect(parsedIpfsPath).toEqual(`${IPFS_GATEWAY}${path}`);
   }
 
-  @Test('Test parseFilename function')
-  public async testParseFilename() {
+  @Test('Test parseFilenameFromIPFS function')
+  public async testParseFilenameFromIPFS() {
     const host = 'ipfs';
     const path =
       'Qme33YMXArHQzDdgRxQuL6m7JDJNDKeAUyJXDQU3wnL7sf/1000_F_260918513_EtP8xFDBIj4SvHIuXPGdFIyEXyBCmTEq.jpg';
     const nativeUrl = `${host}://${path}`;
     const ipfsPath = `/${host}/${path}`;
     const httpPath = `http://ipfs.dev.aura.network:8080/ipfs/${path}`;
-    const parsedNativeUrl = Erc721MediaHanlder.parseFilename(nativeUrl);
-    const parsedIpfsPath = Erc721MediaHanlder.parseFilename(ipfsPath);
-    const parsedHttpPath = Erc721MediaHanlder.parseFilename(httpPath);
+    const parsedNativeUrl = Erc721MediaHanlder.parseFilenameFromIPFS(nativeUrl);
+    const parsedIpfsPath = Erc721MediaHanlder.parseFilenameFromIPFS(ipfsPath);
+    const parsedHttpPath = Erc721MediaHanlder.parseFilenameFromIPFS(httpPath);
     expect(parsedNativeUrl).toEqual(`ipfs/${path}`);
     expect(parsedIpfsPath).toEqual(`ipfs/${path}`);
     expect(parsedHttpPath).toEqual(`ipfs/${path}`);
     const subDomain =
       'bafybeie5gq4jxvzmsym6hjlwxej4rwdoxt7wadqvmmwbqi7r27fclha2va.ipfs.dweb.link';
     const httpSubDomain = `https://${subDomain}`;
-    const parsedHttpSubDomain = Erc721MediaHanlder.parseFilename(httpSubDomain);
+    const parsedHttpSubDomain =
+      Erc721MediaHanlder.parseFilenameFromIPFS(httpSubDomain);
     expect(parsedHttpSubDomain).toEqual(subDomain);
     const file = '1.json';
     const httpFullSubDomain = `https://${subDomain}/${file}`;
     const parsedFullHttpSubDomain =
-      Erc721MediaHanlder.parseFilename(httpFullSubDomain);
+      Erc721MediaHanlder.parseFilenameFromIPFS(httpFullSubDomain);
     expect(parsedFullHttpSubDomain).toEqual(`${subDomain}/${file}`);
   }
 
@@ -188,7 +189,8 @@ export default class TestErc721MediaService {
     const imageUrl =
       'ipfs://QmPfi9CcTafv4C1sBZ5HxUs4PbvBi22nkjgqbypMhqaPLp/The_Immersion_Into_Aura_Odyssey.png';
     // Case token_uri: ipfs format
-    const ipfsTokenUri = 'ipfs://QmPf5LawLS1ZVqFTSs7JhFD6yteKQLXxYMEYoc1PcKkhVj/109';
+    const ipfsTokenUri =
+      'ipfs://QmPf5LawLS1ZVqFTSs7JhFD6yteKQLXxYMEYoc1PcKkhVj/109';
     jest.spyOn(axios, 'get').mockImplementation(async () =>
       Buffer.from(`{
         name: 'Immersion 109',
