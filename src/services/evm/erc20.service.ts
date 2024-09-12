@@ -11,7 +11,12 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { SERVICE as COSMOS_SERVICE, Config } from '../../common';
 import knex from '../../common/utils/db_connection';
 import { getViemClient } from '../../common/utils/etherjs_client';
-import { BlockCheckpoint, EVMSmartContract } from '../../models';
+import {
+  Block,
+  BlockCheckpoint,
+  EVMSmartContract,
+  Erc20Statistic,
+} from '../../models';
 import { Erc20Activity } from '../../models/erc20_activity';
 import { Erc20Contract } from '../../models/erc20_contract';
 import { BULL_JOB_NAME, SERVICE as EVM_SERVICE, SERVICE } from './constant';
@@ -129,6 +134,7 @@ export default class Erc20Service extends BullableService {
         [BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY],
         config.erc20.key
       );
+    await this.handleStatistic(startBlock);
     // get Erc20 activities
     let erc20Activities = await Erc20Handler.getErc20Activities(
       startBlock,
@@ -355,6 +361,50 @@ export default class Erc20Service extends BullableService {
           `Unable crawl missing account: ${missingAccountsAddress}`
         );
       }
+    }
+  }
+
+  async handleStatistic(startBlock: number) {
+    const systemDate = (
+      await Block.query()
+        .where('height', startBlock + 1)
+        .first()
+        .throwIfNotFound()
+    ).time;
+    const lastUpdatedDate = (await Erc20Statistic.query().max('date').first())
+      ?.max;
+    if (lastUpdatedDate) {
+      systemDate.setHours(0, 0, 0, 0);
+      lastUpdatedDate.setHours(0, 0, 0, 0);
+      if (systemDate > lastUpdatedDate) {
+        await this.handleTotalHolderStatistic(systemDate);
+      }
+    } else {
+      await this.handleTotalHolderStatistic(systemDate);
+    }
+  }
+
+  async handleTotalHolderStatistic(systemDate: Date) {
+    const totalHolder = await Erc20Contract.query()
+      .joinRelated('holders')
+      .where('erc20_contract.track', true)
+      .groupBy('erc20_contract.id')
+      .select(
+        'erc20_contract.id as erc20_contract_id',
+        knex.raw(
+          'count(CASE when holders.amount > 0 THEN 1 ELSE null END) as count'
+        )
+      );
+    if (totalHolder.length > 0) {
+      await Erc20Statistic.query().insert(
+        totalHolder.map((e) =>
+          Erc20Statistic.fromJson({
+            erc20_contract_id: e.erc20_contract_id,
+            total_holder: e.count,
+            date: systemDate,
+          })
+        )
+      );
     }
   }
 
