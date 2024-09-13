@@ -11,8 +11,10 @@ import {
   toBech32,
   toHex,
 } from '@cosmjs/encoding';
+import { Secp256k1 } from '@cosmjs/crypto';
 import axios from 'axios';
 import { pubkeyToRawAddress } from '@cosmjs/tendermint-rpc';
+import { keccak256 } from 'viem';
 import { Validator } from '../../../../models/validator';
 import BullableService, {
   QueueHandler,
@@ -43,15 +45,20 @@ export default class CrawlValidatorService extends BullableService {
   public async handleCrawlAllValidator(_payload: object): Promise<void> {
     this.logger.info('Crawl validator info in story protocol');
     const updateValidators: Validator[] = await this.getFullInfoValidators();
-    await Validator.query()
-      .insert(updateValidators)
-      .onConflict('operator_address')
-      .merge()
-      .returning('id')
-      .catch((error) => {
-        this.logger.error('Error insert or update validators');
-        this.logger.error(error);
-      });
+    if (updateValidators.length > 0) {
+      for (let i = 0; i < updateValidators.length; i += 500) {
+        const chunk = updateValidators.slice(i, i + 500);
+        await Validator.query()
+          .insert(chunk)
+          .onConflict('operator_address')
+          .merge()
+          .returning('id')
+          .catch((error) => {
+            this.logger.error('Error insert or update validators');
+            this.logger.error(error);
+          });
+      }
+    }
   }
 
   private async getFullInfoValidators(): Promise<Validator[]> {
@@ -124,8 +131,14 @@ export default class CrawlValidatorService extends BullableService {
       } else {
         // mark this offchain validator is mapped with onchain
         offchainMapped.set(validator.operator_address, true);
-
+        const unCompressPubKey = Secp256k1.uncompressPubkey(
+          fromBase64(validator.consensus_pubkey.value)
+        );
+        const evmAddress = `0x${keccak256(unCompressPubKey.slice(1)).slice(
+          -40
+        )}`;
         validatorEntity = foundValidator;
+        validatorEntity.evm_address = evmAddress;
         validatorEntity.consensus_pubkey = validator.consensus_pubkey;
         validatorEntity.jailed = validator.jailed ?? false;
         validatorEntity.status = validator.status;
@@ -193,8 +206,13 @@ export default class CrawlValidatorService extends BullableService {
     );
     const consensusPubkey = {
       type: validator.consensus_pubkey.type,
-      key: validator.consensus_pubkey.value,
+      value: validator.consensus_pubkey.value,
     };
+
+    const unCompressPubKey = Secp256k1.uncompressPubkey(
+      fromBase64(consensusPubkey.value)
+    );
+    const evmAddress = `0x${keccak256(unCompressPubKey.slice(1)).slice(-40)}`;
 
     const validatorEntity = Validator.fromJson({
       operator_address: validator.operator_address,
@@ -202,6 +220,7 @@ export default class CrawlValidatorService extends BullableService {
       consensus_address: consensusAddress,
       consensus_hex_address: consensusHexAddress,
       consensus_pubkey: consensusPubkey,
+      evm_address: evmAddress,
       jailed: validator.jailed ?? false,
       status: validator.status,
       tokens: validator.tokens,

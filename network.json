@@ -78,7 +78,7 @@
     "redisDBNumber": 4,
     "moleculerNamespace": "namespace-ancient8",
     "EVMJSONRPC": ["https://rpc.ancient8.gg"],
-    "EVMchainId": 888888888 
+    "EVMchainId": 888888888
   },
   {
     "chainId": "ancient-8-testnet",
@@ -88,7 +88,7 @@
     "redisDBNumber": 4,
     "moleculerNamespace": "namespace-auratestnet",
     "EVMJSONRPC": ["https://rpcv2-testnet.ancient8.gg"],
-    "EVMchainId": 28122024 
+    "EVMchainId": 28122024
   },
   {
     "chainId": "ethereum",
@@ -103,5 +103,18 @@
     "RPC": [],
     "LCD": [],
     "EVMchainId": 11155111
+  },
+  {
+    "chainId": "1513",
+    "RPC": [],
+    "LCD": ["https://story-testnet-lcd.aura.network"],
+    "databaseName": "local_evm",
+    "redisDBNumber": 0,
+    "EVMJSONRPC": [
+      "https://story-testnet.aura.network",
+      "https://testnet.storyrpc.io"
+    ],
+    "EVMchainId": 1513,
+    "moleculerNamespace": "erascope-dev-story-testnet"
   }
 ]
