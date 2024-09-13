@@ -10,6 +10,7 @@ import {
   EVMTransaction,
   Erc721Activity,
   Erc721Contract,
+  Erc721HolderStatistic,
   Erc721Token,
   EvmEvent,
 } from '../../models';
@@ -70,12 +71,16 @@ export class Erc721Handler {
 
   erc721Activities: Erc721Activity[];
 
+  erc721HolderStats: Dictionary<Erc721HolderStatistic>;
+
   constructor(
     erc721Tokens: Dictionary<Erc721Token>,
-    erc721Activities: Erc721Activity[]
+    erc721Activities: Erc721Activity[],
+    erc721HolderStats: Dictionary<Erc721HolderStatistic>
   ) {
     this.erc721Tokens = erc721Tokens;
     this.erc721Activities = erc721Activities;
+    this.erc721HolderStats = erc721HolderStats;
   }
 
   process() {
@@ -87,6 +92,7 @@ export class Erc721Handler {
   }
 
   handlerErc721Transfer(erc721Activity: Erc721Activity) {
+    // update erc721 token
     const token =
       this.erc721Tokens[
         `${erc721Activity.erc721_contract_address}_${erc721Activity.token_id}`
@@ -108,6 +114,21 @@ export class Erc721Handler {
       });
     } else {
       throw new Error('Handle erc721 tranfer error');
+    }
+    // update erc721 holder statistics
+    if (erc721Activity.from !== ZERO_ADDRESS) {
+      const erc721HolderStatFrom =
+        this.erc721HolderStats[
+          `${erc721Activity.erc721_contract_address}_${erc721Activity.from}`
+        ];
+      erc721HolderStatFrom.count -= 1;
+    }
+    if (erc721Activity.to !== ZERO_ADDRESS) {
+      const erc721HolderStatTo =
+        this.erc721HolderStats[
+          `${erc721Activity.erc721_contract_address}_${erc721Activity.to}`
+        ];
+      erc721HolderStatTo.count += 1;
     }
   }
 

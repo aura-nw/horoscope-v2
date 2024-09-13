@@ -15,6 +15,7 @@ import {
   BlockCheckpoint,
   EVMSmartContract,
   Erc721Activity,
+  Erc721HolderStatistic,
   Erc721Stats,
   Erc721Token,
 } from '../../models';
@@ -103,6 +104,7 @@ export default class Erc721Service extends BullableService {
       if (erc721Activities.length > 0) {
         // create chunk array
         const listChunkErc721Activities = [];
+        const erc721HolderStatsOnDB: Erc721HolderStatistic[] = [];
         const erc721TokensOnDB: Erc721Token[] = [];
         for (
           let i = 0;
@@ -130,12 +132,37 @@ export default class Erc721Service extends BullableService {
             erc721TokensOnDB.push(...erc721TokensInChunk);
           })
         );
-
+        // process chunk array
+        await Promise.all(
+          // eslint-disable-next-line array-callback-return
+          listChunkErc721Activities.map(async (chunk) => {
+            const erc721HolderStatsInChunk =
+              await Erc721HolderStatistic.query().whereIn(
+                ['erc721_contract_address', 'owner'],
+                _.uniqWith(
+                  [
+                    ...chunk.map((e) => [e.erc721_contract_address, e.from]),
+                    ...chunk.map((e) => [e.erc721_contract_address, e.to]),
+                  ],
+                  _.isEqual
+                )
+              );
+            erc721HolderStatsOnDB.push(...erc721HolderStatsInChunk);
+          })
+        );
         const erc721Tokens = _.keyBy(
           erc721TokensOnDB,
           (o) => `${o.erc721_contract_address}_${o.token_id}`
         );
-        const erc721Handler = new Erc721Handler(erc721Tokens, erc721Activities);
+        const erc721HolderStats = _.keyBy(
+          erc721HolderStatsOnDB,
+          (o) => `${o.erc721_contract_address}_${o.owner}`
+        );
+        const erc721Handler = new Erc721Handler(
+          erc721Tokens,
+          erc721Activities,
+          erc721HolderStats
+        );
         erc721Handler.process();
         await Erc721Handler.updateErc721(
           erc721Activities,
@@ -276,21 +303,6 @@ export default class Erc721Service extends BullableService {
     const erc721Reindexer = new Erc721Reindexer(this.viemClient, this.logger);
     await erc721Reindexer.reindex(address);
     this.logger.info(`Reindex erc721 contract ${address} done.`);
-  }
-
-  @QueueHandler({
-    queueName: BULL_JOB_NAME.REFRESH_ERC721_HOLDER_STATISTIC,
-    jobName: BULL_JOB_NAME.REFRESH_ERC721_HOLDER_STATISTIC,
-  })
-  public async refreshErc721HolderStatistic(): Promise<void> {
-    await knex.transaction(async (trx) => {
-      await knex
-        .raw(`set statement_timeout to ${config.erc721.statementTimeout}`)
-        .transacting(trx);
-      await knex.schema
-        .refreshMaterializedView('m_view_erc721_holder_statistic')
-        .transacting(trx);
-    });
   }
 
   @Action({
@@ -547,20 +559,6 @@ export default class Erc721Service extends BullableService {
           },
           repeat: {
             pattern: config.erc721.timeRefreshErc721Stats,
-          },
-        }
-      );
-      await this.createJob(
-        BULL_JOB_NAME.REFRESH_ERC721_HOLDER_STATISTIC,
-        BULL_JOB_NAME.REFRESH_ERC721_HOLDER_STATISTIC,
-        {},
-        {
-          removeOnComplete: true,
-          removeOnFail: {
-            count: 3,
-          },
-          repeat: {
-            pattern: config.erc721.timeRefreshMViewErc721HolderStats,
           },
         }
       );
