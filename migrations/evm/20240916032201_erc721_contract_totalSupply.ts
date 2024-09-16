@@ -3,7 +3,7 @@ import { Erc721Token } from '../../src/models';
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.alterTable('erc721_contract', (table) => {
-    table.integer('total_supply').defaultTo(0).index();
+    table.bigInteger('total_supply').defaultTo(0).index();
   });
   await knex.raw(`set statement_timeout to 0`);
   const totalSupplies = await Erc721Token.query(knex)
@@ -14,7 +14,7 @@ export async function up(knex: Knex): Promise<void> {
     const stringListUpdates = totalSupplies
       .map(
         (totalSuply) =>
-          `('${totalSuply.erc721_contract_address}', ${totalSuply.count})`
+          `('${totalSuply.erc721_contract_address}', '${totalSuply.count}')`
       )
       .join(',');
     await knex.raw(

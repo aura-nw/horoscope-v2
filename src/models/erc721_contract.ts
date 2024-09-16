@@ -25,7 +25,7 @@ export class Erc721Contract extends BaseModel {
 
   last_updated_height!: number;
 
-  total_supply!: number;
+  total_supply!: string;
 
   static get tableName() {
     return 'erc721_contract';

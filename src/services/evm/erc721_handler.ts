@@ -107,7 +107,9 @@ export class Erc721Handler {
       token.owner = erc721Activity.to;
       token.last_updated_height = erc721Activity.height;
       if (erc721Activity.to === ZERO_ADDRESS) {
-        erc721Contract.total_supply -= 1;
+        erc721Contract.total_supply = (
+          BigInt(erc721Contract.total_supply) - BigInt(1)
+        ).toString();
       }
     } else if (erc721Activity.from === ZERO_ADDRESS) {
       // handle mint
@@ -120,7 +122,9 @@ export class Erc721Handler {
         last_updated_height: erc721Activity.height,
         burned: false,
       });
-      erc721Contract.total_supply += 1;
+      erc721Contract.total_supply = (
+        BigInt(erc721Contract.total_supply) + BigInt(1)
+      ).toString();
     } else {
       throw new Error('Handle erc721 tranfer error');
     }
@@ -132,19 +136,27 @@ export class Erc721Handler {
         ];
       if (!erc721HolderStatFrom) {
         throw new Error(
-          `Erc721 holder ${  erc721Activity.from  } havent been audited`
+          `Erc721 holder ${erc721Activity.from} havent been audited`
         );
       }
-      erc721HolderStatFrom.count -= 1;
+      erc721HolderStatFrom.count = (
+        BigInt(erc721HolderStatFrom.count) - BigInt(1)
+      ).toString();
     }
     if (erc721Activity.to !== ZERO_ADDRESS) {
       const erc721HolderStatTo =
         this.erc721HolderStats[
           `${erc721Activity.erc721_contract_address}_${erc721Activity.to}`
         ];
-      erc721HolderStatTo.count = erc721HolderStatTo
-        ? erc721HolderStatTo.count + 1
-        : 1;
+      this.erc721HolderStats[
+        `${erc721Activity.erc721_contract_address}_${erc721Activity.to}`
+      ] = Erc721HolderStatistic.fromJson({
+        erc721_contract_address: erc721Activity.erc721_contract_address,
+        owner: erc721Activity.to,
+        count: erc721HolderStatTo
+          ? (BigInt(erc721HolderStatTo.count) + BigInt(1)).toString()
+          : BigInt(1).toString(),
+      });
     }
   }
 
@@ -314,7 +326,7 @@ export class Erc721Handler {
       const stringListUpdates = erc721Contracts
         .map(
           (erc721Contract) =>
-            `('${erc721Contract.id}', ${erc721Contract.total_supply})`
+            `(${erc721Contract.id}, ${erc721Contract.total_supply})`
         )
         .join(',');
       await knex
@@ -368,7 +380,15 @@ export class Erc721Handler {
     if (erc721HolderStats.length > 0) {
       await Erc721HolderStatistic.query()
         .transacting(trx)
-        .insert(erc721HolderStats)
+        .insert(
+          erc721HolderStats.map((e) =>
+            Erc721HolderStatistic.fromJson({
+              erc721_contract_address: e.erc721_contract_address,
+              owner: e.owner,
+              count: e.count,
+            })
+          )
+        )
         .onConflict(['erc721_contract_address', 'owner'])
         .merge();
     }

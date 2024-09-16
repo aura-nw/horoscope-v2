@@ -7,7 +7,7 @@ export class Erc721HolderStatistic extends BaseModel {
 
   owner!: string;
 
-  count!: number;
+  count!: string;
 
   static get tableName() {
     return 'erc721_holder_statistic';
@@ -20,7 +20,7 @@ export class Erc721HolderStatistic extends BaseModel {
       properties: {
         erc721_contract_address: { type: 'string' },
         owner: { type: 'string' },
-        count: { type: 'number' },
+        count: { type: 'string' },
       },
     };
   }
