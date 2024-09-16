@@ -65,6 +65,8 @@ export const ERC721_ACTION = {
   APPROVAL_FOR_ALL: 'approval_for_all',
 };
 export class Erc721Handler {
+  erc721Contracts: Dictionary<Erc721Contract>;
+
   // key: {contract_address}_{token_id}
   // value: erc721 token
   erc721Tokens: Dictionary<Erc721Token>;
@@ -74,10 +76,12 @@ export class Erc721Handler {
   erc721HolderStats: Dictionary<Erc721HolderStatistic>;
 
   constructor(
+    erc721Contracts: Dictionary<Erc721Contract>,
     erc721Tokens: Dictionary<Erc721Token>,
     erc721Activities: Erc721Activity[],
     erc721HolderStats: Dictionary<Erc721HolderStatistic>
   ) {
+    this.erc721Contracts = erc721Contracts;
     this.erc721Tokens = erc721Tokens;
     this.erc721Activities = erc721Activities;
     this.erc721HolderStats = erc721HolderStats;
@@ -92,7 +96,8 @@ export class Erc721Handler {
   }
 
   handlerErc721Transfer(erc721Activity: Erc721Activity) {
-    // update erc721 token
+    const erc721Contract =
+      this.erc721Contracts[`${erc721Activity.erc721_contract_address}`];
     const token =
       this.erc721Tokens[
         `${erc721Activity.erc721_contract_address}_${erc721Activity.token_id}`
@@ -101,6 +106,9 @@ export class Erc721Handler {
       // update new owner and last updated height
       token.owner = erc721Activity.to;
       token.last_updated_height = erc721Activity.height;
+      if (erc721Activity.to === ZERO_ADDRESS) {
+        erc721Contract.total_supply -= 1;
+      }
     } else if (erc721Activity.from === ZERO_ADDRESS) {
       // handle mint
       this.erc721Tokens[
@@ -112,6 +120,7 @@ export class Erc721Handler {
         last_updated_height: erc721Activity.height,
         burned: false,
       });
+      erc721Contract.total_supply += 1;
     } else {
       throw new Error('Handle erc721 tranfer error');
     }
@@ -121,6 +130,11 @@ export class Erc721Handler {
         this.erc721HolderStats[
           `${erc721Activity.erc721_contract_address}_${erc721Activity.from}`
         ];
+      if (!erc721HolderStatFrom) {
+        throw new Error(
+          `Erc721 holder ${  erc721Activity.from  } havent been audited`
+        );
+      }
       erc721HolderStatFrom.count -= 1;
     }
     if (erc721Activity.to !== ZERO_ADDRESS) {
@@ -128,7 +142,9 @@ export class Erc721Handler {
         this.erc721HolderStats[
           `${erc721Activity.erc721_contract_address}_${erc721Activity.to}`
         ];
-      erc721HolderStatTo.count += 1;
+      erc721HolderStatTo.count = erc721HolderStatTo
+        ? erc721HolderStatTo.count + 1
+        : 1;
     }
   }
 
@@ -287,11 +303,28 @@ export class Erc721Handler {
   }
 
   static async updateErc721(
+    erc721Contracts: Erc721Contract[],
     erc721Activities: Erc721Activity[],
     erc721Tokens: Erc721Token[],
+    erc721HolderStats: Erc721HolderStatistic[],
     trx: Knex.Transaction
   ) {
+    // update erc721 contract: total supply
+    if (erc721Contracts.length > 0) {
+      const stringListUpdates = erc721Contracts
+        .map(
+          (erc721Contract) =>
+            `('${erc721Contract.id}', ${erc721Contract.total_supply})`
+        )
+        .join(',');
+      await knex
+        .raw(
+          `UPDATE erc721_contract SET total_supply = temp.total_supply from (VALUES ${stringListUpdates}) as temp(id, total_supply) where temp.id = erc721_contract.id`
+        )
+        .transacting(trx);
+    }
     let updatedTokens: Dictionary<Erc721Token> = {};
+    // update erc721 token: new token & new holder
     if (erc721Tokens.length > 0) {
       updatedTokens = _.keyBy(
         await Erc721Token.query()
@@ -311,6 +344,7 @@ export class Erc721Handler {
         (o) => `${o.erc721_contract_address}_${o.token_id}`
       );
     }
+    // insert new erc721 activities
     if (erc721Activities.length > 0) {
       erc721Activities.forEach((activity) => {
         const token =
@@ -329,6 +363,14 @@ export class Erc721Handler {
           config.erc721.chunkSizeInsert
         )
         .transacting(trx);
+    }
+    // update erc721 holder statistic
+    if (erc721HolderStats.length > 0) {
+      await Erc721HolderStatistic.query()
+        .transacting(trx)
+        .insert(erc721HolderStats)
+        .onConflict(['erc721_contract_address', 'owner'])
+        .merge();
     }
   }
 

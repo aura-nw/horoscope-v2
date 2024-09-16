@@ -104,6 +104,15 @@ export default class Erc721Service extends BullableService {
       if (erc721Activities.length > 0) {
         // create chunk array
         const listChunkErc721Activities = [];
+        const erc721Contracts = _.keyBy(
+          await Erc721Contract.query()
+            .whereIn(
+              'address',
+              erc721Activities.map((e) => e.erc721_contract_address)
+            )
+            .transacting(trx),
+          'address'
+        );
         const erc721HolderStatsOnDB: Erc721HolderStatistic[] = [];
         const erc721TokensOnDB: Erc721Token[] = [];
         for (
@@ -159,14 +168,17 @@ export default class Erc721Service extends BullableService {
           (o) => `${o.erc721_contract_address}_${o.owner}`
         );
         const erc721Handler = new Erc721Handler(
+          erc721Contracts,
           erc721Tokens,
           erc721Activities,
           erc721HolderStats
         );
         erc721Handler.process();
         await Erc721Handler.updateErc721(
+          Object.values(erc721Handler.erc721Contracts),
           erc721Activities,
           Object.values(erc721Handler.erc721Tokens),
+          Object.values(erc721Handler.erc721HolderStats),
           trx
         );
       }
