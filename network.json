@@ -116,15 +116,5 @@
     ],
     "EVMchainId": 1513,
     "moleculerNamespace": "erascope-dev-story-testnet"
-  },
-  {
-    "chainId": "story-protocol",
-    "RPC": ["https://testnet.storyrpc.io"],
-    "LCD": ["https://lcd.dev.aura.network"],
-    "databaseName": "horoscope_dev_story_testnet",
-    "redisDBNumber": 4,
-    "moleculerNamespace": "namespace-auratestnet",
-    "EVMJSONRPC": ["https://testnet.storyrpc.io"],
-    "EVMchainId": 1513
   }
 ]
