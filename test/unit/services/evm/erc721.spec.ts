@@ -135,7 +135,7 @@ export default class Erc721Test {
           '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
         topic1:
           '0x0000000000000000000000000000000000000000000000000000000000000000',
-        topic2: `0x000000000000000000000000${  holder1.slice(2)}`,
+        topic2: `0x000000000000000000000000${holder1.slice(2)}`,
         topic3:
           '0x0000000000000000000000000000000000000000000000000000000000000000',
         address: this.evmSmartContract.address,
@@ -151,8 +151,8 @@ export default class Erc721Test {
         data: null,
         topic0:
           '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925',
-        topic1: `0x000000000000000000000000${  holder1.slice(2)}`,
-        topic2: `0x000000000000000000000000${  holder2.slice(2)}`,
+        topic1: `0x000000000000000000000000${holder1.slice(2)}`,
+        topic2: `0x000000000000000000000000${holder2.slice(2)}`,
         topic3:
           '0x0000000000000000000000000000000000000000000000000000000000000000',
         address: this.evmSmartContract.address,
@@ -168,8 +168,8 @@ export default class Erc721Test {
         data: null,
         topic0:
           '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
-        topic1: `0x000000000000000000000000${  holder1.slice(2)}`,
-        topic2: `0x000000000000000000000000${  holder2.slice(2)}`,
+        topic1: `0x000000000000000000000000${holder1.slice(2)}`,
+        topic2: `0x000000000000000000000000${holder2.slice(2)}`,
         topic3:
           '0x0000000000000000000000000000000000000000000000000000000000000000',
         address: this.evmSmartContract.address,
