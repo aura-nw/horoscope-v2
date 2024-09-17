@@ -11,7 +11,8 @@
   "crawlValidator": {
     "millisecondCrawl": null,
     "queryPageLimit": 100,
-    "patternCrawl": "30 */2 * * * *"
+    "patternCrawl": "30 */2 * * * *",
+    "chunkSizeInsert": 500
   },
   "cw721": {
     "key": "cw721",
