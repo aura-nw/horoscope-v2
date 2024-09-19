@@ -1,9 +1,11 @@
 import Moleculer from 'moleculer';
 import { PublicClient, getContract } from 'viem';
+import { Dictionary } from 'lodash';
 import knex from '../../common/utils/db_connection';
 import {
   Erc721Activity,
   Erc721Contract,
+  Erc721HolderStatistic,
   Erc721Stats,
   Erc721Token,
 } from '../../models';
@@ -74,6 +76,10 @@ export class Erc721Reindexer {
         )
         .first()
         .throwIfNotFound();
+      await Erc721HolderStatistic.query()
+        .delete()
+        .where('erc721_contract_address', address)
+        .transacting(trx);
       await Erc721Stats.query()
         .delete()
         .where('erc721_contract_id', erc721Contract.id)
@@ -100,7 +106,8 @@ export class Erc721Reindexer {
         contract.read.name().catch(() => Promise.resolve(undefined)),
         contract.read.symbol().catch(() => Promise.resolve(undefined)),
       ]);
-      await Erc721Contract.query()
+      const [tokens, height] = await this.getCurrentTokens(address);
+      const newErc721Contract: Erc721Contract = await Erc721Contract.query()
         .insert(
           Erc721Contract.fromJson({
             evm_smart_contract_id: erc721Contract.evm_smart_contract_id,
@@ -109,10 +116,10 @@ export class Erc721Reindexer {
             name: contractInfo[0],
             track: true,
             last_updated_height: Number(blockHeight),
+            total_supply: tokens.length,
           })
         )
         .transacting(trx);
-      const [tokens, height] = await this.getCurrentTokens(address);
       const activities = await Erc721Handler.getErc721Activities(
         0,
         height,
@@ -120,7 +127,24 @@ export class Erc721Reindexer {
         [address],
         trx
       );
-      await Erc721Handler.updateErc721(activities, tokens, trx);
+      const erc721HolderStats: Dictionary<Erc721HolderStatistic> = {};
+      tokens.forEach((token) => {
+        const { owner } = token;
+        const currentCount = erc721HolderStats[owner]?.count || '0';
+        const newCount = (BigInt(currentCount) + BigInt(1)).toString();
+        erc721HolderStats[owner] = Erc721HolderStatistic.fromJson({
+          erc721_contract_address: address,
+          owner,
+          count: newCount,
+        });
+      });
+      await Erc721Handler.updateErc721(
+        [newErc721Contract],
+        activities,
+        tokens,
+        Object.values(erc721HolderStats),
+        trx
+      );
     });
     const erc721Stats = await Erc721Handler.calErc721Stats([address]);
     if (erc721Stats.length > 0) {
