@@ -267,7 +267,7 @@ export default class Erc721HandlerTest {
         from: '0x0000000000000000000000000000000000000000',
         to: holders[1],
         token_id: '2',
-        height: 1,
+        height: 2,
         evm_event_id: 1,
       }),
       // mint token 3 to holder0
@@ -277,7 +277,7 @@ export default class Erc721HandlerTest {
         from: '0x0000000000000000000000000000000000000000',
         to: holders[0],
         token_id: '3',
-        height: 1,
+        height: 3,
         evm_event_id: 1,
       }),
       // transfer token 0 from holder0 to holder2
@@ -287,7 +287,7 @@ export default class Erc721HandlerTest {
         from: holders[0],
         to: holders[2],
         token_id: '0',
-        height: 1,
+        height: 4,
         evm_event_id: 1,
       }),
       // transfer token 1 from holder0 to holder1
@@ -297,18 +297,17 @@ export default class Erc721HandlerTest {
         from: holders[0],
         to: holders[1],
         token_id: '1',
-        height: 1,
+        height: 5,
         evm_event_id: 1,
       }),
       // burn token 3
-      // mint token 0 to holder0
       Erc721Activity.fromJson({
         action: ERC721_ACTION.TRANSFER,
         erc721_contract_address: initErc721Contract.address,
         from: holders[0],
         to: '0x0000000000000000000000000000000000000000',
         token_id: '3',
-        height: 1,
+        height: 6,
         evm_event_id: 1,
       }),
     ];
@@ -338,16 +337,30 @@ export default class Erc721HandlerTest {
     const updatedErc721HolderStats = erc721Handler.erc721HolderStats;
     expect(
       updatedErc721HolderStats[`${initErc721Contract.address}_${holders[0]}`]
-        .count
-    ).toEqual('0');
+    ).toMatchObject({
+      count: '0',
+      last_updated_height: erc721Activities[6].height,
+    });
     expect(
       updatedErc721HolderStats[`${initErc721Contract.address}_${holders[1]}`]
-        .count
-    ).toEqual('2');
+    ).toMatchObject({
+      count: '2',
+      last_updated_height: erc721Activities[5].height,
+    });
     expect(
       updatedErc721HolderStats[`${initErc721Contract.address}_${holders[2]}`]
-        .count
-    ).toEqual('1');
+    ).toMatchObject({
+      count: '1',
+      last_updated_height: erc721Activities[4].height,
+    });
+    expect(
+      updatedErc721HolderStats[
+        `${initErc721Contract.address}_0x0000000000000000000000000000000000000000`
+      ]
+    ).toMatchObject({
+      count: '-3',
+      last_updated_height: erc721Activities[6].height,
+    });
   }
 
   @Test('test calErc721Stats')

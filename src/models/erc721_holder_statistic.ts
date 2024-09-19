@@ -9,6 +9,8 @@ export class Erc721HolderStatistic extends BaseModel {
 
   count!: string;
 
+  last_updated_height!: number;
+
   static get tableName() {
     return 'erc721_holder_statistic';
   }

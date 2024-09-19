@@ -129,35 +129,30 @@ export class Erc721Handler {
       throw new Error('Handle erc721 tranfer error');
     }
     // update erc721 holder statistics
-    if (erc721Activity.from !== ZERO_ADDRESS) {
-      const erc721HolderStatFrom =
-        this.erc721HolderStats[
-          `${erc721Activity.erc721_contract_address}_${erc721Activity.from}`
-        ];
-      if (!erc721HolderStatFrom) {
-        throw new Error(
-          `Erc721 holder ${erc721Activity.from} havent been audited`
-        );
-      }
-      erc721HolderStatFrom.count = (
-        BigInt(erc721HolderStatFrom.count) - BigInt(1)
-      ).toString();
-    }
-    if (erc721Activity.to !== ZERO_ADDRESS) {
-      const erc721HolderStatTo =
-        this.erc721HolderStats[
-          `${erc721Activity.erc721_contract_address}_${erc721Activity.to}`
-        ];
+    const erc721HolderStatFrom =
+      this.erc721HolderStats[
+        `${erc721Activity.erc721_contract_address}_${erc721Activity.from}`
+      ];
+    this.erc721HolderStats[
+      `${erc721Activity.erc721_contract_address}_${erc721Activity.from}`
+    ] = Erc721HolderStatistic.fromJson({
+      erc721_contract_address: erc721Activity.erc721_contract_address,
+      owner: erc721Activity.from,
+      count: (BigInt(erc721HolderStatFrom?.count || 0) - BigInt(1)).toString(),
+      last_updated_height: erc721Activity.height,
+    });
+    const erc721HolderStatTo =
       this.erc721HolderStats[
         `${erc721Activity.erc721_contract_address}_${erc721Activity.to}`
-      ] = Erc721HolderStatistic.fromJson({
-        erc721_contract_address: erc721Activity.erc721_contract_address,
-        owner: erc721Activity.to,
-        count: erc721HolderStatTo
-          ? (BigInt(erc721HolderStatTo.count) + BigInt(1)).toString()
-          : BigInt(1).toString(),
-      });
-    }
+      ];
+    this.erc721HolderStats[
+      `${erc721Activity.erc721_contract_address}_${erc721Activity.to}`
+    ] = Erc721HolderStatistic.fromJson({
+      erc721_contract_address: erc721Activity.erc721_contract_address,
+      owner: erc721Activity.to,
+      count: (BigInt(erc721HolderStatTo?.count || 0) + BigInt(1)).toString(),
+      last_updated_height: erc721Activity.height,
+    });
   }
 
   static buildTransferActivity(
@@ -386,6 +381,7 @@ export class Erc721Handler {
               erc721_contract_address: e.erc721_contract_address,
               owner: e.owner,
               count: e.count,
+              last_updated_height: e.last_updated_height,
             })
           )
         )

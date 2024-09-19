@@ -113,8 +113,6 @@ export default class Erc721Service extends BullableService {
             .transacting(trx),
           'address'
         );
-        const erc721HolderStatsOnDB: Erc721HolderStatistic[] = [];
-        const erc721TokensOnDB: Erc721Token[] = [];
         for (
           let i = 0;
           i < erc721Activities.length;
@@ -127,26 +125,25 @@ export default class Erc721Service extends BullableService {
           listChunkErc721Activities.push(chunk);
         }
         // process chunk array
-        await Promise.all(
-          // eslint-disable-next-line array-callback-return
-          listChunkErc721Activities.map(async (chunk) => {
-            const erc721TokensInChunk = await Erc721Token.query().whereIn(
-              ['erc721_contract_address', 'token_id'],
-              chunk.map((e) => [
-                e.erc721_contract_address,
-                // if token_id undefined (case approval_all), replace by null => not get any token (because token must have token_id)
-                e.token_id || null,
-              ])
-            );
-            erc721TokensOnDB.push(...erc721TokensInChunk);
-          })
-        );
+        const erc721TokensOnDB: Erc721Token[] = (
+          await Promise.all(
+            listChunkErc721Activities.map(async (chunk) =>
+              Erc721Token.query().whereIn(
+                ['erc721_contract_address', 'token_id'],
+                chunk.map((e) => [
+                  e.erc721_contract_address,
+                  // if token_id undefined (case approval_all), replace by null => not get any token (because token must have token_id)
+                  e.token_id || null,
+                ])
+              )
+            )
+          )
+        ).flat();
         // process chunk array
-        await Promise.all(
-          // eslint-disable-next-line array-callback-return
-          listChunkErc721Activities.map(async (chunk) => {
-            const erc721HolderStatsInChunk =
-              await Erc721HolderStatistic.query().whereIn(
+        const erc721HolderStatsOnDB: Erc721HolderStatistic[] = (
+          await Promise.all(
+            listChunkErc721Activities.map(async (chunk) =>
+              Erc721HolderStatistic.query().whereIn(
                 ['erc721_contract_address', 'owner'],
                 _.uniqWith(
                   [
@@ -155,10 +152,10 @@ export default class Erc721Service extends BullableService {
                   ],
                   _.isEqual
                 )
-              );
-            erc721HolderStatsOnDB.push(...erc721HolderStatsInChunk);
-          })
-        );
+              )
+            )
+          )
+        ).flat();
         const erc721Tokens = _.keyBy(
           erc721TokensOnDB,
           (o) => `${o.erc721_contract_address}_${o.token_id}`

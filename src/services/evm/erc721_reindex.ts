@@ -129,16 +129,17 @@ export class Erc721Reindexer {
         [address],
         trx
       );
-      const erc721HolderStats: Dictionary<Erc721HolderStatistic> =
-        tokens.reduce((acc: Dictionary<Erc721HolderStatistic>, curr) => {
-          const count = acc[curr.owner] ? acc[curr.owner].count + 1 : 1;
-          acc[curr.owner] = Erc721HolderStatistic.fromJson({
-            erc721_contract_address: address,
-            owner: curr.owner,
-            count,
-          });
-          return acc;
-        }, {});
+      const erc721HolderStats: Dictionary<Erc721HolderStatistic> = {};
+      tokens.forEach((token) => {
+        const {owner} = token;
+        const currentCount = erc721HolderStats[owner]?.count || '0';
+        const newCount = (BigInt(currentCount) + BigInt(1)).toString();
+        erc721HolderStats[owner] = Erc721HolderStatistic.fromJson({
+          erc721_contract_address: address,
+          owner,
+          count: newCount,
+        });
+      });
       await Erc721Handler.updateErc721(
         newErc721Contract,
         activities,
