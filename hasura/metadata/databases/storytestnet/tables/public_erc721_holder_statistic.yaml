@@ -1,0 +1,14 @@
+table:
+  name: erc721_holder_statistic
+  schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - count
+        - owner
+        - erc721_contract_address
+        - id
+        - last_updated_height
+      filter: {}
+      limit: 100

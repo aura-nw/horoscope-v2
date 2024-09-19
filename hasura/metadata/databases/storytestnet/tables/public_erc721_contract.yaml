@@ -55,13 +55,14 @@ select_permissions:
   - role: internal_service
     permission:
       columns:
-        - id
-        - evm_smart_contract_id
         - address
-        - symbol
-        - name
-        - track
+        - evm_smart_contract_id
+        - id
         - last_updated_height
+        - name
+        - symbol
+        - total_supply
+        - track
       filter: {}
       limit: 100
       allow_aggregations: true

@@ -9,6 +9,7 @@
 - '!include public_erc20_contract.yaml'
 - '!include public_erc721_activity.yaml'
 - '!include public_erc721_contract.yaml'
+- '!include public_erc721_holder_statistic.yaml'
 - '!include public_erc721_stats.yaml'
 - '!include public_erc721_token.yaml'
 - '!include public_evm_block.yaml'
