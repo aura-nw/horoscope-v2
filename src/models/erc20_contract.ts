@@ -23,6 +23,8 @@ export class Erc20Contract extends BaseModel {
 
   track!: boolean;
 
+  total_holder!: number;
+
   last_updated_height!: number;
 
   static get tableName() {
