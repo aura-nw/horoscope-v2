@@ -9,6 +9,7 @@ export async function up(knex: Knex): Promise<void> {
   const totalHolders = await AccountBalance.query(knex)
     .select('account_balance.denom')
     .where('account_balance.type', AccountBalance.TYPE.ERC20_TOKEN)
+    .andWhere('account_balance.amount', '>', 0)
     .count()
     .groupBy('account_balance.denom');
   if (totalHolders.length > 0) {
