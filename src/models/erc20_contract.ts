@@ -27,6 +27,8 @@ export class Erc20Contract extends BaseModel {
 
   last_updated_height!: number;
 
+  total_actions!: any;
+
   static get tableName() {
     return 'erc20_contract';
   }
