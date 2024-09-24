@@ -265,7 +265,7 @@ export class Erc20Test {
       .where('address', this.evmSmartContract.address)
       .first()
       .throwIfNotFound();
-    expect(erc20Contract.no_action).toEqual({
+    expect(erc20Contract.total_actions).toEqual({
       transfer: erc20Activities.length - 1,
       approval: 1,
     });
@@ -370,7 +370,7 @@ export class Erc20Test {
       .where('address', this.evmSmartContract.address)
       .first()
       .throwIfNotFound();
-    expect(erc20Contract.no_action).toEqual({
+    expect(erc20Contract.total_actions).toEqual({
       transfer: erc20Activities.length + 2,
       approval: 1,
     });

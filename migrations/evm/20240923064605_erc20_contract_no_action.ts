@@ -5,7 +5,7 @@ import _ from 'lodash';
 
 export async function up(knex: Knex): Promise<void> {
   await knex.schema.alterTable('erc20_contract', (table) => {
-    table.jsonb('no_action').defaultTo('{}');
+    table.jsonb('total_actions').defaultTo('{}');
   });
   await knex.raw(`set statement_timeout to 0`);
   const [totalTransfer, totalApproval, totalDeposit, totalWithdrawal] =
@@ -60,13 +60,13 @@ export async function up(knex: Knex): Promise<void> {
       )
       .join(',');
     await knex.raw(
-      `UPDATE erc20_contract SET no_action = temp.no_action from (VALUES ${stringListUpdates}) as temp(address, no_action) where temp.address = erc20_contract.address`
+      `UPDATE erc20_contract SET total_actions = temp.total_actions from (VALUES ${stringListUpdates}) as temp(address, total_actions) where temp.address = erc20_contract.address`
     );
   }
 }
 
 export async function down(knex: Knex): Promise<void> {
   await knex.schema.alterTable('erc20_contract', (table) => {
-    table.dropColumn('no_action');
+    table.dropColumn('total_actions');
   });
 }
