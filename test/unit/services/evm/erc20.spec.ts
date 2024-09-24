@@ -224,6 +224,20 @@ export class Erc20Test {
           '0x21f905f14a26c5b35e43e1bfbcf8ff395e453d6497a0ce0a0c3cd7814ec0ba03',
         evm_tx_id: this.evmTx.id,
       },
+      {
+        id: 3,
+        evm_event_id: this.evmEvent.id,
+        sender: '0xDF587daaC47ae7B5586E34bCdb23d0b900b18a6C',
+        action: 'approval',
+        erc20_contract_address: this.evmSmartContract.address,
+        amount: '2211',
+        from: this.account2.evm_address,
+        to: this.account3.evm_address,
+        height: this.blockCheckpoints[0].height + 1,
+        tx_hash:
+          '0x21f905f14a26c5b35e43e1bfbcf8ff395e453d6497a0ce0a0c3cd7814ec0ba03',
+        evm_tx_id: this.evmTx.id,
+      },
     ];
     await Erc20Activity.query().insert(erc20Activities);
     await this.erc20Service.handleErc20Balance();
@@ -247,6 +261,14 @@ export class Erc20Test {
       accountBalances[`${this.account3.id}_${this.evmSmartContract.address}`]
         .amount
     ).toEqual(`${BigInt(erc20Activities[1].amount).toString()}`);
+    const erc20Contract = await Erc20Contract.query()
+      .where('address', this.evmSmartContract.address)
+      .first()
+      .throwIfNotFound();
+    expect(erc20Contract.no_action).toEqual({
+      transfer: erc20Activities.length - 1,
+      approval: 1,
+    });
   }
 
   @Test('handle erc20 balance with missing account')
@@ -344,5 +366,13 @@ export class Erc20Test {
       accountBalances[`${this.account3.id}_${this.evmSmartContract.address}`]
         .amount
     ).toEqual(`${BigInt(erc20Activities[1].amount).toString()}`);
+    const erc20Contract = await Erc20Contract.query()
+      .where('address', this.evmSmartContract.address)
+      .first()
+      .throwIfNotFound();
+    expect(erc20Contract.no_action).toEqual({
+      transfer: erc20Activities.length + 2,
+      approval: 1,
+    });
   }
 }

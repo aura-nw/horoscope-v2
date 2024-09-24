@@ -86,6 +86,12 @@ export class Erc20Handler {
       ) {
         this.handlerErc20Transfer(erc20Activity);
       }
+      this.erc20Contracts[erc20Activity.erc20_contract_address].no_action[
+        erc20Activity.action
+      ] =
+        (this.erc20Contracts[erc20Activity.erc20_contract_address].no_action[
+          erc20Activity.action
+        ] || 0) + 1;
     });
   }
 
