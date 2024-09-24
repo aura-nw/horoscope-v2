@@ -12,6 +12,7 @@ import {
   EVMTransaction,
 } from '../../../models';
 import { BULL_JOB_NAME, SERVICE } from '../constant';
+import knex from '../../../common/utils/db_connection';
 import config from '../../../../config.json' assert { type: 'json' };
 import BullableService, { QueueHandler } from '../../../base/bullable.service';
 
@@ -53,7 +54,6 @@ export default class DailyEVMStatisticsService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_DAILY_EVM_STATISTICS,
     jobName: BULL_JOB_NAME.CRAWL_DAILY_EVM_STATISTICS,
-    // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: { date: string }): Promise<void> {
     const endTime = dayjs.utc(_payload.date).startOf('day').toDate();
@@ -62,36 +62,56 @@ export default class DailyEVMStatisticsService extends BullableService {
       `Get daily statistic events for day ${new Date(startTime)}`
     );
 
-    const [startBlock, endBlock] = await Promise.all([
-      EVMBlock.query()
-        .select('height')
-        .where('timestamp', '>=', startTime)
-        .limit(1)
-        .orderBy('height'),
-      EVMBlock.query()
-        .select('height')
-        .where('timestamp', '<', endTime)
-        .limit(1)
-        .orderBy('height', 'desc'),
-    ]);
+    const [startBlock, endBlock, dailyStatisticPreviousDay] = await Promise.all(
+      [
+        EVMBlock.query()
+          .select('height')
+          .where('timestamp', '>=', startTime)
+          .limit(1)
+          .orderBy('height'),
+        EVMBlock.query()
+          .select('height')
+          .where('timestamp', '<', endTime)
+          .limit(1)
+          .orderBy('height', 'desc'),
+        DailyStatistics.query().findOne(
+          'date',
+          dayjs.utc(startTime).subtract(1, 'day').toDate().toISOString()
+        ),
+      ]
+    );
 
-    const [dailyTxs, totalAddresses] = await Promise.all([
+    const [todayAccounts, totalTxs, totalActiveAddress] = await Promise.all([
+      Account.query()
+        .count('id')
+        .findOne(
+          knex.raw(`created_at >= '${startTime.toISOString()}'::timestamp`)
+        )
+        .andWhere(
+          knex.raw(`created_at < '${endTime.toISOString()}'::timestamp`)
+        ),
       EVMTransaction.query()
-        .where('height', '>=', startBlock[0].height)
+        .count()
+        .findOne('height', '>=', startBlock[0].height)
         .andWhere('height', '<=', endBlock[0].height),
-      Account.query().count('id'),
+      EVMTransaction.query()
+        .count(knex.raw('distinct("from")'))
+        .findOne('height', '>=', startBlock[0].height)
+        .andWhere('height', '<=', endBlock[0].height),
     ]);
-
-    const activeAddrs = Array.from(new Set(dailyTxs.map((tx) => tx.from)));
 
     const dailyStat = DailyStatistics.fromJson({
-      daily_txs: dailyTxs.length,
-      daily_active_addresses: activeAddrs.length,
-      unique_addresses: Number(totalAddresses[0].count),
+      daily_txs: totalTxs?.count,
+      daily_active_addresses: totalActiveAddress?.count,
+      unique_addresses:
+        // eslint-disable-next-line no-unsafe-optional-chaining
+        Number(dailyStatisticPreviousDay?.unique_addresses) +
+        Number(todayAccounts?.count),
       date: startTime.toISOString(),
     });
 
     this.logger.info(`Insert new daily statistic for date ${startTime}`);
+    this.logger.info(dailyStat);
     await DailyStatistics.query()
       .insert(dailyStat)
       .catch((error) => {
