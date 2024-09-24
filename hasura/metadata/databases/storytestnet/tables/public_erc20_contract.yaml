@@ -48,6 +48,7 @@ select_permissions:
         - last_updated_height
         - name
         - symbol
+        - total_actions
         - total_holder
         - total_supply
         - track
