@@ -27,6 +27,8 @@ export class Erc721Contract extends BaseModel {
 
   total_supply!: string;
 
+  total_actions!: any;
+
   static get tableName() {
     return 'erc721_contract';
   }

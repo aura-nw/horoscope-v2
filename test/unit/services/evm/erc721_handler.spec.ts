@@ -223,6 +223,7 @@ export default class Erc721HandlerTest {
 
   @Test('test process')
   async testProcess() {
+    const totalTransfer = 5;
     const holders = [
       '0x38828FA9766dE6eb49011fCC970ed1beFE15974a',
       '0x27CF763feEE58f14C2c69663EA8De784FCF2Dbbb',
@@ -236,6 +237,11 @@ export default class Erc721HandlerTest {
       track: true,
       last_updated_height: 0,
       total_supply: '3',
+      total_actions: {
+        [ERC721_ACTION.TRANSFER]: totalTransfer,
+        [ERC721_ACTION.APPROVAL]: 1,
+        [ERC721_ACTION.APPROVAL_FOR_ALL]: 2,
+      },
     });
     const initErc721Tokens = {};
     const initErc721HolderStats = {};
@@ -323,6 +329,14 @@ export default class Erc721HandlerTest {
 
     // check total supply
     expect(updatedErc721Contract.total_supply).toEqual('6');
+    // check total actions
+    expect(updatedErc721Contract.total_actions).toEqual({
+      [ERC721_ACTION.TRANSFER]: totalTransfer + erc721Activities.length,
+      [ERC721_ACTION.APPROVAL]:
+        initErc721Contract.total_actions[ERC721_ACTION.APPROVAL],
+      [ERC721_ACTION.APPROVAL_FOR_ALL]:
+        initErc721Contract.total_actions[ERC721_ACTION.APPROVAL_FOR_ALL],
+    });
     // check new owner for each token
     const updatedTokens = erc721Handler.erc721Tokens;
     expect(updatedTokens[`${initErc721Contract.address}_0`].owner).toEqual(

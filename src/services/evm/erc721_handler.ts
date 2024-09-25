@@ -92,6 +92,11 @@ export class Erc721Handler {
       if (erc721Activity.action === ERC721_ACTION.TRANSFER) {
         this.handlerErc721Transfer(erc721Activity);
       }
+      this.erc721Contracts[
+        erc721Activity.erc721_contract_address
+      ].total_actions[erc721Activity.action] =
+        (this.erc721Contracts[erc721Activity.erc721_contract_address]
+          .total_actions[erc721Activity.action] || 0) + 1;
     });
   }
 
@@ -321,12 +326,14 @@ export class Erc721Handler {
       const stringListUpdates = erc721Contracts
         .map(
           (erc721Contract) =>
-            `(${erc721Contract.id}, ${erc721Contract.total_supply})`
+            `(${erc721Contract.id}, ${
+              erc721Contract.total_supply
+            }, '${JSON.stringify(erc721Contract.total_actions)}'::jsonb)`
         )
         .join(',');
       await knex
         .raw(
-          `UPDATE erc721_contract SET total_supply = temp.total_supply from (VALUES ${stringListUpdates}) as temp(id, total_supply) where temp.id = erc721_contract.id`
+          `UPDATE erc721_contract SET total_supply = temp.total_supply, total_actions = temp.total_actions from (VALUES ${stringListUpdates}) as temp(id, total_supply, total_actions) where temp.id = erc721_contract.id`
         )
         .transacting(trx);
     }
