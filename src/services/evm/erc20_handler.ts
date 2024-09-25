@@ -86,6 +86,11 @@ export class Erc20Handler {
       ) {
         this.handlerErc20Transfer(erc20Activity);
       }
+      this.erc20Contracts[erc20Activity.erc20_contract_address].total_actions[
+        erc20Activity.action
+      ] =
+        (this.erc20Contracts[erc20Activity.erc20_contract_address]
+          .total_actions[erc20Activity.action] || 0) + 1;
     });
   }
 
@@ -114,6 +119,9 @@ export class Erc20Handler {
       const amount = (
         BigInt(fromAccountBalance?.amount || 0) - BigInt(erc20Activity.amount)
       ).toString();
+      if (BigInt(amount) === BigInt(0)) {
+        erc20Contract.total_holder -= 1;
+      }
       // update object accountBalance
       this.accountBalances[key] = AccountBalance.fromJson({
         denom: erc20Activity.erc20_contract_address,
@@ -144,10 +152,14 @@ export class Erc20Handler {
           `Process erc20 balance: toAccountBalance ${erc20Activity.to} was updated`
         );
       }
+      const initAmount = toAccountBalance?.amount || 0;
       // calculate new balance: increase balance of to account
       const amount = (
-        BigInt(toAccountBalance?.amount || 0) + BigInt(erc20Activity.amount)
+        BigInt(initAmount) + BigInt(erc20Activity.amount)
       ).toString();
+      if (BigInt(amount) > BigInt(0) && BigInt(initAmount) === BigInt(0)) {
+        erc20Contract.total_holder += 1;
+      }
       // update object accountBalance
       this.accountBalances[key] = AccountBalance.fromJson({
         denom: erc20Activity.erc20_contract_address,
@@ -342,10 +354,16 @@ export class Erc20Handler {
           .joinRelated('account')
           .whereIn(
             ['account.evm_address', 'denom'],
-            [
-              ...erc20Activities.map((e) => [e.from, e.erc20_contract_address]),
-              ...erc20Activities.map((e) => [e.to, e.erc20_contract_address]),
-            ]
+            _.uniqWith(
+              [
+                ...erc20Activities.map((e) => [
+                  e.from,
+                  e.erc20_contract_address,
+                ]),
+                ...erc20Activities.map((e) => [e.to, e.erc20_contract_address]),
+              ],
+              _.isEqual
+            )
           ),
         (o) => `${o.account_id}_${o.denom}`
       );
@@ -354,7 +372,7 @@ export class Erc20Handler {
           .transacting(trx)
           .whereIn(
             'address',
-            erc20Activities.map((e) => e.erc20_contract_address)
+            _.uniq(erc20Activities.map((e) => e.erc20_contract_address))
           ),
         'address'
       );
@@ -539,7 +557,7 @@ export class Erc20Handler {
       ) as [string, bigint];
       return Erc20Activity.fromJson({
         evm_event_id: e.id,
-        sender: e.sender,
+        sender: bytesToHex(e.sender),
         action: ERC20_ACTION.DEPOSIT,
         erc20_contract_address: e.address,
         amount: amount.toString(),
@@ -567,7 +585,7 @@ export class Erc20Handler {
       ) as [string, bigint];
       return Erc20Activity.fromJson({
         evm_event_id: e.id,
-        sender: e.sender,
+        sender: bytesToHex(e.sender),
         action: ERC20_ACTION.WITHDRAWAL,
         erc20_contract_address: e.address,
         amount: amount.toString(),

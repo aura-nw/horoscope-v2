@@ -65,6 +65,8 @@ export class Validator extends BaseModel {
 
   image_url!: string;
 
+  evm_address!: string;
+
   static get tableName() {
     return 'validator';
   }

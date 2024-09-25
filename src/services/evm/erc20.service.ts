@@ -283,7 +283,7 @@ export default class Erc20Service extends BullableService {
       Erc20Contract.fromJson({
         evm_smart_contract_id: evmSmartContracts[index].id,
         address: e.address,
-        total_supply: erc20ContractsInfo[index].totalSupply,
+        total_supply: '0',
         symbol: erc20ContractsInfo[index].symbol,
         decimal: erc20ContractsInfo[index].decimals,
         name: erc20ContractsInfo[index].name,

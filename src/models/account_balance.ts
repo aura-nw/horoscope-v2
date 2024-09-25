@@ -4,6 +4,8 @@ import BaseModel from './base';
 import { Account } from './account';
 
 export class AccountBalance extends BaseModel {
+  [relation: string]: any;
+
   static softDelete = false;
 
   account!: Account;

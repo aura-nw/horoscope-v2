@@ -1,80 +1,52 @@
-import { AfterAll, BeforeAll, Describe, Test } from '@jest-decorated/core';
-import _ from 'lodash';
-import { ServiceBroker } from 'moleculer';
-import { decodeAbiParameters, hexToBytes, toHex } from 'viem';
-import knex from '../../../../src/common/utils/db_connection';
-import { getViemClient } from '../../../../src/common/utils/etherjs_client';
+import { fromBase64 } from '@cosmjs/encoding';
 import {
-  Account,
-  AccountBalance,
+  AfterAll,
+  BeforeAll,
+  BeforeEach,
+  Describe,
+  Test,
+} from '@jest-decorated/core';
+import { Dictionary } from 'lodash';
+import { ServiceBroker } from 'moleculer';
+import {
+  decodeAbiParameters,
+  encodeAbiParameters,
+  fromHex,
+  hexToBytes,
+  toHex,
+} from 'viem';
+import config from '../../../../config.json' assert { type: 'json' };
+import knex from '../../../../src/common/utils/db_connection';
+import {
+  Block,
   Erc20Activity,
   Erc20Contract,
+  Event,
+  EventAttribute,
   EvmEvent,
   EVMSmartContract,
   EVMTransaction,
+  Transaction,
 } from '../../../../src/models';
-import { ABI_TRANSFER_PARAMS } from '../../../../src/services/evm/erc20_handler';
-import { Erc20Reindexer } from '../../../../src/services/evm/erc20_reindex';
+import { AccountBalance } from '../../../../src/models/account_balance';
+import { ZERO_ADDRESS } from '../../../../src/services/evm/constant';
+import {
+  ABI_APPROVAL_PARAMS,
+  ABI_TRANSFER_PARAMS,
+  ERC20_ACTION,
+  Erc20Handler,
+} from '../../../../src/services/evm/erc20_handler';
 
-const accounts = [
-  Account.fromJson({
-    id: 116058,
-    address: 'aura1az8cmnr4ppfggj0vt4llzdun0ptlkc8jxha27w',
-    balances: [
-      {
-        denom: 'uaura',
-        amount: '42981159',
-      },
-    ],
-    code_hash: null,
-    evm_address: '0xe88f8dcc7508528449ec5d7ff137937857fb60f2',
-    pubkey: {},
-    sequence: 11,
-    account_number: 5,
-    spendable_balances: [
-      {
-        denom: 'uaura',
-        amount: '42981159',
-      },
-    ],
-    type: '/cosmos.auth.v1beta1.BaseAccount',
-    account_balances: [
-      {
-        denom: '0x80b5a32e4f032b2a058b4f29ec95eefeeb87adcd',
-        amount: '422142',
-        type: 'ERC20_TOKEN',
-      },
-      {
-        denom: '0xde47a655a5d9904bd3f7e1a536d8323fbd99993a',
-        amount: '-10000000000000000000',
-        type: 'ERC20_TOKEN',
-      },
-    ],
-  }),
-  Account.fromJson({
-    id: 116059,
-    address: 'aura1xnjpzgtqztcy9l8vhafmr5zulfn7a8l8sjlhp3',
-    balances: [
-      {
-        denom: 'uaura',
-        amount: '32218705',
-      },
-    ],
-    code_hash: null,
-    evm_address: '0x34e411216012f042fcecbf53b1d05cfa67ee9fe7',
-    pubkey: {},
-    sequence: 11,
-    account_number: 5,
-    spendable_balances: [
-      {
-        denom: 'uaura',
-        amount: '42981159',
-      },
-    ],
-    type: '/cosmos.auth.v1beta1.BaseAccount',
-    account_balances: [],
-  }),
-];
+const evmTransaction = EVMTransaction.fromJson({
+  id: 2931,
+  hash: '0xf15467ec2a25eeef95798d93c2fe9ed8e7c891578b8e1bcc3284105849656c9d',
+  height: 121114,
+  tx_id: 1612438,
+  tx_msg_id: 4752908,
+  contract_address: null,
+  index: 0,
+  from: 'evmos1fwgemqt4mw39m0mn8e7ulyjpafl9r9pmzyv3hv',
+});
 const evmSmartContract = EVMSmartContract.fromJson({
   id: 1,
   address: '0xde47a655a5d9904bd3f7e1a536d8323fbd99993a',
@@ -85,7 +57,6 @@ const evmSmartContract = EVMSmartContract.fromJson({
   type: EVMSmartContract.TYPES.ERC20,
   code_hash: '0xdsf3335453454tsgfsdrtserf43645y4h4tAAvfgfgds',
 });
-
 const erc20Contract = Erc20Contract.fromJson({
   id: 10,
   address: evmSmartContract.address,
@@ -94,134 +65,931 @@ const erc20Contract = Erc20Contract.fromJson({
   symbol: 'WAURA',
   total_supply: '0',
   track: true,
-  activities: [
-    {
-      from: '0x93f8e7ec7e054b476d7de8e6bb096e56cd575beb',
-      erc20_contract_address: '0xde47a655a5d9904bd3f7e1a536d8323fbd99993a',
-      height: 7116660,
-      sender: '0x34e411216012f042fcecbf53b1d05cfa67ee9fe7',
-      to: '0x34e411216012f042fcecbf53b1d05cfa67ee9fe7',
-      tx_hash:
-        '0xf15467ec2a25eeef95798d93c2fe9ed8e7c891578b8e1bcc3284105849656c9d',
-      action: 'transfer',
-      amount: '258773093659445577552',
-    },
-  ],
   evm_smart_contract_id: evmSmartContract.id,
 });
-const evmTransaction = EVMTransaction.fromJson({
-  id: 2931,
-  hash: hexToBytes(
-    '0xf15467ec2a25eeef95798d93c2fe9ed8e7c891578b8e1bcc3284105849656c9d'
-  ),
-  height: 1,
-  tx_id: 1612438,
-  tx_msg_id: 4752908,
-  contract_address: null,
-  index: 0,
-  from: hexToBytes('0x51aeade652867f342ddc012e15c27d0cd6220398'),
+const wrapSmartContract = EVMSmartContract.fromJson({
+  id: 2,
+  address: config.erc20.wrapExtensionContract[0],
+  creator: '0x5606b4eA93F696Dd82Ca983BAF5723d00729f127',
+  created_height: 100,
+  created_hash:
+    '0x8c46cf6373f2f6e528b56becf0ce6b460b5d90cf9b0325a136b9b3a820e1e489',
+  type: EVMSmartContract.TYPES.ERC20,
+  code_hash: '0xdsf3335453454tsgfsdrtserf43645y4h4tAAvfgfgds',
 });
-
-@Describe('Test erc20 reindex')
-export default class Erc20ReindexTest {
+const erc20WrapContract = Erc20Contract.fromJson({
+  id: 20,
+  address: wrapSmartContract.address,
+  decimal: '18',
+  name: 'Wrapped Aura',
+  symbol: 'WAURA',
+  total_supply: '0',
+  track: true,
+  evm_smart_contract_id: wrapSmartContract.id,
+});
+const erc20ModuleAccount = 'aura1glht96kr2rseywuvhhay894qw7ekuc4q3jyctl';
+@Describe('Test erc20 handler')
+export default class Erc20HandlerTest {
   broker = new ServiceBroker({ logger: false });
 
   @BeforeAll()
   async initSuite() {
     await this.broker.start();
     await knex.raw(
-      'TRUNCATE TABLE evm_transaction, evm_smart_contract, erc20_contract, account, erc20_activity, account_balance, evm_event RESTART IDENTITY CASCADE'
+      'TRUNCATE TABLE evm_transaction, evm_smart_contract, erc20_contract RESTART IDENTITY CASCADE'
     );
     await EVMTransaction.query().insert(evmTransaction);
-    await EVMSmartContract.query().insert(evmSmartContract);
-    await Erc20Contract.query().insertGraph(erc20Contract);
-    await Account.query().insertGraph(accounts);
+    await EVMSmartContract.query().insert([
+      evmSmartContract,
+      wrapSmartContract,
+    ]);
+    await Erc20Contract.query().insert([erc20Contract, erc20WrapContract]);
   }
 
   @AfterAll()
   async tearDown() {
     await this.broker.stop();
-    jest.resetAllMocks();
-    jest.restoreAllMocks();
   }
 
-  @Test('test reindex')
-  async testReindex() {
-    const viemClient = getViemClient();
-    jest.spyOn(viemClient, 'getBlockNumber').mockResolvedValue(BigInt(123456));
-    // Instantiate Erc20Reindexer with the mock
-    const reindexer = new Erc20Reindexer(viemClient, this.broker.logger);
-    const event = EvmEvent.fromJson({
-      id: 4227,
+  @BeforeEach()
+  async beforeEach() {
+    await knex.raw(
+      'TRUNCATE TABLE evm_event, transaction, event, event_attribute, block RESTART IDENTITY CASCADE'
+    );
+  }
+
+  @Test('test build erc20 activities (transfer, approval)')
+  async testBuildErc20Activities() {
+    const from = '0x400207c680a1c5d5a86f35f97111afc00f2f1826';
+    const to = '0xea780c13a5450ac7c3e6ae4b17a0445998132b15';
+    const amount = '45222000';
+    const evmEvents = [
+      // transfer event
+      EvmEvent.fromJson({
+        id: 1,
+        address: erc20Contract.address,
+        block_hash:
+          '0xed6a2d3c3ac9a2868420c4fdd67240d2d96298fc4272cd31455cd0cdaabf9093',
+        block_height: evmTransaction.height,
+        data: fromHex(
+          encodeAbiParameters([ABI_TRANSFER_PARAMS.VALUE], [amount]),
+          'bytes'
+        ),
+        evm_tx_id: evmTransaction.id,
+        topic0:
+          '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+        topic1: encodeAbiParameters([ABI_TRANSFER_PARAMS.FROM], [from]),
+        topic2: encodeAbiParameters([ABI_TRANSFER_PARAMS.TO], [to]),
+        tx_hash:
+          '0x8a82a0c8848487d716f10a91f0aefb0526d35bd0f489166cc5141718a4d8aa64',
+        topic3: null,
+        tx_id: evmTransaction.id,
+        tx_index: 0,
+      }),
+      // approval event
+      EvmEvent.fromJson({
+        id: 2,
+        address: erc20Contract.address,
+        block_hash:
+          '0x3ad4778e1b3a03f2c4cfe51d3dd6e75ccea2cb5081cb5eab2f83f60a6960d353',
+        block_height: evmTransaction.height,
+        data: fromHex(
+          encodeAbiParameters([ABI_TRANSFER_PARAMS.VALUE], [amount]),
+          'bytes'
+        ),
+        evm_tx_id: evmTransaction.id,
+        topic0:
+          '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925',
+        topic1: encodeAbiParameters([ABI_TRANSFER_PARAMS.FROM], [from]),
+        topic2: encodeAbiParameters([ABI_TRANSFER_PARAMS.TO], [to]),
+        tx_hash:
+          '0xfc1219232e1dfd380464d0ee843e0ee5b7a587521f2e02cb9957a74f7c57b05c',
+        topic3: null,
+        tx_id: evmTransaction.id,
+        tx_index: 0,
+      }),
+      // deposit event but not wrap
+      EvmEvent.fromJson({
+        id: 3,
+        address: erc20Contract.address,
+        block_hash:
+          '0xed6a2d3c3ac9a2868420c4fdd67240d2d96298fc4272cd31455cd0cdaabf9093',
+        block_height: evmTransaction.height,
+        data: fromHex(
+          encodeAbiParameters([ABI_TRANSFER_PARAMS.VALUE], [amount]),
+          'bytes'
+        ),
+        evm_tx_id: evmTransaction.id,
+        topic0:
+          '0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c',
+        topic1: encodeAbiParameters([ABI_TRANSFER_PARAMS.TO], [to]),
+        tx_hash:
+          '0x8a82a0c8848487d716f10a91f0aefb0526d35bd0f489166cc5141718a4d8aa64',
+        topic2: null,
+        topic3: null,
+        tx_id: evmTransaction.id,
+        tx_index: 0,
+      }),
+      // transfer event
+      EvmEvent.fromJson({
+        id: 4,
+        address: erc20Contract.address,
+        block_hash:
+          '0xed6a2d3c3ac9a2868420c4fdd67240d2d96298fc4272cd31455cd0cdaabf9093',
+        block_height: evmTransaction.height,
+        data: null,
+        evm_tx_id: evmTransaction.id,
+        topic0:
+          '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+        topic1: encodeAbiParameters([ABI_TRANSFER_PARAMS.FROM], [from]),
+        topic2: encodeAbiParameters([ABI_TRANSFER_PARAMS.TO], [to]),
+        topic3: encodeAbiParameters([ABI_TRANSFER_PARAMS.VALUE], [amount]),
+        tx_hash:
+          '0x8a82a0c8848487d716f10a91f0aefb0526d35bd0f489166cc5141718a4d8aa64',
+        tx_id: evmTransaction.id,
+        tx_index: 0,
+      }),
+    ];
+    await EvmEvent.query().insert(evmEvents);
+    await knex.transaction(async (trx) => {
+      const { erc20Activities } = await Erc20Handler.buildErc20Activities(
+        evmTransaction.height - 1,
+        evmTransaction.height,
+        trx,
+        this.broker.logger
+      );
+      expect(erc20Activities.length).toEqual(evmEvents.length - 1);
+      // test build transfer activity
+      const transferActivity = erc20Activities[0];
+      expect(transferActivity).toMatchObject({
+        action: ERC20_ACTION.TRANSFER,
+        erc20_contract_address: erc20Contract.address,
+        from,
+        to,
+        amount,
+      });
+      // test build approve activity
+      const approvalActivity = erc20Activities[1];
+      expect(approvalActivity).toMatchObject({
+        action: ERC20_ACTION.APPROVAL,
+        erc20_contract_address: erc20Contract.address,
+        from,
+        to,
+        amount,
+      });
+      // test build transfer activity case amount in topic 3
+      const transfer2Activity = erc20Activities[2];
+      expect(transfer2Activity).toMatchObject({
+        action: ERC20_ACTION.TRANSFER,
+        erc20_contract_address: erc20Contract.address,
+        from,
+        to,
+        amount,
+      });
+    });
+  }
+
+  @Test('test build wrap erc20 activities (deposit, withdrawl)')
+  async testBuildWrapErc20Activities() {
+    const from = '0x400207c680a1c5d5a86f35f97111afc00f2f1826';
+    const to = '0xea780c13a5450ac7c3e6ae4b17a0445998132b15';
+    const amount = '45222000';
+    const evmEvents = [
+      // deposit event
+      EvmEvent.fromJson({
+        id: 1,
+        address: erc20WrapContract.address,
+        block_hash:
+          '0xed6a2d3c3ac9a2868420c4fdd67240d2d96298fc4272cd31455cd0cdaabf9093',
+        block_height: evmTransaction.height,
+        data: fromHex(
+          encodeAbiParameters([ABI_TRANSFER_PARAMS.VALUE], [amount]),
+          'bytes'
+        ),
+        evm_tx_id: evmTransaction.id,
+        topic0:
+          '0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c',
+        topic1: encodeAbiParameters([ABI_TRANSFER_PARAMS.TO], [to]),
+        tx_hash:
+          '0x8a82a0c8848487d716f10a91f0aefb0526d35bd0f489166cc5141718a4d8aa64',
+        topic2: null,
+        topic3: null,
+        tx_id: evmTransaction.id,
+        tx_index: 0,
+      }),
+      // withdrawal event
+      EvmEvent.fromJson({
+        id: 2,
+        address: erc20WrapContract.address,
+        block_hash:
+          '0xed6a2d3c3ac9a2868420c4fdd67240d2d96298fc4272cd31455cd0cdaabf9093',
+        block_height: evmTransaction.height,
+        data: fromHex(
+          encodeAbiParameters([ABI_TRANSFER_PARAMS.VALUE], [amount]),
+          'bytes'
+        ),
+        evm_tx_id: evmTransaction.id,
+        topic0:
+          '0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65',
+        topic1: encodeAbiParameters([ABI_TRANSFER_PARAMS.FROM], [from]),
+        tx_hash:
+          '0x8a82a0c8848487d716f10a91f0aefb0526d35bd0f489166cc5141718a4d8aa64',
+        topic2: null,
+        topic3: null,
+        tx_id: evmTransaction.id,
+        tx_index: 0,
+      }),
+    ];
+    await EvmEvent.query().insert(evmEvents);
+    await knex.transaction(async (trx) => {
+      const { erc20Activities } = await Erc20Handler.buildErc20Activities(
+        evmTransaction.height - 1,
+        evmTransaction.height,
+        trx,
+        this.broker.logger
+      );
+      expect(erc20Activities.length).toEqual(evmEvents.length);
+      // test build deposit activity
+      const depositActivity = erc20Activities[0];
+      expect(depositActivity).toMatchObject({
+        action: ERC20_ACTION.DEPOSIT,
+        erc20_contract_address: erc20WrapContract.address,
+        from: ZERO_ADDRESS,
+        to,
+        amount,
+      });
+      // test build withdrawal activity
+      const withdrawalActivity = erc20Activities[1];
+      expect(withdrawalActivity).toMatchObject({
+        action: ERC20_ACTION.WITHDRAWAL,
+        erc20_contract_address: erc20WrapContract.address,
+        from,
+        to: ZERO_ADDRESS,
+        amount,
+      });
+    });
+  }
+
+  @Test('test build erc20 activities from cosmos (convertCoin, convertErc20)')
+  async testBuildConvertCoinErc20Activity() {
+    const from = '0x400207c680a1c5d5a86f35f97111afc00f2f1826';
+    const to = '0xea780c13a5450ac7c3e6ae4b17a0445998132b15';
+    const amount = '45222000';
+    const block = Block.fromJson({
+      data: JSON.stringify({
+        linkS3: 'https://nft.aurascan.io/rawlog/aura/aura_6322-2/block/7424149',
+      }),
+      tx_count: 2,
+      hash: '152A5BDEE0768D2BAB1E65C726C4B94ACC28FF792E202F4676EFC888B3E22A79',
+      height: evmTransaction.height,
+      proposer_address: '39A5D22101441C1B1D93C4F3B72A64681D59B2A0',
+      time: '2024-07-26T01:00:21.319351+07:00',
+    });
+    const transaction = Transaction.fromJson({
+      code: 0,
+      codespace: '',
+      data: {
+        linkS3:
+          'https://nft.aurascan.io/rawlog/aura/auradev_1236-2/transaction/20534362/1406F9DDCE529F0E6EB32E07A88E5BC4EE220D3A2AB6D57E89DD12EB1945CC19',
+      },
+      fee: JSON.stringify([
+        {
+          denom: 'uaura',
+          amount: '6141',
+        },
+      ]),
+      gas_limit: '2456353',
+      gas_used: '1775234',
+      gas_wanted: '2456353',
+      hash: '1406F9DDCE529F0E6EB32E07A88E5BC4EE220D3A2AB6D57E89DD12EB1945CC19',
+      height: evmTransaction.height,
+      id: evmTransaction.id,
+      index: 0,
+      memo: 'memo',
+      timestamp: '2024-07-15T17:08:43.386+07:00',
+      events: [
+        {
+          id: 3,
+          tx_msg_index: 0,
+          type: Event.EVENT_TYPE.CONVERT_COIN,
+          source: 'TX_EVENT',
+          block_height: evmTransaction.height,
+          attributes: [
+            {
+              block_height: evmTransaction.height,
+              index: 4,
+              key: EventAttribute.ATTRIBUTE_KEY.ERC20_TOKEN,
+              tx_id: 505671,
+              value: erc20Contract.address,
+              event_id: '1',
+            },
+            {
+              block_height: evmTransaction.height,
+              index: 0,
+              key: EventAttribute.ATTRIBUTE_KEY.SENDER,
+              tx_id: 505671,
+              value: erc20ModuleAccount,
+              event_id: '1',
+            },
+            {
+              block_height: evmTransaction.height,
+              index: 1,
+              key: EventAttribute.ATTRIBUTE_KEY.RECEIVER,
+              tx_id: 505671,
+              value: to,
+              event_id: '1',
+            },
+            {
+              block_height: evmTransaction.height,
+              index: 2,
+              key: EventAttribute.ATTRIBUTE_KEY.AMOUNT,
+              tx_id: 505671,
+              value: amount,
+              event_id: '1',
+            },
+          ],
+        },
+        {
+          id: 2,
+          tx_msg_index: 1,
+          type: Event.EVENT_TYPE.CONVERT_ERC20,
+          source: 'TX_EVENT',
+          block_height: evmTransaction.height,
+          attributes: [
+            {
+              block_height: evmTransaction.height,
+              index: 0,
+              key: 'sender',
+              tx_id: 505657,
+              value: from,
+              event_id: '1',
+            },
+            {
+              block_height: evmTransaction.height,
+              index: 1,
+              key: 'receiver',
+              tx_id: 505657,
+              value: erc20ModuleAccount,
+              event_id: '1',
+            },
+            {
+              block_height: evmTransaction.height,
+              index: 2,
+              key: 'amount',
+              tx_id: 505657,
+              value: amount,
+              event_id: '1',
+            },
+            {
+              block_height: evmTransaction.height,
+              index: 4,
+              key: 'erc20_token',
+              tx_id: 505657,
+              value: erc20Contract.address,
+              event_id: '1',
+            },
+          ],
+        },
+      ],
+    });
+    await Block.query().insert(block);
+    await Transaction.query().insertGraph(transaction);
+    const evmEvents = [
+      // transfer event
+      EvmEvent.fromJson({
+        id: 1,
+        address: erc20Contract.address,
+        block_hash:
+          '0xed6a2d3c3ac9a2868420c4fdd67240d2d96298fc4272cd31455cd0cdaabf9093',
+        block_height: evmTransaction.height - 1,
+        data: fromHex(
+          encodeAbiParameters([ABI_TRANSFER_PARAMS.VALUE], [amount]),
+          'bytes'
+        ),
+        evm_tx_id: evmTransaction.id,
+        topic0:
+          '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+        topic1: encodeAbiParameters([ABI_TRANSFER_PARAMS.FROM], [from]),
+        topic2: encodeAbiParameters([ABI_TRANSFER_PARAMS.TO], [to]),
+        tx_hash:
+          '0x8a82a0c8848487d716f10a91f0aefb0526d35bd0f489166cc5141718a4d8aa64',
+        topic3: null,
+        tx_id: evmTransaction.id - 1,
+        tx_index: 0,
+      }),
+      // transfer event
+      EvmEvent.fromJson({
+        id: 2,
+        address: erc20Contract.address,
+        block_hash:
+          '0xed6a2d3c3ac9a2868420c4fdd67240d2d96298fc4272cd31455cd0cdaabf9093',
+        block_height: evmTransaction.height + 1,
+        data: fromHex(
+          encodeAbiParameters([ABI_TRANSFER_PARAMS.VALUE], [amount]),
+          'bytes'
+        ),
+        evm_tx_id: evmTransaction.id,
+        topic0:
+          '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
+        topic1: encodeAbiParameters([ABI_TRANSFER_PARAMS.FROM], [from]),
+        topic2: encodeAbiParameters([ABI_TRANSFER_PARAMS.TO], [to]),
+        tx_hash:
+          '0x8a82a0c8848487d716f10a91f0aefb0526d35bd0f489166cc5141718a4d8aa64',
+        topic3: null,
+        tx_id: evmTransaction.id + 1,
+        tx_index: 0,
+      }),
+    ];
+    await EvmEvent.query().insert(evmEvents);
+    await knex.transaction(async (trx) => {
+      const { erc20Activities } = await Erc20Handler.buildErc20Activities(
+        evmTransaction.height - 2,
+        evmTransaction.height + 1,
+        trx,
+        this.broker.logger
+      );
+      if (config.evmOnly === false) {
+        // test convert coin activity
+        const convertCoinActivity = erc20Activities[2];
+        expect(convertCoinActivity).toMatchObject({
+          from: ZERO_ADDRESS,
+          to,
+          amount,
+          action: ERC20_ACTION.TRANSFER,
+          erc20_contract_address: erc20Contract.address,
+          cosmos_event_id: transaction.events[0].id,
+        });
+        // test convert erc20 activity
+        const convertErc20Activity = erc20Activities[1];
+        expect(convertErc20Activity).toMatchObject({
+          from,
+          to: ZERO_ADDRESS,
+          amount,
+          action: ERC20_ACTION.TRANSFER,
+          erc20_contract_address: erc20Contract.address,
+          cosmos_event_id: transaction.events[1].id,
+        });
+        // test sort order
+        const transferActivity1 = erc20Activities[0];
+        expect(transferActivity1).toMatchObject({
+          action: ERC20_ACTION.TRANSFER,
+          erc20_contract_address: erc20Contract.address,
+          from,
+          to,
+          amount,
+          evm_tx_id: evmEvents[0].evm_tx_id,
+          cosmos_tx_id: evmEvents[0].tx_id,
+        });
+        const transferActivity2 = erc20Activities[3];
+        expect(transferActivity2).toMatchObject({
+          action: ERC20_ACTION.TRANSFER,
+          erc20_contract_address: erc20Contract.address,
+          from,
+          to,
+          amount,
+          evm_tx_id: evmEvents[1].evm_tx_id,
+          cosmos_tx_id: evmEvents[1].tx_id,
+        });
+      }
+    });
+  }
+
+  @Test('test build erc20 transfer activity')
+  async testBuildErc20TransferActivity() {
+    const evmEvent = {
+      id: 872436,
+      tx_id: 9377483,
+      evm_tx_id: 6789103,
+      address: '0xf4dcd1ba7a2d862077a12918b9cf1889568b1fc5',
       topic0:
         '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef',
       topic1:
-        '0x000000000000000000000000e88f8dcc7508528449ec5d7ff137937857fb60f2',
+        '0x00000000000000000000000089413d5a8601622a03fd63f8aab595a12e65b9c0',
       topic2:
-        '0x00000000000000000000000034e411216012f042fcecbf53b1d05cfa67ee9fe7',
+        '0x0000000000000000000000004b919d8175dba25dbf733e7dcf9241ea7e51943b',
       topic3: null,
+      block_height: 22024821,
       tx_hash:
-        '0xf15467ec2a25eeef95798d93c2fe9ed8e7c891578b8e1bcc3284105849656c9d',
+        '0x1d646b55ef69dc9cf5e6b025b783c947f36d51c9b4e164895bbfe9e2af8b6e22',
       tx_index: 0,
-      tx_id: 1612438,
-      data: Buffer.from(
-        '\\x00000000000000000000000000000000000000000000000e0732b5a508244750'
-      ),
-      block_height: 1,
       block_hash:
-        '0x16f84b38d58b8aedbba1e108990f858b09fe8373610659d4c37a67f5c87e09e1',
-      address: evmSmartContract.address,
-      evm_tx_id: evmTransaction.id,
-    });
-    await EvmEvent.query().insert(event);
-    // Call the reindex method
-    await reindexer.reindex(erc20Contract.address as `0x${string}`);
-    // Test phase
-    const erc20Activity = await Erc20Activity.query().first().throwIfNotFound();
+        '0x6daa455dda31eb9e09000087bee9540bee9622842d5a423baf82da5b7b534a38',
+      data: fromBase64('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADVdLhb6wpEI='),
+      sender: hexToBytes('0x8812d810EA7CC4e1c3FB45cef19D6a7ECBf2D85D'),
+    };
     const [from, to, amount] = decodeAbiParameters(
       [
         ABI_TRANSFER_PARAMS.FROM,
         ABI_TRANSFER_PARAMS.TO,
         ABI_TRANSFER_PARAMS.VALUE,
       ],
-      (event.topic1 +
-        event.topic2.slice(2) +
-        toHex(event.data).slice(2)) as `0x${string}`
+      (evmEvent.topic1 +
+        evmEvent.topic2.slice(2) +
+        toHex(evmEvent.data).slice(2)) as `0x${string}`
     ) as [string, string, bigint];
-    // Test new activity had been inserted
-    expect(erc20Activity).toMatchObject({
-      action: 'transfer',
-      erc20_contract_address: erc20Contract.address,
+    const result = Erc20Handler.buildTransferActivity(
+      EvmEvent.fromJson(evmEvent),
+      this.broker.logger
+    );
+    expect(result).toMatchObject({
+      evm_event_id: evmEvent.id,
+      action: ERC20_ACTION.TRANSFER,
+      erc20_contract_address: evmEvent.address,
       amount: amount.toString(),
       from: from.toLowerCase(),
       to: to.toLowerCase(),
+      height: evmEvent.block_height,
+      tx_hash: evmEvent.tx_hash,
+      evm_tx_id: evmEvent.evm_tx_id,
     });
-    const accountBalances = _.keyBy(
-      await AccountBalance.query(),
-      (o) => `${o.account_id}_${o.denom}`
+  }
+
+  /**
+   * @input evm event that be approval erc20
+   * @result build erc20ApprovalActivity
+   */
+  @Test('test build erc20 approval activity')
+  async testBuildErc20ApprovalActivity() {
+    const evmEvent = {
+      id: 881548,
+      tx_id: 9381778,
+      evm_tx_id: 6793335,
+      address: '0xf4dcd1ba7a2d862077a12918b9cf1889568b1fc5',
+      topic0:
+        '0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925',
+      topic1:
+        '0x000000000000000000000000e57c921f5f3f3a2aade9a462dab70b0cb97ded4d',
+      topic2:
+        '0x000000000000000000000000cbd61600b891a738150e68d5a58646321189cf6f',
+      topic3: null,
+      block_height: 22033598,
+      tx_hash:
+        '0x89dd0093c3c7633276c20be92fd5838f1eca99314a0c6375e9050e5cc82b51c3',
+      tx_index: 1,
+      block_hash:
+        '0x692c859d6254ef6c27fc7accf1131d55351c62a1357fe261d8517e3144cfbebe',
+      data: fromBase64('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='),
+      sender: hexToBytes('0x8812d810EA7CC4e1c3FB45cef19D6a7ECBf2D85D'),
+    };
+    const result = Erc20Handler.buildApprovalActivity(
+      EvmEvent.fromJson(evmEvent),
+      this.broker.logger
     );
-    // from account balance had been reindexed
-    expect(
-      accountBalances[`${accounts[0].id}_${erc20Contract.address}`]
-    ).toMatchObject({
-      denom: erc20Contract.address,
-      amount: `-${amount.toString()}`,
-    });
-    // to account balance had been reindexed
-    expect(
-      accountBalances[`${accounts[1].id}_${erc20Contract.address}`]
-    ).toMatchObject({
-      denom: erc20Contract.address,
+    const [from, to, amount] = decodeAbiParameters(
+      [
+        ABI_APPROVAL_PARAMS.OWNER,
+        ABI_APPROVAL_PARAMS.SPENDER,
+        ABI_APPROVAL_PARAMS.VALUE,
+      ],
+      (evmEvent.topic1 +
+        evmEvent.topic2.slice(2) +
+        toHex(evmEvent.data).slice(2)) as `0x${string}`
+    ) as [string, string, bigint];
+    expect(result).toMatchObject({
+      evm_event_id: evmEvent.id,
+      action: ERC20_ACTION.APPROVAL,
+      erc20_contract_address: evmEvent.address,
       amount: amount.toString(),
+      from: from.toLowerCase(),
+      to: to.toLowerCase(),
+      height: evmEvent.block_height,
+      tx_hash: evmEvent.tx_hash,
+      evm_tx_id: evmEvent.evm_tx_id,
     });
-    // from account balance without erc20 had been orinal
+  }
+
+  /**
+   * @input erc20 transfer activity
+   * @result from/to account balances be updated
+   */
+  @Test('test handlerErc20Transfer')
+  async testHandlerErc20Transfer() {
+    const fromAmount = '4424242424';
+    const toAmount = '1123342';
+    const totalSupply = '123654';
+    const erc20Address = '0x98605ae21dd3be686337a6d7a8f156d0d8baee92';
+    const erc20Activity = Erc20Activity.fromJson({
+      evm_event_id: 1,
+      sender: '0x7c756Cba10Ff2C65016494E8BA37C12a108572b5',
+      action: ERC20_ACTION.TRANSFER,
+      erc20_contract_address: erc20Address,
+      amount: '998222',
+      from: '0x3E665ACfE64628774d3bA8E589Fa8683eD8706C9',
+      to: '0xD83E708D7FE0E769Af80d990f9241458734808Ac',
+      height: 10000,
+      tx_hash:
+        '0xb97228e533e3af1323d873c9c3e4c0a9b85d95ecd8e98110c8890c9453d2f077',
+      evm_tx_id: 1,
+      from_account_id: 123,
+      to_account_id: 234,
+    });
+    const [fromKey, toKey] = [
+      `${erc20Activity.from_account_id}_${erc20Address}`,
+      `${erc20Activity.to_account_id}_${erc20Address}`,
+    ];
+    const accountBalances: Dictionary<AccountBalance> = {
+      [fromKey]: AccountBalance.fromJson({
+        denom: erc20Address,
+        amount: fromAmount,
+        last_updated_height: 1,
+      }),
+      [toKey]: AccountBalance.fromJson({
+        denom: erc20Address,
+        amount: toAmount,
+        last_updated_height: 1,
+      }),
+    };
+    const erc20Contracts = {
+      [erc20Address]: Erc20Contract.fromJson({
+        evm_smart_contract_id: 1,
+        total_supply: totalSupply,
+        symbol: 'ALPHA',
+        address: erc20Address,
+        decimal: '20',
+        name: 'Alpha Grand Wolf',
+        track: true,
+        last_updated_height: 1,
+        total_holder: 2,
+      }),
+    };
+    const erc20Handler = new Erc20Handler(accountBalances, [], erc20Contracts);
+    erc20Handler.handlerErc20Transfer(erc20Activity);
+    expect(erc20Handler.accountBalances[fromKey]).toMatchObject({
+      denom: erc20Address,
+      amount: (BigInt(fromAmount) - BigInt(erc20Activity.amount)).toString(),
+    });
+    expect(erc20Handler.accountBalances[toKey]).toMatchObject({
+      denom: erc20Address,
+      amount: (BigInt(erc20Activity.amount) + BigInt(toAmount)).toString(),
+    });
+    expect(erc20Contracts[erc20Address].total_supply).toEqual(totalSupply);
+  }
+
+  @Test.only('test handlerErc20Transfer update total holder')
+  async testHandlerErc20TransferUpdateTotalHolder() {
+    const fromAmount = '10';
+    const totalSupply = '123654';
+    const erc20Address = '0x98605ae21dd3be686337a6d7a8f156d0d8baee92';
+    const erc20Activity = Erc20Activity.fromJson({
+      evm_event_id: 1,
+      sender: '0x7c756Cba10Ff2C65016494E8BA37C12a108572b5',
+      action: ERC20_ACTION.TRANSFER,
+      erc20_contract_address: erc20Address,
+      amount: '1',
+      from: '0x3E665ACfE64628774d3bA8E589Fa8683eD8706C9',
+      to: '0xD83E708D7FE0E769Af80d990f9241458734808Ac',
+      height: 10000,
+      tx_hash:
+        '0xb97228e533e3af1323d873c9c3e4c0a9b85d95ecd8e98110c8890c9453d2f077',
+      evm_tx_id: 1,
+      from_account_id: 123,
+      to_account_id: 234,
+    });
+    const [fromKey] = [`${erc20Activity.from_account_id}_${erc20Address}`];
+    const accountBalances: Dictionary<AccountBalance> = {
+      [fromKey]: AccountBalance.fromJson({
+        denom: erc20Address,
+        amount: fromAmount,
+        last_updated_height: 1,
+      }),
+    };
+    const erc20Contracts = {
+      [erc20Address]: Erc20Contract.fromJson({
+        evm_smart_contract_id: 1,
+        total_supply: totalSupply,
+        symbol: 'ALPHA',
+        address: erc20Address,
+        decimal: '20',
+        name: 'Alpha Grand Wolf',
+        track: true,
+        last_updated_height: 1,
+        total_holder: 2,
+      }),
+    };
+    const erc20Handler = new Erc20Handler(accountBalances, [], erc20Contracts);
+    erc20Handler.handlerErc20Transfer(erc20Activity);
+    expect(erc20Handler.erc20Contracts[erc20Address].total_holder).toEqual(3);
+    // test transfer all from balance
+    const erc20ActivityTransferAllFrom = Erc20Activity.fromJson({
+      evm_event_id: 1,
+      sender: '0x7c756Cba10Ff2C65016494E8BA37C12a108572b5',
+      action: ERC20_ACTION.TRANSFER,
+      erc20_contract_address: erc20Address,
+      amount: '9',
+      from: '0x3E665ACfE64628774d3bA8E589Fa8683eD8706C9',
+      to: '0xD83E708D7FE0E769Af80d990f9241458734808Ac',
+      height: 10000,
+      tx_hash:
+        '0xb97228e533e3af1323d873c9c3e4c0a9b85d95ecd8e98110c8890c9453d2f077',
+      evm_tx_id: 1,
+      from_account_id: 123,
+      to_account_id: 234,
+    });
+    erc20Handler.handlerErc20Transfer(erc20ActivityTransferAllFrom);
+    expect(erc20Handler.erc20Contracts[erc20Address].total_holder).toEqual(2);
+  }
+
+  @Test('test handlerErc20Transfer when from is zero')
+  async testHandlerErc20TransferWhenFromIsZero() {
+    const toAmount = '242423234';
+    const totalSupply = '123654';
+    const erc20Activity = Erc20Activity.fromJson({
+      evm_event_id: 1,
+      sender: '0x7c756Cba10Ff2C65016494E8BA37C12a108572b5',
+      action: ERC20_ACTION.TRANSFER,
+      erc20_contract_address: '0x98605ae21dd3be686337a6d7a8f156d0d8baee92',
+      amount: '12345222',
+      from: ZERO_ADDRESS,
+      to: '0xD83E708D7FE0E769Af80d990f9241458734808Ac',
+      height: 10000,
+      tx_hash:
+        '0xb97228e533e3af1323d873c9c3e4c0a9b85d95ecd8e98110c8890c9453d2f077',
+      evm_tx_id: 1,
+      from_account_id: 123,
+      to_account_id: 234,
+    });
+    const erc20Contracts = {
+      [erc20Activity.erc20_contract_address]: Erc20Contract.fromJson({
+        evm_smart_contract_id: 1,
+        total_supply: totalSupply,
+        symbol: 'ALPHA',
+        address: erc20Activity.erc20_contract_address,
+        decimal: '20',
+        name: 'Alpha Grand Wolf',
+        track: true,
+        last_updated_height: 1,
+      }),
+    };
+    const [fromKey, toKey] = [
+      `${erc20Activity.from_account_id}_${erc20Activity.erc20_contract_address}`,
+      `${erc20Activity.to_account_id}_${erc20Activity.erc20_contract_address}`,
+    ];
+    const accountBalances: Dictionary<AccountBalance> = {
+      [toKey]: AccountBalance.fromJson({
+        denom: erc20Activity.erc20_contract_address,
+        amount: toAmount,
+        last_updated_height: 1,
+      }),
+    };
+    const erc20Handler = new Erc20Handler(accountBalances, [], erc20Contracts);
+    erc20Handler.handlerErc20Transfer(erc20Activity);
+    expect(erc20Handler.accountBalances[fromKey]).toBeUndefined();
+    expect(erc20Handler.accountBalances[toKey]).toMatchObject({
+      denom: erc20Activity.erc20_contract_address,
+      amount: (BigInt(erc20Activity.amount) + BigInt(toAmount)).toString(),
+    });
     expect(
-      accountBalances[
-        `${accounts[0].id}_${accounts[0].account_balances[0].denom}`
-      ]
-    ).toMatchObject({
-      denom: accounts[0].account_balances[0].denom,
-      amount: accounts[0].account_balances[0].amount,
+      erc20Contracts[erc20Activity.erc20_contract_address].total_supply
+    ).toEqual((BigInt(totalSupply) + BigInt(erc20Activity.amount)).toString());
+  }
+
+  @Test('test handlerErc20Transfer when to is zero')
+  async testHandlerErc20TransferWhenToIsZero() {
+    const balance = '242423234';
+    const totalHolder = 2;
+    const erc20Activity = Erc20Activity.fromJson({
+      evm_event_id: 1,
+      sender: '0x7c756Cba10Ff2C65016494E8BA37C12a108572b5',
+      action: ERC20_ACTION.TRANSFER,
+      erc20_contract_address: '0x98605ae21dd3be686337a6d7a8f156d0d8baee92',
+      amount: '12345222',
+      from: '0xD83E708D7FE0E769Af80d990f9241458734808Ac',
+      to: ZERO_ADDRESS,
+      height: 10000,
+      tx_hash:
+        '0xb97228e533e3af1323d873c9c3e4c0a9b85d95ecd8e98110c8890c9453d2f077',
+      evm_tx_id: 1,
+      from_account_id: 123,
+      to_account_id: 234,
     });
+    const [fromKey, toKey] = [
+      `${erc20Activity.from_account_id}_${erc20Activity.erc20_contract_address}`,
+      `${erc20Activity.to_account_id}_${erc20Activity.erc20_contract_address}`,
+    ];
+    const accountBalances: Dictionary<AccountBalance> = {
+      [fromKey]: AccountBalance.fromJson({
+        denom: erc20Activity.erc20_contract_address,
+        amount: balance,
+        last_updated_height: 1,
+      }),
+    };
+    const totalSupply = '123654';
+    const erc20Contracts = {
+      [erc20Activity.erc20_contract_address]: Erc20Contract.fromJson({
+        evm_smart_contract_id: 1,
+        total_supply: totalSupply,
+        symbol: 'ALPHA',
+        address: erc20Activity.erc20_contract_address,
+        decimal: '20',
+        name: 'Alpha Grand Wolf',
+        track: true,
+        last_updated_height: 1,
+        total_holder: totalHolder,
+      }),
+    };
+    const erc20Handler = new Erc20Handler(accountBalances, [], erc20Contracts);
+    erc20Handler.handlerErc20Transfer(erc20Activity);
+    expect(erc20Handler.accountBalances[fromKey]).toMatchObject({
+      denom: erc20Activity.erc20_contract_address,
+      amount: (BigInt(balance) - BigInt(erc20Activity.amount)).toString(),
+    });
+    expect(erc20Handler.accountBalances[toKey]).toBeUndefined();
+    expect(
+      erc20Contracts[erc20Activity.erc20_contract_address].total_supply
+    ).toEqual((BigInt(totalSupply) - BigInt(erc20Activity.amount)).toString());
+    expect(
+      erc20Contracts[erc20Activity.erc20_contract_address].total_holder
+    ).toEqual(totalHolder);
+  }
+
+  @Test('test handlerErc20Transfer when last_updated_height not suitable')
+  async testHandlerErc20TransferWhenNotHeight() {
+    const fromAmount = '23442423';
+    const toAmount = '32323232';
+    const totalSupply = '123456';
+    const erc20Activity = Erc20Activity.fromJson({
+      evm_event_id: 1,
+      sender: '0x7c756Cba10Ff2C65016494E8BA37C12a108572b5',
+      action: ERC20_ACTION.TRANSFER,
+      erc20_contract_address: '0x98605ae21dd3be686337a6d7a8f156d0d8baee92',
+      amount: '12345222',
+      from: '0x3E665ACfE64628774d3bA8E589Fa8683eD8706C9',
+      to: '0xD83E708D7FE0E769Af80d990f9241458734808Ac',
+      height: 10000,
+      tx_hash:
+        '0xb97228e533e3af1323d873c9c3e4c0a9b85d95ecd8e98110c8890c9453d2f077',
+      evm_tx_id: 1,
+      from_account_id: 123,
+      to_account_id: 234,
+    });
+    const erc20Contracts = {
+      [erc20Activity.erc20_contract_address]: Erc20Contract.fromJson({
+        evm_smart_contract_id: 1,
+        total_supply: totalSupply,
+        symbol: 'ALPHA',
+        address: erc20Activity.erc20_contract_address,
+        decimal: '20',
+        name: 'Alpha Grand Wolf',
+        track: true,
+        last_updated_height: 1,
+      }),
+    };
+    const [fromKey, toKey] = [
+      `${erc20Activity.from_account_id}_${erc20Activity.erc20_contract_address}`,
+      `${erc20Activity.to_account_id}_${erc20Activity.erc20_contract_address}`,
+    ];
+    const accountBalances: Dictionary<AccountBalance> = {
+      [fromKey]: AccountBalance.fromJson({
+        denom: erc20Activity.erc20_contract_address,
+        amount: fromAmount,
+        last_updated_height: 10001,
+      }),
+      [toKey]: AccountBalance.fromJson({
+        denom: erc20Activity.erc20_contract_address,
+        amount: toAmount,
+        last_updated_height: 1,
+      }),
+    };
+    const erc20Handler = new Erc20Handler(accountBalances, [], erc20Contracts);
+    expect(() => erc20Handler.handlerErc20Transfer(erc20Activity)).toThrow(
+      `Process erc20 balance: fromAccountBalance ${erc20Activity.from} was updated`
+    );
+  }
+
+  @Test('test handlerErc20Transfer when from/to is erc20 module account')
+  async testHandlerErc20TransferWhenToIsErc20ModuleAccount() {
+    const erc20Activity = Erc20Activity.fromJson({
+      evm_event_id: 1,
+      sender: '0x7c756Cba10Ff2C65016494E8BA37C12a108572b5',
+      action: ERC20_ACTION.TRANSFER,
+      erc20_contract_address: '0x98605ae21dd3be686337a6d7a8f156d0d8baee92',
+      amount: '12345222',
+      from: '0xD83E708D7FE0E769Af80d990f9241458734808Ac',
+      to: ZERO_ADDRESS,
+      height: 10000,
+      tx_hash:
+        '0xb97228e533e3af1323d873c9c3e4c0a9b85d95ecd8e98110c8890c9453d2f077',
+      evm_tx_id: 1,
+      from_account_id: 123,
+      to_account_id: 234,
+    });
+    const totalSupply = '123654';
+    const erc20Contracts = {
+      [erc20Activity.erc20_contract_address]: Erc20Contract.fromJson({
+        evm_smart_contract_id: 1,
+        total_supply: totalSupply,
+        symbol: 'ALPHA',
+        address: erc20Activity.erc20_contract_address,
+        decimal: '20',
+        name: 'Alpha Grand Wolf',
+        track: true,
+        last_updated_height: 1,
+      }),
+    };
+    const erc20Handler = new Erc20Handler({}, [], erc20Contracts);
+    erc20Handler.handlerErc20Transfer(erc20Activity);
+    expect(
+      erc20Contracts[erc20Activity.erc20_contract_address].total_supply
+    ).toEqual((BigInt(totalSupply) - BigInt(erc20Activity.amount)).toString());
   }
 }
