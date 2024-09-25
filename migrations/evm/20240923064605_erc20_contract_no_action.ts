@@ -11,35 +11,51 @@ export async function up(knex: Knex): Promise<void> {
   const [totalTransfer, totalApproval, totalDeposit, totalWithdrawal] =
     await Promise.all([
       _.keyBy(
-        await Erc20Activity.query(knex)
-          .where('action', ERC20_ACTION.TRANSFER)
-          .groupBy('erc20_activity.erc20_contract_address')
-          .select('erc20_activity.erc20_contract_address')
-          .count('* as transfer'),
+        (
+          await Erc20Activity.query(knex)
+            .where('action', ERC20_ACTION.TRANSFER)
+            .groupBy('erc20_activity.erc20_contract_address')
+            .select(
+              'erc20_activity.erc20_contract_address',
+              knex.raw('count(*)::integer as transfer')
+            )
+        ).map((e) => e.toJSON()),
         'erc20_contract_address'
       ),
       _.keyBy(
-        await Erc20Activity.query(knex)
-          .where('action', ERC20_ACTION.APPROVAL)
-          .groupBy('erc20_activity.erc20_contract_address')
-          .select('erc20_activity.erc20_contract_address')
-          .count('* as approval'),
+        (
+          await Erc20Activity.query(knex)
+            .where('action', ERC20_ACTION.APPROVAL)
+            .groupBy('erc20_activity.erc20_contract_address')
+            .select(
+              'erc20_activity.erc20_contract_address',
+              knex.raw('count(*)::integer as approval')
+            )
+        ).map((e) => e.toJSON()),
         'erc20_contract_address'
       ),
       _.keyBy(
-        await Erc20Activity.query(knex)
-          .where('action', ERC20_ACTION.DEPOSIT)
-          .groupBy('erc20_activity.erc20_contract_address')
-          .select('erc20_activity.erc20_contract_address')
-          .count('* as deposit'),
+        (
+          await Erc20Activity.query(knex)
+            .where('action', ERC20_ACTION.DEPOSIT)
+            .groupBy('erc20_activity.erc20_contract_address')
+            .select(
+              'erc20_activity.erc20_contract_address',
+              knex.raw('count(*)::integer as deposit')
+            )
+        ).map((e) => e.toJSON()),
         'erc20_contract_address'
       ),
       _.keyBy(
-        await Erc20Activity.query(knex)
-          .where('action', ERC20_ACTION.WITHDRAWAL)
-          .groupBy('erc20_activity.erc20_contract_address')
-          .select('erc20_activity.erc20_contract_address')
-          .count('* as withdrawal'),
+        (
+          await Erc20Activity.query(knex)
+            .where('action', ERC20_ACTION.WITHDRAWAL)
+            .groupBy('erc20_activity.erc20_contract_address')
+            .select(
+              'erc20_activity.erc20_contract_address',
+              knex.raw('count(*)::integer as withdrawal')
+            )
+        ).map((e) => e.toJSON()),
         'erc20_contract_address'
       ),
     ]);
