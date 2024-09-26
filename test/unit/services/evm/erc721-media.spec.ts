@@ -6,7 +6,6 @@ import {
   Describe,
   Test,
 } from '@jest-decorated/core';
-import axios from 'axios';
 import { ServiceBroker } from 'moleculer';
 import { Config } from '../../../../src/common';
 import knex from '../../../../src/common/utils/db_connection';
@@ -17,7 +16,7 @@ import {
 } from '../../../../src/models';
 import { BULL_JOB_NAME } from '../../../../src/services/evm/constant';
 import Erc721Service from '../../../../src/services/evm/erc721.service';
-import * as Erc721MediaHanlder from '../../../../src/services/evm/erc721_media_handler';
+import { Erc721MediaHandler } from '../../../../src/services/evm/erc721_media_handler';
 
 const { IPFS_GATEWAY } = Config;
 @Describe('Test view count')
@@ -125,8 +124,8 @@ export default class TestErc721MediaService {
       'Qme33YMXArHQzDdgRxQuL6m7JDJNDKeAUyJXDQU3wnL7sf/1000_F_260918513_EtP8xFDBIj4SvHIuXPGdFIyEXyBCmTEq.jpg';
     const nativeUrl = `${host}://${path}`;
     const ipfsPath = `/${host}/${path}`;
-    const parsedNativeUrl = Erc721MediaHanlder.parseIPFSUri(nativeUrl);
-    const parsedIpfsPath = Erc721MediaHanlder.parseIPFSUri(ipfsPath);
+    const parsedNativeUrl = Erc721MediaHandler.parseIPFSUri(nativeUrl);
+    const parsedIpfsPath = Erc721MediaHandler.parseIPFSUri(ipfsPath);
     expect(parsedNativeUrl).toEqual(`${IPFS_GATEWAY}${path}`);
     expect(parsedIpfsPath).toEqual(`${IPFS_GATEWAY}${path}`);
   }
@@ -139,9 +138,9 @@ export default class TestErc721MediaService {
     const nativeUrl = `${host}://${path}`;
     const ipfsPath = `/${host}/${path}`;
     const httpPath = `http://ipfs.dev.aura.network:8080/ipfs/${path}`;
-    const parsedNativeUrl = Erc721MediaHanlder.parseFilenameFromIPFS(nativeUrl);
-    const parsedIpfsPath = Erc721MediaHanlder.parseFilenameFromIPFS(ipfsPath);
-    const parsedHttpPath = Erc721MediaHanlder.parseFilenameFromIPFS(httpPath);
+    const parsedNativeUrl = Erc721MediaHandler.parseFilenameFromIPFS(nativeUrl);
+    const parsedIpfsPath = Erc721MediaHandler.parseFilenameFromIPFS(ipfsPath);
+    const parsedHttpPath = Erc721MediaHandler.parseFilenameFromIPFS(httpPath);
     expect(parsedNativeUrl).toEqual(`ipfs/${path}`);
     expect(parsedIpfsPath).toEqual(`ipfs/${path}`);
     expect(parsedHttpPath).toEqual(`ipfs/${path}`);
@@ -149,12 +148,12 @@ export default class TestErc721MediaService {
       'bafybeie5gq4jxvzmsym6hjlwxej4rwdoxt7wadqvmmwbqi7r27fclha2va.ipfs.dweb.link';
     const httpSubDomain = `https://${subDomain}`;
     const parsedHttpSubDomain =
-      Erc721MediaHanlder.parseFilenameFromIPFS(httpSubDomain);
+      Erc721MediaHandler.parseFilenameFromIPFS(httpSubDomain);
     expect(parsedHttpSubDomain).toEqual(subDomain);
     const file = '1.json';
     const httpFullSubDomain = `https://${subDomain}/${file}`;
     const parsedFullHttpSubDomain =
-      Erc721MediaHanlder.parseFilenameFromIPFS(httpFullSubDomain);
+      Erc721MediaHandler.parseFilenameFromIPFS(httpFullSubDomain);
     expect(parsedFullHttpSubDomain).toEqual(`${subDomain}/${file}`);
   }
 
@@ -191,19 +190,21 @@ export default class TestErc721MediaService {
     // Case token_uri: ipfs format
     const ipfsTokenUri =
       'ipfs://QmPf5LawLS1ZVqFTSs7JhFD6yteKQLXxYMEYoc1PcKkhVj/109';
-    jest.spyOn(axios, 'get').mockImplementation(async () =>
-      Buffer.from(`{
-        name: 'Immersion 109',
-        description:
-          'The Immersion: Into Aura Odyssey Collection is a collaboration between Micro3 and Aura Network, marking the debut of Aura EVM NFT.',
-        image: ${imageUrl},
+    jest
+      .spyOn(Erc721MediaHandler, 'downloadAttachment')
+      .mockImplementationOnce(async () =>
+        Buffer.from(`{
+        "name": "Immersion 109",
+        "description":
+          "The Immersion: Into Aura Odyssey Collection is a collaboration between Micro3 and Aura Network, marking the debut of Aura EVM NFT.",
+        "image": "${imageUrl}"
       }`)
-    );
-    const ipfsMetadata = await Erc721MediaHanlder.getMetadata(ipfsTokenUri);
+      );
+    const ipfsMetadata = await Erc721MediaHandler.getMetadata(ipfsTokenUri);
     expect(ipfsMetadata.image).toEqual(imageUrl);
     // Case token_uri: json
     const jsonTokenUri = `{"name": "Mahojin NFT #20", "description": "Mahojin NFT!", "image": "${imageUrl}"}`;
-    const jsonMetadata = await Erc721MediaHanlder.getMetadata(jsonTokenUri);
+    const jsonMetadata = await Erc721MediaHandler.getMetadata(jsonTokenUri);
     expect(jsonMetadata.image).toEqual(imageUrl);
     // Case token_uri: base64
     const metadata = {
@@ -217,7 +218,7 @@ export default class TestErc721MediaService {
     const base64TokenUri = `data:application/json;base64,${toBase64(
       toUtf8(JSON.stringify(metadata))
     )}`;
-    const base64Metadata = await Erc721MediaHanlder.getMetadata(base64TokenUri);
+    const base64Metadata = await Erc721MediaHandler.getMetadata(base64TokenUri);
     expect(base64Metadata.image).toEqual(imageUrl);
   }
 }
