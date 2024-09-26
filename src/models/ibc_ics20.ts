@@ -17,6 +17,8 @@ export class IbcIcs20 extends BaseModel {
 
   denom!: string;
 
+  denom_hash!: string;
+
   status!: string;
 
   channel_id!: string;
