@@ -90,8 +90,8 @@ export default class DailyEVMStatisticsService extends BullableService {
         .andWhere(
           knex.raw(`created_at < '${endTime.toISOString()}'::timestamp`)
         ),
-      EVMTransaction.query()
-        .count()
+      EVMBlock.query()
+        .sum('tx_count')
         .findOne('height', '>=', startBlock[0].height)
         .andWhere('height', '<=', endBlock[0].height),
       EVMTransaction.query()
@@ -101,7 +101,9 @@ export default class DailyEVMStatisticsService extends BullableService {
     ]);
 
     const dailyStat = DailyStatistics.fromJson({
-      daily_txs: totalTxs?.count,
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      daily_txs: totalTxs?.sum,
       daily_active_addresses: totalActiveAddress?.count,
       unique_addresses:
         // eslint-disable-next-line no-unsafe-optional-chaining
