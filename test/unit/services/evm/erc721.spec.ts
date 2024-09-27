@@ -213,6 +213,10 @@ export default class Erc721Test {
       .first()
       .throwIfNotFound();
     expect(erc721Contract.total_supply).toEqual('1');
+    expect(erc721Contract.total_actions).toEqual({
+      [ERC721_ACTION.TRANSFER]: 2,
+      [ERC721_ACTION.APPROVAL]: 1,
+    });
     const erc721HolderStats = _.keyBy(
       await Erc721HolderStatistic.query(),
       'owner'
