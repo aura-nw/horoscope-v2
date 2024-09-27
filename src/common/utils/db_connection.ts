@@ -23,6 +23,12 @@ export async function batchUpdate(
           }
           return 'NULL::timestamp';
         }
+        if (record[field]?.type === 'jsonb') {
+          if (record[field].value !== undefined) {
+            return `'${record[field].value}'::jsonb`;
+          }
+          return '{}';
+        }
 
         if (record[field] !== undefined) {
           return `'${record[field]}'`;

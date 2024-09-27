@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable no-await-in-loop */
 import {
   Action,
@@ -6,16 +7,23 @@ import {
 import { Knex } from 'knex';
 import _, { Dictionary } from 'lodash';
 import { Context } from 'moleculer';
-import { bytesToHex, PublicClient } from 'viem';
+import {
+  bytesToHex,
+  PublicClient,
+  recoverAddress,
+  recoverPublicKey,
+} from 'viem';
+import { ethers } from 'ethers';
 import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
-import knex from '../../common/utils/db_connection';
+import knex, { batchUpdate } from '../../common/utils/db_connection';
 import { getViemClient } from '../../common/utils/etherjs_client';
 import {
   Account,
   AccountBalance,
   BlockCheckpoint,
+  EVMBlock,
   EvmInternalTransaction,
   EVMTransaction,
 } from '../../models';
@@ -224,6 +232,102 @@ export default class CrawlEvmAccountService extends BullableService {
     ];
   }
 
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.CRAWL_EVM_ACCOUNT_PUBKEY,
+    jobName: BULL_JOB_NAME.CRAWL_EVM_ACCOUNT_PUBKEY,
+  })
+  async crawlEvmAccountPubkey() {
+    const [startBlock, endBlock, blockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.CRAWL_EVM_ACCOUNT_PUBKEY,
+        [BULL_JOB_NAME.CRAWL_EVM_ACCOUNT],
+        config.crawlEvmAccountPubkey.key
+      );
+    this.logger.info(
+      `Crawl evm account pubkey from block ${startBlock} to ${endBlock}`
+    );
+    if (startBlock >= endBlock) {
+      return;
+    }
+    const listBlock = await EVMBlock.query()
+      .select('transactions')
+      .where('height', '>', startBlock)
+      .andWhere('height', '<=', endBlock);
+    const listAccountDict: any = {};
+    await Promise.all(
+      listBlock.map(async (block) => {
+        const listTxs = block.transactions;
+        await Promise.all(
+          listTxs.map(async (tx: any) => {
+            const txData = {
+              gasPrice: tx.gasPrice,
+              gasLimit: tx.gas,
+              value: tx.value,
+              nonce: tx.nonce,
+              data: tx.input,
+              chainId: tx.chainId,
+              type: Number(tx.typeHex),
+              maxFeePerGas: tx.maxFeePerGas,
+              maxPriorityFeePerGas: tx.maxPriorityFeePerGas,
+              to: tx.to,
+            };
+            const txs = (await ethers.resolveProperties(txData)) as any;
+            const rawTx = ethers.Transaction.from(txs).unsignedSerialized; // returns RLP encoded tx
+            const sig = {
+              r: tx.r,
+              s: tx.s,
+              v: tx.v,
+            };
+            const signature = ethers.Signature.from(sig).serialized as any;
+            const msgHash = ethers.keccak256(rawTx); // as specified by ECDSA
+            const msgBytes = ethers.getBytes(msgHash); // create binary hash
+            const recoveredPubKey = await recoverPublicKey({
+              hash: msgBytes,
+              signature,
+            });
+
+            const recoveredAddress = await recoverAddress({
+              hash: msgBytes,
+              signature,
+            });
+            if (tx.from !== recoveredAddress.toLowerCase()) {
+              this.logger.error(`cannot recover address at ${tx.hash}`);
+              throw Error(`cannot recover address at ${tx.hash}`);
+            }
+            listAccountDict[tx.from] = {
+              pubkey: JSON.stringify({
+                pubkeyEVM: recoveredPubKey,
+              }),
+            };
+          })
+        );
+      })
+    );
+
+    await knex.transaction(async (trx) => {
+      if (Object.keys(listAccountDict).length > 0) {
+        const listAccountDB = await Account.query().whereIn(
+          'address',
+          Object.keys(listAccountDict)
+        );
+        const listAccount = Object.keys(listAccountDict).map((e) => ({
+          account: e,
+          pubkey: { type: 'jsonb', value: listAccountDict[e].pubkey },
+          id: listAccountDB.find((a) => a.evm_address === e)?.id,
+        }));
+        await batchUpdate(trx, 'account', listAccount, ['pubkey']);
+      }
+      if (blockCheckpoint) {
+        blockCheckpoint.height = endBlock;
+        await BlockCheckpoint.query()
+          .insert(blockCheckpoint)
+          .onConflict('job_name')
+          .merge()
+          .transacting(trx);
+      }
+    });
+  }
+
   public async _start(): Promise<void> {
     this.viemClient = getViemClient();
     await this.createJob(
@@ -237,6 +341,20 @@ export default class CrawlEvmAccountService extends BullableService {
         },
         repeat: {
           every: config.crawlEvmAccount.millisecondCrawl,
+        },
+      }
+    );
+    await this.createJob(
+      BULL_JOB_NAME.CRAWL_EVM_ACCOUNT_PUBKEY,
+      BULL_JOB_NAME.CRAWL_EVM_ACCOUNT_PUBKEY,
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        repeat: {
+          every: config.crawlEvmAccountPubkey.millisecondCrawl,
         },
       }
     );
