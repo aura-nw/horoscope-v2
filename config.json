@@ -519,7 +519,6 @@
   "crawlEvmAccountPubkey": {
     "key": "crawlEvmAccountPubkey",
     "millisecondCrawl": 1000,
-    "blocksPerCall": 100,
-    "batchSize": 10
+    "blocksPerCall": 100
   }
 }
