@@ -60,7 +60,6 @@ export default class EVMAccountStatisticsService extends BullableService {
   @QueueHandler({
     queueName: BULL_JOB_NAME.CRAWL_EVM_ACCOUNT_STATISTICS,
     jobName: BULL_JOB_NAME.CRAWL_EVM_ACCOUNT_STATISTICS,
-    // prefix: `horoscope-v2-${config.chainId}`,
   })
   public async handleJob(_payload: { date: string }): Promise<void> {
     const { date } = _payload;
@@ -147,12 +146,18 @@ export default class EVMAccountStatisticsService extends BullableService {
     const now = dayjs.utc().startOf('day').toDate();
 
     const { dayRange } = config.accountStatistics;
-    const [threeDayStat, fifteenDayStat, thirtyDayStat] = await Promise.all([
-      this.getStatsFromSpecificDaysAgo(dayRange[0], now),
-      this.getStatsFromSpecificDaysAgo(dayRange[1], now),
-      this.getStatsFromSpecificDaysAgo(dayRange[2], now),
-    ]);
-
+    const threeDayStat = await this.getStatsFromSpecificDaysAgo(
+      dayRange[0],
+      now
+    );
+    const fifteenDayStat = await this.getStatsFromSpecificDaysAgo(
+      dayRange[1],
+      now
+    );
+    const thirtyDayStat = await this.getStatsFromSpecificDaysAgo(
+      dayRange[2],
+      now
+    );
     const topAccounts = {
       three_days: this.calculateTop(threeDayStat),
       fifteen_days: this.calculateTop(fifteenDayStat),
@@ -252,15 +257,30 @@ export default class EVMAccountStatisticsService extends BullableService {
       .subtract(daysAgo, 'day')
       .startOf('day')
       .toDate();
-    const result = await AccountStatistics.query()
-      .select('address')
-      .sum('amount_sent as amount_sent')
-      .sum('amount_received as amount_received')
-      .sum('tx_sent as tx_sent')
-      .sum('gas_used as gas_used')
-      .where('date', '>=', startTime)
-      .andWhere('date', '<', endTime)
-      .groupBy('address');
+
+    const limit = config.accountStatistics.limitQuery;
+    let offset = 0;
+    const result: AccountStatistics[] = [];
+    while (1) {
+      this.logger.info(`${daysAgo} days ago offset: ${offset}`);
+      // eslint-disable-next-line no-await-in-loop
+      const chunk = await AccountStatistics.query()
+        .select('address')
+        .sum('amount_sent as amount_sent')
+        .sum('amount_received as amount_received')
+        .sum('tx_sent as tx_sent')
+        .sum('gas_used as gas_used')
+        .where('date', '>=', startTime)
+        .andWhere('date', '<', endTime)
+        .groupBy('address')
+        .limit(limit)
+        .offset(offset);
+      if (chunk.length === 0) break;
+      this.logger.info(`${daysAgo} days ago found chunk offset ${offset}`);
+      result.push(...chunk);
+      offset += limit;
+    }
+    this.logger.info(`${daysAgo} done`);
     return result;
   }
 

@@ -264,7 +264,8 @@
   },
   "accountStatistics": {
     "numberOfTopRecords": 10,
-    "dayRange": [3, 15, 30]
+    "dayRange": [3, 15, 30],
+    "limitQuery": 5000
   },
   "dailyStatsJobs": {
     "jobPattern": "0 0 0 * * ?"
