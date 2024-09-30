@@ -9,11 +9,15 @@ import _, { Dictionary } from 'lodash';
 import { Context } from 'moleculer';
 import {
   bytesToHex,
+  hexToBytes,
   PublicClient,
   recoverAddress,
   recoverPublicKey,
 } from 'viem';
 import { ethers } from 'ethers';
+import { toBech32 } from '@cosmjs/encoding';
+import { pubkeyToRawAddress } from '@cosmjs/tendermint-rpc';
+import { Secp256k1 } from '@cosmjs/crypto';
 import config from '../../../config.json' assert { type: 'json' };
 import '../../../fetch-polyfill.js';
 import BullableService, { QueueHandler } from '../../base/bullable.service';
@@ -176,9 +180,9 @@ export default class CrawlEvmAccountService extends BullableService {
         await Account.query()
           .transacting(trx)
           .insert(batchAccounts)
-          .onConflict(['address'])
+          .onConflict(['evm_address'])
           .merge(),
-        'address'
+        'evm_address'
       );
       await AccountBalance.query()
         .insert(
@@ -294,28 +298,55 @@ export default class CrawlEvmAccountService extends BullableService {
               this.logger.error(`cannot recover address at ${tx.hash}`);
               throw Error(`cannot recover address at ${tx.hash}`);
             }
+
+            const compressPubkey = Secp256k1.compressPubkey(
+              hexToBytes(recoveredPubKey)
+            );
+            const bech32Add = toBech32(
+              `${config.networkPrefixAddress}`,
+              pubkeyToRawAddress('secp256k1', compressPubkey)
+            );
+
             listAccountDict[tx.from] = {
               pubkey: JSON.stringify({
                 pubkeyEVM: recoveredPubKey,
               }),
+              bech32Add,
             };
           })
         );
       })
     );
 
+    const listAccountDB = await Account.query().whereIn(
+      'evm_address',
+      Object.keys(listAccountDict)
+    );
+    const listAccountDBByAddress = _.keyBy(listAccountDB, 'evm_address');
+
+    const listMissingAccount = Object.keys(listAccountDict).filter(
+      (e) => listAccountDBByAddress[e] === undefined
+    );
+    await this.broker.call(SERVICE.V1.CrawlEvmAccount.CrawlNewAccountApi.path, {
+      addresses: listMissingAccount,
+    });
+
+    const listAccountDBAfterInsert = await Account.query().whereIn(
+      'evm_address',
+      Object.keys(listAccountDict)
+    );
+    const listAccountAfterInsert = Object.keys(listAccountDict).map((e) => ({
+      account: e,
+      pubkey: { type: 'jsonb', value: listAccountDict[e].pubkey },
+      address: listAccountDict[e].bech32Add,
+      id: listAccountDBAfterInsert.find((a) => a.evm_address === e)?.id,
+    }));
     await knex.transaction(async (trx) => {
       if (Object.keys(listAccountDict).length > 0) {
-        const listAccountDB = await Account.query().whereIn(
+        await batchUpdate(trx, 'account', listAccountAfterInsert, [
+          'pubkey',
           'address',
-          Object.keys(listAccountDict)
-        );
-        const listAccount = Object.keys(listAccountDict).map((e) => ({
-          account: e,
-          pubkey: { type: 'jsonb', value: listAccountDict[e].pubkey },
-          id: listAccountDB.find((a) => a.evm_address === e)?.id,
-        }));
-        await batchUpdate(trx, 'account', listAccount, ['pubkey']);
+        ]);
       }
       if (blockCheckpoint) {
         blockCheckpoint.height = endBlock;
