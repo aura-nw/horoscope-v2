@@ -45,6 +45,12 @@ const {
   MAX_CONTENT_LENGTH_BYTE,
   S3_GATEWAY,
 } = Config;
+const axiosClient = axios.create({
+  responseType: 'arraybuffer',
+  timeout: parseInt(REQUEST_IPFS_TIMEOUT, 10),
+  maxContentLength: parseInt(MAX_CONTENT_LENGTH_BYTE, 10),
+  maxBodyLength: parseInt(MAX_BODY_LENGTH_BYTE, 10),
+});
 export class Erc721MediaHandler {
   // download image/animation from media_uri, then upload to S3
   static async uploadMediaToS3(media_uri?: string) {
@@ -85,21 +91,20 @@ export class Erc721MediaHandler {
           throw e;
         }
       } else {
-        // case media uri is http/https uri
-        const mediaBuffer = await Erc721MediaHandler.downloadAttachment(
-          Erc721MediaHandler.parseIPFSUri(media_uri)
-        );
-        let type: string | undefined = (
-          await FileType.fileTypeFromBuffer(mediaBuffer)
-        )?.mime;
-        if (type === 'application/xml') {
-          type = 'image/svg+xml';
-        }
-        return {
-          linkS3: media_uri,
-          contentType: type,
-          key: undefined,
-        };
+        // case media uri is http/https uri: just support image, video, audio, model
+        const type = await this.getContentType(media_uri);
+        const isContentTypeSupported =
+          type.startsWith('image') ||
+          type.startsWith('video') ||
+          type.startsWith('audio') ||
+          type.startsWith('model');
+        return isContentTypeSupported
+          ? {
+              linkS3: media_uri,
+              contentType: type,
+              key: undefined,
+            }
+          : null;
       }
     }
     return null;
@@ -221,18 +226,19 @@ export class Erc721MediaHandler {
 
   // dowload image/animation from http/https url
   static async downloadAttachment(url: string) {
-    const axiosClient = axios.create({
-      responseType: 'arraybuffer',
-      timeout: parseInt(REQUEST_IPFS_TIMEOUT, 10),
-      maxContentLength: parseInt(MAX_CONTENT_LENGTH_BYTE, 10),
-      maxBodyLength: parseInt(MAX_BODY_LENGTH_BYTE, 10),
-    });
     const fromGithub = url.startsWith('https://github.com');
     const formatedUrl = fromGithub ? `${url}?raw=true` : url;
     return axiosClient.get(formatedUrl).then((response: any) => {
       const buffer = Buffer.from(response.data, 'base64');
       return buffer;
     });
+  }
+
+  // head request to get ContentType
+  static async getContentType(url: string): Promise<string> {
+    const fromGithub = url.startsWith('https://github.com');
+    const formatedUrl = fromGithub ? `${url}?raw=true` : url;
+    return axiosClient.head(formatedUrl).then((response) => response.headers['content-type']);
   }
 
   /**
