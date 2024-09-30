@@ -85,7 +85,7 @@ export class Erc721MediaHandler {
           throw e;
         }
       } else {
-        // case media uri isnot ipfs supported or http/https
+        // case media uri is http/https uri
         const mediaBuffer = await Erc721MediaHandler.downloadAttachment(
           Erc721MediaHandler.parseIPFSUri(media_uri)
         );
@@ -199,7 +199,7 @@ export class Erc721MediaHandler {
   }> {
     let metadata = token_uri;
     try {
-      if (token_uri.startsWith(`${SUPPORT_DECODED_TOKEN_URI.BASE64  },`)) {
+      if (token_uri.startsWith(`${SUPPORT_DECODED_TOKEN_URI.BASE64},`)) {
         const base64Metadata = token_uri.split(',')[1];
         metadata = fromUtf8(fromBase64(base64Metadata));
       }
@@ -213,13 +213,13 @@ export class Erc721MediaHandler {
         )
       ).toString();
     } catch {
-      // not ipfs
+      // ipfs/https/http url couldn't loaded
     }
     // check json
     return JSON.parse(metadata);
   }
 
-  // dowload image/animation from url
+  // dowload image/animation from http/https url
   static async downloadAttachment(url: string) {
     const axiosClient = axios.create({
       responseType: 'arraybuffer',
@@ -235,7 +235,14 @@ export class Erc721MediaHandler {
     });
   }
 
-  // parse filename which be stored in AWS S3
+  /**
+   * @description check is ipfs format supported.
+   * If true, from media uri => check and parse that uri to unique filename (base on ipfs) that saved on AWS
+   * If false, return null
+   * @examples
+   * https://bafybeie5gq4jxvzmsym6hjlwxej4rwdoxt7wadqvmmwbqi7r27fclha2va.ipfs.dweb.link => bafybeie5gq4jxvzmsym6hjlwxej4rwdoxt7wadqvmmwbqi7r27fclha2va.ipfs.dweb.link
+   * https://github.com/storyprotocol/protocol-core/blob/main/assets/license-image.gif => null
+   */
   static parseFilenameFromIPFS(media_uri: string) {
     const parsed = parse(media_uri);
     if (parsed.protocol === IPFS_PREFIX) {
