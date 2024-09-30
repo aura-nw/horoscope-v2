@@ -61,6 +61,7 @@ select_permissions:
         - last_updated_height
         - name
         - symbol
+        - total_actions
         - total_supply
         - track
       filter: {}
