@@ -5,6 +5,8 @@ import BullableService, { QueueHandler } from '../../base/bullable.service';
 import { BULL_JOB_NAME, SERVICE } from './constant';
 import { Asset } from '../../models/asset';
 import { Erc20Contract } from '../../models/erc20_contract';
+import { BlockCheckpoint } from '../../models';
+import knex from '../../common/utils/db_connection';
 
 @Service({
   name: SERVICE.V1.JobService.UpdateEvmAssets.key,
@@ -20,7 +22,15 @@ export default class UpdateEvmAssetsJob extends BullableService {
     jobName: BULL_JOB_NAME.JOB_UPDATE_EVM_ASSETS,
   })
   async jobUpdateEvmAssets() {
-    const erc20Assets = await Erc20Contract.query();
+    const [startBlock, endBlock, updateBlockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.UPDATE_EVM_ASSETS,
+        [BULL_JOB_NAME.HANDLE_ERC20_BALANCE],
+        config.jobUpdateAssets.key
+      );
+    const erc20Assets = await Erc20Contract.query()
+      .where('last_updated_height', '>', startBlock)
+      .andWhere('last_updated_height', '<=', endBlock);
     const assets: Asset[] = [];
     assets.push(
       ...erc20Assets.map((erc20Asset) =>
@@ -35,9 +45,21 @@ export default class UpdateEvmAssetsJob extends BullableService {
         })
       )
     );
-    if (assets.length > 0) {
-      await Asset.query().insert(assets).onConflict('denom').merge();
-    }
+    await knex.transaction(async (trx) => {
+      if (assets.length > 0) {
+        await Asset.query()
+          .insert(assets)
+          .onConflict('denom')
+          .merge()
+          .transacting(trx);
+      }
+      updateBlockCheckpoint.height = endBlock;
+      await BlockCheckpoint.query()
+        .insert(updateBlockCheckpoint)
+        .onConflict('job_name')
+        .merge()
+        .transacting(trx);
+    });
   }
 
   public async _start(): Promise<void> {
