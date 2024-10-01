@@ -342,7 +342,9 @@
   },
   "jobUpdateAssets": {
     "millisecondRepeatJob": 10000,
-    "lcdRecordGet": 5
+    "lcdRecordGet": 5,
+    "key": "jobUpdateAssets",
+    "blocksPerCall": 1000
   },
   "jobCreateConstraintInTransactionMessagePartition": {
     "jobRepeatCheckNeedCreateConstraint": {
