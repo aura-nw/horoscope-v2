@@ -295,6 +295,7 @@ export const BULL_JOB_NAME = {
   REINDEX_ERC20: 'reindex:erc20',
   REFRESH_ERC721_HOLDER_STATISTIC: 'refresh:erc721-holder-statistic',
   CRAWL_EVM_ACCOUNT_PUBKEY: 'crawl:evm-account-pubkey',
+  HANDLE_EVM_SMART_CONTRACT_TX: 'handle:evm-smart-contract-tx',
 };
 
 export const MSG_TYPE = {
