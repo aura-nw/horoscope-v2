@@ -522,6 +522,9 @@
   "crawlEvmAccountPubkey": {
     "key": "crawlEvmAccountPubkey",
     "millisecondCrawl": 1000,
-    "blocksPerCall": 100
+    "blocksPerCall": 10
+  },
+  "crawlEvmAccountBalanceNonce": {
+    "concurrency": 100
   }
 }

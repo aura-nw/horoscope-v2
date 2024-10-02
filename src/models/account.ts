@@ -42,7 +42,6 @@ export class Account extends BaseModel {
     return {
       type: 'object',
       required: [
-        'address',
         'balances',
         'spendable_balances',
         'type',
