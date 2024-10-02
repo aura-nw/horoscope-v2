@@ -250,6 +250,7 @@ export const BULL_JOB_NAME = {
   REFRESH_ERC721_HOLDER_STATISTIC: 'refresh:erc721-holder-statistic',
   CRAWL_EVM_ACCOUNT_PUBKEY: 'crawl:evm-account-pubkey',
   UPDATE_EVM_ASSETS: 'update:evm-assets',
+  CRAWL_EVM_ACCOUNT_BALANCE_NONCE: 'crawl:evm-account-balance-nonce',
 };
 
 export const MSG_TYPE = {
