@@ -143,13 +143,61 @@ export default class CrawlEvmAccountService extends BullableService {
         accountsAddress.add(participant.to);
       }
     });
-    const [accountsInstances, height] = await this.getEvmAccountInstances(
-      Array.from(accountsAddress)
-    );
+
+    const existAccount = await Account.query()
+      .select('id', 'evm_address')
+      .whereIn('evm_address', Array.from(accountsAddress));
+
+    const existAccountByEvmAddress = _.keyBy(existAccount, 'evm_address');
+
+    const newAccountsInstances = Array.from(accountsAddress)
+      .filter((account) => !existAccountByEvmAddress[account])
+      .map((account) => ({
+        address: account,
+        evm_address: account,
+        balances: JSON.stringify([{ denom: config.networkDenom, amount: '0' }]),
+        spendable_balances: JSON.stringify([
+          { denom: config.networkDenom, amount: '0' },
+        ]),
+        type: null,
+        pubkey: {},
+        account_number: 0,
+        sequence: 0,
+      }));
+    const accountInserted: Account[] = [];
     await knex.transaction(async (trx) => {
-      if (accountsInstances.length > 0) {
-        await this.insertNewAccounts(accountsInstances, height, trx);
+      if (newAccountsInstances.length > 0) {
+        const accountInserted: any[] = await knex
+          .batchInsert(
+            'account',
+            newAccountsInstances,
+            config.crawlEvmAccount.batchSize
+          )
+          // @ts-ignore
+          .returning(['id', 'evm_address'])
+          .transacting(trx);
+        const accountInsertedByEvmAddress = _.keyBy(
+          accountInserted,
+          'evm_address'
+        );
+        await knex
+          .batchInsert(
+            'account_balance',
+            newAccountsInstances.map((account) =>
+              AccountBalance.fromJson({
+                denom: config.networkDenom,
+                amount: 0,
+                last_updated_height: 0,
+                account_id:
+                  accountInsertedByEvmAddress[account.evm_address]?.id,
+                type: AccountBalance.TYPE.NATIVE,
+              })
+            ),
+            config.crawlEvmAccount.batchSize
+          )
+          .transacting(trx);
       }
+
       if (blockCheckpoint) {
         blockCheckpoint.height = endBlock;
         await BlockCheckpoint.query()
@@ -159,6 +207,42 @@ export default class CrawlEvmAccountService extends BullableService {
           .transacting(trx);
       }
     });
+    await Promise.all([
+      ...accountInserted.map(async (account) =>
+        this.createJob(
+          BULL_JOB_NAME.CRAWL_EVM_ACCOUNT_BALANCE_NONCE,
+          BULL_JOB_NAME.CRAWL_EVM_ACCOUNT_BALANCE_NONCE,
+          {
+            evm_address: account.evm_address,
+            id: account.id,
+          },
+          {
+            jobId: account.evm_address,
+            removeOnComplete: true,
+            removeOnFail: false,
+            attempts: config.jobRetryAttempt,
+            backoff: config.jobRetryBackoff,
+          }
+        )
+      ),
+      ...existAccount.map(async (account) =>
+        this.createJob(
+          BULL_JOB_NAME.CRAWL_EVM_ACCOUNT_BALANCE_NONCE,
+          BULL_JOB_NAME.CRAWL_EVM_ACCOUNT_BALANCE_NONCE,
+          {
+            evm_address: account.evm_address,
+            id: account.id,
+          },
+          {
+            jobId: account.evm_address,
+            removeOnComplete: true,
+            removeOnFail: false,
+            attempts: config.jobRetryAttempt,
+            backoff: config.jobRetryBackoff,
+          }
+        )
+      ),
+    ]);
   }
 
   async insertNewAccounts(
@@ -191,7 +275,7 @@ export default class CrawlEvmAccountService extends BullableService {
               denom: config.networkDenom,
               amount: e.balances[0].amount,
               last_updated_height: lastUpdateHeight,
-              account_id: accounts[e.address].id,
+              account_id: accounts[e.evm_address].id,
               type: AccountBalance.TYPE.NATIVE,
             })
           )
@@ -234,6 +318,57 @@ export default class CrawlEvmAccountService extends BullableService {
       ),
       Number(height),
     ];
+  }
+
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.CRAWL_EVM_ACCOUNT_BALANCE_NONCE,
+    jobName: BULL_JOB_NAME.CRAWL_EVM_ACCOUNT_BALANCE_NONCE,
+    concurrency: config.crawlEvmAccountBalanceNonce.concurrency,
+  })
+  async crawlEvmAccountBalanceNonce(_payload: {
+    evm_address: string;
+    id: number;
+  }) {
+    this.logger.debug(
+      `Crawl evm_account balance and nonce for ${_payload.evm_address}`
+    );
+    const [accountsInstances, height] = await this.getEvmAccountInstances([
+      _payload.evm_address,
+    ]);
+    if (accountsInstances.length === 0) {
+      return;
+    }
+    const accountBalanceInstance = await AccountBalance.query().findOne(
+      'account_id',
+      _payload.id
+    );
+    if (!accountBalanceInstance) {
+      throw Error(`Missing account_balance_id: ${_payload.id}`);
+    }
+    await knex.transaction(async (trx) => {
+      await Account.query()
+        .patch({
+          balances: accountsInstances[0].balances,
+          spendable_balances: accountsInstances[0].balances,
+          sequence: accountsInstances[0].sequence,
+        })
+        .where({
+          id: _payload.id,
+        })
+        .transacting(trx);
+
+      await AccountBalance.query()
+        .patch({
+          last_updated_height: height,
+          amount: accountsInstances[0].balances[0].amount,
+        })
+        .where({
+          id: accountBalanceInstance?.id,
+          denom: config.networkDenom,
+          type: AccountBalance.TYPE.NATIVE,
+        })
+        .transacting(trx);
+    });
   }
 
   @QueueHandler({
@@ -322,31 +457,15 @@ export default class CrawlEvmAccountService extends BullableService {
       'evm_address',
       Object.keys(listAccountDict)
     );
-    const listAccountDBByAddress = _.keyBy(listAccountDB, 'evm_address');
-
-    const listMissingAccount = Object.keys(listAccountDict).filter(
-      (e) => listAccountDBByAddress[e] === undefined
-    );
-    await this.broker.call(SERVICE.V1.CrawlEvmAccount.CrawlNewAccountApi.path, {
-      addresses: listMissingAccount,
-    });
-
-    const listAccountDBAfterInsert = await Account.query().whereIn(
-      'evm_address',
-      Object.keys(listAccountDict)
-    );
-    const listAccountAfterInsert = Object.keys(listAccountDict).map((e) => ({
+    const listAccount = Object.keys(listAccountDict).map((e) => ({
       account: e,
       pubkey: { type: 'jsonb', value: listAccountDict[e].pubkey },
       address: listAccountDict[e].bech32Add,
-      id: listAccountDBAfterInsert.find((a) => a.evm_address === e)?.id,
+      id: listAccountDB.find((a) => a.evm_address === e)?.id,
     }));
     await knex.transaction(async (trx) => {
-      if (Object.keys(listAccountDict).length > 0) {
-        await batchUpdate(trx, 'account', listAccountAfterInsert, [
-          'pubkey',
-          'address',
-        ]);
+      if (listAccount.length > 0) {
+        await batchUpdate(trx, 'account', listAccount, ['pubkey', 'address']);
       }
       if (blockCheckpoint) {
         blockCheckpoint.height = endBlock;
