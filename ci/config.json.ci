@@ -527,5 +527,10 @@
   },
   "crawlEvmAccountBalanceNonce": {
     "concurrency": 100
+  },
+  "updateAccountIdInEVMTransaction": {
+    "key": "updateAccountIdInEVMTransaction",
+    "blocksPerCall": 100,
+    "millisecondCrawl": 1000
   }
 }
