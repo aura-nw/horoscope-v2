@@ -10,9 +10,11 @@ import { Context } from 'moleculer';
 import {
   bytesToHex,
   hexToBytes,
+  keccak256,
   PublicClient,
   recoverAddress,
   recoverPublicKey,
+  serializeSignature,
 } from 'viem';
 import { ethers } from 'ethers';
 import { toBech32 } from '@cosmjs/encoding';
@@ -392,64 +394,88 @@ export default class CrawlEvmAccountService extends BullableService {
       .select('transactions')
       .where('height', '>', startBlock)
       .andWhere('height', '<=', endBlock);
+    const listTxByFrom: any = {};
+    const listTx = listBlock.flatMap((block) => block.transactions);
+    listTx.forEach((tx) => {
+      if (!listTxByFrom[tx.from]) {
+        listTxByFrom[tx.from] = tx;
+      }
+    });
+
     const listAccountDict: any = {};
     await Promise.all(
-      listBlock.map(async (block) => {
-        const listTxs = block.transactions;
-        await Promise.all(
-          listTxs.map(async (tx: any) => {
-            const txData = {
-              gasPrice: tx.gasPrice,
-              gasLimit: tx.gas,
-              value: tx.value,
-              nonce: tx.nonce,
-              data: tx.input,
-              chainId: tx.chainId,
-              type: Number(tx.typeHex),
-              maxFeePerGas: tx.maxFeePerGas,
-              maxPriorityFeePerGas: tx.maxPriorityFeePerGas,
-              to: tx.to,
-            };
-            const txs = (await ethers.resolveProperties(txData)) as any;
-            const rawTx = ethers.Transaction.from(txs).unsignedSerialized; // returns RLP encoded tx
-            const sig = {
-              r: tx.r,
-              s: tx.s,
-              v: tx.v,
-            };
-            const signature = ethers.Signature.from(sig).serialized as any;
-            const msgHash = ethers.keccak256(rawTx); // as specified by ECDSA
-            const msgBytes = ethers.getBytes(msgHash); // create binary hash
-            const recoveredPubKey = await recoverPublicKey({
-              hash: msgBytes,
-              signature,
-            });
+      Object.values(listTxByFrom).map(async (tx: any) => {
+        const txData = {
+          gasPrice: tx.gasPrice,
+          gasLimit: tx.gas,
+          // gas: tx.gas,
+          value: tx.value,
+          nonce: tx.nonce,
+          data: tx.input,
+          chainId: tx.chainId,
+          type: Number(tx.typeHex),
+          maxFeePerGas: tx.maxFeePerGas,
+          maxPriorityFeePerGas: tx.maxPriorityFeePerGas,
+          to: tx.to,
+        };
+        // const txs = (await ethers.resolveProperties(txData)) as any;
+        const rawTx = ethers.Transaction.from(txData).unsignedSerialized; // returns RLP encoded tx
+        // currently cannot use viem ??!! This always is not the same rawTx
+        // const serializedViem = toRlp(
+        //   serializeTransaction({
+        //     gasPrice: txData.gasPrice,
+        //     gas: txData.gasLimit,
+        //     value: txData.value,
+        //     nonce: txData.nonce,
+        //     data: txData.data,
+        //     chainId: txData.chainId,
+        //     type: tx.type,
+        //     maxFeePerGas: txData.maxFeePerGas,
+        //     maxPriorityFeePerGas: txData.maxPriorityFeePerGas,
+        //     to: txData.to,
+        //   })
+        // );
+        const sig = {
+          r: tx.r,
+          s: tx.s,
+          v: BigInt(tx.v),
+          yParity: tx.yParity,
+        };
+        // const signature = ethers.Signature.from(sig).serialized as any;
+        const signatureViem = serializeSignature(sig);
 
-            const recoveredAddress = await recoverAddress({
-              hash: msgBytes,
-              signature,
-            });
-            if (tx.from !== recoveredAddress.toLowerCase()) {
-              this.logger.error(`cannot recover address at ${tx.hash}`);
-              throw Error(`cannot recover address at ${tx.hash}`);
-            }
+        const msgHash = keccak256(rawTx as `0x${string}`); // as specified by ECDSA
+        const msgBytes = hexToBytes(msgHash); // create binary hash
+        const [recoveredPubKey, recoveredAddress] = await Promise.all([
+          recoverPublicKey({
+            hash: msgBytes,
+            signature: signatureViem,
+          }),
+          recoverAddress({
+            hash: msgBytes,
+            signature: signatureViem,
+          }),
+        ]);
 
-            const compressPubkey = Secp256k1.compressPubkey(
-              hexToBytes(recoveredPubKey)
-            );
-            const bech32Add = toBech32(
-              `${config.networkPrefixAddress}`,
-              pubkeyToRawAddress('secp256k1', compressPubkey)
-            );
+        if (tx.from !== recoveredAddress.toLowerCase()) {
+          this.logger.error(`cannot recover address at ${tx.hash}`);
+          throw Error(`cannot recover address at ${tx.hash}`);
+        }
 
-            listAccountDict[tx.from] = {
-              pubkey: JSON.stringify({
-                pubkeyEVM: recoveredPubKey,
-              }),
-              bech32Add,
-            };
-          })
+        const compressPubkey = Secp256k1.compressPubkey(
+          hexToBytes(recoveredPubKey)
         );
+        const bech32Add = toBech32(
+          `${config.networkPrefixAddress}`,
+          pubkeyToRawAddress('secp256k1', compressPubkey)
+        );
+
+        listAccountDict[tx.from] = {
+          pubkey: JSON.stringify({
+            pubkeyEVM: recoveredPubKey,
+          }),
+          bech32Add,
+        };
       })
     );
 
