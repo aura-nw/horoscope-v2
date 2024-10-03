@@ -71,11 +71,11 @@ export default class UpdateAccountIdInEVMTransaction extends BullableService {
       listUpdateAccountInTx.push({
         id: tx.id,
         from_account_id: {
-          type: 'number',
+          type: 'integer',
           value: tx.from ? listAddressDB[bytesToHex(tx.from)]?.id : undefined,
         },
         to_account_id: {
-          type: 'number',
+          type: 'integer',
           value: tx.to ? listAddressDB[bytesToHex(tx.to)]?.id : undefined,
         },
       });
