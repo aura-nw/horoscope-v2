@@ -251,6 +251,7 @@ export const BULL_JOB_NAME = {
   CRAWL_EVM_ACCOUNT_PUBKEY: 'crawl:evm-account-pubkey',
   UPDATE_EVM_ASSETS: 'update:evm-assets',
   CRAWL_EVM_ACCOUNT_BALANCE_NONCE: 'crawl:evm-account-balance-nonce',
+  UPDATE_ACCOUNT_ID_IN_EVM_TX: 'update:account-id-in-evm-tx',
 };
 
 export const MSG_TYPE = {
