@@ -479,16 +479,21 @@ export default class CrawlEvmAccountService extends BullableService {
       })
     );
 
-    const listAccountDB = await Account.query().whereIn(
-      'evm_address',
-      Object.keys(listAccountDict)
+    const listAccountDBByEvmAdd = _.keyBy(
+      await Account.query()
+        .select('id', 'evm_address', 'pubkey')
+        .whereIn('evm_address', Object.keys(listAccountDict)),
+      'evm_address'
     );
-    const listAccount = Object.keys(listAccountDict).map((e) => ({
-      account: e,
-      pubkey: { type: 'jsonb', value: listAccountDict[e].pubkey },
-      address: listAccountDict[e].bech32Add,
-      id: listAccountDB.find((a) => a.evm_address === e)?.id,
-    }));
+    const listAccount = Object.keys(listAccountDict)
+      // filter account has no pubkey
+      .filter((e) => Object.keys(listAccountDBByEvmAdd[e].pubkey).length === 0)
+      .map((e) => ({
+        account: e,
+        pubkey: { type: 'jsonb', value: listAccountDict[e].pubkey },
+        address: listAccountDict[e].bech32Add,
+        id: listAccountDBByEvmAdd[e].id,
+      }));
     await knex.transaction(async (trx) => {
       if (listAccount.length > 0) {
         await batchUpdate(trx, 'account', listAccount, ['pubkey', 'address']);
