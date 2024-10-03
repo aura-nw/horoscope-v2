@@ -42,27 +42,25 @@ export default class CreateConstraintInEVMTransactionPartitionJob extends Bullab
    * @description get max min tx_id and max min tx_msg_id in partition
    * @param partitionName
    */
-  public async getMaxMinTxIdAndTxMsgIdByPartition(
-    partitionName: string
-  ): Promise<{
-    min_tx_id: number;
-    max_tx_id: number;
-    min_tx_msg_id: number;
-    max_tx_msg_id: number;
+  public async getMaxMinIdAndHeightByPartition(partitionName: string): Promise<{
+    min_id: number;
+    max_id: number;
+    min_height: number;
+    max_height: number;
   }> {
     await knex.raw(
       `set statement_timeout to ${config.jobCreateConstraintInEVMTransactionPartition.statementTimeout}`
     );
     const boundariesResult = await knex.raw(`
         SELECT
-            min(tx_id) min_tx_id, max(tx_id) max_tx_id, 
-            min(tx_msg_id) min_tx_msg_id, max(tx_msg_id) max_tx_msg_id 
+            min(id) min_id, max(id) max_id, 
+            min(height) min_height, max(height) max_height 
             FROM ${partitionName}`);
     return {
-      min_tx_id: boundariesResult.rows[0].min_tx_id,
-      max_tx_id: boundariesResult.rows[0].max_tx_id,
-      min_tx_msg_id: boundariesResult.rows[0].min_tx_msg_id,
-      max_tx_msg_id: boundariesResult.rows[0].max_tx_msg_id,
+      min_id: boundariesResult.rows[0].min_id,
+      max_id: boundariesResult.rows[0].max_id,
+      min_height: boundariesResult.rows[0].min_height,
+      max_height: boundariesResult.rows[0].max_height,
     };
   }
 
@@ -125,9 +123,7 @@ export default class CreateConstraintInEVMTransactionPartitionJob extends Bullab
     // Don't need to create constraint because current partition is empty
     if (insertionStatus === this.insertionStatus.empty) return null;
 
-    const maxMinTxId = await this.getMaxMinTxIdAndTxMsgIdByPartition(
-      partitionName
-    );
+    const maxMinId = await this.getMaxMinIdAndHeightByPartition(partitionName);
 
     if (insertionStatus === this.insertionStatus.inserting) {
       // Current inserting and having constraint so do nothing
@@ -135,10 +131,10 @@ export default class CreateConstraintInEVMTransactionPartitionJob extends Bullab
 
       return {
         createConstraint: {
-          fromTxId: maxMinTxId.min_tx_id,
-          toTxId: null,
-          fromTxMsgId: maxMinTxId.min_tx_msg_id,
-          toTxMsgId: null,
+          fromId: maxMinId.min_id,
+          toId: null,
+          fromHeight: maxMinId.min_height,
+          toHeight: null,
         },
         dropConstraint: null,
       };
@@ -153,10 +149,10 @@ export default class CreateConstraintInEVMTransactionPartitionJob extends Bullab
 
     return {
       createConstraint: {
-        fromTxId: maxMinTxId.min_tx_id,
-        toTxId: maxMinTxId.max_tx_id,
-        fromTxMsgId: maxMinTxId.min_tx_msg_id,
-        toTxMsgId: maxMinTxId.max_tx_msg_id,
+        fromId: maxMinId.min_id,
+        toId: maxMinId.max_id,
+        fromHeight: maxMinId.min_height,
+        toHeight: maxMinId.max_height,
       },
       dropConstraint: currentConstraintName,
     };
@@ -194,21 +190,21 @@ export default class CreateConstraintInEVMTransactionPartitionJob extends Bullab
 
   public async createConstraint(
     partitionName: string,
-    fromTxId: number,
-    toTxId: number | null,
-    fromTxMsgId: number,
-    toTxMsgId: number | null,
+    fromId: number,
+    toId: number | null,
+    fromHeight: number,
+    toHeight: number | null,
     currentConstraintName: string
   ): Promise<void> {
     let constraintName: string;
     let checkConstraint: string;
 
-    if (toTxId === null) {
+    if (toId === null) {
       constraintName = `evmtx_ct_${partitionName}_${this.insertionStatus.inserting}`;
-      checkConstraint = `(tx_id >= ${fromTxId} AND tx_msg_id >= ${fromTxMsgId})`;
+      checkConstraint = `(id >= ${fromId} AND height >= ${fromHeight})`;
     } else {
       constraintName = `evmtx_ct_${partitionName}_${this.insertionStatus.done}`;
-      checkConstraint = `(tx_id >= ${fromTxId} AND tx_id <= ${toTxId} AND tx_msg_id >= ${fromTxMsgId} and tx_msg_id <= ${toTxMsgId})`;
+      checkConstraint = `(id >= ${fromId} AND id <= ${toId} AND height >= ${fromHeight} and height <= ${toHeight})`;
     }
 
     await knex.transaction(async (trx) => {
@@ -277,10 +273,10 @@ export default class CreateConstraintInEVMTransactionPartitionJob extends Bullab
 
     await this.createConstraint(
       _payload.name,
-      prepareConstraintCreation.createConstraint.fromTxId,
-      prepareConstraintCreation.createConstraint.toTxId,
-      prepareConstraintCreation.createConstraint.fromTxMsgId,
-      prepareConstraintCreation.createConstraint.toTxMsgId,
+      prepareConstraintCreation.createConstraint.fromId,
+      prepareConstraintCreation.createConstraint.toId,
+      prepareConstraintCreation.createConstraint.fromHeight,
+      prepareConstraintCreation.createConstraint.toHeight,
       prepareConstraintCreation.dropConstraint
     );
     return this.createConstraintEVMTxStatus.constraintUpdated;
