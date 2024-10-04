@@ -25,11 +25,12 @@ select_permissions:
         - from
         - sender
         - to
-        - tx_hash
         - cw20_contract_id
         - height
         - id
         - smart_contract_event_id
         - amount
+        - tx_hash
+        - tx_id
       filter: {}
       limit: 100
