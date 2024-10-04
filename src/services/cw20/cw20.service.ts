@@ -246,7 +246,7 @@ export default class Cw20Service extends BullableService {
         'smart_contract_event.id as smart_contract_event_id',
         'event:transaction.hash',
         'event:transaction.height',
-        'tx_id'
+        'smart_contract_event.tx_id'
       )
       .orderBy('smart_contract_event.id', 'asc');
   }
