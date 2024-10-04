@@ -29,6 +29,5 @@ select_permissions:
         - sender
         - to
         - tx_hash
-        - tx_id
       filter: {}
       limit: 100
