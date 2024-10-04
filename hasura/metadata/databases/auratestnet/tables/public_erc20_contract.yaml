@@ -49,6 +49,7 @@ select_permissions:
         - decimal
         - name
         - track
+        - total_holder
         - last_updated_height
       filter: {}
       limit: 100

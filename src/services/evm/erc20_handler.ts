@@ -113,6 +113,9 @@ export class Erc20Handler {
       const amount = (
         BigInt(fromAccountBalance?.amount || 0) - BigInt(erc20Activity.amount)
       ).toString();
+      if (BigInt(amount) === BigInt(0)) {
+        erc20Contract.total_holder -= 1;
+      }
       // update object accountBalance
       this.accountBalances[key] = AccountBalance.fromJson({
         denom: erc20Activity.erc20_contract_address,
@@ -143,10 +146,14 @@ export class Erc20Handler {
           `Process erc20 balance: toAccountBalance ${erc20Activity.to} was updated`
         );
       }
+      const initAmount = toAccountBalance?.amount || 0;
       // calculate new balance: increase balance of to account
       const amount = (
-        BigInt(toAccountBalance?.amount || 0) + BigInt(erc20Activity.amount)
+        BigInt(initAmount) + BigInt(erc20Activity.amount)
       ).toString();
+      if (BigInt(amount) > BigInt(0) && BigInt(initAmount) === BigInt(0)) {
+        erc20Contract.total_holder += 1;
+      }
       // update object accountBalance
       this.accountBalances[key] = AccountBalance.fromJson({
         denom: erc20Activity.erc20_contract_address,
