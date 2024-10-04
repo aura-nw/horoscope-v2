@@ -193,20 +193,22 @@ export default class CrawlAccountService extends BullableService {
 
       await knex
         .transaction(async (trx) => {
-          const patchQueries = accounts.map((account) =>
-            Account.query()
-              .patch({
-                type: account.type,
-                pubkey: account.pubkey,
-                account_number: account.account_number,
-                sequence: account.sequence,
-                code_hash: account.code_hash,
-              })
-              .where({ id: account.id })
-              .transacting(trx)
-          );
+          const stringListUpdates = accounts
+            .map(
+              (account) =>
+                `(${account.id}, '${account.type}', '${JSON.stringify(
+                  account.pubkey || {}
+                )}'::jsonb, ${account.account_number}, ${account.sequence}, '${
+                  account.code_hash
+                }')`
+            )
+            .join(',');
           try {
-            await Promise.all(patchQueries);
+            await knex
+              .raw(
+                `UPDATE account SET type = temp.type, pubkey = temp.pubkey, account_number = temp.account_number, sequence = temp.sequence, code_hash = temp.code_hash from (VALUES ${stringListUpdates}) as temp(id, type, pubkey, account_number, sequence, code_hash) where temp.id = account.id`
+              )
+              .transacting(trx);
           } catch (error) {
             this.logger.error(
               `Error update account auth: ${_payload.addresses}`
@@ -441,15 +443,18 @@ export default class CrawlAccountService extends BullableService {
         })
       );
 
-      const patchQueries = accounts.map((account) =>
-        Account.query()
-          .patch({
-            spendable_balances: account.spendable_balances,
-          })
-          .where({ address: account.address })
-      );
+      const stringListUpdates = accounts
+        .map(
+          (account) =>
+            `('${account.address}' , '${JSON.stringify(
+              account.spendable_balances || {}
+            )}'::jsonb)`
+        )
+        .join(',');
       try {
-        await Promise.all(patchQueries);
+        await knex.raw(
+          `UPDATE account SET spendable_balances = temp.spendable_balances from (VALUES ${stringListUpdates}) as temp(address, spendable_balances) where temp.address = account.address`
+        );
       } catch (error) {
         this.logger.error(
           `Error update account spendable balance: ${_payload.addresses}`
