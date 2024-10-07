@@ -21,7 +21,7 @@ export default class UpdateAccountIdInEVMTransaction extends BullableService {
       await BlockCheckpoint.getCheckpoint(
         BULL_JOB_NAME.UPDATE_ACCOUNT_ID_IN_EVM_TX,
         [BULL_JOB_NAME.CRAWL_EVM_ACCOUNT],
-        config.crawlEvmAccount.key
+        config.updateAccountIdInEVMTransaction.key
       );
     this.logger.info(
       `Update account id in evm_transaction from block ${startBlock} to ${endBlock}`
