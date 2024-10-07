@@ -5,6 +5,7 @@ export async function up(knex: Knex): Promise<void> {
   await knex.schema.alterTable('evm_transaction', (table) => {
     table.integer('from_account_id').index();
     table.integer('to_account_id').index();
+    table.index(['to_account_id', 'id']);
   });
 }
 
