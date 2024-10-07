@@ -187,6 +187,10 @@ export const SERVICE = {
         key: 'CreateConstraintInEVMBlockPartition',
         path: 'v1.CreateConstraintInEVMBlockPartition',
       },
+      UpdateAccountIdInEVMTransaction: {
+        key: 'UpdateAccountIdInEVMTransaction',
+        path: 'v1.UpdateAccountIdInEVMTransaction',
+      },
     },
     CrawlEvmBlock: {
       key: 'CrawlEvmBlock',
@@ -296,6 +300,9 @@ export const BULL_JOB_NAME = {
   REFRESH_ERC721_HOLDER_STATISTIC: 'refresh:erc721-holder-statistic',
   CRAWL_EVM_ACCOUNT_PUBKEY: 'crawl:evm-account-pubkey',
   HANDLE_EVM_SMART_CONTRACT_TX: 'handle:evm-smart-contract-tx',
+  UPDATE_EVM_ASSETS: 'update:evm-assets',
+  CRAWL_EVM_ACCOUNT_BALANCE_NONCE: 'crawl:evm-account-balance-nonce',
+  UPDATE_ACCOUNT_ID_IN_EVM_TX: 'update:account-id-in-evm-tx',
 };
 
 export const MSG_TYPE = {

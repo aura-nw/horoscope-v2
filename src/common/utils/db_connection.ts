@@ -29,7 +29,12 @@ export async function batchUpdate(
           }
           return '{}';
         }
-
+        if (record[field]?.type === 'integer') {
+          if (record[field].value !== undefined) {
+            return record[field].value;
+          }
+          return 'NULL::integer';
+        }
         if (record[field] !== undefined) {
           return `'${record[field]}'`;
         }
