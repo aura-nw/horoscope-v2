@@ -22,7 +22,7 @@ import {
 import { Erc721Contract } from '../../models/erc721_contract';
 import { BULL_JOB_NAME, SERVICE } from './constant';
 import { Erc721Handler } from './erc721_handler';
-import * as Erc721MediaHandler from './erc721_media_handler';
+import { Erc721MediaHandler, ITokenMediaInfo } from './erc721_media_handler';
 import { Erc721Reindexer } from './erc721_reindex';
 
 const { NODE_ENV } = Config;
@@ -239,9 +239,7 @@ export default class Erc721Service extends BullableService {
     jobName: BULL_JOB_NAME.HANDLE_ERC721_TOKEN_MEDIA,
     concurrency: config.erc721.concurrencyHandleTokenMedia,
   })
-  async jobHandlerTokenMedia(_payload: {
-    tokenMedia: Erc721MediaHandler.ITokenMediaInfo;
-  }) {
+  async jobHandlerTokenMedia(_payload: { tokenMedia: ITokenMediaInfo }) {
     let { tokenMedia } = _payload;
     if (tokenMedia.onchain.token_uri) {
       try {
@@ -386,9 +384,7 @@ export default class Erc721Service extends BullableService {
     }
   }
 
-  async getTokensUri(
-    tokens: Erc721Token[]
-  ): Promise<Erc721MediaHandler.ITokenMediaInfo[]> {
+  async getTokensUri(tokens: Erc721Token[]): Promise<ITokenMediaInfo[]> {
     const contracts = tokens.map((token) =>
       getContract({
         address: token.erc721_contract_address as `0x${string}`,

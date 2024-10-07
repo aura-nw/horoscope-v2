@@ -1,3 +1,4 @@
+import { toBase64, toUtf8 } from '@cosmjs/encoding';
 import {
   AfterAll,
   AfterEach,
@@ -15,7 +16,7 @@ import {
 } from '../../../../src/models';
 import { BULL_JOB_NAME } from '../../../../src/services/evm/constant';
 import Erc721Service from '../../../../src/services/evm/erc721.service';
-import * as Erc721MediaHanlder from '../../../../src/services/evm/erc721_media_handler';
+import { Erc721MediaHandler } from '../../../../src/services/evm/erc721_media_handler';
 
 const { IPFS_GATEWAY } = Config;
 @Describe('Test view count')
@@ -123,38 +124,36 @@ export default class TestErc721MediaService {
       'Qme33YMXArHQzDdgRxQuL6m7JDJNDKeAUyJXDQU3wnL7sf/1000_F_260918513_EtP8xFDBIj4SvHIuXPGdFIyEXyBCmTEq.jpg';
     const nativeUrl = `${host}://${path}`;
     const ipfsPath = `/${host}/${path}`;
-    const parsedNativeUrl = Erc721MediaHanlder.parseIPFSUri(nativeUrl);
-    const parsedIpfsPath = Erc721MediaHanlder.parseIPFSUri(ipfsPath);
+    const parsedNativeUrl = Erc721MediaHandler.parseIPFSUri(nativeUrl);
+    const parsedIpfsPath = Erc721MediaHandler.parseIPFSUri(ipfsPath);
     expect(parsedNativeUrl).toEqual(`${IPFS_GATEWAY}${path}`);
     expect(parsedIpfsPath).toEqual(`${IPFS_GATEWAY}${path}`);
   }
 
-  @Test('Test parseFilename function')
-  public async testParseFilename() {
+  @Test('Test parseFilenameFromIPFS function')
+  public async testParseFilenameFromIPFS() {
     const host = 'ipfs';
     const path =
       'Qme33YMXArHQzDdgRxQuL6m7JDJNDKeAUyJXDQU3wnL7sf/1000_F_260918513_EtP8xFDBIj4SvHIuXPGdFIyEXyBCmTEq.jpg';
     const nativeUrl = `${host}://${path}`;
     const ipfsPath = `/${host}/${path}`;
     const httpPath = `http://ipfs.dev.aura.network:8080/ipfs/${path}`;
-    const parsedNativeUrl = Erc721MediaHanlder.parseFilename(nativeUrl);
-    const parsedIpfsPath = Erc721MediaHanlder.parseFilename(ipfsPath);
-    const parsedHttpPath = Erc721MediaHanlder.parseFilename(httpPath);
+    const parsedNativeUrl = Erc721MediaHandler.parseFilenameFromIPFS(nativeUrl);
+    const parsedIpfsPath = Erc721MediaHandler.parseFilenameFromIPFS(ipfsPath);
+    const parsedHttpPath = Erc721MediaHandler.parseFilenameFromIPFS(httpPath);
     expect(parsedNativeUrl).toEqual(`ipfs/${path}`);
     expect(parsedIpfsPath).toEqual(`ipfs/${path}`);
     expect(parsedHttpPath).toEqual(`ipfs/${path}`);
-    const httpWrongPath =
-      'http://ipfs.dev.aura.network:8080/ipfs/Qme33YMXArHQzDdgRxQuL6m7JDJNDKeAUyJXDQU3wnL7s/1000_F_260918513_EtP8xFDBIj4SvHIuXPGdFIyEXyBCmTEq.jpg';
-    expect(Erc721MediaHanlder.parseFilename(httpWrongPath)).toBeNull();
     const subDomain =
       'bafybeie5gq4jxvzmsym6hjlwxej4rwdoxt7wadqvmmwbqi7r27fclha2va.ipfs.dweb.link';
     const httpSubDomain = `https://${subDomain}`;
-    const parsedHttpSubDomain = Erc721MediaHanlder.parseFilename(httpSubDomain);
+    const parsedHttpSubDomain =
+      Erc721MediaHandler.parseFilenameFromIPFS(httpSubDomain);
     expect(parsedHttpSubDomain).toEqual(subDomain);
     const file = '1.json';
     const httpFullSubDomain = `https://${subDomain}/${file}`;
     const parsedFullHttpSubDomain =
-      Erc721MediaHanlder.parseFilename(httpFullSubDomain);
+      Erc721MediaHandler.parseFilenameFromIPFS(httpFullSubDomain);
     expect(parsedFullHttpSubDomain).toEqual(`${subDomain}/${file}`);
   }
 
@@ -182,5 +181,44 @@ export default class TestErc721MediaService {
       this.mockInitContract.tokens.length +
         this.mockInitContract_2.tokens.length
     );
+  }
+
+  @Test('test getMetadata')
+  async testGetMetadata() {
+    const imageUrl =
+      'ipfs://QmPfi9CcTafv4C1sBZ5HxUs4PbvBi22nkjgqbypMhqaPLp/The_Immersion_Into_Aura_Odyssey.png';
+    // Case token_uri: ipfs format
+    const ipfsTokenUri =
+      'ipfs://QmPf5LawLS1ZVqFTSs7JhFD6yteKQLXxYMEYoc1PcKkhVj/109';
+    jest
+      .spyOn(Erc721MediaHandler, 'downloadAttachment')
+      .mockImplementationOnce(async () =>
+        Buffer.from(`{
+        "name": "Immersion 109",
+        "description":
+          "The Immersion: Into Aura Odyssey Collection is a collaboration between Micro3 and Aura Network, marking the debut of Aura EVM NFT.",
+        "image": "${imageUrl}"
+      }`)
+      );
+    const ipfsMetadata = await Erc721MediaHandler.getMetadata(ipfsTokenUri);
+    expect(ipfsMetadata.image).toEqual(imageUrl);
+    // Case token_uri: json
+    const jsonTokenUri = `{"name": "Mahojin NFT #20", "description": "Mahojin NFT!", "image": "${imageUrl}"}`;
+    const jsonMetadata = await Erc721MediaHandler.getMetadata(jsonTokenUri);
+    expect(jsonMetadata.image).toEqual(imageUrl);
+    // Case token_uri: base64
+    const metadata = {
+      name: 'Color Commemorative Launch NFT #999999',
+      description:
+        'Color Commemorative NFT to celebrate the launch of Story Testnet',
+      external_url: 'https://colormp.com/',
+      image: imageUrl,
+      attributes: [{ trait_type: 'Serial Number', value: '999999' }],
+    };
+    const base64TokenUri = `data:application/json;base64,${toBase64(
+      toUtf8(JSON.stringify(metadata))
+    )}`;
+    const base64Metadata = await Erc721MediaHandler.getMetadata(base64TokenUri);
+    expect(base64Metadata.image).toEqual(imageUrl);
   }
 }
