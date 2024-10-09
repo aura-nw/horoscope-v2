@@ -53,11 +53,9 @@ export default class CrawlValidatorImageService extends BullableService {
           .where('id', validator.id)
           .patch({ image_url: imageUrl });
       } catch (error) {
-        // Retry error validators.
-        if (error) {
-          await this.createJobRetry(validators.slice(i));
-        }
-        throw error;
+        this.logger.error(
+          `Cannot get validator image. Validator id: ${validator.id}`
+        );
       }
     }
   }
@@ -78,23 +76,6 @@ export default class CrawlValidatorImageService extends BullableService {
     }
 
     return defaultValidatorImage;
-  }
-
-  public async createJobRetry(
-    validators: IUpdateImageValidator[]
-  ): Promise<void> {
-    this.createJob(
-      BULL_JOB_NAME.CRAWL_VALIDATOR_IMG,
-      BULL_JOB_NAME.RETRY_CRAWL_VALIDATOR_IMG,
-      { validators },
-      {
-        removeOnComplete: true,
-        removeOnFail: {
-          count: 3,
-        },
-        delay: config.crawlValidatorImage.milliSecondDelayRetry,
-      }
-    );
   }
 
   public async _start() {
