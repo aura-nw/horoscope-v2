@@ -298,7 +298,7 @@ export class Erc20Handler {
 
   static async getErc20Activities(
     startBlock: number,
-    endBlock: number,
+    endBlock?: number,
     trx?: Knex.Transaction,
     addresses?: string[],
     page?: { prevId: number; limitRecordGet: number }
@@ -315,6 +315,9 @@ export class Erc20Handler {
           builder
             .andWhere('erc20_activity.id', '>', page.prevId)
             .limit(page.limitRecordGet);
+        }
+        if (endBlock) {
+          builder.andWhere('erc20_activity.height', '<=', endBlock);
         }
       })
       .leftJoin(
@@ -333,7 +336,6 @@ export class Erc20Handler {
         'erc20_contract.address'
       )
       .where('erc20_activity.height', '>', startBlock)
-      .andWhere('erc20_activity.height', '<=', endBlock)
       .andWhere('erc20_contract.track', true)
       .select(
         'erc20_activity.*',
