@@ -51,7 +51,7 @@ export default class EvmProxyServiceTest {
     jest
       .spyOn(ContractHelper.prototype, 'isContractProxy')
       .mockResolvedValueOnce(proxyContractRPC);
-
+    jest.spyOn(this.evmProxyService.broker, 'call').mockImplementation();
     const insertedSmartContract = await EVMSmartContract.query()
       .insert({ address: ctx.params.contractAddress })
       .returning('*');
@@ -82,7 +82,7 @@ export default class EvmProxyServiceTest {
     jest
       .spyOn(this.evmProxyService.viemClient, 'getBlockNumber')
       .mockResolvedValueOnce(Promise.resolve(BigInt(lastBlockHeight)));
-
+    jest.spyOn(this.evmProxyService.broker, 'call').mockImplementation();
     await EVMSmartContract.query()
       .insert({
         address: ctx.params.contractAddress,
