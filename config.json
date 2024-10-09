@@ -68,6 +68,15 @@
   "crawlAccount": {
     "handleVestingAccount": {
       "millisecondCrawl": 30000
+    },
+    "crawlAccountAuth": {
+      "concurrency": 100
+    },
+    "crawlAccountBalance": {
+      "concurrency": 100
+    },
+    "crawlAccountSpendableBalance": {
+      "concurrency": 100
     }
   },
   "crawlProposal": {
