@@ -3,9 +3,15 @@ import Moleculer from 'moleculer';
 import { getContract, PublicClient } from 'viem';
 import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
-import { AccountBalance, Erc20Activity, Erc20Contract } from '../../models';
+import {
+  AccountBalance,
+  BlockCheckpoint,
+  Erc20Activity,
+  Erc20Contract,
+} from '../../models';
 import { Erc20Handler } from './erc20_handler';
 import { convertEthAddressToBech32Address } from './utils';
+import { BULL_JOB_NAME } from './constant';
 
 export class Erc20Reindexer {
   viemClient: PublicClient;
@@ -29,6 +35,18 @@ export class Erc20Reindexer {
     await Erc20Contract.query()
       .patch({ track: false })
       .where('address', address);
+    const erc20ActivityBlockCheckpoint = (
+      await BlockCheckpoint.query()
+        .where('job_name', BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY)
+        .first()
+        .throwIfNotFound()
+    ).height;
+    const erc20BalanceBlockCheckpoint = (
+      await BlockCheckpoint.query()
+        .where('job_name', BULL_JOB_NAME.HANDLE_ERC20_BALANCE)
+        .first()
+        .throwIfNotFound()
+    ).height;
     // reindex
     await knex.transaction(async (trx) => {
       const erc20Contract = await Erc20Contract.query()
@@ -55,8 +73,7 @@ export class Erc20Reindexer {
         abi: Erc20Contract.ABI,
         client: this.viemClient,
       });
-      const [blockHeight, ...contractInfo] = await Promise.all([
-        this.viemClient.getBlockNumber(),
+      const contractInfo = await Promise.all([
         contract.read.name().catch(() => Promise.resolve(undefined)),
         contract.read.symbol().catch(() => Promise.resolve(undefined)),
         contract.read.decimals().catch(() => Promise.resolve(undefined)),
@@ -71,7 +88,7 @@ export class Erc20Reindexer {
             total_supply: '0',
             decimal: contractInfo[2],
             track: true,
-            last_updated_height: Number(blockHeight),
+            last_updated_height: erc20BalanceBlockCheckpoint,
           })
         )
         .transacting(trx);
@@ -83,7 +100,7 @@ export class Erc20Reindexer {
         const resultBuildErc20Activities =
           await Erc20Handler.buildErc20Activities(
             0,
-            Number(blockHeight),
+            erc20ActivityBlockCheckpoint,
             trx,
             this.logger,
             [address],
@@ -115,7 +132,7 @@ export class Erc20Reindexer {
       while (true) {
         const erc20ActivitiesInDb = await Erc20Handler.getErc20Activities(
           0,
-          Number(blockHeight),
+          erc20BalanceBlockCheckpoint,
           trx,
           [address],
           {
