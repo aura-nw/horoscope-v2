@@ -35,6 +35,18 @@ export class Erc20Reindexer {
     await Erc20Contract.query()
       .patch({ track: false })
       .where('address', address);
+    const erc20ActivityBlockCheckpoint = (
+      await BlockCheckpoint.query()
+        .where('job_name', BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY)
+        .first()
+        .throwIfNotFound()
+    ).height;
+    const erc20BalanceBlockCheckpoint = (
+      await BlockCheckpoint.query()
+        .where('job_name', BULL_JOB_NAME.HANDLE_ERC20_BALANCE)
+        .first()
+        .throwIfNotFound()
+    ).height;
     // reindex
     await knex.transaction(async (trx) => {
       const erc20Contract = await Erc20Contract.query()
@@ -61,12 +73,6 @@ export class Erc20Reindexer {
         abi: Erc20Contract.ABI,
         client: this.viemClient,
       });
-      const blockHeight = (
-        await BlockCheckpoint.query()
-          .where('job_name', BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY)
-          .first()
-          .throwIfNotFound()
-      ).height;
       const contractInfo = await Promise.all([
         contract.read.name().catch(() => Promise.resolve(undefined)),
         contract.read.symbol().catch(() => Promise.resolve(undefined)),
@@ -82,7 +88,7 @@ export class Erc20Reindexer {
             total_supply: '0',
             decimal: contractInfo[2],
             track: true,
-            last_updated_height: blockHeight,
+            last_updated_height: erc20BalanceBlockCheckpoint,
           })
         )
         .transacting(trx);
@@ -94,7 +100,7 @@ export class Erc20Reindexer {
         const resultBuildErc20Activities =
           await Erc20Handler.buildErc20Activities(
             0,
-            blockHeight,
+            erc20ActivityBlockCheckpoint,
             trx,
             this.logger,
             [address],
@@ -126,7 +132,7 @@ export class Erc20Reindexer {
       while (true) {
         const erc20ActivitiesInDb = await Erc20Handler.getErc20Activities(
           0,
-          undefined,
+          erc20BalanceBlockCheckpoint,
           trx,
           [address],
           {
