@@ -7,12 +7,14 @@ import { getViemClient } from '../../../../src/common/utils/etherjs_client';
 import {
   Account,
   AccountBalance,
+  BlockCheckpoint,
   Erc20Activity,
   Erc20Contract,
   EvmEvent,
   EVMSmartContract,
   EVMTransaction,
 } from '../../../../src/models';
+import { BULL_JOB_NAME } from '../../../../src/services/evm/constant';
 import { ABI_TRANSFER_PARAMS } from '../../../../src/services/evm/erc20_handler';
 import { Erc20Reindexer } from '../../../../src/services/evm/erc20_reindex';
 
@@ -121,6 +123,16 @@ const evmTransaction = EVMTransaction.fromJson({
   index: 0,
   from: hexToBytes('0x51aeade652867f342ddc012e15c27d0cd6220398'),
 });
+const blockCheckpoints = [
+  BlockCheckpoint.fromJson({
+    job_name: BULL_JOB_NAME.HANDLE_ERC20_BALANCE,
+    height: 123456,
+  }),
+  BlockCheckpoint.fromJson({
+    job_name: BULL_JOB_NAME.HANDLE_ERC20_ACTIVITY,
+    height: 123457,
+  }),
+];
 
 @Describe('Test erc20 reindex')
 export default class Erc20ReindexTest {
@@ -130,12 +142,13 @@ export default class Erc20ReindexTest {
   async initSuite() {
     await this.broker.start();
     await knex.raw(
-      'TRUNCATE TABLE evm_transaction, evm_smart_contract, erc20_contract, account, erc20_activity, account_balance, evm_event RESTART IDENTITY CASCADE'
+      'TRUNCATE TABLE evm_transaction, evm_smart_contract, erc20_contract, account, erc20_activity, account_balance, evm_event, block_checkpoint RESTART IDENTITY CASCADE'
     );
     await EVMTransaction.query().insert(evmTransaction);
     await EVMSmartContract.query().insert(evmSmartContract);
     await Erc20Contract.query().insertGraph(erc20Contract);
     await Account.query().insertGraph(accounts);
+    await BlockCheckpoint.query().insert(blockCheckpoints);
   }
 
   @AfterAll()
@@ -148,7 +161,6 @@ export default class Erc20ReindexTest {
   @Test('test reindex')
   async testReindex() {
     const viemClient = getViemClient();
-    jest.spyOn(viemClient, 'getBlockNumber').mockResolvedValue(BigInt(123456));
     // Instantiate Erc20Reindexer with the mock
     const reindexer = new Erc20Reindexer(viemClient, this.broker.logger);
     const event = EvmEvent.fromJson({
