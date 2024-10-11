@@ -340,10 +340,9 @@ export default class CrawlEvmAccountService extends BullableService {
     if (accountsInstances.length === 0) {
       return;
     }
-    const accountBalanceInstance = await AccountBalance.query().findOne(
-      'account_id',
-      _payload.id
-    );
+    const accountBalanceInstance = await AccountBalance.query()
+      .findOne('account_id', _payload.id)
+      .andWhere('type', AccountBalance.TYPE.NATIVE);
     if (!accountBalanceInstance) {
       throw Error(`Missing account_balance_id: ${_payload.id}`);
     }
@@ -366,8 +365,6 @@ export default class CrawlEvmAccountService extends BullableService {
         })
         .where({
           id: accountBalanceInstance?.id,
-          denom: config.networkDenom,
-          type: AccountBalance.TYPE.NATIVE,
         })
         .transacting(trx);
     });
