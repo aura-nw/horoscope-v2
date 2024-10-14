@@ -1,6 +1,7 @@
 import { Knex } from 'knex';
 
 export async function up(knex: Knex): Promise<void> {
+  await knex.raw(`set statement_timeout to 0`);
   await knex.raw(
     'ALTER TABLE evm_internal_transaction ALTER COLUMN "id" SET DATA TYPE bigint'
   );
@@ -8,6 +9,7 @@ export async function up(knex: Knex): Promise<void> {
 }
 
 export async function down(knex: Knex): Promise<void> {
+  await knex.raw(`set statement_timeout to 0`);
   await knex.raw(
     'ALTER TABLE evm_internal_transaction ALTER COLUMN "id" SET DATA TYPE integer'
   );
