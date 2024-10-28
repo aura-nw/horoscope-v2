@@ -1,0 +1,44 @@
+table:
+  name: evm_block
+  schema: public
+object_relationships:
+  - name: validator
+    using:
+      manual_configuration:
+        column_mapping:
+          miner: evm_address
+        insertion_order: null
+        remote_table:
+          name: validator
+          schema: public
+array_relationships:
+  - name: evm_transactions
+    using:
+      manual_configuration:
+        column_mapping:
+          height: height
+        insertion_order: null
+        remote_table:
+          name: evm_transaction
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - height
+        - tx_count
+        - transactions
+        - base_fee_per_gas
+        - difficulty
+        - gas_limit
+        - gas_used
+        - extra_data
+        - hash
+        - miner
+        - nonce
+        - parent_hash
+        - receipts_root
+        - state_root
+        - timestamp
+      filter: {}
+      limit: 100

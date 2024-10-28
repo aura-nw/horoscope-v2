@@ -1,0 +1,92 @@
+table:
+  name: evm_transaction
+  schema: public
+object_relationships:
+  - name: evm_block
+    using:
+      manual_configuration:
+        column_mapping:
+          height: height
+        insertion_order: null
+        remote_table:
+          name: evm_block
+          schema: public
+  - name: optimism_deposit
+    using:
+      manual_configuration:
+        column_mapping:
+          hash: l2_tx_hash
+        insertion_order: null
+        remote_table:
+          name: optimism_deposit
+          schema: public
+array_relationships:
+  - name: erc20_activities
+    using:
+      manual_configuration:
+        column_mapping:
+          id: evm_tx_id
+        insertion_order: null
+        remote_table:
+          name: erc20_activity
+          schema: public
+  - name: erc721_activities
+    using:
+      manual_configuration:
+        column_mapping:
+          id: evm_tx_id
+        insertion_order: null
+        remote_table:
+          name: erc721_activity
+          schema: public
+  - name: evm_events
+    using:
+      manual_configuration:
+        column_mapping:
+          height: block_height
+          id: evm_tx_id
+        insertion_order: null
+        remote_table:
+          name: evm_event
+          schema: public
+  - name: evm_internal_transactions
+    using:
+      manual_configuration:
+        column_mapping:
+          id: evm_tx_id
+        insertion_order: null
+        remote_table:
+          name: evm_internal_transaction
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - additional_data
+        - contract_address
+        - data
+        - from
+        - from_account_id
+        - gas
+        - gas_fee_cap
+        - gas_limit
+        - gas_price
+        - gas_tip_cap
+        - gas_used
+        - hash
+        - height
+        - id
+        - index
+        - nonce
+        - reason
+        - size
+        - status
+        - timestamp
+        - to
+        - to_account_id
+        - tx_id
+        - tx_msg_id
+        - type
+        - value
+      filter: {}
+      limit: 100
