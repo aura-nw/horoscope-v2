@@ -12,13 +12,6 @@ object_relationships:
           name: evm_smart_contract
           schema: public
 array_relationships:
-  - name: erc20_activities
-    using:
-      foreign_key_constraint_on:
-        column: erc20_contract_address
-        table:
-          name: erc20_activity
-          schema: public
   - name: evm_internal_transaction_from
     using:
       manual_configuration:
