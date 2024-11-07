@@ -238,7 +238,9 @@ export class Erc721MediaHandler {
   static async getContentType(url: string): Promise<string> {
     const fromGithub = url.startsWith('https://github.com');
     const formatedUrl = fromGithub ? `${url}?raw=true` : url;
-    return axiosClient.head(formatedUrl).then((response) => response.headers['content-type']);
+    return axiosClient
+      .head(formatedUrl)
+      .then((response) => response.headers['content-type']);
   }
 
   /**
