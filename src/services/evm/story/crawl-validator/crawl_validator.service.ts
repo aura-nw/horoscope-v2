@@ -132,7 +132,9 @@ export default class CrawlValidatorService extends BullableService {
         // mark this offchain validator is mapped with onchain
         offchainMapped.set(validator.operator_address, true);
         const unCompressPubKey = Secp256k1.uncompressPubkey(
-          fromBase64(validator.consensus_pubkey.value)
+          fromBase64(
+            validator.consensus_pubkey.value.compressed_base64_pubkey.toString()
+          )
         );
         const evmAddress = `0x${keccak256(unCompressPubKey.slice(1)).slice(
           -40
@@ -191,13 +193,17 @@ export default class CrawlValidatorService extends BullableService {
       `${config.networkPrefixAddress}${config.consensusPrefixAddress}`,
       pubkeyToRawAddress(
         'secp256k1',
-        fromBase64(validator.consensus_pubkey.value.toString())
+        fromBase64(
+          validator.consensus_pubkey.value.compressed_base64_pubkey.toString()
+        )
       )
     );
     const consensusHexAddress: string = toHex(
       pubkeyToRawAddress(
         'secp256k1',
-        fromBase64(validator.consensus_pubkey.value.toString())
+        fromBase64(
+          validator.consensus_pubkey.value.compressed_base64_pubkey.toString()
+        )
       )
     ).toUpperCase();
     const accountAddress = toBech32(
@@ -206,7 +212,8 @@ export default class CrawlValidatorService extends BullableService {
     );
     const consensusPubkey = {
       type: validator.consensus_pubkey.type,
-      value: validator.consensus_pubkey.value,
+      value:
+        validator.consensus_pubkey.value.compressed_base64_pubkey.toString(),
     };
 
     const unCompressPubKey = Secp256k1.uncompressPubkey(
