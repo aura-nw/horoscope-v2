@@ -107,8 +107,10 @@ export default class DailyEVMStatisticsService extends BullableService {
       daily_active_addresses: totalActiveAddress?.count,
       unique_addresses:
         // eslint-disable-next-line no-unsafe-optional-chaining
-        Number(dailyStatisticPreviousDay?.unique_addresses) +
-        Number(todayAccounts?.count),
+        dailyStatisticPreviousDay
+          ? Number(dailyStatisticPreviousDay?.unique_addresses) +
+            Number(todayAccounts?.count)
+          : 0 + Number(todayAccounts?.count),
       date: startTime.toISOString(),
     });
 
