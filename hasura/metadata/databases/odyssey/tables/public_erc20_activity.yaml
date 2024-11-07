@@ -2,6 +2,15 @@ table:
   name: erc20_activity
   schema: public
 object_relationships:
+  - name: erc20_contract
+    using:
+      manual_configuration:
+        column_mapping:
+          erc20_contract_address: address
+        insertion_order: null
+        remote_table:
+          name: erc20_contract
+          schema: public
   - name: evm_transaction
     using:
       manual_configuration:
