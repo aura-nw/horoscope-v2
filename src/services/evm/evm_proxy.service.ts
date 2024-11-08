@@ -41,8 +41,9 @@ export default class EVMProxy extends BaseService {
   public async detectEvmProxy(
     ctx: Context<{ contractAddress: string }>
   ): Promise<EvmProxyHistory> {
+    const contractAddress = ctx.params.contractAddress.toLowerCase();
     const proxyContractRPC = await this.contractHelper.isContractProxy(
-      ctx.params.contractAddress
+      contractAddress
     );
 
     if (!proxyContractRPC) {
@@ -51,7 +52,7 @@ export default class EVMProxy extends BaseService {
 
     let evmProxyHistory!: EvmProxyHistory;
     const proxyContract = await EVMSmartContract.query()
-      .findOne('address', ctx.params.contractAddress)
+      .findOne('address', contractAddress)
       .withGraphJoined('evm_proxy_histories')
       .orderBy('evm_proxy_histories.updated_at', 'desc');
 
@@ -71,8 +72,9 @@ export default class EVMProxy extends BaseService {
 
         evmProxyHistory = await EvmProxyHistory.query()
           .insert({
-            proxy_contract: ctx.params.contractAddress,
-            implementation_contract: proxyContractRPC.logicContractAddress,
+            proxy_contract: contractAddress,
+            implementation_contract:
+              proxyContractRPC.logicContractAddress?.toLowerCase(),
             last_updated_height: currentBlock,
             tx_hash: '',
           })
