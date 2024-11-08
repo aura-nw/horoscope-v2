@@ -252,6 +252,8 @@ export const BULL_JOB_NAME = {
   UPDATE_EVM_ASSETS: 'update:evm-assets',
   CRAWL_EVM_ACCOUNT_BALANCE_NONCE: 'crawl:evm-account-balance-nonce',
   UPDATE_ACCOUNT_ID_IN_EVM_TX: 'update:account-id-in-evm-tx',
+  INSERT_ERC20_CONTRACT: 'job:insert-erc20-contract',
+  INSERT_ERC721_CONTRACT: 'job:insert-erc721-contract',
 };
 
 export const MSG_TYPE = {
