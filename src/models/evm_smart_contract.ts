@@ -29,6 +29,8 @@ export class EVMSmartContract extends BaseModel {
 
   last_updated_tx_id!: number;
 
+  total_tx_to!: number;
+
   static get tableName() {
     return 'evm_smart_contract';
   }

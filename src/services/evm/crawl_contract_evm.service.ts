@@ -328,6 +328,70 @@ export default class CrawlSmartContractEVMService extends BullableService {
     });
   }
 
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.HANDLE_EVM_SMART_CONTRACT_TX,
+    jobName: BULL_JOB_NAME.HANDLE_EVM_SMART_CONTRACT_TX,
+  })
+  async handleEvmSmartContractTx() {
+    const [startBlock, endBlock, blockCheckpoint] =
+      await BlockCheckpoint.getCheckpoint(
+        BULL_JOB_NAME.HANDLE_EVM_SMART_CONTRACT_TX,
+        [BULL_JOB_NAME.CRAWL_SMART_CONTRACT_EVM],
+        config.crawlSmartContractEVM.key
+      );
+    this.logger.info(
+      `Handle evm_smart_contract tx from block ${startBlock} to block ${endBlock}`
+    );
+    if (startBlock >= endBlock) {
+      return;
+    }
+    const evmSmartContractTxs = await EVMTransaction.query()
+      .where('height', '>', startBlock)
+      .andWhere('height', '<=', endBlock)
+      .orderBy('height', 'asc')
+      .orderBy('index', 'asc');
+    const toAddrs = _.uniq(
+      evmSmartContractTxs.filter((e) => e.to).map((e) => bytesToHex(e.to))
+    );
+    const evmSmartContractsState = _.keyBy(
+      await EVMSmartContract.query()
+        .whereIn('address', toAddrs)
+        .select('address', 'total_tx_to'),
+      'address'
+    );
+    evmSmartContractTxs.forEach((tx) => {
+      if (!tx.to) return;
+      const toAddr = bytesToHex(tx.to);
+      const evmSmartContractState = evmSmartContractsState[toAddr];
+      if (evmSmartContractsState[toAddr]) {
+        evmSmartContractState.total_tx_to += 1;
+      }
+    });
+    await knex.transaction(async (trx) => {
+      if (Object.keys(evmSmartContractsState).length > 0) {
+        const stringListUpdates = Object.keys(evmSmartContractsState)
+          .map(
+            (addr) => `('${addr}', ${evmSmartContractsState[addr].total_tx_to})`
+          )
+          .join(',');
+        await knex
+          .raw(
+            `UPDATE evm_smart_contract SET total_tx_to = temp.total_tx_to from (VALUES ${stringListUpdates}) as temp(address, total_tx_to) where temp.address = evm_smart_contract.address`
+          )
+          .transacting(trx);
+      }
+      if (blockCheckpoint) {
+        blockCheckpoint.height = endBlock;
+        await BlockCheckpoint.query()
+          .insert(blockCheckpoint)
+          .onConflict('job_name')
+          .merge()
+          .returning('id')
+          .transacting(trx);
+      }
+    });
+  }
+
   async getContractsProxyInfo(
     addrs: string[],
     bytecodes: _.Dictionary<GetBytecodeReturnType>,
@@ -441,6 +505,20 @@ export default class CrawlSmartContractEVMService extends BullableService {
     await this.createJob(
       BULL_JOB_NAME.HANDLE_SELF_DESTRUCT,
       BULL_JOB_NAME.HANDLE_SELF_DESTRUCT,
+      {},
+      {
+        removeOnComplete: true,
+        removeOnFail: {
+          count: 3,
+        },
+        repeat: {
+          every: config.crawlSmartContractEVM.millisecondCrawl,
+        },
+      }
+    );
+    await this.createJob(
+      BULL_JOB_NAME.HANDLE_EVM_SMART_CONTRACT_TX,
+      BULL_JOB_NAME.HANDLE_EVM_SMART_CONTRACT_TX,
       {},
       {
         removeOnComplete: true,
