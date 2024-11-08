@@ -260,9 +260,19 @@ export default class CrawlProxyContractEVMService extends BullableService {
         proxyContracts.map((e) => e.id)
       )
       .select('evm_proxy_history.proxy_contract as address', 'proxy.id as id');
-    await this.broker.call(SERVICE.V1.Erc20.insertNewErc20Contracts.path, {
-      evmSmartContracts: erc20ProxyContracts,
-    });
+    await this.createJob(
+      BULL_JOB_NAME.INSERT_ERC20_CONTRACT,
+      BULL_JOB_NAME.INSERT_ERC20_CONTRACT,
+      {
+        evmSmartContracts: erc20ProxyContracts,
+      },
+      {
+        removeOnComplete: true,
+        removeOnFail: false,
+        attempts: config.jobRetryAttempt,
+        backoff: config.jobRetryBackoff,
+      }
+    );
   }
 
   async handleErc721ProxyContracts(proxyContracts: EvmProxyHistory[]) {
@@ -283,9 +293,19 @@ export default class CrawlProxyContractEVMService extends BullableService {
         proxyContracts.map((e) => e.id)
       )
       .select('evm_proxy_history.proxy_contract as address', 'proxy.id as id');
-    await this.broker.call(SERVICE.V1.Erc721.insertNewErc721Contracts.path, {
-      evmSmartContracts: erc721ProxyContracts,
-    });
+    await this.createJob(
+      BULL_JOB_NAME.INSERT_ERC721_CONTRACT,
+      BULL_JOB_NAME.INSERT_ERC721_CONTRACT,
+      {
+        evmSmartContracts: erc721ProxyContracts,
+      },
+      {
+        removeOnComplete: true,
+        removeOnFail: false,
+        attempts: config.jobRetryAttempt,
+        backoff: config.jobRetryBackoff,
+      }
+    );
   }
 
   public async _start() {

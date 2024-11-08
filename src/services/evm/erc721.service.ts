@@ -312,21 +312,14 @@ export default class Erc721Service extends BullableService {
     this.logger.info(`Reindex erc721 contract ${address} done.`);
   }
 
-  @Action({
-    name: SERVICE.V1.Erc721.insertNewErc721Contracts.key,
-    params: {
-      evmSmartContracts: 'any[]',
-    },
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.INSERT_ERC721_CONTRACT,
+    jobName: BULL_JOB_NAME.INSERT_ERC721_CONTRACT,
   })
-  async insertNewErc721Contracts(
-    ctx: Context<{
-      evmSmartContracts: {
-        id: number;
-        address: string;
-      }[];
-    }>
-  ) {
-    const { evmSmartContracts } = ctx.params;
+  async insertNewErc721Contracts(_payload: {
+    evmSmartContracts: { id: number; address: string }[];
+  }) {
+    const { evmSmartContracts } = _payload;
     if (evmSmartContracts.length > 0) {
       const currentHeight = await this.viemClient.getBlockNumber();
       const erc721Instances = await this.getErc721Instances(
@@ -548,6 +541,9 @@ export default class Erc721Service extends BullableService {
         {},
         {
           removeOnComplete: true,
+          removeOnFail: {
+            count: 3,
+          },
           repeat: {
             every: config.erc721.millisecondRepeatJob,
           },

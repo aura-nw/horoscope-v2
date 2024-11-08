@@ -3,6 +3,7 @@ import { ServiceBroker } from 'moleculer';
 import knex from '../../../../src/common/utils/db_connection';
 import { EVMSmartContract, EvmProxyHistory } from '../../../../src/models';
 import CrawlProxyContractEVMService from '../../../../src/services/evm/crawl_evm_proxy_history.service';
+import { BULL_JOB_NAME } from '../../../../src/services/evm/constant';
 
 @Describe('Test EVMProxy')
 export default class EvmProxyServiceTest {
@@ -90,29 +91,37 @@ export default class EvmProxyServiceTest {
       .onConflict(['proxy_contract', 'block_height'])
       .merge()
       .returning('id');
-    const result = jest
-      .spyOn(this.evmProxyHistoryService.broker, 'call')
-      .mockResolvedValue([]);
+    const result = jest.spyOn(this.evmProxyHistoryService, 'createJob');
     await this.evmProxyHistoryService.handleTypeProxyContracts(
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       newProxyContracts
     );
-    expect(result).toHaveBeenCalledWith('v1.Erc20.insertNewErc20Contracts', {
-      evmSmartContracts: [
-        {
-          address: evmSmartContracts[0].address,
-          id: evmSmartContracts[0].id,
-        },
-      ],
-    });
-    expect(result).toHaveBeenCalledWith('v1.Erc721.insertNewErc721Contracts', {
-      evmSmartContracts: [
-        {
-          address: evmSmartContracts[2].address,
-          id: evmSmartContracts[2].id,
-        },
-      ],
-    });
+    expect(result).toHaveBeenCalledWith(
+      BULL_JOB_NAME.INSERT_ERC20_CONTRACT,
+      BULL_JOB_NAME.INSERT_ERC20_CONTRACT,
+      {
+        evmSmartContracts: [
+          {
+            id: evmSmartContracts[0].id,
+            address: evmSmartContracts[0].address,
+          },
+        ],
+      },
+      expect.any(Object)
+    );
+    expect(result).toHaveBeenCalledWith(
+      BULL_JOB_NAME.INSERT_ERC721_CONTRACT,
+      BULL_JOB_NAME.INSERT_ERC721_CONTRACT,
+      {
+        evmSmartContracts: [
+          {
+            id: evmSmartContracts[2].id,
+            address: evmSmartContracts[2].address,
+          },
+        ],
+      },
+      expect.any(Object)
+    );
   }
 }

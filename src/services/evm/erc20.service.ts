@@ -196,21 +196,14 @@ export default class Erc20Service extends BullableService {
     }
   }
 
-  @Action({
-    name: SERVICE.V1.Erc20.insertNewErc20Contracts.key,
-    params: {
-      evmSmartContracts: 'any[]',
-    },
+  @QueueHandler({
+    queueName: BULL_JOB_NAME.INSERT_ERC20_CONTRACT,
+    jobName: BULL_JOB_NAME.INSERT_ERC20_CONTRACT,
   })
-  async insertNewErc20Contracts(
-    ctx: Context<{
-      evmSmartContracts: {
-        id: number;
-        address: string;
-      }[];
-    }>
-  ) {
-    const { evmSmartContracts } = ctx.params;
+  async insertNewErc20Contracts(_payload: {
+    evmSmartContracts: { id: number; address: string }[];
+  }) {
+    const { evmSmartContracts } = _payload;
     if (evmSmartContracts.length > 0) {
       const currentHeight = await this.viemClient.getBlockNumber();
       const erc20Instances = await this.getErc20Instances(
