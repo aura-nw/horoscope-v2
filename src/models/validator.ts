@@ -8,8 +8,10 @@ import { PowerEvent } from './power_event';
 import { Delegator } from './delegator';
 
 export interface IConsensusPubkey {
-  type: string;
-  key: string;
+  type?: string;
+  key?: string;
+  value?: string;
+  original_value?: any;
 }
 
 export class Validator extends BaseModel {

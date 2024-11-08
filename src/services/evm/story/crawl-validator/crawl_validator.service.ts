@@ -141,7 +141,11 @@ export default class CrawlValidatorService extends BullableService {
         )}`;
         validatorEntity = foundValidator;
         validatorEntity.evm_address = evmAddress;
-        validatorEntity.consensus_pubkey = validator.consensus_pubkey;
+        validatorEntity.consensus_pubkey = {
+          type: validator.consensus_pubkey.type,
+          value: validator.consensus_pubkey.value.compressed_base64_pubkey,
+          original_value: validator.consensus_pubkey,
+        };
         validatorEntity.jailed = validator.jailed ?? false;
         validatorEntity.status = validator.status;
         validatorEntity.tokens = validator.tokens;
@@ -214,6 +218,7 @@ export default class CrawlValidatorService extends BullableService {
       type: validator.consensus_pubkey.type,
       value:
         validator.consensus_pubkey.value.compressed_base64_pubkey.toString(),
+      original_value: validator.consensus_pubkey.value,
     };
 
     const unCompressPubKey = Secp256k1.uncompressPubkey(
