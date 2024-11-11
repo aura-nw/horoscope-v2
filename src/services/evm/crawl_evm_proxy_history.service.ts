@@ -264,7 +264,11 @@ export default class CrawlProxyContractEVMService extends BullableService {
       BULL_JOB_NAME.INSERT_ERC20_CONTRACT,
       BULL_JOB_NAME.INSERT_ERC20_CONTRACT,
       {
-        evmSmartContracts: erc20ProxyContracts,
+        evmSmartContracts: [
+          ...new Map(
+            erc20ProxyContracts.map((item) => [item.address, item])
+          ).values(),
+        ],
       },
       {
         removeOnComplete: true,
@@ -297,7 +301,11 @@ export default class CrawlProxyContractEVMService extends BullableService {
       BULL_JOB_NAME.INSERT_ERC721_CONTRACT,
       BULL_JOB_NAME.INSERT_ERC721_CONTRACT,
       {
-        evmSmartContracts: erc721ProxyContracts,
+        evmSmartContracts: [
+          ...new Map(
+            erc721ProxyContracts.map((item) => [item.address, item])
+          ).values(),
+        ],
       },
       {
         removeOnComplete: true,
