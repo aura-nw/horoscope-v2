@@ -319,7 +319,11 @@ export default class Erc721Service extends BullableService {
   async insertNewErc721Contracts(_payload: {
     evmSmartContracts: { id: number; address: string }[];
   }) {
-    const { evmSmartContracts } = _payload;
+    const evmSmartContracts = [
+      ...new Map(
+        _payload.evmSmartContracts.map((item) => [item.address, item])
+      ).values(),
+    ];
     if (evmSmartContracts.length > 0) {
       const currentHeight = await this.viemClient.getBlockNumber();
       const erc721Instances = await this.getErc721Instances(
