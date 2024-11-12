@@ -111,10 +111,19 @@
     "databaseName": "local_evm",
     "redisDBNumber": 0,
     "EVMJSONRPC": [
-      "https://story-testnet.aura.network",
       "https://testnet.storyrpc.io"
     ],
     "EVMchainId": 1513,
     "moleculerNamespace": "erascope-dev-story-testnet"
+  },
+  {
+    "chainId": "1516",
+    "RPC": [],
+    "LCD": [],
+    "databaseName": "local_evm",
+    "redisDBNumber": 19,
+    "EVMJSONRPC": ["https://odyssey.storyrpc.io"],
+    "EVMchainId": 1516,
+    "moleculerNamespace": "erascope-dev-odyssey-testnet"
   }
 ]
