@@ -59,12 +59,21 @@ export class Erc721MediaHandler {
       if (fileName) {
         // case media uri is ipfs supported
         try {
-          const s3Object = await s3Client
+          let s3Object = await s3Client
             .headObject({
               Bucket: BUCKET,
               Key: fileName,
             })
             .promise();
+          if (s3Object.ContentType === 'application/octet-stream'){
+            s3Object = await s3Client.copyObject({
+              Bucket: BUCKET,
+              CopySource: `${BUCKET}/${fileName}`,
+              Key: fileName,
+              MetadataDirective: 'REPLACE',
+              ContentType: 'image/svg+xml'
+            }).promise();
+          }
           return {
             linkS3: S3_GATEWAY + fileName,
             contentType: s3Object.ContentType,

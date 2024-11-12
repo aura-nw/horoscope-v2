@@ -181,6 +181,7 @@ export class Erc721Reindexer {
         contract.read.tokenByIndex([i])
       )
     )) as bigint[];
+    // const tokensId = [...Array(9).keys()];
     const [height, ...owners]: [bigint, ...string[]] = await Promise.all([
       this.viemClient.getBlockNumber(),
       ...tokensId.map(

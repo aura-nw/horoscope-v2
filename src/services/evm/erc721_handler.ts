@@ -131,7 +131,7 @@ export class Erc721Handler {
         BigInt(erc721Contract.total_supply) + BigInt(1)
       ).toString();
     } else {
-      throw new Error('Handle erc721 tranfer error');
+      throw new Error(`Handle erc721 tranfer error, address: ${erc721Contract.address}`);
     }
     // update erc721 holder statistics
     const erc721HolderStatFrom =
@@ -328,7 +328,7 @@ export class Erc721Handler {
           (erc721Contract) =>
             `(${erc721Contract.id}, ${
               erc721Contract.total_supply
-            }, '${JSON.stringify(erc721Contract.total_actions)}'::jsonb)`
+            }, '${JSON.stringify(erc721Contract.total_actions ?? {})}'::jsonb)`
         )
         .join(',');
       await knex
