@@ -131,7 +131,9 @@ export class Erc721Handler {
         BigInt(erc721Contract.total_supply) + BigInt(1)
       ).toString();
     } else {
-      throw new Error(`Handle erc721 tranfer error, address: ${erc721Contract.address}`);
+      throw new Error(
+        `Handle erc721 tranfer error, address: ${erc721Contract.address}`
+      );
     }
     // update erc721 holder statistics
     const erc721HolderStatFrom =
