@@ -307,6 +307,7 @@ export default class Erc721Service extends BullableService {
   })
   async reindexErc721(_payload: { address: `0x${string}` }): Promise<void> {
     const { address } = _payload;
+    this.logger.info(`Reindexing erc721 contract ${address}`);
     const erc721Reindexer = new Erc721Reindexer(this.viemClient, this.logger);
     await erc721Reindexer.reindex(address);
     this.logger.info(`Reindex erc721 contract ${address} done.`);
@@ -363,6 +364,7 @@ export default class Erc721Service extends BullableService {
     const erc721Reindexer = new Erc721Reindexer(this.viemClient, this.logger);
     addresses = await erc721Reindexer.filterReindex(addresses);
     if (addresses.length > 0) {
+      this.logger.info(`Reindex erc721 contracts: ${addresses}`);
       await Promise.all(
         addresses.map((address) =>
           this.createJob(
@@ -378,6 +380,8 @@ export default class Erc721Service extends BullableService {
           )
         )
       );
+    } else {
+      this.logger.info('No erc721 contracts satisfied');
     }
   }
 
