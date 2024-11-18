@@ -163,6 +163,10 @@ export class Erc721Reindexer {
         .merge()
         .returning('id');
     }
+    await Erc721Contract.query()
+      .patch({ track: true })
+      .where('address', address);
+    this.logger.info('set track to true');
   }
 
   async getCurrentTokens(
@@ -173,34 +177,72 @@ export class Erc721Reindexer {
       abi: Erc721Contract.ABI,
       client: this.viemClient,
     });
+    function chunkArray(array: any, chunkSize: number) {
+      const result = [];
+      for (let i = 0; i < array.length; i += chunkSize) {
+        result.push(array.slice(i, i + chunkSize));
+      }
+      return result;
+    }
     const totalSupply = (await contract.read
       .totalSupply()
       .catch(() => Promise.resolve(BigInt(0)))) as bigint;
-    const tokensId = (await Promise.all(
-      Array.from(Array(Number(totalSupply)).keys()).map((i) =>
-        contract.read.tokenByIndex([i])
-      )
-    )) as bigint[];
-    // const tokensId = [...Array(9).keys()];
-    const [height, ...owners]: [bigint, ...string[]] = await Promise.all([
-      this.viemClient.getBlockNumber(),
-      ...tokensId.map(
-        (tokenId) =>
-          contract.read
-            .ownerOf([tokenId])
-            .catch(() => Promise.resolve('')) as Promise<string>
-      ),
-    ]);
-    return [
-      tokensId.map((tokenId, index) =>
-        Erc721Token.fromJson({
-          token_id: tokenId.toString(),
-          owner: owners[index].toLowerCase(),
-          erc721_contract_address: address,
-          last_updated_height: Number(height),
-        })
-      ),
-      Number(height),
-    ];
+    const chunkedTokenIds = chunkArray(
+      [...Array(Number(totalSupply)).keys()],
+      500
+    );
+    let i = 0;
+    const tokensId = [];
+    while (i < chunkedTokenIds.length) {
+      this.logger.info(`get id: ${i}/${chunkedTokenIds.length}`);
+      // eslint-disable-next-line no-await-in-loop
+      const res = await Promise.all(
+        chunkedTokenIds[i].map((index: any) =>
+          contract.read.tokenByIndex([index])
+        )
+      );
+      tokensId.push(...res);
+      i += 1;
+    }
+
+    // const tokensId = (await Promise.all(
+    //   Array.from(Array(Number(totalSupply)).keys()).map((i) =>
+    //     contract.read.tokenByIndex([i])
+    //   )
+    // )) as bigint[];
+    // const tokensId = [...Array(Number(totalSupply)).keys()];
+
+    const chunkedArray = chunkArray(tokensId, 500);
+    i = 0;
+    const erc721Tokens: Erc721Token[] = [];
+    let lastHeight = BigInt(0);
+    while (i < chunkedArray.length) {
+      this.logger.info(`Handle ${i}/${chunkedArray.length}`);
+      // eslint-disable-next-line no-await-in-loop
+      const [height, ...owners]: [bigint, ...string[]] = await Promise.all([
+        this.viemClient.getBlockNumber(),
+        ...chunkedArray[i].map(
+          (tokenId: number) =>
+            contract.read
+              .ownerOf([tokenId])
+              .catch(() => Promise.resolve('')) as Promise<string>
+        ),
+      ]);
+      lastHeight = height;
+      erc721Tokens.push(
+        ...chunkedArray[i].map((tokenId: number, index: number) =>
+          Erc721Token.fromJson({
+            token_id: tokenId.toString(),
+            owner: owners[index].toLowerCase(),
+            erc721_contract_address: address,
+            last_updated_height: Number(height),
+          })
+        )
+      );
+      i += 1;
+    }
+    this.logger.info('Handle done list token');
+
+    return [erc721Tokens, Number(lastHeight)];
   }
 }

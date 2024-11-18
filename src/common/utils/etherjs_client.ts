@@ -28,6 +28,8 @@ export function getViemClient(chainId?: string): PublicClient {
           wait: config.viemConfig.transport.waitMilisecond,
         },
         timeout: config.viemConfig.transport.timeout,
+        retryCount: 10,
+        retryDelay: 1000,
       }),
     }).extend(publicActionsL1());
     viemClientMapping.set(chainId ?? config.chainId, viemClient);

@@ -343,8 +343,23 @@ export class Erc721Handler {
     // update erc721 token: new token & new holder
     if (erc721Tokens.length > 0) {
       updatedTokens = _.keyBy(
-        await Erc721Token.query()
-          .insert(
+        // await Erc721Token.query()
+        //   .insert(
+        //     erc721Tokens.map((token) =>
+        //       Erc721Token.fromJson({
+        //         token_id: token.token_id,
+        //         owner: token.owner,
+        //         erc721_contract_address: token.erc721_contract_address,
+        //         last_updated_height: token.last_updated_height,
+        //       })
+        //     )
+        //   )
+        //   .onConflict(['token_id', 'erc721_contract_address'])
+        //   .merge()
+        //   .transacting(trx),
+        await trx
+          .batchInsert(
+            Erc721Token.tableName,
             erc721Tokens.map((token) =>
               Erc721Token.fromJson({
                 token_id: token.token_id,
@@ -352,11 +367,10 @@ export class Erc721Handler {
                 erc721_contract_address: token.erc721_contract_address,
                 last_updated_height: token.last_updated_height,
               })
-            )
+            ),
+            1000
           )
-          .onConflict(['token_id', 'erc721_contract_address'])
-          .merge()
-          .transacting(trx),
+          .returning(['erc721_contract_address', 'token_id', 'id']),
         (o) => `${o.erc721_contract_address}_${o.token_id}`
       );
     }
@@ -382,20 +396,32 @@ export class Erc721Handler {
     }
     // update erc721 holder statistic
     if (erc721HolderStats.length > 0) {
-      await Erc721HolderStatistic.query()
-        .transacting(trx)
-        .insert(
-          erc721HolderStats.map((e) =>
-            Erc721HolderStatistic.fromJson({
-              erc721_contract_address: e.erc721_contract_address,
-              owner: e.owner,
-              count: e.count,
-              last_updated_height: e.last_updated_height,
-            })
-          )
-        )
-        .onConflict(['erc721_contract_address', 'owner'])
-        .merge();
+      // await Erc721HolderStatistic.query()
+      //   .transacting(trx)
+      //   .insert(
+      //     erc721HolderStats.map((e) =>
+      //       Erc721HolderStatistic.fromJson({
+      //         erc721_contract_address: e.erc721_contract_address,
+      //         owner: e.owner,
+      //         count: e.count,
+      //         last_updated_height: e.last_updated_height,
+      //       })
+      //     )
+      //   )
+      //   .onConflict(['erc721_contract_address', 'owner'])
+      //   .merge();
+      await trx.batchInsert(
+        Erc721HolderStatistic.tableName,
+        erc721HolderStats.map((e) =>
+          Erc721HolderStatistic.fromJson({
+            erc721_contract_address: e.erc721_contract_address,
+            owner: e.owner,
+            count: e.count,
+            last_updated_height: e.last_updated_height,
+          })
+        ),
+        1000
+      );
     }
   }
 

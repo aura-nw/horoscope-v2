@@ -512,8 +512,71 @@ export default class Erc721Service extends BullableService {
     }));
   }
 
+  @QueueHandler({
+    queueName: 'update-erc721-stat',
+    jobName: 'update-erc721-stat',
+  })
+  async updateErc721Stat() {
+    const listContractAddress: string[] = [
+      '0x72352ff937cf0599c44066bf5304a372c7d26ca0',
+      '0xb468b57468d0c2e4e34c1d97b085603b34513a2b',
+    ];
+
+    let i = 0;
+    while (i < listContractAddress.length) {
+      this.logger.info(
+        `${i}/${listContractAddress.length}: ${listContractAddress[i]}`
+      );
+      const contractAddress = listContractAddress[i];
+      const lastUpdatedHeight = 2283967;
+      // eslint-disable-next-line no-await-in-loop
+      await knex.transaction(async (trx) => {
+        const res = await trx.raw(`select owner, sum(1) from erc721_token
+      where erc721_contract_address = '${contractAddress}'
+      group by owner
+      order by sum desc`);
+        const listErc721Holders = res.rows.map((e: any) =>
+          Erc721HolderStatistic.fromJson({
+            erc721_contract_address: contractAddress,
+            owner: e.owner,
+            count: e.sum,
+            last_updated_height: lastUpdatedHeight,
+          })
+        );
+        this.logger.debug(listErc721Holders);
+        this.logger.info('Deleting old record');
+        await Erc721HolderStatistic.query()
+          .delete()
+          .where('erc721_contract_address', contractAddress)
+          .transacting(trx);
+        this.logger.info('Inserting new record');
+        await trx.batchInsert(
+          Erc721HolderStatistic.tableName,
+          listErc721Holders,
+          500
+        );
+        this.logger.info('Done update erc721 stat');
+      });
+      i += 1;
+    }
+  }
+
   public async _start(): Promise<void> {
     this.viemClient = getViemClient();
+
+    // await this.createJob('update-erc721-stat', 'update-erc721-stat', {}, {});
+    // this.createJob(
+    //   BULL_JOB_NAME.REINDEX_ERC721,
+    //   BULL_JOB_NAME.REINDEX_ERC721,
+    //   {
+    //     address: '0xb138aed64814f2845554f9dbb116491a077eeb2d',
+    //   },
+    //   {
+    //     jobId: '0xb138aed64814f2845554f9dbb116491a077eeb2d',
+    //     removeOnComplete: false,
+    //     removeOnFail: false,
+    //   }
+    // );
     if (NODE_ENV !== 'test') {
       await this.createJob(
         BULL_JOB_NAME.HANDLE_ERC721_CONTRACT,
