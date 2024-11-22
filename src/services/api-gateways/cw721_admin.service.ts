@@ -3,6 +3,7 @@ import { Context, ServiceBroker } from 'moleculer';
 import networks from '../../../network.json' assert { type: 'json' };
 import BaseService from '../../base/base.service';
 import { REINDEX_TYPE } from '../cw721/cw721-reindexing.service';
+import { SERVICE } from '../../common';
 
 @Service({
   name: 'cw721-admin',
@@ -51,6 +52,41 @@ export default class Cw721AdminService extends BaseService {
       {
         contractAddresses: ctx.params.contractAddresses,
         type: ctx.params.type,
+      }
+    );
+  }
+
+  @Post('/cw721-reindexing-tokens', {
+    name: 'cw721ReindexingTokens',
+    params: {
+      chainid: {
+        type: 'string',
+        optional: false,
+        enum: networks.map((network) => network.chainId),
+      },
+      ids: {
+        type: 'array',
+        optional: false,
+        items: 'number',
+      },
+    },
+  })
+  async cw721ReindexingTokens(
+    ctx: Context<
+      {
+        chainid: string;
+        ids: number[];
+      },
+      Record<string, unknown>
+    >
+  ) {
+    const selectedChain = networks.find(
+      (network) => network.chainId === ctx.params.chainid
+    );
+    return this.broker.call(
+      `${SERVICE.V1.CW721ReindexingService.ReindexingTokens.path}@${selectedChain?.moleculerNamespace}`,
+      {
+        ids: ctx.params.ids,
       }
     );
   }
