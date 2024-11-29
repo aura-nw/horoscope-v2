@@ -1,9 +1,12 @@
 /* eslint-disable @typescript-eslint/return-await */
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-restricted-syntax */
-import { Service } from '@ourparentcenter/moleculer-decorators-extended';
+import {
+  Action,
+  Service,
+} from '@ourparentcenter/moleculer-decorators-extended';
 import _, { Dictionary } from 'lodash';
-import { ServiceBroker } from 'moleculer';
+import { Context, ServiceBroker } from 'moleculer';
 import {
   PublicClient,
   decodeAbiParameters,
@@ -233,6 +236,38 @@ export default class CrawlProxyContractEVMService extends BullableService {
         .transacting(trx);
     });
     await this.handleTypeProxyContracts(newProxyContracts);
+  }
+
+  @Action({
+    name: SERVICE.V1.CrawlEvmProxyHistory.handleTypeProxyContracts.key,
+    params: {
+      proxyHistoryIds: {
+        type: 'array',
+        items: 'number',
+        required: true,
+      },
+    },
+  })
+  public async actionHandleTypeProxyContracts(
+    ctx: Context<{ proxyHistoryIds: number[] }>
+  ) {
+    const ids = ctx.params.proxyHistoryIds;
+    // handle erc20 proxies
+    await this.handleErc20ProxyContracts(
+      ids.map((id) =>
+        EvmProxyHistory.fromJson({
+          id,
+        })
+      )
+    );
+    // handle erc721 proxies
+    await this.handleErc721ProxyContracts(
+      ids.map((id) =>
+        EvmProxyHistory.fromJson({
+          id,
+        })
+      )
+    );
   }
 
   async handleTypeProxyContracts(proxyContracts: EvmProxyHistory[]) {

@@ -149,6 +149,10 @@ export const SERVICE = {
     CrawlEvmProxyHistory: {
       key: 'CrawlEvmProxyHistory',
       path: 'v1.CrawlEvmProxyHistory',
+      handleTypeProxyContracts: {
+        key: 'handleTypeProxyContracts',
+        path: 'v1.CrawlEvmProxyHistory.handleTypeProxyContracts',
+      },
     },
     JobService: {
       CrawlEvmEvent: {

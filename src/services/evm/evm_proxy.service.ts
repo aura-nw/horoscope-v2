@@ -80,6 +80,12 @@ export default class EVMProxy extends BaseService {
           })
           .returning('*');
       }
+      await this.broker.call(
+        SERVICE.V1.CrawlEvmProxyHistory.handleTypeProxyContracts.path,
+        {
+          proxyHistoryIds: [evmProxyHistory.id],
+        }
+      );
     }
 
     return evmProxyHistory;
