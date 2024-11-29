@@ -7,11 +7,16 @@ import {
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
 import { decodeTxRaw } from '@cosmjs/proto-signing';
-import { toBase64, fromBase64 } from '@cosmjs/encoding';
+import { toBase64, fromBase64, toHex } from '@cosmjs/encoding';
 import { Knex } from 'knex';
 import { Queue } from 'bullmq';
 import { GetNodeInfoResponseSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/base/tendermint/v1beta1/query';
 import _ from 'lodash';
+import {
+  TransactionSerializable,
+  recoverTransactionAddress,
+  serializeTransaction,
+} from 'viem';
 import Utils from '../../common/utils/utils';
 import {
   BULL_JOB_NAME,
@@ -31,6 +36,8 @@ import config from '../../../config.json' assert { type: 'json' };
 import knex from '../../common/utils/db_connection';
 import ChainRegistry from '../../common/utils/chain.registry';
 import { getProviderRegistry } from '../../common/utils/provider.registry';
+import { MSG_TYPE } from '../evm/constant';
+import { convertEthAddressToBech32Address } from '../evm/utils';
 
 @Service({
   name: SERVICE.V1.CrawlTransaction.key,
@@ -416,7 +423,7 @@ export default class CrawlTxService extends BullableService {
           block_height: tx.height,
           source: Event.SOURCE.TX_EVENT,
         })) ?? [];
-      const msgInsert =
+      const msgInsert: TransactionMessage[] =
         rawLogTx.tx.body.messages.map((message: any, index: any) => ({
           tx_id: tx.id,
           sender,
@@ -424,6 +431,15 @@ export default class CrawlTxService extends BullableService {
           type: message['@type'],
           content: message,
         })) ?? [];
+      this.updateSenderInEVMTx(
+        msgInsert.filter((msg) =>
+          [
+            MSG_TYPE.MSG_ETHEREUM_TX,
+            MSG_TYPE.MSG_DYNAMIC_FEE_TX,
+            MSG_TYPE.MSG_LEGACY_TX,
+          ].includes(msg.type)
+        )
+      );
       listEventModel.push(...eventInsert);
       listMsgModel.push(...msgInsert);
     });
@@ -577,6 +593,50 @@ export default class CrawlTxService extends BullableService {
       this.logger.warn('No job can be promoted');
       this.logger.warn(error);
     }
+  }
+
+  public async updateSenderInEVMTx(
+    listTransactionMessage: TransactionMessage[]
+  ) {
+    await Promise.all(
+      listTransactionMessage.map(async (txmsg: TransactionMessage) => {
+        const { content } = txmsg;
+        const evmTransaction = {
+          chainId: parseInt(content.data.chain_id, 10),
+          maxFeePerGas: BigInt(content.data.gas_fee_cap),
+          maxPriorityFeePerGas: BigInt(content.data.gas_tip_cap),
+          to: content.data.to,
+          value: BigInt(content.data.value),
+          data: `0x${toHex(fromBase64(content.data.data))}`,
+          nonce: parseInt(content.data.nonce, 10),
+          gas: BigInt(content.data.gas),
+          accessList: content.data.accesses.map((accessElement: any) => ({
+            address: accessElement.address,
+            storageKeys: accessElement.storage_keys,
+          })),
+        } as const satisfies TransactionSerializable;
+
+        const recovedAddress = await recoverTransactionAddress({
+          serializedTransaction: serializeTransaction(evmTransaction),
+          signature: {
+            r: `0x${toHex(fromBase64(content.data.r))}`,
+            s: `0x${toHex(fromBase64(content.data.s))}`,
+            v: content.data.v ? BigInt(1) : BigInt(0),
+          },
+        });
+        const bech32RecovedAddress = convertEthAddressToBech32Address(
+          config.networkPrefixAddress,
+          recovedAddress
+        );
+        if (txmsg.sender !== bech32RecovedAddress) {
+          this.logger.warn(`Sender not match in evm tx ${content.hash}`);
+          this.logger.warn(`Currently: ${txmsg.sender}`);
+          this.logger.warn(`Recover: ${bech32RecovedAddress}`);
+          // eslint-disable-next-line no-param-reassign
+          txmsg.sender = bech32RecovedAddress;
+        }
+      })
+    );
   }
 
   public async _start() {
