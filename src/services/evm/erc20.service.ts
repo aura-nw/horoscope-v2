@@ -90,13 +90,12 @@ export default class Erc20Service extends BullableService {
           ],
           config.erc20.key
         );
-      const erc20Activities: Erc20Activity[] =
-        await Erc20Handler.buildErc20Activities(
-          startBlock,
-          endBlock,
-          trx,
-          this.logger
-        );
+      const { erc20Activities } = await Erc20Handler.buildErc20Activities(
+        startBlock,
+        endBlock,
+        trx,
+        this.logger
+      );
       await this.handleMissingErc20Contract(erc20Activities, trx);
       if (erc20Activities.length > 0) {
         this.logger.info(

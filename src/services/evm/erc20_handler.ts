@@ -177,7 +177,12 @@ export class Erc20Handler {
     endBlock: number,
     trx: Knex.Transaction,
     logger: Moleculer.LoggerInstance,
-    addresses?: string[]
+    addresses?: string[],
+    page?: {
+      prevEvmEventId?: number;
+      limitRecordGet: number;
+      prevCosmosEventId?: number;
+    }
   ) {
     const erc20Activities: Erc20Activity[] = [];
     const erc20Events = await EvmEvent.query()
@@ -191,6 +196,11 @@ export class Erc20Handler {
       .modify((builder) => {
         if (addresses) {
           builder.whereIn('evm_event.address', addresses);
+        }
+        if (page && page.prevEvmEventId !== undefined) {
+          builder
+            .andWhere('evm_event.id', '>', page.prevEvmEventId)
+            .limit(page.limitRecordGet);
         }
       })
       .where('evm_event.block_height', '>', startBlock)
@@ -219,6 +229,11 @@ export class Erc20Handler {
               .joinRelated('attributes')
               .where('attributes.key', EventAttribute.ATTRIBUTE_KEY.ERC20_TOKEN)
               .whereIn(knex.raw('lower("value")'), addresses);
+          }
+          if (page && page.prevCosmosEventId !== undefined) {
+            builder
+              .andWhere('event.id', '>', page.prevCosmosEventId)
+              .limit(page.limitRecordGet);
           }
         })
         .withGraphFetched('[transaction, attributes]')
@@ -251,14 +266,19 @@ export class Erc20Handler {
         erc20Activities.push(activity);
       }
     });
-    return _.sortBy(erc20Activities, 'cosmos_tx_id');
+    return {
+      erc20Activities: _.sortBy(erc20Activities, 'cosmos_tx_id'),
+      prevEvmEventId: erc20Events[erc20Events.length - 1]?.id,
+      prevCosmosEventId: erc20CosmosEvents[erc20CosmosEvents.length - 1]?.id,
+    };
   }
 
   static async getErc20Activities(
     startBlock: number,
     endBlock: number,
     trx?: Knex.Transaction,
-    addresses?: string[]
+    addresses?: string[],
+    page?: { prevId: number; limitRecordGet: number }
   ): Promise<Erc20Activity[]> {
     return Erc20Activity.query()
       .modify((builder) => {
@@ -267,6 +287,11 @@ export class Erc20Handler {
         }
         if (trx) {
           builder.transacting(trx);
+        }
+        if (page) {
+          builder
+            .andWhere('erc20_activity.id', '>', page.prevId)
+            .limit(page.limitRecordGet);
         }
       })
       .leftJoin(
