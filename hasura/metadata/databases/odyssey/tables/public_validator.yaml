@@ -1,0 +1,61 @@
+table:
+  name: validator
+  schema: public
+array_relationships:
+  - name: delegators
+    using:
+      foreign_key_constraint_on:
+        column: validator_id
+        table:
+          name: delegator
+          schema: public
+  - name: powerEventsByValidatorSrcId
+    using:
+      foreign_key_constraint_on:
+        column: validator_src_id
+        table:
+          name: power_event
+          schema: public
+  - name: power_events
+    using:
+      foreign_key_constraint_on:
+        column: validator_dst_id
+        table:
+          name: power_event
+          schema: public
+select_permissions:
+  - role: internal_service
+    permission:
+      columns:
+        - account_address
+        - commission
+        - consensus_address
+        - consensus_hex_address
+        - consensus_pubkey
+        - created_at
+        - delegator_shares
+        - delegators_count
+        - delegators_last_height
+        - description
+        - evm_address
+        - id
+        - image_url
+        - index_offset
+        - jailed
+        - jailed_until
+        - min_self_delegation
+        - missed_blocks_counter
+        - operator_address
+        - percent_voting_power
+        - self_delegation_balance
+        - start_height
+        - status
+        - tokens
+        - tombstoned
+        - unbonding_height
+        - unbonding_time
+        - updated_at
+        - uptime
+      filter: {}
+      limit: 200
+      allow_aggregations: true

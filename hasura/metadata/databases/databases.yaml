@@ -42,6 +42,21 @@
     type_names:
       prefix: euphoria_
   tables: '!include euphoria/tables/tables.yaml'
+- name: odyssey
+  kind: postgres
+  configuration:
+    connection_info:
+      database_url:
+        from_env: DATABASE_URL_ODYSSEY_TESTNET
+      isolation_level: read-committed
+      use_prepared_statements: false
+  customization:
+    naming_convention: hasura-default
+    root_fields:
+      namespace: odyssey
+    type_names:
+      prefix: odyssey_
+  tables: '!include odyssey/tables/tables.yaml'
 - name: xstaxy
   kind: postgres
   configuration:
