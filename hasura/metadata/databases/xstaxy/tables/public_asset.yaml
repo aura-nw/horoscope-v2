@@ -11,6 +11,8 @@ select_permissions:
         - name
         - type
         - price
+        - transactions
+        - transactions_updated_height
         - total_supply
         - origin_id
         - updated_at
