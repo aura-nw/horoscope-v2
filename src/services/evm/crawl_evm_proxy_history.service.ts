@@ -79,6 +79,7 @@ export default class CrawlProxyContractEVMService extends BullableService {
       EVMSmartContract.TYPES.PROXY_EIP_1967,
       EVMSmartContract.TYPES.PROXY_EIP_1822,
       EVMSmartContract.TYPES.PROXY_OPEN_ZEPPELIN_IMPLEMENTATION,
+      EVMSmartContract.TYPES.PROXY_EIP_1167,
     ]);
 
     for (const evmEvent of evmEvents) {
