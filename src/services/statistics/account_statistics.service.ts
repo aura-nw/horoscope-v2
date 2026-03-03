@@ -433,25 +433,28 @@ export default class AccountStatisticsService extends BullableService {
     const denom = config.networkDenom;
 
     if (!isMViewExists) {
-      await knex.schema.raw(`
-        CREATE MATERIALIZED VIEW ${viewName} AS
-        SELECT account.address,
-              COALESCE(SUM(delegator_sum_amount.amount), 0) + COALESCE(SUM(account_balance.amount), 0) AS amount,
-              Now() AS updated_at
-        FROM   account
-              LEFT JOIN account_balance
-                      ON account.id = account_balance.account_id
-              LEFT JOIN (SELECT delegator_address AS address,
-                                  Sum(amount)       AS amount
-                          FROM   delegator
-                          GROUP  BY address) AS delegator_sum_amount
-                      ON delegator_sum_amount.address = account.address
-        WHERE  denom = '${denom}'
-        GROUP BY account.address, account_balance.denom
-        ORDER BY amount DESC;
+      await knex.transaction(async (trx) => {
+        await trx.raw('SET LOCAL statement_timeout = 0');
+        await trx.raw(`
+          CREATE MATERIALIZED VIEW ${viewName} AS
+          SELECT account.address,
+                COALESCE(SUM(delegator_sum_amount.amount), 0) + COALESCE(SUM(account_balance.amount), 0) AS amount,
+                Now() AS updated_at
+          FROM   account
+                LEFT JOIN account_balance
+                        ON account.id = account_balance.account_id
+                LEFT JOIN (SELECT delegator_address AS address,
+                                    Sum(amount)       AS amount
+                            FROM   delegator
+                            GROUP  BY address) AS delegator_sum_amount
+                        ON delegator_sum_amount.address = account.address
+          WHERE  denom = '${denom}'
+          GROUP BY account.address, account_balance.denom
+          ORDER BY amount DESC;
 
-        CREATE INDEX idx_materialized_view_name_address ON ${viewName}(address);
-    `);
+          CREATE INDEX idx_materialized_view_name_address ON ${viewName}(address);
+      `);
+      });
     } else {
       await knex.schema.refreshMaterializedView(viewName);
     }
