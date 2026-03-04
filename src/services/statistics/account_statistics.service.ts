@@ -456,7 +456,10 @@ export default class AccountStatisticsService extends BullableService {
       `);
       });
     } else {
-      await knex.schema.refreshMaterializedView(viewName);
+      await knex.transaction(async (trx) => {
+        await trx.raw('SET LOCAL statement_timeout = 0');
+        await trx.raw('REFRESH MATERIALIZED VIEW ??', [viewName]);
+      });
     }
   }
 
