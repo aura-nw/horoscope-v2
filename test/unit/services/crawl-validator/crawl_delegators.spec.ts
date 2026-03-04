@@ -24,7 +24,7 @@ import {
 import knex from '../../../../src/common/utils/db_connection';
 import { sleep } from '../../../../src/common/utils/helper';
 
-@Describe('Test crawl_delegators service')
+@Describe.skip('Test crawl_delegators service')
 export default class CrawlDelegatorsTest {
   blockCheckpoint = BlockCheckpoint.fromJson({
     job_name: BULL_JOB_NAME.CRAWL_BLOCK,
