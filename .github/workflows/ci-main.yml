@@ -17,15 +17,15 @@ on:
 
 jobs:
   lint:
-    if: github.actor == 'peara'
+    if: github.actor == 'peara' || github.actor == 'tuanbass'
     uses: ./.github/workflows/lint.yml
     secrets: inherit
   test:
-    if: github.actor == 'peara'
+    if: github.actor == 'peara' || github.actor == 'tuanbass'
     uses: ./.github/workflows/test.yml
     secrets: inherit
   build:
-    if: github.actor == 'peara'
+    if: github.actor == 'peara' || github.actor == 'tuanbass'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -67,8 +67,8 @@ jobs:
       - name: Tag commit
         uses: tvdias/github-tagger@v0.0.1
         with:
-          repo-token: "${{ secrets.GITHUB_TOKEN }}"
-          tag: "${{ env.new_version }}"
+          repo-token: '${{ secrets.GITHUB_TOKEN }}'
+          tag: '${{ env.new_version }}'
 
       - name: Set environment variable
         run: |
