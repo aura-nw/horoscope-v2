@@ -900,8 +900,16 @@ export default class CrawlBlockTest {
       .andWhere('source', Event.SOURCE.END_BLOCK_EVENT);
 
     expect(block).not.toBeUndefined();
-    expect(beginBlockEvents.length).toEqual(16);
+    // The fixture has 16 begin block events, 4 of which are rewards/commission.
+    // Those are skipped via config.crawlBlock.skipEventTypes because no
+    // consumer reads them; the raw form stays in block.data.block_result.
+    expect(beginBlockEvents.length).toEqual(12);
     expect(endBlockEvents.length).toEqual(4);
+    expect(
+      beginBlockEvents.filter((event) =>
+        ['rewards', 'commission'].includes(event.type)
+      ).length
+    ).toEqual(0);
   }
 
   @AfterAll()
