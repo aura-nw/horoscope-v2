@@ -173,8 +173,15 @@ export default class CrawlBlockService extends BullableService {
           !mapExistedBlock[parseInt(block.block?.header?.height, 10)]
         ) {
           const events: Event[] = [];
+          // Per-block distribution accrual (rewards/commission) is emitted for
+          // every validator on every block and is not read by any consumer.
+          // The raw form stays available in block.data.block_result, which is
+          // what the block detail page renders.
+          const skipEventTypes: string[] =
+            config.crawlBlock.skipEventTypes ?? [];
           if (block.block_result.begin_block_events?.length > 0) {
             block.block_result.begin_block_events.forEach((event: any) => {
+              if (skipEventTypes.includes(event.type)) return;
               events.push({
                 ...event,
                 source: Event.SOURCE.BEGIN_BLOCK_EVENT,
@@ -183,6 +190,7 @@ export default class CrawlBlockService extends BullableService {
           }
           if (block.block_result.end_block_events?.length > 0) {
             block.block_result.end_block_events.forEach((event: any) => {
+              if (skipEventTypes.includes(event.type)) return;
               if (event.type === Event.EVENT_TYPE.BLOCK_BLOOM) {
                 const attrBloom = event.attributes.filter(
                   (attr: any) => attr.key === EventAttribute.ATTRIBUTE_KEY.BLOOM

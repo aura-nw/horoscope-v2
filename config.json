@@ -30,7 +30,8 @@
     "millisecondCrawl": 5000,
     "blocksPerCall": 100,
     "startBlock": 4860000,
-    "saveRawLog": true
+    "saveRawLog": true,
+    "skipEventTypes": ["rewards", "commission"]
   },
   "crawlTransaction": {
     "key": "crawlTransaction",
