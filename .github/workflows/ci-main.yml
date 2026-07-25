@@ -7,6 +7,7 @@ on:
     permissions:
       users:
         - peara
+        - tuanbass
     inputs:
       version:
         description: 'Specify which version to bump (major, minor, patch)'
@@ -35,7 +36,7 @@ jobs:
         run: |
           # Get the most recent tag (previous tag of the current commit)
           PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^)
-          
+
           # If there is no previous tag, default to 1.0.0
           if [ -z "$PREVIOUS_TAG" ]; then
             echo "No previous tag found, defaulting to version 1.0.0"
@@ -62,7 +63,7 @@ jobs:
           fi
           echo "New version: $VERSION"
           echo "new_version=$VERSION" >> $GITHUB_ENV
-          
+
       - name: Tag commit
         uses: tvdias/github-tagger@v0.0.1
         with:
