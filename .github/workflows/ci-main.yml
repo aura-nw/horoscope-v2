@@ -27,6 +27,9 @@ jobs:
   build:
     if: github.actor == 'peara' || github.actor == 'tuanbass'
     runs-on: ubuntu-latest
+    # Exposed so update-manifest can read it: $GITHUB_ENV does not cross jobs.
+    outputs:
+      new_version: ${{ steps.increment_version.outputs.new_version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,6 +66,7 @@ jobs:
           fi
           echo "New version: $VERSION"
           echo "new_version=$VERSION" >> $GITHUB_ENV
+          echo "new_version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Tag commit
         uses: tvdias/github-tagger@v0.0.1
@@ -126,7 +130,7 @@ jobs:
       - uses: imranismail/setup-kustomize@v2
       - name: Set environment variable
         run: |
-          echo CONTAINER_RELEASE_IMAGE=ghcr.io/aura-nw/erascope:${{ env.new_version }} >> $GITHUB_ENV
+          echo CONTAINER_RELEASE_IMAGE=ghcr.io/aura-nw/erascope:${{ needs.build.outputs.new_version }} >> $GITHUB_ENV
           echo REPO_MANIFEST_NAME=gitops-prod >> $GITHUB_ENV
           echo REPO_MANIFEST_URL=github.com/aura-nw/gitops-prod.git >> $GITHUB_ENV
           echo REPO_MANIFEST_BRANCH=main >> $GITHUB_ENV
