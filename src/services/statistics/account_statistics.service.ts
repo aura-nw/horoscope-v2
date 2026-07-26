@@ -450,6 +450,11 @@ export default class AccountStatisticsService extends BullableService {
                         ON delegator_sum_amount.address = account.address
           WHERE  denom = '${denom}'
           GROUP BY account.address, account_balance.denom
+          -- Consumers only ever query amount > 0 (Aurascan holders tab), so
+          -- excluding zero-balance accounts here keeps ~4M unused rows out of
+          -- the view and shortens each REFRESH proportionally.
+          HAVING COALESCE(SUM(delegator_sum_amount.amount), 0)
+               + COALESCE(SUM(account_balance.amount), 0) > 0
           ORDER BY amount DESC;
 
           CREATE INDEX idx_materialized_view_name_address ON ${viewName}(address);
