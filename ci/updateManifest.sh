@@ -1,6 +1,17 @@
 #!/bin/sh
 set -xe
 
+# `kustomize edit set image name=repo` (no tag) silently DROPS newTag from the
+# manifest, which pins the deployment to :latest. Fail loudly instead — the
+# kustomize call itself succeeds, so `set -e` cannot catch this.
+case "${CONTAINER_RELEASE_IMAGE}" in
+  *:?*) ;;
+  *)
+    echo "ERROR: CONTAINER_RELEASE_IMAGE has no tag: '${CONTAINER_RELEASE_IMAGE}'" >&2
+    exit 1
+    ;;
+esac
+
 # clone repo manifest
 git clone "https://${PERSONAL_ACCESS_TOKEN}@${REPO_MANIFEST_URL}"
 cd ./${REPO_MANIFEST_NAME}
