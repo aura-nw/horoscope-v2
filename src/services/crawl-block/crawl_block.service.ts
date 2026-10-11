@@ -1,10 +1,7 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import { ServiceBroker } from 'moleculer';
 import { Service } from '@ourparentcenter/moleculer-decorators-extended';
-import {
-  GetLatestBlockResponseSDKType,
-  GetNodeInfoResponseSDKType,
-} from '@aura-nw/aurajs/types/codegen/cosmos/base/tendermint/v1beta1/query';
+import { GetNodeInfoResponseSDKType } from '@aura-nw/aurajs/types/codegen/cosmos/base/tendermint/v1beta1/query';
 import { CommitSigSDKType } from '@aura-nw/aurajs/types/codegen/tendermint/types/types';
 import { HttpBatchClient } from '@cosmjs/tendermint-rpc';
 import { createJsonRpcRequest } from '@cosmjs/tendermint-rpc/build/jsonrpc';
@@ -36,6 +33,11 @@ export default class CrawlBlockService extends BullableService {
 
   private _registry!: ChainRegistry;
 
+  // node_info only changes on a chain upgrade; refresh it rarely instead of every crawl
+  private static readonly NODE_INFO_REFRESH_MS = 10 * 60 * 1000;
+
+  private _nodeInfoFetchedAt = 0;
+
   public constructor(public broker: ServiceBroker) {
     super(broker);
     this._httpBatchClient = getHttpBatchClient();
@@ -55,11 +57,17 @@ export default class CrawlBlockService extends BullableService {
     this._lcdClient = await getLcdClient();
 
     // set version cosmos sdk to registry
-    const nodeInfo: GetNodeInfoResponseSDKType =
-      await this._lcdClient.provider.cosmos.base.tendermint.v1beta1.getNodeInfo();
-    const cosmosSdkVersion = nodeInfo.application_version?.cosmos_sdk_version;
-    if (cosmosSdkVersion) {
-      this._registry.setCosmosSdkVersionByString(cosmosSdkVersion);
+    if (
+      Date.now() - this._nodeInfoFetchedAt >=
+      CrawlBlockService.NODE_INFO_REFRESH_MS
+    ) {
+      const nodeInfo: GetNodeInfoResponseSDKType =
+        await this._lcdClient.provider.cosmos.base.tendermint.v1beta1.getNodeInfo();
+      const cosmosSdkVersion = nodeInfo.application_version?.cosmos_sdk_version;
+      if (cosmosSdkVersion) {
+        this._registry.setCosmosSdkVersionByString(cosmosSdkVersion);
+      }
+      this._nodeInfoFetchedAt = Date.now();
     }
 
     // Get handled block from db
@@ -79,13 +87,11 @@ export default class CrawlBlockService extends BullableService {
   }
 
   async handleJobCrawlBlock() {
-    // Get latest block in network
-    const responseGetLatestBlock: GetLatestBlockResponseSDKType =
-      await this._lcdClient.provider.cosmos.base.tendermint.v1beta1.getLatestBlock();
+    // Get latest block height in network (RPC status is ~1 KB, LCD blocks/latest ~14 KB)
+    const responseStatus: JsonRpcSuccessResponse =
+      await this._httpBatchClient.execute(createJsonRpcRequest('status'));
     const latestBlockNetwork = parseInt(
-      responseGetLatestBlock.block?.header?.height
-        ? responseGetLatestBlock.block?.header?.height.toString()
-        : '0',
+      responseStatus.result?.sync_info?.latest_block_height ?? '0',
       10
     );
 
