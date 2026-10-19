@@ -50,6 +50,8 @@ export class Cw20Contract extends BaseModel {
 
   last_updated_height!: number;
 
+  smart_contract_address!: string;
+
   static get tableName() {
     return 'cw20_contract';
   }
